@@ -1,0 +1,134 @@
+---
+title: "Clear Creek Adult Upstream Video Data QC Checklist"
+author: "Erin Cain"
+date: "9/29/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+
+```
+
+## Clear Creek Adult Upstream Video Data 
+```{r, echo = FALSE}
+# getwd()
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/ClearCreekVideoWeir_AdultRecruitment_2013-2020.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "test-data.xlsx",
+               overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data: 
+```{r}
+# read in data to clean 
+readxl::excel_sheets("test-data.xlsx")
+domain_description <- readxl::read_excel("test-data.xlsx", sheet = "Domain Description") 
+domain_description %>% head(10)
+raw_data_test <- readxl::read_excel("test-data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui") %>% glimpse()
+```
+
+## Checklist
+
+* Update column names to snake case/remove any funky spacing
+* Check column types to ensure all data is stored as desired:
+  * Numerical data - <dbl> or <int> 
+  * Character data - <str> or <chr>
+  * Date - <datetime> or <date> or <time>
+* remove any redundant columns
+
+```{r}
+cleaner_data <- raw_data_test %>% 
+  set_names(tolower(colnames(raw_data_test))) %>%
+  mutate(date = as.Date(date),
+         time_block = format(time_block, format = "%H:%M:%S")) %>% # TODO fix time_block and time_passage
+  select(-stt_size) %>% 
+  glimpse() 
+```
+
+* Transform into tidy format, check that:
+  * Each variable has its own column 
+  * Each observation has its own row 
+  * Each value has its own cell
+```{r}
+
+```
+
+Visualize Data to quickly determine if it looks reasonable: 
+* Plot numerical values
+* table on categorical columns
+
+### Plots: {.tabset}
+
+#### `Up`
+```{r}
+cleaner_data %>% ggplot(aes(x = date, y = up)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free_x") 
+```
+
+* check for missing values, convert -9999 or other placeholders to NA 
+  * summarize quantity of missing values to determine quality and completeness of data
+  
+We know from the plot above that there are no -9999 values
+`r round(sum(is.na(cleaner_data$up))/nrow(cleaner_data), 3)` % of values in the `up` column are NA. 
+
+#### `Down` 
+```{r}
+cleaner_data %>% ggplot(aes(x = date, y = down)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free_x") 
+```
+
+* check for missing values, convert -9999 or other placeholders to NA 
+  * summarize quantity of missing values to determine quality and completeness of data
+  
+We know from the plot above that there are no -9999 values
+`r round(sum(is.na(cleaner_data$down))/nrow(cleaner_data), 3)` % of values in the `up` column are NA. 
+
+### Categorical Tables: {.tabset}
+
+#### `viewing_condition`
+```{r}
+table(cleaner_data$viewing_condition)
+domain_description[which(domain_description$Domain == "VIEWING CONDITION"), ]
+```
+
+* check for missing values, convert -9999 or other placeholders to NA 
+  * summarize quantity of missing values to determine quality and completeness of data
+  
+`r round(sum(is.na(cleaner_data$viewing_condition))/nrow(cleaner_data), 3)` % of values in the `viewing_condition` column are NA. 
+
+#### 2st categorical variable (replace)
+```{r}
+
+```
+
+* check for missing values, convert -9999 or other placeholders to NA 
+  * summarize quantity of missing values to determine quality and completeness of data
+
+```{r}
+
+```  
+
+### Checklist cont. 
+* Within a categorical column check that capitalization is consistent (ex: if a column describes methodology and has “Snorkel” and “snorkel” listed as options fix to make all into snake case “snorkel”)
+* Within a categorical column check that values are consistent, no typos
+```{r}
+
+```
+
+* Check for location information for every station (latitude and longitude for every sampling location) 
+```{r}
+
+```
