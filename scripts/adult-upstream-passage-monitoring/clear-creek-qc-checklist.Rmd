@@ -2,19 +2,23 @@
 title: "Clear Creek Adult Upstream Video Data QC Checklist"
 author: "Erin Cain"
 date: "9/29/2021"
-output: html_document
+output: 
+  html_document:
+    theme: flatly
+    code_folding: hide
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
-
+library(ggplot2)
+library(scales)
 ```
 
 ## Clear Creek Adult Upstream Video Data 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 # getwd()
 # Open object from google cloud storage
 # Set your authentication using gcs_auth
@@ -29,33 +33,33 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/Clea
                overwrite = TRUE)
 ```
 
-Read in data from google cloud, glimpse raw data: 
+Read in data from google cloud, glimpse raw data and domain description sheet: 
 ```{r}
 # read in data to clean 
-readxl::excel_sheets("test-data.xlsx")
+sheets <- readxl::excel_sheets("test-data.xlsx")
 domain_description <- readxl::read_excel("test-data.xlsx", sheet = "Domain Description") 
 domain_description %>% head(10)
-raw_data_test <- readxl::read_excel("test-data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui") %>% glimpse()
+raw_video_data <- readxl::read_excel("test-data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui") %>% glimpse()
 ```
 
 ## Checklist
 
 * Update column names to snake case/remove any funky spacing
 * Check column types to ensure all data is stored as desired:
-  * Numerical data - <dbl> or <int> 
-  * Character data - <str> or <chr>
-  * Date - <datetime> or <date> or <time>
+  * Numerical data - `<dbl>` or `<int>` 
+  * Character data - `<str>` or `<chr>`
+  * Date - <datetime> or `<date>` or `<time>`
 * remove any redundant columns
 
 ```{r}
-cleaner_data <- raw_data_test %>% 
-  set_names(tolower(colnames(raw_data_test))) %>%
+cleaner_video_data <- raw_video_data %>% 
+  set_names(tolower(colnames(raw_video_data))) %>%
   mutate(date = as.Date(date),
-         time_block = format(time_block, format = "%H:%M:%S")) %>% # TODO fix time_block and time_passage
+         time_block = hms::as_hms(time_block)) %>% # TODO fix time_passage
+  filter(species == "CHN", run == "SR") %>%
   select(-stt_size) %>% 
   glimpse() 
 ```
-
 * Transform into tidy format, check that:
   * Each variable has its own column 
   * Each observation has its own row 
@@ -68,65 +72,116 @@ Visualize Data to quickly determine if it looks reasonable:
 * Plot numerical values
 * table on categorical columns
 
-### Plots: {.tabset}
+### Plots visualizing numeric variables: {.tabset}
 
-#### `Up`
+#### `up`
 ```{r}
-cleaner_data %>% ggplot(aes(x = date, y = up)) + 
+cleaner_video_data %>% ggplot(aes(x = date, y = up)) + 
   geom_col() + 
-  facet_wrap(~year(date), scales = "free_x") 
+  facet_wrap(~year(date), scales = "free_x") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
 * check for missing values, convert -9999 or other placeholders to NA 
   * summarize quantity of missing values to determine quality and completeness of data
   
 We know from the plot above that there are no -9999 values
-`r round(sum(is.na(cleaner_data$up))/nrow(cleaner_data), 3)` % of values in the `up` column are NA. 
+`r round(sum(is.na(cleaner_video_data$up))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
 
-#### `Down` 
+#### `down` 
 ```{r}
-cleaner_data %>% ggplot(aes(x = date, y = down)) + 
+cleaner_video_data %>% ggplot(aes(x = date, y = down)) + 
   geom_col() + 
-  facet_wrap(~year(date), scales = "free_x") 
+  facet_wrap(~year(date), scales = "free_x") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
 * check for missing values, convert -9999 or other placeholders to NA 
   * summarize quantity of missing values to determine quality and completeness of data
   
 We know from the plot above that there are no -9999 values
-`r round(sum(is.na(cleaner_data$down))/nrow(cleaner_data), 3)` % of values in the `up` column are NA. 
+`r round(sum(is.na(cleaner_video_data$down))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
 
-### Categorical Tables: {.tabset}
+### Tables describing categorical variables: {.tabset}
 
 #### `viewing_condition`
 ```{r}
-table(cleaner_data$viewing_condition)
-domain_description[which(domain_description$Domain == "VIEWING CONDITION"), ]
+table(cleaner_video_data$viewing_condition)
+domain_description[which(domain_description$Domain == "VIEWING CONDITION"), ]$Description
 ```
 
 * check for missing values, convert -9999 or other placeholders to NA 
   * summarize quantity of missing values to determine quality and completeness of data
   
-`r round(sum(is.na(cleaner_data$viewing_condition))/nrow(cleaner_data), 3)` % of values in the `viewing_condition` column are NA. 
+`r round(sum(is.na(cleaner_video_data$viewing_condition))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
 
-#### 2st categorical variable (replace)
+#### `adipose`
 ```{r}
-
+table(cleaner_video_data$adipose)
+domain_description[which(domain_description$Domain == "ADIPOSE"), ]$Description
 ```
 
 * check for missing values, convert -9999 or other placeholders to NA 
   * summarize quantity of missing values to determine quality and completeness of data
+  
+`r round(sum(is.na(cleaner_video_data$adipose))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
 
+#### `sex`
 ```{r}
+table(cleaner_video_data$sex)
+domain_description[which(domain_description$Domain == "SEX"), ]$Description
+```
 
-```  
+* check for missing values, convert -9999 or other placeholders to NA 
+  * summarize quantity of missing values to determine quality and completeness of data
+  
+`r round(sum(is.na(cleaner_video_data$sex))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA.   
 
-### Checklist cont. 
+* Within a categorical column check that capitalization is consistent 
+* Within a categorical column check that values are consistent, no typos
+```{r}
+# Fix MALE, male, MAle, female variations, and Unknown 
+```
+
+#### `spawning_condition`
+```{r}
+table(cleaner_video_data$spawning_condition)
+domain_description[which(domain_description$Domain == "SPAWNING CONDITION"), ]$Description
+```
+
+* check for missing values, convert -9999 or other placeholders to NA 
+  * summarize quantity of missing values to determine quality and completeness of data
+  
+`r round(sum(is.na(cleaner_video_data$spawning_condition))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
+
+* Within a categorical column check that capitalization is consistent 
+* Within a categorical column check that values are consistent, no typos
+```{r}
+# Fix No vs NO in jack_size, 
+```
+
+#### `jack_size`
+```{r}
+table(cleaner_video_data$jack_size)
+domain_description[which(domain_description$Domain == "JACKSIZE"), ]$Description
+```
+
+* check for missing values, convert -9999 or other placeholders to NA 
+  * summarize quantity of missing values to determine quality and completeness of data
+  
+`r round(sum(is.na(cleaner_video_data$jack_size))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
+
 * Within a categorical column check that capitalization is consistent (ex: if a column describes methodology and has “Snorkel” and “snorkel” listed as options fix to make all into snake case “snorkel”)
 * Within a categorical column check that values are consistent, no typos
 ```{r}
-
+# Fix No vs NO in jack_size, 
 ```
+
+### Checklist cont. 
 
 * Check for location information for every station (latitude and longitude for every sampling location) 
 ```{r}
