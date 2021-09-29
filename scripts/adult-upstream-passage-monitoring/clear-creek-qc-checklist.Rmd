@@ -2,10 +2,7 @@
 title: "Clear Creek Adult Upstream Video Data QC Checklist"
 author: "Erin Cain"
 date: "9/29/2021"
-output: 
-  html_document:
-    theme: flatly
-    code_folding: hide
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE, fig.width=15, fig.height=10}
@@ -55,7 +52,7 @@ raw_video_data <- readxl::read_excel("test-data.xlsx", sheet = "ClearCreekVideoW
 cleaner_video_data <- raw_video_data %>% 
   set_names(tolower(colnames(raw_video_data))) %>%
   mutate(date = as.Date(date),
-         time_block = hms::as_hms(time_block)) %>% # TODO fix time_passage
+         time_block = hms::as_hms(time_block)) %>% # TODO fix time_passed 
   filter(species == "CHN", run == "SR") %>%
   select(-stt_size) %>% 
   glimpse() 
@@ -65,10 +62,11 @@ cleaner_video_data <- raw_video_data %>%
   * Each observation has its own row 
   * Each value has its own cell
 ```{r}
-
+# Each variable has its own column, each observation has its own row (an observation is count in time period), and each value has its own cell 
 ```
 
 Visualize Data to quickly determine if it looks reasonable: 
+
 * Plot numerical values
 * table on categorical columns
 
@@ -88,6 +86,7 @@ cleaner_video_data %>% ggplot(aes(x = date, y = up)) +
   * summarize quantity of missing values to determine quality and completeness of data
   
 We know from the plot above that there are no -9999 values
+
 `r round(sum(is.na(cleaner_video_data$up))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
 
 #### `down` 
@@ -104,6 +103,7 @@ cleaner_video_data %>% ggplot(aes(x = date, y = down)) +
   * summarize quantity of missing values to determine quality and completeness of data
   
 We know from the plot above that there are no -9999 values
+
 `r round(sum(is.na(cleaner_video_data$down))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
 
 ### Tables describing categorical variables: {.tabset}
@@ -119,6 +119,12 @@ domain_description[which(domain_description$Domain == "VIEWING CONDITION"), ]$De
   
 `r round(sum(is.na(cleaner_video_data$viewing_condition))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
 
+* Within a categorical column check that capitalization is consistent 
+* Within a categorical column check that values are consistent, no typos
+```{r}
+# Looks fine
+```
+
 #### `adipose`
 ```{r}
 table(cleaner_video_data$adipose)
@@ -129,6 +135,13 @@ domain_description[which(domain_description$Domain == "ADIPOSE"), ]$Description
   * summarize quantity of missing values to determine quality and completeness of data
   
 `r round(sum(is.na(cleaner_video_data$adipose))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
+
+* Within a categorical column check that capitalization is consistent 
+* Within a categorical column check that values are consistent, no typos
+```{r}
+cleaner_video_data <- cleaner_video_data %>% 
+  mutate(adipose = tolower(adipose)) 
+```
 
 #### `sex`
 ```{r}
@@ -144,7 +157,8 @@ domain_description[which(domain_description$Domain == "SEX"), ]$Description
 * Within a categorical column check that capitalization is consistent 
 * Within a categorical column check that values are consistent, no typos
 ```{r}
-# Fix MALE, male, MAle, female variations, and Unknown 
+cleaner_video_data <- cleaner_video_data %>% 
+  mutate(sex = tolower(if_else(sex == "UNK", "UNKNOWN", sex))) 
 ```
 
 #### `spawning_condition`
@@ -161,7 +175,7 @@ domain_description[which(domain_description$Domain == "SPAWNING CONDITION"), ]$D
 * Within a categorical column check that capitalization is consistent 
 * Within a categorical column check that values are consistent, no typos
 ```{r}
-# Fix No vs NO in jack_size, 
+# Looks good
 ```
 
 #### `jack_size`
@@ -178,12 +192,16 @@ domain_description[which(domain_description$Domain == "JACKSIZE"), ]$Description
 * Within a categorical column check that capitalization is consistent (ex: if a column describes methodology and has “Snorkel” and “snorkel” listed as options fix to make all into snake case “snorkel”)
 * Within a categorical column check that values are consistent, no typos
 ```{r}
-# Fix No vs NO in jack_size, 
+cleaner_video_data <- cleaner_video_data %>% 
+  mutate(jack_size = tolower(if_else(jack_size == "UNK", "UNKNOWN", jack_size))) 
 ```
 
 ### Checklist cont. 
 
-* Check for location information for every station (latitude and longitude for every sampling location) 
-```{r}
+* Check for location information for every station (latitude and longitude for every sampling location
 
-```
+*TODO* Need to inquire for location of video monitoring station 
+
+### Save cleaned data back to google cloud 
+
+TODO 
