@@ -17,10 +17,23 @@ library(scales)
 # Clear Creek Adult Upstream Video Data 
 
 ## Description of Monitoring Data
-TODO add current knows here
 
-TODO investigate/talk about outages, is a 0 a real zero or explained by other factors
+**Timeframe:** 2013-2020
+
+**Video Season:** August - December
+
+**Completeness of Record throughout timeframe:** 
+Data are not padded - missing data indicate a period where footage was not collected by USFWS
+(However we are filtering for spring run so it is also possible that footage was taken but no spring run were found)
+
+* TODO investigate/talk about outages, is a 0 a real zero or explained by other factors
+
+**Sampling Location:**
 TODO get location of video monitoring station
+
+**Data Contact:** [Sam Provins](mailto:samuel_provins@fws.gov) 
+
+Additional information describing this monitoring data is available in the [Adult Spring Run Chinook Salmon Monitoring in Clear Creek Report](https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf) prepared by USFWS. 
 
 ## Access Cloud Data
 
@@ -34,7 +47,8 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
-gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/ClearCreekVideoWeir_AdultRecruitment_2013-2020.xlsx",
+gcs_get_object(object_name = 
+                 "adult-upstream-passage-monitoring/clear-creek/data-rawClearCreekVideoWeir_AdultRecruitment_2013-2020.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "test-data.xlsx",
                overwrite = TRUE)
@@ -81,11 +95,15 @@ cleaner_video_data <- raw_video_data %>%
 ```{r}
 cleaner_video_data %>% ggplot(aes(x = date, y = up)) + 
   geom_col() + 
-  facet_wrap(~year(date), scales = "free_x") + 
+  facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
+```{r}
+# Add boxplot
+```
+
 **Numeric Summary of Passage Counts Moving Up over Period of Record**
 
 ```{r}
@@ -108,10 +126,13 @@ However, there are clearly gaps in data. More investigation needs to be done to 
 ```{r}
 cleaner_video_data %>% ggplot(aes(x = date, y = down)) + 
   geom_col() + 
-  facet_wrap(~year(date), scales = "free_x") + 
+  facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+```{r}
+# Add boxplot
 ```
 
 **Numeric Summary of Passage Counts Moving Down over Period of Record**
@@ -160,7 +181,7 @@ clear_passage_viewing_condition
 ### Variable: `adipose`
 ```{r}
 table(cleaner_video_data$adipose) # TODO fix inconsistent names see below
-domain_description[which(domain_description$Domain == "ADIPOSE"), ]$Description
+description <- domain_description[which(domain_description$Domain == "ADIPOSE"), ]$Description
 ```
 Fix inconsistencies with spelling, capitalization, and abbreviations.  
 
@@ -218,7 +239,7 @@ clear_passage_viewing_condition
 Whether or not the total width of Jack plate is 22".
 ```{r}
 table(cleaner_video_data$jack_size) # TODO fix inconsistent names see below
-domain_description[which(domain_description$Domain == "JACKSIZE"), ]$Description
+description <- domain_description[which(domain_description$Domain == "JACKSIZE"), ]$Description
 ```
 Fix inconsistencies with spelling, capitalization, and abbreviations.  
 
