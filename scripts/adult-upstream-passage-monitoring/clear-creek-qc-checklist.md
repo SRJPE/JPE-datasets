@@ -9,7 +9,7 @@ Erin Cain
 
 **Timeframe:** 2013-2020
 
-**Video Season:** August - December
+**Video Season:**
 
 **Completeness of Record throughout timeframe:** Data are not padded -
 missing data indicate a period where footage was not collected by USFWS
@@ -19,7 +19,7 @@ footage was taken but no spring run were found)
 -   TODO investigate/talk about outages, is a 0 a real zero or explained
     by other factors
 
-**Sampling Location:** TODO get location of video monitoring station
+**Sampling Location:** Located at the mouth of clear creek
 
 **Data Contact:** [Sam Provins](mailto:samuel_provins@fws.gov)
 
@@ -41,9 +41,9 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
 gcs_get_object(object_name = 
-                 "adult-upstream-passage-monitoring/clear-creek/data-rawClearCreekVideoWeir_AdultRecruitment_2013-2020.xlsx",
+                 "adult-upstream-passage-monitoring/clear-creek/data-raw/ClearCreekVideoWeir_AdultRecruitment_2013-2020.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "test-data.xlsx",
+               saveToDisk = "raw_clear_creek_passage_data.xlsx",
                overwrite = TRUE)
 ```
 
@@ -52,8 +52,8 @@ sheet:
 
 ``` r
 # read in data to clean 
-sheets <- readxl::excel_sheets("../../test-data.xlsx")
-domain_description <- readxl::read_excel("../../test-data.xlsx", sheet = "Domain Description") 
+sheets <- readxl::excel_sheets("raw_clear_creek_passage_data.xlsx")
+domain_description <- readxl::read_excel("raw_clear_creek_passage_data.xlsx", sheet = "Domain Description") 
 domain_description %>% head(10)
 ```
 
@@ -72,7 +72,7 @@ domain_description %>% head(10)
     ## 10 JACKSIZE          "Salmon only (Fork Length less than 22\"). Total width of ~
 
 ``` r
-raw_video_data <- readxl::read_excel("../../test-data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui",
+raw_video_data <- readxl::read_excel("raw_clear_creek_passage_data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui",
                                      col_types = c("numeric", "date", "date", "text",
                                                    "text", "numeric", "numeric", "date", "text",
                                                    "text", "text", "text", "text", "text")) %>% 
@@ -98,6 +98,9 @@ raw_video_data <- readxl::read_excel("../../test-data.xlsx", sheet = "ClearCreek
 
 ## Data transformations
 
+We cleaned up the column names, filtered to only show Spring Run Chinook
+data, and removed an unneeded and redundant columns.
+
 ``` r
 cleaner_video_data <- raw_video_data %>% 
   set_names(tolower(colnames(raw_video_data))) %>%
@@ -105,17 +108,15 @@ cleaner_video_data <- raw_video_data %>%
          time_block = hms::as_hms(time_block),
          time_passed = hms::as_hms(time_passed)) %>%
   filter(species == "CHN", run == "SR") %>%
-  select(-stt_size) %>% 
+  select(-stt_size, -video_year, -species, -run) %>% 
   glimpse() 
 ```
 
     ## Rows: 2,279
-    ## Columns: 13
-    ## $ video_year         <dbl> 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,~
+    ## Columns: 10
     ## $ date               <date> 2013-03-26, 2013-03-26, 2013-03-31, 2013-03-31, 20~
     ## $ time_block         <time> 04:30:00, 22:30:00, 16:00:00, 21:30:00, 11:30:00, ~
     ## $ viewing_condition  <chr> "0", "0", "0", "0", "0", "1", "1", "1", "1", "0", "~
-    ## $ species            <chr> "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "C~
     ## $ up                 <dbl> 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
     ## $ down               <dbl> 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
     ## $ time_passed        <time> 04:47:00, 22:48:00, 16:09:00, 21:34:00, 11:53:00, ~
@@ -123,13 +124,14 @@ cleaner_video_data <- raw_video_data %>%
     ## $ sex                <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "U~
     ## $ spawning_condition <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "~
     ## $ jack_size          <chr> "YES", "NO", "NO", "NO", "NO", "NO", "NO", "YES", "~
-    ## $ run                <chr> "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR~
 
 ## Explore Numeric Variables:
 
 ``` r
-# Filter for coltypes that are numeric
+cleaner_video_data %>% select_if(is.numeric) %>% colnames()
 ```
+
+    ## [1] "up"   "down"
 
 ### Variable: `up`
 
@@ -147,7 +149,7 @@ cleaner_video_data %>% ggplot(aes(x = date, y = up)) +
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
-# Add boxplot
+# TODO add boxplot
 ```
 
 **Numeric Summary of Passage Counts Moving Up over Period of Record**
@@ -162,15 +164,20 @@ summary(cleaner_video_data$up)
 
 ``` r
 # TODO probably want to group by day because this is not informative
+cleaner_video_data %>% group_by(date) %>%
+  summarise(count = sum(up, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   0.000   1.000   2.000   3.123   4.000  40.000
 
 **NA and Unknown Values**
 
-0 % of values in the `up` column are NA.
-
-However, there are clearly gaps in data. More investigation needs to be
-done to see if 0 is a real 0 or if it can be explained by other factors
-(outages).
+-   0 % of values in the `up` column are NA. However, there are clearly
+    gaps in data. More investigation needs to be done to see if 0 is a
+    real 0 or if it can be explained by other factors (outages).
 
 ### Variable: `down`
 
@@ -188,7 +195,7 @@ cleaner_video_data %>% ggplot(aes(x = date, y = down)) +
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
-# Add boxplot
+# TODO Add boxplot
 ```
 
 **Numeric Summary of Passage Counts Moving Down over Period of Record**
@@ -203,17 +210,28 @@ summary(cleaner_video_data$down)
 
 ``` r
 # TODO probably want to group by day because this is not informative
+cleaner_video_data %>% group_by(date) %>%
+  summarise(count = sum(down, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##  0.0000  0.0000  1.0000  0.8669  1.0000  7.0000
 
 **NA and Unknown Values**
 
-0 % of values in the `up` column are NA.
+-   0 % of values in the `up` column are NA.
 
 ## Explore Categorical variables:
 
 ``` r
-# Filter for coltypes that are numeric
+# Filter for coltypes that are characters
+cleaner_video_data %>% select_if(is.character) %>% colnames()
 ```
+
+    ## [1] "viewing_condition"  "adipose"            "sex"               
+    ## [4] "spawning_condition" "jack_size"
 
 ### Variable: `viewing_condition`
 
@@ -251,7 +269,9 @@ clear_passage_viewing_condition
 
 **NA and Unknown Values**
 
-0 % of values in the `viewing_condition` column are NA.
+-   0 % of values in the `viewing_condition` column are NA.
+-   0.01 % of values in the `viewing_condition` column are considered
+    Not Readable because of high turbidity or equipment failure.
 
 ### Variable: `adipose`
 
@@ -274,9 +294,10 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 cleaner_video_data$adipose = tolower(if_else(cleaner_video_data$adipose == "UNK", "unknown", cleaner_video_data$adipose))
 ```
 
-0 % of values in the `adipose` column are NA.
+**NA or Unknown Values**
 
-NA % of values in the `adipose` column are`unknown`.
+-   0 % of values in the `adipose` column are NA.
+-   0.467 % of values in the `adipose` column are`unknown`.
 
 ### Variable: `sex`
 
@@ -295,9 +316,10 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 cleaner_video_data$sex = tolower(if_else(cleaner_video_data$sex == "UNK", "unknown", cleaner_video_data$sex))
 ```
 
-0.001 % of values in the `sex` column are NA.
+**NA or Unknown Values**
 
-NA % of values in the `sex` column are`unknown`.
+-   0.001 % of values in the `sex` column are NA.
+-   0.927 % of values in the `sex` column are`unknown`.
 
 ### Variable: `spawning_condition`
 
@@ -316,7 +338,7 @@ table(cleaner_video_data$spawning_condition) # TODO fix inconsistent names see b
 ``` r
 # View description of domain for viewing condition 
 description <- domain_description[which(domain_description$Domain == "SPAWNING CONDITION"), ]$Description
-clear_passage_viewing_condition <- c(1:4, "unknown")
+clear_passage_viewing_condition <- c(1:5)
 names(clear_passage_viewing_condition) <- c(
   "Energetic; bright or silvery; no spawning coloration or developed secondary sex characteristics.",
   "Energetic, can tell sex from secondary characteristics (kype) silvery or bright coloration but may have some hint of spawning colors.",
@@ -328,19 +350,22 @@ clear_passage_viewing_condition
 ```
 
     ##                                      Energetic; bright or silvery; no spawning coloration or developed secondary sex characteristics. 
-    ##                                                                                                                                   "1" 
+    ##                                                                                                                                     1 
     ## Energetic, can tell sex from secondary characteristics (kype) silvery or bright coloration but may have some hint of spawning colors. 
-    ##                                                                                                                                   "2" 
+    ##                                                                                                                                     2 
     ##                                                             Spawning colors, defined kype, some tail wear or small amounts of fungus. 
-    ##                                                                                                                                   "3" 
+    ##                                                                                                                                     3 
     ## Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred. 
-    ##                                                                                                                                   "4" 
+    ##                                                                                                                                     4 
     ##                                                                                                           Unable to make distinction. 
-    ##                                                                                                                             "unknown"
+    ##                                                                                                                                     5
 
-0.026 % of values in the `spawning_condition` column are NA.
+**NA or Unknown Values**
 
-NA % of values in the `spawning_condition` column are`unknown`.
+-   0.026 % of values in the `spawning_condition` column are NA.
+
+-   0.063 % of values in the `spawning_condition` column are considered
+    Unknown.
 
 ### Variable: `jack_size`
 
@@ -367,22 +392,16 @@ cleaner_video_data$jack_size = tolower(if_else(cleaner_video_data$jack_size == "
 
 **NA or Unknown Values**
 
-0.007 % of values in the `jack_size` column are NA.
-
-NA % of values in the `jack_size` column are`unknown`.
+-   0.007 % of values in the `jack_size` column are NA.
+-   0.009 % of values in the `jack_size` column are`unknown`.
 
 ``` r
-spring_run_chinook_feather_cleaned_video_data <- cleaner_video_data %>% 
-  mutate(adipose = tolower(adipose),
-         jack_size = tolower(if_else(jack_size == "UNK", "UNKNOWN", jack_size)),
-         sex = tolower(if_else(sex == "UNK", "UNKNOWN", sex))) %>% 
-  select(-species, -run) %>% # Irrelevant because we filtered for "SR" and "CHN" (chinook) # TODO check 
+clear_passage <- cleaner_video_data %>% 
   glimpse()
 ```
 
     ## Rows: 2,279
-    ## Columns: 11
-    ## $ video_year         <dbl> 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,~
+    ## Columns: 10
     ## $ date               <date> 2013-03-26, 2013-03-26, 2013-03-31, 2013-03-31, 20~
     ## $ time_block         <time> 04:30:00, 22:30:00, 16:00:00, 21:30:00, 11:30:00, ~
     ## $ viewing_condition  <chr> "0", "0", "0", "0", "0", "1", "1", "1", "1", "0", "~
@@ -395,3 +414,11 @@ spring_run_chinook_feather_cleaned_video_data <- cleaner_video_data %>%
     ## $ jack_size          <chr> "yes", "no", "no", "no", "no", "no", "no", "yes", "~
 
 ### Save cleaned data back to google cloud
+
+``` r
+# f <- function(input, output) write.csv(input, row.names = FALSE, file = output)
+# 
+# gcs_upload(clear_passage, 
+#            object_function = f,
+#            type = "csv")
+```

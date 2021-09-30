@@ -20,7 +20,7 @@ library(scales)
 
 **Timeframe:** 2013-2020
 
-**Video Season:** August - December
+**Video Season:** 
 
 **Completeness of Record throughout timeframe:** 
 Data are not padded - missing data indicate a period where footage was not collected by USFWS
@@ -29,9 +29,11 @@ Data are not padded - missing data indicate a period where footage was not colle
 * TODO investigate/talk about outages, is a 0 a real zero or explained by other factors
 
 **Sampling Location:**
-TODO get location of video monitoring station
+Located at the mouth of clear creek
 
 **Data Contact:** [Sam Provins](mailto:samuel_provins@fws.gov) 
+
+**Data type** Raw passage data (not passage estimates)
 
 Additional information describing this monitoring data is available in the [Adult Spring Run Chinook Salmon Monitoring in Clear Creek Report](https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf) prepared by USFWS. 
 
@@ -48,19 +50,19 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
 gcs_get_object(object_name = 
-                 "adult-upstream-passage-monitoring/clear-creek/data-rawClearCreekVideoWeir_AdultRecruitment_2013-2020.xlsx",
+                 "adult-upstream-passage-monitoring/clear-creek/data-raw/ClearCreekVideoWeir_AdultRecruitment_2013-2020.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "test-data.xlsx",
+               saveToDisk = "raw_clear_creek_passage_data.xlsx",
                overwrite = TRUE)
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet: 
 ```{r}
 # read in data to clean 
-sheets <- readxl::excel_sheets("../../test-data.xlsx")
-domain_description <- readxl::read_excel("../../test-data.xlsx", sheet = "Domain Description") 
+sheets <- readxl::excel_sheets("raw_clear_creek_passage_data.xlsx")
+domain_description <- readxl::read_excel("raw_clear_creek_passage_data.xlsx", sheet = "Domain Description") 
 domain_description %>% head(10)
-raw_video_data <- readxl::read_excel("../../test-data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui",
+raw_video_data <- readxl::read_excel("raw_clear_creek_passage_data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui",
                                      col_types = c("numeric", "date", "date", "text",
                                                    "text", "numeric", "numeric", "date", "text",
                                                    "text", "text", "text", "text", "text")) %>% 
@@ -69,6 +71,8 @@ raw_video_data <- readxl::read_excel("../../test-data.xlsx", sheet = "ClearCreek
 
 ## Data transformations
 
+We cleaned up the column names, filtered to only show Spring Run Chinook data, and removed an unneeded and redundant columns. 
+
 ```{r}
 cleaner_video_data <- raw_video_data %>% 
   set_names(tolower(colnames(raw_video_data))) %>%
@@ -76,7 +80,7 @@ cleaner_video_data <- raw_video_data %>%
          time_block = hms::as_hms(time_block),
          time_passed = hms::as_hms(time_passed)) %>%
   filter(species == "CHN", run == "SR") %>%
-  select(-stt_size) %>% 
+  select(-stt_size, -video_year, -species, -run) %>% 
   glimpse() 
   
 ```
@@ -84,8 +88,7 @@ cleaner_video_data <- raw_video_data %>%
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
-# Filter for coltypes that are numeric
-
+cleaner_video_data %>% select_if(is.numeric) %>% colnames()
 ```
 
 ### Variable: `up`
@@ -101,7 +104,7 @@ cleaner_video_data %>% ggplot(aes(x = date, y = up)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 ```{r}
-# Add boxplot
+# TODO add boxplot
 ```
 
 **Numeric Summary of Passage Counts Moving Up over Period of Record**
@@ -111,13 +114,15 @@ cleaner_video_data %>% ggplot(aes(x = date, y = up)) +
 summary(cleaner_video_data$up)
 
 # TODO probably want to group by day because this is not informative
+cleaner_video_data %>% group_by(date) %>%
+  summarise(count = sum(up, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
 ```
 
 **NA and Unknown Values**
 
-`r round(sum(is.na(cleaner_video_data$up))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
-
-However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
+* `r round(sum(is.na(cleaner_video_data$up))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
 
 
 ### Variable: `down` 
@@ -132,7 +137,7 @@ cleaner_video_data %>% ggplot(aes(x = date, y = down)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 ```{r}
-# Add boxplot
+# TODO Add boxplot
 ```
 
 **Numeric Summary of Passage Counts Moving Down over Period of Record**
@@ -142,17 +147,21 @@ cleaner_video_data %>% ggplot(aes(x = date, y = down)) +
 summary(cleaner_video_data$down)
 
 # TODO probably want to group by day because this is not informative
+cleaner_video_data %>% group_by(date) %>%
+  summarise(count = sum(down, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
 ```
 
 **NA and Unknown Values**
 
-`r round(sum(is.na(cleaner_video_data$down))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
+* `r round(sum(is.na(cleaner_video_data$down))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
 
 ## Explore Categorical variables: {.tabset}
 
 ```{r}
-# Filter for coltypes that are numeric
-
+# Filter for coltypes that are characters
+cleaner_video_data %>% select_if(is.character) %>% colnames()
 ```
 
 ### Variable: `viewing_condition`
@@ -175,8 +184,8 @@ clear_passage_viewing_condition
 
 **NA and Unknown Values**
   
-`r round(sum(is.na(cleaner_video_data$viewing_condition))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
-
+* `r round(sum(is.na(cleaner_video_data$viewing_condition))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
+* `r round(sum(cleaner_video_data$viewing_condition == "2")/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are considered Not Readable because of high turbidity or equipment failure. 
 
 ### Variable: `adipose`
 ```{r}
@@ -190,9 +199,10 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 cleaner_video_data$adipose = tolower(if_else(cleaner_video_data$adipose == "UNK", "unknown", cleaner_video_data$adipose))
 ```
   
-`r round(sum(is.na(cleaner_video_data$adipose))/nrow(cleaner_video_data), 3)` % of values in the `adipose` column are NA. 
+**NA or Unknown Values**
 
-`r round(sum(cleaner_video_data$adipose == "unknown")/nrow(cleaner_video_data), 3)` % of values in the `adipose` column are`unknown`.
+* `r round(sum(is.na(cleaner_video_data$adipose))/nrow(cleaner_video_data), 3)` % of values in the `adipose` column are NA. 
+* `r round(sum(cleaner_video_data$adipose == "unknown", na.rm = T)/nrow(cleaner_video_data), 3)` % of values in the `adipose` column are`unknown`.
 
 
 ### Variable: `sex`
@@ -206,10 +216,11 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 # Fix yes/no/unknown
 cleaner_video_data$sex = tolower(if_else(cleaner_video_data$sex == "UNK", "unknown", cleaner_video_data$sex))
 ```
-  
-`r round(sum(is.na(cleaner_video_data$sex))/nrow(cleaner_video_data), 3)` % of values in the `sex` column are NA.
 
-`r round(sum(cleaner_video_data$sex == "unknown")/nrow(cleaner_video_data), 3)` % of values in the `sex` column are`unknown`.
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_video_data$sex))/nrow(cleaner_video_data), 3)` % of values in the `sex` column are NA.
+* `r round(sum(cleaner_video_data$sex == "unknown", na.rm = T)/nrow(cleaner_video_data), 3)` % of values in the `sex` column are`unknown`.
 
 ### Variable: `spawning_condition`
 Describes fish condition as it relates to spawning. 
@@ -220,7 +231,7 @@ table(cleaner_video_data$spawning_condition) # TODO fix inconsistent names see b
 ```{r}
 # View description of domain for viewing condition 
 description <- domain_description[which(domain_description$Domain == "SPAWNING CONDITION"), ]$Description
-clear_passage_viewing_condition <- c(1:4, "unknown")
+clear_passage_viewing_condition <- c(1:5)
 names(clear_passage_viewing_condition) <- c(
   "Energetic; bright or silvery; no spawning coloration or developed secondary sex characteristics.",
   "Energetic, can tell sex from secondary characteristics (kype) silvery or bright coloration but may have some hint of spawning colors.",
@@ -230,10 +241,12 @@ names(clear_passage_viewing_condition) <- c(
 
 clear_passage_viewing_condition
 ```
-  
-`r round(sum(is.na(cleaner_video_data$spawning_condition))/nrow(cleaner_video_data), 3)` % of values in the `spawning_condition` column are NA. 
 
-`r round(sum(cleaner_video_data$spawning_condition == "unknown")/nrow(cleaner_video_data), 3)` % of values in the `spawning_condition` column are`unknown`.
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_video_data$spawning_condition))/nrow(cleaner_video_data), 3)` % of values in the `spawning_condition` column are NA. 
+
+* `r round(sum(cleaner_video_data$spawning_condition == "5", na.rm = T)/nrow(cleaner_video_data), 3)` % of values in the `spawning_condition` column are considered Unknown.
 
 ### Variable: `jack_size`
 Whether or not the total width of Jack plate is 22".
@@ -250,23 +263,22 @@ cleaner_video_data$jack_size = tolower(if_else(cleaner_video_data$jack_size == "
 
 **NA or Unknown Values**
   
-`r round(sum(is.na(cleaner_video_data$jack_size))/nrow(cleaner_video_data), 3)` % of values in the `jack_size` column are NA.
-
-`r round(sum(cleaner_video_data$jack_size == "unknown")/nrow(cleaner_video_data), 3)` % of values in the `jack_size` column are`unknown`.
+* `r round(sum(is.na(cleaner_video_data$jack_size))/nrow(cleaner_video_data), 3)` % of values in the `jack_size` column are NA.
+* `r round(sum(cleaner_video_data$jack_size == "unknown", na.rm = T)/nrow(cleaner_video_data), 3)` % of values in the `jack_size` column are`unknown`.
 
 
 ```{r}
-spring_run_chinook_feather_cleaned_video_data <- cleaner_video_data %>% 
-  mutate(adipose = tolower(adipose),
-         jack_size = tolower(if_else(jack_size == "UNK", "UNKNOWN", jack_size)),
-         sex = tolower(if_else(sex == "UNK", "UNKNOWN", sex))) %>% 
-  select(-species, -run) %>% # Irrelevant because we filtered for "SR" and "CHN" (chinook) # TODO check 
+clear_passage <- cleaner_video_data %>% 
   glimpse()
 ```
 
 ### Save cleaned data back to google cloud 
 
-```{r}
-
+```{r, eval=FALSE}
+# f <- function(input, output) write.csv(input, row.names = FALSE, file = output)
+# 
+# gcs_upload(clear_passage, 
+#            object_function = f,
+#            type = "csv")
 ```
 
