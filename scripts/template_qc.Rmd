@@ -1,0 +1,104 @@
+---
+title: "[Watershed] [Data type] [QC]"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+```
+
+# Clear Creek Adult Upstream Video Data 
+
+## Description of Monitoring Data
+TODO add current knows here
+
+TODO investigate/talk about outages, is a 0 a real zero or explained by other factors
+TODO get location of video monitoring station
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean 
+```
+
+## Data transformations
+
+```{r}
+# Snake case, 
+# Columns are appropriate types
+# Remove redundant columns
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables (this way we know we do not miss any)
+```
+
+### Variable: `[name]`
+
+**Plotting Passage Counts Moving Up over Period of Record**
+
+```{r}
+
+```
+
+**Numeric Summary of Passage Counts Moving Up over Period of Record**
+
+```{r}
+# Table with summary statistics
+```
+
+**NA and Unknown Values**
+
+`r round(sum(is.na(cleaner_video_data$up))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
+
+However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
+
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+# Filter clean data to show only categorical variables (this way we know we do not miss any)
+```
+
+
+### Variable: `[name]`
+```{r}
+table() 
+```
+
+**Create lookup rda for [variable] encoding:** 
+```{r}
+
+```
+
+**NA and Unknown Values**
+  
+
+### Save cleaned data back to google cloud 
+
+```{r}
+
+```
