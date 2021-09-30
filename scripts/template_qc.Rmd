@@ -17,10 +17,19 @@ library(scales)
 # Clear Creek Adult Upstream Video Data 
 
 ## Description of Monitoring Data
-TODO add current knows here
 
-TODO investigate/talk about outages, is a 0 a real zero or explained by other factors
-TODO get location of video monitoring station
+**Timeframe:** 
+
+**Video Season:** 
+
+**Completeness of Record throughout timeframe:** 
+
+**Sampling Location:**
+
+
+**Data Contact:** 
+
+Any additional info?
 
 ## Access Cloud Data
 
@@ -45,6 +54,10 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 ## Data transformations
 
 ```{r}
+# For different excel sheets for each year read in and combine years here
+```
+
+```{r}
 # Snake case, 
 # Columns are appropriate types
 # Remove redundant columns
@@ -58,13 +71,14 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 
 ### Variable: `[name]`
 
-**Plotting Passage Counts Moving Up over Period of Record**
+**Plotting [Variable] over Period of Record**
 
 ```{r}
-
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
 ```
 
-**Numeric Summary of Passage Counts Moving Up over Period of Record**
+**Numeric Summary of [Variable] over Period of Record**
 
 ```{r}
 # Table with summary statistics
@@ -72,12 +86,12 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 
 **NA and Unknown Values**
 
-`r round(sum(is.na(cleaner_video_data$up))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
-
-However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
-
+Provide a stat on NA or unknown values
 
 ## Explore Categorical variables: {.tabset}
+
+General notes: If there is an opertunity to turn yes no into boolean do so, but not if you loose value 
+
 
 ```{r}
 # Filter clean data to show only categorical variables (this way we know we do not miss any)
@@ -89,16 +103,26 @@ However, there are clearly gaps in data. More investigation needs to be done to 
 table() 
 ```
 
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+# Fix any inconsistancies with catagorical variables
+```
+
 **Create lookup rda for [variable] encoding:** 
 ```{r}
-
+# Create named lookup vector
+# Name rda [watershed]_[data type]_[variable_name].rda
+# save rda to data/ 
 ```
 
 **NA and Unknown Values**
-  
+
+Provide a stat on NA or unknown values
 
 ### Save cleaned data back to google cloud 
 
 ```{r}
-
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
 ```
