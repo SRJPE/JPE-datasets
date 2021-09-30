@@ -6,7 +6,7 @@ output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE, fig.width=15, fig.height=10}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
@@ -14,8 +14,18 @@ library(ggplot2)
 library(scales)
 ```
 
-## Clear Creek Adult Upstream Video Data 
-```{r, include = FALSE}
+# Clear Creek Adult Upstream Video Data 
+
+## Description of Monitoring Data
+TODO add current knows here
+
+TODO investigate/talk about outages, is a 0 a real zero or explained by other factors
+TODO get location of video monitoring station
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
 # getwd()
 # Open object from google cloud storage
 # Set your authentication using gcs_auth
@@ -33,46 +43,41 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/Clea
 Read in data from google cloud, glimpse raw data and domain description sheet: 
 ```{r}
 # read in data to clean 
-sheets <- readxl::excel_sheets("test-data.xlsx")
-domain_description <- readxl::read_excel("test-data.xlsx", sheet = "Domain Description") 
+sheets <- readxl::excel_sheets("../../test-data.xlsx")
+domain_description <- readxl::read_excel("../../test-data.xlsx", sheet = "Domain Description") 
 domain_description %>% head(10)
-raw_video_data <- readxl::read_excel("test-data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui") %>% glimpse()
+raw_video_data <- readxl::read_excel("../../test-data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui",
+                                     col_types = c("numeric", "date", "date", "text",
+                                                   "text", "numeric", "numeric", "date", "text",
+                                                   "text", "text", "text", "text", "text")) %>% 
+  glimpse()
 ```
 
-## Checklist
-
-* Update column names to snake case/remove any funky spacing
-* Check column types to ensure all data is stored as desired:
-  * Numerical data - `<dbl>` or `<int>` 
-  * Character data - `<str>` or `<chr>`
-  * Date - <datetime> or `<date>` or `<time>`
-* remove any redundant columns
+## Data transformations
 
 ```{r}
 cleaner_video_data <- raw_video_data %>% 
   set_names(tolower(colnames(raw_video_data))) %>%
   mutate(date = as.Date(date),
-         time_block = hms::as_hms(time_block)) %>% # TODO fix time_passed 
+         time_block = hms::as_hms(time_block),
+         time_passed = hms::as_hms(time_passed)) %>%
   filter(species == "CHN", run == "SR") %>%
   select(-stt_size) %>% 
   glimpse() 
+  
 ```
-* Transform into tidy format, check that:
-  * Each variable has its own column 
-  * Each observation has its own row 
-  * Each value has its own cell
+
+## Explore Numeric Variables: {.tabset}
+
 ```{r}
-# Each variable has its own column, each observation has its own row (an observation is count in time period), and each value has its own cell 
+# Filter for coltypes that are numeric
+
 ```
 
-Visualize Data to quickly determine if it looks reasonable: 
+### Variable: `up`
 
-* Plot numerical values
-* table on categorical columns
+**Plotting Passage Counts Moving Up over Period of Record**
 
-### Plots visualizing numeric variables: {.tabset}
-
-#### `up`
 ```{r}
 cleaner_video_data %>% ggplot(aes(x = date, y = up)) + 
   geom_col() + 
@@ -81,15 +86,25 @@ cleaner_video_data %>% ggplot(aes(x = date, y = up)) +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
+**Numeric Summary of Passage Counts Moving Up over Period of Record**
 
-* check for missing values, convert -9999 or other placeholders to NA 
-  * summarize quantity of missing values to determine quality and completeness of data
-  
-We know from the plot above that there are no -9999 values
+```{r}
+# Table with summary statistics
+summary(cleaner_video_data$up)
+
+# TODO probably want to group by day because this is not informative
+```
+
+**NA and Unknown Values**
 
 `r round(sum(is.na(cleaner_video_data$up))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
 
-#### `down` 
+However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
+
+
+### Variable: `down` 
+
+**Plotting Passage Counts Moving Down over Period of Record**
 ```{r}
 cleaner_video_data %>% ggplot(aes(x = date, y = down)) + 
   geom_col() + 
@@ -99,109 +114,138 @@ cleaner_video_data %>% ggplot(aes(x = date, y = down)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-* check for missing values, convert -9999 or other placeholders to NA 
-  * summarize quantity of missing values to determine quality and completeness of data
-  
-We know from the plot above that there are no -9999 values
+**Numeric Summary of Passage Counts Moving Down over Period of Record**
+
+```{r}
+# Table with summary statistics 
+summary(cleaner_video_data$down)
+
+# TODO probably want to group by day because this is not informative
+```
+
+**NA and Unknown Values**
 
 `r round(sum(is.na(cleaner_video_data$down))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
 
-### Tables describing categorical variables: {.tabset}
+## Explore Categorical variables: {.tabset}
 
-#### `viewing_condition`
 ```{r}
-table(cleaner_video_data$viewing_condition)
-domain_description[which(domain_description$Domain == "VIEWING CONDITION"), ]$Description
+# Filter for coltypes that are numeric
+
 ```
 
-* check for missing values, convert -9999 or other placeholders to NA 
-  * summarize quantity of missing values to determine quality and completeness of data
+### Variable: `viewing_condition`
+```{r}
+table(cleaner_video_data$viewing_condition) # TODO fix inconsistent names see below
+```
+**Create lookup rda for viewing condition encoding:** 
+```{r}
+# View description of domain for viewing condition 
+description <- domain_description[which(domain_description$Domain == "VIEWING CONDITION"), ]$Description
+clear_passage_viewing_condition <- 0:3
+names(clear_passage_viewing_condition) <- c(
+  "Normal (good visability, clear water, all equiptment working, no obstructions)", 
+  "Readable (lower confidence due to turbidity or partial loss of video equiptment)", 
+  "Not Readable (high turbidity or equiptment failure)",
+  "Weir is flooded")
+
+clear_passage_viewing_condition
+```
+
+**NA and Unknown Values**
   
 `r round(sum(is.na(cleaner_video_data$viewing_condition))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
 
-* Within a categorical column check that capitalization is consistent 
-* Within a categorical column check that values are consistent, no typos
-```{r}
-# Looks fine
-```
 
-#### `adipose`
+### Variable: `adipose`
 ```{r}
-table(cleaner_video_data$adipose)
+table(cleaner_video_data$adipose) # TODO fix inconsistent names see below
 domain_description[which(domain_description$Domain == "ADIPOSE"), ]$Description
 ```
+Fix inconsistencies with spelling, capitalization, and abbreviations.  
 
-* check for missing values, convert -9999 or other placeholders to NA 
-  * summarize quantity of missing values to determine quality and completeness of data
+```{r}
+# Fix yes/no/unknown
+cleaner_video_data$adipose = tolower(if_else(cleaner_video_data$adipose == "UNK", "unknown", cleaner_video_data$adipose))
+```
   
-`r round(sum(is.na(cleaner_video_data$adipose))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
+`r round(sum(is.na(cleaner_video_data$adipose))/nrow(cleaner_video_data), 3)` % of values in the `adipose` column are NA. 
 
-* Within a categorical column check that capitalization is consistent 
-* Within a categorical column check that values are consistent, no typos
+`r round(sum(cleaner_video_data$adipose == "unknown")/nrow(cleaner_video_data), 3)` % of values in the `adipose` column are`unknown`.
+
+
+### Variable: `sex`
 ```{r}
-cleaner_video_data <- cleaner_video_data %>% 
-  mutate(adipose = tolower(adipose)) 
+table(cleaner_video_data$sex) # TODO fix inconsistent names see below
 ```
 
-#### `sex`
-```{r}
-table(cleaner_video_data$sex)
-domain_description[which(domain_description$Domain == "SEX"), ]$Description
-```
+Fix inconsistencies with spelling, capitalization, and abbreviations.  
 
-* check for missing values, convert -9999 or other placeholders to NA 
-  * summarize quantity of missing values to determine quality and completeness of data
+```{r}
+# Fix yes/no/unknown
+cleaner_video_data$sex = tolower(if_else(cleaner_video_data$sex == "UNK", "unknown", cleaner_video_data$sex))
+```
   
-`r round(sum(is.na(cleaner_video_data$sex))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA.   
+`r round(sum(is.na(cleaner_video_data$sex))/nrow(cleaner_video_data), 3)` % of values in the `sex` column are NA.
 
-* Within a categorical column check that capitalization is consistent 
-* Within a categorical column check that values are consistent, no typos
+`r round(sum(cleaner_video_data$sex == "unknown")/nrow(cleaner_video_data), 3)` % of values in the `sex` column are`unknown`.
+
+### Variable: `spawning_condition`
+Describes fish condition as it relates to spawning. 
 ```{r}
-cleaner_video_data <- cleaner_video_data %>% 
-  mutate(sex = tolower(if_else(sex == "UNK", "UNKNOWN", sex))) 
+table(cleaner_video_data$spawning_condition) # TODO fix inconsistent names see below
 ```
-
-#### `spawning_condition`
+**Create lookup rda for viewing condition encoding:** 
 ```{r}
-table(cleaner_video_data$spawning_condition)
-domain_description[which(domain_description$Domain == "SPAWNING CONDITION"), ]$Description
-```
+# View description of domain for viewing condition 
+description <- domain_description[which(domain_description$Domain == "SPAWNING CONDITION"), ]$Description
+clear_passage_viewing_condition <- c(1:4, "unknown")
+names(clear_passage_viewing_condition) <- c(
+  "Energetic; bright or silvery; no spawning coloration or developed secondary sex characteristics.",
+  "Energetic, can tell sex from secondary characteristics (kype) silvery or bright coloration but may have some hint of spawning colors.",
+  "Spawning colors, defined kype, some tail wear or small amounts of fungus.",
+  "Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred.",
+  "Unable to make distinction.")
 
-* check for missing values, convert -9999 or other placeholders to NA 
-  * summarize quantity of missing values to determine quality and completeness of data
+clear_passage_viewing_condition
+```
   
-`r round(sum(is.na(cleaner_video_data$spawning_condition))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
+`r round(sum(is.na(cleaner_video_data$spawning_condition))/nrow(cleaner_video_data), 3)` % of values in the `spawning_condition` column are NA. 
 
-* Within a categorical column check that capitalization is consistent 
-* Within a categorical column check that values are consistent, no typos
-```{r}
-# Looks good
-```
+`r round(sum(cleaner_video_data$spawning_condition == "unknown")/nrow(cleaner_video_data), 3)` % of values in the `spawning_condition` column are`unknown`.
 
-#### `jack_size`
+### Variable: `jack_size`
+Whether or not the total width of Jack plate is 22".
 ```{r}
-table(cleaner_video_data$jack_size)
+table(cleaner_video_data$jack_size) # TODO fix inconsistent names see below
 domain_description[which(domain_description$Domain == "JACKSIZE"), ]$Description
 ```
+Fix inconsistencies with spelling, capitalization, and abbreviations.  
 
-* check for missing values, convert -9999 or other placeholders to NA 
-  * summarize quantity of missing values to determine quality and completeness of data
-  
-`r round(sum(is.na(cleaner_video_data$jack_size))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
-
-* Within a categorical column check that capitalization is consistent (ex: if a column describes methodology and has “Snorkel” and “snorkel” listed as options fix to make all into snake case “snorkel”)
-* Within a categorical column check that values are consistent, no typos
 ```{r}
-cleaner_video_data <- cleaner_video_data %>% 
-  mutate(jack_size = tolower(if_else(jack_size == "UNK", "UNKNOWN", jack_size))) 
+# Fix yes/no/unknown
+cleaner_video_data$jack_size = tolower(if_else(cleaner_video_data$jack_size == "UNK", "unknown", cleaner_video_data$jack_size))
 ```
 
-### Checklist cont. 
+**NA or Unknown Values**
+  
+`r round(sum(is.na(cleaner_video_data$jack_size))/nrow(cleaner_video_data), 3)` % of values in the `jack_size` column are NA.
 
-* Check for location information for every station (latitude and longitude for every sampling location
+`r round(sum(cleaner_video_data$jack_size == "unknown")/nrow(cleaner_video_data), 3)` % of values in the `jack_size` column are`unknown`.
 
-*TODO* Need to inquire for location of video monitoring station 
+
+```{r}
+spring_run_chinook_feather_cleaned_video_data <- cleaner_video_data %>% 
+  mutate(adipose = tolower(adipose),
+         jack_size = tolower(if_else(jack_size == "UNK", "UNKNOWN", jack_size)),
+         sex = tolower(if_else(sex == "UNK", "UNKNOWN", sex))) %>% 
+  select(-species, -run) %>% # Irrelevant because we filtered for "SR" and "CHN" (chinook) # TODO check 
+  glimpse()
+```
 
 ### Save cleaned data back to google cloud 
 
-TODO 
+```{r}
+
+```
+
