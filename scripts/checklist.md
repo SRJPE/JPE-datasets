@@ -10,9 +10,9 @@
 - [ ] Check for missing values, convert -9999 or other placeholder into NA 
   - [ ] Summarize quantity of missing values to determine quality and completeness of data
 - [ ] Check column types to ensure all data is stored as desired:
-  - [ ] Numerical data - <dbl> or <int> 
-  - [ ] Character data - <str> or <chr>
-  - [ ] Date - <datetime> or <date> or <time>
+  - [ ] Numerical data - `<dbl>` or `<int>` 
+  - [ ] Character data - `<str>` or `<chr>`
+  - [ ] Date - `<datetime>` or `<date>` or `<time>`
 - [ ] Within a categorical column check that capitalization is consistent (ex: if a column describes methodology and has “Snorkel” and “snorkel” listed as options fix to make all into snake case “snorkel”)
 - [ ] Within a categorical column check that values are consistent, no typos
 - [ ] Check for location information for every station (latitude and longitude for every sampling location) 
