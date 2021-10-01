@@ -300,10 +300,11 @@ clear_passage <- cleaner_video_data %>%
 ### Save cleaned data back to google cloud 
 
 ```{r, eval=FALSE}
-# f <- function(input, output) write.csv(input, row.names = FALSE, file = output)
-# 
-# gcs_upload(clear_passage, 
-#            object_function = f,
-#            type = "csv")
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(clear_passage,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/clear-creek/data/clear_passage.csv")
 ```
 

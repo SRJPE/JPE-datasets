@@ -373,6 +373,8 @@ names(clear_passage_spawning_condition) <- c(
   "Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred.",
   "Unable to make distinction.")
 
+write_rds(clear_passage_spawning_condition, "../../data/clear_passage_spawning_condition.rds")
+
 tibble(code = clear_passage_spawning_condition, 
        definitions = names(clear_passage_spawning_condition))
 ```
@@ -442,9 +444,10 @@ clear_passage <- cleaner_video_data %>%
 ### Save cleaned data back to google cloud
 
 ``` r
-# f <- function(input, output) write.csv(input, row.names = FALSE, file = output)
-# 
-# gcs_upload(clear_passage, 
-#            object_function = f,
-#            type = "csv")
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(clear_passage,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/clear-creek/data/clear_passage.csv")
 ```
