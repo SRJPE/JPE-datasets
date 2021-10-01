@@ -7,9 +7,11 @@ Erin Cain
 
 ## Description of Monitoring Data
 
+**Data type** Raw passage counts
+
 **Timeframe:** 2013-2020
 
-**Video Season:**
+**Video Season:** TODO
 
 **Completeness of Record throughout timeframe:** Data are not padded -
 missing data indicate a period where footage was not collected by USFWS
@@ -53,7 +55,8 @@ sheet:
 ``` r
 # read in data to clean 
 sheets <- readxl::excel_sheets("raw_clear_creek_passage_data.xlsx")
-domain_description <- readxl::read_excel("raw_clear_creek_passage_data.xlsx", sheet = "Domain Description") 
+domain_description <- readxl::read_excel("raw_clear_creek_passage_data.xlsx", 
+                                         sheet = "Domain Description") 
 domain_description %>% head(10)
 ```
 
@@ -72,10 +75,13 @@ domain_description %>% head(10)
     ## 10 JACKSIZE          "Salmon only (Fork Length less than 22\"). Total width of ~
 
 ``` r
-raw_video_data <- readxl::read_excel("raw_clear_creek_passage_data.xlsx", sheet = "ClearCreekVideoWeir_AdultRecrui",
-                                     col_types = c("numeric", "date", "date", "text",
-                                                   "text", "numeric", "numeric", "date", "text",
-                                                   "text", "text", "text", "text", "text")) %>% 
+raw_video_data <- readxl::read_excel("raw_clear_creek_passage_data.xlsx", 
+                                     sheet = "ClearCreekVideoWeir_AdultRecrui",
+                                     col_types = c("numeric", "date", "date", 
+                                                   "text", "text", "numeric", 
+                                                   "numeric", "date", "text",
+                                                   "text", "text", "text", 
+                                                   "text", "text")) %>% 
   glimpse()
 ```
 
@@ -143,14 +149,24 @@ cleaner_video_data %>% ggplot(aes(x = date, y = up)) +
   facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
+  theme(text = element_text(size = 23)) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
-# TODO add boxplot
+# Boxplots of daily counts by year
+cleaner_video_data %>% group_by(date) %>%
+  summarise(daily_count_upstream = sum(up)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = year, y = daily_count_upstream)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(text = element_text(size = 23)) 
 ```
+
+![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 **Numeric Summary of Passage Counts Moving Up over Period of Record**
 
@@ -163,7 +179,7 @@ summary(cleaner_video_data$up)
     ##  0.0000  1.0000  1.0000  0.7824  1.0000  1.0000
 
 ``` r
-# TODO probably want to group by day because this is not informative
+# daily numeric summary 
 cleaner_video_data %>% group_by(date) %>%
   summarise(count = sum(up, na.rm = T)) %>%
   pull(count) %>%
@@ -189,14 +205,23 @@ cleaner_video_data %>% ggplot(aes(x = date, y = down)) +
   facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
+  theme(text = element_text(size = 23)) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
-# TODO Add boxplot
+cleaner_video_data %>% group_by(date) %>%
+  summarise(daily_count_downstream = sum(down)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = year, y = daily_count_downstream)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(text = element_text(size = 23)) 
 ```
+
+![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 **Numeric Summary of Passage Counts Moving Down over Period of Record**
 
@@ -209,7 +234,7 @@ summary(cleaner_video_data$down)
     ##  0.0000  0.0000  0.0000  0.2172  0.0000  1.0000
 
 ``` r
-# TODO probably want to group by day because this is not informative
+# Daily numeric summary of passage data
 cleaner_video_data %>% group_by(date) %>%
   summarise(count = sum(down, na.rm = T)) %>%
   pull(count) %>%
@@ -236,7 +261,7 @@ cleaner_video_data %>% select_if(is.character) %>% colnames()
 ### Variable: `viewing_condition`
 
 ``` r
-table(cleaner_video_data$viewing_condition) # TODO fix inconsistent names see below
+table(cleaner_video_data$viewing_condition) 
 ```
 
     ## 
@@ -255,17 +280,19 @@ names(clear_passage_viewing_condition) <- c(
   "Not Readable (high turbidity or equiptment failure)",
   "Weir is flooded")
 
-clear_passage_viewing_condition
+write_rds(clear_passage_viewing_condition, "../../data/clear_passage_viewing_condition.rds")
+
+tibble(code = clear_passage_viewing_condition, 
+       definitions = names(clear_passage_viewing_condition))
 ```
 
-    ##   Normal (good visability, clear water, all equiptment working, no obstructions) 
-    ##                                                                                0 
-    ## Readable (lower confidence due to turbidity or partial loss of video equiptment) 
-    ##                                                                                1 
-    ##                              Not Readable (high turbidity or equiptment failure) 
-    ##                                                                                2 
-    ##                                                                  Weir is flooded 
-    ##                                                                                3
+    ## # A tibble: 4 x 2
+    ##    code definitions                                                             
+    ##   <int> <chr>                                                                   
+    ## 1     0 Normal (good visability, clear water, all equiptment working, no obstru~
+    ## 2     1 Readable (lower confidence due to turbidity or partial loss of video eq~
+    ## 3     2 Not Readable (high turbidity or equiptment failure)                     
+    ## 4     3 Weir is flooded
 
 **NA and Unknown Values**
 
@@ -276,7 +303,7 @@ clear_passage_viewing_condition
 ### Variable: `adipose`
 
 ``` r
-table(cleaner_video_data$adipose) # TODO fix inconsistent names see below
+table(cleaner_video_data$adipose) 
 ```
 
     ## 
@@ -302,7 +329,7 @@ cleaner_video_data$adipose = tolower(if_else(cleaner_video_data$adipose == "UNK"
 ### Variable: `sex`
 
 ``` r
-table(cleaner_video_data$sex) # TODO fix inconsistent names see below
+table(cleaner_video_data$sex) 
 ```
 
     ## 
@@ -326,39 +353,38 @@ cleaner_video_data$sex = tolower(if_else(cleaner_video_data$sex == "UNK", "unkno
 Describes fish condition as it relates to spawning.
 
 ``` r
-table(cleaner_video_data$spawning_condition) # TODO fix inconsistent names see below
+table(cleaner_video_data$spawning_condition)
 ```
 
     ## 
     ##    1    2    3    4    5 
     ## 1879   73   95   29  144
 
-**Create lookup rda for viewing condition encoding:**
+**Create lookup rda for spawning condition encoding:**
 
 ``` r
 # View description of domain for viewing condition 
 description <- domain_description[which(domain_description$Domain == "SPAWNING CONDITION"), ]$Description
-clear_passage_viewing_condition <- c(1:5)
-names(clear_passage_viewing_condition) <- c(
+clear_passage_spawning_condition <- c(1:5)
+names(clear_passage_spawning_condition) <- c(
   "Energetic; bright or silvery; no spawning coloration or developed secondary sex characteristics.",
   "Energetic, can tell sex from secondary characteristics (kype) silvery or bright coloration but may have some hint of spawning colors.",
   "Spawning colors, defined kype, some tail wear or small amounts of fungus.",
   "Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred.",
   "Unable to make distinction.")
 
-clear_passage_viewing_condition
+tibble(code = clear_passage_spawning_condition, 
+       definitions = names(clear_passage_spawning_condition))
 ```
 
-    ##                                      Energetic; bright or silvery; no spawning coloration or developed secondary sex characteristics. 
-    ##                                                                                                                                     1 
-    ## Energetic, can tell sex from secondary characteristics (kype) silvery or bright coloration but may have some hint of spawning colors. 
-    ##                                                                                                                                     2 
-    ##                                                             Spawning colors, defined kype, some tail wear or small amounts of fungus. 
-    ##                                                                                                                                     3 
-    ## Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred. 
-    ##                                                                                                                                     4 
-    ##                                                                                                           Unable to make distinction. 
-    ##                                                                                                                                     5
+    ## # A tibble: 5 x 2
+    ##    code definitions                                                             
+    ##   <int> <chr>                                                                   
+    ## 1     1 Energetic; bright or silvery; no spawning coloration or developed secon~
+    ## 2     2 Energetic, can tell sex from secondary characteristics (kype) silvery o~
+    ## 3     3 Spawning colors, defined kype, some tail wear or small amounts of fungu~
+    ## 4     4 Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in ~
+    ## 5     5 Unable to make distinction.
 
 **NA or Unknown Values**
 
@@ -372,7 +398,7 @@ clear_passage_viewing_condition
 Whether or not the total width of Jack plate is 22".
 
 ``` r
-table(cleaner_video_data$jack_size) # TODO fix inconsistent names see below
+table(cleaner_video_data$jack_size) 
 ```
 
     ## 
