@@ -1,0 +1,146 @@
+---
+title: "Feather River CWT - Broodstock QC"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+```
+
+# Feather River CWT - Broodstock Data
+
+## Description of Monitoring Data 
+This dataset includes the CWT data collected so far at the Feather River Hatchery for the 2021 season. 
+
+**Timeframe:** 2021 (partial)
+
+**Data Contact:** [Lea Koerber](mailto:Lea.Koerber@wildlife.ca.gov) 
+
+**Metadata Shared by Lea**
+
+| Sex  |	RMIS Run  |	Condition  |
+| ------ | ---------- | ----------- |
+| 1 = Male |	1 = Spring |	1 = Killed NOT Spawned |
+| 2 = Female |	3 = Fall |	2 = Dead in Pond |
+| 9 = Unknown |	7 = Late-fall |	3 = Spawned |
+
+
+*Additional Note*: Following up with OSP people regarding data for full period of record. 
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+# git data and save as xlsx
+read_from_cloud <- function(year){
+  gcs_get_object(object_name = paste0("adult-upstream-passage-monitoring/feather-river/CWT/data-raw/2021-09-", year, "_FRFH_tblOutput.xlsx"),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = paste0("raw_feather_cwt_", year, ".xlsx"),
+               overwrite = TRUE)
+  data <- read_excel(paste0("raw_feather_cwt_", year, ".xlsx"))
+}
+years <- c(14, 15, 17, 20, 21, 22)
+raw_data <- purrr::map(years, read_from_cloud) %>%
+  reduce(bind_rows)
+
+write_csv(raw_data, "raw_cwt_data.csv")
+
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean 
+raw_cwt_data <- read_csv("raw_cwt_data.csv") %>% glimpse
+```
+
+## Data transformations
+
+```{r}
+
+```
+
+```{r}
+# Snake case, 
+# Columns are appropriate types
+# Remove redundant columns
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables (this way we know we do not miss any)
+```
+
+### Variable: `[name]`
+
+**Plotting [Variable] over Period of Record**
+
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+```
+
+**Numeric Summary of [Variable] over Period of Record**
+
+```{r}
+# Table with summary statistics
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+## Explore Categorical variables: {.tabset}
+
+General notes: If there is an opertunity to turn yes no into boolean do so, but not if you loose value 
+
+
+```{r}
+# Filter clean data to show only categorical variables (this way we know we do not miss any)
+```
+
+
+### Variable: `[name]`
+```{r}
+# table() 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+# Fix any inconsistancies with catagorical variables
+```
+
+**Create lookup rda for [variable] encoding:** 
+```{r}
+# Create named lookup vector
+# Name rda [watershed]_[data type]_[variable_name].rda
+# save rda to data/ 
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+### Save cleaned data back to google cloud 
+
+```{r}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+```
