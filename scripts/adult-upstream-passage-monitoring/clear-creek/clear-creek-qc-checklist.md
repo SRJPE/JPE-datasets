@@ -149,8 +149,9 @@ cleaner_video_data %>% ggplot(aes(x = date, y = up)) +
   facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
-  theme(text = element_text(size = 23)) + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Count of Upstream Passage (2013-2020)")  
 ```
 
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
@@ -163,7 +164,8 @@ cleaner_video_data %>% group_by(date) %>%
   ggplot(aes(x = year, y = daily_count_upstream)) + 
   geom_boxplot() + 
   theme_minimal() +
-  theme(text = element_text(size = 23)) 
+  theme(text = element_text(size = 23)) + 
+  labs(title = "Daily Count of Upstream Passage (2013-2020) Sumarized by Year")  
 ```
 
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
@@ -205,8 +207,9 @@ cleaner_video_data %>% ggplot(aes(x = date, y = down)) +
   facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
-  theme(text = element_text(size = 23)) + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Count of Downstream Passage (2013-2020)")  
 ```
 
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
@@ -218,6 +221,7 @@ cleaner_video_data %>% group_by(date) %>%
   ggplot(aes(x = year, y = daily_count_downstream)) + 
   geom_boxplot() + 
   theme_minimal() +
+  labs(title = "Daily Count of Downstream Passage (2013-2020) Sumarized by Year") + 
   theme(text = element_text(size = 23)) 
 ```
 
