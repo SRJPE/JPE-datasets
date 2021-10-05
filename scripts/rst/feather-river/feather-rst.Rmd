@@ -1,0 +1,148 @@
+---
+title: "[Watershed] [Data type] [QC]"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+  
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+```
+
+# [Watershed] [Data type long version]
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+  
+**Video Season:** 
+  
+**Completeness of Record throughout timeframe:** 
+  
+**Sampling Location:**
+  
+  
+**Data Contact:** 
+  
+  Any additional info?
+  
+## Access Cloud Data
+  
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = "rst/feather-river/data-raw/Feather River RST Natural Origin Chinook Catch Data_1998-2021.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_feather_rst_data.xlsx",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/feather-river/data-raw/Feather River RST Sampling Effort_1998-2021.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_feather_rst_sampling_effort_data.xlsx",
+               overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean
+# RST Data
+rst_data_sheets <- readxl::excel_sheets("raw_feather_rst_data.xlsx")
+survey_year_details  <- readxl::read_excel("raw_feather_rst_data.xlsx", 
+                                           sheet = "Survey Year Details") 
+survey_year_details
+read_sheets <- function(sheet){
+  data <- read_excel("raw_feather_rst_data.xlsx", sheet = sheet)
+}
+
+raw_catch <- purrr::map(rst_data_sheets[-1], read_sheets) %>%
+    reduce(bind_rows)
+```
+
+## Data transformations
+
+```{r}
+# For different excel sheets for each year read in and combine years here
+```
+
+```{r}
+# Snake case, 
+# Columns are appropriate types
+# Remove redundant columns
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables (this way we know we do not miss any)
+```
+
+### Variable: `[name]`
+
+**Plotting [Variable] over Period of Record**
+  
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+```
+
+**Numeric Summary of [Variable] over Period of Record**
+  
+```{r}
+# Table with summary statistics
+```
+
+**NA and Unknown Values**
+  
+Provide a stat on NA or unknown values
+
+## Explore Categorical variables: {.tabset}
+
+General notes: If there is an opertunity to turn yes no into boolean do so, but not if you loose value 
+
+
+```{r}
+# Filter clean data to show only categorical variables (this way we know we do not miss any)
+```
+
+
+### Variable: `[name]`
+```{r}
+table() 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+# Fix any inconsistancies with catagorical variables
+```
+
+**Create lookup rda for [variable] encoding:** 
+```{r}
+# Create named lookup vector
+# Name rda [watershed]_[data type]_[variable_name].rda
+# save rda to data/ 
+```
+
+**NA and Unknown Values**
+  
+Provide a stat on NA or unknown values
+
+### Save cleaned data back to google cloud 
+
+```{r}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+```
