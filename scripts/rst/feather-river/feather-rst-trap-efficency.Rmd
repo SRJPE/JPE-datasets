@@ -62,10 +62,10 @@ read_sheets <- function(sheet){
   data <- read_excel("raw_feather_rst_sampling_effort_data.xlsx", sheet = sheet)
 }
 
-raw_catch <- purrr::map(rst_data_sheets[-1], read_sheets) %>%
+raw_efficency <- purrr::map(rst_data_sheets[-1], read_sheets) %>%
   reduce(bind_rows)
 
-raw_catch %>% glimpse()
+raw_efficency %>% glimpse()
 ```
 
 ## Data transformations
@@ -74,16 +74,10 @@ raw_catch %>% glimpse()
 # Snake case, 
 # Columns are appropriate types
 # Remove redundant columns
-cleaner_catch_data <- raw_catch %>%
-  rename("date" = Date, "site_name" = siteName, 
-         "at_capture_run" = `At Capture Run`, 
-         "lifestage" = lifeStage, 
-         "fork_length" = FL, "count" = n) %>%
-  mutate(date = as.Date(date)) %>%
-  filter(commonName == "Chinook salmon") %>%
-  select(-commonName)
+cleaner_efficency_data <- raw_efficency %>%
 
-cleaner_catch_data %>% glimpse()
+
+cleaner_efficency_data %>% glimpse()
 ```
 
 ## Explore Numeric Variables: {.tabset}

@@ -1,9 +1,9 @@
-Feather River RST QC
+Feather River RST Catch Data QC
 ================
 Erin Cain
 9/29/2021
 
-# Feather River RST Data
+# Feather River RST Catch Data
 
 ## Description of Monitoring Data
 
@@ -46,11 +46,6 @@ gcs_list_objects()
 gcs_get_object(object_name = "rst/feather-river/data-raw/Feather River RST Natural Origin Chinook Catch Data_1998-2021.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "raw_feather_rst_data.xlsx",
-               overwrite = TRUE)
-
-gcs_get_object(object_name = "rst/feather-river/data-raw/Feather River RST Sampling Effort_1998-2021.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_feather_rst_sampling_effort_data.xlsx",
                overwrite = TRUE)
 ```
 
@@ -106,62 +101,145 @@ raw_catch %>% glimpse()
 ## Data transformations
 
 ``` r
-# For different excel sheets for each year read in and combine years here
-```
-
-``` r
 # Snake case, 
 # Columns are appropriate types
 # Remove redundant columns
+cleaner_catch_data <- raw_catch %>%
+  rename("date" = Date, "site_name" = siteName, 
+         "at_capture_run" = `At Capture Run`, 
+         "lifestage" = lifeStage, 
+         "fork_length" = FL, "count" = n) %>%
+  mutate(date = as.Date(date)) %>%
+  filter(commonName == "Chinook salmon") %>%
+  select(-commonName)
+
+cleaner_catch_data %>% glimpse()
 ```
+
+    ## Rows: 180,871
+    ## Columns: 6
+    ## $ date           <date> 1997-12-23, 1997-12-23, 1997-12-23, 1997-12-23, 1997-1~
+    ## $ site_name      <chr> "Eye Riffle", "Eye Riffle", "Eye Riffle", "Eye Riffle",~
+    ## $ at_capture_run <chr> "Fall", "Fall", "Fall", "Fall", "Fall", "Fall", "Fall",~
+    ## $ lifestage      <chr> "Not recorded", "Parr", "Parr", "Parr", "Parr", "Parr",~
+    ## $ fork_length    <dbl> NA, 30, 32, 33, 34, 35, 38, 29, 37, 36, 31, 34, 33, 31,~
+    ## $ count          <dbl> 65, 2, 6, 8, 16, 10, 1, 1, 2, 2, 2, 19, 10, 2, 9, 7, 1,~
 
 ## Explore Numeric Variables:
 
 ``` r
-# Filter clean data to show only numeric variables (this way we know we do not miss any)
+# Filter clean data to show only numeric variables 
+cleaner_catch_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-### Variable: `[name]`
+    ## [1] "fork_length" "count"
 
-**Plotting \[Variable\] over Period of Record**
+### Variable: `fork_length`
+
+**Plotting fork\_length at RST sites**
 
 ``` r
 # Make whatever plot is appropriate 
 # maybe 2 plots is appropriate
+cleaner_catch_data %>% 
+  ggplot(aes(x = fork_length, y = site_name)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Fork length summarized by site") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
+
+![](feather-rst_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 **Numeric Summary of \[Variable\] over Period of Record**
 
 ``` r
 # Table with summary statistics
+summary(cleaner_catch_data$fork_length)
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    3.00   35.00   37.00   44.17   49.00  940.00    9216
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+-   5.1 % of values in the `fork_length` column are NA.
+
+### Variable: `count`
+
+**Plotting passage counts over period of reccord**
+
+``` r
+cleaner_catch_data %>% 
+  mutate(year = as.factor(year(date)),
+         fake_date = as.Date(paste0("1900-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = count, color = year)) + 
+  geom_line() + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Count of Fish Passage (1997-2021)")  
+```
+
+![](feather-rst_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+cleaner_catch_data %>% 
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = count, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Passage count summarized by year") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+![](feather-rst_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+**Numeric Summary of \[Variable\] over Period of Record**
+
+``` r
+# Table with summary statistics
+summary(cleaner_catch_data$count)
+```
+
+    ##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+    ##      1.00      1.00      1.00     78.63      1.00 123556.00
+
+**NA and Unknown Values**
+
+-   0 % of values in the `count` column are NA.
 
 ## Explore Categorical variables:
 
-General notes: If there is an opertunity to turn yes no into boolean do
+General notes: If there is an opportunity to turn yes no into boolean do
 so, but not if you loose value
 
 ``` r
 # Filter clean data to show only categorical variables (this way we know we do not miss any)
+cleaner_catch_data %>% select_if(is.character) %>% colnames()
 ```
 
-### Variable: `[name]`
+    ## [1] "site_name"      "at_capture_run" "lifestage"
+
+### Variable: `site_name`
 
 ``` r
-# table() 
+table(cleaner_catch_data$site_name) 
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations.
+    ## 
+    ##       Eye Riffle   Gateway Riffle Herringer Riffle         Live Oak 
+    ##            35969            19010            77310             8020 
+    ##    Shawn's Beach     Steep Riffle     Sunset Pumps 
+    ##               45            24642            15875
 
-``` r
-# Fix any inconsistancies with catagorical variables
-```
-
-**Create lookup rda for \[variable\] encoding:**
+**Create location lookup rda for site\_name:** TODO
 
 ``` r
 # Create named lookup vector
@@ -171,11 +249,72 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+-   0 % of values in the `site_name` column are NA.
+
+### Variable: `at_capture_run`
+
+``` r
+table(cleaner_catch_data$at_capture_run) 
+```
+
+    ## 
+    ##         Fall    Late fall Not recorded       Spring       Winter 
+    ##       167243         3091          127        10407            3
+
+``` r
+cleaner_catch_data$at_capture_run <- ifelse(cleaner_catch_data$at_capture_run == "Not recorded", NA, tolower(cleaner_catch_data$at_capture_run))
+```
+
+**NA and Unknown Values**
+
+-   0.1 % of values in the `at_capture_run` column are NA.
+
+### Variable: `lifestage`
+
+``` r
+table(cleaner_catch_data$lifestage) 
+```
+
+    ## 
+    ##                   Adult                     Fry                Juvenile 
+    ##                      42                   26917                       1 
+    ##            Not recorded                    Parr               Pre-smolt 
+    ##                    9484                  116135                    1097 
+    ##            Silvery parr                   Smolt   Yolk sac fry (alevin) 
+    ##                   24053                    1478                    1663 
+    ## YOY (young of the year) 
+    ##                       1
+
+``` r
+cleaner_catch_data$lifestage <- ifelse(cleaner_catch_data$lifestage == "Not recorded", NA, tolower(cleaner_catch_data$lifestage))
+```
+
+**NA and Unknown Values**
+
+-   5.2 % of values in the `lifestage` column are NA.
+
+``` r
+feather_rst <- cleaner_catch_data %>% glimpse()
+```
+
+    ## Rows: 180,871
+    ## Columns: 6
+    ## $ date           <date> 1997-12-23, 1997-12-23, 1997-12-23, 1997-12-23, 1997-1~
+    ## $ site_name      <chr> "Eye Riffle", "Eye Riffle", "Eye Riffle", "Eye Riffle",~
+    ## $ at_capture_run <chr> "fall", "fall", "fall", "fall", "fall", "fall", "fall",~
+    ## $ lifestage      <chr> NA, "parr", "parr", "parr", "parr", "parr", "parr", "pa~
+    ## $ fork_length    <dbl> NA, 30, 32, 33, 34, 35, 38, 29, 37, 36, 31, 34, 33, 31,~
+    ## $ count          <dbl> 65, 2, 6, 8, 16, 10, 1, 1, 2, 2, 2, 19, 10, 2, 9, 7, 1,~
 
 ### Save cleaned data back to google cloud
 
 ``` r
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_rst,
+           object_function = f,
+           type = "csv",
+           name = "rst/feather-river/data/feather_rst.csv")
 ```

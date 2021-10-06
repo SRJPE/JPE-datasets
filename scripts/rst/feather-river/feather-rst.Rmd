@@ -126,28 +126,68 @@ summary(cleaner_catch_data$fork_length)
   
 * `r round(sum(is.na(cleaner_catch_data$fork_length))/nrow(cleaner_catch_data), 3) * 100` % of values in the `fork_length` column are NA. 
 
+### Variable: `count`
+
+**Plotting passage counts over period of reccord**
+```{r}
+cleaner_catch_data %>% 
+  mutate(year = as.factor(year(date)),
+         fake_date = as.Date(paste0("1900-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = count, color = year)) + 
+  geom_line() + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Count of Fish Passage (1997-2021)")  
+
+```
+  
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+cleaner_catch_data %>% 
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = count, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Passage count summarized by year") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of [Variable] over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_catch_data$count)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_catch_data$count))/nrow(cleaner_catch_data), 3) * 100` % of values in the `count` column are NA. 
+
 ## Explore Categorical variables: {.tabset}
 
-General notes: If there is an opertunity to turn yes no into boolean do so, but not if you loose value 
+General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
 
 
 ```{r}
 # Filter clean data to show only categorical variables (this way we know we do not miss any)
+cleaner_catch_data %>% select_if(is.character) %>% colnames()
 ```
 
 
-### Variable: `[name]`
+### Variable: `site_name`
 ```{r}
-# table() 
+table(cleaner_catch_data$site_name) 
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
-```{r}
-# Fix any inconsistancies with catagorical variables
-```
 
-**Create lookup rda for [variable] encoding:** 
+**Create location lookup rda for site_name:** 
+TODO 
 ```{r}
 # Create named lookup vector
 # Name rda [watershed]_[data type]_[variable_name].rda
@@ -156,11 +196,41 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 **NA and Unknown Values**
   
-Provide a stat on NA or unknown values
+* `r round(sum(is.na(cleaner_catch_data$site_name))/nrow(cleaner_catch_data), 3) * 100` % of values in the `site_name` column are NA. 
+
+### Variable: `at_capture_run`
+```{r}
+table(cleaner_catch_data$at_capture_run) 
+cleaner_catch_data$at_capture_run <- ifelse(cleaner_catch_data$at_capture_run == "Not recorded", NA, tolower(cleaner_catch_data$at_capture_run))
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_catch_data$at_capture_run))/nrow(cleaner_catch_data), 3) * 100` % of values in the `at_capture_run` column are NA. 
+
+### Variable: `lifestage`
+```{r}
+table(cleaner_catch_data$lifestage) 
+cleaner_catch_data$lifestage <- ifelse(cleaner_catch_data$lifestage == "Not recorded", NA, tolower(cleaner_catch_data$lifestage))
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_catch_data$lifestage))/nrow(cleaner_catch_data), 3) * 100` % of values in the `lifestage` column are NA. 
+
+```{r}
+feather_rst <- cleaner_catch_data %>% glimpse()
+```
 
 ### Save cleaned data back to google cloud 
 
-```{r}
+```{r, eval=FALSE}
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_rst,
+           object_function = f,
+           type = "csv",
+           name = "rst/feather-river/data/feather_rst.csv")
 ```
