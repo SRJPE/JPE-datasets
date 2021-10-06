@@ -1,5 +1,5 @@
 ---
-title: "[Watershed] [Data type] [QC]"
+title: "Feather River RST Catch Data QC"
 author: "Erin Cain"
 date: "9/29/2021"
 output: rmarkdown::github_document
@@ -12,24 +12,28 @@ library(lubridate)
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
+library(readxl)
 ```
 
-# [Watershed] [Data type long version]
+# Feather River RST Catch Data
 
 ## Description of Monitoring Data
 
-**Timeframe:** 
+Background: The traps are typically operated for approximately seven months (December through June). Two trap locations are necessary because flow is strictly regulated above the Thermalito Outlet and therefore emigration cues and species composition may be different for the two reaches.
+
+**Timeframe:** Dec 1997 - May 2021
   
-**Video Season:** 
+**Trapping Season:** Typically December - June, looks like it varies quite a bit. 
   
 **Completeness of Record throughout timeframe:** 
   
 **Sampling Location:**
-  
+Two RST locations are generally used, one at the lower end of each of the two study reaches. Typically, one RST is stationed at the bottom of Eye Side Channel, RM 60.2 (approximately one mile above the Thermalito Afterbay Outlet) and one stationed in the HFC below Herringer riffle, at RM 45.7.
+
+TODO if time add map with sites here
   
 **Data Contact:** 
-  
-  Any additional info?
+[Kassie Hickey](mailto:KHickey@psmfc.org)
   
 ## Access Cloud Data
   
@@ -49,10 +53,6 @@ gcs_get_object(object_name = "rst/feather-river/data-raw/Feather River RST Natur
                saveToDisk = "raw_feather_rst_data.xlsx",
                overwrite = TRUE)
 
-gcs_get_object(object_name = "rst/feather-river/data-raw/Feather River RST Sampling Effort_1998-2021.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_feather_rst_sampling_effort_data.xlsx",
-               overwrite = TRUE)
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet: 
@@ -63,50 +63,68 @@ rst_data_sheets <- readxl::excel_sheets("raw_feather_rst_data.xlsx")
 survey_year_details  <- readxl::read_excel("raw_feather_rst_data.xlsx", 
                                            sheet = "Survey Year Details") 
 survey_year_details
+# create function to read in all sheets of a 
 read_sheets <- function(sheet){
   data <- read_excel("raw_feather_rst_data.xlsx", sheet = sheet)
 }
 
 raw_catch <- purrr::map(rst_data_sheets[-1], read_sheets) %>%
     reduce(bind_rows)
+
+raw_catch %>% glimpse()
 ```
 
 ## Data transformations
 
 ```{r}
-# For different excel sheets for each year read in and combine years here
-```
-
-```{r}
 # Snake case, 
 # Columns are appropriate types
 # Remove redundant columns
+cleaner_catch_data <- raw_catch %>%
+  rename("date" = Date, "site_name" = siteName, 
+         "at_capture_run" = `At Capture Run`, 
+         "lifestage" = lifeStage, 
+         "fork_length" = FL, "count" = n) %>%
+  mutate(date = as.Date(date)) %>%
+  filter(commonName == "Chinook salmon") %>%
+  select(-commonName)
+
+cleaner_catch_data %>% glimpse()
 ```
 
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
-# Filter clean data to show only numeric variables (this way we know we do not miss any)
+# Filter clean data to show only numeric variables 
+cleaner_catch_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-### Variable: `[name]`
+### Variable: `fork_length`
 
-**Plotting [Variable] over Period of Record**
+**Plotting fork_length at RST sites**
   
 ```{r}
 # Make whatever plot is appropriate 
 # maybe 2 plots is appropriate
+cleaner_catch_data %>% 
+  ggplot(aes(x = fork_length, y = site_name)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Fork length summarized by site") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 **Numeric Summary of [Variable] over Period of Record**
   
 ```{r}
 # Table with summary statistics
+summary(cleaner_catch_data$fork_length)
 ```
 
 **NA and Unknown Values**
   
-Provide a stat on NA or unknown values
+* `r round(sum(is.na(cleaner_catch_data$fork_length))/nrow(cleaner_catch_data), 3) * 100` % of values in the `fork_length` column are NA. 
 
 ## Explore Categorical variables: {.tabset}
 
@@ -120,7 +138,7 @@ General notes: If there is an opertunity to turn yes no into boolean do so, but 
 
 ### Variable: `[name]`
 ```{r}
-table() 
+# table() 
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
