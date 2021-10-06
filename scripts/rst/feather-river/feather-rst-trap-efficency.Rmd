@@ -74,68 +74,178 @@ raw_efficency %>% glimpse()
 # Snake case, 
 # Columns are appropriate types
 # Remove redundant columns
-cleaner_efficency_data <- raw_efficency %>%
+cleaner_efficency_data <- raw_efficency %>% 
+  rename("sub_site_name" = subSiteName, "visit_time" = visitTime, 
+         "visit_type" = visitType, "trap_functioning" = trapFunctioning, 
+         "fish_processed" = fishProcessed, "water_temp_c" = `Water Temp (C)`, 
+         "turbidity_ntu" = `Turbidity (NTUs)`) %>% glimpse()
 
-
-cleaner_efficency_data %>% glimpse()
 ```
 
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
-# Filter clean data to show only numeric variables (this way we know we do not miss any)
+# Filter clean data to show only numeric variables 
+cleaner_efficency_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-### Variable: `[name]`
+### Variable: `water_temp_c`
 
-**Plotting [Variable] over Period of Record**
+**Plotting water_temp_c over Period of Record**
   
-  ```{r}
+```{r}
 # Make whatever plot is appropriate 
 # maybe 2 plots is appropriate
+cleaner_efficency_data %>% 
+  group_by(date = as.Date(visit_time)) %>%
+  mutate(avg_temp = mean(water_temp_c)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_date = as.Date(paste0("1900-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
+  geom_point(alpha = .25) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily Water Temperature")  
+
+
+```
+```{r}
+cleaner_efficency_data %>% 
+  mutate(year = as.factor(year(as.Date(visit_time)))) %>%
+  ggplot(aes(x = water_temp_c, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Water Temperature summarized by year") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
+**Numeric Summary of water_temp_c over Period of Record**
   
-  ```{r}
+```{r}
 # Table with summary statistics
+summary(cleaner_efficency_data$water_temp_c)
 ```
 
 **NA and Unknown Values**
   
-  Provide a stat on NA or unknown values
+* `r round(sum(is.na(cleaner_efficency_data$water_temp_c))/nrow(cleaner_efficency_data), 3) * 100` % of values in the `water_temp_c` column are NA. 
+  
+### Variable: `turbidity_ntu`
+
+Turbidity is measured in Nephelometric Turbidity unit, i.e. the presence of suspended particles in water. The higher NTU the more solids are suspended in water and the dirtier the water is. 
+
+**Plotting turbidity_ntu over Period of Record**
+  
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+cleaner_efficency_data %>% 
+  group_by(date = as.Date(visit_time)) %>%
+  mutate(avg_turbidity_ntu = mean(turbidity_ntu)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_date = as.Date(paste0("1900-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_turbidity_ntu, color = year)) + 
+  geom_point(alpha = .25) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily Turbidity Measures")  
+```
+```{r}
+cleaner_efficency_data %>% 
+  filter(year(as.Date(visit_time)) > 1999) %>% # Filter because only a few measure before this date
+  mutate(year = as.factor(year(as.Date(visit_time)))) %>%
+  ggplot(aes(x = turbidity_ntu, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Water Turbidity measures summarized by year") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+**Numeric Summary of turbidity_ntu over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_efficency_data$turbidity_ntu)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_efficency_data$turbidity_ntu))/nrow(cleaner_efficency_data), 3) * 100` % of values in the `turbidity_ntu` column are NA.
 
 ## Explore Categorical variables: {.tabset}
 
-General notes: If there is an opertunity to turn yes no into boolean do so, but not if you loose value 
-
-
 ```{r}
 # Filter clean data to show only categorical variables (this way we know we do not miss any)
+cleaner_efficency_data %>% select_if(is.character) %>% colnames()
 ```
 
 
-### Variable: `[name]`
+### Variable: `sub_site_name`
 ```{r}
-# table() 
+table(cleaner_efficency_data$sub_site_name) 
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistancies with catagorical variables
+# TODO check if I want to make thse changes
+# Fix any inconsistencies with categorical variables
+cleaner_efficency_data$sub_site_name <- gsub(" ", "_", tolower(cleaner_efficency_data$sub_site_name))
+table(cleaner_efficency_data$sub_site_name) 
 ```
 
-**Create lookup rda for [variable] encoding:** 
+
+
+**NA and Unknown Values**
+  
+No values that do not have an associated site with them. 
+  
+### Variable: `visit_type`
 ```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
+table(cleaner_efficency_data$visit_type) 
 ```
 
 **NA and Unknown Values**
   
-  Provide a stat on NA or unknown values
+No values that do not have an associated visit type with them. 
+  
+### Variable: `trap_functioning`
+```{r}
+table(cleaner_efficency_data$trap_functioning) 
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(cleaner_efficency_data$trap_functioning == "Not recorded")/nrow(cleaner_efficency_data), 3) * 100` % of values in the `trap_functioning` column are listed as "Not Recorded".
+
+* `r round(sum(cleaner_efficency_data$trap_functioning == "Not recorded", cleaner_efficency_data$trap_functioning == "Trap not in service", cleaner_efficency_data$trap_functioning == "Trap stopped functioning", cleaner_efficency_data$trap_functioning == "Trap functioning, but not normally")/nrow(cleaner_efficency_data), 3) * 100` % of values in the `trap_functioning` column state that the trap is not function at normal capacity. 
+  
+### Variable: `fish_processed`
+```{r}
+table(cleaner_efficency_data$fish_processed) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+# Fix any inconsistencies with categorical variables
+cleaner_efficency_data$fish_processed <- ifelse(cleaner_efficency_data$fish_processed == "Not applicable", NA, cleaner_efficency_data$fish_processed)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_efficency_data$fish_processed))/nrow(cleaner_efficency_data), 3) * 100` % of values in the `fish_processed` column are NA.
 
 ### Save cleaned data back to google cloud 
 

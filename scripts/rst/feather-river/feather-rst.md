@@ -152,7 +152,7 @@ cleaner_catch_data %>%
 
 ![](feather-rst_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-**Numeric Summary of \[Variable\] over Period of Record**
+**Numeric Summary of fork\_length over Period of Record**
 
 ``` r
 # Table with summary statistics
@@ -179,8 +179,9 @@ cleaner_catch_data %>%
   # facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
-  theme(text = element_text(size = 23),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom") + 
   labs(title = "Daily Count of Fish Passage (1997-2021)")  
 ```
 
@@ -201,7 +202,7 @@ cleaner_catch_data %>%
 
 ![](feather-rst_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-**Numeric Summary of \[Variable\] over Period of Record**
+**Numeric Summary of count over Period of Record**
 
 ``` r
 # Table with summary statistics
