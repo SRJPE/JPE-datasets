@@ -18,7 +18,11 @@ reaches.
 **Trapping Season:** Typically December - June, looks like it varies
 quite a bit.
 
-**Completeness of Record throughout timeframe:**
+**Completeness of Record throughout timeframe:** Data for every year in
+the sample timeframe, detailed start and end dates for the season are
+given in the `survey_year_details` table:
+
+\`
 
 **Sampling Location:** Two RST locations are generally used, one at the
 lower end of each of the two study reaches. Typically, one RST is
@@ -136,21 +140,34 @@ cleaner_catch_data %>% select_if(is.numeric) %>% colnames()
 
 ### Variable: `fork_length`
 
-**Plotting fork\_length at RST sites**
+**Plotting fork\_length**
 
 ``` r
-# Make whatever plot is appropriate 
-# maybe 2 plots is appropriate
-cleaner_catch_data %>% 
-  ggplot(aes(x = fork_length, y = site_name)) + 
-  geom_boxplot() + 
+cleaner_catch_data %>% filter(fork_length < 250) %>% # filter out 13 points so we can more clearly see distribution
+  ggplot(aes(x = fork_length)) + 
+  geom_histogram(breaks=seq(0, 200, by=2)) + 
+  scale_x_continuous(breaks=seq(0, 200, by=25)) +
   theme_minimal() +
-  labs(title = "Fork length summarized by site") + 
+  labs(title = "Fork length distribution") + 
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 ![](feather-rst_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
+# TODO put as maybe - think about 
+cleaner_catch_data %>% 
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = fork_length, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Fork length summarized by year") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+![](feather-rst_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 **Numeric Summary of fork\_length over Period of Record**
 
@@ -168,39 +185,46 @@ summary(cleaner_catch_data$fork_length)
 
 ### Variable: `count`
 
-**Plotting passage counts over period of reccord**
+**Plotting passage counts over period of record**
 
 ``` r
+# Group by year and create average 
+
 cleaner_catch_data %>% 
+  group_by(month = month(date), day = day(date)) %>%
+  mutate(average_daily_catch = mean(count)) %>%
+  ungroup() %>%
   mutate(year = as.factor(year(date)),
-         fake_date = as.Date(paste0("1900-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = count, color = year)) + 
-  geom_line() + 
-  # facet_wrap(~year(date), scales = "free") + 
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = average_daily_catch)) + 
+  geom_point() + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "bottom") + 
-  labs(title = "Daily Count of Fish Passage (1997-2021)")  
+  labs(title = "Daily Average Fish Passage Count (Summarized 1997-2021)",
+       y = "Average daily catch",
+       x = "Date")  
 ```
 
-![](feather-rst_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](feather-rst_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
-# Make whatever plot is appropriate 
-# maybe 2 plots is appropriate
-cleaner_catch_data %>% 
+# Figure out a second plot 
+cleaner_catch_data  %>%
   mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = count, y = year)) + 
-  geom_boxplot() + 
+  ggplot(aes(x = year, y = count)) + 
+  geom_col() + 
   theme_minimal() +
-  labs(title = "Passage count summarized by year") + 
+  labs(title = "Total Fish Count by Year",
+       y = "Total fish count") + 
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](feather-rst_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](feather-rst_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 **Numeric Summary of count over Period of Record**
 
@@ -218,9 +242,6 @@ summary(cleaner_catch_data$count)
 
 ## Explore Categorical variables:
 
-General notes: If there is an opportunity to turn yes no into boolean do
-so, but not if you loose value
-
 ``` r
 # Filter clean data to show only categorical variables (this way we know we do not miss any)
 cleaner_catch_data %>% select_if(is.character) %>% colnames()
@@ -229,6 +250,9 @@ cleaner_catch_data %>% select_if(is.character) %>% colnames()
     ## [1] "site_name"      "at_capture_run" "lifestage"
 
 ### Variable: `site_name`
+
+The feather river efficiency data contains additional information about
+sub sites and lat/long values.
 
 ``` r
 table(cleaner_catch_data$site_name) 
@@ -239,14 +263,6 @@ table(cleaner_catch_data$site_name)
     ##            35969            19010            77310             8020 
     ##    Shawn's Beach     Steep Riffle     Sunset Pumps 
     ##               45            24642            15875
-
-**Create location lookup rda for site\_name:** TODO
-
-``` r
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
 
 **NA and Unknown Values**
 
