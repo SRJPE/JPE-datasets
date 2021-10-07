@@ -1,9 +1,9 @@
-Feather River RST Trap Efficency Data QC
+Feather River RST Effort Data QC
 ================
 Erin Cain
 9/29/2021
 
-# Feather River RST Efficency Data
+# Feather River RST Effort Data
 
 ## Description of Monitoring Data
 

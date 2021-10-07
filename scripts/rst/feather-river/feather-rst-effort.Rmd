@@ -1,5 +1,5 @@
 ---
-title: "Feather River RST Trap Efficency Data QC"
+title: "Feather River RST Effort Data QC"
 author: "Erin Cain"
 date: "9/29/2021"
 output: rmarkdown::github_document
@@ -15,7 +15,7 @@ library(scales)
 library(readxl)
 ```
 
-# Feather River RST Efficency Data
+# Feather River RST Effort Data
 
 ## Description of Monitoring Data
 
