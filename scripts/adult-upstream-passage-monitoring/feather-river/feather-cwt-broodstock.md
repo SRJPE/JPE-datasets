@@ -22,7 +22,7 @@ Hatchery for the 2021 season.
 | 2 = Female  | 3 = Fall      | 2 = Dead in Pond       |
 | 9 = Unknown | 7 = Late-fall | 3 = Spawned            |
 
-*Additional Note* Following up with OSP people regarding data for full
+*Additional Note*: Following up with OSP people regarding data for full
 period of record.
 
 ## Access Cloud Data
