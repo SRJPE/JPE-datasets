@@ -37,6 +37,7 @@ This data contains information describing trapping effort, location information,
 **Data Contact:** 
 [Kassie Hickey](mailto:KHickey@psmfc.org)
 
+
 ## Access Cloud Data
 
 ```{r, eval=FALSE}
@@ -133,6 +134,7 @@ cleaner_effort_data %>%
 
 ```
 ```{r}
+# TODO check on 0 point
 cleaner_effort_data %>% 
   mutate(year = as.factor(year(as.Date(visit_time)))) %>%
   ggplot(aes(x = water_temp_c, y = year)) + 
@@ -154,6 +156,8 @@ summary(cleaner_effort_data$water_temp_c)
 **NA and Unknown Values**
   
 * `r round(sum(is.na(cleaner_effort_data$water_temp_c))/nrow(cleaner_effort_data), 3) * 100` % of values in the `water_temp_c` column are NA. 
+
+TODO make note of when
   
 ### Variable: `turbidity_ntu`
 
@@ -207,6 +211,9 @@ summary(cleaner_effort_data$turbidity_ntu)
   
 * `r round(sum(is.na(cleaner_effort_data$turbidity_ntu))/nrow(cleaner_effort_data), 3) * 100` % of values in the `turbidity_ntu` column are NA.
 
+Notes: 
+- TODO describe 2006, 2017 wet years high turbidity
+
 ## Explore Categorical variables: {.tabset}
 
 ```{r}
@@ -221,6 +228,7 @@ table(cleaner_effort_data$sub_site_name)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
+TODO - remove hashtag and ' (foot sign) make Title case
 
 ```{r}
 cleaner_effort_data$sub_site_name <- gsub(" ", "_", tolower(cleaner_effort_data$sub_site_name))
@@ -258,11 +266,14 @@ table(cleaned_location$river_location)
 cleaner_effort_data <-  left_join(cleaner_effort_data, cleaned_location) 
 ```
 
+TODO map 
   
 ### Variable: `visit_type`
 ```{r}
 table(cleaner_effort_data$visit_type) 
 ```
+
+TODO snake case undscores, remove symbols
 
 **NA and Unknown Values**
   
@@ -272,6 +283,7 @@ No values that do not have an associated visit type with them.
 ```{r}
 table(cleaner_effort_data$trap_functioning) 
 ```
+TODO snake case underscores, remove symbols, Not Recorded == NA
 
 **NA and Unknown Values**
   

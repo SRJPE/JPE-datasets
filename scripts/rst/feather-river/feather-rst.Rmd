@@ -36,6 +36,11 @@ TODO if time add map with sites here
   
 **Data Contact:** 
 [Kassie Hickey](mailto:KHickey@psmfc.org)
+
+Questions: all marked or unmarked? 
+Units for Fork Length (are these values outrageous)
+Try to describe NA's if possible
+Fork length by run 
   
 ## Access Cloud Data
   
@@ -117,7 +122,7 @@ cleaner_catch_data %>% filter(fork_length < 250) %>% # filter out 13 points so w
 ```
 
 ```{r}
-# TODO put as maybe - think about 
+# TODO maybe do forklength by lifestage (or numeric summary of this) 
 cleaner_catch_data %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = fork_length, y = year)) + 
@@ -141,10 +146,11 @@ summary(cleaner_catch_data$fork_length)
 
 ### Variable: `count`
 
-**Plotting passage counts over period of record**
+**Plotting raw passage counts over period of record**
 ```{r}
 # Group by year and create average 
-
+# TODO fix title
+# Group by water year type (facet on water year type)
 cleaner_catch_data %>% 
   group_by(month = month(date), day = day(date)) %>%
   mutate(average_daily_catch = mean(count)) %>%
@@ -166,7 +172,7 @@ cleaner_catch_data %>%
 ```
   
 ```{r}
-# Figure out a second plot 
+# TODO maybe group or facet by run type 
 cleaner_catch_data  %>%
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = year, y = count)) + 
