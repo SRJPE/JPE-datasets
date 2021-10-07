@@ -73,7 +73,6 @@ cleaner_hallprint_data <- raw_hallprint_data %>%
   mutate(date = as.Date(date)) %>%
   glimpse() 
 
-cleaner_hallprint_data %>% filter(acoustic == "Y")
 ```
 
 
@@ -81,14 +80,14 @@ cleaner_hallprint_data %>% filter(acoustic == "Y")
 
 No numeric variables
 ```{r}
-# Filter clean data to show only numeric variables (this way we know we do not miss any)
+# Filter clean data to show only numeric variables 
 cleaner_hallprint_data %>% select_if(is.numeric) %>% colnames()
 ```
 
 ## Explore Categorical variables: {.tabset}
 
 ```{r}
-# Filter clean data to show only categorical variables (this way we know we do not miss any)
+# Filter clean data to show only categorical variables
 cleaner_hallprint_data %>% select_if(is.character) %>% colnames()
 ```
 
@@ -125,7 +124,7 @@ nrow(subset(cleaner_hallprint_data, is.na(cleaner_hallprint_data$tag_number)))
 
 ### Variable: `second_tag_number`
 
-Are all the tags unique? No it looks like in more recent years they start to be unique and we have less NA values but there are 8 years where tags are not unique. 
+Similarly not all unique. Only one year where count of unique tags equals total number of unique tags. 
 ```{r}
 cleaner_hallprint_data %>% 
   group_by(year = year(date)) %>%
@@ -141,6 +140,7 @@ cleaner_hallprint_data %>%
 
 ### Variable: `color`
 ```{r}
+# TODO email Byron to ask about color 
 table(cleaner_hallprint_data$color) 
 ```
 
@@ -202,4 +202,5 @@ table(cleaner_hallprint_data$acoustic_location)
 ```{r}
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
+
 ```

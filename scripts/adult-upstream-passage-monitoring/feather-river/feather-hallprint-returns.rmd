@@ -1,0 +1,100 @@
+---
+title: "Feather River Hallprint Data QC"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+```
+
+# Feather River hallprint adult broodstock selection and enumeration data
+
+## Description of Monitoring Data
+
+Hallprint tagging data only describes fish marked, giving hallprint tag numbers and dates tagged for each fish. It does not include any other sampling of fish like size or genetics. The data that we have does not contain any additional information about fish returns. We currently have one file describing fish returns. We can likely acquire more but there are issues with the return data. 
+
+**Timeframe:** 2004 - 2020 
+  
+**Season:** Tagging typically begins in April and goes through June
+  
+**Completeness of Record throughout timeframe:** 
+  
+**Sampling Location:** Some tags have a acoustic location attribute. 
+   
+  
+**Data Contact:** [Byron Mache](mailto:Byron.Mache@water.ca.gov) 
+  
+Each fish is given two tags. The `second_tag_number` is na if the first tag and the second tag have the same number. 
+  
+## Access Cloud Data
+  
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = 
+                 "adult-upstream-passage-monitoring/feather-river/hallprint/data-raw/returns/FRFH HP RUN DATA 2018 as of 9-10-20.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_feather_hallprint_returns_data.xlsx",
+               overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean 
+sheets <- excel_sheets("raw_feather_hallprint_returns_data.xlsx")
+sheets # many sheets, most do not seem useful 
+raw_carcass_data <- read_excel("raw_feather_hallprint_returns_data.xlsx", 
+                               sheet = "Carcass Recoveries",
+                               range = "A1:V209") %>% glimpse()
+```
+
+## Data transformations
+
+```{r}
+# For different excel sheets for each year read in and combine years here
+cleaner_carcass_data <- raw_carcass_data
+```
+
+
+## Explore Numeric Variables: {.tabset}
+
+
+```{r}
+# Filter clean data to show only numeric variables 
+cleaner_carcass_data %>% select_if(is.numeric) %>% colnames()
+```
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+# Filter clean data to show only categorical variables
+cleaner_carcass_data %>% select_if(is.character) %>% colnames()
+```
+
+### Variable: ``
+
+```{r}
+
+```
+
+**NA and Unknown Values**
+```{r}
+
+```
+There are no NA values in ``. 
