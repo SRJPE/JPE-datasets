@@ -65,6 +65,7 @@ raw_hallprint_data <- read_excel("raw_feather_hallprint_data.xlsx",
 ## Data transformations
 
 ```{r}
+# TODO turn NA into second tag number 
 # For different excel sheets for each year read in and combine years here
 cleaner_hallprint_data <- raw_hallprint_data %>% 
   rename("date" = Date, "tag_number" = `Tag#`, "second_tag_number" = `2ndTag#`, 
@@ -115,6 +116,31 @@ cleaner_hallprint_data %>%
             na_tags = sum(is.na(tag_number)),
             all_tags_na_or_unique = ifelse(count_unique_tags == number_tags + na_tags, TRUE, FALSE))
 ```
+
+```{r}
+# TODO visualize count by year 
+cleaner_hallprint_data %>% 
+  group_by(year = year(date)) %>%
+  mutate(total_tags_per_year = sum(!is.na(tag_number))) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = year, y = total_tags_per_year)) +
+  geom_col()
+```
+
+Numbers of fish tagged are not even over the period of record. 
+
+```{r}
+# TODO Could also do a visual of when in the year this is happening (tags by month) - facet on year (some portion of years or average over years)
+cleaner_hallprint_data %>% 
+  group_by(month = month(date)) %>%
+  mutate(total_tags_per_month = mean(sum(!is.na(tag_number)))) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = month, y = total_tags_per_month)) +
+  geom_col()
+# Could also do a visual of when in the year this is happening (tags by month) - facet on year (some portion of years or average over years)
+```
+
+It appears that most of the tagging occurs in May and June. 
 
 **NA and Unknown Values**
 ```{r}
@@ -196,6 +222,9 @@ table(cleaner_hallprint_data$acoustic_location)
 **NA and Unknown Values**
 
   * `r round(sum(is.na(cleaner_hallprint_data$acoustic_location))/nrow(cleaner_hallprint_data), 3)` % of values in the `acoustic_location` column are NA. 
+  
+**Summary of identified issues:**
+TODO fill in this section 
 
 ### Save cleaned data back to google cloud 
 

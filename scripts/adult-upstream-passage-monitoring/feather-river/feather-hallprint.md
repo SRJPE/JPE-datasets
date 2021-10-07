@@ -70,6 +70,7 @@ raw_hallprint_data <- read_excel("raw_feather_hallprint_data.xlsx",
 ## Data transformations
 
 ``` r
+# TODO turn NA into second tag number 
 # For different excel sheets for each year read in and combine years here
 cleaner_hallprint_data <- raw_hallprint_data %>% 
   rename("date" = Date, "tag_number" = `Tag#`, "second_tag_number" = `2ndTag#`, 
@@ -89,31 +90,12 @@ cleaner_hallprint_data <- raw_hallprint_data %>%
     ## $ acoustic          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ acoustic_location <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 
-``` r
-cleaner_hallprint_data %>% filter(acoustic == "Y")
-```
-
-    ## # A tibble: 244 x 7
-    ##    ID     date       tag_number second_tag_number color acoustic acoustic_locati~
-    ##    <chr>  <date>     <chr>      <chr>             <chr> <chr>    <chr>           
-    ##  1 101548 2020-05-13 4497       4498              R?    Y        SRA             
-    ##  2 101549 2020-05-20 4495       4496              R?    Y        SRA             
-    ##  3 108143 2018-05-24 1437       1438              R     Y        FRFH            
-    ##  4 108144 2018-05-24 1439       1440              R     Y        FRFH            
-    ##  5 108145 2018-05-24 1441       1442              R     Y        FRFH            
-    ##  6 108146 2018-05-24 1443       <NA>              R     Y        FRFH            
-    ##  7 108147 2018-05-24 1445       1446              R     Y        FRFH            
-    ##  8 108148 2018-05-24 1447       1448              R     Y        FRFH            
-    ##  9 108149 2018-05-24 1449       1450              R     Y        FRFH            
-    ## 10 108150 2018-05-24 2969       2970              P     Y        FRFH            
-    ## # ... with 234 more rows
-
 ## Explore Numeric Variables:
 
 No numeric variables
 
 ``` r
-# Filter clean data to show only numeric variables (this way we know we do not miss any)
+# Filter clean data to show only numeric variables 
 cleaner_hallprint_data %>% select_if(is.numeric) %>% colnames()
 ```
 
@@ -122,7 +104,7 @@ cleaner_hallprint_data %>% select_if(is.numeric) %>% colnames()
 ## Explore Categorical variables:
 
 ``` r
-# Filter clean data to show only categorical variables (this way we know we do not miss any)
+# Filter clean data to show only categorical variables
 cleaner_hallprint_data %>% select_if(is.character) %>% colnames()
 ```
 
@@ -188,6 +170,37 @@ cleaner_hallprint_data %>%
     ## 16  2019              6052        6052       0 TRUE                 
     ## 17  2020              2748        2748       0 TRUE
 
+``` r
+# TODO visualize count by year 
+cleaner_hallprint_data %>% 
+  group_by(year = year(date)) %>%
+  mutate(total_tags_per_year = sum(!is.na(tag_number))) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = year, y = total_tags_per_year)) +
+  geom_col()
+```
+
+![](feather-hallprint_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+Numbers of fish tagged are not even over the period of record.
+
+``` r
+cleaner_hallprint_data %>% 
+  group_by(month = month(date)) %>%
+  mutate(total_tags_per_month = mean(sum(!is.na(tag_number)))) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = month, y = total_tags_per_month)) +
+  geom_col()
+```
+
+![](feather-hallprint_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+``` r
+# Could also do a visual of when in the year this is happening (tags by month) - facet on year (some portion of years or average over years)
+```
+
+It appears that most of the tagging occurs in May and June.
+
 **NA and Unknown Values**
 
 ``` r
@@ -200,9 +213,8 @@ nrow(subset(cleaner_hallprint_data, is.na(cleaner_hallprint_data$tag_number)))
 
 ### Variable: `second_tag_number`
 
-Are all the tags unique? No it looks like in more recent years they
-start to be unique and we have less NA values but there are 8 years
-where tags are not unique.
+Similarly not all unique. Only one year where count of unique tags
+equals total number of unique tags.
 
 ``` r
 cleaner_hallprint_data %>% 
@@ -241,6 +253,7 @@ equals the `second_tag_number` they leave `second_tag_number` as NA.
 ### Variable: `color`
 
 ``` r
+# TODO email Byron to ask about color 
 table(cleaner_hallprint_data$color) 
 ```
 
@@ -318,6 +331,8 @@ table(cleaner_hallprint_data$acoustic_location)
 **NA and Unknown Values**
 
 -   0.997 % of values in the `acoustic_location` column are NA.
+
+**Summary of identified issues:** TODO fill in this section
 
 ### Save cleaned data back to google cloud
 
