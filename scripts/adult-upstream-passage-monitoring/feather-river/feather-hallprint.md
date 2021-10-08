@@ -18,13 +18,13 @@ are issues with the return data.
 
 **Season:** Tagging typically begins in April and goes through June
 
-**Completeness of Record throughout timeframe:**
+**Provisional or QC data** Data is QC
 
 **Sampling Location:** Some tags have a acoustic location attribute.
 
 **Data Contact:** [Byron Mache](mailto:Byron.Mache@water.ca.gov)
 
-Each fish is given two tags. The `second_tag_number` is na if the first
+Each fish is given two tags. The `second_tag_number` is NA if the first
 tag and the second tag have the same number.
 
 ## Access Cloud Data
@@ -70,8 +70,6 @@ raw_hallprint_data <- read_excel("raw_feather_hallprint_data.xlsx",
 ## Data transformations
 
 ``` r
-# TODO turn NA into second tag number 
-# For different excel sheets for each year read in and combine years here
 cleaner_hallprint_data <- raw_hallprint_data %>% 
   rename("date" = Date, "tag_number" = `Tag#`, "second_tag_number" = `2ndTag#`, 
          "color" = Color, "acoustic" = Acoustic, 
@@ -92,7 +90,7 @@ cleaner_hallprint_data <- raw_hallprint_data %>%
 
 ## Explore Numeric Variables:
 
-No numeric variables
+No numeric variables.
 
 ``` r
 # Filter clean data to show only numeric variables 
@@ -136,9 +134,9 @@ There are no NA values in `ID`.
 
 ### Variable: `tag_number`
 
-Are all the tags unique? No it looks like in more recent years they
-start to be unique and we have less NA values but there are 8 years
-where tags are not unique.
+Are all the tags unique? No. In more recent years tag numbera start to
+be unique and we have less NA values but there are 8 years where tags
+are not unique.
 
 ``` r
 cleaner_hallprint_data %>% 
@@ -171,35 +169,39 @@ cleaner_hallprint_data %>%
     ## 17  2020              2748        2748       0 TRUE
 
 ``` r
-# TODO visualize count by year 
 cleaner_hallprint_data %>% 
   group_by(year = year(date)) %>%
   mutate(total_tags_per_year = sum(!is.na(tag_number))) %>% 
   ungroup() %>% 
   ggplot(aes(x = year, y = total_tags_per_year)) +
-  geom_col()
+  geom_col() + 
+  theme_minimal() + 
+  labs(title = "Total fish tagged by year",
+       y = "Number of Fish Tagged")  
 ```
 
 ![](feather-hallprint_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
-Numbers of fish tagged are not even over the period of record.
+More fish were tagged in 2013 than any other year. Numbers of fish
+tagged are not even over the period of record.
 
 ``` r
+# TODO Could also do a visual of when in the year this is happening (tags by month) - facet on year (some portion of years or average over years)
 cleaner_hallprint_data %>% 
   group_by(month = month(date)) %>%
-  mutate(total_tags_per_month = mean(sum(!is.na(tag_number)))) %>% 
+  mutate(total_tags_per_month = sum(!is.na(tag_number))) %>% 
   ungroup() %>% 
   ggplot(aes(x = month, y = total_tags_per_month)) +
-  geom_col()
+  geom_col() + 
+  facet_wrap(~year(date)) +  
+  theme_minimal() + 
+  labs(title = "Tags by month",
+       y = "Number of Fish Tagged")  
 ```
 
 ![](feather-hallprint_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-``` r
-# Could also do a visual of when in the year this is happening (tags by month) - facet on year (some portion of years or average over years)
-```
-
-It appears that most of the tagging occurs in May and June.
+Generally tagging occurs in May and June.
 
 **NA and Unknown Values**
 
@@ -249,6 +251,13 @@ cleaner_hallprint_data %>%
 **NA and Unknown Values** \* 0.516 % of values in the
 `second_tag_number` column are NA. Byron shared that if the `tag_number`
 equals the `second_tag_number` they leave `second_tag_number` as NA.
+
+``` r
+# Replace 2nd tag number with first tag number if second tag number is NA
+cleaner_hallprint_data$second_tag_number <- if_else(is.na(cleaner_hallprint_data$second_tag_number), 
+                                                    cleaner_hallprint_data$tag_number, 
+                                                    cleaner_hallprint_data$second_tag_number)
+```
 
 ### Variable: `color`
 
@@ -308,9 +317,8 @@ table(cleaner_hallprint_data$acoustic)
 
 **NA and Unknown Values**
 
--   0.997 % of values in the `acoustic` column are NA.
-
-### Variable: `acoustic_location`
+-   0.997 % of values in the `acoustic` column are NA. \#\#\# Variable:
+    `acoustic_location`
 
 ``` r
 table(cleaner_hallprint_data$acoustic_location) 
@@ -332,9 +340,24 @@ table(cleaner_hallprint_data$acoustic_location)
 
 -   0.997 % of values in the `acoustic_location` column are NA.
 
-**Summary of identified issues:** TODO fill in this section
+**Summary of identified issues:** \* One identified issue is that not
+all `tags_numbers` or `second_tag_numbers` are unique.
 
 ### Save cleaned data back to google cloud
+
+``` r
+cleaner_hallprint_data %>% glimpse()
+```
+
+    ## Rows: 98,935
+    ## Columns: 7
+    ## $ ID                <chr> "98802", "98803", "98804", "98805", "98806", "98807"~
+    ## $ date              <date> 2020-05-06, 2020-05-06, 2020-05-06, 2020-05-06, 202~
+    ## $ tag_number        <chr> "25703", "25704", "25705", "25707", "25708", "25709"~
+    ## $ second_tag_number <chr> "25703", "25704", "25705", "25707", "25708", "25709"~
+    ## $ color             <chr> "G", "G", "G", "G", "G", "G", "G", "G", "G", "G", "G~
+    ## $ acoustic          <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ acoustic_location <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 
 ``` r
 # Write to google cloud 
