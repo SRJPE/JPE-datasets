@@ -1,5 +1,5 @@
 ---
-title: "feather-river-adult-holding-redd-survey-qc-checklist-2011"
+title: "feather-river-redd-survey-qc-checklist-2011"
 author: "Inigo Peng"
 date: "10/6/2021"
 output: rmarkdown::github_document
