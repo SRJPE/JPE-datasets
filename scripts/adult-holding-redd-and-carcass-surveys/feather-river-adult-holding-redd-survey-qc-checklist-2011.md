@@ -15,9 +15,6 @@ Inigo Peng
     2012, 2019, 2020. NA values will be filled in for these data sets in
     final cleaned data set.
 
--   No data was recorded for “depth\_m”, “pot\_depth\_m”, and
-    “velocity\_m/s” in 2009 data. NA values only.
-
 **Sampling Location:** Feather River
 
 **Data Contact:** [Chris Cook](Chris.Cook@water.ca.gov)
@@ -333,19 +330,6 @@ cleaner_data_2011 %>%
 
 ![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
-``` r
-cleaner_data_2011  %>%
-  ggplot(aes(y = location, x = salmon_counted))+
-  geom_boxplot() +
-  theme_minimal() +
-  theme(text = element_text(size = 10))+
-  scale_y_discrete()+
-  theme(axis.text.y = element_text(size = 8,vjust = 0.1, hjust=0.2))+
-  labs(title = "Salmon Count By Locations")
-```
-
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
-
 **Numeric Daily Summary of salmon\_counted Over 2011**
 
 ``` r
@@ -359,143 +343,33 @@ cleaner_data_2011 %>%
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
     ##    3.00    6.00   19.00   51.92   89.00  188.00
 
+``` r
+cleaner_data_2011  %>%
+  ggplot(aes(y = location, x = salmon_counted))+
+  geom_boxplot() +
+  theme_minimal() +
+  theme(text = element_text(size = 10))+
+  scale_y_discrete()+
+  theme(axis.text.y = element_text(size = 8,vjust = 0.1, hjust=0.2))+
+  labs(title = "Salmon Count By Locations")
+```
+
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+**Numeric summary of salmon\_counted by location in 2011**
+
+``` r
+cleaner_data_2011 %>%
+  group_by(location) %>% 
+  summarise(count = sum(salmon_counted, na.rm = T)) %>% 
+  pull(count) %>%
+  summary()
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    1.00    3.00    5.00   16.46   15.00  117.00
+
 **NA and Unknown Values** \* 0 % of values in the `salmon_counted`
 column are NA.
-
-### Variable:`percent_fine_substrate`
-
-``` r
-cleaner_data_2011 %>%
-  group_by(location) %>% 
-  summarise(mean_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_fine_substrate)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Fine Substrate By Location")
-```
-
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
-
-**Numeric Summary of percent\_fine\_substrate Over 2011**
-
-``` r
-summary(cleaner_data_2011$percent_fine_substrate)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##      10      10      20      24      30      50     229
-
-**NA and Unknown Values** \* 97.9 % of values in the
-`percent_fine_substrate` column are NA.
-
-### Variable:`percent_small_substrate`
-
-``` r
-cleaner_data_2011 %>%
-  group_by(location) %>% 
-  summarise(mean_small_substrate = mean(percent_small_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_small_substrate)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percent Small Substrate By Location")
-```
-
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
-
-**Numeric Summary of percent\_small\_substrate Over 2011**
-
-``` r
-summary(cleaner_data_2011$percent_small_substrate)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##      30      40      50      46      50      60     229
-
-**NA and Unknown Values** \* 97.9 % of values in the
-`percent_small_substrate` column are NA.
-
-### Variable:`percent_medium_substrate`
-
-``` r
-cleaner_data_2011 %>%
-  group_by(location) %>% 
-  summarise(mean_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_medium_substrate)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percent Medium Substrate By Location")
-```
-
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
-
-**Numeric Summary of percent\_medium\_substrate Over 2011**
-
-``` r
-summary(cleaner_data_2011$percent_medium_substrate)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       0      20      20      28      40      60     229
-
-**NA and Unknown Values** \* 97.9 % of values in the
-`percent_medium_substrate` column are NA.
-
-### Variable:`percent_large_substrate`
-
-``` r
-cleaner_data_2011 %>%
-  group_by(location) %>% 
-  summarise(mean_large_substrate = mean(percent_large_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_large_substrate)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percent Large Substrate By Location")
-```
-
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
-
-**Numeric Summary of percent\_large\_substrate Over 2011**
-
-``` r
-summary(cleaner_data_2011$percent_large_substrate)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       0       0       0       2       0      10     229
-
-**NA and Unknown Values** \* 97.9 % of values in the
-`percent_large_substrate` column are NA.
-
-### Variable:`percent_boulder`
-
-``` r
-cleaner_data_2011 %>%
-  group_by(location) %>% 
-  summarise(mean_boulder = mean(percent_boulder, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_boulder)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percent Boulder By Location")
-```
-
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
-
-**Numeric Summary of percent\_boulder Over 2011**
-
-``` r
-summary(cleaner_data_2011$percent_large_substrate)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       0       0       0       2       0      10     229
-
-**NA and Unknown Values** NA and Unknown Values\*\* \* 97.9 % of values
-in the `percent_large_substrate` column are NA.
 
 ### Variable:`redd_width_m`
 
@@ -510,7 +384,7 @@ cleaner_data_2011 %>%
   labs(title = "Mean Redd Width By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 cleaner_data_2011 %>%
@@ -520,7 +394,7 @@ cleaner_data_2011 %>%
   labs(title = "Count of Redd Width")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 **Numeric Summary of redd\_width\_m Over 2011**
 
@@ -547,7 +421,7 @@ cleaner_data_2011 %>%
   labs(title = "Mean Redd Length By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
 cleaner_data_2011 %>%
@@ -557,7 +431,7 @@ cleaner_data_2011 %>%
   labs(title = "Count of Redd Length")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Numeric Summary of redd\_length\_m Over 2011**
 
@@ -570,3 +444,199 @@ summary(cleaner_data_2011$redd_length_m)
 
 **NA and Unknown Values** \* 97.9 % of values in the `redd_length_m`
 column are NA.
+
+### Location Physical Attributes
+
+### Variable:`percent_fine_substrate`
+
+``` r
+cleaner_data_2011 %>%
+  group_by(location) %>% 
+  summarise(mean_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE)) %>%
+  ggplot(aes(y = location, x = mean_fine_substrate)) +
+  geom_col() +
+  theme_minimal() +
+  theme(text = element_text(size = 8)) +
+  labs(title = "Average Fine Substrate By Location")
+```
+
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+**Numeric Summary of percent\_fine\_substrate Over 2011**
+
+``` r
+summary(cleaner_data_2011$percent_fine_substrate)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##      10      10      20      24      30      50     229
+
+**NA and Unknown Values** \* 97.9 % of values in the
+`percent_fine_substrate` column are NA.
+
+### Variable:`percent_small_substrate`
+
+``` r
+cleaner_data_2011 %>%
+  group_by(location) %>% 
+  summarise(mean_small_substrate = mean(percent_small_substrate, na.rm = TRUE)) %>%
+  ggplot(aes(y = location, x = mean_small_substrate)) +
+  geom_col() +
+  theme_minimal() +
+  theme(text = element_text(size = 8)) +
+  labs(title = "Average Percentage of Small Substrate By Location")
+```
+
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
+**Numeric Summary of percent\_small\_substrate Over 2011**
+
+``` r
+summary(cleaner_data_2011$percent_small_substrate)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##      30      40      50      46      50      60     229
+
+**NA and Unknown Values** \* 97.9 % of values in the
+`percent_small_substrate` column are NA.
+
+### Variable:`percent_medium_substrate`
+
+``` r
+cleaner_data_2011 %>%
+  group_by(location) %>% 
+  summarise(mean_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE)) %>%
+  ggplot(aes(y = location, x = mean_medium_substrate)) +
+  geom_col() +
+  theme_minimal() +
+  theme(text = element_text(size = 8)) +
+  labs(title = "Average Percentage of Medium Substrate By Location")
+```
+
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+**Numeric Summary of percent\_medium\_substrate Over 2011**
+
+``` r
+summary(cleaner_data_2011$percent_medium_substrate)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##       0      20      20      28      40      60     229
+
+**NA and Unknown Values** \* 97.9 % of values in the
+`percent_medium_substrate` column are NA.
+
+### Variable:`percent_large_substrate`
+
+``` r
+cleaner_data_2011 %>%
+  group_by(location) %>% 
+  summarise(mean_large_substrate = mean(percent_large_substrate, na.rm = TRUE)) %>%
+  ggplot(aes(y = location, x = mean_large_substrate)) +
+  geom_col() +
+  theme_minimal() +
+  theme(text = element_text(size = 8)) +
+  labs(title = "Average Percentage of Large Substrate By Location")
+```
+
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+**Numeric Summary of percent\_large\_substrate Over 2011**
+
+``` r
+summary(cleaner_data_2011$percent_large_substrate)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##       0       0       0       2       0      10     229
+
+**NA and Unknown Values** \* 97.9 % of values in the
+`percent_large_substrate` column are NA.
+
+### Variable:`percent_boulder`
+
+**Numeric Summary of percent\_boulder Over 2011**
+
+``` r
+summary(cleaner_data_2011$percent_boulder)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##       0       0       0       0       0       0     229
+
+**NA and Unknown Values** NA and Unknown Values\*\* \* 97.9 % of values
+in the `percent_large_substrate` column are NA.
+
+### Variable: `depth_m`
+
+``` r
+cleaner_data_2011 %>% 
+  ggplot(aes(x = depth_m, y = location)) + 
+  geom_col() + 
+  theme_minimal() + 
+  theme(text = element_text(size = 8))+
+  labs(title = "Depth By Location")
+```
+
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+**Numeric Summary of depth\_m Over 2011**
+
+``` r
+summary(cleaner_data_2011$depth_m)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.360   0.380   0.390   0.426   0.440   0.560     229
+
+**NA and Unknown Values** NA and Unknown Values\*\* \* 97.9 % of values
+in the `depth_m` column are NA.
+
+### Variable: `pot_depth_m`
+
+``` r
+cleaner_data_2011 %>% 
+  ggplot(aes(x = pot_depth_m, y = location)) + 
+  geom_col() + 
+  theme_minimal() + 
+  theme(text = element_text(size = 8))+
+  labs(title = "Pot Depth By Location")
+```
+
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+**Numeric Summary of pot\_depth\_m Over 2011**
+
+``` r
+summary(cleaner_data_2011$pot_depth_m)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.310   0.380   0.520   0.494   0.610   0.650     229
+
+**NA and Unknown Values** NA and Unknown Values\*\* \* 97.9 % of values
+in the `pot_depth_m` column are NA.
+
+### Variable: `velocity_m/s`
+
+``` r
+cleaner_data_2011 %>% 
+  ggplot(aes(x = `velocity_m/s`, y = location)) + 
+  geom_col() + 
+  theme_minimal() + 
+  theme(text = element_text(size = 8))+
+  labs(title = "Velocity By Location")
+```
+
+![](feather-river-adult-holding-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+**Numeric Summary of velocity\_m/s Over 2011**
+
+``` r
+summary(cleaner_data_2011$`velocity_m/s`)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.470   0.520   0.530   0.544   0.550   0.650     229
+
+**NA and Unknown Values** NA and Unknown Values\*\* \* 97.9 % of values
+in the `velocity_m/s` column are NA.
