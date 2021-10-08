@@ -5,8 +5,8 @@ date: "9/29/2021"
 output: rmarkdown::github_document
 ---
 
-```{r setup, include=FALSE, fig.width=15, fig.height=10}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
