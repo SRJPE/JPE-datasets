@@ -48,9 +48,6 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-riv
 ``` r
 raw_data_2009 = readxl::read_excel("2009_Chinook_Redd_Survey_Data_raw.xlsx",
                                    sheet="2009 All Data")
-```
-
-``` r
 glimpse(raw_data_2009)
 ```
 
@@ -73,6 +70,9 @@ glimpse(raw_data_2009)
     ## $ `Redd Width (ft)`    <dbl> NA, 3, 3, 3, 4, 3, 3, 12, NA, 4, 2, 2, 3, 4, 3, 4~
     ## $ `Redd Lenght (ft)`   <dbl> NA, 4, 5, 4, 6, 3, 3, 4, NA, 4, 3, 3, 4, 5, 3, 6,~
     ## $ `Survey Date`        <dttm> 2009-09-29, 2009-09-29, 2009-09-29, 2009-09-29, ~
+
+\#\#Data Transformation \#TODO don’t add NA columns/remove na columns
+\#TODO bind removed columns in final script
 
 ``` r
 raw_data_2009$'Redd Width (ft)' = raw_data_2009$'Redd Width (ft)'/3.281
@@ -101,28 +101,8 @@ cleaner_data_2009 <- raw_data_2009 %>%
          'pot_depth_m' = as.numeric('pot_depth_m'),
          'velocity_m/s'= as.numeric('velocity_m/s'),
          'latitude' = as.numeric(latitude),
-         'longitude' = as.numeric(longitude)) %>% 
-glimpse()
+         'longitude' = as.numeric(longitude)) 
 ```
-
-    ## Rows: 301
-    ## Columns: 16
-    ## $ Date                     <dttm> 2009-09-29, 2009-09-29, 2009-09-29, 2009-09-~
-    ## $ Location                 <chr> "Table Mountain", "Table Mountain", "Table Mo~
-    ## $ type                     <chr> "Area", "Point", "Area", "Area", "Area", "Are~
-    ## $ salmon_counted           <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
-    ## $ latitude                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ longitude                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ depth_m                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ pot_depth_m              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `velocity_m/s`           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ percent_fine_substrate   <dbl> 10, 5, 15, 30, 25, 5, 5, 20, NA, NA, NA, NA, ~
-    ## $ percent_small_substrate  <dbl> 20, 20, 30, 50, 15, 15, 20, 20, NA, NA, NA, N~
-    ## $ percent_medium_substrate <dbl> 40, 30, 20, 20, 60, 30, 20, 60, NA, NA, NA, N~
-    ## $ percent_large_substrate  <dbl> 30, 40, 30, 0, 0, 50, 45, 0, NA, NA, NA, NA, ~
-    ## $ percent_boulder          <dbl> 0, 5, 5, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, N~
-    ## $ redd_width_m             <dbl> NA, 0.9143554, 0.9143554, 0.9143554, 1.219140~
-    ## $ redd_length_m            <dbl> NA, 1.2191405, 1.5239256, 1.2191405, 1.828710~
 
 ``` r
 cleaner_data_2009 <- cleaner_data_2009 %>% 
@@ -150,6 +130,8 @@ cleaner_data_2009 <- cleaner_data_2009 %>%
     ## $ redd_width_m             <dbl> NA, 0.9143554, 0.9143554, 0.9143554, 1.219140~
     ## $ redd_length_m            <dbl> NA, 1.2191405, 1.5239256, 1.2191405, 1.828710~
 
+\#\#Explore Categorical Variables
+
 ``` r
 cleaner_data_2009 %>% 
   select_if(is.character) %>% colnames()
@@ -176,10 +158,11 @@ table(cleaner_data_2009$location)
     ##                14                 7                 2
 
 ``` r
+#Changed the locations with inconsistent names with the rest of the files
 cleaner_data_2009 <- cleaner_data_2009 %>% 
   mutate(location = tolower(location), 
-         location = if_else(location == "alec", "aleck", location),
-         location = if_else(location == "matthews", "mathews", location),
+         location = if_else(location == "alec", "aleck", location), #change alec to be consistent with the rest of the files
+         location = if_else(location == "matthews", "mathews", location), 
          location = if_else(location == "middle auditorium", "mid auditorium", location),
          )
 table(cleaner_data_2009$location)
@@ -198,6 +181,9 @@ table(cleaner_data_2009$location)
     ##               14                7                2
 
 -   0 % of values in the `location` column are NA.
+
+Variable: Type \#Put description under the heading \#Use Area, Point,
+etc.
 
 ``` r
 table(cleaner_data_2009$type)
@@ -219,7 +205,8 @@ table(cleaner_data_2009$type)
     ##   a   p 
     ## 290  11
 
-**Create lookup rda for type encoding:**
+\#Remmove lookup table for descriptioon \#TODO **Create lookup rda for
+type encoding:**
 
 ``` r
 types <- distinct(cleaner_data_2009, type) %>% 
@@ -229,7 +216,7 @@ types <- distinct(cleaner_data_2009, type) %>%
 types_description <- c(
   "area - polygon mapped with Trimble GPS unit",
   "point - points mapped with Trimble GPS unit"
-  # "questionable redds - polygon mapped with Trimble GPS unitwhere the substrate was disturbed but did not have the proper characteristics to be called a redd - it was no longer recrded after 2011"
+  # "questionable redds - polygon mapped with Trimble GPS unit where the substrate was disturbed but did not have the proper characteristics to be called a redd - it was no longer recorded after 2011"
 )
 
 write_rds(types_description, paste0(getwd(),"/adult-holding-redd-and-carcass-surveys/feather-river/data/types_description.rds"))
@@ -257,7 +244,7 @@ cleaner_data_2009 %>%
     ## [11] "percent_boulder"          "redd_width_m"            
     ## [13] "redd_length_m"
 
-### Variable: salmon\_counted
+Numerical Data \#\#\# Variable: salmon\_counted
 
 ``` r
 cleaner_data_2009 %>% 
@@ -270,21 +257,22 @@ cleaner_data_2009 %>%
   theme(axis.text.y = element_text(size = 8))
 ```
 
-![](feather-river-halltag-data-qc-checklist-2009_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
-# Boxplots of daily counts by year
-# cleaner_data_2009  %>%
-#   group_by(date) %>%
-#   summarise(daily_salmon_count = sum(salmon_counted)) %>%
-#   mutate(year = as.factor(year(date))) %>%
-#   ggplot(aes(x = date, y = (daily_salmon_count)))+ 
-#   geom_boxplot() + 
-#   theme_minimal() +
-#   theme(text = element_text(size = 12)) 
+# Boxplots group by 
+cleaner_data_2009  %>%
+  # group_by(location) %>%
+  # summarise(daily_salmon_count = sum(salmon_counted)) %>%
+  # mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = location, y = salmon_counted))+
+  geom_boxplot() +
+  theme_minimal() +
+  theme(text = element_text(size = 12))
 ```
 
-**Numeric Summary of Salmon Counted over 2009**
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+**Numeric Daily Summary of Salmon Counted over 2009**
 
 ``` r
 cleaner_data_2009 %>%
@@ -338,9 +326,9 @@ summary(cleaner_data_2009$depth_m)
 **NA and Unknown Values** \* 100 % of values in the `depth_m` column are
 NA
 
-### Variable: pot\_depth\_m
-
-**Numeric Summary of “pot\_depth\_m”over 2009**
+\#No data was recorded for 2009 but keeping the data consistent with the
+rest of the datasets \#\#\# Variable: pot\_depth\_m **Numeric Summary of
+“pot\_depth\_m”over 2009**
 
 ``` r
 summary(cleaner_data_2009$pot_depth_m)
@@ -369,6 +357,7 @@ column are NA.
 ### Variable: percent\_fine\_substrate
 
 ``` r
+#TODO average percent_fine_substrate
 cleaner_data_2009 %>%
   ggplot(aes(x = location, y = percent_fine_substrate)) +
   geom_col() +
@@ -377,7 +366,7 @@ cleaner_data_2009 %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-![](feather-river-halltag-data-qc-checklist-2009_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
 # # Boxplots of mean depth by location
@@ -389,7 +378,7 @@ cleaner_data_2009  %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-![](feather-river-halltag-data-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data_2009$percent_fine_substrate)
@@ -420,25 +409,24 @@ NA and Unknown Values\*\* \* 71.1 % of values in the
 ### Variable: redd\_width\_m
 
 ``` r
+##TODO Mean redd_width
 cleaner_data_2009 %>%
-  ggplot(aes(x = date, y = redd_width_m)) +
+  ggplot(aes(x = location, y = redd_width_m)) +
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-![](feather-river-halltag-data-qc-checklist-2009_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 ``` r
-cleaner_data_2009  %>%
-  ggplot(aes(x = date, y = redd_width_m))+
-  geom_boxplot() +
-  theme_minimal() +
-  theme(text = element_text(size = 12))
+# cleaner_data_2009  %>%
+#   ggplot(aes(x = date, y = redd_width_m))+
+#   geom_boxplot() +
+#   theme_minimal() +
+#   theme(text = element_text(size = 12))
 ```
-
-![](feather-river-halltag-data-qc-checklist-2009_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data_2009$redd_width_m)
