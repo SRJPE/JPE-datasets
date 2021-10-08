@@ -9,21 +9,24 @@ Inigo Peng
 
 **Timeframe:** 2009
 
-**Completeness of Record throughout timeframe: ** \*Longitude and
-latitude data are not available for 2009,2010, 2011,2012,2019, 2020. NA
-values will be filled in for these data sets in final cleaned data set.
+**Completeness of Record throughout timeframe: **  
 
-\*No data was recroded for “depth\_m”, “pot\_depth\_m”, and
+\*Longitude and latitude data are not available for 2009,2010,
+2011,2012,2019, 2020. NA values will be filled in for these data sets in
+final cleaned data set.
+
+\*No data was recorded for “depth\_m”, “pot\_depth\_m”, and
 “velocity\_m/s” in 2009 data. NA values only.
 
 **Sampling Location:** Feather River
 
 **Data Contact:** [Chris Cook](Chris.Cook@water.ca.gov)
 
-Additional Info: *1. *Latitude and longitude are in NAD 1983 UTM Zone
-10N *2. *The substrate is observed visually and an estimate of the
-percentage of 5 size classes. Fines &lt;1cm, small 1-5cm, medium 6-15cm,
-large 16-30cm, boulder &gt;30cm
+Additional Info:  
+*1. Latitude and longitude are in NAD 1983 UTM Zone 10N  
+*2. The substrate is observed visually and an estimate of the percentage
+of 5 size classes. Fines &lt;1cm, small 1-5cm, medium 6-15cm, large
+16-30cm, boulder &gt;30cm
 
 ## Access Cloud Data
 
@@ -39,7 +42,7 @@ gcs_list_objects()
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2009_Chinook_Redd_Survey_Data_raw.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "2009_Chinook_Redd_Survey_Data_raw.xlsx",
-               overwrite = TRUE)
+               Overwrite = TRUE)
 ```
 
 Read in data from google cloud, glimpse raw data:
@@ -70,8 +73,7 @@ glimpse(raw_data_2009)
     ## $ `Redd Lenght (ft)`   <dbl> NA, 4, 5, 4, 6, 3, 3, 4, NA, 4, 3, 3, 4, 5, 3, 6,~
     ## $ `Survey Date`        <dttm> 2009-09-29, 2009-09-29, 2009-09-29, 2009-09-29, ~
 
-\#\#Data Transformation \#TODO don’t add NA columns/remove na columns
-\#TODO bind removed columns in final script
+## Data Transformation
 
 ``` r
 raw_data_2009$'Redd Width (ft)' = raw_data_2009$'Redd Width (ft)'/3.281
@@ -127,7 +129,7 @@ cleaner_data_2009 <- cleaner_data_2009 %>%
     ## $ redd_width_m             <dbl> NA, 0.9143554, 0.9143554, 0.9143554, 1.219140~
     ## $ redd_length_m            <dbl> NA, 1.2191405, 1.5239256, 1.2191405, 1.828710~
 
-\#\#Explore Categorical Variables
+## Explore Categorical Variables
 
 ``` r
 cleaner_data_2009 %>% 
@@ -136,7 +138,7 @@ cleaner_data_2009 %>%
 
     ## [1] "location" "type"
 
-### Variable: `location`
+### Variable:`location`
 
 ``` r
 table(cleaner_data_2009$location)
@@ -181,11 +183,14 @@ table(cleaner_data_2009$location)
 
 -   0 % of values in the `location` column are NA.
 
-Variable: `Type` area - polygon mapped with Trimble GPS unit“,”point -
-points mapped with Trimble GPS unit" “questionable redds - polygon
-mapped with Trimble GPS unit where the substrate was disturbed but did
-not have the proper characteristics to be called a redd - it was no
-longer recorded after 2011”
+## Variable:`Type`
+
+Description:  
+Area - polygon mapped with Trimble GPS unit Point - points mapped with
+Trimble GPS unit Questionable redds - polygon mapped with Trimble GPS
+unit where the substrate was disturbed but did not have the proper
+characteristics to be called a redd - it was no longer recorded after
+2011
 
 ``` r
 table(cleaner_data_2009$type)
@@ -218,7 +223,7 @@ table(cleaner_data_2009$type)
 #        definitions = types_description)
 ```
 
-\#\#Expore Numeric Variables
+## Expore Numeric Variables
 
 ``` r
 cleaner_data_2009 %>% 
@@ -232,8 +237,9 @@ cleaner_data_2009 %>%
     ##  [9] "percent_boulder"          "redd_width_m"            
     ## [11] "redd_length_m"
 
-Numerical Data \#\#\# Variable: `salmon_counted` \#\#\#\#Plotting salmon
-counted in 2009
+### Variable:`salmon_counted`
+
+#### Plotting salmon counted in 2009
 
 ``` r
 cleaner_data_2009 %>% 
@@ -260,7 +266,8 @@ cleaner_data_2009  %>%
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
-**Numeric Daily Summary of Salmon Counted over 2009**
+
+**Numeric Daily Summary of salmon\_counted Over 2009**
 
 ``` r
 cleaner_data_2009 %>%
@@ -276,7 +283,7 @@ cleaner_data_2009 %>%
 **NA and Unknown Values** \* 0 % of values in the `salmon_counted`
 column are NA.
 
-### Variable: `percent_fine_substrate`
+### Variable:`percent_fine_substrate`
 
 ``` r
 cleaner_data_2009 %>%
@@ -291,7 +298,8 @@ cleaner_data_2009 %>%
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
-**Numeric Summary of percent\_fine\_substrate over 2009**
+
+**Numeric Summary of percent\_fine\_substrate Over 2009**
 
 ``` r
 summary(cleaner_data_2009$percent_fine_substrate)
@@ -300,10 +308,10 @@ summary(cleaner_data_2009$percent_fine_substrate)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##    0.00    5.00   10.00   12.37   20.00   33.00     214
 
-NA and Unknown Values\*\* \* 71.1 % of values in the
+**NA and Unknown Values** \* 71.1 % of values in the
 `percent_fine_substrate` column are NA.
 
-### Variable: `percent_small_substrate`
+### Variable:`percent_small_substrate`
 
 ``` r
 cleaner_data_2009 %>%
@@ -319,7 +327,7 @@ cleaner_data_2009 %>%
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
-**Numeric Summary of percent\_small\_substrate over 2009**
+**Numeric Summary of percent\_small\_substrate Over 2009**
 
 ``` r
 summary(cleaner_data_2009$percent_small_substrate)
@@ -328,10 +336,10 @@ summary(cleaner_data_2009$percent_small_substrate)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##    5.00   20.00   30.00   31.37   40.00   80.00     212
 
-NA and Unknown Values\*\* \* 70.4 % of values in the
+**NA and Unknown Values** \* 70.4 % of values in the
 `percent_small_substrate` column are NA.
 
-### Variable: `percent_medium_substrate`
+### Variable:`percent_medium_substrate`
 
 ``` r
 cleaner_data_2009 %>%
@@ -346,7 +354,8 @@ cleaner_data_2009 %>%
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
-**Numeric Summary of percent\_medium\_substrate over 2009**
+
+**Numeric Summary of percent\_medium\_substrate Over 2009**
 
 ``` r
 summary(cleaner_data_2009$percent_medium_substrate)
@@ -355,10 +364,10 @@ summary(cleaner_data_2009$percent_medium_substrate)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##   10.00   30.00   40.00   38.54   50.00   80.00     211
 
-NA and Unknown Values\*\* \* 70.1 % of values in the
+**NA and Unknown Values** \* 70.1 % of values in the
 `percent_medium_substrate` column are NA.
 
-### Variable: `percent_large_substrate`
+### Variable:`percent_large_substrate`
 
 ``` r
 cleaner_data_2009 %>%
@@ -373,7 +382,8 @@ cleaner_data_2009 %>%
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
-**Numeric Summary of percent\_large\_substrate over 2009**
+
+**Numeric Summary of percent\_large\_substrate Over 2009**
 
 ``` r
 summary(cleaner_data_2009$percent_large_substrate)
@@ -382,10 +392,10 @@ summary(cleaner_data_2009$percent_large_substrate)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##    0.00   10.00   20.00   21.96   30.00   60.00     232
 
-NA and Unknown Values\*\* \* 77.1 % of values in the
+**NA and Unknown Values** \* 77.1 % of values in the
 `percent_large_substrate` column are NA.
 
-### Variable: `percent_boulder`
+### Variable:`percent_boulder`
 
 ``` r
 cleaner_data_2009 %>%
@@ -400,7 +410,8 @@ cleaner_data_2009 %>%
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
-**Numeric Summary of percent\_boulder over 2009**
+
+**Numeric Summary of percent\_boulder Over 2009**
 
 ``` r
 summary(cleaner_data_2009$percent_large_substrate)
@@ -412,7 +423,7 @@ summary(cleaner_data_2009$percent_large_substrate)
 **NA and Unknown Values** NA and Unknown Values\*\* \* 88.4 % of values
 in the `percent_large_substrate` column are NA.
 
-### Variable: `redd_width_m`
+### Variable:`redd_width_m`
 
 ``` r
 cleaner_data_2009 %>%
@@ -438,7 +449,7 @@ cleaner_data_2009 %>%
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
-**Numeric Summary of redd\_width\_m over 2009**
+**Numeric Summary of redd\_width\_m Over 2009**
 
 ``` r
 summary(cleaner_data_2009$redd_width_m)
@@ -475,7 +486,8 @@ cleaner_data_2009 %>%
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
-**Numeric Summary of redd\_length\_m over 2009**
+
+**Numeric Summary of redd\_length\_m Over 2009**
 
 ``` r
 summary(cleaner_data_2009$redd_length_m)
