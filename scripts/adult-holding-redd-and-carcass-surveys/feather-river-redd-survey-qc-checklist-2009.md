@@ -11,22 +11,26 @@ Inigo Peng
 
 **Completeness of Record throughout timeframe: **  
 
-\*Longitude and latitude data are not available for 2009,2010,
-2011,2012,2019, 2020. NA values will be filled in for these data sets in
-final cleaned data set.
+-   Longitude and latitude data are not available for 2009,2010,
+    2011,2012,2019, 2020. NA values will be filled in for these data
+    sets in final cleaned data set.
 
-\*No data was recorded for “depth\_m”, “pot\_depth\_m”, and
-“velocity\_m/s” in 2009 data. NA values only.
+-   No data was recorded for “depth\_m”, “pot\_depth\_m”, and
+    “velocity\_m/s” in 2009 data. NA values only.
 
 **Sampling Location:** Feather River
 
 **Data Contact:** [Chris Cook](Chris.Cook@water.ca.gov)
 
 Additional Info:  
-*1. Latitude and longitude are in NAD 1983 UTM Zone 10N  
-*2. The substrate is observed visually and an estimate of the percentage
-of 5 size classes. Fines &lt;1cm, small 1-5cm, medium 6-15cm, large
-16-30cm, boulder &gt;30cm
+1. Latitude and longitude are in NAD 1983 UTM Zone 10N  
+2. The substrate is observed visually and an estimate of the percentage
+of 5 size classes:  
+\* fines &lt;1cm  
+\* small 1-5cm  
+\* medium 6-15cm  
+\* large 16-30cm  
+\* boulder &gt;30cm
 
 ## Access Cloud Data
 
@@ -80,11 +84,7 @@ raw_data_2009$'Redd Width (ft)' = raw_data_2009$'Redd Width (ft)'/3.281
 raw_data_2009$'Redd Lenght (ft)' = raw_data_2009$'Redd Lenght (ft)'/3.281
 cleaner_data_2009 <- raw_data_2009 %>%
   select(-c(Remeasured, File, '#  Redds')) %>%
-  # add_column(longitude = NA) %>% 
-  # add_column(latitude = NA) %>% 
   relocate('Survey Date', .before = 'Location') %>% 
-  # relocate('latitude', .after = '# Salmon') %>%
-  # relocate('longitude', .before = 'Depth (m)') %>%  
   rename('Date' = 'Survey Date',
          'type' = 'Type (D, A, P)', 
          'salmon_counted' = '# Salmon', 
@@ -101,8 +101,6 @@ cleaner_data_2009 <- raw_data_2009 %>%
   mutate('depth_m' = as.numeric('depth_m'),
          'pot_depth_m' = as.numeric('pot_depth_m'),
          'velocity_m/s'= as.numeric('velocity_m/s'))
-         # 'latitude' = as.numeric(latitude),
-         # 'longitude' = as.numeric(longitude)) 
 ```
 
 ``` r
@@ -200,29 +198,6 @@ table(cleaner_data_2009$type)
     ##  Area Point 
     ##   290    11
 
-``` r
-# cleaner_data_2009 <- cleaner_data_2009 %>% 
-#   mutate(type = tolower(type),
-# table(cleaner_data_2009$type)
-```
-
-``` r
-# types <- distinct(cleaner_data_2009, type) %>% 
-#   drop_na() %>% 
-#   unlist()
-# 
-# types_description <- c(
-#   "area - polygon mapped with Trimble GPS unit",
-#   "point - points mapped with Trimble GPS unit"
-#   # "questionable redds - polygon mapped with Trimble GPS unit where the substrate was disturbed but did not have the proper characteristics to be called a redd - it was no longer recorded after 2011"
-# )
-# 
-# write_rds(types_description, paste0(getwd(),"/adult-holding-redd-and-carcass-surveys/feather-river/data/types_description.rds"))
-# 
-# tibble(code = types,
-#        definitions = types_description)
-```
-
 ## Expore Numeric Variables
 
 ``` r
@@ -253,19 +228,19 @@ cleaner_data_2009 %>%
   labs(title = "Daily Count of Salmon Counted in 2009")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 cleaner_data_2009  %>%
-  ggplot(aes(x = location, y = salmon_counted))+
+  ggplot(aes(y = location, x = salmon_counted))+
   geom_boxplot() +
   theme_minimal() +
   theme(text = element_text(size = 12))+
-  theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1))+
+  theme(axis.text.x = element_text(size = 10,vjust = 0.5, hjust=0.1))+
   labs(title = "Salmon Count By Locations")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 **Numeric Daily Summary of salmon\_counted Over 2009**
 
@@ -289,15 +264,14 @@ column are NA.
 cleaner_data_2009 %>%
   group_by(location) %>% 
   summarise(mean_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(x = location, y = mean_fine_substrate)) +
+  ggplot(aes(y = location, x = mean_fine_substrate)) +
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
-  theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Average Fine Substrate By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 **Numeric Summary of percent\_fine\_substrate Over 2009**
 
@@ -317,15 +291,14 @@ summary(cleaner_data_2009$percent_fine_substrate)
 cleaner_data_2009 %>%
   group_by(location) %>% 
   summarise(mean_small_substrate = mean(percent_small_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(x = location, y = mean_small_substrate)) +
+  ggplot(aes(y = location, x = mean_small_substrate)) +
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
-  theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Average Percent Small Substrate By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 **Numeric Summary of percent\_small\_substrate Over 2009**
 
@@ -345,15 +318,14 @@ summary(cleaner_data_2009$percent_small_substrate)
 cleaner_data_2009 %>%
   group_by(location) %>% 
   summarise(mean_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(x = location, y = mean_medium_substrate)) +
+  ggplot(aes(y = location, x = mean_medium_substrate)) +
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
-  theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Average Percent Medium Substrate By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 **Numeric Summary of percent\_medium\_substrate Over 2009**
 
@@ -373,15 +345,14 @@ summary(cleaner_data_2009$percent_medium_substrate)
 cleaner_data_2009 %>%
   group_by(location) %>% 
   summarise(mean_large_substrate = mean(percent_large_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(x = location, y = mean_large_substrate)) +
+  ggplot(aes(y = location, x = mean_large_substrate)) +
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
-  theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Average Percent Large Substrate By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Numeric Summary of percent\_large\_substrate Over 2009**
 
@@ -401,15 +372,14 @@ summary(cleaner_data_2009$percent_large_substrate)
 cleaner_data_2009 %>%
   group_by(location) %>% 
   summarise(mean_boulder = mean(percent_boulder, na.rm = TRUE)) %>%
-  ggplot(aes(x = location, y = mean_boulder)) +
+  ggplot(aes(y = location, x = mean_boulder)) +
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
-  theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Average Percent Boulder By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Numeric Summary of percent\_boulder Over 2009**
 
@@ -429,15 +399,14 @@ in the `percent_large_substrate` column are NA.
 cleaner_data_2009 %>%
   group_by(location) %>%
   summarise(mean_redd_width = mean(redd_width_m, na.rm = TRUE)) %>%
-  ggplot(aes(x = location, y = mean_redd_width)) +
+  ggplot(aes(y = location, x = mean_redd_width)) +
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
-  theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Mean Redd Width By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
 cleaner_data_2009 %>%
@@ -447,7 +416,7 @@ cleaner_data_2009 %>%
   labs(title = "Count of Redd Width")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 **Numeric Summary of redd\_width\_m Over 2009**
 
@@ -467,15 +436,14 @@ are NA.
 cleaner_data_2009 %>%
   group_by(location) %>%
   summarise(mean_redd_length = mean(redd_length_m, na.rm = TRUE)) %>%
-  ggplot(aes(x = location, y = mean_redd_length)) +
+  ggplot(aes(y = location, x = mean_redd_length)) +
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
-  theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Mean Redd Length By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ``` r
 cleaner_data_2009 %>%
@@ -485,7 +453,7 @@ cleaner_data_2009 %>%
   labs(title = "Count of Redd Length")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 **Numeric Summary of redd\_length\_m Over 2009**
 
