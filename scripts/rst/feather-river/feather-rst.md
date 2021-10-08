@@ -22,21 +22,16 @@ quite a bit.
 
 **Completeness of Record throughout timeframe:** Data for every year in
 the sample timeframe, detailed start and end dates for the season are
-given in the `survey_year_details` table (Only last 10 rows are show
+given in the `survey_year_details` table (Only last 5 rows are show
 please view complete data for more info):
 
-| Site             | Location          | Survery Start | Survey End | Notes                                                                   |
-|:-----------------|:------------------|:--------------|:-----------|:------------------------------------------------------------------------|
-| Gateway Riffle   | Low Flow Channel  | 2016-12-19    | 2017-06-28 | Gap from 2/6/2017 to 6/15/2017 due to spillway incident at Oroville dam |
-| Herringer Riffle | High Flow Channel | 2016-12-19    | 2017-08-31 | Gap from 2/6/2017 to 4/26/2017 due to spillway incident at Oroville dam |
-| Eye Riffle       | Low Flow Channel  | 2017-11-27    | 2018-06-21 | NA                                                                      |
-| Herringer Riffle | High Flow Channel | 2017-11-28    | 2018-06-29 | NA                                                                      |
-| Eye Riffle       | Low Flow Channel  | 2018-12-03    | 2019-06-28 | NA                                                                      |
-| Herringer Riffle | High Flow Channel | 2018-12-06    | 2019-06-28 | NA                                                                      |
-| Eye Riffle       | Low Flow Channel  | 2019-12-11    | 2020-08-26 | NA                                                                      |
-| Herringer Riffle | High Flow Channel | 2019-12-17    | 2020-07-02 | NA                                                                      |
-| Eye Riffle       | Low Flow Channel  | 2020-12-07    | 2021-06-25 | Gap between 12/10/2020 and 3/9/2021 due to COVID shutdown               |
-| Herringer Riffle | High Flow Channel | 2020-12-07    | 2021-05-28 | Gap between 12/10/2020 and 3/10/2021 due to COVID shutdown              |
+| Site             | Location          | Survery Start | Survey End | Notes                                                      |
+|:-----------------|:------------------|:--------------|:-----------|:-----------------------------------------------------------|
+| Herringer Riffle | High Flow Channel | 2018-12-06    | 2019-06-28 | NA                                                         |
+| Eye Riffle       | Low Flow Channel  | 2019-12-11    | 2020-08-26 | NA                                                         |
+| Herringer Riffle | High Flow Channel | 2019-12-17    | 2020-07-02 | NA                                                         |
+| Eye Riffle       | Low Flow Channel  | 2020-12-07    | 2021-06-25 | Gap between 12/10/2020 and 3/9/2021 due to COVID shutdown  |
+| Herringer Riffle | High Flow Channel | 2020-12-07    | 2021-05-28 | Gap between 12/10/2020 and 3/10/2021 due to COVID shutdown |
 
 **Sampling Location:** Two RST locations are generally used, one at the
 lower end of each of the two study reaches. Typically, one RST is
@@ -259,7 +254,7 @@ cleaner_catch_data %>%
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "bottom") + 
-  labs(title = "Total Daily Raw Passage",
+  labs(title = "Total Daily Raw Passage 2011 - 2020",
        y = "Total daily catch",
        x = "Date")+ 
   facet_wrap(~water_year, scales = "free")
@@ -302,7 +297,7 @@ summary(cleaner_catch_data$count)
 ## Explore Categorical variables:
 
 ``` r
-# Filter clean data to show only categorical variables (this way we know we do not miss any)
+# Filter clean data to show only categorical variables 
 cleaner_catch_data %>% select_if(is.character) %>% colnames()
 ```
 
