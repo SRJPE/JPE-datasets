@@ -13,6 +13,8 @@ flow is strictly regulated above the Thermalito Outlet and therefore
 emigration cues and species composition may be different for the two
 reaches.
 
+**QC/raw or estimates** This data is raw passage counts and is QC.
+
 **Timeframe:** Dec 1997 - May 2021
 
 **Trapping Season:** Typically December - June, looks like it varies
@@ -20,9 +22,21 @@ quite a bit.
 
 **Completeness of Record throughout timeframe:** Data for every year in
 the sample timeframe, detailed start and end dates for the season are
-given in the `survey_year_details` table:
+given in the `survey_year_details` table (Only last 10 rows are show
+please view complete data for more info):
 
-\`
+| Site             | Location          | Survery Start | Survey End | Notes                                                                   |
+|:-----------------|:------------------|:--------------|:-----------|:------------------------------------------------------------------------|
+| Gateway Riffle   | Low Flow Channel  | 2016-12-19    | 2017-06-28 | Gap from 2/6/2017 to 6/15/2017 due to spillway incident at Oroville dam |
+| Herringer Riffle | High Flow Channel | 2016-12-19    | 2017-08-31 | Gap from 2/6/2017 to 4/26/2017 due to spillway incident at Oroville dam |
+| Eye Riffle       | Low Flow Channel  | 2017-11-27    | 2018-06-21 | NA                                                                      |
+| Herringer Riffle | High Flow Channel | 2017-11-28    | 2018-06-29 | NA                                                                      |
+| Eye Riffle       | Low Flow Channel  | 2018-12-03    | 2019-06-28 | NA                                                                      |
+| Herringer Riffle | High Flow Channel | 2018-12-06    | 2019-06-28 | NA                                                                      |
+| Eye Riffle       | Low Flow Channel  | 2019-12-11    | 2020-08-26 | NA                                                                      |
+| Herringer Riffle | High Flow Channel | 2019-12-17    | 2020-07-02 | NA                                                                      |
+| Eye Riffle       | Low Flow Channel  | 2020-12-07    | 2021-06-25 | Gap between 12/10/2020 and 3/9/2021 due to COVID shutdown               |
+| Herringer Riffle | High Flow Channel | 2020-12-07    | 2021-05-28 | Gap between 12/10/2020 and 3/10/2021 due to COVID shutdown              |
 
 **Sampling Location:** Two RST locations are generally used, one at the
 lower end of each of the two study reaches. Typically, one RST is
@@ -30,9 +44,12 @@ stationed at the bottom of Eye Side Channel, RM 60.2 (approximately one
 mile above the Thermalito Afterbay Outlet) and one stationed in the HFC
 below Herringer riffle, at RM 45.7.
 
-TODO if time add map with sites here
+See `feather-rst-effort` for additional Location information.
 
 **Data Contact:** [Kassie Hickey](mailto:KHickey@psmfc.org)
+
+Questions: all marked or unmarked? Units for Fork Length (are these
+values outrageous) Try to describe NA’s if possible Fork length by run
 
 ## Access Cloud Data
 
@@ -149,25 +166,39 @@ cleaner_catch_data %>% filter(fork_length < 250) %>% # filter out 13 points so w
   scale_x_continuous(breaks=seq(0, 200, by=25)) +
   theme_minimal() +
   labs(title = "Fork length distribution") + 
-  theme(text = element_text(size = 15),
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](feather-rst_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](feather-rst_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
-# TODO put as maybe - think about 
+# TODO maybe do forklength by lifestage (or numeric summary of this) 
 cleaner_catch_data %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = fork_length, y = year)) + 
   geom_boxplot() + 
   theme_minimal() +
   labs(title = "Fork length summarized by year") + 
-  theme(text = element_text(size = 15),
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](feather-rst_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](feather-rst_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+# TODO maybe do forklength by lifestage (or numeric summary of this) 
+cleaner_catch_data %>% 
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = fork_length, y = lifestage)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Fork length summarized by lifestage") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+![](feather-rst_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 **Numeric Summary of fork\_length over Period of Record**
 
@@ -185,11 +216,9 @@ summary(cleaner_catch_data$fork_length)
 
 ### Variable: `count`
 
-**Plotting passage counts over period of record**
+**Plotting raw passage counts over period of record**
 
 ``` r
-# Group by year and create average 
-
 cleaner_catch_data %>% 
   group_by(month = month(date), day = day(date)) %>%
   mutate(average_daily_catch = mean(count)) %>%
@@ -201,30 +230,60 @@ cleaner_catch_data %>%
   geom_point() + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
-  theme(text = element_text(size = 15),
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "bottom") + 
-  labs(title = "Daily Average Fish Passage Count (Summarized 1997-2021)",
+  labs(title = "Daily Average Raw Passage Count (Summarized 1997-2021)",
        y = "Average daily catch",
-       x = "Date")  
+       x = "Date")
 ```
 
-![](feather-rst_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](feather-rst_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
-# Figure out a second plot 
+cleaner_catch_data %>% 
+  filter(year(date) > 2010, year(date) < 2021) %>%
+  mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  left_join(sac_indices) %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  filter(water_year < 2021) %>%
+  group_by(date) %>%
+  mutate(total_daily_catch = sum(count)) %>%
+  ungroup() %>%
+  ggplot(aes(x = fake_date, y = total_daily_catch, fill = year_type)) + 
+  geom_col() + 
+  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-06-01")), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom") + 
+  labs(title = "Total Daily Raw Passage",
+       y = "Total daily catch",
+       x = "Date")+ 
+  facet_wrap(~water_year, scales = "free")
+```
+
+    ## Joining, by = "water_year"
+
+![](feather-rst_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
 cleaner_catch_data  %>%
+  filter(year(date) < 2021) %>%
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = year, y = count)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Fish Count by Year",
+  labs(title = "Total Fish Counted each Year by run",
        y = "Total fish count") + 
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  facet_wrap(~at_capture_run, scales = "free")
 ```
 
-![](feather-rst_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](feather-rst_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 **Numeric Summary of count over Period of Record**
 
