@@ -26,7 +26,6 @@ library(scales)
 
 **Sampling Location:**
 
-
 **Data Contact:** 
 
 Any additional info?
@@ -66,7 +65,7 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
-# Filter clean data to show only numeric variables (this way we know we do not miss any)
+# Filter clean data to show only numeric variables 
 ```
 
 ### Variable: `[name]`
@@ -75,7 +74,7 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 
 ```{r}
 # Make whatever plot is appropriate 
-# maybe 2 plots is appropriate
+# maybe 2+ plots are appropriate
 ```
 
 **Numeric Summary of [Variable] over Period of Record**
@@ -90,23 +89,22 @@ Provide a stat on NA or unknown values
 
 ## Explore Categorical variables: {.tabset}
 
-General notes: If there is an opertunity to turn yes no into boolean do so, but not if you loose value 
-
+General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
 
 ```{r}
-# Filter clean data to show only categorical variables (this way we know we do not miss any)
+# Filter clean data to show only categorical variables
 ```
 
 
 ### Variable: `[name]`
 ```{r}
-table() 
+#table() 
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistancies with catagorical variables
+# Fix any inconsistencies with categorical variables
 ```
 
 **Create lookup rda for [variable] encoding:** 
@@ -120,7 +118,11 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 Provide a stat on NA or unknown values
 
-### Save cleaned data back to google cloud 
+## Summary of identified issues
+
+* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
+
+## Save cleaned data back to google cloud 
 
 ```{r}
 # Write to google cloud 

@@ -284,7 +284,7 @@ names(clear_passage_viewing_condition) <- c(
   "Not Readable (high turbidity or equiptment failure)",
   "Weir is flooded")
 
-write_rds(clear_passage_viewing_condition, "../../data/clear_passage_viewing_condition.rds")
+# write_rds(clear_passage_viewing_condition, "../../data/clear_passage_viewing_condition.rds")
 
 tibble(code = clear_passage_viewing_condition, 
        definitions = names(clear_passage_viewing_condition))
@@ -301,8 +301,8 @@ tibble(code = clear_passage_viewing_condition,
 **NA and Unknown Values**
 
 -   0 % of values in the `viewing_condition` column are NA.
--   0.01 % of values in the `viewing_condition` column are considered
-    Not Readable because of high turbidity or equipment failure.
+-   1 % of values in the `viewing_condition` column are considered Not
+    Readable because of high turbidity or equipment failure.
 
 ### Variable: `adipose`
 
@@ -328,7 +328,7 @@ cleaner_video_data$adipose = tolower(if_else(cleaner_video_data$adipose == "UNK"
 **NA or Unknown Values**
 
 -   0 % of values in the `adipose` column are NA.
--   0.467 % of values in the `adipose` column are`unknown`.
+-   46.7 % of values in the `adipose` column are`unknown`.
 
 ### Variable: `sex`
 
@@ -349,8 +349,8 @@ cleaner_video_data$sex = tolower(if_else(cleaner_video_data$sex == "UNK", "unkno
 
 **NA or Unknown Values**
 
--   0.001 % of values in the `sex` column are NA.
--   0.927 % of values in the `sex` column are`unknown`.
+-   0.1 % of values in the `sex` column are NA.
+-   92.7 % of values in the `sex` column are`unknown`.
 
 ### Variable: `spawning_condition`
 
@@ -377,7 +377,7 @@ names(clear_passage_spawning_condition) <- c(
   "Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred.",
   "Unable to make distinction.")
 
-write_rds(clear_passage_spawning_condition, "../../data/clear_passage_spawning_condition.rds")
+# write_rds(clear_passage_spawning_condition, "../../data/clear_passage_spawning_condition.rds")
 
 tibble(code = clear_passage_spawning_condition, 
        definitions = names(clear_passage_spawning_condition))
@@ -394,9 +394,9 @@ tibble(code = clear_passage_spawning_condition,
 
 **NA or Unknown Values**
 
--   0.026 % of values in the `spawning_condition` column are NA.
+-   2.6 % of values in the `spawning_condition` column are NA.
 
--   0.063 % of values in the `spawning_condition` column are considered
+-   6.3 % of values in the `spawning_condition` column are considered
     Unknown.
 
 ### Variable: `jack_size`
@@ -424,8 +424,8 @@ cleaner_video_data$jack_size = tolower(if_else(cleaner_video_data$jack_size == "
 
 **NA or Unknown Values**
 
--   0.007 % of values in the `jack_size` column are NA.
--   0.009 % of values in the `jack_size` column are`unknown`.
+-   0.7 % of values in the `jack_size` column are NA.
+-   0.9 % of values in the `jack_size` column are`unknown`.
 
 ``` r
 clear_passage <- cleaner_video_data %>% 

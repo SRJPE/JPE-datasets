@@ -136,7 +136,7 @@ cleaner_video_data %>% group_by(date) %>%
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_video_data$up))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
+* `r round(sum(is.na(cleaner_video_data$up))/nrow(cleaner_video_data), 3) * 100` % of values in the `up` column are NA. However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
 
 
 ### Variable: `down` 
@@ -179,7 +179,7 @@ cleaner_video_data %>% group_by(date) %>%
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_video_data$down))/nrow(cleaner_video_data), 3)` % of values in the `up` column are NA. 
+* `r round(sum(is.na(cleaner_video_data$down))/nrow(cleaner_video_data), 3) * 100` % of values in the `up` column are NA. 
 
 ## Explore Categorical variables: {.tabset}
 
@@ -203,7 +203,7 @@ names(clear_passage_viewing_condition) <- c(
   "Not Readable (high turbidity or equiptment failure)",
   "Weir is flooded")
 
-write_rds(clear_passage_viewing_condition, "../../data/clear_passage_viewing_condition.rds")
+# write_rds(clear_passage_viewing_condition, "../../data/clear_passage_viewing_condition.rds")
 
 tibble(code = clear_passage_viewing_condition, 
        definitions = names(clear_passage_viewing_condition))
@@ -211,8 +211,8 @@ tibble(code = clear_passage_viewing_condition,
 
 **NA and Unknown Values**
   
-* `r round(sum(is.na(cleaner_video_data$viewing_condition))/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are NA. 
-* `r round(sum(cleaner_video_data$viewing_condition == "2")/nrow(cleaner_video_data), 3)` % of values in the `viewing_condition` column are considered Not Readable because of high turbidity or equipment failure. 
+* `r round(sum(is.na(cleaner_video_data$viewing_condition))/nrow(cleaner_video_data), 3) * 100` % of values in the `viewing_condition` column are NA. 
+* `r round(sum(cleaner_video_data$viewing_condition == "2")/nrow(cleaner_video_data), 3) * 100` % of values in the `viewing_condition` column are considered Not Readable because of high turbidity or equipment failure. 
 
 ### Variable: `adipose`
 ```{r}
@@ -228,8 +228,8 @@ cleaner_video_data$adipose = tolower(if_else(cleaner_video_data$adipose == "UNK"
   
 **NA or Unknown Values**
 
-* `r round(sum(is.na(cleaner_video_data$adipose))/nrow(cleaner_video_data), 3)` % of values in the `adipose` column are NA. 
-* `r round(sum(cleaner_video_data$adipose == "unknown", na.rm = T)/nrow(cleaner_video_data), 3)` % of values in the `adipose` column are`unknown`.
+* `r round(sum(is.na(cleaner_video_data$adipose))/nrow(cleaner_video_data), 3) * 100` % of values in the `adipose` column are NA. 
+* `r round(sum(cleaner_video_data$adipose == "unknown", na.rm = T)/nrow(cleaner_video_data), 3) * 100` % of values in the `adipose` column are`unknown`.
 
 
 ### Variable: `sex`
@@ -246,8 +246,8 @@ cleaner_video_data$sex = tolower(if_else(cleaner_video_data$sex == "UNK", "unkno
 
 **NA or Unknown Values**
 
-* `r round(sum(is.na(cleaner_video_data$sex))/nrow(cleaner_video_data), 3)` % of values in the `sex` column are NA.
-* `r round(sum(cleaner_video_data$sex == "unknown", na.rm = T)/nrow(cleaner_video_data), 3)` % of values in the `sex` column are`unknown`.
+* `r round(sum(is.na(cleaner_video_data$sex))/nrow(cleaner_video_data), 3) * 100` % of values in the `sex` column are NA.
+* `r round(sum(cleaner_video_data$sex == "unknown", na.rm = T)/nrow(cleaner_video_data), 3) * 100` % of values in the `sex` column are`unknown`.
 
 ### Variable: `spawning_condition`
 Describes fish condition as it relates to spawning. 
@@ -266,7 +266,7 @@ names(clear_passage_spawning_condition) <- c(
   "Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred.",
   "Unable to make distinction.")
 
-write_rds(clear_passage_spawning_condition, "../../data/clear_passage_spawning_condition.rds")
+# fwrite_rds(clear_passage_spawning_condition, "../../data/clear_passage_spawning_condition.rds")
 
 tibble(code = clear_passage_spawning_condition, 
        definitions = names(clear_passage_spawning_condition))
@@ -274,9 +274,9 @@ tibble(code = clear_passage_spawning_condition,
 
 **NA or Unknown Values**
 
-* `r round(sum(is.na(cleaner_video_data$spawning_condition))/nrow(cleaner_video_data), 3)` % of values in the `spawning_condition` column are NA. 
+* `r round(sum(is.na(cleaner_video_data$spawning_condition))/nrow(cleaner_video_data), 3) * 100` % of values in the `spawning_condition` column are NA. 
 
-* `r round(sum(cleaner_video_data$spawning_condition == "5", na.rm = T)/nrow(cleaner_video_data), 3)` % of values in the `spawning_condition` column are considered Unknown.
+* `r round(sum(cleaner_video_data$spawning_condition == "5", na.rm = T)/nrow(cleaner_video_data), 3) * 100` % of values in the `spawning_condition` column are considered Unknown.
 
 ### Variable: `jack_size`
 Whether or not the total width of Jack plate is 22".
@@ -293,8 +293,8 @@ cleaner_video_data$jack_size = tolower(if_else(cleaner_video_data$jack_size == "
 
 **NA or Unknown Values**
   
-* `r round(sum(is.na(cleaner_video_data$jack_size))/nrow(cleaner_video_data), 3)` % of values in the `jack_size` column are NA.
-* `r round(sum(cleaner_video_data$jack_size == "unknown", na.rm = T)/nrow(cleaner_video_data), 3)` % of values in the `jack_size` column are`unknown`.
+* `r round(sum(is.na(cleaner_video_data$jack_size))/nrow(cleaner_video_data), 3) * 100` % of values in the `jack_size` column are NA.
+* `r round(sum(cleaner_video_data$jack_size == "unknown", na.rm = T)/nrow(cleaner_video_data), 3) * 100` % of values in the `jack_size` column are`unknown`.
 
 
 ```{r}
