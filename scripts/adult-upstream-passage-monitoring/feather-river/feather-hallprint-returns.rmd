@@ -5,8 +5,8 @@ date: "9/29/2021"
 output: rmarkdown::github_document
 ---
 
-```{r setup, include=FALSE, fig.width=15, fig.height=10}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
@@ -19,20 +19,20 @@ library(readxl)
 
 ## Description of Monitoring Data
 
-Hallprint tagging data only describes fish marked, giving hallprint tag numbers and dates tagged for each fish. It does not include any other sampling of fish like size or genetics. The data that we have does not contain any additional information about fish returns. We currently have one file describing fish returns. We can likely acquire more but there are issues with the return data. 
+We currently only have one file describing fish returns. We can likely acquire more but the return data is currently very messy and not stored in a consistent format across years. 
 
-**Timeframe:** 2004 - 2020 
+The excel workbook that we have has 15 sheets. Most sheets are summaries of hallprint tagging data. This markdown is focused on the `Carcass Recoveries` tab of the workbook. 
+
+**Timeframe:** 2018
   
-**Season:** Tagging typically begins in April and goes through June
+**Season:** Carcass Recoveries appear to be found from September - December
   
 **Completeness of Record throughout timeframe:** 
   
-**Sampling Location:** Some tags have a acoustic location attribute. 
+**Sampling Location:** 
    
-  
 **Data Contact:** [Byron Mache](mailto:Byron.Mache@water.ca.gov) 
   
-Each fish is given two tags. The `second_tag_number` is na if the first tag and the second tag have the same number. 
   
 ## Access Cloud Data
   
@@ -61,14 +61,28 @@ sheets <- excel_sheets("raw_feather_hallprint_returns_data.xlsx")
 sheets # many sheets, most do not seem useful 
 raw_carcass_data <- read_excel("raw_feather_hallprint_returns_data.xlsx", 
                                sheet = "Carcass Recoveries",
-                               range = "A1:V209") %>% glimpse()
+                               range = "A1:V209") %>% # additonal columns are summaries
+  glimpse()
 ```
 
 ## Data transformations
 
 ```{r}
 # For different excel sheets for each year read in and combine years here
-cleaner_carcass_data <- raw_carcass_data
+cleaner_carcass_data <- raw_carcass_data %>% 
+  set_names(tolower(colnames(raw_carcass_data))) %>% 
+  rename("individual_id" = individualid, "other_marks" = othermarks,
+         "distinct_tag_applied" = disctagapplied, 
+         "color_tag_applied" = colortagapplied, 
+         "spawn_status" = spawnstatus, 
+         "fl_cm" = flcm, 
+         "adipose_fin_clip" = adfinclip, 
+         "head_number" = headnumber, 
+         "scale_number" = scalenumber, 
+         "tissue_number" = tissuenumber,
+         "otolith_number" = otolithnumber) %>% 
+  select(-flmm) %>% #we already have flcm
+  glimpse()
 ```
 
 

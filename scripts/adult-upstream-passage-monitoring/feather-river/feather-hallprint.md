@@ -186,7 +186,6 @@ More fish were tagged in 2013 than any other year. Numbers of fish
 tagged are not even over the period of record.
 
 ``` r
-# TODO Could also do a visual of when in the year this is happening (tags by month) - facet on year (some portion of years or average over years)
 cleaner_hallprint_data %>% 
   group_by(month = month(date)) %>%
   mutate(total_tags_per_month = sum(!is.na(tag_number))) %>% 
@@ -211,7 +210,7 @@ nrow(subset(cleaner_hallprint_data, is.na(cleaner_hallprint_data$tag_number)))
 
     ## [1] 147
 
--   0.001 % of values in the `tag_number` column are NA.
+-   0.1 % of values in the `tag_number` column are NA.
 
 ### Variable: `second_tag_number`
 
@@ -248,9 +247,9 @@ cleaner_hallprint_data %>%
     ## 16  2019                        1               6052    6052 FALSE              
     ## 17  2020                        3               2748    2746 FALSE
 
-**NA and Unknown Values** \* 0.516 % of values in the
-`second_tag_number` column are NA. Byron shared that if the `tag_number`
-equals the `second_tag_number` they leave `second_tag_number` as NA.
+**NA and Unknown Values** \* 51.6 % of values in the `second_tag_number`
+column are NA. Byron shared that if the `tag_number` equals the
+`second_tag_number` they leave `second_tag_number` as NA.
 
 ``` r
 # Replace 2nd tag number with first tag number if second tag number is NA
@@ -261,8 +260,11 @@ cleaner_hallprint_data$second_tag_number <- if_else(is.na(cleaner_hallprint_data
 
 ### Variable: `color`
 
+Color refers to the color of the tag. Most are actual colors, Hole
+Punches are used in the place of tags when they run out. (Hole Punch fin
+as form of tagging)
+
 ``` r
-# TODO email Byron to ask about color 
 table(cleaner_hallprint_data$color) 
 ```
 
@@ -275,20 +277,32 @@ table(cleaner_hallprint_data$color)
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-# Fix any inconsistencies with categorical variables
+unique(cleaner_hallprint_data$color)
 ```
 
-**Create lookup rda for \[variable\] encoding:**
+    ## [1] "G"          "R?"         "R"          "P"          "Y"         
+    ## [6] "Hole Punch" "?"          "YD"         "YH"
 
 ``` r
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
+# Fix any inconsistencies with categorical variables (changes made based on correspondence with Byron)
+cleaner_hallprint_data$color <- case_when(
+  cleaner_hallprint_data$color == "G" ~ "green",
+  cleaner_hallprint_data$color %in% c("R?", "R") ~ "red",
+  cleaner_hallprint_data$color %in% c("Y", "YD", "YH") ~ "yellow",
+  cleaner_hallprint_data$color == "Hole Punch" ~ "hole punch",
+  cleaner_hallprint_data$color == "P" ~ "pink",
+  cleaner_hallprint_data$color == "?" ~ "unknown",
+  TRUE ~ 'uhoh'
+)
+table(cleaner_hallprint_data$color)
 ```
 
-**NA and Unknown Values**
+    ## 
+    ##      green hole punch       pink        red    unknown     yellow 
+    ##      86631        764       1373       2475         32       7660
 
-Provide a stat on NA or unknown values
+**NA and Unknown Values** \* 0 % of values in the `color` column are
+Unknown.
 
 ### Variable: `acoustic`
 
@@ -317,8 +331,13 @@ table(cleaner_hallprint_data$acoustic)
 
 **NA and Unknown Values**
 
--   0.997 % of values in the `acoustic` column are NA. \#\#\# Variable:
-    `acoustic_location`
+-   99.7 % of values in the `acoustic` column are NA.
+
+### Variable: `acoustic_location`
+
+This fish were marked with Hallprint tags and acoustic tags in the lower
+river. These fish would be spawned as spring-run broodstock in the
+hatchery if they were to return in late September.
 
 ``` r
 table(cleaner_hallprint_data$acoustic_location) 
@@ -331,14 +350,15 @@ table(cleaner_hallprint_data$acoustic_location)
 **Create lookup rda for \[variable\] encoding:**
 
 ``` r
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
+feather_hallprint_acoustic_location <- c("SRA", "FRFH")
+names(feather_hallprint_acoustic_location) <- c("Spring Run Angling Project", "Feather River Fish Hatchery")
+
+write_rds(feather_hallprint_acoustic_location, "../../../data/feather_hallprint_acoustic_location.rds")
 ```
 
 **NA and Unknown Values**
 
--   0.997 % of values in the `acoustic_location` column are NA.
+-   99.7 % of values in the `acoustic_location` column are NA.
 
 **Summary of identified issues:** \* One identified issue is that not
 all `tags_numbers` or `second_tag_numbers` are unique.
@@ -355,7 +375,7 @@ cleaner_hallprint_data %>% glimpse()
     ## $ date              <date> 2020-05-06, 2020-05-06, 2020-05-06, 2020-05-06, 202~
     ## $ tag_number        <chr> "25703", "25704", "25705", "25707", "25708", "25709"~
     ## $ second_tag_number <chr> "25703", "25704", "25705", "25707", "25708", "25709"~
-    ## $ color             <chr> "G", "G", "G", "G", "G", "G", "G", "G", "G", "G", "G~
+    ## $ color             <chr> "green", "green", "green", "green", "green", "green"~
     ## $ acoustic          <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ acoustic_location <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 
