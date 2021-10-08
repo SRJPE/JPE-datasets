@@ -91,7 +91,8 @@ cleaner_data_2009 <- raw_data_2009 %>%
          'redd_length_m' = 'Redd Lenght (ft)') %>%
   mutate('depth_m' = as.numeric('depth_m'),
          'pot_depth_m' = as.numeric('pot_depth_m'),
-         'velocity_m/s'= as.numeric('velocity_m/s'))
+         'velocity_m/s'= as.numeric('velocity_m/s')) %>% 
+  filter(salmon_counted > 0)
 ```
 ```{r}
 
@@ -288,13 +289,6 @@ cleaner_data_2009 %>%
   theme(text = element_text(size = 8)) +
   labs(title = "Mean Redd Width By Location")
 ```
-```{r}
-cleaner_data_2009 %>%
-  ggplot(aes(x = redd_width_m)) +
-  geom_histogram(binwidth = 0.2, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2009$redd_width_m, na.rm = TRUE), max(cleaner_data_2009$redd_width_m, na.rm = TRUE), by = 0.2),1))+
-  labs(title = "Count of Redd Width")
-```
 
 **Numeric Summary of redd_width_m Over 2009**
 ```{r}
@@ -314,13 +308,6 @@ cleaner_data_2009 %>%
   theme_minimal() +
   theme(text = element_text(size = 8)) +
   labs(title = "Mean Redd Length By Location")
-```
-```{r}
-cleaner_data_2009 %>%
-  ggplot(aes(x = redd_length_m)) +
-  geom_histogram(binwidth = 0.2, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2009$redd_length_m, na.rm = TRUE), max(cleaner_data_2009$redd_length_m, na.rm = TRUE), by = 0.2),1))+
-  labs(title = "Count of Redd Length")
 ```
 
 **Numeric Summary of redd_length_m Over 2009**

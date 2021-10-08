@@ -101,27 +101,28 @@ cleaner_data_2010 <- raw_data_2010 %>%
          ) %>% 
   mutate(latitude = as.numeric(latitude),
          longitude = as.numeric(longitude)) %>% 
+  filter(salmon_counted > 0) %>% 
   glimpse()
 ```
 
-    ## Rows: 901
+    ## Rows: 398
     ## Columns: 16
-    ## $ Date                     <dttm> 2010-09-17, 2010-09-17, 2010-09-17, 2010-09-~
-    ## $ Location                 <chr> "Table Mountain", "Table Mountain", "Table Mo~
-    ## $ type                     <chr> "A", "Q", "Q", "Q", "A", "A", "Q", "A", "A", ~
-    ## $ salmon_counted           <dbl> 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, ~
+    ## $ Date                     <dttm> 2010-09-17, 2010-09-17, 2010-09-18, 2010-09-~
+    ## $ Location                 <chr> "Top of Auditorium", "Top of Auditorium", "Lo~
+    ## $ type                     <chr> "Q", "A", "A", "A", "A", "A", "Q", "A", "A", ~
+    ## $ salmon_counted           <dbl> 1, 1, 1, 1, 2, 2, 1, 1, 1, 5, 2, 2, 3, 2, 2, ~
     ## $ latitude                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ longitude                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ depth_m                  <dbl> NA, NA, NA, NA, 0.70, 0.66, NA, 0.56, 0.64, 0~
-    ## $ pot_depth_m              <dbl> 0.90, NA, NA, NA, 0.76, 0.70, NA, 0.52, 0.66,~
-    ## $ `velocity_m/s`           <dbl> 0.38, NA, NA, NA, 0.55, 0.80, NA, 0.33, 0.35,~
-    ## $ percent_fine_substrate   <dbl> 10, NA, NA, NA, 20, 10, NA, 10, 10, 10, 30, 2~
-    ## $ percent_small_substrate  <dbl> 60, NA, NA, NA, 70, 10, NA, 90, 20, 20, 40, 3~
-    ## $ percent_medium_substrate <dbl> 30, NA, NA, NA, 10, 70, NA, 0, 70, 50, 30, 50~
-    ## $ percent_large_substrate  <dbl> 0, NA, NA, NA, 0, 10, NA, 0, 0, 20, 0, 0, 0, ~
-    ## $ percent_boulder          <dbl> 0, NA, NA, NA, 0, 0, NA, 0, 0, 0, 0, 0, 0, 0,~
-    ## $ redd_width_m             <dbl> NA, 0.9143554, 1.2191405, 3.0478513, NA, NA, ~
-    ## $ redd_length_m            <dbl> NA, 0.6095703, 0.9143554, 4.5717769, NA, NA, ~
+    ## $ depth_m                  <dbl> NA, 0.56, 0.46, 0.48, 0.26, 0.30, NA, 0.34, 0~
+    ## $ pot_depth_m              <dbl> NA, 0.52, 0.46, 0.56, 0.32, 0.32, NA, 0.36, 0~
+    ## $ `velocity_m/s`           <dbl> NA, 0.33, 0.46, 0.76, 0.45, 0.25, NA, 0.78, 0~
+    ## $ percent_fine_substrate   <dbl> NA, 10, 10, 10, 10, 20, NA, 20, 30, 20, NA, N~
+    ## $ percent_small_substrate  <dbl> NA, 90, 70, 30, 70, 80, NA, 80, 60, 20, NA, N~
+    ## $ percent_medium_substrate <dbl> NA, 0, 20, 60, 20, 0, NA, 0, 10, 40, NA, NA, ~
+    ## $ percent_large_substrate  <dbl> NA, 0, 0, 0, 0, 0, NA, 0, 0, 20, NA, NA, 40, ~
+    ## $ percent_boulder          <dbl> NA, 0, 0, 0, 0, 0, NA, 0, 0, 0, NA, NA, 0, NA~
+    ## $ redd_width_m             <dbl> 1.219141, NA, NA, NA, NA, NA, 2.133496, NA, N~
+    ## $ redd_length_m            <dbl> 1.219141, NA, NA, NA, NA, NA, 2.438281, NA, N~
 
 ``` r
 cleaner_data_2010 <- cleaner_data_2010 %>% 
@@ -130,24 +131,24 @@ cleaner_data_2010 <- cleaner_data_2010 %>%
   glimpse()
 ```
 
-    ## Rows: 901
+    ## Rows: 398
     ## Columns: 16
-    ## $ date                     <date> 2010-09-17, 2010-09-17, 2010-09-17, 2010-09-~
-    ## $ location                 <chr> "Table Mountain", "Table Mountain", "Table Mo~
-    ## $ type                     <chr> "A", "Q", "Q", "Q", "A", "A", "Q", "A", "A", ~
-    ## $ salmon_counted           <dbl> 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, ~
+    ## $ date                     <date> 2010-09-17, 2010-09-17, 2010-09-18, 2010-09-~
+    ## $ location                 <chr> "Top of Auditorium", "Top of Auditorium", "Lo~
+    ## $ type                     <chr> "Q", "A", "A", "A", "A", "A", "Q", "A", "A", ~
+    ## $ salmon_counted           <dbl> 1, 1, 1, 1, 2, 2, 1, 1, 1, 5, 2, 2, 3, 2, 2, ~
     ## $ latitude                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ longitude                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ depth_m                  <dbl> NA, NA, NA, NA, 0.70, 0.66, NA, 0.56, 0.64, 0~
-    ## $ pot_depth_m              <dbl> 0.90, NA, NA, NA, 0.76, 0.70, NA, 0.52, 0.66,~
-    ## $ `velocity_m/s`           <dbl> 0.38, NA, NA, NA, 0.55, 0.80, NA, 0.33, 0.35,~
-    ## $ percent_fine_substrate   <dbl> 10, NA, NA, NA, 20, 10, NA, 10, 10, 10, 30, 2~
-    ## $ percent_small_substrate  <dbl> 60, NA, NA, NA, 70, 10, NA, 90, 20, 20, 40, 3~
-    ## $ percent_medium_substrate <dbl> 30, NA, NA, NA, 10, 70, NA, 0, 70, 50, 30, 50~
-    ## $ percent_large_substrate  <dbl> 0, NA, NA, NA, 0, 10, NA, 0, 0, 20, 0, 0, 0, ~
-    ## $ percent_boulder          <dbl> 0, NA, NA, NA, 0, 0, NA, 0, 0, 0, 0, 0, 0, 0,~
-    ## $ redd_width_m             <dbl> NA, 0.9143554, 1.2191405, 3.0478513, NA, NA, ~
-    ## $ redd_length_m            <dbl> NA, 0.6095703, 0.9143554, 4.5717769, NA, NA, ~
+    ## $ depth_m                  <dbl> NA, 0.56, 0.46, 0.48, 0.26, 0.30, NA, 0.34, 0~
+    ## $ pot_depth_m              <dbl> NA, 0.52, 0.46, 0.56, 0.32, 0.32, NA, 0.36, 0~
+    ## $ `velocity_m/s`           <dbl> NA, 0.33, 0.46, 0.76, 0.45, 0.25, NA, 0.78, 0~
+    ## $ percent_fine_substrate   <dbl> NA, 10, 10, 10, 10, 20, NA, 20, 30, 20, NA, N~
+    ## $ percent_small_substrate  <dbl> NA, 90, 70, 30, 70, 80, NA, 80, 60, 20, NA, N~
+    ## $ percent_medium_substrate <dbl> NA, 0, 20, 60, 20, 0, NA, 0, 10, 40, NA, NA, ~
+    ## $ percent_large_substrate  <dbl> NA, 0, 0, 0, 0, 0, NA, 0, 0, 20, NA, NA, 40, ~
+    ## $ percent_boulder          <dbl> NA, 0, 0, 0, 0, 0, NA, 0, 0, 0, NA, NA, 0, NA~
+    ## $ redd_width_m             <dbl> 1.219141, NA, NA, NA, NA, NA, 2.133496, NA, N~
+    ## $ redd_length_m            <dbl> 1.219141, NA, NA, NA, NA, NA, 2.438281, NA, N~
 
 ## Explore Categorical Variables
 
@@ -166,37 +167,27 @@ table(cleaner_data_2010$location)
 
     ## 
     ##                  Aleck             Auditorium                Bedrock 
-    ##                     14                    162                     22 
-    ##       Below Auditorium Below Lower Auditorium                Big Bar 
-    ##                      2                      1                      2 
-    ##          Big Hole East             Big Riffle             Cottonwood 
-    ##                      7                      2                      4 
-    ##                    Eye             Eye Riffle                    G95 
-    ##                      7                      1                      5 
-    ##             G95 Bottom           G95 East Top       G95 Side Channel 
-    ##                      7                      8                      1 
-    ##                Gateway           Goose Riffle         Hatchery Ditch 
-    ##                      5                      2                     22 
-    ##          Hatchery Pipe        Hatchery Riffle         Keister Riffle 
-    ##                     19                      1                      2 
-    ##       Lower Auditorium          Lower Bedrock             Lower Hour 
-    ##                     95                      2                      2 
-    ##         Lower Robinson                Mathews      Middle Auditorium 
-    ##                     36                     80                      3 
+    ##                      7                     57                      8 
+    ##       Below Auditorium Below Lower Auditorium          Big Hole East 
+    ##                      1                      1                      2 
+    ##                    G95             G95 Bottom           G95 East Top 
+    ##                      3                      6                      4 
+    ##           Goose Riffle         Hatchery Ditch          Hatchery Pipe 
+    ##                      1                     15                      4 
+    ##       Lower Auditorium         Lower Robinson                Mathews 
+    ##                     40                     18                     55 
     ##        Middle Robinson     Moe's Side Channel             Moes Ditch 
-    ##                     14                      5                     18 
-    ##               Robinson           Steep Riffle     Steep Side Channel 
-    ##                     35                      4                      4 
-    ##         Table Mountain      Top of Auditorium           Top of Steep 
-    ##                     46                     21                      8 
-    ##           Trailer Park            Upper Aleck       Upper Auditorium 
-    ##                    147                      3                      4 
-    ##          Upper Bedrock             Upper Hour          Upper Mathews 
-    ##                      1                      7                      1 
-    ##         Upper McFarlin         Upper Robinson             Vance East 
-    ##                      2                     38                      2 
-    ##         Vance East Top             Vance West            Weir Riffle 
-    ##                     10                      6                     11
+    ##                      1                      2                     15 
+    ##               Robinson           Steep Riffle         Table Mountain 
+    ##                     23                      1                     15 
+    ##      Top of Auditorium           Top of Steep           Trailer Park 
+    ##                      7                      3                     73 
+    ##            Upper Aleck          Upper Bedrock             Upper Hour 
+    ##                      2                      1                      2 
+    ##         Upper McFarlin         Upper Robinson         Vance East Top 
+    ##                      1                     20                      4 
+    ##             Vance West            Weir Riffle 
+    ##                      5                      1
 
 Locations names are changed to be consistent with the rest of the
 Feather River redd survey files:
@@ -220,37 +211,27 @@ table(cleaner_data_2010$location)
 
     ## 
     ##                     aleck                auditorium                   bedrock 
-    ##                        14                       162                        22 
-    ##          below auditorium    below lower auditorium                   big bar 
-    ##                         2                         1                         2 
-    ##             big hole east                big riffle                cottonwood 
-    ##                         7                         2                         4 
-    ##                       eye                eye riffle                       g95 
-    ##                         7                         1                         5 
-    ## g95 east side channel top           g95 main bottom          g95 side channel 
-    ##                         8                         7                         1 
-    ##                   gateway              goose riffle            hatchery ditch 
-    ##                         5                         2                        22 
-    ##             hatchery pipe           hatchery riffle            keister riffle 
-    ##                        19                         1                         2 
-    ##          lower auditorium             lower bedrock                lower hour 
-    ##                        95                         2                         2 
-    ##            lower robinson                   mathews            mid auditorium 
-    ##                        36                        80                         3 
+    ##                         7                        57                         8 
+    ##          below auditorium    below lower auditorium             big hole east 
+    ##                         1                         1                         2 
+    ##                       g95 g95 east side channel top           g95 main bottom 
+    ##                         3                         4                         6 
+    ##              goose riffle            hatchery ditch             hatchery pipe 
+    ##                         1                        15                         4 
+    ##          lower auditorium            lower robinson                   mathews 
+    ##                        40                        18                        55 
     ##           middle robinson               moe's ditch        moe's side channel 
-    ##                        14                        18                         5 
-    ##                  robinson              steep riffle        steep side channel 
-    ##                        35                         4                         4 
-    ##            table mountain         top of auditorium              trailer park 
-    ##                        46                        21                       147 
-    ##               upper aleck          upper auditorium             upper bedrock 
-    ##                         3                         4                         1 
-    ##                upper hour             upper mathews           upper mcfarland 
-    ##                         7                         1                         2 
+    ##                         1                        15                         2 
+    ##                  robinson              steep riffle            table mountain 
+    ##                        23                         1                        15 
+    ##         top of auditorium              trailer park               upper aleck 
+    ##                         7                        73                         2 
+    ##             upper bedrock                upper hour           upper mcfarland 
+    ##                         1                         2                         1 
     ##            upper robinson               upper steep          upper vance east 
-    ##                        38                         8                        10 
-    ##                vance east                vance west               weir riffle 
-    ##                         2                         6                        11
+    ##                        20                         3                         4 
+    ##                vance west               weir riffle 
+    ##                         5                         1
 
 -   0 % of values in the `location` column are NA.
 
@@ -268,8 +249,8 @@ table(cleaner_data_2010$type)
 ```
 
     ## 
-    ##   A   p   P   Q 
-    ## 493   1 176 231
+    ##   A   P   Q 
+    ## 247  51 100
 
 ``` r
 cleaner_data_2010 <- cleaner_data_2010 %>% 
@@ -280,7 +261,7 @@ cleaner_data_2010 <- cleaner_data_2010 %>%
 glimpse(cleaner_data_2010$type)
 ```
 
-    ##  chr [1:901] "Area" "Questionable Redds" "Questionable Redds" ...
+    ##  chr [1:398] "Questionable Redds" "Area" "Area" "Area" "Area" "Area" ...
 
 ## Expore Numeric Variables
 
@@ -341,7 +322,7 @@ cleaner_data_2010 %>%
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
     ##    2.00   32.00   52.00   77.92  100.00  217.00
 
-**NA and Unknown Values** \* 0.111 % of values in the `salmon_counted`
+**NA and Unknown Values** \* 0 % of values in the `salmon_counted`
 column are NA.
 
 ### Variable:`percent_fine_substrate`
@@ -366,9 +347,9 @@ summary(cleaner_data_2010$percent_fine_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.000   0.000  10.000   9.452  10.000  90.000     649
+    ##   0.000   0.000   0.000   9.025  10.000  80.000     277
 
-**NA and Unknown Values** \* 72 % of values in the
+**NA and Unknown Values** \* 69.6 % of values in the
 `percent_fine_substrate` column are NA.
 
 ### Variable:`percent_small_substrate`
@@ -393,9 +374,9 @@ summary(cleaner_data_2010$percent_small_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00   20.00   30.00   37.51   60.00   90.00     649
+    ##    0.00   20.00   30.00   40.17   60.00   90.00     277
 
-**NA and Unknown Values** \* 72 % of values in the
+**NA and Unknown Values** \* 69.6 % of values in the
 `percent_small_substrate` column are NA.
 
 ### Variable:`percent_medium_substrate`
@@ -420,9 +401,9 @@ summary(cleaner_data_2010$percent_medium_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00   20.00   40.00   38.48   60.00   80.00     649
+    ##    0.00   20.00   40.00   35.08   50.00   75.00     277
 
-**NA and Unknown Values** \* 72 % of values in the
+**NA and Unknown Values** \* 69.6 % of values in the
 `percent_medium_substrate` column are NA.
 
 ### Variable:`percent_large_substrate`
@@ -447,9 +428,9 @@ summary(cleaner_data_2010$percent_large_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00    0.00    0.00   14.22   25.00   80.00     649
+    ##    0.00    0.00    0.00   15.21   30.00   80.00     277
 
-**NA and Unknown Values** \* 72 % of values in the
+**NA and Unknown Values** \* 69.6 % of values in the
 `percent_large_substrate` column are NA.
 
 ### Variable:`percent_boulder`
@@ -474,10 +455,10 @@ summary(cleaner_data_2010$percent_large_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00    0.00    0.00   14.22   25.00   80.00     649
+    ##    0.00    0.00    0.00   15.21   30.00   80.00     277
 
-**NA and Unknown Values** NA and Unknown Values\*\* \* 72 % of values in
-the `percent_large_substrate` column are NA.
+**NA and Unknown Values** NA and Unknown Values\*\* \* 69.6 % of values
+in the `percent_large_substrate` column are NA.
 
 ### Variable:`redd_width_m`
 
@@ -498,7 +479,7 @@ cleaner_data_2010 %>%
 cleaner_data_2010 %>%
   ggplot(aes(x = redd_width_m)) +
   geom_histogram(binwidth = 0.5, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2010$redd_width_m, na.rm = TRUE), max(cleaner_data_2010$redd_width_m, na.rm = TRUE), by = 0.5),1))+
+  scale_x_continuous(breaks = round(seq(min(cleaner_data_2010$redd_width_m, na.rm = TRUE), max(cleaner_data_2010$redd_width_m, na.rm = TRUE), by = 1),0))+
   labs(title = "Count of Redd Width")
 ```
 
@@ -511,9 +492,9 @@ summary(cleaner_data_2010$redd_width_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.6096  1.2191  1.5239  1.9614  2.4383 12.1914     343
+    ##  0.6096  1.5239  1.5239  2.2947  3.0478 12.1914     173
 
-**NA and Unknown Values** \* 38.1 % of values in the `redd_width_m`
+**NA and Unknown Values** \* 43.5 % of values in the `redd_width_m`
 column are NA.
 
 ### Variable: `redd_length_m`
@@ -535,7 +516,7 @@ cleaner_data_2010 %>%
 cleaner_data_2010 %>%
   ggplot(aes(x = redd_length_m)) +
   geom_histogram(binwidth = 0.5, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2010$redd_length_m, na.rm = TRUE), max(cleaner_data_2010$redd_length_m, na.rm = TRUE), by = 0.5),1))+
+  scale_x_continuous(breaks = round(seq(min(cleaner_data_2010$redd_length_m, na.rm = TRUE), max(cleaner_data_2010$redd_length_m, na.rm = TRUE), by = 1),0))+
   labs(title = "Count of Redd Length")
 ```
 
@@ -548,7 +529,7 @@ summary(cleaner_data_2010$redd_length_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.000   1.524   2.438   2.759   3.048  12.191     343
+    ##  0.9144  1.5239  3.0478  3.4057  4.5718 12.1914     173
 
-**NA and Unknown Values** \* 38.1 % of values in the `redd_length_m`
+**NA and Unknown Values** \* 43.5 % of values in the `redd_length_m`
 column are NA.

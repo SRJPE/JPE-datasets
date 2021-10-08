@@ -100,7 +100,8 @@ cleaner_data_2009 <- raw_data_2009 %>%
          'redd_length_m' = 'Redd Lenght (ft)') %>%
   mutate('depth_m' = as.numeric('depth_m'),
          'pot_depth_m' = as.numeric('pot_depth_m'),
-         'velocity_m/s'= as.numeric('velocity_m/s'))
+         'velocity_m/s'= as.numeric('velocity_m/s')) %>% 
+  filter(salmon_counted > 0)
 ```
 
 ``` r
@@ -110,22 +111,22 @@ cleaner_data_2009 <- cleaner_data_2009 %>%
   glimpse()
 ```
 
-    ## Rows: 301
+    ## Rows: 127
     ## Columns: 14
-    ## $ date                     <date> 2009-09-29, 2009-09-29, 2009-09-29, 2009-09-~
-    ## $ location                 <chr> "Table Mountain", "Table Mountain", "Table Mo~
-    ## $ type                     <chr> "Area", "Point", "Area", "Area", "Area", "Are~
-    ## $ salmon_counted           <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
+    ## $ date                     <date> 2009-10-22, 2009-10-22, 2009-10-22, 2009-10-~
+    ## $ location                 <chr> "Trailer Park", "Matthews", "Matthews", "Matt~
+    ## $ type                     <chr> "Area", "Area", "Area", "Area", "Area", "Area~
+    ## $ salmon_counted           <dbl> 2, 1, 1, 1, 3, 1, 1, 2, 2, 2, 4, 1, 1, 3, 2, ~
     ## $ depth_m                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ pot_depth_m              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ `velocity_m/s`           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ percent_fine_substrate   <dbl> 10, 5, 15, 30, 25, 5, 5, 20, NA, NA, NA, NA, ~
-    ## $ percent_small_substrate  <dbl> 20, 20, 30, 50, 15, 15, 20, 20, NA, NA, NA, N~
-    ## $ percent_medium_substrate <dbl> 40, 30, 20, 20, 60, 30, 20, 60, NA, NA, NA, N~
-    ## $ percent_large_substrate  <dbl> 30, 40, 30, 0, 0, 50, 45, 0, NA, NA, NA, NA, ~
-    ## $ percent_boulder          <dbl> 0, 5, 5, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, N~
-    ## $ redd_width_m             <dbl> NA, 0.9143554, 0.9143554, 0.9143554, 1.219140~
-    ## $ redd_length_m            <dbl> NA, 1.2191405, 1.5239256, 1.2191405, 1.828710~
+    ## $ percent_fine_substrate   <dbl> NA, 5, 5, NA, NA, NA, NA, 0, 5, NA, NA, 5, NA~
+    ## $ percent_small_substrate  <dbl> NA, 30, 40, NA, NA, NA, NA, 5, 10, NA, NA, 15~
+    ## $ percent_medium_substrate <dbl> NA, 50, 40, NA, NA, NA, NA, 20, 50, NA, NA, 5~
+    ## $ percent_large_substrate  <dbl> NA, 15, 15, NA, NA, NA, NA, 60, 35, NA, NA, 3~
+    ## $ percent_boulder          <dbl> NA, 0, 0, NA, NA, NA, NA, 5, 0, NA, NA, 0, NA~
+    ## $ redd_width_m             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ redd_length_m            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
 
 ## Explore Categorical Variables
 
@@ -143,16 +144,14 @@ table(cleaner_data_2009$location)
 ```
 
     ## 
-    ##              Alec           Bedrock        Cottonwood               Eye 
-    ##                 1                 7                15                 3 
-    ##           Gateway    Hatchery Ditch     Hatchery Pipe   Hatchery Riffle 
-    ##                 1                 6                11                24 
-    ##  Lower Auditorium    Lower Robinson          Matthews Middle Auditorium 
-    ##               123                14                14                 3 
-    ##       Moe's Ditch             Steep    Table Mountain      Trailer Park 
-    ##                13                 6                20                17 
-    ##  Upper Auditorium    Upper Robinson              Wier 
-    ##                14                 7                 2
+    ##          Bedrock       Cottonwood   Hatchery Ditch    Hatchery Pipe 
+    ##                2                8                3                6 
+    ##  Hatchery Riffle Lower Auditorium   Lower Robinson         Matthews 
+    ##                5               58                1                6 
+    ##      Moe's Ditch            Steep   Table Mountain     Trailer Park 
+    ##                7                4                7                7 
+    ## Upper Auditorium   Upper Robinson 
+    ##               11                2
 
 Locations names are changed to be consistent with the rest of the
 Feather River redd survey files:
@@ -168,16 +167,14 @@ table(cleaner_data_2009$location)
 ```
 
     ## 
-    ##            aleck          bedrock       cottonwood              eye 
-    ##                1                7               15                3 
-    ##          gateway   hatchery ditch    hatchery pipe  hatchery riffle 
-    ##                1                6               11               24 
-    ## lower auditorium   lower robinson          mathews   mid auditorium 
-    ##              123               14               14                3 
+    ##          bedrock       cottonwood   hatchery ditch    hatchery pipe 
+    ##                2                8                3                6 
+    ##  hatchery riffle lower auditorium   lower robinson          mathews 
+    ##                5               58                1                6 
     ##      moe's ditch            steep   table mountain     trailer park 
-    ##               13                6               20               17 
-    ## upper auditorium   upper robinson             wier 
-    ##               14                7                2
+    ##                7                4                7                7 
+    ## upper auditorium   upper robinson 
+    ##               11                2
 
 -   0 % of values in the `location` column are NA.
 
@@ -196,7 +193,7 @@ table(cleaner_data_2009$type)
 
     ## 
     ##  Area Point 
-    ##   290    11
+    ##   124     3
 
 ## Expore Numeric Variables
 
@@ -253,7 +250,7 @@ cleaner_data_2009 %>%
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##    0.00    5.50   10.50   21.42   32.50   76.00
+    ##     4.0     7.5    14.0    25.7    33.5    76.0
 
 **NA and Unknown Values** \* 0 % of values in the `salmon_counted`
 column are NA.
@@ -280,9 +277,9 @@ summary(cleaner_data_2009$percent_fine_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00    5.00   10.00   12.37   20.00   33.00     214
+    ##    0.00    5.00   10.00   13.97   20.00   33.00      96
 
-**NA and Unknown Values** \* 71.1 % of values in the
+**NA and Unknown Values** \* 75.6 % of values in the
 `percent_fine_substrate` column are NA.
 
 ### Variable:`percent_small_substrate`
@@ -307,9 +304,9 @@ summary(cleaner_data_2009$percent_small_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    5.00   20.00   30.00   31.37   40.00   80.00     212
+    ##    5.00   20.00   30.00   32.06   40.00   80.00      96
 
-**NA and Unknown Values** \* 70.4 % of values in the
+**NA and Unknown Values** \* 75.6 % of values in the
 `percent_small_substrate` column are NA.
 
 ### Variable:`percent_medium_substrate`
@@ -334,9 +331,9 @@ summary(cleaner_data_2009$percent_medium_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   10.00   30.00   40.00   38.54   50.00   80.00     211
+    ##   10.00   30.00   40.00   39.78   50.00   60.00      95
 
-**NA and Unknown Values** \* 70.1 % of values in the
+**NA and Unknown Values** \* 74.8 % of values in the
 `percent_medium_substrate` column are NA.
 
 ### Variable:`percent_large_substrate`
@@ -361,9 +358,9 @@ summary(cleaner_data_2009$percent_large_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00   10.00   20.00   21.96   30.00   60.00     232
+    ##    0.00   10.00   17.50   21.25   30.00   60.00     103
 
-**NA and Unknown Values** \* 77.1 % of values in the
+**NA and Unknown Values** \* 81.1 % of values in the
 `percent_large_substrate` column are NA.
 
 ### Variable:`percent_boulder`
@@ -388,9 +385,9 @@ summary(cleaner_data_2009$percent_large_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00   10.00   20.00   21.96   30.00   60.00     232
+    ##    0.00   10.00   17.50   21.25   30.00   60.00     103
 
-**NA and Unknown Values** NA and Unknown Values\*\* \* 88.4 % of values
+**NA and Unknown Values** NA and Unknown Values\*\* \* 93.7 % of values
 in the `percent_large_substrate` column are NA.
 
 ### Variable:`redd_width_m`
@@ -408,16 +405,6 @@ cleaner_data_2009 %>%
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
-``` r
-cleaner_data_2009 %>%
-  ggplot(aes(x = redd_width_m)) +
-  geom_histogram(binwidth = 0.2, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2009$redd_width_m, na.rm = TRUE), max(cleaner_data_2009$redd_width_m, na.rm = TRUE), by = 0.2),1))+
-  labs(title = "Count of Redd Width")
-```
-
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
-
 **Numeric Summary of redd\_width\_m Over 2009**
 
 ``` r
@@ -425,10 +412,10 @@ summary(cleaner_data_2009$redd_width_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.6096  0.9144  0.9144  1.2395  1.2191  3.6574     286
+    ##   2.438   2.438   2.438   2.438   2.438   2.438     126
 
-**NA and Unknown Values** \* 95 % of values in the `redd_width_m` column
-are NA.
+**NA and Unknown Values** \* 99.2 % of values in the `redd_width_m`
+column are NA.
 
 ### Variable: `redd_length_m`
 
@@ -443,17 +430,7 @@ cleaner_data_2009 %>%
   labs(title = "Mean Redd Length By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
-
-``` r
-cleaner_data_2009 %>%
-  ggplot(aes(x = redd_length_m)) +
-  geom_histogram(binwidth = 0.2, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2009$redd_length_m, na.rm = TRUE), max(cleaner_data_2009$redd_length_m, na.rm = TRUE), by = 0.2),1))+
-  labs(title = "Count of Redd Length")
-```
-
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 **Numeric Summary of redd\_length\_m Over 2009**
 
@@ -462,7 +439,7 @@ summary(cleaner_data_2009$redd_length_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.9144  0.9144  1.2191  1.2191  1.3715  1.8287     286
+    ##  0.9144  0.9144  0.9144  0.9144  0.9144  0.9144     126
 
-**NA and Unknown Values** \* 95 % of values in the `redd_length_m`
+**NA and Unknown Values** \* 99.2 % of values in the `redd_length_m`
 column are NA.
