@@ -81,13 +81,13 @@ cleaner_carcass_data <- raw_carcass_data %>%
          "scale_number" = scalenumber, 
          "tissue_number" = tissuenumber,
          "otolith_number" = otolithnumber) %>% 
-  select(-flmm) %>% #we already have flcm
+  mutate(date = as.Date(date)) %>%
+  select(-flmm) %>% # we already have flcm
   glimpse()
 ```
 
 
 ## Explore Numeric Variables: {.tabset}
-
 
 ```{r}
 # Filter clean data to show only numeric variables 
