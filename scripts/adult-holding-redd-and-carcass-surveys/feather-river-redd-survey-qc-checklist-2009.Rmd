@@ -20,11 +20,12 @@ library(leaflet)
 **Timeframe:** 2009
 
 
-**Completeness of Record throughout timeframe: **
+**Completeness of Record throughout timeframe: **\
+
 *Longitude and latitude data are not available for 2009,2010, 2011,2012,2019,
 2020. NA values will be filled in for these data sets in final cleaned data set.
 
-*No data was recroded for "depth_m", "pot_depth_m", and "velocity_m/s" in 2009 data. NA 
+*No data was recorded for "depth_m", "pot_depth_m", and "velocity_m/s" in 2009 data. NA 
 values only. 
 
 **Sampling Location:** Feather River
@@ -33,9 +34,9 @@ values only.
 **Data Contact:** [Chris Cook](Chris.Cook@water.ca.gov)
 
 
-Additional Info:
-*1. *Latitude and longitude are in NAD 1983 UTM Zone 10N
-*2. *The substrate is observed visually and an estimate of the percentage of 5 size classes. Fines <1cm, small 1-5cm, medium 6-15cm, large 16-30cm, boulder >30cm
+Additional Info:  
+*1. Latitude and longitude are in NAD 1983 UTM Zone 10N\
+*2. The substrate is observed visually and an estimate of the percentage of 5 size classes. Fines <1cm, small 1-5cm, medium 6-15cm, large 16-30cm, boulder >30cm
 
 ## Access Cloud Data
 
@@ -51,7 +52,7 @@ gcs_list_objects()
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2009_Chinook_Redd_Survey_Data_raw.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "2009_Chinook_Redd_Survey_Data_raw.xlsx",
-               overwrite = TRUE)
+               Overwrite = TRUE)
 
 
 ```
@@ -62,9 +63,9 @@ raw_data_2009 = readxl::read_excel("2009_Chinook_Redd_Survey_Data_raw.xlsx",
                                    sheet="2009 All Data")
 glimpse(raw_data_2009)
 ```
-##Data Transformation
-#TODO don't add NA columns/remove na columns
-#TODO bind removed columns in final script
+
+## Data Transformation
+
 ```{r}
 raw_data_2009$'Redd Width (ft)' = raw_data_2009$'Redd Width (ft)'/3.281
 raw_data_2009$'Redd Lenght (ft)' = raw_data_2009$'Redd Lenght (ft)'/3.281
@@ -101,12 +102,16 @@ cleaner_data_2009 <- cleaner_data_2009 %>%
   mutate(date = as.Date(date)) %>% 
   glimpse()
 ```
-##Explore Categorical Variables
+
+## Explore Categorical Variables
+
 ```{r}
 cleaner_data_2009 %>% 
   select_if(is.character) %>% colnames()
 ```
-### Variable: `location`
+
+### Variable:`location`
+
 ```{r}
 table(cleaner_data_2009$location)
 ```
@@ -123,10 +128,12 @@ table(cleaner_data_2009$location)
 
 * `r round(sum(is.na(cleaner_data_2009$location))/nrow(cleaner_data_2009), 3)*100` % of values in the `location` column are NA.
 
-Variable: `Type`
-area - polygon mapped with Trimble GPS unit",
-"point - points mapped with Trimble GPS unit"
-"questionable redds - polygon mapped with Trimble GPS unit where the substrate was disturbed but did not have the proper characteristics to be called a redd - it was no longer recorded after 2011"
+## Variable:`Type`
+
+Description:  
+Area - polygon mapped with Trimble GPS unit
+Point - points mapped with Trimble GPS unit
+Questionable redds - polygon mapped with Trimble GPS unit where the substrate was disturbed but did not have the proper characteristics to be called a redd - it was no longer recorded after 2011
 
 ```{r}
 table(cleaner_data_2009$type)
@@ -154,14 +161,14 @@ table(cleaner_data_2009$type)
 #        definitions = types_description)
 ```
 
-##Expore Numeric Variables
+## Expore Numeric Variables
+
 ```{r}
 cleaner_data_2009 %>% 
   select_if(is.numeric) %>% colnames()
 ```
-Numerical Data
-### Variable: `salmon_counted`
-####Plotting salmon counted in 2009
+### Variable:`salmon_counted`  
+#### Plotting salmon counted in 2009
 ```{r}
 cleaner_data_2009 %>% 
   ggplot(aes(x = date, y = salmon_counted)) + 
@@ -183,7 +190,8 @@ cleaner_data_2009  %>%
   theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1))+
   labs(title = "Salmon Count By Locations")
 ```
-**Numeric Daily Summary of Salmon Counted over 2009**
+
+**Numeric Daily Summary of salmon_counted Over 2009**
 ```{r}
 cleaner_data_2009 %>%
   group_by(date) %>%
@@ -195,7 +203,7 @@ cleaner_data_2009 %>%
 **NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2009$salmon_counted))/nrow(cleaner_data_2009), 5)*100` % of values in the `salmon_counted` column are NA. 
 
-### Variable: `percent_fine_substrate`
+### Variable:`percent_fine_substrate`
 ```{r}
 cleaner_data_2009 %>%
   group_by(location) %>% 
@@ -207,14 +215,15 @@ cleaner_data_2009 %>%
   theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Average Fine Substrate By Location")
 ```
-**Numeric Summary of percent_fine_substrate over 2009**
+
+**Numeric Summary of percent_fine_substrate Over 2009**
 ```{r}
 summary(cleaner_data_2009$percent_fine_substrate)
 ```
-NA and Unknown Values**
+**NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2009$'percent_fine_substrate'))/nrow(cleaner_data_2009), 3)*100` % of values in the `percent_fine_substrate` column are NA.
 
-### Variable: `percent_small_substrate`
+### Variable:`percent_small_substrate`
 ```{r}
 cleaner_data_2009 %>%
   group_by(location) %>% 
@@ -227,15 +236,15 @@ cleaner_data_2009 %>%
   labs(title = "Average Percent Small Substrate By Location")
 ```
 
-**Numeric Summary of percent_small_substrate over 2009**
+**Numeric Summary of percent_small_substrate Over 2009**
 ```{r}
 summary(cleaner_data_2009$percent_small_substrate)
 ```
 
-NA and Unknown Values**
+**NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2009$'percent_small_substrate'))/nrow(cleaner_data_2009), 3)*100` % of values in the `percent_small_substrate` column are NA.
 
-### Variable: `percent_medium_substrate`
+### Variable:`percent_medium_substrate`
 ```{r}
 cleaner_data_2009 %>%
   group_by(location) %>% 
@@ -247,14 +256,15 @@ cleaner_data_2009 %>%
   theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Average Percent Medium Substrate By Location")
 ```
-**Numeric Summary of percent_medium_substrate over 2009**
+
+**Numeric Summary of percent_medium_substrate Over 2009**
 ```{r}
 summary(cleaner_data_2009$percent_medium_substrate)
 ```
-NA and Unknown Values**
+**NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2009$'percent_medium_substrate'))/nrow(cleaner_data_2009), 3)*100` % of values in the `percent_medium_substrate` column are NA.
 
-### Variable: `percent_large_substrate`
+### Variable:`percent_large_substrate`
 ```{r}
 cleaner_data_2009 %>%
   group_by(location) %>% 
@@ -266,14 +276,15 @@ cleaner_data_2009 %>%
   theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Average Percent Large Substrate By Location")
 ```
-**Numeric Summary of percent_large_substrate over 2009**
+
+**Numeric Summary of percent_large_substrate Over 2009**
 ```{r}
 summary(cleaner_data_2009$percent_large_substrate)
 ```
-NA and Unknown Values**
+**NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2009$'percent_large_substrate'))/nrow(cleaner_data_2009), 3)*100` % of values in the `percent_large_substrate` column are NA.
 
-### Variable: `percent_boulder`
+### Variable:`percent_boulder`
 ```{r}
 cleaner_data_2009 %>%
   group_by(location) %>% 
@@ -285,7 +296,8 @@ cleaner_data_2009 %>%
   theme(axis.text.x = element_text(angle = 90))+
   labs(title = "Average Percent Boulder By Location")
 ```
-**Numeric Summary of percent_boulder over 2009**
+
+**Numeric Summary of percent_boulder Over 2009**
 ```{r}
 summary(cleaner_data_2009$percent_large_substrate)
 ```
@@ -294,7 +306,7 @@ summary(cleaner_data_2009$percent_large_substrate)
 NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2009$'percent_boulder'))/nrow(cleaner_data_2009), 3)*100` % of values in the `percent_large_substrate` column are NA.
 
-### Variable: `redd_width_m`
+### Variable:`redd_width_m`
 ```{r}
 cleaner_data_2009 %>%
   group_by(location) %>%
@@ -314,7 +326,7 @@ cleaner_data_2009 %>%
   labs(title = "Count of Redd Width")
 ```
 
-**Numeric Summary of redd_width_m over 2009**
+**Numeric Summary of redd_width_m Over 2009**
 ```{r}
 summary(cleaner_data_2009$redd_width_m)
 ```
@@ -341,7 +353,8 @@ cleaner_data_2009 %>%
   scale_x_continuous(breaks = round(seq(min(cleaner_data_2009$redd_length_m, na.rm = TRUE), max(cleaner_data_2009$redd_length_m, na.rm = TRUE), by = 0.2),1))+
   labs(title = "Count of Redd Length")
 ```
-**Numeric Summary of redd_length_m over 2009**
+
+**Numeric Summary of redd_length_m Over 2009**
 ```{r}
 summary(cleaner_data_2009$redd_length_m)
 ```
