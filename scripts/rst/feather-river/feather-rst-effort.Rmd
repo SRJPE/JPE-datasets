@@ -213,7 +213,8 @@ cleaner_effort_data %>%
 ```
 
 Notes: 
-- 2006, 2017 were both wet years with low catch (see `feather-rst.md`) and high turbidity.
+
+* 2006, 2017 were both wet years with low catch (see `feather-rst.md`) and high turbidity.
 
 **Numeric Summary of turbidity_ntu over Period of Record**
   
@@ -298,7 +299,7 @@ cleaner_effort_data <-  left_join(cleaner_effort_data, cleaned_location)
 
 Map of Feather River RST: 
 
-```{r, eval = FALSE, include = FALSE}
+```{r, eval = FALSE}
 # TODO Figure out how to get in md
 library(leaflet)
 map <- leaflet(cleaned_location)  %>% 
@@ -335,7 +336,7 @@ cleaner_effort_data$trap_functioning <- ifelse(cleaner_effort_data$trap_function
   
 * `r round(sum(is.na(cleaner_effort_data$trap_functioning))/nrow(cleaner_effort_data), 3) * 100` % of values in the `trap_functioning` column are listed as NA.
 
-* `r round(sum(is.na(cleaner_effort_data$trap_functioning), cleaner_effort_data$trap_functioning == "Trap not in service", cleaner_effort_data$trap_functioning == "Trap stopped functioning", cleaner_effort_data$trap_functioning == "Trap functioning, but not normally")/nrow(cleaner_effort_data), 3) * 100` % of values in the `trap_functioning` column state that the trap is not function at normal capacity. 
+* `r round(sum(is.na(cleaner_effort_data$trap_functioning), cleaner_effort_data$trap_functioning == "Trap not in service", cleaner_effort_data$trap_functioning == "Trap stopped functioning", cleaner_effort_data$trap_functioning == "Trap functioning, but not normally", na.rm = T)/nrow(cleaner_effort_data), 3) * 100` % of values in the `trap_functioning` column state that the trap is not function at normal capacity. 
   
 ### Variable: `fish_processed`
 ```{r}

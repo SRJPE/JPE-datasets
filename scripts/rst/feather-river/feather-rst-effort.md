@@ -265,8 +265,10 @@ cleaner_effort_data %>%
 
 ![](feather-rst-effort_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
-Notes: - 2006, 2017 were both wet years with low catch (see
-`feather-rst.md`) and high turbidity.
+Notes:
+
+-   2006, 2017 were both wet years with low catch (see `feather-rst.md`)
+    and high turbidity.
 
 **Numeric Summary of turbidity\_ntu over Period of Record**
 
@@ -438,6 +440,21 @@ cleaner_effort_data <-  left_join(cleaner_effort_data, cleaned_location)
 
 Map of Feather River RST:
 
+``` r
+# TODO Figure out how to get in md
+library(leaflet)
+map <- leaflet(cleaned_location)  %>% 
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
+  addCircleMarkers(data = cleaned_location,  label = cleaned_location$sub_site_name, 
+                   weight = 1.5,
+                   opacity =  1, fillOpacity = .25, 
+                   labelOptions = labelOptions(noHide = F, # Set to F to hide labels
+                                               style = list("font-size" = "14px")), 
+                   popup = cleaned_location$sub_site_name
+  ) %>%
+  addScaleBar()
+```
+
 ### Variable: `visit_type`
 
 ``` r
@@ -480,8 +497,8 @@ cleaner_effort_data$trap_functioning <- ifelse(cleaner_effort_data$trap_function
 
 -   7.8 % of values in the `trap_functioning` column are listed as NA.
 
--   NA % of values in the `trap_functioning` column state that the trap
-    is not function at normal capacity.
+-   20.7 % of values in the `trap_functioning` column state that the
+    trap is not function at normal capacity.
 
 ### Variable: `fish_processed`
 
