@@ -134,7 +134,6 @@ cleaner_effort_data %>%
 
 ```
 ```{r}
-# TODO check on 0 point
 cleaner_effort_data %>% 
   mutate(year = as.factor(year(as.Date(visit_time)))) %>%
   ggplot(aes(x = water_temp_c, y = year)) + 
@@ -144,6 +143,11 @@ cleaner_effort_data %>%
        x = "Water Temperature C") + 
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+# All points where water temp = 0 degrees C occur in November or December and happen when trap is not in service or functioning
+zero_values <- cleaner_effort_data %>% filter(water_temp_c == 0)
 ```
 
 **Numeric Summary of water_temp_c over Period of Record**
@@ -156,8 +160,16 @@ summary(cleaner_effort_data$water_temp_c)
 **NA and Unknown Values**
   
 * `r round(sum(is.na(cleaner_effort_data$water_temp_c))/nrow(cleaner_effort_data), 3) * 100` % of values in the `water_temp_c` column are NA. 
+* 315 of the NA values are in 2008 (maybe a funding issue?)
+* Typically there are around 23 NA values in a year 
 
-TODO make note of when
+```{r, include = FALSE}
+# Table with summary statistics
+cleaner_effort_data %>% 
+  group_by(year <- year(as.Date(visit_time))) %>% 
+  summarise(na_water_temp = sum(is.na(water_temp_c))) %>%
+  summary(na_water_temp)
+```
   
 ### Variable: `turbidity_ntu`
 
@@ -200,6 +212,9 @@ cleaner_effort_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
+Notes: 
+- 2006, 2017 were both wet years with low catch (see `feather-rst.md`) and high turbidity.
+
 **Numeric Summary of turbidity_ntu over Period of Record**
   
 ```{r}
@@ -210,9 +225,16 @@ summary(cleaner_effort_data$turbidity_ntu)
 **NA and Unknown Values**
   
 * `r round(sum(is.na(cleaner_effort_data$turbidity_ntu))/nrow(cleaner_effort_data), 3) * 100` % of values in the `turbidity_ntu` column are NA.
+* Early sampling years: 1998, 1999, 2000 have many NA values
+* There are less NA in the most recent years with the exception of 2016
 
-Notes: 
-- TODO describe 2006, 2017 wet years high turbidity
+```{r, include = FALSE}
+# Table with summary statistics
+cleaner_effort_data %>% 
+  group_by(year <- year(as.Date(visit_time))) %>% 
+  summarise(na_turbidity = sum(is.na(turbidity_ntu))) %>%
+  summary(na_turbidity)
+```
 
 ## Explore Categorical variables: {.tabset}
 
@@ -228,10 +250,18 @@ table(cleaner_effort_data$sub_site_name)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
-TODO - remove hashtag and ' (foot sign) make Title case
 
 ```{r}
-cleaner_effort_data$sub_site_name <- gsub(" ", "_", tolower(cleaner_effort_data$sub_site_name))
+format_site_name <- function(string) {
+  clean <- str_replace_all(string, "[^[:alnum:]]", " ") %>% 
+    trimws() %>% 
+    stringr::str_squish() %>%
+    stringr::str_to_title()
+}
+```
+
+```{r}
+cleaner_effort_data$sub_site_name <- format_site_name(cleaner_effort_data$sub_site_name)
 table(cleaner_effort_data$sub_site_name) 
 ```
 
@@ -249,7 +279,7 @@ cleaned_location <- location_details %>%
   mutate(degree = OSMscale::degree(Latitude, Longitude),
          latitude = degree$lat,
          longitude = degree$long,
-         sub_site_name = gsub(" ", "_", tolower(sub_site_name))) %>%
+         sub_site_name = format_site_name(sub_site_name)) %>%
   select(-degree, -Latitude, -Longitude) %>%
   glimpse()
 ```
@@ -266,14 +296,27 @@ table(cleaned_location$river_location)
 cleaner_effort_data <-  left_join(cleaner_effort_data, cleaned_location) 
 ```
 
-TODO map 
+Map of Feather River RST: 
+
+```{r, eval = FALSE, include = FALSE}
+# TODO Figure out how to get in md
+library(leaflet)
+map <- leaflet(cleaned_location)  %>% 
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
+  addCircleMarkers(data = cleaned_location,  label = cleaned_location$sub_site_name, 
+                   weight = 1.5,
+                   opacity =  1, fillOpacity = .25, 
+                   labelOptions = labelOptions(noHide = F, # Set to F to hide labels
+                                               style = list("font-size" = "14px")), 
+                   popup = cleaned_location$sub_site_name
+  ) %>%
+  addScaleBar()
+```
   
 ### Variable: `visit_type`
 ```{r}
 table(cleaner_effort_data$visit_type) 
 ```
-
-TODO snake case undscores, remove symbols
 
 **NA and Unknown Values**
   
@@ -283,13 +326,16 @@ No values that do not have an associated visit type with them.
 ```{r}
 table(cleaner_effort_data$trap_functioning) 
 ```
-TODO snake case underscores, remove symbols, Not Recorded == NA
+Replace Not Recorded with NA
+```{r}
+cleaner_effort_data$trap_functioning <- ifelse(cleaner_effort_data$trap_functioning == "Not recorded", NA, cleaner_effort_data$trap_functioning)
+```
 
 **NA and Unknown Values**
   
-* `r round(sum(cleaner_effort_data$trap_functioning == "Not recorded")/nrow(cleaner_effort_data), 3) * 100` % of values in the `trap_functioning` column are listed as "Not Recorded".
+* `r round(sum(is.na(cleaner_effort_data$trap_functioning))/nrow(cleaner_effort_data), 3) * 100` % of values in the `trap_functioning` column are listed as NA.
 
-* `r round(sum(cleaner_effort_data$trap_functioning == "Not recorded", cleaner_effort_data$trap_functioning == "Trap not in service", cleaner_effort_data$trap_functioning == "Trap stopped functioning", cleaner_effort_data$trap_functioning == "Trap functioning, but not normally")/nrow(cleaner_effort_data), 3) * 100` % of values in the `trap_functioning` column state that the trap is not function at normal capacity. 
+* `r round(sum(is.na(cleaner_effort_data$trap_functioning), cleaner_effort_data$trap_functioning == "Trap not in service", cleaner_effort_data$trap_functioning == "Trap stopped functioning", cleaner_effort_data$trap_functioning == "Trap functioning, but not normally")/nrow(cleaner_effort_data), 3) * 100` % of values in the `trap_functioning` column state that the trap is not function at normal capacity. 
   
 ### Variable: `fish_processed`
 ```{r}

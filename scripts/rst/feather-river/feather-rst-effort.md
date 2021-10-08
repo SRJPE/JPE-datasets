@@ -196,6 +196,11 @@ cleaner_effort_data %>%
 
 ![](feather-rst-effort_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
+``` r
+# All points where water temp = 0 degrees C occur in November or December and happen when trap is not in service or functioning
+zero_values <- cleaner_effort_data %>% filter(water_temp_c == 0)
+```
+
 **Numeric Summary of water\_temp\_c over Period of Record**
 
 ``` r
@@ -209,6 +214,8 @@ summary(cleaner_effort_data$water_temp_c)
 **NA and Unknown Values**
 
 -   11.7 % of values in the `water_temp_c` column are NA.
+-   315 of the NA values are in 2008 (maybe a funding issue?)
+-   Typically there are around 23 NA values in a year
 
 ### Variable: `turbidity_ntu`
 
@@ -241,7 +248,7 @@ cleaner_effort_data %>%
        y = "Average Daily Turbidity NTUs")  
 ```
 
-![](feather-rst-effort_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](feather-rst-effort_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 cleaner_effort_data %>% 
@@ -256,7 +263,10 @@ cleaner_effort_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](feather-rst-effort_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](feather-rst-effort_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+Notes: - 2006, 2017 were both wet years with low catch (see
+`feather-rst.md`) and high turbidity.
 
 **Numeric Summary of turbidity\_ntu over Period of Record**
 
@@ -271,6 +281,9 @@ summary(cleaner_effort_data$turbidity_ntu)
 **NA and Unknown Values**
 
 -   23 % of values in the `turbidity_ntu` column are NA.
+-   Early sampling years: 1998, 1999, 2000 have many NA values
+-   There are less NA in the most recent years with the exception of
+    2016
 
 ## Explore Categorical variables:
 
@@ -310,28 +323,37 @@ table(cleaner_effort_data$sub_site_name)
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-cleaner_effort_data$sub_site_name <- gsub(" ", "_", tolower(cleaner_effort_data$sub_site_name))
+format_site_name <- function(string) {
+  clean <- str_replace_all(string, "[^[:alnum:]]", " ") %>% 
+    trimws() %>% 
+    stringr::str_squish() %>%
+    stringr::str_to_title()
+}
+```
+
+``` r
+cleaner_effort_data$sub_site_name <- format_site_name(cleaner_effort_data$sub_site_name)
 table(cleaner_effort_data$sub_site_name) 
 ```
 
     ## 
-    ##           #steep_riffle_rst            eye_riffle_north 
-    ##                        1012                        1995 
-    ##     eye_riffle_side_channel  gateway_main_400'_up_river 
-    ##                          77                          24 
-    ##               gateway_main1            gateway_rootball 
-    ##                         395                         178 
-    ## gateway_rootball_river_left              herringer_east 
-    ##                          32                         985 
-    ##        herringer_upper_west              herringer_west 
-    ##                         956                        1076 
-    ##                    live_oak                 shawns_east 
-    ##                         760                          23 
-    ##                 shawns_west        steep_riffle_10'_ext 
-    ##                          24                          83 
-    ##          steep_side_channel            sunset_east_bank 
+    ##            Eye Riffle North     Eye Riffle Side Channel 
+    ##                        1995                          77 
+    ##   Gateway Main 400 Up River               Gateway Main1 
+    ##                          24                         395 
+    ##            Gateway Rootball Gateway Rootball River Left 
+    ##                         178                          32 
+    ##              Herringer East        Herringer Upper West 
+    ##                         985                         956 
+    ##              Herringer West                    Live Oak 
+    ##                        1076                         760 
+    ##                 Shawns East                 Shawns West 
+    ##                          23                          24 
+    ##         Steep Riffle 10 Ext            Steep Riffle Rst 
+    ##                          83                        1012 
+    ##          Steep Side Channel            Sunset East Bank 
     ##                          38                         470 
-    ##            sunset_west_bank 
+    ##            Sunset West Bank 
     ##                         429
 
 **NA and Unknown Values**
@@ -348,7 +370,7 @@ cleaned_location <- location_details %>%
   mutate(degree = OSMscale::degree(Latitude, Longitude),
          latitude = degree$lat,
          longitude = degree$long,
-         sub_site_name = gsub(" ", "_", tolower(sub_site_name))) %>%
+         sub_site_name = format_site_name(sub_site_name)) %>%
   select(-degree, -Latitude, -Longitude) %>%
   glimpse()
 ```
@@ -356,7 +378,7 @@ cleaned_location <- location_details %>%
     ## Rows: 17
     ## Columns: 6
     ## $ site_name      <chr> "Steep Riffle", "Steep Riffle", "Steep Riffle", "Eye Ri~
-    ## $ sub_site_name  <chr> "#steep_riffle_rst", "steep_riffle_10'_ext", "steep_sid~
+    ## $ sub_site_name  <chr> "Steep Riffle Rst", "Steep Riffle 10 Ext", "Steep Side ~
     ## $ river_location <chr> "LFC", "LFC", "LFC", "LFC", "LFC", "HFC", "HFC", "HFC",~
     ## $ river_mile     <dbl> 61.0, 61.0, 61.0, 60.2, 60.2, 41.0, 46.0, 46.0, 46.0, 3~
     ## $ latitude       <dbl> 39.46210, 39.46210, 39.46201, 39.45660, 39.45623, 39.27~
@@ -380,23 +402,23 @@ table(cleaned_location$sub_site_name) # Values consistent with effort data (will
 ```
 
     ## 
-    ##           #steep_riffle_rst            eye_riffle_north 
+    ##            Eye Riffle North     Eye Riffle Side Channel 
     ##                           1                           1 
-    ##     eye_riffle_side_channel  gateway_main_400'_up_river 
+    ##   Gateway Main 400 Up River               Gateway Main1 
     ##                           1                           1 
-    ##               gateway_main1            gateway_rootball 
+    ##            Gateway Rootball Gateway Rootball River Left 
     ##                           1                           1 
-    ## gateway_rootball_river_left              herringer_east 
+    ##              Herringer East        Herringer Upper West 
     ##                           1                           1 
-    ##        herringer_upper_west              herringer_west 
+    ##              Herringer West                    Live Oak 
     ##                           1                           1 
-    ##                    live_oak                 shawns_east 
+    ##                 Shawns East                 Shawns West 
     ##                           1                           1 
-    ##                 shawns_west        steep_riffle_10'_ext 
+    ##         Steep Riffle 10 Ext            Steep Riffle Rst 
     ##                           1                           1 
-    ##          steep_side_channel            sunset_east_bank 
+    ##          Steep Side Channel            Sunset East Bank 
     ##                           1                           1 
-    ##            sunset_west_bank 
+    ##            Sunset West Bank 
     ##                           1
 
 ``` r
@@ -413,6 +435,8 @@ cleaner_effort_data <-  left_join(cleaner_effort_data, cleaned_location)
 ```
 
     ## Joining, by = "sub_site_name"
+
+Map of Feather River RST:
 
 ### Variable: `visit_type`
 
@@ -446,13 +470,18 @@ table(cleaner_effort_data$trap_functioning)
     ##           Trap stopped functioning 
     ##                                325
 
+Replace Not Recorded with NA
+
+``` r
+cleaner_effort_data$trap_functioning <- ifelse(cleaner_effort_data$trap_functioning == "Not recorded", NA, cleaner_effort_data$trap_functioning)
+```
+
 **NA and Unknown Values**
 
--   7.8 % of values in the `trap_functioning` column are listed as “Not
-    Recorded”.
+-   7.8 % of values in the `trap_functioning` column are listed as NA.
 
--   20.7 % of values in the `trap_functioning` column state that the
-    trap is not function at normal capacity.
+-   NA % of values in the `trap_functioning` column state that the trap
+    is not function at normal capacity.
 
 ### Variable: `fish_processed`
 
@@ -498,10 +527,10 @@ feather_rst_effort <- cleaner_effort_data %>%
     ## Columns: 13
     ## $ date             <date> 1997-12-22, 1997-12-23, 1997-12-26, 1997-12-27, 1997~
     ## $ site_name        <chr> "Eye Riffle", "Eye Riffle", "Eye Riffle", "Eye Riffle~
-    ## $ sub_site_name    <chr> "eye_riffle_north", "eye_riffle_north", "eye_riffle_n~
+    ## $ sub_site_name    <chr> "Eye Riffle North", "Eye Riffle North", "Eye Riffle N~
     ## $ visit_time       <dttm> 1997-12-22 10:40:00, 1997-12-23 11:40:00, 1997-12-26~
     ## $ visit_type       <chr> "Start trap & begin trapping", "End trapping", "Start~
-    ## $ trap_functioning <chr> "Trap not in service", "Not recorded", "Trap not in s~
+    ## $ trap_functioning <chr> "Trap not in service", NA, "Trap not in service", NA,~
     ## $ fish_processed   <chr> NA, "Processed fish", NA, "Processed fish", "Processe~
     ## $ water_temp_c     <dbl> NA, 8.888889, NA, 7.777778, 8.333333, 8.888889, 8.333~
     ## $ turbidity_ntu    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~

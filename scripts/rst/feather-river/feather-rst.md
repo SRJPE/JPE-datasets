@@ -168,7 +168,6 @@ cleaner_catch_data %>% filter(fork_length < 250) %>% # filter out 13 points so w
 ![](feather-rst_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
-# TODO maybe do forklength by lifestage (or numeric summary of this) 
 cleaner_catch_data %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = fork_length, y = year)) + 
@@ -182,7 +181,6 @@ cleaner_catch_data %>%
 ![](feather-rst_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
-# TODO maybe do forklength by lifestage (or numeric summary of this) 
 cleaner_catch_data %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = fork_length, y = lifestage)) + 
@@ -237,7 +235,7 @@ cleaner_catch_data %>%
 
 ``` r
 cleaner_catch_data %>% 
-  filter(year(date) > 2010, year(date) < 2021) %>%
+  filter(year(date) > 2014, year(date) < 2021) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
   mutate(year = as.factor(year(date)),
@@ -254,10 +252,11 @@ cleaner_catch_data %>%
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "bottom") + 
-  labs(title = "Total Daily Raw Passage 2011 - 2020",
+  labs(title = "Total Daily Raw Passage 2015 - 2020",
        y = "Total daily catch",
        x = "Date")+ 
-  facet_wrap(~water_year, scales = "free")
+  facet_wrap(~water_year, scales = "free") + 
+  scale_fill_manual(values = palette)
 ```
 
     ## Joining, by = "water_year"
