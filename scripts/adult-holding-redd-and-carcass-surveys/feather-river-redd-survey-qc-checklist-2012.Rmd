@@ -123,7 +123,7 @@ cleaner_data_2012 <- cleaner_data_2012 %>%
          location = if_else(location == "top g95 east side chnl", "g95 east side channel top", location),
          location = if_else(location == "top g95 main", "g95 main top", location),
          location = if_else(location == "top hour", "top of hour", location),
-         location = if_else(location == "top of moes ditch", "upper moe's ditch", location),
+         location = if_else(location == "top of moes ditch", "top of moe's ditch", location),
          location = if_else(location == "upper moes", "upper moe's ditch", location),
          location = if_else(location == "upper moes ditch", "upper moe's ditch", location),
          )

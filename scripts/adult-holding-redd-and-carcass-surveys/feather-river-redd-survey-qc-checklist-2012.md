@@ -213,7 +213,7 @@ cleaner_data_2012 <- cleaner_data_2012 %>%
          location = if_else(location == "top g95 east side chnl", "g95 east side channel top", location),
          location = if_else(location == "top g95 main", "g95 main top", location),
          location = if_else(location == "top hour", "top of hour", location),
-         location = if_else(location == "top of moes ditch", "upper moe's ditch", location),
+         location = if_else(location == "top of moes ditch", "top of moe's ditch", location),
          location = if_else(location == "upper moes", "upper moe's ditch", location),
          location = if_else(location == "upper moes ditch", "upper moe's ditch", location),
          )
@@ -253,20 +253,22 @@ table(cleaner_data_2012$location)
     ##                           12                           38 
     ##            top big hole east            top of auditorium 
     ##                            9                            6 
-    ##                  top of hour               top vance east 
-    ##                            2                            7 
-    ##               top vance west                 trailer park 
-    ##                            1                            2 
-    ##             upper auditorium                upper bedrock 
-    ##                           27                            9 
-    ##         upper hatchery ditch        upper hatchery riffle 
-    ##                           11                           58 
-    ##                upper mathews            upper moe's ditch 
-    ##                            8                           12 
-    ##               upper robinson                  upper steep 
-    ##                           32                            3 
-    ##           upper trailer park                         weir 
-    ##                            5                           11
+    ##                  top of hour           top of moe's ditch 
+    ##                            2                            2 
+    ##               top vance east               top vance west 
+    ##                            7                            1 
+    ##                 trailer park             upper auditorium 
+    ##                            2                           27 
+    ##                upper bedrock         upper hatchery ditch 
+    ##                            9                           11 
+    ##        upper hatchery riffle                upper mathews 
+    ##                           58                            8 
+    ##            upper moe's ditch               upper robinson 
+    ##                           10                           32 
+    ##                  upper steep           upper trailer park 
+    ##                            3                            5 
+    ##                         weir 
+    ##                           11
 
 -   0 % of values in the `location` column are NA.
 
@@ -368,7 +370,7 @@ cleaner_data_2012 %>%
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##    1.00    3.00   12.50   27.54   37.50  181.00
+    ##    1.00    3.00   11.00   26.96   35.00  181.00
 
 **NA and Unknown Values** \* 0 % of values in the `salmon_counted`
 column are NA.

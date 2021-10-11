@@ -263,7 +263,7 @@ cleaner_data_2015 %>%
 
 ### Variable:`salmon_counted`
 
-#### Plotting salmon counted in 2015
+#### Plotting salmon counted in 2015 
 
 ``` r
 cleaner_data_2015 %>% 
@@ -278,6 +278,7 @@ cleaner_data_2015 %>%
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2015_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
 **Numeric Daily Summary of salmon\_counted Over 2015**
 
 ``` r
@@ -303,6 +304,7 @@ cleaner_data_2015  %>%
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2015_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
 **Numeric summary of salmon\_counted by location in 2015**
 
 ``` r

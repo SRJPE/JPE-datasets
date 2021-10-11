@@ -146,7 +146,8 @@ cleaner_data_2015 %>%
   select_if(is.numeric) %>% colnames()
 ```
 ### Variable:`salmon_counted`  
-#### Plotting salmon counted in 2015
+#### Plotting salmon counted in 2015\
+
 ```{r}
 cleaner_data_2015 %>% 
   ggplot(aes(x = date, y = salmon_counted)) + 
@@ -158,6 +159,8 @@ cleaner_data_2015 %>%
   theme(axis.text.y = element_text(size = 8))+
   labs(title = "Daily Salmon Counted in 2015")
 ```
+
+
 **Numeric Daily Summary of salmon_counted Over 2015**
 ```{r}
 cleaner_data_2015 %>%
@@ -166,6 +169,7 @@ cleaner_data_2015 %>%
   pull(count) %>%
   summary()
 ```
+
 
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2015  %>%
@@ -177,6 +181,7 @@ cleaner_data_2015  %>%
   theme(axis.text.y = element_text(size = 8,vjust = 0.1, hjust=0.2))+
   labs(title = "Salmon Count By Locations")
 ```
+
 **Numeric summary of salmon_counted by location in 2015**
 ```{r}
 cleaner_data_2015 %>%
