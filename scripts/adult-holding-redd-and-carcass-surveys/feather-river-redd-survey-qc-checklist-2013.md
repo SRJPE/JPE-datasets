@@ -1,4 +1,4 @@
-feather-river-adult-holding-redd-survey-qc-checklist-2013
+feather-river-redd-survey-qc-checklist-2013
 ================
 Inigo Peng
 10/6/2021
@@ -14,9 +14,6 @@ Inigo Peng
 -   Longitude and latitude data are not available for 2009, 2010, 2011,
     2012, 2019, 2020. NA values will be filled in for these data sets in
     final cleaned data set.
-
--   No data was recorded for “depth\_m”, “pot\_depth\_m”, and
-    “velocity\_m/s” in 2009 data. NA values only.
 
 **Sampling Location:** Feather River
 
@@ -286,7 +283,7 @@ cleaner_data_2013 %>%
   labs(title = "Daily Salmon Counted in 2013")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 **Numeric Daily Summary of salmon\_counted Over 2013**
 
 ``` r
@@ -311,7 +308,7 @@ cleaner_data_2013  %>%
   labs(title = "Salmon Count By Locations")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 **Numeric summary of salmon\_counted by location in 2013**
 
 ``` r
@@ -341,7 +338,7 @@ cleaner_data_2013 %>%
   labs(title = "Mean Redd Width By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 cleaner_data_2013 %>%
@@ -351,7 +348,7 @@ cleaner_data_2013 %>%
   labs(title = "Count of Redd Width")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 **Numeric Summary of redd\_width\_m Over 2013**
 
@@ -378,7 +375,7 @@ cleaner_data_2013 %>%
   labs(title = "Mean Redd Length By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
 cleaner_data_2013 %>%
@@ -388,7 +385,7 @@ cleaner_data_2013 %>%
   labs(title = "Count of Redd Length")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Numeric Summary of redd\_length\_m Over 2013**
 
@@ -417,7 +414,7 @@ cleaner_data_2013 %>%
   labs(title = "Average Percentage of Fine Substrate By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Numeric Summary of percent\_fine\_substrate Over 2013**
 
@@ -444,7 +441,7 @@ cleaner_data_2013 %>%
   labs(title = "Average Percentage of Small Substrate By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 **Numeric Summary of percent\_small\_substrate Over 2013**
 
@@ -471,7 +468,7 @@ cleaner_data_2013 %>%
   labs(title = "Average Percentage of Medium Substrate By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 **Numeric Summary of percent\_medium\_substrate Over 2013**
 
@@ -498,7 +495,7 @@ cleaner_data_2013 %>%
   labs(title = "Average Percentage of Large Substrate By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 **Numeric Summary of percent\_large\_substrate Over 2013**
 
@@ -525,7 +522,7 @@ cleaner_data_2013 %>%
   labs(title = "Average Percentage of Boulder By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 **Numeric Summary of percent\_boulder Over 2013**
 
@@ -550,7 +547,7 @@ cleaner_data_2013 %>%
   labs(title = "Depth By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
 **Numeric Summary of depth\_m Over 2013**
 
 ``` r
@@ -574,7 +571,7 @@ cleaner_data_2013 %>%
   labs(title = "Pot Depth By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 **Numeric Summary of pot\_depth\_m Over 2013**
 
 ``` r
@@ -598,7 +595,7 @@ cleaner_data_2013 %>%
   labs(title = "Velocity By Location")
 ```
 
-![](feather-river-adult-holding-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2013_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 **Numeric Summary of velocity\_m/s Over 2013**
 
 ``` r
