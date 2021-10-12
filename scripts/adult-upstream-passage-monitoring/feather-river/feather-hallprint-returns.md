@@ -67,7 +67,8 @@ sheets # many sheets, most do not seem useful
 ``` r
 raw_carcass_data <- read_excel("raw_feather_hallprint_returns_data.xlsx", 
                                sheet = "Carcass Recoveries",
-                               range = "A1:V209") %>% glimpse()
+                               range = "A1:V209") %>% # additonal columns are summaries
+  glimpse()
 ```
 
     ## Rows: 208
@@ -99,8 +100,46 @@ raw_carcass_data <- read_excel("raw_feather_hallprint_returns_data.xlsx",
 
 ``` r
 # For different excel sheets for each year read in and combine years here
-cleaner_carcass_data <- raw_carcass_data
+cleaner_carcass_data <- raw_carcass_data %>% 
+  set_names(tolower(colnames(raw_carcass_data))) %>% 
+  rename("individual_id" = individualid, "other_marks" = othermarks,
+         "distinct_tag_applied" = disctagapplied, 
+         "color_tag_applied" = colortagapplied, 
+         "spawn_status" = spawnstatus, 
+         "fl_cm" = flcm, 
+         "adipose_fin_clip" = adfinclip, 
+         "head_number" = headnumber, 
+         "scale_number" = scalenumber, 
+         "tissue_number" = tissuenumber,
+         "otolith_number" = otolithnumber) %>% 
+  mutate(date = as.Date(date)) %>%
+  select(-flmm) %>% # we already have flcm
+  glimpse()
 ```
+
+    ## Rows: 208
+    ## Columns: 21
+    ## $ week                 <dbl> 3, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5~
+    ## $ date                 <date> 2018-09-18, 2018-09-24, 2018-09-24, 2018-10-01, ~
+    ## $ section              <chr> "4", "11", "15", "1", "6", "2", "9", "9", "10", "~
+    ## $ surveyid             <dbl> 83, 128, 132, 158, 163, 156, 165, 165, 172, 157, ~
+    ## $ individual_id        <dbl> 4, 7, 8, 11, 21, 9, 24, 25, 33, 10, 30, 17, 13, 1~
+    ## $ other_marks          <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ species              <chr> "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", ~
+    ## $ run                  <chr> "Spring", "Spring", "Spring", "Spring", "Spring",~
+    ## $ disposition          <chr> "Tagged", "Tagged", "Chopped", "Tagged", "Tagged"~
+    ## $ distinct_tag_applied <chr> "5550", "260", NA, "5561", "5558", "5850", "5553"~
+    ## $ color_tag_applied    <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ sex                  <chr> "F", "F", "Unk", "F", "F", "F", "F", "F", "F", "F~
+    ## $ spawn_status         <chr> "Y", "Y", "Unk", "Y", "Y", "Y", "Y", "Y", "Y", "Y~
+    ## $ fl_cm                <dbl> 60, 70, NA, 79, 76, 82, 60, 60, 80, 77, 79, 73, 8~
+    ## $ condition            <chr> "F", "F", "n/r", "F", "F", "F", "F", "F", "F", "F~
+    ## $ adipose_fin_clip     <chr> "Yes", "Yes", "Unknown", "Yes", "Yes", "Yes", "Ye~
+    ## $ head_number          <chr> NA, "71101", NA, "71114", "71111", "71115", "7110~
+    ## $ scale_number         <chr> "26051", "26052", NA, "26065", "26062", "26066", ~
+    ## $ tissue_number        <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ otolith_number       <chr> "72", "57", NA, "91", "79", "71", "68", "67", "59~
+    ## $ comments             <chr> "SPRING GREEN", "SPRING GREEN", "SPRING GREEN", "~
 
 ## Explore Numeric Variables:
 
@@ -109,7 +148,7 @@ cleaner_carcass_data <- raw_carcass_data
 cleaner_carcass_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "Week"         "SurveyID"     "IndividualID" "FLcm"         "FLmm"
+    ## [1] "week"          "surveyid"      "individual_id" "fl_cm"
 
 ## Explore Categorical variables:
 
@@ -118,10 +157,11 @@ cleaner_carcass_data %>% select_if(is.numeric) %>% colnames()
 cleaner_carcass_data %>% select_if(is.character) %>% colnames()
 ```
 
-    ##  [1] "Section"        "Species"        "Run"            "Disposition"   
-    ##  [5] "DiscTagApplied" "Sex"            "SpawnStatus"    "Condition"     
-    ##  [9] "AdFinClip"      "HeadNumber"     "ScaleNumber"    "OtolithNumber" 
-    ## [13] "Comments"
+    ##  [1] "section"              "species"              "run"                 
+    ##  [4] "disposition"          "distinct_tag_applied" "sex"                 
+    ##  [7] "spawn_status"         "condition"            "adipose_fin_clip"    
+    ## [10] "head_number"          "scale_number"         "otolith_number"      
+    ## [13] "comments"
 
 ### Variable: \`\`
 

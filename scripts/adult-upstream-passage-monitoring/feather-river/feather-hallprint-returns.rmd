@@ -71,7 +71,9 @@ raw_carcass_data <- read_excel("raw_feather_hallprint_returns_data.xlsx",
 # For different excel sheets for each year read in and combine years here
 cleaner_carcass_data <- raw_carcass_data %>% 
   set_names(tolower(colnames(raw_carcass_data))) %>% 
-  rename("individual_id" = individualid, "other_marks" = othermarks,
+  rename("individual_id" = individualid, 
+         "survey_id" = surveyid, 
+         "other_marks" = othermarks,
          "distinct_tag_applied" = disctagapplied, 
          "color_tag_applied" = colortagapplied, 
          "spawn_status" = spawnstatus, 
@@ -81,7 +83,11 @@ cleaner_carcass_data <- raw_carcass_data %>%
          "scale_number" = scalenumber, 
          "tissue_number" = tissuenumber,
          "otolith_number" = otolithnumber) %>% 
-  mutate(date = as.Date(date)) %>%
+  mutate(date = as.Date(date),
+         survey_id = as.character(survey_id),
+         individual_id = as.character(individual_id),
+         otolith_number = as.numeric(otolith_number)) %>%
+  filter(species == "CHN") %>%
   select(-flmm) %>% # we already have flcm
   glimpse()
 ```
@@ -93,6 +99,36 @@ cleaner_carcass_data <- raw_carcass_data %>%
 # Filter clean data to show only numeric variables 
 cleaner_carcass_data %>% select_if(is.numeric) %>% colnames()
 ```
+
+### Variable: `week`
+
+```{r}
+hist(cleaner_carcass_data$week)
+```
+Numeric Summary: 
+
+```{r}
+summary(cleaner_carcass_data$week)
+```
+
+**NA and Unknown Values**
+```{r}
+sum(is.na(cleaner_carcass_data$week))
+```
+
+There are no NA values in `week`. 
+
+### Variable: ``
+
+```{r}
+hist(cleaner_carcass_data$fl_cm)
+```
+
+**NA and Unknown Values**
+```{r}
+
+```
+There are no NA values in ``. 
 
 ## Explore Categorical variables: {.tabset}
 
