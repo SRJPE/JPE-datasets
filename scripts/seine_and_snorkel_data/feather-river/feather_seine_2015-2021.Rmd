@@ -1,5 +1,5 @@
 ---
-title: "Feather River Seine Data QC"
+title: "Feather River Seine Data 2015 - 2021 QC"
 author: "Erin Cain"
 date: "9/29/2021"
 output: rmarkdown::github_document
@@ -22,7 +22,7 @@ Feather River Seine data 2015 - 2021. All new data will be stored in this format
 
 **Timeframe:** 2015 - 2021
 
-**Seine Season:** 
+**Seine Season:** ? TODO 
 
 **Completeness of Record throughout timeframe:** 
 

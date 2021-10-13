@@ -1,5 +1,5 @@
 ---
-title: "Feather River Seine Data 2008 - 2014 QC"
+title: "Feather River Seine Data 1997 - 2001 QC"
 author: "Erin Cain"
 date: "9/29/2021"
 output: rmarkdown::github_document
@@ -18,19 +18,15 @@ library(scales)
 
 ## Description of Monitoring Data
 
-Feather River Seine data 2008 - 2014. 
+Feather River Seine data 1997 - 2021. This dataset contains less attributes than the more recent data.
 
-**Timeframe:** 2008 - 2014
+? TODO elaborate
+
+**Timeframe:** 1997 - 2001
 
 **Seine Season:** ? TODO 
 
 **Completeness of Record throughout timeframe:** 
-
-No sampling occurred in the following years: 
-
-* 2010 
-* 2011
-* 2012
 
 **Sampling Location:** Feather River
 
@@ -51,9 +47,9 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = 
-                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/all_fields_seine_2008-2014.xlsx",
+                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/all_seine_1997-2001.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_seine_2008-2014.xlsx",
+               saveToDisk = "raw_seine_1997-2001.xlsx",
                overwrite = TRUE)
 
 ```
@@ -61,7 +57,7 @@ gcs_get_object(object_name =
 Read in data from google cloud, glimpse raw data and domain description sheet: 
 ```{r, warning=FALSE}
 # read in data to clean 
-raw_seine_2008 <- read_xlsx("raw_seine_2008-2014.xlsx") %>% 
+raw_seine_1997 <- read_xlsx("raw_seine_1997-2001.xlsx") %>% 
   janitor::clean_names() %>%
   glimpse()
 
@@ -145,3 +141,4 @@ Provide a stat on NA or unknown values
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
 ```
+
