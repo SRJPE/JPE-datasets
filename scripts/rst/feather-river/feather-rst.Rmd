@@ -21,7 +21,9 @@ palette <- wesanderson::wes_palette(name = "Moonrise2")
 
 ## Description of Monitoring Data
 
-Background: The traps are typically operated for approximately seven months (December through June). Two trap locations are necessary because flow is strictly regulated above the Thermalito Outlet and therefore emigration cues and species composition may be different for the two reaches.
+RST catch data for all natural origin Chinook salmon on the Feather River. 
+
+Background: The traps are typically operated for approximately seven months (December through June). Traps are necessary on both the Low Flow Channel (LFC) and High Flow Channel (HFC) because flow is strictly regulated above the Thermalito Outlet (on the LFC) and therefore emigration cues and species composition may be different for the two reaches.
 
 **QC/raw or estimates** This data is raw passage counts and is QC. 
 
@@ -29,12 +31,22 @@ Background: The traps are typically operated for approximately seven months (Dec
   
 **Trapping Season:** Typically December - June, looks like it varies quite a bit. 
   
-**Completeness of Record throughout timeframe:** Data for every year in the sample timeframe, detailed start and end dates for the season are given in the `survey_year_details` table (Only last 5 rows are show please view complete data for more info): 
+**Completeness of Record throughout timeframe:** Data for every year in the sample timeframe, detailed start and end dates for the season are given in the `survey_year_details` table (Only the last 8 years are displayed below): 
 
 ```{r, echo = FALSE}
 survey_year_details  <- readxl::read_excel("raw_feather_rst_data.xlsx", 
-                                           sheet = "Survey Year Details") 
-knitr::kable(survey_year_details %>% tail(5))
+                                           sheet = "Survey Year Details")  %>% 
+   mutate(water_year_start = ifelse(month(`Survery Start`) %in% 9:12, year(`Survery Start`) + 1, year(`Survery Start`)),
+          water_year_end = ifelse(month(`Survey End`) %in% 9:12, year(`Survey End`) + 1, year(`Survey End`)))
+
+survey_timing <- survey_year_details %>% 
+  mutate(survey_range = paste0(month.abb[month(`Survery Start`)], " - ", month.abb[month(`Survey End`)])) %>%
+  select(Site, water_year_start, survey_range) %>%
+  pivot_wider(names_from = Site, values_from = survey_range, values_fill = "") %>% 
+  rename("Water Year" = water_year_start)
+
+knitr::kable(survey_timing %>% tail(8))
+
 ```  
 
 **Sampling Location:**
@@ -44,11 +56,6 @@ See `feather-rst-effort` for additional Location information.
   
 **Data Contact:** 
 [Kassie Hickey](mailto:KHickey@psmfc.org)
-
-Questions: all marked or unmarked? 
-Units for Fork Length (are these values outrageous)
-Try to describe NA's if possible
-Fork length by run 
   
 ## Access Cloud Data
   
@@ -97,7 +104,7 @@ raw_catch %>% glimpse()
 # Remove redundant columns
 cleaner_catch_data <- raw_catch %>%
   rename("date" = Date, "site_name" = siteName, 
-         "at_capture_run" = `At Capture Run`, 
+         "run" = `At Capture Run`, 
          "lifestage" = lifeStage, 
          "fork_length" = FL, "count" = n) %>%
   mutate(date = as.Date(date)) %>%
@@ -173,26 +180,6 @@ sac_indices <- waterYearType::water_year_indices %>%
 
 ```{r}
 cleaner_catch_data %>% 
-  group_by(month = month(date), day = day(date)) %>%
-  mutate(average_daily_catch = mean(count)) %>%
-  ungroup() %>%
-  mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = average_daily_catch)) + 
-  geom_point() + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
-  theme_minimal() + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "bottom") + 
-  labs(title = "Daily Average Raw Passage Count (Summarized 1997-2021)",
-       y = "Average daily catch",
-       x = "Date")
-
-```
-```{r}
-cleaner_catch_data %>% 
   filter(year(date) > 2014, year(date) < 2021) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
@@ -220,7 +207,7 @@ cleaner_catch_data %>%
   
 ```{r}
 cleaner_catch_data  %>%
-  filter(year(date) < 2021) %>%
+  filter(year(date) < 2021) %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = year, y = count)) + 
   geom_col() + 
@@ -229,8 +216,10 @@ cleaner_catch_data  %>%
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  facet_wrap(~at_capture_run, scales = "free")
+  facet_wrap(~run, scales = "free_y")
 ```
+
+The majority of "Not recorded" run values occur in 2015. `r sum(cleaner_catch_data %>% filter(year(date) == 2005 & run == "Not recorded") %>% pull(count))/sum(cleaner_catch_data %>% filter(year(date) == 2005) %>% pull(count)) * 1000` % of the values in 2005 are "Not recorded". 
 
 **Numeric Summary of count over Period of Record**
   
@@ -259,19 +248,25 @@ The feather river efficiency data contains additional information about sub site
 table(cleaner_catch_data$site_name) 
 ```
 
-**NA and Unknown Values**
-  
-* `r round(sum(is.na(cleaner_catch_data$site_name))/nrow(cleaner_catch_data), 3) * 100` % of values in the `site_name` column are NA. 
-
-### Variable: `at_capture_run`
 ```{r}
-table(cleaner_catch_data$at_capture_run) 
-cleaner_catch_data$at_capture_run <- ifelse(cleaner_catch_data$at_capture_run == "Not recorded", NA, tolower(cleaner_catch_data$at_capture_run))
+cleaner_catch_data$site_name <- str_replace_all(cleaner_catch_data$site_name, "'", "")
+
+table(cleaner_catch_data$site_name) 
 ```
 
 **NA and Unknown Values**
   
-* `r round(sum(is.na(cleaner_catch_data$at_capture_run))/nrow(cleaner_catch_data), 3) * 100` % of values in the `at_capture_run` column are NA. 
+* `r round(sum(is.na(cleaner_catch_data$site_name))/nrow(cleaner_catch_data), 3) * 100` % of values in the `site_name` column are NA. 
+
+### Variable: `run``
+```{r}
+table(cleaner_catch_data$run) 
+cleaner_catch_data$run <- ifelse(cleaner_catch_data$run == "Not recorded", NA, tolower(cleaner_catch_data$run))
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_catch_data$run))/nrow(cleaner_catch_data), 3) * 100` % of values in the `run` column are NA. 
 
 ### Variable: `lifestage`
 ```{r}

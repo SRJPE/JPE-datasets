@@ -7,9 +7,13 @@ Erin Cain
 
 ## Description of Monitoring Data
 
+RST catch data for all natural origin Chinook salmon on the Feather
+River.
+
 Background: The traps are typically operated for approximately seven
-months (December through June). Two trap locations are necessary because
-flow is strictly regulated above the Thermalito Outlet and therefore
+months (December through June). Traps are necessary on both the Low Flow
+Channel (LFC) and High Flow Channel (HFC) because flow is strictly
+regulated above the Thermalito Outlet (on the LFC) and therefore
 emigration cues and species composition may be different for the two
 reaches.
 
@@ -22,16 +26,19 @@ quite a bit.
 
 **Completeness of Record throughout timeframe:** Data for every year in
 the sample timeframe, detailed start and end dates for the season are
-given in the `survey_year_details` table (Only last 5 rows are show
-please view complete data for more info):
+given in the `survey_year_details` table (Only the last 8 years are
+displayed below):
 
-| Site             | Location          | Survery Start | Survey End | Notes                                                      |
-|:-----------------|:------------------|:--------------|:-----------|:-----------------------------------------------------------|
-| Herringer Riffle | High Flow Channel | 2018-12-06    | 2019-06-28 | NA                                                         |
-| Eye Riffle       | Low Flow Channel  | 2019-12-11    | 2020-08-26 | NA                                                         |
-| Herringer Riffle | High Flow Channel | 2019-12-17    | 2020-07-02 | NA                                                         |
-| Eye Riffle       | Low Flow Channel  | 2020-12-07    | 2021-06-25 | Gap between 12/10/2020 and 3/9/2021 due to COVID shutdown  |
-| Herringer Riffle | High Flow Channel | 2020-12-07    | 2021-05-28 | Gap between 12/10/2020 and 3/10/2021 due to COVID shutdown |
+| Water Year | Eye Riffle | Live Oak | Herringer Riffle | Steep Riffle | Sunset Pumps | Shawns Beach | Gateway Riffle |
+|-----------:|:-----------|:---------|:-----------------|:-------------|:-------------|:-------------|:---------------|
+|       2014 |            |          | Dec - May        |              |              |              | Dec - Apr      |
+|       2015 |            |          | Dec - May        | Dec - Apr    |              |              | Dec - May      |
+|       2016 |            |          | Dec - Apr        | Dec - Aug    |              |              | Dec - Apr      |
+|       2017 |            |          | Dec - Aug        |              |              |              | Dec - Jun      |
+|       2018 | Nov - Jun  |          | Nov - Jun        |              |              |              |                |
+|       2019 | Dec - Jun  |          | Dec - Jun        |              |              |              |                |
+|       2020 | Dec - Aug  |          | Dec - Jul        |              |              |              |                |
+|       2021 | Dec - Jun  |          | Dec - May        |              |              |              |                |
 
 **Sampling Location:** Two RST locations are generally used, one at the
 lower end of each of the two study reaches. Typically, one RST is
@@ -42,9 +49,6 @@ below Herringer riffle, at RM 45.7.
 See `feather-rst-effort` for additional Location information.
 
 **Data Contact:** [Kassie Hickey](mailto:KHickey@psmfc.org)
-
-Questions: all marked or unmarked? Units for Fork Length (are these
-values outrageous) Try to describe NA’s if possible Fork length by run
 
 ## Access Cloud Data
 
@@ -122,7 +126,7 @@ raw_catch %>% glimpse()
 # Remove redundant columns
 cleaner_catch_data <- raw_catch %>%
   rename("date" = Date, "site_name" = siteName, 
-         "at_capture_run" = `At Capture Run`, 
+         "run" = `At Capture Run`, 
          "lifestage" = lifeStage, 
          "fork_length" = FL, "count" = n) %>%
   mutate(date = as.Date(date)) %>%
@@ -134,12 +138,12 @@ cleaner_catch_data %>% glimpse()
 
     ## Rows: 180,871
     ## Columns: 6
-    ## $ date           <date> 1997-12-23, 1997-12-23, 1997-12-23, 1997-12-23, 1997-1~
-    ## $ site_name      <chr> "Eye Riffle", "Eye Riffle", "Eye Riffle", "Eye Riffle",~
-    ## $ at_capture_run <chr> "Fall", "Fall", "Fall", "Fall", "Fall", "Fall", "Fall",~
-    ## $ lifestage      <chr> "Not recorded", "Parr", "Parr", "Parr", "Parr", "Parr",~
-    ## $ fork_length    <dbl> NA, 30, 32, 33, 34, 35, 38, 29, 37, 36, 31, 34, 33, 31,~
-    ## $ count          <dbl> 65, 2, 6, 8, 16, 10, 1, 1, 2, 2, 2, 19, 10, 2, 9, 7, 1,~
+    ## $ date        <date> 1997-12-23, 1997-12-23, 1997-12-23, 1997-12-23, 1997-12-2~
+    ## $ site_name   <chr> "Eye Riffle", "Eye Riffle", "Eye Riffle", "Eye Riffle", "E~
+    ## $ run         <chr> "Fall", "Fall", "Fall", "Fall", "Fall", "Fall", "Fall", "F~
+    ## $ lifestage   <chr> "Not recorded", "Parr", "Parr", "Parr", "Parr", "Parr", "P~
+    ## $ fork_length <dbl> NA, 30, 32, 33, 34, 35, 38, 29, 37, 36, 31, 34, 33, 31, 35~
+    ## $ count       <dbl> 65, 2, 6, 8, 16, 10, 1, 1, 2, 2, 2, 19, 10, 2, 9, 7, 1, 1,~
 
 ## Explore Numeric Variables:
 
@@ -213,28 +217,6 @@ summary(cleaner_catch_data$fork_length)
 
 ``` r
 cleaner_catch_data %>% 
-  group_by(month = month(date), day = day(date)) %>%
-  mutate(average_daily_catch = mean(count)) %>%
-  ungroup() %>%
-  mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = average_daily_catch)) + 
-  geom_point() + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
-  theme_minimal() + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "bottom") + 
-  labs(title = "Daily Average Raw Passage Count (Summarized 1997-2021)",
-       y = "Average daily catch",
-       x = "Date")
-```
-
-![](feather-rst_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
-
-``` r
-cleaner_catch_data %>% 
   filter(year(date) > 2014, year(date) < 2021) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
@@ -261,11 +243,11 @@ cleaner_catch_data %>%
 
     ## Joining, by = "water_year"
 
-![](feather-rst_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](feather-rst_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 cleaner_catch_data  %>%
-  filter(year(date) < 2021) %>%
+  filter(year(date) < 2021) %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = year, y = count)) + 
   geom_col() + 
@@ -274,10 +256,13 @@ cleaner_catch_data  %>%
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  facet_wrap(~at_capture_run, scales = "free")
+  facet_wrap(~run, scales = "free_y")
 ```
 
-![](feather-rst_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](feather-rst_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+The majority of “Not recorded” run values occur in 2015. 28.3502636 % of
+the values in 2005 are “Not recorded”.
 
 **Numeric Summary of count over Period of Record**
 
@@ -300,7 +285,7 @@ summary(cleaner_catch_data$count)
 cleaner_catch_data %>% select_if(is.character) %>% colnames()
 ```
 
-    ## [1] "site_name"      "at_capture_run" "lifestage"
+    ## [1] "site_name" "run"       "lifestage"
 
 ### Variable: `site_name`
 
@@ -317,14 +302,26 @@ table(cleaner_catch_data$site_name)
     ##    Shawn's Beach     Steep Riffle     Sunset Pumps 
     ##               45            24642            15875
 
+``` r
+cleaner_catch_data$site_name <- str_replace_all(cleaner_catch_data$site_name, "'", "")
+
+table(cleaner_catch_data$site_name) 
+```
+
+    ## 
+    ##       Eye Riffle   Gateway Riffle Herringer Riffle         Live Oak 
+    ##            35969            19010            77310             8020 
+    ##     Shawns Beach     Steep Riffle     Sunset Pumps 
+    ##               45            24642            15875
+
 **NA and Unknown Values**
 
 -   0 % of values in the `site_name` column are NA.
 
-### Variable: `at_capture_run`
+### Variable: \`run\`\`
 
 ``` r
-table(cleaner_catch_data$at_capture_run) 
+table(cleaner_catch_data$run) 
 ```
 
     ## 
@@ -332,12 +329,12 @@ table(cleaner_catch_data$at_capture_run)
     ##       167243         3091          127        10407            3
 
 ``` r
-cleaner_catch_data$at_capture_run <- ifelse(cleaner_catch_data$at_capture_run == "Not recorded", NA, tolower(cleaner_catch_data$at_capture_run))
+cleaner_catch_data$run <- ifelse(cleaner_catch_data$run == "Not recorded", NA, tolower(cleaner_catch_data$run))
 ```
 
 **NA and Unknown Values**
 
--   0.1 % of values in the `at_capture_run` column are NA.
+-   0.1 % of values in the `run` column are NA.
 
 ### Variable: `lifestage`
 
@@ -369,12 +366,12 @@ feather_rst <- cleaner_catch_data %>% glimpse()
 
     ## Rows: 180,871
     ## Columns: 6
-    ## $ date           <date> 1997-12-23, 1997-12-23, 1997-12-23, 1997-12-23, 1997-1~
-    ## $ site_name      <chr> "Eye Riffle", "Eye Riffle", "Eye Riffle", "Eye Riffle",~
-    ## $ at_capture_run <chr> "fall", "fall", "fall", "fall", "fall", "fall", "fall",~
-    ## $ lifestage      <chr> NA, "parr", "parr", "parr", "parr", "parr", "parr", "pa~
-    ## $ fork_length    <dbl> NA, 30, 32, 33, 34, 35, 38, 29, 37, 36, 31, 34, 33, 31,~
-    ## $ count          <dbl> 65, 2, 6, 8, 16, 10, 1, 1, 2, 2, 2, 19, 10, 2, 9, 7, 1,~
+    ## $ date        <date> 1997-12-23, 1997-12-23, 1997-12-23, 1997-12-23, 1997-12-2~
+    ## $ site_name   <chr> "Eye Riffle", "Eye Riffle", "Eye Riffle", "Eye Riffle", "E~
+    ## $ run         <chr> "fall", "fall", "fall", "fall", "fall", "fall", "fall", "f~
+    ## $ lifestage   <chr> NA, "parr", "parr", "parr", "parr", "parr", "parr", "parr"~
+    ## $ fork_length <dbl> NA, 30, 32, 33, 34, 35, 38, 29, 37, 36, 31, 34, 33, 31, 35~
+    ## $ count       <dbl> 65, 2, 6, 8, 16, 10, 1, 1, 2, 2, 2, 19, 10, 2, 9, 7, 1, 1,~
 
 ### Save cleaned data back to google cloud
 

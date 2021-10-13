@@ -214,7 +214,10 @@ summary(cleaner_effort_data$water_temp_c)
 **NA and Unknown Values**
 
 -   11.7 % of values in the `water_temp_c` column are NA.
--   315 of the NA values are in 2008 (maybe a funding issue?)
+-   315 of the NA values are in 2008 (maybe a funding issue?). NAs
+    account for
+    `315/nrow(cleaner_effort_data %>% filter(year(visit_time) == 2008)) * 100`
+    % of the 2008 data.
 -   Typically there are around 23 NA values in a year
 
 ### Variable: `turbidity_ntu`
@@ -268,7 +271,8 @@ cleaner_effort_data %>%
 Notes:
 
 -   2006, 2017 were both wet years with low catch (see `feather-rst.md`)
-    and high turbidity.
+    and high turbidity. We know that in wet years high flows can
+    increase turbidity and impede trap functionality.
 
 **Numeric Summary of turbidity\_ntu over Period of Record**
 
@@ -523,6 +527,14 @@ cleaner_effort_data$fish_processed <- ifelse(cleaner_effort_data$fish_processed 
 **NA and Unknown Values**
 
 -   8.1 % of values in the `fish_processed` column are NA.
+
+### Identified issues with this dataset
+
+-   Not all the years have the same coverage.
+    -   2008 data is 66 % NAs.
+    -   2017 and 2006 are both low catch years. These were wet years
+        with difficult trapping conditions. Low catch may be due to
+        traps not functioning correctly.
 
 ### Save cleaned data back to google cloud
 
