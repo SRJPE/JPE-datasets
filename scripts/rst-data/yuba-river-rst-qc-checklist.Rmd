@@ -1,0 +1,193 @@
+---
+title: "yuba-river-rst-qc-checklist"
+author: "Inigo Peng"
+date: "10/11/2021"
+output: rmarkdown::github_document
+---
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(leaflet)
+```
+# Yuba River RST Data  
+
+## Description of Monitoring Data
+
+**Timeframe:** 2000-2008
+
+
+**Completeness of Record throughout timeframe: **\
+
+TODO
+
+
+**Sampling Location:** Yuba River
+
+
+**Data Contact:** [Robyn Bilski](Robyn.Bilski@Wildlife.ca.gov)
+
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = "rst/yuba-river/data-raw/yuba-river-rst-data.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "yuba-rst.xlsx",
+               overwrite = TRUE)
+
+
+```
+
+Read in data from google cloud, glimpse raw data:
+```{r}
+raw_data = readxl::read_excel('yuba-rst.xlsx', col_types = c("text",
+                                                             "date",
+                                                             "date",
+                                                             "text",
+                                                             "numeric",
+                                                             "numeric",
+                                                             "numeric",
+                                                             "text",
+                                                             "numeric",
+                                                             "numeric",
+                                                             "numeric",
+                                                             "numeric",
+                                                             "numeric",
+                                                             "text",
+                                                             "text",
+                                                             "text",
+                                                             "text",
+                                                             "numeric",
+                                                             "numeric",
+                                                             "text",
+                                                             "numeric",
+                                                             'text',
+                                                             'numeric',
+                                                             'numeric'))
+glimpse(raw_data)
+```
+
+## Data Transformation
+
+```{r}
+cleaner_data <- raw_data %>% 
+  select(-c('Catch_Entry_SampleRowID', 'CatchRowID')) %>% 
+  rename('id' = Sample_Entry_SampleRowID,
+         'date'= SampleDate,
+         'time' = SampleTime,
+         'method' = MethodCode,
+         'water_temp' = WaterTemperature,
+         'turbidity' = Turbidity,
+         'water_velocity' = WaterVelocity,
+         'trap_status' = TrapStatus,
+         'trap_revolutions' = TrapRevolutions,
+         'trap_revolutions2' = TrapRevolutions2,
+         'rpms_before' = RPMsBefore,
+         'rpms_after' = RPMsAfter,
+         'organism_code' = OrganismCode,
+         'fork_length' = ForkLength,
+         'stage_code' = StageCode
+         ) %>%
+  mutate(time = hms::as_hms(time)) %>%
+  filter(organism_code == 'CHN', rm.na = TRUE) %>% 
+  glimpse()
+```
+```{r}
+cleaner_data <- cleaner_data %>% 
+  set_names(tolower(colnames(cleaner_data))) %>% 
+  glimpse()
+```
+
+## Explore Numeric Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.numeric) %>% colnames()
+```
+
+### Variable:`water_temp`
+#TODO: figure out what's happenign with the high temperature
+#note: 2000 - fst had lower temperature (15s) while rst had high temp (60s) on the same day
+
+```{r}
+cleaner_data %>% 
+  group_by(date) %>%
+  mutate(avg_temp = mean(water_temp, na.rm = T)) %>%
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
+  geom_point(alpha = .25) + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily Water Temperature (colored by year)",
+       y = "Average daily temp", 
+       x = "Date")  
+```
+```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = water_temp, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Water Temperature summarized by year",
+       x = "Water Temperature C") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+```{r}
+summary(cleaner_data$water_temp)
+```
+
+
+### Variable:`turbidity`
+```{r}
+cleaner_data %>% 
+  group_by(date) %>%
+  mutate(avg_temp = mean(turbidity, na.rm = T)) %>%
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
+  geom_point(alpha = .25) + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily Water Turbidity (colored by year)",
+       y = "Average daily turbdity", 
+       x = "Date")  
+```
+```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = turbidity, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Turbdity summarized by year",
+       x = "Turbidity") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
