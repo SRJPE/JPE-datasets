@@ -27,6 +27,8 @@ library(leaflet)
 * No data was recorded for "depth_m", "pot_depth_m", and "velocity_m/s" in 2009 data. NA 
 values only. 
 
+*Only 1 data point was recorded for "redd_width_m" and "redd_length_m".
+
 **Sampling Location:** Feather River
 
 
@@ -180,6 +182,34 @@ cleaner_data_2009 %>%
 **NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2009$salmon_counted))/nrow(cleaner_data_2009), 5)*100` % of values in the `salmon_counted` column are NA. 
 
+
+### Variable:`redd_width_m`
+Only one redd_width_m was recorded in 2009.
+
+**Numeric Summary of redd_width_m Over 2009**
+```{r}
+summary(cleaner_data_2009$redd_width_m)
+```
+**NA and Unknown Values**
+* `r round(sum(is.na(cleaner_data_2009$'redd_width_m'))/nrow(cleaner_data_2009), 3)*100` % of values in the `redd_width_m` column are NA.
+
+
+### Variable: `redd_length_m`
+Only one redd_length_m was recorded in 2009.
+
+**Numeric Summary of redd_length_m Over 2009**
+```{r}
+summary(cleaner_data_2009$redd_length_m)
+```
+**NA and Unknown Values**
+* `r round(sum(is.na(cleaner_data_2009$'redd_length_m'))/nrow(cleaner_data_2009), 3)*100` % of values in the `redd_length_m` column are NA.
+
+```{r}
+feather_redd_survey_2009 <- cleaner_data_2009 %>% glimpse()
+```
+
+### Location Physical Attributes
+
 ### Variable:`percent_fine_substrate`
 ```{r}
 cleaner_data_2009 %>%
@@ -271,49 +301,20 @@ cleaner_data_2009 %>%
 
 **Numeric Summary of percent_boulder Over 2009**
 ```{r}
-summary(cleaner_data_2009$percent_large_substrate)
+summary(cleaner_data_2009$percent_boulder)
 ```
 
 **NA and Unknown Values**
 NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2009$'percent_boulder'))/nrow(cleaner_data_2009), 3)*100` % of values in the `percent_large_substrate` column are NA.
 
-### Variable:`redd_width_m`
+
+### Add cleaned data back onto google cloud
 ```{r}
-cleaner_data_2009 %>%
-  group_by(location) %>%
-  summarise(mean_redd_width = mean(redd_width_m, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_redd_width)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Mean Redd Width By Location")
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_redd_survey_2009,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/2009_Chinook_Redd_Survey_Data.csv")
 ```
-
-**Numeric Summary of redd_width_m Over 2009**
-```{r}
-summary(cleaner_data_2009$redd_width_m)
-```
-**NA and Unknown Values**
-* `r round(sum(is.na(cleaner_data_2009$'redd_width_m'))/nrow(cleaner_data_2009), 3)*100` % of values in the `redd_width_m` column are NA.
-
-
-### Variable: `redd_length_m`
-```{r}
-cleaner_data_2009 %>%
-  group_by(location) %>%
-  summarise(mean_redd_length = mean(redd_length_m, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_redd_length)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Mean Redd Length By Location")
-```
-
-**Numeric Summary of redd_length_m Over 2009**
-```{r}
-summary(cleaner_data_2009$redd_length_m)
-```
-**NA and Unknown Values**
-* `r round(sum(is.na(cleaner_data_2009$'redd_length_m'))/nrow(cleaner_data_2009), 3)*100` % of values in the `redd_length_m` column are NA.
-

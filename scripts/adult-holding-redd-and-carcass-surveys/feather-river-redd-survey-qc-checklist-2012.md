@@ -577,11 +577,11 @@ cleaner_data_2012 %>%
 **Numeric Summary of percent\_boulder Over 2012**
 
 ``` r
-summary(cleaner_data_2012$percent_large_substrate)
+summary(cleaner_data_2012$percent_boulder)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00    3.75   10.00   13.75   20.00   55.00     598
+    ##   0.000   0.000   0.000   1.094   0.000  25.000     598
 
 **NA and Unknown Values** NA and Unknown Values\*\* \* 94.9 % of values
 in the `percent_large_substrate` column are NA.
@@ -590,11 +590,13 @@ in the `percent_large_substrate` column are NA.
 
 ``` r
 cleaner_data_2012 %>% 
-  ggplot(aes(x = depth_m, y = location)) + 
+  group_by(location) %>% 
+  summarise(mean_depth_m = mean(depth_m, na.rm = TRUE)) %>%
+  ggplot(aes(x = mean_depth_m, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
-  labs(title = "Depth By Location")
+  labs(title = "Average Depth By Location")
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
@@ -614,11 +616,13 @@ in the `depth_m` column are NA.
 
 ``` r
 cleaner_data_2012 %>% 
-  ggplot(aes(x = pot_depth_m, y = location)) + 
+  group_by(location) %>% 
+  summarise(mean_pot_depth_m = mean(pot_depth_m, na.rm = TRUE)) %>%
+  ggplot(aes(x = mean_pot_depth_m, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
-  labs(title = "Pot Depth By Location")
+  labs(title = "Average Pot Depth By Location")
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
@@ -638,11 +642,13 @@ in the `pot_depth_m` column are NA.
 
 ``` r
 cleaner_data_2012 %>% 
-  ggplot(aes(x = `velocity_m/s`, y = location)) + 
+  group_by(location) %>% 
+  summarise(`mean_velocity_m/s` = mean(`velocity_m/s`, na.rm = TRUE)) %>%
+  ggplot(aes(x = `mean_velocity_m/s`, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
-  labs(title = "Velocity By Location")
+  labs(title = "Average Velocity By Location")
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
@@ -657,3 +663,63 @@ summary(cleaner_data_2012$`velocity_m/s`)
 
 **NA and Unknown Values** NA and Unknown Values\*\* \* 94.9 % of values
 in the `velocity_m/s` column are NA.
+
+``` r
+feather_redd_survey_2012 <- cleaner_data_2012 %>% glimpse()
+```
+
+    ## Rows: 630
+    ## Columns: 16
+    ## $ date                     <date> 2012-08-08, 2012-09-12, 2012-09-12, 2012-09-~
+    ## $ location                 <chr> "moe's ditch", "table mountain", "cottonwood"~
+    ## $ type                     <chr> "Point", "Point", "Point", "Point", "Point", ~
+    ## $ salmon_counted           <dbl> 1, 2, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 2, 1, ~
+    ## $ latitude                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ longitude                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ depth_m                  <dbl> 0.22, NA, NA, NA, 0.55, NA, NA, NA, 0.36, NA,~
+    ## $ pot_depth_m              <dbl> 0.28, NA, NA, NA, 0.55, NA, NA, NA, 0.40, NA,~
+    ## $ `velocity_m/s`           <dbl> 0.42, NA, NA, NA, 0.32, NA, NA, NA, 0.62, NA,~
+    ## $ percent_fine_substrate   <dbl> 10, NA, NA, NA, 0, NA, NA, NA, 5, NA, NA, NA,~
+    ## $ percent_small_substrate  <dbl> 25, NA, NA, NA, 20, NA, NA, NA, 30, NA, NA, N~
+    ## $ percent_medium_substrate <dbl> 65, NA, NA, NA, 50, NA, NA, NA, 60, NA, NA, N~
+    ## $ percent_large_substrate  <dbl> 0, NA, NA, NA, 30, NA, NA, NA, 5, NA, NA, NA,~
+    ## $ percent_boulder          <dbl> 0, NA, NA, NA, 0, NA, NA, NA, 0, NA, NA, NA, ~
+    ## $ redd_width_m             <dbl> 0.75, NA, NA, NA, 2.00, NA, NA, NA, 1.00, NA,~
+    ## $ redd_length_m            <dbl> 1.5, NA, NA, NA, 2.0, NA, NA, NA, 2.0, NA, NA~
+
+### Add cleaned data back onto google cloud
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_redd_survey_2012,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/2012_Chinook_Redd_Survey_Data.csv")
+```
+
+    ## i 2021-10-13 09:50:59 > File size detected as  44.3 Kb
+
+    ## i 2021-10-13 09:50:59 > Request Status Code:  400
+
+    ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
+
+    ## i 2021-10-13 09:50:59 > File size detected as  44.3 Kb
+
+    ## ==Google Cloud Storage Object==
+    ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/2012_Chinook_Redd_Survey_Data.csv 
+    ## Type:                csv 
+    ## Size:                44.3 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2F2012_Chinook_Redd_Survey_Data.csv?generation=1634143859730441&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2F2012_Chinook_Redd_Survey_Data.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2F2012_Chinook_Redd_Survey_Data.csv 
+    ## Bucket:              jpe-dev-bucket 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/2012_Chinook_Redd_Survey_Data.csv/1634143859730441 
+    ## MD5 Hash:            fk/i/AgUS3VOPXkWfHLfWw== 
+    ## Class:               STANDARD 
+    ## Created:             2021-10-13 16:50:59 
+    ## Updated:             2021-10-13 16:50:59 
+    ## Generation:          1634143859730441 
+    ## Meta Generation:     1 
+    ## eTag:                CInQlaLsx/MCEAE= 
+    ## crc32c:              cIRVgw==

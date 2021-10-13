@@ -23,6 +23,7 @@ library(leaflet)
 **Completeness of Record throughout timeframe: **\
 
 * Longitude and latitude data are not available for 2009, 2010, 2011, 2012, 2019, 2020. NA values will be filled in for these data sets in final cleaned data set.
+*No numeric values recorded for percent_boulder in 2011.
 
 **Sampling Location:** Feather River
 
@@ -329,6 +330,8 @@ summary(cleaner_data_2011$percent_large_substrate)
 * `r round(sum(is.na(cleaner_data_2011$'percent_large_substrate'))/nrow(cleaner_data_2011), 3)*100` % of values in the `percent_large_substrate` column are NA.
 
 ### Variable:`percent_boulder`
+No values recorded for percent_boulder
+
 **Numeric Summary of percent_boulder Over 2011**
 ```{r}
 summary(cleaner_data_2011$percent_boulder)
@@ -341,11 +344,13 @@ NA and Unknown Values**
 ### Variable: `depth_m`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2011 %>% 
-  ggplot(aes(x = depth_m, y = location)) + 
+  group_by(location) %>% 
+  summarise(mean_depth_m = mean(depth_m, na.rm = TRUE)) %>%
+  ggplot(aes(x = mean_depth_m, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
-  labs(title = "Depth By Location")
+  labs(title = "Average Depth By Location")
 ```
 **Numeric Summary of depth_m Over 2011**
 ```{r}
@@ -360,11 +365,13 @@ NA and Unknown Values**
 ### Variable: `pot_depth_m`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2011 %>% 
-  ggplot(aes(x = pot_depth_m, y = location)) + 
+  group_by(location) %>% 
+  summarise(mean_pot_depth_m = mean(pot_depth_m, na.rm = TRUE)) %>%
+  ggplot(aes(x = mean_pot_depth_m, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
-  labs(title = "Pot Depth By Location")
+  labs(title = "Average Pot Depth By Location")
 ```
 **Numeric Summary of pot_depth_m Over 2011**
 ```{r}
@@ -378,11 +385,13 @@ NA and Unknown Values**
 ### Variable: `velocity_m/s`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2011 %>% 
-  ggplot(aes(x = `velocity_m/s`, y = location)) + 
+  group_by(location) %>% 
+  summarise(`mean_velocity_m/s` = mean(`velocity_m/s`, na.rm = TRUE)) %>%
+  ggplot(aes(x = `mean_velocity_m/s`, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
-  labs(title = "Velocity By Location")
+  labs(title = "Average Velocity By Location")
 ```
 **Numeric Summary of velocity_m/s Over 2011**
 ```{r}
@@ -393,4 +402,16 @@ summary(cleaner_data_2011$`velocity_m/s`)
 NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2011$'velocity_m/s'))/nrow(cleaner_data_2011), 3)*100` % of values in the `velocity_m/s` column are NA.
 
+```{r}
+feather_redd_survey_2011 <- cleaner_data_2011 %>% glimpse()
+```
 
+### Add cleaned data back onto google cloud
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_redd_survey_2011,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/2011_Chinook_Redd_Survey_Data.csv")
+```

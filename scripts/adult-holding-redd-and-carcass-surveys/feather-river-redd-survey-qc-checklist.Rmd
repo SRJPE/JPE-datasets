@@ -1,0 +1,970 @@
+---
+title: "feather-river-adult-holding-redd-survey-qc-checklist"
+author: "Inigo Peng"
+date: "9/30/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(leaflet)
+```
+# Feather River Redd Survey Data  
+
+## Description of Monitoring Data
+
+**Timeframe:** 2009 - 2020
+
+
+**Completeness of Record throughout timeframe:** TODO
+
+**Sampling Location:** TODO
+
+
+**Data Contact:** Chris Cook 
+
+Any additional info?
+1. Latitude and longitude are in NAD 1983 UTM Zone 10N
+The substrate is observed visually and an estimate of the percentage of 5 size classes. Fines <1cm, small 1-5cm, medium 6-15cm, large 16-30cm, boulder >30cm
+Type refers to whether a polygon (A for Area) or point (P) was mapped with the Trimble GPS unit
+A different substrate classification system was used in 2008. Each of the 5 size classes were given a number: 1=fines, 2=small, 3=medium, 4=large, 5=boulder. The dominant class was recorded as a number.
+D stands for Digging. We used to record digging areas as redds that looked to be unfinished. We record only finished redds now.
+Q refers to Questionable redds. Areas where the substrate was disturbed but did not have the proper characteristics to be called a redd. We no longer record questionable redds.
+## Access Cloud Data
+
+```{r, eval= FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+datasets <- gcs_list_objects()
+# git data and save as xlsx
+
+datasets
+
+for (item in datasets[3:14, 1]){
+  gcs_get_object(object_name = item,
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = gsub(" ", "_", item),
+                 overwrite = TRUE)
+                 }
+
+```
+
+Read in data from google cloud, glimpse raw data: 
+
+```{r}
+# read in data to clean 
+
+raw_data_2009 = readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2009_Chinook_Redd_Survey_Data_raw.xlsx"),  
+                                   sheet="2009 All Data")
+
+raw_data_2010 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2010_Chinook_Redd_Survey_Data.xlsx"))
+
+raw_data_2011 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2011_Chinook_Redd_Survey_Data.xlsx"))
+
+raw_data_2012 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2012_Chinook_Redd_Survey_Data_raw.xlsx"))
+
+raw_data_2013 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2013_Chinook_Redd_Survey_Data_raw.xlsx"))
+
+raw_data_2014 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2014_Chinook_Redd_Survey_raw.xlsx"))
+
+raw_data_2015 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2015_Chinook_Redd_Survey_Data_raw.xlsx"))
+
+raw_data_2016 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2016_Chinook_Redd_Survey_Data_raw.xlsx"))
+raw_data_2017 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2017_Chinook_Redd_Survey_Data_raw.xlsx"))
+
+raw_data_2018 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2018_Chinook_Redd_Survey_Data_raw.xlsx"))
+
+raw_data_2019 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2019_Chinook_Redd_Survey_Data_raw.xlsx"))
+
+raw_data_2020 =  readxl::read_excel(paste0(getwd(),
+                                    "/adult-holding-redd-and-carcass-surveys/feather-river/data-raw/redd_survey/2020_Chinook_Redd_Survey_Data_raw.xlsx"))
+```
+
+## Data transformations
+```{r}
+glimpse(raw_data_2009)
+
+raw_data_2009$'Redd Width (ft)' = raw_data_2009$'Redd Width (ft)'/3.281
+raw_data_2009$'Redd Lenght (ft)' = raw_data_2009$'Redd Lenght (ft)'/3.281
+cleaner_data_2009 <- raw_data_2009 %>%
+  select(-c(Remeasured, File, '#  Redds')) %>%
+  add_column(longitude = NA) %>% 
+  add_column(latitude = NA) %>% 
+  relocate('Survey Date', .before = 'Location') %>% 
+  relocate('latitude', .after = '# Salmon') %>%
+  relocate('longitude', .before = 'Depth (m)') %>%  
+  rename('Date' = 'Survey Date',
+         'type' = 'Type (D, A, P)', 
+         'salmon_counted' = '# Salmon', 
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% Fines (<1 cm)',
+         'percent_small_substrate' = '% Small (1-5 cm)',
+         'percent_medium_substrate'= '% Medium (5-15 cm)',
+         'percent_large_substrate' =  '% Large (15-30 cm)',
+         'percent_boulder' = '% Boulder (>30 cm)',
+         'redd_width_m' = 'Redd Width (ft)',
+         'redd_length_m' = 'Redd Lenght (ft)') %>%
+  mutate('depth_m' = as.numeric('depth_m'),
+         'pot_depth_m' = as.numeric('pot_depth_m'),
+         'velocity_m/s'= as.numeric('velocity_m/s'),
+         'latitude' = as.numeric(latitude),
+         'longitude' = as.numeric(longitude)) %>% 
+glimpse()
+```
+```{r}
+# glimpse(raw_data_2010)
+
+raw_data_2010$'redd width (ft)' = raw_data_2010$'redd width (ft)'/3.281
+raw_data_2010$'redd length (ft)' = raw_data_2010$'redd length (ft)'/3.281
+cleaner_data_2010 <- raw_data_2010 %>% 
+  select(-c('Survey Wk', 'File #', '# of redds')) %>% 
+  rename('salmon_counted'= '# salmon',
+         'latitude' = 'Latitude',
+         'longitude' = 'Longitude',
+         'depth_m' = 'Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'percent_fine_substrate' = '% fines(<1 cm)',
+         'percent_small_substrate' = '% small (1-5 cm)',
+         'percent_medium_substrate'= '% med (5-15 cm)',
+         'percent_large_substrate' = '% large (15-30 cm)',
+         'percent_boulder' = '% boulder (>30 cm)',
+         'redd_width_m' = 'redd width (ft)',
+         'redd_length_m' = 'redd length (ft)',
+         ) %>% 
+  mutate(latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude)) %>% 
+  glimpse()
+
+```
+```{r}
+# glimpse(raw_data_2011)
+
+raw_data_2011$'redd width (ft)' = raw_data_2011$'redd width (ft)'/3.281
+raw_data_2011$'redd length (ft)' = raw_data_2011$'redd length (ft)'/3.281
+cleaner_data_2011 <- raw_data_2011 %>% 
+  select(-c('Survey Wk', 'File #', '# of redds')) %>% 
+  rename('salmon_counted'= '# salmon',
+         'latitude' = 'Latitude',
+         'longitude' = 'Longitude',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% fines(<1 cm)',
+         'percent_small_substrate' = '% small (1-5 cm)',
+         'percent_medium_substrate'= '% med (5-15 cm)',
+         'percent_large_substrate' = '% large (15-30 cm)',
+         'percent_boulder' = '% boulder (>30 cm)',
+         'redd_width_m' = 'redd width (ft)',
+         'redd_length_m' = 'redd length (ft)',
+         ) %>% 
+  mutate(latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude)) %>% 
+  glimpse()
+```
+```{r}
+glimpse(raw_data_2012)
+
+cleaner_data_2012 <- raw_data_2012 %>% 
+  select(-c('Survey Wk', 'File #', '# of redds')) %>% 
+  rename('salmon_counted'= '# salmon',
+         'latitude' = 'Latitude',
+         'longitude' = 'Longitude',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% fines',
+         'percent_small_substrate' = '% small',
+         'percent_medium_substrate'= '% med',
+         'percent_large_substrate' = '% large',
+         'percent_boulder' = '% boulder',
+         'redd_width_m' = 'redd width (m)',
+         'redd_length_m' = 'redd length (m)',
+         ) %>% 
+  mutate(latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude)) %>% 
+  glimpse()
+
+```
+```{r}
+# glimpse(raw_data_2013)
+
+cleaner_data_2013 <- raw_data_2013 %>% 
+  select(-c('Survey Wk', 'File #', '# of redds')) %>% 
+  rename('Date' = All,
+         'salmon_counted'= '# salmon',
+         'latitude' = 'Latitude',
+         'longitude' = 'Longitude',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% fines',
+         'percent_small_substrate' = '% small',
+         'percent_medium_substrate'= '% med',
+         'percent_large_substrate' = '% large',
+         'percent_boulder' = '% boulder',
+         'redd_width_m' = 'redd width (m)',
+         'redd_length_m' = 'redd length (m)',
+         ) %>%
+  mutate(Date = as.Date(as.numeric(Date), origin = "1899-12-30")) %>% 
+  glimpse()
+
+
+
+```
+```{r}
+# glimpse(raw_data_2014)
+
+cleaner_data_2014 <- raw_data_2014 %>% 
+  select(-c('Survey Wk', 'File #', '# of redds')) %>% 
+  rename('salmon_counted'= '# salmon',
+         'latitude' = 'Latitude',
+         'longitude' = 'Longitude',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% fines',
+         'percent_small_substrate' = '% small',
+         'percent_medium_substrate'= '% med',
+         'percent_large_substrate' = '% large',
+         'percent_boulder' = '% boulder',
+         'redd_width_m' = 'redd width (m)',
+         'redd_length_m' = 'redd length (m)',
+         ) %>%
+  mutate(Date = as.Date(as.numeric(Date), origin = "1899-12-30")) %>% 
+  glimpse()
+
+```
+```{r}
+# glimpse(raw_data_2015)
+cleaner_data_2015 <- raw_data_2015 %>% 
+  select(-c('Survey Wk', 'File #', '# of redds')) %>% 
+  rename('salmon_counted'= '# salmon',
+         'latitude' = 'Latitude',
+         'longitude' = 'Longitude',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% fines',
+         'percent_small_substrate' = '% small',
+         'percent_medium_substrate'= '% med',
+         'percent_large_substrate' = '% large',
+         'percent_boulder' = '% boulder',
+         'redd_width_m' = 'redd width (m)',
+         'redd_length_m' = 'redd length (m)',
+         ) %>% 
+  glimpse()
+
+```
+```{r}
+glimpse(raw_data_2016)
+cleaner_data_2016 <- raw_data_2016 %>% 
+  select(-c('Survey Wk', 'File #', '# of redds')) %>% 
+  rename('salmon_counted'= '# salmon',
+         'latitude' = 'Latitude mN',
+         'longitude' = 'Longitude mE',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% fines',
+         'percent_small_substrate' = '% small',
+         'percent_medium_substrate'= '% med',
+         'percent_large_substrate' = '% large',
+         'percent_boulder' = '% boulder',
+         'redd_width_m' = 'redd width (m)',
+         'redd_length_m' = 'redd length (m)',
+         ) %>% 
+  glimpse()
+```
+```{r}
+# glimpse(raw_data_2017)
+cleaner_data_2017 <- raw_data_2017 %>% 
+  select(-c('Survey Wk', 'File #', '# redds')) %>% 
+  rename('type'= 'Type',
+         'salmon_counted'= '# salmon',
+         'latitude' = 'Latitude mN',
+         'longitude' = 'Longitude mE',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% fines',
+         'percent_small_substrate' = '% small',
+         'percent_medium_substrate'= '% med',
+         'percent_large_substrate' = '% large',
+         'percent_boulder' = '% boulder',
+         'redd_width_m' = 'redd width (m)',
+         'redd_length_m' = 'redd length (m)',
+         ) %>% 
+  glimpse()
+```
+```{r}
+# glimpse(raw_data_2018)
+cleaner_data_2018 <- raw_data_2018 %>% 
+  select(-c('Survey Wk', 'File #', '# redds')) %>% 
+  rename('type' = Type,
+         'salmon_counted'= '# salmon',
+         'latitude' = 'Latitude mN',
+         'longitude' = 'Longitude mE',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% fines',
+         'percent_small_substrate' = '% small',
+         'percent_medium_substrate'= '% med',
+         'percent_large_substrate' = '% large',
+         'percent_boulder' = '% boulder',
+         'redd_width_m' = 'redd width (m)',
+         'redd_length_m' = 'redd length (m)',) %>% 
+  glimpse()
+```
+```{r}
+glimpse(raw_data_2019)
+cleaner_data_2019 <- raw_data_2019 %>% 
+  select(-c('Survey Wk', 'File #', '# redds')) %>% 
+  rename('type'= Type,
+         'salmon_counted'= '# salmon',
+         'latitude' = 'Latitude mN',
+         'longitude' = 'Longitude mE',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% fines',
+         'percent_small_substrate' = '% small',
+         'percent_medium_substrate'= '% med',
+         'percent_large_substrate' = '% large',
+         'percent_boulder' = '% boulder',
+         'redd_width_m' = 'redd width (m)',
+         'redd_length_m' = 'redd length (m)',
+         ) %>% 
+  mutate(latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude)) %>% 
+  glimpse()
+```
+```{r}
+glimpse(raw_data_2020)
+cleaner_data_2020 <- raw_data_2020 %>% 
+  select(-c('Survey Wk', 'File#', '#Redds')) %>% 
+  rename('type'= Type, 
+         'salmon_counted'= '# Salmon',
+         'latitude' = 'Latitude mN',
+         'longitude' = 'Longitude nE',
+         'depth_m' = 'Depth (m)',
+         'pot_depth_m' = 'Pot Depth (m)',
+         'velocity_m/s' = 'Velocity (m/s)',
+         'percent_fine_substrate' = '% Fines',
+         'percent_small_substrate' = '% Small',
+         'percent_medium_substrate'= '% Med',
+         'percent_large_substrate' = '% Large',
+         'percent_boulder' = '% Boulder',
+         'redd_width_m' = 'Redd Width (m)',
+         'redd_length_m' = 'Redd Length (m)'
+         ) %>% 
+  mutate(latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude)) %>% 
+  glimpse()
+```
+```{r}
+full_redd_survey_data <- bind_rows(cleaner_data_2009, 
+          cleaner_data_2010, 
+          cleaner_data_2011, 
+          cleaner_data_2012, 
+          cleaner_data_2013,
+          cleaner_data_2014,
+          cleaner_data_2015,
+          cleaner_data_2016,
+          cleaner_data_2017,
+          cleaner_data_2018,
+          cleaner_data_2019,
+          cleaner_data_2020)
+```
+```{r}
+glimpse(full_redd_survey_data)
+```
+Clean up the column names, change convert date time (dttm) to Date format
+```{r}
+cleaner_full_redd_survey_data <- full_redd_survey_data %>% 
+  set_names(tolower(colnames(full_redd_survey_data))) %>% 
+  mutate(date = as.Date(date)) %>% 
+  glimpse()
+```
+## Explore Categorical Variables:
+
+```{r}
+cleaner_full_redd_survey_data %>% 
+  select_if(is.character) %>% colnames()
+```
+### Variable: `location`
+```{r}
+table(cleaner_full_redd_survey_data$location)
+```
+```{r}
+cleaner_full_redd_survey_data <- cleaner_full_redd_survey_data %>% 
+  mutate(location = tolower(location), 
+         location = if_else(location == "alec", "aleck", location),
+         location = if_else(location == "big holewest", "big hole west", location),
+         location = if_else(location == "g95 east top", "g95 east side channel top", location),
+         location = if_else(location == "g-95 east side channel", "g95 east side channel", location),
+         location = if_else(location == "g-95 east side channel bottom", "g95 east side channel bottom", location),
+         location = if_else(location == "g-95 main", "g95 main", location),
+         location = if_else(location == "g-95 west side channel bottom", "g95 west side channel bottom", location),
+         location = if_else(location == "g95 east", "g95 east side channel", location),
+         location = if_else(location == "g95 east bottom", "g95 east side channel bottom", location),
+         location = if_else(location == "g95 east top", "g95 east side channel top", location),
+         location = if_else(location == "g95 west", "g95 west side channel", location),
+         location = if_else(location == "g95 west bottom", "g95 west side channel bottom", location),
+         location = if_else(location == "g95 west side chnl", "g95 west side channel", location),
+         location = if_else(location == "g95 west top", "g95 west side channel top", location),
+         location = if_else(location == "bottom g95 east side chnl", "g95 east side channel bottom", location),
+         location = if_else(location == "lower table mtn", "lower table mountain", location),
+         location = if_else(location == "lower table mtn", "lower table mountain", location),
+         location = if_else(location == "matthews", "mathews", location),
+         location = if_else(location == "mid g95 east side chnl", "g95 east side channel mid", location),
+         location = if_else(location == "middle auditoium", "mid auditorium", location),
+         location = if_else(location == "middle auditorium", "mid auditorium", location),
+         location = if_else(location == "moes ditch", "moe's ditch", location),
+         location = if_else(location == "moes", "moe's ditch", location),
+         location = if_else(location == "table mtn", "table mountain", location),
+         location = if_else(location == "top g95 east side chnl", "g95 east side channel top", location),
+         location = if_else(location == "top g95 main", "g95 main top", location),
+         location = if_else(location == "top g95 west side chnl", "g95 west side channel top", location),
+         location = if_else(location == "top g95 west side chnl", "g95 west side channel top", location),
+         location = if_else(location == "top moes side channel", "upper moe's side channel", location),
+         location = if_else(location == "top of auditorium", "upper auditorium", location),
+         location = if_else(location == "top of hatchery", "upper hatchery", location),
+         location = if_else(location == "top of hour", "upper hour", location),
+         location = if_else(location == "top hour", "upper hour", location),
+         location = if_else(location == "top of matthews", "upper mathews", location),
+         location = if_else(location == "top of moes ditch", "upper moe's ditch", location),
+         location = if_else(location == "top of steep", "upper steep", location),
+         location = if_else(location == "top moes side channel", "upper moe's side channel", location),
+         location = if_else(location == "upper matthews", "upper mathews", location),
+         location = if_else(location == "upper mcfarlin", "upper mcfarland", location),
+         location = if_else(location == "upper moes", "upper moe's", location),
+         location = if_else(location == "upper moes ditch", "upper moe's ditch", location),
+         location = if_else(location == "uppper auditorium", "upper auditorium", location),
+         location = if_else(location == "vance east lower", "lower vance east", location),
+         location = if_else(location == "vance east top", "upper vance east", location),
+         location = if_else(location == "vance east side channel", "vance east", location),
+         location = if_else(location == "wier", "weir", location),
+         location = if_else(location == "top vance east", "upper vance east", location),
+         location = if_else(location == "top vance west", "upper vance west", location),
+         location = if_else(location == "lower steep side chnl", "lower steep side channel", location),
+         location = if_else(location == "keister upper", "upper keister", location),
+         location = if_else(location == "g95 bottom", "g95 main bottom", location),
+         location = gsub("top", "upper", location)
+         )
+
+```
+
+* `r round(sum(is.na(cleaner_full_redd_survey_data$location))/nrow(cleaner_full_redd_survey_data), 3)` % of values in the `location` column are NA. 
+
+### Variable: 'type'
+
+```{r}
+table(cleaner_full_redd_survey_data$type)
+```
+```{r}
+cleaner_full_redd_survey_data <- cleaner_full_redd_survey_data %>% 
+  mutate(type = tolower(type),
+         type = if_else(type == "area", "a", type),
+         type = if_else(type == "point", "p", type))
+table(cleaner_full_redd_survey_data$type)
+```
+**Create lookup rda for type encoding:**
+Type refers to whether a polygon (A for Area) or point (P) was mapped with the Trimble GPS unit
+A different substrate classification system was used in 2008. Each of the 5 size classes were given a number: 1=fines, 2=small, 3=medium, 4=large, 5=boulder. The dominant class was recorded as a number.
+D stands for Digging. We used to record digging areas as redds that looked to be unfinished. We record only finished redds now.
+Q refers to Questionable redds. Areas where the substrate was disturbed but did not have the proper characteristics to be called a redd. We no longer record questionable redds.
+```{r}
+types <- distinct(cleaner_full_redd_survey_data, type) %>% 
+  drop_na() %>% 
+  unlist()
+
+types_description <- c(
+  "area - polygon mapped with Trimble GPS unit",
+  "point - points mapped with Trimble GPS unit",
+  "questionable redds - polygon mapped with Trimble GPS unitwhere the substrate was disturbed but did not have the proper characteristics to be called a redd - it was no longer recrded after 2011"
+)
+
+write_rds(types_description, paste0(getwd(),"/adult-holding-redd-and-carcass-surveys/feather-river/data/types_description.rds"))
+tibble(code = types,
+       definitions = types_description)
+```
+
+
+
+## Explore Numeric Variables: 
+```{r}
+cleaner_full_redd_survey_data %>% 
+  select_if(is.numeric) %>% colnames()
+```
+### Variable: salmon_counted
+```{r}
+cleaner_full_redd_survey_data %>% 
+  # na.omit(salmon_counted) %>% 
+  ggplot(aes(x = date, y = salmon_counted)) + 
+  geom_col() +
+  facet_wrap(~year(date), scales = "free") +
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
+  theme(axis.text.y = element_text(size = 8))
+```
+```{r}
+# Boxplots of daily counts by year
+cleaner_full_redd_survey_data  %>%
+  group_by(date) %>%
+  summarise(daily_salmon_count = sum(salmon_counted)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = year, y = (daily_salmon_count)))+ 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(text = element_text(size = 12)) 
+```
+**Numeric Summary of [Variable] over Period of Record**
+```{r}
+summary(cleaner_full_redd_survey_data$salmon_counted)
+```
+
+
+```{r}
+cleaner_full_redd_survey_data %>%
+  group_by(date) %>%
+  summarise(count = sum(salmon_counted, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
+```
+
+**NA and Unknown Values**
+* `r round(sum(is.na(cleaner_full_redd_survey_data$salmon_counted))/nrow(cleaner_full_redd_survey_data), 5)*100` % of values in the `salmon_counted` column are NA. 
+
+### Variable: latitude and longitude
+```{r}
+# cleaner_full_redd_survey_data %>% 
+#   ggplot(aes(x = date, y = latitude)) + 
+#   geom_col() + 
+#   facet_wrap(~year(date), scales = "free") + 
+#   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+#   theme_minimal() + 
+#   theme(text = element_text(size = 12)) + 
+#   theme(axis.text.x = element_text(angle = 90))
+```
+```{r}
+coordinates <- na.omit(subset(cleaner_full_redd_survey_data, select = c("longitude", "latitude"))) 
+# m <- leaflet(coordinates) %>% 
+#   addTiles() %>% 
+  # addMarkers()
+# m
+```
+
+
+```{r}
+distinct(cleaner_full_redd_survey_data, latitude)
+```
+
+
+```{r}
+summary(cleaner_full_redd_survey_data$latitude)
+```
+
+```{r}
+cleaner_full_redd_survey_data %>% 
+  count(latitude)
+```
+
+*latitude at 1.0 is converted to NA
+```{r}
+cleaner_full_redd_survey_data$latitude <-
+  na_if(cleaner_full_redd_survey_data$latitude, 1) 
+cleaner_full_redd_survey_data %>%
+  count(latitude)
+```
+**NA and Unknown Values**
+* `r round(sum(is.na(cleaner_full_redd_survey_data$latitude))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `latitude` column are NA.
+
+### Variable: longitude
+**Plotting longitude over Period of Record**
+```{r}
+cleaner_full_redd_survey_data %>% 
+  ggplot(aes(x = date, y = longitude)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 12)) + 
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+**Numeric Summary of [Variable] over Period of Record**
+
+```{r}
+summary(cleaner_full_redd_survey_data$longitude)
+```
+```{r}
+distinct(cleaner_full_redd_survey_data, longitude)
+```
+```{r}
+cleaner_full_redd_survey_data %>% 
+  count(longitude)
+```
+*longitude at 1.0 is converted to NA
+```{r}
+cleaner_full_redd_survey_data$longitude <-
+  na_if(cleaner_full_redd_survey_data$longitude, 1) 
+cleaner_full_redd_survey_data %>%
+  count(longitude)
+```
+**NA and Unknown Values**
+* `r round(sum(is.na(cleaner_full_redd_survey_data$longitude))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `longitude` column are NA
+
+### Variable: depth_m
+**Plotting "depth_m" over Period of Record**
+##TODO: would be interesting to see depth vs location chart
+```{r}
+cleaner_full_redd_survey_data %>% 
+  ggplot(aes(x = date, y = depth_m)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month", limits = as.Date("year-09-01")) + 
+  theme_minimal() + 
+  theme(text = element_text(size = 12)) + 
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+```{r}
+cleaner_full_redd_survey_data %>% 
+  ggplot(aes(x = location, y = depth_m)) + 
+  geom_col() + 
+  theme_minimal() + 
+  scale_x_discrete()+
+  theme(axis.text.x = element_text(size = 9, angle = 90, hjust = 0.5, vjust = 0.7))
+```
+```{r}
+# Boxplots of daily counts by year
+cleaner_full_redd_survey_data  %>%
+  ggplot(aes(x = location, y = (depth_m)))+ 
+  geom_boxplot() + 
+  theme_minimal() +
+  scale_x_discrete()+
+  theme(axis.text.x = element_text(size = 9, angle = 90, hjust = 0.5, vjust = 0.7)) 
+```
+
+**Numeric Summary of "depth_m"over Period of Record**
+```{r}
+summary(cleaner_full_redd_survey_data$depth_m)
+```
+
+**NA and Unknown Values**
+* `r round(sum(is.na(cleaner_full_redd_survey_data$depth_m))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `depth_m` column are NA
+
+### Variable: pot_depth_m
+**Plotting longitude over Period of Record**
+```{r}
+# cleaner_full_redd_survey_data %>% 
+cleaner_full_redd_survey_data %>% 
+  ggplot(aes(x = location, y = pot_depth_m)) + 
+  geom_col() + 
+  theme_minimal() + 
+  scale_x_discrete()+
+  theme(axis.text.x = element_text(size = 9, angle = 90, hjust = 0.5, vjust = 0.7))
+  
+```
+```{r}
+cleaner_full_redd_survey_data  %>%
+  group_by(location) %>%
+  ggplot(aes(x = location, y = (pot_depth_m)))+ 
+  geom_boxplot() + 
+  theme_minimal() +
+  scale_x_discrete()+
+  theme(axis.text.x = element_text(size = 9, angle = 90, hjust = 0.5, vjust = 0.7)) 
+```
+**Numeric Summary of pot_depth_m over Period of Record**
+```{r}
+summary(cleaner_full_redd_survey_data$pot_depth_m)
+```
+```{r}
+distinct(cleaner_full_redd_survey_data, pot_depth_m)
+```
+```{r}
+cleaner_full_redd_survey_data %>% 
+  count(pot_depth_m)
+```
+
+
+**NA and Unknown Values**
+* `r round(sum(is.na(cleaner_full_redd_survey_data$pot_depth_m))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `pot_depth_m` column are NA. 
+
+### Variable: velocity_m/s
+```{r}
+cleaner_full_redd_survey_data %>% 
+  ggplot(aes(x = location, y = `velocity_m/s`)) + 
+  geom_col() + 
+  theme_minimal() + 
+  scale_x_discrete()+
+  theme(axis.text.x = element_text(size = 9, angle = 90, hjust = 0.5, vjust = 0.7))
+```
+```{r}
+cleaner_full_redd_survey_data  %>%
+  group_by(location) %>%
+  ggplot(aes(x = location, y = `velocity_m/s`))+ 
+  geom_boxplot() + 
+  theme_minimal() +
+  scale_x_discrete()+
+  theme(axis.text.x = element_text(size = 9, angle = 90, hjust = 0.5, vjust = 0.7)) 
+```
+**Numeric Summary of velocity_m/s over Period of Record**
+```{r}
+summary(cleaner_full_redd_survey_data$`velocity_m/s`)
+```
+```{r}
+cleaner_full_redd_survey_data %>%
+  count(`velocity_m/s`)
+```
+=
+**NA and Unknown Values**
+* `r round(sum(is.na(cleaner_full_redd_survey_data$'velocity_m/s'))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `velocity_m/s` column are NA.
+
+### Variable: percent_fine_substrate
+```{r}
+# cleaner_full_redd_survey_data %>% 
+#   ggplot(aes(x = date, y = pot_depth_m)) + 
+#   geom_col() + 
+#   facet_wrap(~year(date), scales = "free") + 
+#   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+#   theme_minimal() + 
+#   theme(text = element_text(size = 8)) + 
+#   theme(axis.text.x = element_text(angle = 90))
+```
+```{r}
+# # Boxplots of mean depth by location
+# cleaner_full_redd_survey_data  %>%
+#   group_by(date) %>%
+#   summarise(pot_depth_by_location = mean(pot_depth_m)) %>%
+#   mutate(year = as.factor(year(date))) %>% 
+#   ggplot(aes(x = year, y = (daily_salmon_count)))+ 
+#   geom_boxplot() + 
+#   theme_minimal() +
+#   theme(text = element_text(size = 12)) 
+```
+**Numeric Summary of velocity_m/s over Period of Record**
+```{r}
+# summary(cleaner_full_redd_survey_data$pot_depth_m)
+```
+```{r}
+# cleaner_full_redd_survey_data %>% 
+#   count(pot_depth_m)
+```
+TODO: group by location
+```{r}
+# cleaner_full_redd_survey_data %>%
+#   group_by(date) %>%
+#   summarise(count = sum(salmon_counted, na.rm = T)) %>%
+#   pull(count) %>%
+#   summary()
+```
+**NA and Unknown Values**
+<!-- * `r round(sum(is.na(cleaner_full_redd_survey_data$pot_depth_m))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `pot_depth_m` column are NA.  -->
+
+### Variable: percent_small_substrate
+```{r}
+# cleaner_full_redd_survey_data %>% 
+#   ggplot(aes(x = date, y = pot_depth_m)) + 
+#   geom_col() + 
+#   facet_wrap(~year(date), scales = "free") + 
+#   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+#   theme_minimal() + 
+#   theme(text = element_text(size = 8)) + 
+#   theme(axis.text.x = element_text(angle = 90))
+```
+```{r}
+# # Boxplots of mean depth by location
+# cleaner_full_redd_survey_data  %>%
+#   group_by(date) %>%
+#   summarise(pot_depth_by_location = mean(pot_depth_m)) %>%
+#   mutate(year = as.factor(year(date))) %>% 
+#   ggplot(aes(x = year, y = (daily_salmon_count)))+ 
+#   geom_boxplot() + 
+#   theme_minimal() +
+#   theme(text = element_text(size = 12)) 
+```
+**Numeric Summary of velocity_m/s over Period of Record**
+```{r}
+# summary(cleaner_full_redd_survey_data$pot_depth_m)
+```
+```{r}
+# cleaner_full_redd_survey_data %>% 
+  # count(pot_depth_m)
+```
+TODO: group by location
+```{r}
+# cleaner_full_redd_survey_data %>%
+#   group_by(date) %>%
+#   summarise(count = sum(salmon_counted, na.rm = T)) %>%
+#   pull(count) %>%
+#   summary()
+```
+**NA and Unknown Values**
+<!-- * `r round(sum(is.na(cleaner_full_redd_survey_data$pot_depth_m))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `pot_depth_m` column are NA.  -->
+
+### Variable: percent_medium_substrate
+```{r}
+# cleaner_full_redd_survey_data %>% 
+#   ggplot(aes(x = date, y = pot_depth_m)) + 
+#   geom_col() + 
+#   facet_wrap(~year(date), scales = "free") + 
+#   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+#   theme_minimal() + 
+#   theme(text = element_text(size = 8)) + 
+#   theme(axis.text.x = element_text(angle = 90))
+```
+```{r}
+# # Boxplots of mean depth by location
+# cleaner_full_redd_survey_data  %>%
+#   group_by(date) %>%
+#   summarise(pot_depth_by_location = mean(pot_depth_m)) %>%
+#   mutate(year = as.factor(year(date))) %>% 
+#   ggplot(aes(x = year, y = (daily_salmon_count)))+ 
+#   geom_boxplot() + 
+#   theme_minimal() +
+#   theme(text = element_text(size = 12)) 
+```
+**Numeric Summary of velocity_m/s over Period of Record**
+```{r}
+# summary(cleaner_full_redd_survey_data$pot_depth_m)
+```
+```{r}
+# cleaner_full_redd_survey_data %>% 
+#   count(pot_depth_m)
+```
+TODO: group by location
+```{r}
+# cleaner_full_redd_survey_data %>%
+#   group_by(date) %>%
+#   summarise(count = sum(salmon_counted, na.rm = T)) %>%
+#   pull(count) %>%
+#   summary()
+```
+**NA and Unknown Values**
+<!-- * `r round(sum(is.na(cleaner_full_redd_survey_data$pot_depth_m))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `pot_depth_m` column are NA.  -->
+
+### Variable: percent_large_substrate
+```{r}
+# cleaner_full_redd_survey_data %>% 
+#   ggplot(aes(x = date, y = pot_depth_m)) + 
+#   geom_col() + 
+#   facet_wrap(~year(date), scales = "free") + 
+#   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+#   theme_minimal() + 
+#   theme(text = element_text(size = 8)) + 
+#   theme(axis.text.x = element_text(angle = 90))
+```
+```{r}
+# # Boxplots of mean depth by location
+# cleaner_full_redd_survey_data  %>%
+#   group_by(date) %>%
+#   summarise(pot_depth_by_location = mean(pot_depth_m)) %>%
+#   mutate(year = as.factor(year(date))) %>% 
+#   ggplot(aes(x = year, y = (daily_salmon_count)))+ 
+#   geom_boxplot() + 
+#   theme_minimal() +
+#   theme(text = element_text(size = 12)) 
+```
+**Numeric Summary of velocity_m/s over Period of Record**
+```{r}
+# summary(cleaner_full_redd_survey_data$pot_depth_m)
+```
+```{r}
+# cleaner_full_redd_survey_data %>% 
+#   count(pot_depth_m)
+```
+TODO: group by location
+```{r}
+# cleaner_full_redd_survey_data %>%
+#   group_by(date) %>%
+#   summarise(count = sum(salmon_counted, na.rm = T)) %>%
+#   pull(count) %>%
+#   summary()
+```
+**NA and Unknown Values**
+<!-- * `r round(sum(is.na(cleaner_full_redd_survey_data$pot_depth_m))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `pot_depth_m` column are NA.  -->
+
+### Variable: percent_boulder
+```{r}
+# cleaner_full_redd_survey_data %>%
+#   ggplot(aes(x = date, y = pot_depth_m)) +
+#   geom_col() +
+#   facet_wrap(~year(date), scales = "free") +
+#   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") +
+#   theme_minimal() +
+#   theme(text = element_text(size = 8)) +
+#   theme(axis.text.x = element_text(angle = 90))
+```
+```{r}
+# # Boxplots of mean depth by location
+# cleaner_full_redd_survey_data  %>%
+#   group_by(date) %>%
+#   summarise(pot_depth_by_location = mean(pot_depth_m)) %>%
+#   mutate(year = as.factor(year(date))) %>%
+#   ggplot(aes(x = year, y = (daily_salmon_count)))+
+#   geom_boxplot() +
+#   theme_minimal() +
+#   theme(text = element_text(size = 12))
+```
+**Numeric Summary of velocity_m/s over Period of Record**
+```{r}
+summary(cleaner_full_redd_survey_data$pot_depth_m)
+```
+```{r}
+# cleaner_full_redd_survey_data %>%
+#   count(pot_depth_m)
+```
+TODO: group by location
+```{r}
+# cleaner_full_redd_survey_data %>%
+#   group_by(date) %>%
+#   summarise(count = sum(salmon_counted, na.rm = T)) %>%
+#   pull(count) %>%
+#   summary()
+```
+**NA and Unknown Values**
+<!-- * `r round(sum(is.na(cleaner_full_redd_survey_data$pot_depth_m))/nrow(cleaner_full_redd_survey_data), 3)*100` % of values in the `pot_depth_m` column are NA. -->
+
+### Variable: redd_width_m
+### Variable: redd_length_m
+
+
+
+
+
+
+
+
+
+
+
+
+

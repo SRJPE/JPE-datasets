@@ -12,6 +12,7 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library(leaflet)
+library(rgdal)
 ```
 # Feather River Redd Survey Data  
 
@@ -245,6 +246,19 @@ summary(cleaner_data_2014$redd_length_m)
 
 ### Location Physical Attributes
 
+### Variable: `longitude and latitude`
+```{r}
+# TODO: Mutate coordinate in the dataframe 
+utm_coords <- na.omit(subset(cleaner_data_2014, select = c("longitude", "latitude")))
+utm_coords <- SpatialPoints(utm_coords,
+                            proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
+long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
+summary(long_lat_coords)
+```
+**NA and Unknown Values**
+* `r round(sum(is.na(cleaner_data_2014$'longitude'))/nrow(cleaner_data_2014), 3)*100` % of values in the `longitude` column are NA.  
+* `r round(sum(is.na(cleaner_data_2014$'latitude'))/nrow(cleaner_data_2014), 3)*100` % of values in the `latitude` column are NA.
+
 ### Variable:`percent_fine_substrate`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2014 %>%
@@ -336,7 +350,7 @@ cleaner_data_2014 %>%
 
 **Numeric Summary of percent_boulder Over 2014**
 ```{r}
-summary(cleaner_data_2014$percent_large_substrate)
+summary(cleaner_data_2014$percent_boulder)
 ```
 
 **NA and Unknown Values**
@@ -346,11 +360,13 @@ NA and Unknown Values**
 ### Variable: `depth_m`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2014 %>% 
-  ggplot(aes(x = depth_m, y = location)) + 
+  group_by(location) %>% 
+  summarise(mean_depth_m = mean(depth_m, na.rm = TRUE)) %>%
+  ggplot(aes(x = mean_depth_m, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
-  labs(title = "Depth By Location")
+  labs(title = "Average Depth By Location")
 ```
 **Numeric Summary of depth_m Over 2014**
 ```{r}
@@ -365,11 +381,13 @@ NA and Unknown Values**
 ### Variable: `pot_depth_m`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2014 %>% 
-  ggplot(aes(x = pot_depth_m, y = location)) + 
+  group_by(location) %>% 
+  summarise(mean_pot_depth_m = mean(pot_depth_m, na.rm = TRUE)) %>%
+  ggplot(aes(x = mean_pot_depth_m, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
-  labs(title = "Pot Depth By Location")
+  labs(title = "Average Pot Depth By Location")
 ```
 **Numeric Summary of pot_depth_m Over 2014**
 ```{r}
@@ -383,11 +401,13 @@ NA and Unknown Values**
 ### Variable: `velocity_m/s`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2014 %>% 
-  ggplot(aes(x = `velocity_m/s`, y = location)) + 
+  group_by(location) %>% 
+  summarise(`mean_velocity_m/s` = mean(`velocity_m/s`, na.rm = TRUE)) %>%
+  ggplot(aes(x = `mean_velocity_m/s`, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
-  labs(title = "Velocity By Location")
+  labs(title = "Average Velocity By Location")
 ```
 **Numeric Summary of velocity_m/s Over 2014**
 ```{r}
@@ -398,3 +418,16 @@ summary(cleaner_data_2014$`velocity_m/s`)
 NA and Unknown Values**
 * `r round(sum(is.na(cleaner_data_2014$'velocity_m/s'))/nrow(cleaner_data_2014), 3)*100` % of values in the `velocity_m/s` column are NA.
 
+```{r}
+feather_redd_survey_2014 <- cleaner_data_2014 %>% glimpse()
+```
+
+### Add cleaned data back onto google cloud
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_redd_survey_2014,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/2014_Chinook_Redd_Survey_Data.csv")
+```

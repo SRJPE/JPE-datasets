@@ -18,6 +18,9 @@ Inigo Peng
 -   No data was recorded for “depth\_m”, “pot\_depth\_m”, and
     “velocity\_m/s” in 2009 data. NA values only.
 
+\*Only 1 data point was recorded for “redd\_width\_m” and
+“redd\_length\_m”.
+
 **Sampling Location:** Feather River
 
 **Data Contact:** [Chris Cook](Chris.Cook@water.ca.gov)
@@ -255,6 +258,61 @@ cleaner_data_2009 %>%
 **NA and Unknown Values** \* 0 % of values in the `salmon_counted`
 column are NA.
 
+### Variable:`redd_width_m`
+
+Only one redd\_width\_m was recorded in 2009.
+
+**Numeric Summary of redd\_width\_m Over 2009**
+
+``` r
+summary(cleaner_data_2009$redd_width_m)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   2.438   2.438   2.438   2.438   2.438   2.438     126
+
+**NA and Unknown Values** \* 99.2 % of values in the `redd_width_m`
+column are NA.
+
+### Variable: `redd_length_m`
+
+Only one redd\_length\_m was recorded in 2009.
+
+**Numeric Summary of redd\_length\_m Over 2009**
+
+``` r
+summary(cleaner_data_2009$redd_length_m)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  0.9144  0.9144  0.9144  0.9144  0.9144  0.9144     126
+
+**NA and Unknown Values** \* 99.2 % of values in the `redd_length_m`
+column are NA.
+
+``` r
+feather_redd_survey_2009 <- cleaner_data_2009 %>% glimpse()
+```
+
+    ## Rows: 127
+    ## Columns: 14
+    ## $ date                     <date> 2009-10-22, 2009-10-22, 2009-10-22, 2009-10-~
+    ## $ location                 <chr> "trailer park", "mathews", "mathews", "mathew~
+    ## $ type                     <chr> "Area", "Area", "Area", "Area", "Area", "Area~
+    ## $ salmon_counted           <dbl> 2, 1, 1, 1, 3, 1, 1, 2, 2, 2, 4, 1, 1, 3, 2, ~
+    ## $ depth_m                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ pot_depth_m              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `velocity_m/s`           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ percent_fine_substrate   <dbl> NA, 5, 5, NA, NA, NA, NA, 0, 5, NA, NA, 5, NA~
+    ## $ percent_small_substrate  <dbl> NA, 30, 40, NA, NA, NA, NA, 5, 10, NA, NA, 15~
+    ## $ percent_medium_substrate <dbl> NA, 50, 40, NA, NA, NA, NA, 20, 50, NA, NA, 5~
+    ## $ percent_large_substrate  <dbl> NA, 15, 15, NA, NA, NA, NA, 60, 35, NA, NA, 3~
+    ## $ percent_boulder          <dbl> NA, 0, 0, NA, NA, NA, NA, 5, 0, NA, NA, 0, NA~
+    ## $ redd_width_m             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ redd_length_m            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+
+### Location Physical Attributes
+
 ### Variable:`percent_fine_substrate`
 
 ``` r
@@ -268,7 +326,7 @@ cleaner_data_2009 %>%
   labs(title = "Average Fine Substrate By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 **Numeric Summary of percent\_fine\_substrate Over 2009**
 
@@ -295,7 +353,7 @@ cleaner_data_2009 %>%
   labs(title = "Average Percent Small Substrate By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 **Numeric Summary of percent\_small\_substrate Over 2009**
 
@@ -322,7 +380,7 @@ cleaner_data_2009 %>%
   labs(title = "Average Percent Medium Substrate By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 **Numeric Summary of percent\_medium\_substrate Over 2009**
 
@@ -349,7 +407,7 @@ cleaner_data_2009 %>%
   labs(title = "Average Percent Large Substrate By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 **Numeric Summary of percent\_large\_substrate Over 2009**
 
@@ -376,70 +434,53 @@ cleaner_data_2009 %>%
   labs(title = "Average Percent Boulder By Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 **Numeric Summary of percent\_boulder Over 2009**
 
 ``` r
-summary(cleaner_data_2009$percent_large_substrate)
+summary(cleaner_data_2009$percent_boulder)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00   10.00   17.50   21.25   30.00   60.00     103
+    ##   0.000   0.000   0.000   3.125   5.000  15.000     119
 
 **NA and Unknown Values** NA and Unknown Values\*\* \* 93.7 % of values
 in the `percent_large_substrate` column are NA.
 
-### Variable:`redd_width_m`
+### Add cleaned data back onto google cloud
 
 ``` r
-cleaner_data_2009 %>%
-  group_by(location) %>%
-  summarise(mean_redd_width = mean(redd_width_m, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_redd_width)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Mean Redd Width By Location")
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_redd_survey_2009,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/2009_Chinook_Redd_Survey_Data.csv")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+    ## i 2021-10-13 10:07:46 > File size detected as  8 Kb
 
-**Numeric Summary of redd\_width\_m Over 2009**
+    ## i 2021-10-13 10:07:46 > Request Status Code:  400
 
-``` r
-summary(cleaner_data_2009$redd_width_m)
-```
+    ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   2.438   2.438   2.438   2.438   2.438   2.438     126
+    ## i 2021-10-13 10:07:46 > File size detected as  8 Kb
 
-**NA and Unknown Values** \* 99.2 % of values in the `redd_width_m`
-column are NA.
-
-### Variable: `redd_length_m`
-
-``` r
-cleaner_data_2009 %>%
-  group_by(location) %>%
-  summarise(mean_redd_length = mean(redd_length_m, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_redd_length)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Mean Redd Length By Location")
-```
-
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
-
-**Numeric Summary of redd\_length\_m Over 2009**
-
-``` r
-summary(cleaner_data_2009$redd_length_m)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.9144  0.9144  0.9144  0.9144  0.9144  0.9144     126
-
-**NA and Unknown Values** \* 99.2 % of values in the `redd_length_m`
-column are NA.
+    ## ==Google Cloud Storage Object==
+    ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/2009_Chinook_Redd_Survey_Data.csv 
+    ## Type:                csv 
+    ## Size:                8 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2F2009_Chinook_Redd_Survey_Data.csv?generation=1634144866615957&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2F2009_Chinook_Redd_Survey_Data.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2F2009_Chinook_Redd_Survey_Data.csv 
+    ## Bucket:              jpe-dev-bucket 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/2009_Chinook_Redd_Survey_Data.csv/1634144866615957 
+    ## MD5 Hash:            LR5Et3xNOVedcrLXLhBhuA== 
+    ## Class:               STANDARD 
+    ## Created:             2021-10-13 17:07:46 
+    ## Updated:             2021-10-13 17:07:46 
+    ## Generation:          1634144866615957 
+    ## Meta Generation:     1 
+    ## eTag:                CJWFpYLwx/MCEAE= 
+    ## crc32c:              Mk00Qw==
