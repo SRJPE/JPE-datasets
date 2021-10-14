@@ -61,9 +61,7 @@ gcs_get_object(object_name =
 Read in data from google cloud, glimpse raw data and domain description sheet: 
 ```{r, warning=FALSE}
 # read in data to clean 
-raw_seine_2008 <- read_xlsx("raw_seine_2008-2014.xlsx") %>% 
-  janitor::clean_names() %>%
-  glimpse()
+raw_seine_2008 <- read_xlsx("raw_seine_2008-2014.xlsx") %>% glimpse
 
 ```
 
