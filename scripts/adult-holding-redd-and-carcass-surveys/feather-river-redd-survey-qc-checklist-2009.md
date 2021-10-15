@@ -102,7 +102,7 @@ raw_data_2009$'redd_length_m' <- round(raw_data_2009$'Redd Lenght (ft)'*0.3048, 
 cleaner_data_2009 <- raw_data_2009 %>%
   select(-c(Remeasured, File, `Redd Width (ft)`, `Redd Lenght (ft)`)) %>%
   relocate('Survey Date', .before = 'Location') %>% 
-  rename('Date' = 'Survey Date',
+  rename('date' = 'Survey Date',
          'type' = 'Type (D, A, P)', 
          'salmon_count' = '# Salmon',
          'redd_count' = '#  Redds',
@@ -115,7 +115,7 @@ cleaner_data_2009 <- raw_data_2009 %>%
          'percent_large_substrate' =  '% Large (15-30 cm)',
          'percent_boulder' = '% Boulder (>30 cm)'
          ) %>%
-  mutate('Date' = as.Date(Date))
+  mutate('date' = as.Date(date))
 cleaner_data_2009 <- cleaner_data_2009 %>% 
   set_names(tolower(colnames(cleaner_data_2009))) %>%
   glimpse()
@@ -138,6 +138,29 @@ cleaner_data_2009 <- cleaner_data_2009 %>%
     ## $ percent_boulder          <dbl> 0, 5, 5, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, N~
     ## $ redd_width_m             <dbl> NA, 0.91, 0.91, 0.91, 1.22, 0.91, 0.91, 3.66,~
     ## $ redd_length_m            <dbl> NA, 1.22, 1.52, 1.22, 1.83, 0.91, 0.91, 1.22,~
+
+## Explore `date`
+
+``` r
+cleaner_data_2009 %>%
+  ggplot(aes(x = date)) +
+  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  labs(title = "Value Counts For Survey Season Dates")+
+  theme(legend.text = element_text(size = 8))
+```
+
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+``` r
+summary(cleaner_data_2009$date)
+```
+
+    ##         Min.      1st Qu.       Median         Mean      3rd Qu.         Max. 
+    ## "2009-09-29" "2009-10-01" "2009-10-21" "2009-10-18" "2009-11-02" "2009-11-16"
+
+**NA and Unknown Values**
+
+-   0 % of values in the `date` column are NA.
 
 ## Explore Categorical Variables
 
@@ -243,7 +266,7 @@ cleaner_data_2009 %>%
   labs(title = "Daily Count of Salmon in 2009")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 cleaner_data_2009  %>%
@@ -255,7 +278,7 @@ cleaner_data_2009  %>%
   labs(title = "Salmon Count By Locations")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 **Numeric Daily Summary of salmon\_count Over 2009**
 
@@ -288,7 +311,7 @@ cleaner_data_2009 %>%
   labs(title = "Daily Count of Redds in 2009")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ``` r
 cleaner_data_2009  %>%
@@ -300,7 +323,7 @@ cleaner_data_2009  %>%
   labs(title = "Redd Count By Locations")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 **Numeric Daily Summary of redd\_count Over 2009**
 
@@ -329,7 +352,7 @@ cleaner_data_2009 %>%
   labs(title = "Redd Width Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 **Numeric Summary of redd\_width\_m Over 2009**
 
@@ -354,7 +377,7 @@ cleaner_data_2009 %>%
   labs(title = "Redd Length Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Numeric Summary of redd\_length\_m Over 2009**
 
@@ -387,7 +410,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Numeric Summary of percent\_fine\_substrate Over 2009**
 
@@ -414,7 +437,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 **Numeric Summary of percent\_small\_substrate Over 2009**
 
@@ -441,7 +464,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 **Numeric Summary of percent\_medium\_substrate Over 2009**
 
@@ -468,7 +491,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 **Numeric Summary of percent\_large\_substrate Over 2009**
 
@@ -495,7 +518,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 **Numeric Summary of percent\_boulder Over 2009**
 
@@ -534,7 +557,7 @@ cleaner_data_2009 %>%
   labs(title = "Mean Percent Substrate by Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
 
 ### Variable: `depth_m`
 
@@ -548,7 +571,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 **Numeric Summary of depth\_m Over 2009**
 
@@ -575,7 +598,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 **Numeric Summary of pot\_depth\_m Over 2009**
 
@@ -602,7 +625,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
 **Numeric Summary of velocity\_m\_per\_s Over 2009**
 
@@ -650,28 +673,28 @@ gcs_upload(feather_redd_survey_2009,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv")
 ```
 
-    ## i 2021-10-15 16:07:03 > File size detected as  19.8 Kb
+    ## i 2021-10-15 16:25:54 > File size detected as  19.8 Kb
 
-    ## i 2021-10-15 16:07:04 > Request Status Code:  400
+    ## i 2021-10-15 16:25:55 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-15 16:07:04 > File size detected as  19.8 Kb
+    ## i 2021-10-15 16:25:55 > File size detected as  19.8 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv 
     ## Type:                csv 
     ## Size:                19.8 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv?generation=1634339223687049&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv?generation=1634340354794079&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv/1634339223687049 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv/1634340354794079 
     ## MD5 Hash:            nqfUAaw5wY2t18jOk96N8g== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-15 23:07:03 
-    ## Updated:             2021-10-15 23:07:03 
-    ## Generation:          1634339223687049 
+    ## Created:             2021-10-15 23:25:54 
+    ## Updated:             2021-10-15 23:25:54 
+    ## Generation:          1634340354794079 
     ## Meta Generation:     1 
-    ## eTag:                CImf+4bEzfMCEAE= 
+    ## eTag:                CN/EqKLIzfMCEAE= 
     ## crc32c:              oXTTdw==

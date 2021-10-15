@@ -94,7 +94,7 @@ raw_data_2009$'redd_length_m' <- round(raw_data_2009$'Redd Lenght (ft)'*0.3048, 
 cleaner_data_2009 <- raw_data_2009 %>%
   select(-c(Remeasured, File, `Redd Width (ft)`, `Redd Lenght (ft)`)) %>%
   relocate('Survey Date', .before = 'Location') %>% 
-  rename('Date' = 'Survey Date',
+  rename('date' = 'Survey Date',
          'type' = 'Type (D, A, P)', 
          'salmon_count' = '# Salmon',
          'redd_count' = '#  Redds',
@@ -107,12 +107,28 @@ cleaner_data_2009 <- raw_data_2009 %>%
          'percent_large_substrate' =  '% Large (15-30 cm)',
          'percent_boulder' = '% Boulder (>30 cm)'
          ) %>%
-  mutate('Date' = as.Date(Date))
+  mutate('date' = as.Date(date))
 cleaner_data_2009 <- cleaner_data_2009 %>% 
   set_names(tolower(colnames(cleaner_data_2009))) %>%
   glimpse()
 ```
 
+## Explore `date`
+```{r}
+cleaner_data_2009 %>%
+  ggplot(aes(x = date)) +
+  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  labs(title = "Value Counts For Survey Season Dates")+
+  theme(legend.text = element_text(size = 8))
+```
+
+```{r}
+summary(cleaner_data_2009$date)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data_2009$date))/nrow(cleaner_data_2009), 3)*100` % of values in the `date` column are NA.
 
 ## Explore Categorical Variables
 
@@ -163,6 +179,7 @@ table(cleaner_data_2009$type)
 cleaner_data_2009 %>% 
   select_if(is.numeric) %>% colnames()
 ```
+
 ### Variable:`salmon_count`  
 
 ```{r}
