@@ -243,8 +243,8 @@ cleaner_data_2009 %>%
 ```{r}
 cleaner_data_2009 %>%
   ggplot(aes(x = redd_width_m)) +
-  geom_histogram(binwidth = 0.5, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2009$redd_width_m, na.rm = TRUE), max(cleaner_data_2009$redd_width_m, na.rm = TRUE), by = 1),0))+
+  geom_histogram(binwidth = 0.3, color = "black", fill = "white") +
+  scale_x_continuous(breaks = round(seq(min(cleaner_data_2009$redd_width_m, na.rm = TRUE), max(cleaner_data_2009$redd_width_m, na.rm = TRUE), by = 0.5),0))+
   labs(title = "Redd Width Distribution")
 ```
 
@@ -264,8 +264,8 @@ summary(cleaner_data_2009$redd_width_m)
 #TODO: chance xaxis interval
 cleaner_data_2009 %>%
   ggplot(aes(x = redd_length_m)) +
-  geom_histogram(binwidth = 0.3, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2009$redd_length_m, na.rm = TRUE), max(cleaner_data_2009$redd_length_m, na.rm = TRUE), by = 1),1))+
+  geom_histogram(binwidth = 0.2, color = "black", fill = "white") +
+  scale_x_continuous(breaks = round(seq(min(cleaner_data_2009$redd_length_m, na.rm = TRUE), max(cleaner_data_2009$redd_length_m, na.rm = TRUE), by = 0.3),1))+
   labs(title = "Redd Length Distribution")
 ```
 
