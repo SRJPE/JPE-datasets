@@ -20,20 +20,21 @@ library(leaflet)
 **Timeframe:** 2011
 
 
-**Completeness of Record throughout timeframe: **\
+**Completeness of Record throughout timeframe:**  
 
 * Longitude and latitude data are not available for 2009, 2010, 2011, 2012, 2019, 2020. NA values will be filled in for these data sets in final cleaned data set.
-*No numeric values recorded for percent_boulder in 2011.
-
-**Sampling Location:** Feather River
 
 
-**Data Contact:** [Chris Cook](Chris.Cook@water.ca.gov)
+**Sampling Location:** Various sampling locations on Feather River.
+
+
+**Data Contact:** [Chris Cook](mailto::Chris.Cook@water.ca.gov)
 
 
 Additional Info:  
 1. Latitude and longitude are in NAD 1983 UTM Zone 10N\
 2. The substrate is observed visually and an estimate of the percentage of 5 size classes:   
+
 * fines <1cm  
 * small 1-5cm  
 * medium 6-15cm  
@@ -65,38 +66,40 @@ raw_data_2011 = readxl::read_excel("2011_Chinook_Redd_Survey_Data_raw.xlsx")
 glimpse(raw_data_2011)
 ```
 
-## Data Transformation
+## Data Transformations
 
 ```{r}
-raw_data_2011$'redd width (ft)' = raw_data_2011$'redd width (ft)'/3.281
-raw_data_2011$'redd length (ft)' = raw_data_2011$'redd length (ft)'/3.281
+#Convert feet to m
+raw_data_2011$'redd_width_m' <- round(raw_data_2011$'redd width (ft)'*0.3048, 2)
+raw_data_2011$'redd_length_m' <- round(raw_data_2011$'redd length (ft)'*0.3048, 2)
+
 cleaner_data_2011 <- raw_data_2011 %>% 
-  select(-c('Survey Wk', 'File #', '# of redds')) %>% 
-  rename('salmon_counted'= '# salmon',
+  select(-c('Survey Wk', 'File #', 'redd width (ft)', 'redd length (ft)')) %>% 
+  rename(
+         'redd_count' = '# of redds', 
+         'salmon_count'= '# salmon',
          'latitude' = 'Latitude',
          'longitude' = 'Longitude',
          'depth_m' = 'Depth (m)',
          'pot_depth_m' = 'Pot Depth (m)',
-         'velocity_m/s' = 'Velocity (m/s)',
+         'velocity_m_per_s' = 'Velocity (m/s)',
          'percent_fine_substrate' = '% fines(<1 cm)',
          'percent_small_substrate' = '% small (1-5 cm)',
          'percent_medium_substrate'= '% med (5-15 cm)',
          'percent_large_substrate' = '% large (15-30 cm)',
-         'percent_boulder' = '% boulder (>30 cm)',
-         'redd_width_m' = 'redd width (ft)',
-         'redd_length_m' = 'redd length (ft)',
+         'percent_boulder' = '% boulder (>30 cm)'
          ) %>% 
   mutate(latitude = as.numeric(latitude),
-         longitude = as.numeric(longitude)) %>% 
-  filter(salmon_counted > 0) %>% 
-  glimpse()
-```
-```{r}
+         longitude = as.numeric(longitude),
+         Date = as.Date(Date))
+
+#Convert to snakecase
 cleaner_data_2011 <- cleaner_data_2011 %>% 
   set_names(tolower(colnames(cleaner_data_2011))) %>% 
-  mutate(date = as.Date(date)) %>% 
   glimpse()
 ```
+
+
 
 ## Explore Categorical Variables
 
@@ -113,25 +116,31 @@ table(cleaner_data_2011$location)
 Locations names are changed to be consistent with the rest of the Feather River redd survey files:
 ```{r}
 cleaner_data_2011 <- cleaner_data_2011 %>% 
-  mutate(location = tolower(location), 
-         location = if_else(location == "matthews", "mathews", location),
-         location = if_else(location == "top moes side channel", "upper moe's side channel", location),
-         location = if_else(location == "top of matthews", "top of mathews", location),
-         location = if_else(location == "upper matthews", "upper mathews", location),
-         location = if_else(location == "uppper auditorium", "upper auditorium", location)
+  mutate(location = str_to_title(location),
+    location = if_else(location == "Matthews", "Mathews", location),
+          location = if_else(location == "Moe's Ditch", "Moes Ditch", location),
+         location = if_else(location == "Top Moes Side Channel", "Upper Moes Side Channel", location),
+         location = if_else(location == "Top of Matthews", "Top of Mathews", location),
+         location = if_else(location == "Upper Matthews", "Upper Mathews", location),
+         location = if_else(location == "Upper Moe's Channel", "Upper Moes Channel", location),
+         location = if_else(location == "Top Vance East", "Upper Vance East", location),
+         location = if_else(location == "Uppper Auditorium", "Upper Auditorium", location)
          )
 table(cleaner_data_2011$location)
 ```
+**NA and Unknown Values** 
 
 * `r round(sum(is.na(cleaner_data_2011$location))/nrow(cleaner_data_2011), 3)*100` % of values in the `location` column are NA.
 
 ## Variable:`Type`
 
-Description:  
-Area - polygon mapped with Trimble GPS unit
-Point - points mapped with Trimble GPS unit
-Questionable redds - polygon mapped with Trimble GPS unit where the substrate was disturbed but did not have the proper characteristics to be called a redd - it was no longer recorded after 2011
+Description:    
 
+* Area - polygon mapped with Trimble GPS unit  
+
+* Point - points mapped with Trimble GPS unit  
+
+* Questionable redds - polygon mapped with Trimble GPS unit where the substrate was disturbed but did not have the proper characteristics to be called a redd - it was no longer recorded after 2011 
 ```{r}
 table(cleaner_data_2011$type)
 ```
@@ -152,32 +161,32 @@ table(cleaner_data_2011$type)
 cleaner_data_2011 %>% 
   select_if(is.numeric) %>% colnames()
 ```
-### Variable:`salmon_counted`  
-#### Plotting salmon counted in 2011
+### Variable:`salmon_count`  
+
 ```{r}
 cleaner_data_2011 %>% 
-  ggplot(aes(x = date, y = salmon_counted)) + 
+  ggplot(aes(x = date, y = salmon_count)) + 
   geom_col() +
   facet_wrap(~year(date), scales = "free") +
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
   theme_minimal() +
   theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
   theme(axis.text.y = element_text(size = 8))+
-  labs(title = "Daily Count of Salmon Counted in 2011")
+  labs(title = "Daily Count of Salmon in 2011")
 ```
 
-**Numeric Daily Summary of salmon_counted Over 2011**
+**Numeric Daily Summary of salmon_count Over 2011**
 ```{r}
 cleaner_data_2011 %>%
   group_by(date) %>%
-  summarise(count = sum(salmon_counted, na.rm = T)) %>%
+  summarise(count = sum(salmon_count, na.rm = T)) %>%
   pull(count) %>%
   summary()
 ```
 
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2011  %>%
-  ggplot(aes(y = location, x = salmon_counted))+
+  ggplot(aes(y = location, x = salmon_count))+
   geom_boxplot() +
   theme_minimal() +
   theme(text = element_text(size = 10))+
@@ -185,18 +194,51 @@ cleaner_data_2011  %>%
   theme(axis.text.y = element_text(size = 8,vjust = 0.1, hjust=0.2))+
   labs(title = "Salmon Count By Locations")
 ```
-**Numeric summary of salmon_counted by location in 2011**
+
+**Numeric summary of salmon_count by location in 2011**
 ```{r}
 cleaner_data_2011 %>%
   group_by(location) %>% 
-  summarise(count = sum(salmon_counted, na.rm = T)) %>% 
+  summarise(count = sum(salmon_count, na.rm = T)) %>% 
   pull(count) %>%
   summary()
 ```
 
 **NA and Unknown Values**
-* `r round(sum(is.na(cleaner_data_2011$salmon_counted))/nrow(cleaner_data_2011), 5)*100` % of values in the `salmon_counted` column are NA. 
 
+* `r round(sum(is.na(cleaner_data_2011$salmon_count))/nrow(cleaner_data_2011), 5)*100` % of values in the `salmon_count` column are NA. 
+
+### Variable:`redd_count` 
+
+```{r}
+cleaner_data_2011 %>% 
+  ggplot(aes(x = date, y = redd_count)) + 
+  geom_col() +
+  facet_wrap(~year(date), scales = "free") +
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
+  theme(axis.text.y = element_text(size = 8))+
+  labs(title = "Daily Count of Redds in 2011")
+```
+```{r}
+cleaner_data_2011  %>%
+  ggplot(aes(y = location, x = redd_count))+
+  geom_boxplot() +
+  theme_minimal() +
+  theme(text = element_text(size = 8))+
+  theme(axis.text.x = element_text(size = 10,vjust = 0.5, hjust=0.1))+
+  labs(title = "Redd Count By Locations")
+```
+
+**Numeric Daily Summary of redd_count Over 2011**
+```{r}
+cleaner_data_2011 %>%
+  group_by(date) %>%
+  summarise(count = sum(redd_count, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
+```
 
 ### Variable:`redd_width_m`
 ```{r fig.height = 8, fig.width = 8}
@@ -212,16 +254,18 @@ cleaner_data_2011 %>%
 ```{r}
 cleaner_data_2011 %>%
   ggplot(aes(x = redd_width_m)) +
-  geom_histogram(binwidth = 0.3, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2011$redd_width_m, na.rm = TRUE), max(cleaner_data_2011$redd_width_m, na.rm = TRUE), by = 0.2),1))+
-  labs(title = "Count of Redd Width")
+  geom_histogram(binwidth = 0.5, color = "black", fill = "white") +
+  scale_x_continuous(breaks = round(seq(min(cleaner_data_2011$redd_width_m, na.rm = TRUE), max(cleaner_data_2011$redd_width_m, na.rm = TRUE), by = 1),0))+
+  labs(title = "Redd Width Distribution")
 ```
 
 **Numeric Summary of redd_width_m Over 2011**
 ```{r}
 summary(cleaner_data_2011$redd_width_m)
 ```
+
 **NA and Unknown Values**
+
 * `r round(sum(is.na(cleaner_data_2011$'redd_width_m'))/nrow(cleaner_data_2011), 3)*100` % of values in the `redd_width_m` column are NA.
 
 
@@ -239,9 +283,9 @@ cleaner_data_2011 %>%
 ```{r}
 cleaner_data_2011 %>%
   ggplot(aes(x = redd_length_m)) +
-  geom_histogram(binwidth = 0.3, color = "black", fill = "white") +
-  scale_x_continuous(breaks = round(seq(min(cleaner_data_2011$redd_length_m, na.rm = TRUE), max(cleaner_data_2011$redd_length_m, na.rm = TRUE), by = 0.3),1))+
-  labs(title = "Count of Redd Length")
+  geom_histogram(binwidth = 0.5, color = "black", fill = "white") +
+  scale_x_continuous(breaks = round(seq(min(cleaner_data_2011$redd_length_m, na.rm = TRUE), max(cleaner_data_2011$redd_length_m, na.rm = TRUE), by = 1),0))+
+  labs(title = "Redd Length Distribution")
 ```
 
 **Numeric Summary of redd_length_m Over 2011**
@@ -249,19 +293,23 @@ cleaner_data_2011 %>%
 summary(cleaner_data_2011$redd_length_m)
 ```
 **NA and Unknown Values**
+
 * `r round(sum(is.na(cleaner_data_2011$'redd_length_m'))/nrow(cleaner_data_2011), 3)*100` % of values in the `redd_length_m` column are NA.
 
-### Location Physical Attributes
+### Physical Attributes
+
 ### Variable:`percent_fine_substrate`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2011 %>%
   group_by(location) %>% 
   summarise(mean_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE)) %>%
   ggplot(aes(y = location, x = mean_fine_substrate)) +
+  xlab("Percent Fine Substrate")+
+  ylab("Location")+
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
-  labs(title = "Average Fine Substrate By Location")
+  labs(title = "Average Percentage of Fine Substrate By Location")
 ```
 
 **Numeric Summary of percent_fine_substrate Over 2011**
@@ -269,6 +317,7 @@ cleaner_data_2011 %>%
 summary(cleaner_data_2011$percent_fine_substrate)
 ```
 **NA and Unknown Values**
+
 * `r round(sum(is.na(cleaner_data_2011$'percent_fine_substrate'))/nrow(cleaner_data_2011), 3)*100` % of values in the `percent_fine_substrate` column are NA.
 
 ### Variable:`percent_small_substrate`
@@ -277,6 +326,8 @@ cleaner_data_2011 %>%
   group_by(location) %>% 
   summarise(mean_small_substrate = mean(percent_small_substrate, na.rm = TRUE)) %>%
   ggplot(aes(y = location, x = mean_small_substrate)) +
+  xlab("Percent Small Substrate")+
+  ylab("Location")+
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
@@ -289,6 +340,7 @@ summary(cleaner_data_2011$percent_small_substrate)
 ```
 
 **NA and Unknown Values**
+
 * `r round(sum(is.na(cleaner_data_2011$'percent_small_substrate'))/nrow(cleaner_data_2011), 3)*100` % of values in the `percent_small_substrate` column are NA.
 
 ### Variable:`percent_medium_substrate`
@@ -297,6 +349,8 @@ cleaner_data_2011 %>%
   group_by(location) %>% 
   summarise(mean_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE)) %>%
   ggplot(aes(y = location, x = mean_medium_substrate)) +
+  xlab("Percent Medium Substrate")+
+  ylab("Location")+
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
@@ -308,6 +362,7 @@ cleaner_data_2011 %>%
 summary(cleaner_data_2011$percent_medium_substrate)
 ```
 **NA and Unknown Values**
+
 * `r round(sum(is.na(cleaner_data_2011$'percent_medium_substrate'))/nrow(cleaner_data_2011), 3)*100` % of values in the `percent_medium_substrate` column are NA.
 
 ### Variable:`percent_large_substrate`
@@ -316,6 +371,8 @@ cleaner_data_2011 %>%
   group_by(location) %>% 
   summarise(mean_large_substrate = mean(percent_large_substrate, na.rm = TRUE)) %>%
   ggplot(aes(y = location, x = mean_large_substrate)) +
+  xlab("Percent Large Substrate")+
+  ylab("Location")+
   geom_col() +
   theme_minimal() +
   theme(text = element_text(size = 8)) +
@@ -327,10 +384,22 @@ cleaner_data_2011 %>%
 summary(cleaner_data_2011$percent_large_substrate)
 ```
 **NA and Unknown Values**
+
 * `r round(sum(is.na(cleaner_data_2011$'percent_large_substrate'))/nrow(cleaner_data_2011), 3)*100` % of values in the `percent_large_substrate` column are NA.
 
 ### Variable:`percent_boulder`
-No values recorded for percent_boulder
+```{r fig.height = 8, fig.width = 8}
+cleaner_data_2011 %>%
+  group_by(location) %>% 
+  summarise(mean_boulder = mean(percent_boulder, na.rm = TRUE)) %>%
+  ggplot(aes(y = location, x = mean_boulder)) +
+  xlab("Percent Boulder Substrate")+
+  ylab("Location")+
+  geom_col() +
+  theme_minimal() +
+  theme(text = element_text(size = 8)) +
+  labs(title = "Average Percentage of Boulder By Location")
+```
 
 **Numeric Summary of percent_boulder Over 2011**
 ```{r}
@@ -339,6 +408,7 @@ summary(cleaner_data_2011$percent_boulder)
 
 **NA and Unknown Values**
 NA and Unknown Values**
+
 * `r round(sum(is.na(cleaner_data_2011$'percent_boulder'))/nrow(cleaner_data_2011), 3)*100` % of values in the `percent_large_substrate` column are NA.
 
 ### Variable: `depth_m`
@@ -358,14 +428,14 @@ summary(cleaner_data_2011$depth_m)
 ```
 
 **NA and Unknown Values**
-NA and Unknown Values**
+
 * `r round(sum(is.na(cleaner_data_2011$'depth_m'))/nrow(cleaner_data_2011), 3)*100` % of values in the `depth_m` column are NA.
 
 
 ### Variable: `pot_depth_m`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2011 %>% 
-  group_by(location) %>% 
+   group_by(location) %>% 
   summarise(mean_pot_depth_m = mean(pot_depth_m, na.rm = TRUE)) %>%
   ggplot(aes(x = mean_pot_depth_m, y = location)) + 
   geom_col() + 
@@ -379,39 +449,40 @@ summary(cleaner_data_2011$pot_depth_m)
 ```
 
 **NA and Unknown Values**
-NA and Unknown Values**
+
 * `r round(sum(is.na(cleaner_data_2011$'pot_depth_m'))/nrow(cleaner_data_2011), 3)*100` % of values in the `pot_depth_m` column are NA.
 
-### Variable: `velocity_m/s`
+### Variable: `velocity_m_per_s`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2011 %>% 
   group_by(location) %>% 
-  summarise(`mean_velocity_m/s` = mean(`velocity_m/s`, na.rm = TRUE)) %>%
-  ggplot(aes(x = `mean_velocity_m/s`, y = location)) + 
+  summarise(`mean_velocity_m_per_s` = mean(`velocity_m_per_s`, na.rm = TRUE)) %>%
+  ggplot(aes(x = `mean_velocity_m_per_s`, y = location)) + 
   geom_col() + 
   theme_minimal() + 
   theme(text = element_text(size = 8))+
   labs(title = "Average Velocity By Location")
 ```
-**Numeric Summary of velocity_m/s Over 2011**
+**Numeric Summary of velocity_m_per_s Over 2011**
 ```{r}
-summary(cleaner_data_2011$`velocity_m/s`)
+summary(cleaner_data_2011$`velocity_m_per_s`)
 ```
 
 **NA and Unknown Values**
-NA and Unknown Values**
-* `r round(sum(is.na(cleaner_data_2011$'velocity_m/s'))/nrow(cleaner_data_2011), 3)*100` % of values in the `velocity_m/s` column are NA.
 
+* `r round(sum(is.na(cleaner_data_2011$'velocity_m_per_s'))/nrow(cleaner_data_2011), 3)*100` % of values in the `velocity_m_per_s` column are NA.
+
+
+### Add cleaned data back onto google cloud
 ```{r}
 feather_redd_survey_2011 <- cleaner_data_2011 %>% glimpse()
 ```
 
-### Add cleaned data back onto google cloud
 ```{r}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(feather_redd_survey_2011,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/2011_Chinook_Redd_Survey_Data.csv")
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2011.csv")
 ```
