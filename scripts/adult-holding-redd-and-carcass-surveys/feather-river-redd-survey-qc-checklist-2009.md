@@ -375,16 +375,16 @@ summary(cleaner_data_2009$redd_length_m)
 ### Variable:`percent_fine_substrate`
 
 ``` r
+colourCount = length(unique(cleaner_data_2009$location))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
 cleaner_data_2009 %>%
-  group_by(location) %>% 
-  summarise(mean_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = reorder(location,+mean_fine_substrate), x = mean_fine_substrate)) +
-  xlab("Percent Fine Substrate")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percent Fine Substrate By Location")
+  ggplot(aes(x = percent_fine_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 5, position = 'stack', color = "black") +
+  labs(title = "Percent Fine Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
@@ -406,15 +406,12 @@ summary(cleaner_data_2009$percent_fine_substrate)
 
 ``` r
 cleaner_data_2009 %>%
-  group_by(location) %>% 
-  summarise(mean_small_substrate = mean(percent_small_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = reorder(location,+ mean_small_substrate), x = mean_small_substrate)) +
-  xlab("Percent Small Substrate")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percent Small Substrate By Location")
+  ggplot(aes(x = percent_small_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 10, position = 'stack', color = "black") +
+  labs(title = "Percent Small Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
@@ -436,15 +433,12 @@ summary(cleaner_data_2009$percent_small_substrate)
 
 ``` r
 cleaner_data_2009 %>%
-  group_by(location) %>% 
-  summarise(mean_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = reorder(location,+ mean_medium_substrate), x = mean_medium_substrate)) +
-  xlab("Percent Medium Substrate")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percent Medium Substrate By Location")
+  ggplot(aes(x = percent_medium_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 10, position = 'stack', color = "black") +
+  labs(title = "Percent Medium Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
@@ -466,15 +460,12 @@ summary(cleaner_data_2009$percent_medium_substrate)
 
 ``` r
 cleaner_data_2009 %>%
-  group_by(location) %>% 
-  summarise(mean_large_substrate = mean(percent_large_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_large_substrate)) +
-  xlab("Percent Large Substrate")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percent Large Substrate By Location")
+  ggplot(aes(x = percent_large_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 10, position = 'stack', color = "black") +
+  labs(title = "Percent Large Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
@@ -496,15 +487,12 @@ summary(cleaner_data_2009$percent_large_substrate)
 
 ``` r
 cleaner_data_2009 %>%
-  group_by(location) %>% 
-  summarise(mean_boulder = mean(percent_boulder, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_boulder)) +
-  xlab("Percent Boulder")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percent Boulder By Location")
+  ggplot(aes(x = percent_boulder, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  labs(title = "Percent Boulder Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
@@ -522,20 +510,45 @@ summary(cleaner_data_2009$percent_boulder)
 
 -   88.4 % of values in the `percent_large_substrate` column are NA.
 
-### Variable: `depth_m`
+### Summary of Mean Percent Substrate In Each Location
 
 ``` r
 cleaner_data_2009 %>% 
   group_by(location) %>% 
-  summarise(mean_depth_m = mean(depth_m, na.rm = TRUE)) %>%
-  ggplot(aes(x = mean_depth_m, y = location)) + 
-  geom_col() + 
-  theme_minimal() + 
-  theme(text = element_text(size = 8))+
-  labs(title = "Average Depth By Location")
+  summarise(mean_percent_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE),
+            mean_percent_small_substrate = mean(percent_small_substrate, na.rm = TRUE),
+            mean_percent_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE),
+            mean_percent_large_substrate = mean(percent_large_substrate, na.rm = TRUE),
+            mean_percent_boulder = mean(percent_boulder, na.rm = TRUE),
+            ) %>% 
+  pivot_longer(
+    cols = starts_with("mean"),
+    names_to = "substrate_type",
+    values_to = "percent",
+    values_drop_na = TRUE
+  ) %>%
+  ggplot(aes(fill = substrate_type,
+             y = location,
+             x = percent))+
+  geom_bar(position = 'stack', stat = 'identity', color = 'black')+
+  labs(title = "Mean Percent Substrate by Location")
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+
+### Variable: `depth_m`
+
+``` r
+cleaner_data_2009 %>%
+  ggplot(aes(x = depth_m, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 0.15, position = 'stack', color = "black") +
+  labs(title = "Depth Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
+```
+
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Numeric Summary of depth\_m Over 2009**
 
@@ -553,17 +566,16 @@ summary(cleaner_data_2009$depth_m)
 ### Variable: `pot_depth_m`
 
 ``` r
-cleaner_data_2009 %>% 
-   group_by(location) %>% 
-  summarise(mean_pot_depth_m = mean(pot_depth_m, na.rm = TRUE)) %>%
-  ggplot(aes(x = mean_pot_depth_m, y = location)) + 
-  geom_col() + 
-  theme_minimal() + 
-  theme(text = element_text(size = 8))+
-  labs(title = "Average Pot Depth By Location")
+cleaner_data_2009 %>%
+  ggplot(aes(x = pot_depth_m, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 0.15, position = 'stack', color = "black") +
+  labs(title = "Pot Depth Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 **Numeric Summary of pot\_depth\_m Over 2009**
 
@@ -581,17 +593,16 @@ summary(cleaner_data_2009$pot_depth_m)
 ### Variable: `velocity_m_per_s`
 
 ``` r
-cleaner_data_2009 %>% 
-  group_by(location) %>% 
-  summarise(`mean_velocity_m_per_s` = mean(`velocity_m_per_s`, na.rm = TRUE)) %>%
-  ggplot(aes(x = `mean_velocity_m_per_s`, y = location)) + 
-  geom_col() + 
-  theme_minimal() + 
-  theme(text = element_text(size = 8))+
-  labs(title = "Average Velocity By Location")
+cleaner_data_2009 %>%
+  ggplot(aes(x = velocity_m_per_s, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 0.75, position = 'stack', color = "black") +
+  labs(title = "Mean Velocity Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 **Numeric Summary of velocity\_m\_per\_s Over 2009**
 
@@ -639,28 +650,28 @@ gcs_upload(feather_redd_survey_2009,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv")
 ```
 
-    ## i 2021-10-14 16:56:01 > File size detected as  19.8 Kb
+    ## i 2021-10-15 15:33:32 > File size detected as  19.8 Kb
 
-    ## i 2021-10-14 16:56:01 > Request Status Code:  400
+    ## i 2021-10-15 15:33:32 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-14 16:56:01 > File size detected as  19.8 Kb
+    ## i 2021-10-15 15:33:32 > File size detected as  19.8 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv 
     ## Type:                csv 
     ## Size:                19.8 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv?generation=1634255760926593&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv?generation=1634337212465973&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv/1634255760926593 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv/1634337212465973 
     ## MD5 Hash:            nqfUAaw5wY2t18jOk96N8g== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-14 23:56:00 
-    ## Updated:             2021-10-14 23:56:00 
-    ## Generation:          1634255760926593 
+    ## Created:             2021-10-15 22:33:32 
+    ## Updated:             2021-10-15 22:33:32 
+    ## Generation:          1634337212465973 
     ## Meta Generation:     1 
-    ## eTag:                CIHP6JCNy/MCEAE= 
+    ## eTag:                CLWG+Me8zfMCEAE= 
     ## crc32c:              oXTTdw==
