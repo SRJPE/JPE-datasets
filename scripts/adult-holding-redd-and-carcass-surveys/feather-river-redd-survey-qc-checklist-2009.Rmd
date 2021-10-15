@@ -261,7 +261,6 @@ summary(cleaner_data_2009$redd_width_m)
 ### Variable: `redd_length_m`  
 
 ```{r}
-#TODO: chance xaxis interval
 cleaner_data_2009 %>%
   ggplot(aes(x = redd_length_m)) +
   geom_histogram(binwidth = 0.2, color = "black", fill = "white") +
@@ -285,8 +284,9 @@ summary(cleaner_data_2009$redd_length_m)
 
 ### Variable:`percent_fine_substrate`
 ```{r}
+#Find the most distinctive colours for visual
 colourCount = length(unique(cleaner_data_2009$location))
-getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
 
 cleaner_data_2009 %>%
   ggplot(aes(x = percent_fine_substrate, fill = location)) +
