@@ -396,7 +396,7 @@ summary(cleaner_seine_data$weight_g)
 
 ### Variable: `temperature`
 
-**Plotting temperature over Period of Record**
+**Plotting Distribution of temperature measures**
 
 ``` r
 cleaner_seine_data %>%  
@@ -575,8 +575,6 @@ length(unique(cleaner_seine_data$sample_id)) == nrow(cleaner_seine_data)
 
 **NA and Unknown Values**
 
-No NA values:
-
 -   0 % of values in the `sample_id` column are NA.
 -   0 % of values in the `id` column are NA.
 
@@ -610,8 +608,6 @@ table(cleaner_seine_data$lifestage)
 
 **NA and Unknown Values**
 
-No NA values:
-
 -   9.9 % of values in the `lifestage` column are NA.
 
 ### Variable: `gear_code`
@@ -642,8 +638,6 @@ table(cleaner_seine_data$gear_code)
     ##    403   9697
 
 **NA and Unknown Values**
-
-No NA values:
 
 -   0 % of values in the `gear_code` column are NA.
 
@@ -686,8 +680,6 @@ table(cleaner_seine_data$condition_code)
 
 **NA and Unknown Values**
 
-No NA values:
-
 -   1.2 % of values in the `condition_code` column are NA.
 
 ### Variable: `weather_code`
@@ -717,8 +709,6 @@ table(cleaner_seine_data$weather_code)
     ##            74          2546           552          6876
 
 **NA and Unknown Values**
-
-No NA values:
 
 -   0.5 % of values in the `weather_code` column are NA.
 
@@ -830,8 +820,6 @@ unique(cleaner_seine_data$cover_6)
 
 **NA and Unknown Values**
 
-No NA values:
-
 -   0.8 % of values in the `cover_1` column are NA.
 -   93.8 % of values in the `cover_2` column are NA.
 -   73.1 % of values in the `cover_3` column are NA.
@@ -878,8 +866,6 @@ tibble(code = feather_seine_stream_features,
 ```
 
 **NA and Unknown Values**
-
-No NA values:
 
 -   1.6 % of values in the `stream_features` column are NA.
 
@@ -1000,7 +986,6 @@ table(cleaner_seine_data$site_name)
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-string <- "Boyds 1/4 mile upstream RL"
 format_site_name <- function(string) {
   clean <- str_replace_all(string, "1/2", "half") %>%
     str_replace_all("1/4", "quarter") %>%
@@ -1127,8 +1112,6 @@ table(cleaner_seine_data$site_name)
 
 **NA and Unknown Values**
 
-No NA values:
-
 -   0 % of values in the `site_name` column are NA.
 
 ### Variable: `location_lu_channel`
@@ -1150,8 +1133,6 @@ table(cleaner_seine_data$location_lu_channel)
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 **NA and Unknown Values**
-
-No NA values:
 
 -   3.4 % of values in the `location_lu_channel` column are NA.
 
@@ -1178,14 +1159,13 @@ table(cleaner_seine_data$run)
 
 **NA and Unknown Values**
 
-No NA values:
-
 -   3.6 % of values in the `run` column are NA.
 
 ## Summary of identified issues
 
--   List things that are funcky/bothering us but that we don’t feel like
-    should be changed without more investigation
+-   TODO need to figure out what is going on with the substrate and
+    cover columns.
+-   There are not a ton of SR catches, mainly FR.
 
 ## Save cleaned data back to google cloud
 

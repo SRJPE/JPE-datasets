@@ -12,6 +12,7 @@ library(lubridate)
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
+library(readxl)
 ```
 
 # Feather River Seine and Snorkel Data 
@@ -58,7 +59,6 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 ```{r, warning=FALSE}
 # read in data to clean 
 raw_seine_1997 <- read_xlsx("raw_seine_1997-2001.xlsx") %>% 
-  janitor::clean_names() %>%
   glimpse()
 
 ```
@@ -66,74 +66,264 @@ raw_seine_1997 <- read_xlsx("raw_seine_1997-2001.xlsx") %>%
 ## Data transformations
 
 ```{r}
-# For different excel sheets for each year read in and combine years here
+cleaner_seine_data <- raw_seine_1997 %>%
+  janitor::clean_names() %>% 
+  filter(species_code %in% c("CHN", "CHNF", "CHNFT", "CHNI",
+                        "CHNL", "CHNS", "CHNST", "CHNT","CHNW")) %>%
+  rename("cover" = hu_ccover, 
+         "substrate" = hu_csubstrate, 
+         "HUC_stream_feature" = hu_cunit,
+         "count" = total_catch) %>% 
+  mutate(time = hms::as_hms(time),
+         seine_id = as.character(seine_id), 
+         substrate = as.character(substrate)) %>%
+  select(-year, -month, -species_code) %>% 
+  glimpse()
+
 ```
 
-```{r}
-# Snake case, 
-# Columns are appropriate types
-# Remove redundant columns
-```
 
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
-# Filter clean data to show only numeric variables 
+cleaner_seine_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-### Variable: `[name]`
+### Variable: `water_temp`
 
-**Plotting [Variable] over Period of Record**
+**Plotting water_temp over Period of Record**
+
+Daily average water temperature measures appear to be lower in Dec - March and tehn increase April - September. They appear to typically range from 44 - 72. 
+```{r}
+cleaner_seine_data %>% 
+  group_by(date = as.Date(date)) %>%
+  mutate(avg_temp = mean(water_temp)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
+  geom_point(alpha = .25, size = 2) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom") + 
+  labs(title = "Daily Water Temperature (colored by year)",
+       y = "Average daily temp", 
+       x = "Date")  
+```
 
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+cleaner_seine_data %>%  
+  ggplot(aes(x = water_temp)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Temperature distribution (farenheit)") +  
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
+**Numeric Summary of water_temp over Period of Record**
 
 ```{r}
-# Table with summary statistics
+summary(cleaner_seine_data$water_temp)
 ```
 
+### Variable: `flow`
+
+**Plotting flow over Period of Record**
+
+```{r}
+cleaner_seine_data %>% 
+  group_by(date = as.Date(date)) %>%
+  mutate(avg_flow = mean(flow)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_flow, color = year)) + 
+  geom_point(alpha = .75, size = 2) + 
+  geom_line(alpha = .25) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom") + 
+  labs(title = "Daily Average Flow (colored by year)",
+       y = "Flow (CFS)", 
+       x = "Date")  
+```
+
+Flow measurements are not taken frequently. It looks like about ~ 15 - 30 days out of the year. 
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot(aes(x = flow)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Flow distribution (cfs)") +  
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of flow over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$flow)
+```
 **NA and Unknown Values**
 
 Provide a stat on NA or unknown values
 
-## Explore Categorical variables: {.tabset}
+### Variable: `count`
 
-General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
+**Plotting Count over Period of Record**
 
 ```{r}
-# Filter clean data to show only categorical variables
+cleaner_seine_data %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = count)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Seine Count", 
+       x = "Date")  
+```
+
+```{r}
+cleaner_seine_data %>% group_by(date) %>%
+  mutate(daily_count_upstream = sum(count)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ungroup() %>%
+  ggplot(aes(x = year, y = daily_count_upstream)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(text = element_text(size = 23)) + 
+  labs(title = "Daily Count of Seine Catch Sumarized by Year") 
+```
+
+There is no data on runs (or fork length) so we cannot differentiate spring from other runs. 
+
+**Numeric Summary of Count over Period of Record**
+
+```{r}
+# daily numeric summary 
+cleaner_seine_data %>% group_by(date) %>%
+  summarise(daily_count = sum(count, na.rm = T)) %>%
+  pull(daily_count) %>%
+  summary()
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$count))/nrow(cleaner_seine_data), 3) * 100` % of values in the `count` column are NA. However, there are clearly gaps in data. 
+
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+cleaner_seine_data %>% select_if(is.character) %>% colnames()
 ```
 
 
-### Variable: `[name]`
+### Variable: `seine_id`
+
+TODO join seineData onto 
+Seine Id can be used to get additional information describing seine equipment. (Information on crew, depth, temp, ect...)
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$seine_id))/nrow(cleaner_seine_data), 3) * 100` % of values in the `seine_id` column are NA.
+
+### Variable: `location`
 ```{r}
-#table() 
+table(cleaner_seine_data$location)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
-```
+format_site_name <- function(string) {
+  clean <- str_replace_all(string, "1/2", "half") %>%
+    str_replace_all("1/4", "quarter") %>%
+    str_replace_all("S.C.", "SC") %>%
+    str_replace_all("'", "") %>%
+    str_replace_all("G-95", "G95") %>% 
+    str_replace_all("[^[:alnum:]]", " ") %>% 
+    trimws() %>% 
+    stringr::str_squish() %>%
+    stringr::str_to_title()
+}
 
-**Create lookup rda for [variable] encoding:** 
-```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
+cleaner_seine_data$location <- format_site_name(cleaner_seine_data$location)
+table(cleaner_seine_data$location)
 ```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+* `r round(sum(is.na(cleaner_seine_data$location))/nrow(cleaner_seine_data), 3) * 100` % of values in the `location` column are NA.
+
+### Variable: `station_code`
+
+TODO add to this
+
+```{r}
+table(cleaner_seine_data$station_code)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$seine_id))/nrow(cleaner_seine_data), 3) * 100` % of values in the `station_code` column are NA.
+
+### Variable: `substrate`
+
+TODO add to this 
+
+```{r}
+table(cleaner_seine_data$substrate)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$substrate))/nrow(cleaner_seine_data), 3) * 100` % of values in the `substrate` column are NA.
+
+### Variable: `cover`
+
+TODO add to this 
+
+```{r}
+table(cleaner_seine_data$cover)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$cover))/nrow(cleaner_seine_data), 3) * 100` % of values in the `cover` column are NA.
+
+### Variable: `HUC_strean_feature`
+
+TODO add to this 
+
+```{r}
+table(cleaner_seine_data$HUC_strean_feature)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$HUC_strean_feature))/nrow(cleaner_seine_data), 3) * 100` % of values in the `HUC_strean_feature` column are NA.
 
 ## Summary of identified issues
 
-* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
+* There is no data on runs (or fork length) so we cannot differentiate spring from other runs. 
+* Sampling does not occur that frequently each year
 
 ## Save cleaned data back to google cloud 
 
