@@ -76,7 +76,7 @@ cleaner_seine_data <- raw_seine_2015 %>%
   janitor::clean_names() %>% 
   rename("bs_depth_half" = bs_depth_1_2, 
          "lifestage" = salmonid_life_stage,
-         "latitude" = ) %>%
+         "stream_features" = rpg_ru) %>%
   filter(species %in% c("CHN", "CHNF", "CHNFT", "CHNI",
                         "CHNL", "CHNS", "CHNST", "CHNT","CHNW")) %>%
   mutate(date = as.Date(date),
@@ -85,24 +85,28 @@ cleaner_seine_data <- raw_seine_2015 %>%
          weight_g = as.numeric(weight_g),
          sample_id = as.character(sample_id),
          id = as.character(id),
-         gear_code = as.character(gear_code),
+         site_id = as.character(site_id),
          condition_code = as.character(condition_code),
          lifestage = as.character(lifestage),
          substrate_1 = as.character(substrate_1), # Should I change these to the actual cover type ex: fine_substrate T/F values?
          substrate_2 = as.character(substrate_2),
          substrate_3 = as.character(substrate_3),
-         objectid = as.character(objectid),
+         substrate_4 = as.character(substrate_4),
+         substrate_5 = as.character(substrate_5),
          run = case_when(species %in% c("CHNF", "CHNFT") ~ "fall",
                          species %in% c("CHNS", "CHNST") ~ "spring",
                          species == "CHNW" ~ "winter",
                          species == "CHNI" ~ "inland", 
                          species %in% c("CHN", "CHNT") ~ "unknown"),
          tagged = if_else(grepl('T$', species), TRUE, FALSE)) %>% 
-  select(-catch_tbl_comments, -dissolved_oxygen, -ec, -gear_height, -substrate_4, -substrate_5, -cover_6,
-         -bs_velocity_full, -bs_velocity_1_2, -bs_depth_full, -species) %>% # Remove because all values are NA, species redundant
+  select(-catch_tbl_comments, -dissolved_oxygen, -ec, -gear_height, # Remove because all values are NA
+         -bs_velocity_full, -bs_velocity_1_2, -bs_depth_full, 
+         -species, # Remove species because we filtered for chinook so it is redundant
+         -total_length, # Remove total length because only one value, and fork_length already measures size 
+         -gear_type, # All are sein
+         -site_id, -objectid) %>% # Remove site_id/objectid because already joined with attributes relevent to these id (have site_name, lat/long) 
   glimpse()
 
-unique(cleaner_seine_data$flow)
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -223,174 +227,446 @@ summary(cleaner_seine_data$fork_length)
 
 * `r round(sum(is.na(cleaner_seine_data$fork_length))/nrow(cleaner_seine_data), 3) * 100` % of values in the `fork_length` column are NA. 
 
-### Variable: `total_length`
-
-**Plotting total_length over Period of Record**
-
-```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
-```
-
-**Numeric Summary of total_length over Period of Record**
-
-```{r}
-# Table with summary statistics
-```
-
-**NA and Unknown Values**
-
-Provide a stat on NA or unknown values
-
 ### Variable: `weight_g`
 
 **Plotting weight_g over Period of Record**
 
 ```{r}
+
+cleaner_seine_data %>%  
+  ggplot(aes(x = weight_g)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Weight distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 # Make whatever plot is appropriate 
 # maybe 2+ plots are appropriate
+```
+
+```{r}
+lifestage_code <- c(1, 2, 3, 4, 5, 6, 7, 8)
+names(lifestage_code)  <- c("yolk-sac fry", "fry", "parr", "silvery parr", "smolt", "adult", "not provided", NA)
+
+cleaner_seine_data %>% 
+  mutate(year = as.factor(year(date)),
+         lifestage_name = names(lifestage_code[as.numeric(lifestage)])) %>%
+  ggplot(aes(x = weight_g, y = lifestage_name)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Weight summarized by lifestage") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 **Numeric Summary of weight_g over Period of Record**
 
 ```{r}
 # Table with summary statistics
+summary(cleaner_seine_data$weight_g)
 ```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+* `r round(sum(is.na(cleaner_seine_data$weight_g))/nrow(cleaner_seine_data), 3) * 100` % of values in the `weight_g` column are NA. 
+
 
 ### Variable: `temperature`
 
-**Plotting [Variable] over Period of Record**
+**Plotting temperature over Period of Record**
 
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+cleaner_seine_data %>%  
+  ggplot(aes(x = temperature)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Temperature distribution (celcius)") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
+**Numeric Summary of temperature over Period of Record**
 
 ```{r}
 # Table with summary statistics
+summary(cleaner_seine_data$temperature)
 ```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+* `r round(sum(is.na(cleaner_seine_data$temperature))/nrow(cleaner_seine_data), 3) * 100` % of values in the `temperature` column are NA. 
 
 
 ### Variable: `bs_start_length`
 
-**Plotting [Variable] over Period of Record**
+**Plotting bs_start_length over Period of Record**
 
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+cleaner_seine_data %>%  
+  ggplot(aes(x = bs_start_length)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Beach Seine start length distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
+**Numeric Summary of bs_start_length over Period of Record**
 
 ```{r}
 # Table with summary statistics
+summary(cleaner_seine_data$bs_start_length)
 ```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+* `r round(sum(is.na(cleaner_seine_data$bs_start_length))/nrow(cleaner_seine_data), 3) * 100` % of values in the `bs_start_length` column are NA. 
 
 ### Variable: `bs_distance_out`
 
-**Plotting [Variable] over Period of Record**
+**Plotting bs_distance_out over Period of Record**
 
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+cleaner_seine_data %>%  
+  ggplot(aes(x = bs_distance_out)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Beach Seine Distance out distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
+**Numeric Summary of bs_distance_out over Period of Record**
 
 ```{r}
 # Table with summary statistics
+summary(cleaner_seine_data$bs_distance_out)
 ```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+* `r round(sum(is.na(cleaner_seine_data$bs_distance_out))/nrow(cleaner_seine_data), 3) * 100` % of values in the `bs_distance_out` column are NA. 
 
 ### Variable: `bs_depth_half`
 
-**Plotting [Variable] over Period of Record**
+**Plotting bs_depth_half over Period of Record**
 
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+cleaner_seine_data %>%  
+  ggplot(aes(x = bs_depth_half)) + 
+  geom_histogram(breaks=seq(0, 3, by=.1)) + # filters out three values greater than 3 (63 likely outliers)
+  # scale_x_continuous(breaks=seq(0, 200, by=25)) +
+  theme_minimal() +
+  labs(title = "Beach seine half depth distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
+
+**Numeric Summary of bs_depth_half over Period of Record**
 
 ```{r}
 # Table with summary statistics
+summary(cleaner_seine_data$bs_depth_half)
 ```
+63 seems like it must be an outlier, occurs 3 times (same sample). 
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
-
+* `r round(sum(is.na(cleaner_seine_data$bs_depth_half))/nrow(cleaner_seine_data), 3) * 100` % of values in the `bs_depth_half` column are NA. 
 
 ### Variables: `utm_northing`, `utm_easting` 
 
-These are the latitude and longitude columns. 
-**Plotting [Variable] over Period of Record**
+These are the location columns. 
 
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+# Check that they are in consistant format
+# Map
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
-
-```{r}
-# Table with summary statistics
-```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
-
+* `r round(sum(is.na(cleaner_seine_data$utm_easting))/nrow(cleaner_seine_data), 3) * 100` % of values in the `utm_easting` column are NA. 
+* `r round(sum(is.na(cleaner_seine_data$utm_northing))/nrow(cleaner_seine_data), 3) * 100` % of values in the `utm_northing` column are NA. 
 
 
 ## Explore Categorical variables: {.tabset}
 
-General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
-
 ```{r}
-# Filter clean data to show only categorical variables
+cleaner_seine_data %>% select_if(is.character) %>% colnames()
 ```
 
 
-### Variable: `[name]`
+### Variable: `sample_id`, `id`
 ```{r}
-#table() 
+length(unique(cleaner_seine_data$id)) == nrow(cleaner_seine_data)
+```
+
+Each id is unique as anticipated. 
+
+Each `sample_id` is not unique because multiple catches can occur in the same beach seine sample. 
+
+```{r}
+length(unique(cleaner_seine_data$sample_id)) == nrow(cleaner_seine_data)
+```
+
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$sample_id))/nrow(cleaner_seine_data), 3) * 100` % of values in the `sample_id` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$id))/nrow(cleaner_seine_data), 3) * 100` % of values in the `id` column are NA.
+
+### Variable: `lifestage`
+```{r}
+table(cleaner_seine_data$lifestage)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+lifestage_code <- c(1, 2, 3, 4, 5, 6, 7)
+names(lifestage_code)  <- c("yolk-sac fry", "fry", "parr", "silvery parr", "smolt", "adult", "not provided")
+
+cleaner_seine_data$lifestage <- names(lifestage_code[as.numeric(cleaner_seine_data$lifestage)])
+cleaner_seine_data$lifestage <- ifelse(cleaner_seine_data$lifestage == "not provided", NA, cleaner_seine_data$lifestage) # Change not provided to NA
+
+table(cleaner_seine_data$lifestage)
 ```
 
 **Create lookup rda for [variable] encoding:** 
+
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$lifestage))/nrow(cleaner_seine_data), 3) * 100` % of values in the `lifestage` column are NA.
+
+### Variable: `gear_code`
 ```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
+table(cleaner_seine_data$gear_code)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. Update gear codes with gear names:
+
+* SEIN25 - Gear description 25 foot beach seine with bag
+* SEIN50 - Gear description 25 foot beach seine with bag
+
+```{r}
+cleaner_seine_data$gear_code <- case_when(cleaner_seine_data$gear_code == "1" ~ "SEIN25",
+                                          cleaner_seine_data$gear_code == "3" ~ "SEIN50")
+
+table(cleaner_seine_data$gear_code)
 ```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$gear_code))/nrow(cleaner_seine_data), 3) * 100` % of values in the `gear_code` column are NA.
+
+### Variable: `condition_code`
+```{r}
+table(cleaner_seine_data$condition_code)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+Descriptions: 
+
+* Good - The haul went smoothly without getting hung up on anything or net rolling.
+* Fair - The haul went relatively smoothly, but you had to stop once or twice to get it unsnagged or take big rocks out of the net.
+* Poor - The haul didn’t go well; you had to stop numerous times while the poles were still a good distance from the shore to free the seine from snags or big rocks.
+
+All other values (0, 4) corresond to NA
+
+```{r}
+cleaner_seine_data$condition_code <- case_when(cleaner_seine_data$condition_code == "1" ~ "good",
+                                               cleaner_seine_data$condition_code == "2" ~ "fair",
+                                               cleaner_seine_data$condition_code == "3" ~ "poor")
+
+
+table(cleaner_seine_data$condition_code)
+```
+
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$condition_code))/nrow(cleaner_seine_data), 3) * 100` % of values in the `condition_code` column are NA.
+
+### Variable: `weather_code`
+```{r}
+table(cleaner_seine_data$weather_code)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_seine_data$weather_code <- case_when(cleaner_seine_data$weather_code == "CLD" ~ "overcast",
+                                             cleaner_seine_data$weather_code == "CLR" ~ "sunny",
+                                             cleaner_seine_data$weather_code == "FOG" ~ "foggy",
+                                             cleaner_seine_data$weather_code == "RAN" ~ "precipitation")
+
+
+table(cleaner_seine_data$weather_code)
+```
+
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$weather_code))/nrow(cleaner_seine_data), 3) * 100` % of values in the `weather_code` column are NA.
+
+### Variable: `substrate_1`, `substrate_2`, `substrate_3`,  `substrate_4`, `substrate_5`
+
+TODO fix substrate stuff 
+
+```{r}
+table(cleaner_seine_data$substrate_1)
+table(cleaner_seine_data$substrate_2)
+table(cleaner_seine_data$substrate_3)
+table(cleaner_seine_data$substrate_4)
+table(cleaner_seine_data$substrate_5)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+```
+
+**Create lookup rda for [variable] encoding:** 
+
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$substrate_1))/nrow(cleaner_seine_data), 3) * 100` % of values in the `substrate_1` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$substrate_2))/nrow(cleaner_seine_data), 3) * 100` % of values in the `substrate_2` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$substrate_3))/nrow(cleaner_seine_data), 3) * 100` % of values in the `substrate_3` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$substrate_4))/nrow(cleaner_seine_data), 3) * 100` % of values in the `substrate_4` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$substrate_5))/nrow(cleaner_seine_data), 3) * 100` % of values in the `substrate_5` column are NA.
+
+### Variable: `cover_1`, `cover_2`, `cover_3`, `cover_4`, `cover_5`
+
+TODO fix cover stuff 
+
+```{r}
+table(cleaner_seine_data$cover_1)
+table(cleaner_seine_data$cover_2)
+table(cleaner_seine_data$cover_3)
+table(cleaner_seine_data$cover_4)
+table(cleaner_seine_data$cover_5)
+unique(cleaner_seine_data$cover_6)
+```
+
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$cover_1))/nrow(cleaner_seine_data), 3) * 100` % of values in the `cover_1` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$cover_2))/nrow(cleaner_seine_data), 3) * 100` % of values in the `cover_2` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$cover_3))/nrow(cleaner_seine_data), 3) * 100` % of values in the `cover_3` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$cover_4))/nrow(cleaner_seine_data), 3) * 100` % of values in the `cover_4` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$cover_5))/nrow(cleaner_seine_data), 3) * 100` % of values in the `cover_5` column are NA.
+
+### Variable: `stream_features`
+```{r}
+table(cleaner_seine_data$stream_features)
+```
+
+**Create lookup rda for rpg_ru encoding:** 
+```{r}
+feather_seine_stream_features <- c("G", "GP", "GR", "GRRU", "GRU", "P", "PRU", "R", "RRU", "RU")
+names(feather_seine_stream_features) <- c( "Glide", "Glide & Pool", "Glide & Riffle", "Glide & Riffle & Run", "Glide & Run", "Pool",
+                                           "Pool & Run", "Riffle", "Riffle & Run", "Run")
+
+tibble(code = feather_seine_stream_features, 
+       definitions = names(feather_seine_stream_features))
+
+# write_rds(feather_seine_stream_features, "../../../data/feather_seine_stream_features.rds")
+```
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$stream_features))/nrow(cleaner_seine_data), 3) * 100` % of values in the `stream_features` column are NA.
+
+
+### Variable: `site_name`
+```{r}
+table(cleaner_seine_data$site_name)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+string <- "Boyds 1/4 mile upstream RL"
+format_site_name <- function(string) {
+  clean <- str_replace_all(string, "1/2", "half") %>%
+    str_replace_all("1/4", "quarter") %>%
+    str_replace_all("S.C.", "SC") %>%
+    str_replace_all("'", "") %>%
+    str_replace_all("G-95", "G95") %>% 
+    str_replace_all("[^[:alnum:]]", " ") %>% 
+    trimws() %>% 
+    stringr::str_squish() %>%
+    stringr::str_to_title()
+}
+
+cleaner_seine_data$site_name <- format_site_name(cleaner_seine_data$site_name)
+table(cleaner_seine_data$site_name)
+```
+
+
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$site_name))/nrow(cleaner_seine_data), 3) * 100` % of values in the `site_name` column are NA.
+
+### Variable: `location_lu_channel`
+
+Describes where in feather river based on channel type:
+
+* LFC - Low Flow Channel 
+* HFC - High Flow Channel (After thermilito afterbay)
+* HFC DS LYR - High Flow Channel...TODO? 
+```{r}
+table(cleaner_seine_data$location_lu_channel)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$location_lu_channel))/nrow(cleaner_seine_data), 3) * 100` % of values in the `location_lu_channel` column are NA.
+
+### Variable: `run`
+```{r}
+table(cleaner_seine_data$run)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_seine_data$run <- ifelse(cleaner_seine_data$run  == "unknown", NA, cleaner_seine_data$run)
+table(cleaner_seine_data$run)
+```
+
+**NA and Unknown Values**
+
+No NA values: 
+
+* `r round(sum(is.na(cleaner_seine_data$run))/nrow(cleaner_seine_data), 3) * 100` % of values in the `run` column are NA.
 
 ## Summary of identified issues
 

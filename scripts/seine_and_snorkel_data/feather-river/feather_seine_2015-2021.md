@@ -121,7 +121,7 @@ cleaner_seine_data <- raw_seine_2015 %>%
   janitor::clean_names() %>% 
   rename("bs_depth_half" = bs_depth_1_2, 
          "lifestage" = salmonid_life_stage,
-         "latitude" = ) %>%
+         "stream_features" = rpg_ru) %>%
   filter(species %in% c("CHN", "CHNF", "CHNFT", "CHNI",
                         "CHNL", "CHNS", "CHNST", "CHNT","CHNW")) %>%
   mutate(date = as.Date(date),
@@ -130,38 +130,41 @@ cleaner_seine_data <- raw_seine_2015 %>%
          weight_g = as.numeric(weight_g),
          sample_id = as.character(sample_id),
          id = as.character(id),
-         gear_code = as.character(gear_code),
+         site_id = as.character(site_id),
          condition_code = as.character(condition_code),
          lifestage = as.character(lifestage),
          substrate_1 = as.character(substrate_1), # Should I change these to the actual cover type ex: fine_substrate T/F values?
          substrate_2 = as.character(substrate_2),
          substrate_3 = as.character(substrate_3),
-         objectid = as.character(objectid),
+         substrate_4 = as.character(substrate_4),
+         substrate_5 = as.character(substrate_5),
          run = case_when(species %in% c("CHNF", "CHNFT") ~ "fall",
                          species %in% c("CHNS", "CHNST") ~ "spring",
                          species == "CHNW" ~ "winter",
                          species == "CHNI" ~ "inland", 
                          species %in% c("CHN", "CHNT") ~ "unknown"),
          tagged = if_else(grepl('T$', species), TRUE, FALSE)) %>% 
-  select(-catch_tbl_comments, -dissolved_oxygen, -ec, -gear_height, -substrate_4, -substrate_5, -cover_6,
-         -bs_velocity_full, -bs_velocity_1_2, -bs_depth_full, -species) %>% # Remove because all values are NA, species redundant
+  select(-catch_tbl_comments, -dissolved_oxygen, -ec, -gear_height, # Remove because all values are NA
+         -bs_velocity_full, -bs_velocity_1_2, -bs_depth_full, 
+         -species, # Remove species because we filtered for chinook so it is redundant
+         -total_length, # Remove total length because only one value, and fork_length already measures size 
+         -gear_type, # All are sein
+         -site_id, -objectid) %>% # Remove site_id/objectid because already joined with attributes relevent to these id (have site_name, lat/long) 
   glimpse()
 ```
 
     ## Rows: 10,100
-    ## Columns: 43
+    ## Columns: 42
     ## $ sample_id            <chr> "372", "372", "372", "372", "372", "372", "372", ~
     ## $ count                <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
     ## $ fork_length          <dbl> 47, 58, 62, 50, 65, 60, 59, 60, 67, 59, 54, 82, 6~
-    ## $ total_length         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ lifestage            <chr> "7", "7", "7", "7", "7", "7", "7", "7", "7", "7",~
     ## $ id                   <chr> "6225", "6226", "6227", "6228", "6229", "6230", "~
     ## $ dead                 <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ~
     ## $ weight_g             <dbl> 1.1, 2.0, 2.3, 1.3, 2.9, 2.4, 2.0, 2.5, 3.4, 2.3,~
-    ## $ site_id              <dbl> 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 5~
     ## $ date                 <date> 2015-05-19, 2015-05-19, 2015-05-19, 2015-05-19, ~
     ## $ time                 <time> 10:30:00, 10:30:00, 10:30:00, 10:30:00, 10:30:00~
-    ## $ gear_code            <chr> "3", "3", "3", "3", "3", "3", "3", "3", "3", "3",~
+    ## $ gear_code            <dbl> 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3~
     ## $ condition_code       <chr> "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",~
     ## $ temperature          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ weather_code         <chr> "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", ~
@@ -179,26 +182,21 @@ cleaner_seine_data <- raw_seine_2015 %>%
     ## $ substrate_1          <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "1",~
     ## $ substrate_2          <chr> "2", "2", "2", "2", "2", "2", "2", "2", "2", "2",~
     ## $ substrate_3          <chr> "3", "3", "3", "3", "3", "3", "3", "3", "3", "3",~
+    ## $ substrate_4          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ substrate_5          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ cover_1              <chr> "B", "B", "B", "B", "B", "B", "B", "B", "B", "B",~
     ## $ cover_2              <chr> "D", "D", "D", "D", "D", "D", "D", "D", "D", "D",~
     ## $ cover_3              <chr> "C", "C", "C", "C", "C", "C", "C", "C", "C", "C",~
     ## $ cover_4              <chr> "E", "E", "E", "E", "E", "E", "E", "E", "E", "E",~
     ## $ cover_5              <chr> "F", "F", "F", "F", "F", "F", "F", "F", "F", "F",~
-    ## $ rpg_ru               <chr> "GRRU", "GRRU", "GRRU", "GRRU", "GRRU", "GRRU", "~
-    ## $ objectid             <chr> "59", "59", "59", "59", "59", "59", "59", "59", "~
+    ## $ cover_6              <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ stream_features      <chr> "GRRU", "GRRU", "GRRU", "GRRU", "GRRU", "GRRU", "~
     ## $ site_name            <chr> "Hatchery Ditch", "Hatchery Ditch", "Hatchery Dit~
-    ## $ gear_type            <chr> "SEIN", "SEIN", "SEIN", "SEIN", "SEIN", "SEIN", "~
     ## $ utm_easting          <dbl> -121.5588, -121.5588, -121.5588, -121.5588, -121.~
     ## $ utm_northing         <dbl> 39.51619, 39.51619, 39.51619, 39.51619, 39.51619,~
     ## $ location_lu_channel  <chr> "LFC", "LFC", "LFC", "LFC", "LFC", "LFC", "LFC", ~
     ## $ run                  <chr> "fall", "fall", "fall", "fall", "fall", "fall", "~
     ## $ tagged               <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ~
-
-``` r
-unique(cleaner_seine_data$flow)
-```
-
-    ## [1]   NA TRUE
 
 ## Explore Numeric Variables:
 
@@ -207,9 +205,9 @@ unique(cleaner_seine_data$flow)
 cleaner_seine_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ##  [1] "count"           "fork_length"     "total_length"    "weight_g"       
-    ##  [5] "site_id"         "temperature"     "bs_start_length" "bs_distance_out"
-    ##  [9] "bs_depth_half"   "utm_easting"     "utm_northing"
+    ##  [1] "count"           "fork_length"     "weight_g"        "gear_code"      
+    ##  [5] "temperature"     "bs_start_length" "bs_distance_out" "bs_depth_half"  
+    ##  [9] "utm_easting"     "utm_northing"
 
 ### Variable: `count`
 
@@ -341,172 +339,848 @@ summary(cleaner_seine_data$fork_length)
 
 -   1.6 % of values in the `fork_length` column are NA.
 
-### Variable: `total_length`
-
-**Plotting total\_length over Period of Record**
-
-``` r
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
-```
-
-**Numeric Summary of total\_length over Period of Record**
-
-``` r
-# Table with summary statistics
-```
-
-**NA and Unknown Values**
-
-Provide a stat on NA or unknown values
-
 ### Variable: `weight_g`
 
 **Plotting weight\_g over Period of Record**
 
 ``` r
+cleaner_seine_data %>%  
+  ggplot(aes(x = weight_g)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Weight distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](feather_seine_2015-2021_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
 # Make whatever plot is appropriate 
 # maybe 2+ plots are appropriate
 ```
+
+``` r
+lifestage_code <- c(1, 2, 3, 4, 5, 6, 7, 8)
+names(lifestage_code)  <- c("yolk-sac fry", "fry", "parr", "silvery parr", "smolt", "adult", "not provided", NA)
+
+cleaner_seine_data %>% 
+  mutate(year = as.factor(year(date)),
+         lifestage_name = names(lifestage_code[as.numeric(lifestage)])) %>%
+  ggplot(aes(x = weight_g, y = lifestage_name)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Weight summarized by lifestage") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+![](feather_seine_2015-2021_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 **Numeric Summary of weight\_g over Period of Record**
 
 ``` r
 # Table with summary statistics
+summary(cleaner_seine_data$weight_g)
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.300   0.900   1.500   2.332   3.100  59.000    5399
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+-   53.5 % of values in the `weight_g` column are NA.
 
 ### Variable: `temperature`
 
-**Plotting \[Variable\] over Period of Record**
+**Plotting temperature over Period of Record**
 
 ``` r
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+cleaner_seine_data %>%  
+  ggplot(aes(x = temperature)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Temperature distribution (celcius)") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of \[Variable\] over Period of Record**
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](feather_seine_2015-2021_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+**Numeric Summary of temperature over Period of Record**
 
 ``` r
 # Table with summary statistics
+summary(cleaner_seine_data$temperature)
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    7.50   10.00   11.00   11.45   13.00   20.00     722
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+-   7.1 % of values in the `temperature` column are NA.
 
 ### Variable: `bs_start_length`
 
-**Plotting \[Variable\] over Period of Record**
+**Plotting bs\_start\_length over Period of Record**
 
 ``` r
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+cleaner_seine_data %>%  
+  ggplot(aes(x = bs_start_length)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Beach Seine start length distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of \[Variable\] over Period of Record**
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](feather_seine_2015-2021_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+**Numeric Summary of bs\_start\_length over Period of Record**
 
 ``` r
 # Table with summary statistics
+summary(cleaner_seine_data$bs_start_length)
 ```
+
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+    ##   0.7622  18.2923  28.5000  31.0344  39.6340 332.3171      299
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+-   3 % of values in the `bs_start_length` column are NA.
 
 ### Variable: `bs_distance_out`
 
-**Plotting \[Variable\] over Period of Record**
+**Plotting bs\_distance\_out over Period of Record**
 
 ``` r
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+cleaner_seine_data %>%  
+  ggplot(aes(x = bs_distance_out)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Beach Seine Distance out distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of \[Variable\] over Period of Record**
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](feather_seine_2015-2021_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+**Numeric Summary of bs\_distance\_out over Period of Record**
 
 ``` r
 # Table with summary statistics
+summary(cleaner_seine_data$bs_distance_out)
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    3.00    9.10   10.67   10.42   12.20   36.59     248
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+-   2.5 % of values in the `bs_distance_out` column are NA.
 
 ### Variable: `bs_depth_half`
 
-**Plotting \[Variable\] over Period of Record**
+**Plotting bs\_depth\_half over Period of Record**
 
 ``` r
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+cleaner_seine_data %>%  
+  ggplot(aes(x = bs_depth_half)) + 
+  geom_histogram(breaks=seq(0, 3, by=.1)) + # filters out three values greater than 3 (63 likely outliers)
+  # scale_x_continuous(breaks=seq(0, 200, by=25)) +
+  theme_minimal() +
+  labs(title = "Beach seine half depth distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of \[Variable\] over Period of Record**
+![](feather_seine_2015-2021_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+**Numeric Summary of bs\_depth\_half over Period of Record**
 
 ``` r
 # Table with summary statistics
+summary(cleaner_seine_data$bs_depth_half)
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  0.0300  0.5000  0.6098  0.6514  0.7622 63.0000     272
+
+63 seems like it must be an outlier, occurs 3 times (same sample).
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+-   2.7 % of values in the `bs_depth_half` column are NA.
 
 ### Variables: `utm_northing`, `utm_easting`
 
-These are the latitude and longitude columns. **Plotting \[Variable\]
-over Period of Record**
+These are the location columns.
 
 ``` r
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
-```
-
-**Numeric Summary of \[Variable\] over Period of Record**
-
-``` r
-# Table with summary statistics
+# Check that they are in consistant format
+# Map
 ```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+-   8.1 % of values in the `utm_easting` column are NA.
+-   8.1 % of values in the `utm_northing` column are NA.
 
 ## Explore Categorical variables:
 
-General notes: If there is an opportunity to turn yes no into boolean do
-so, but not if you loose value
-
 ``` r
-# Filter clean data to show only categorical variables
+cleaner_seine_data %>% select_if(is.character) %>% colnames()
 ```
 
-### Variable: `[name]`
+    ##  [1] "sample_id"           "lifestage"           "id"                 
+    ##  [4] "condition_code"      "weather_code"        "substrate_1"        
+    ##  [7] "substrate_2"         "substrate_3"         "substrate_4"        
+    ## [10] "substrate_5"         "cover_1"             "cover_2"            
+    ## [13] "cover_3"             "cover_4"             "cover_5"            
+    ## [16] "stream_features"     "site_name"           "location_lu_channel"
+    ## [19] "run"
+
+### Variable: `sample_id`, `id`
 
 ``` r
-#table() 
+length(unique(cleaner_seine_data$id)) == nrow(cleaner_seine_data)
 ```
+
+    ## [1] TRUE
+
+Each id is unique as anticipated.
+
+Each `sample_id` is not unique because multiple catches can occur in the
+same beach seine sample.
+
+``` r
+length(unique(cleaner_seine_data$sample_id)) == nrow(cleaner_seine_data)
+```
+
+    ## [1] FALSE
+
+**NA and Unknown Values**
+
+No NA values:
+
+-   0 % of values in the `sample_id` column are NA.
+-   0 % of values in the `id` column are NA.
+
+### Variable: `lifestage`
+
+``` r
+table(cleaner_seine_data$lifestage)
+```
+
+    ## 
+    ##    1    2    3    4    5    7 
+    ##    3  284 7095 1614  103  102
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-# Fix any inconsistencies with categorical variables
+lifestage_code <- c(1, 2, 3, 4, 5, 6, 7)
+names(lifestage_code)  <- c("yolk-sac fry", "fry", "parr", "silvery parr", "smolt", "adult", "not provided")
+
+cleaner_seine_data$lifestage <- names(lifestage_code[as.numeric(cleaner_seine_data$lifestage)])
+cleaner_seine_data$lifestage <- ifelse(cleaner_seine_data$lifestage == "not provided", NA, cleaner_seine_data$lifestage) # Change not provided to NA
+
+table(cleaner_seine_data$lifestage)
 ```
+
+    ## 
+    ##          fry         parr silvery parr        smolt yolk-sac fry 
+    ##          284         7095         1614          103            3
 
 **Create lookup rda for \[variable\] encoding:**
 
+**NA and Unknown Values**
+
+No NA values:
+
+-   9.9 % of values in the `lifestage` column are NA.
+
+### Variable: `gear_code`
+
 ``` r
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
+table(cleaner_seine_data$gear_code)
+```
+
+    ## 
+    ##    1    3 
+    ##  403 9697
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+Update gear codes with gear names:
+
+-   SEIN25 - Gear description 25 foot beach seine with bag
+-   SEIN50 - Gear description 25 foot beach seine with bag
+
+``` r
+cleaner_seine_data$gear_code <- case_when(cleaner_seine_data$gear_code == "1" ~ "SEIN25",
+                                          cleaner_seine_data$gear_code == "3" ~ "SEIN50")
+
+table(cleaner_seine_data$gear_code)
+```
+
+    ## 
+    ## SEIN25 SEIN50 
+    ##    403   9697
+
+**NA and Unknown Values**
+
+No NA values:
+
+-   0 % of values in the `gear_code` column are NA.
+
+### Variable: `condition_code`
+
+``` r
+table(cleaner_seine_data$condition_code)
+```
+
+    ## 
+    ##    0    1    2    3    4 
+    ##   34 8465 1391  121   89
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
+Descriptions:
+
+-   Good - The haul went smoothly without getting hung up on anything or
+    net rolling.
+-   Fair - The haul went relatively smoothly, but you had to stop once
+    or twice to get it unsnagged or take big rocks out of the net.
+-   Poor - The haul didn’t go well; you had to stop numerous times while
+    the poles were still a good distance from the shore to free the
+    seine from snags or big rocks.
+
+All other values (0, 4) corresond to NA
+
+``` r
+cleaner_seine_data$condition_code <- case_when(cleaner_seine_data$condition_code == "1" ~ "good",
+                                               cleaner_seine_data$condition_code == "2" ~ "fair",
+                                               cleaner_seine_data$condition_code == "3" ~ "poor")
+
+
+table(cleaner_seine_data$condition_code)
+```
+
+    ## 
+    ## fair good poor 
+    ## 1391 8465  121
+
+**NA and Unknown Values**
+
+No NA values:
+
+-   1.2 % of values in the `condition_code` column are NA.
+
+### Variable: `weather_code`
+
+``` r
+table(cleaner_seine_data$weather_code)
+```
+
+    ## 
+    ##   0.  CLD  CLR  FOG  RAN 
+    ##   52 2546 6876   74  552
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
+``` r
+cleaner_seine_data$weather_code <- case_when(cleaner_seine_data$weather_code == "CLD" ~ "overcast",
+                                             cleaner_seine_data$weather_code == "CLR" ~ "sunny",
+                                             cleaner_seine_data$weather_code == "FOG" ~ "foggy",
+                                             cleaner_seine_data$weather_code == "RAN" ~ "precipitation")
+
+
+table(cleaner_seine_data$weather_code)
+```
+
+    ## 
+    ##         foggy      overcast precipitation         sunny 
+    ##            74          2546           552          6876
+
+**NA and Unknown Values**
+
+No NA values:
+
+-   0.5 % of values in the `weather_code` column are NA.
+
+### Variable: `substrate_1`, `substrate_2`, `substrate_3`, `substrate_4`, `substrate_5`
+
+TODO fix substrate stuff
+
+``` r
+table(cleaner_seine_data$substrate_1)
+```
+
+    ## 
+    ##    0    1    2    3    5 
+    ##   86 5586 4009  315  104
+
+``` r
+table(cleaner_seine_data$substrate_2)
+```
+
+    ## 
+    ##    1    2    3    4 
+    ##   32 2682 2333  166
+
+``` r
+table(cleaner_seine_data$substrate_3)
+```
+
+    ## 
+    ##   1   3   4 
+    ##  21 958 461
+
+``` r
+table(cleaner_seine_data$substrate_4)
+```
+
+    ## 
+    ## TRUE 
+    ##  290
+
+``` r
+table(cleaner_seine_data$substrate_5)
+```
+
+    ## < table of extent 0 >
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
+**Create lookup rda for \[variable\] encoding:**
+
+**NA and Unknown Values**
+
+No NA values:
+
+-   0 % of values in the `substrate_1` column are NA.
+-   48.4 % of values in the `substrate_2` column are NA.
+-   85.7 % of values in the `substrate_3` column are NA.
+-   97.1 % of values in the `substrate_4` column are NA.
+-   100 % of values in the `substrate_5` column are NA.
+
+### Variable: `cover_1`, `cover_2`, `cover_3`, `cover_4`, `cover_5`
+
+TODO fix cover stuff
+
+``` r
+table(cleaner_seine_data$cover_1)
+```
+
+    ## 
+    ##    A    B    C    D    E 
+    ## 3626 4431  391   70 1500
+
+``` r
+table(cleaner_seine_data$cover_2)
+```
+
+    ## 
+    ##   D   E   F 
+    ## 157 469   1
+
+``` r
+table(cleaner_seine_data$cover_3)
+```
+
+    ## 
+    ##    B    C    D    E    F 
+    ##   29  736  443 1462   51
+
+``` r
+table(cleaner_seine_data$cover_4)
+```
+
+    ## 
+    ##  E 
+    ## 92
+
+``` r
+table(cleaner_seine_data$cover_5)
+```
+
+    ## 
+    ##  F 
+    ## 16
+
+``` r
+unique(cleaner_seine_data$cover_6)
+```
+
+    ## [1] NA
+
+**NA and Unknown Values**
+
+No NA values:
+
+-   0.8 % of values in the `cover_1` column are NA.
+-   93.8 % of values in the `cover_2` column are NA.
+-   73.1 % of values in the `cover_3` column are NA.
+-   99.1 % of values in the `cover_4` column are NA.
+-   99.8 % of values in the `cover_5` column are NA.
+
+### Variable: `stream_features`
+
+``` r
+table(cleaner_seine_data$stream_features)
+```
+
+    ## 
+    ##    G   GP   GR GRRU  GRU    P  PRU    R  RRU   RU 
+    ## 5268   86   10   16  100 1433  100 1528   51 1350
+
+**Create lookup rda for rpg\_ru encoding:**
+
+``` r
+feather_seine_stream_features <- c("G", "GP", "GR", "GRRU", "GRU", "P", "PRU", "R", "RRU", "RU")
+names(feather_seine_stream_features) <- c( "Glide", "Glide & Pool", "Glide & Riffle", "Glide & Riffle & Run", "Glide & Run", "Pool",
+                                           "Pool & Run", "Riffle", "Riffle & Run", "Run")
+
+tibble(code = feather_seine_stream_features, 
+       definitions = names(feather_seine_stream_features))
+```
+
+    ## # A tibble: 10 x 2
+    ##    code  definitions         
+    ##    <chr> <chr>               
+    ##  1 G     Glide               
+    ##  2 GP    Glide & Pool        
+    ##  3 GR    Glide & Riffle      
+    ##  4 GRRU  Glide & Riffle & Run
+    ##  5 GRU   Glide & Run         
+    ##  6 P     Pool                
+    ##  7 PRU   Pool & Run          
+    ##  8 R     Riffle              
+    ##  9 RRU   Riffle & Run        
+    ## 10 RU    Run
+
+``` r
+# write_rds(feather_seine_stream_features, "../../../data/feather_seine_stream_features.rds")
 ```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+No NA values:
+
+-   1.6 % of values in the `stream_features` column are NA.
+
+### Variable: `site_name`
+
+``` r
+table(cleaner_seine_data$site_name)
+```
+
+    ## 
+    ##                      24th St. Levee OWA                        Aleck-lunch spot 
+    ##                                       7                                      51 
+    ##                      Aleck Backwater RL                     Aleck RL - Upstream 
+    ##                                      77                                      10 
+    ##                                Aleck RR              Auditoruim RR - Downstream 
+    ##                                     212                                      33 
+    ##                Bear River 1 mi Upstream                Bear River Downstream RL 
+    ##                                      29                                      66 
+    ##                  Bedrock Park Backwater                         Bedrock Park RL 
+    ##                                     156                                     758 
+    ##          Bend Upstream Live Oak Ramp RR          Between Big Riffle and Big Bar 
+    ##                                       9                                      31 
+    ##                              Big Bar RL                 Big Hole Boat Launch RL 
+    ##                                      81                                       8 
+    ##                             Big Hole RR                              Big Riffle 
+    ##                                       7                                     202 
+    ##                    Boyd's Downstream RL              Boyds 1/2 mile upstream RL 
+    ##                                     201                                      15 
+    ##    Boyds 1mi downstream Side Channel RL          Boyds Bump Boat Launch- Across 
+    ##                                     207                                     312 
+    ##        Clay Banks upstream backwater RL                                     Cox 
+    ##                                       3                                      95 
+    ##                               Cox SC RR                     Cox Side Channel RL 
+    ##                                      88                                       5 
+    ##                    Developing Riffle RL                    Developing Riffle RR 
+    ##                                      63                                      29 
+    ##                    Downstream Outlet RL              Downstream Sunset Pumps RL 
+    ##                                      89                                       9 
+    ##                        Ellis Road Beach                Eye Main RR - Downstream 
+    ##                                      25                                      54 
+    ##                        Eye side channel               Eye side channel - Bottom 
+    ##                                     103                                     252 
+    ##                            G-95 East RL                       G95 Downstream RL 
+    ##                                      51                                     112 
+    ##                   G95 E Side Channel RL                              G95 SC  RR 
+    ##                                       6                                      40 
+    ##                       G95 Upper Main RR                              Gateway RL 
+    ##                                     107                                     206 
+    ##                              Gateway RR                         Goose Riffle RL 
+    ##                                     202                                      56 
+    ##                           Great Western                            Gridley-Side 
+    ##                                      16                                     165 
+    ##                 Gridley Riffle Lower RR                          Hatchery Ditch 
+    ##                                     113                                     352 
+    ##   Hatchery Fence (Island above Bedrock)               herringer 1/4 mi below RR 
+    ##                                      11                                       4 
+    ##                 Herringer Downstream RL                       Herringer Main RL 
+    ##                                     133                                     361 
+    ##            Herringer Upstream Riffle RR                    honcut Downstream RR 
+    ##                                     132                                       2 
+    ##                Hour Main Backwater - RL                            Hour Main RL 
+    ##                                       5                                     251 
+    ##               Hour Main RL - Downstream               Hour Main RR - Downstream 
+    ##                                      88                                       3 
+    ##         Hour side channel RL - Upstream        Island Upstream Yuba City Launch 
+    ##                                     100                                      12 
+    ##                         Jeff's Basshole                                Junkyard 
+    ##                                       7                                       1 
+    ##            Junkyard side channel 2 - RL                                 Kiester 
+    ##                                      13                                     100 
+    ##                    Live Oak Boat Launch                   Live Oak Boat Ramp RL 
+    ##                                      51                                       1 
+    ##           Live Oak Upstream Boat Launch                  LiveOak Local's Launch 
+    ##                                      12                                      23 
+    ##                  Lower McFarlan Main RL         Lower Trailer Park Backwater RL 
+    ##                                      46                                      58 
+    ##                   Matthews Main Channel                  McFarland Backwater RL 
+    ##                                     129                                       6 
+    ##                     McFarland Main - RR            McFarland Main RR - Upstream 
+    ##                                     197                                      88 
+    ##                      McFarland Upper RL                             Moe's Ditch 
+    ##                                      50                                      46 
+    ##                     Morse Road Beach RL          Mulberry Beach RR - Downstream 
+    ##                                      68                                      51 
+    ##                           Outlet Launch            River Reflections RV Park RL 
+    ##                                      17                                     296 
+    ##                 Riverbend Park Beach RL                        Robinson Main RR 
+    ##                                     335                                       6 
+    ##                      Robinson pond S.C.                      Robinson Riffle RL 
+    ##                                      25                                     109 
+    ##                        Robinson Side RR                       Sanders Road Bend 
+    ##                                       1                                      19 
+    ##                     Sean's Beach 2mi DS                         Sean's Beach RR 
+    ##                                      51                                     155 
+    ##             Shallow Riffle Backwater RR                       Shanghai Above RR 
+    ##                                     318                                      91 
+    ##            Star Bend 2 mi Downstream RL           Star Bend Across from Ramp RR 
+    ##                                      62                                     598 
+    ##                       Star Bend Pump RL    Star Bend Pumps 1/2 mile upstream RR 
+    ##                                     127                                     148 
+    ##                           Steep Main RR                      Steep side channel 
+    ##                                      83                                      52 
+    ##          Sunset Pumps Downstream Island                             Swampy bend 
+    ##                                      13                                      52 
+    ##                       Trailer Park Main                         Upstream G95 RL 
+    ##                                       4                                       4 
+    ## Upstream Gridley Riffle Side Channel RL                      Upstream Hwy 20 RR 
+    ##                                       9                                     183 
+    ##                      Vance East Main RR                                 Weir RL 
+    ##                                      59                                      58 
+    ##                        West Kiester OWA                 Yuba City park beach RR 
+    ##                                       3                                     106 
+    ##      Yuba City Train Bridge Upstream RL            Yuba River 1mi Downstream RL 
+    ##                                      82                                     266 
+    ##           Yuba Train Bridge Upstream RR 
+    ##                                       6
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
+``` r
+string <- "Boyds 1/4 mile upstream RL"
+format_site_name <- function(string) {
+  clean <- str_replace_all(string, "1/2", "half") %>%
+    str_replace_all("1/4", "quarter") %>%
+    str_replace_all("S.C.", "SC") %>%
+    str_replace_all("'", "") %>%
+    str_replace_all("G-95", "G95") %>% 
+    str_replace_all("[^[:alnum:]]", " ") %>% 
+    trimws() %>% 
+    stringr::str_squish() %>%
+    stringr::str_to_title()
+}
+
+cleaner_seine_data$site_name <- format_site_name(cleaner_seine_data$site_name)
+table(cleaner_seine_data$site_name)
+```
+
+    ## 
+    ##                       24th St Levee Owa                      Aleck Backwater Rl 
+    ##                                       7                                      77 
+    ##                        Aleck Lunch Spot                       Aleck Rl Upstream 
+    ##                                      51                                      10 
+    ##                                Aleck Rr                Auditoruim Rr Downstream 
+    ##                                     212                                      33 
+    ##                Bear River 1 Mi Upstream                Bear River Downstream Rl 
+    ##                                      29                                      66 
+    ##                  Bedrock Park Backwater                         Bedrock Park Rl 
+    ##                                     156                                     758 
+    ##          Bend Upstream Live Oak Ramp Rr          Between Big Riffle And Big Bar 
+    ##                                       9                                      31 
+    ##                              Big Bar Rl                 Big Hole Boat Launch Rl 
+    ##                                      81                                       8 
+    ##                             Big Hole Rr                              Big Riffle 
+    ##                                       7                                     202 
+    ##    Boyds 1mi Downstream Side Channel Rl           Boyds Bump Boat Launch Across 
+    ##                                     207                                     312 
+    ##                     Boyds Downstream Rl             Boyds Half Mile Upstream Rl 
+    ##                                     201                                      15 
+    ##        Clay Banks Upstream Backwater Rl                                     Cox 
+    ##                                       3                                      95 
+    ##                               Cox Sc Rr                     Cox Side Channel Rl 
+    ##                                      88                                       5 
+    ##                    Developing Riffle Rl                    Developing Riffle Rr 
+    ##                                      63                                      29 
+    ##                    Downstream Outlet Rl              Downstream Sunset Pumps Rl 
+    ##                                      89                                       9 
+    ##                        Ellis Road Beach                  Eye Main Rr Downstream 
+    ##                                      25                                      54 
+    ##                        Eye Side Channel                 Eye Side Channel Bottom 
+    ##                                     103                                     252 
+    ##                       G95 Downstream Rl                   G95 E Side Channel Rl 
+    ##                                     112                                       6 
+    ##                             G95 East Rl                               G95 Sc Rr 
+    ##                                      51                                      40 
+    ##                       G95 Upper Main Rr                              Gateway Rl 
+    ##                                     107                                     206 
+    ##                              Gateway Rr                         Goose Riffle Rl 
+    ##                                     202                                      56 
+    ##                           Great Western                 Gridley Riffle Lower Rr 
+    ##                                      16                                     113 
+    ##                            Gridley Side                          Hatchery Ditch 
+    ##                                     165                                     352 
+    ##     Hatchery Fence Island Above Bedrock                 Herringer Downstream Rl 
+    ##                                      11                                     133 
+    ##                       Herringer Main Rl           Herringer Quarter Mi Below Rr 
+    ##                                     361                                       4 
+    ##            Herringer Upstream Riffle Rr                    Honcut Downstream Rr 
+    ##                                     132                                       2 
+    ##                  Hour Main Backwater Rl                            Hour Main Rl 
+    ##                                       5                                     251 
+    ##                 Hour Main Rl Downstream                 Hour Main Rr Downstream 
+    ##                                      88                                       3 
+    ##           Hour Side Channel Rl Upstream        Island Upstream Yuba City Launch 
+    ##                                     100                                      12 
+    ##                          Jeffs Basshole                                Junkyard 
+    ##                                       7                                       1 
+    ##              Junkyard Side Channel 2 Rl                                 Kiester 
+    ##                                      13                                     100 
+    ##                    Live Oak Boat Launch                   Live Oak Boat Ramp Rl 
+    ##                                      51                                       1 
+    ##           Live Oak Upstream Boat Launch                   Liveoak Locals Launch 
+    ##                                      12                                      23 
+    ##                  Lower Mcfarlan Main Rl         Lower Trailer Park Backwater Rl 
+    ##                                      46                                      58 
+    ##                   Matthews Main Channel                  Mcfarland Backwater Rl 
+    ##                                     129                                       6 
+    ##                       Mcfarland Main Rr              Mcfarland Main Rr Upstream 
+    ##                                     197                                      88 
+    ##                      Mcfarland Upper Rl                              Moes Ditch 
+    ##                                      50                                      46 
+    ##                     Morse Road Beach Rl            Mulberry Beach Rr Downstream 
+    ##                                      68                                      51 
+    ##                           Outlet Launch            River Reflections Rv Park Rl 
+    ##                                      17                                     296 
+    ##                 Riverbend Park Beach Rl                        Robinson Main Rr 
+    ##                                     335                                       6 
+    ##                        Robinson Pond Sc                      Robinson Riffle Rl 
+    ##                                      25                                     109 
+    ##                        Robinson Side Rr                       Sanders Road Bend 
+    ##                                       1                                      19 
+    ##                      Seans Beach 2mi Ds                          Seans Beach Rr 
+    ##                                      51                                     155 
+    ##             Shallow Riffle Backwater Rr                       Shanghai Above Rr 
+    ##                                     318                                      91 
+    ##            Star Bend 2 Mi Downstream Rl           Star Bend Across From Ramp Rr 
+    ##                                      62                                     598 
+    ##                       Star Bend Pump Rl   Star Bend Pumps Half Mile Upstream Rr 
+    ##                                     127                                     148 
+    ##                           Steep Main Rr                      Steep Side Channel 
+    ##                                      83                                      52 
+    ##          Sunset Pumps Downstream Island                             Swampy Bend 
+    ##                                      13                                      52 
+    ##                       Trailer Park Main                         Upstream G95 Rl 
+    ##                                       4                                       4 
+    ## Upstream Gridley Riffle Side Channel Rl                      Upstream Hwy 20 Rr 
+    ##                                       9                                     183 
+    ##                      Vance East Main Rr                                 Weir Rl 
+    ##                                      59                                      58 
+    ##                        West Kiester Owa                 Yuba City Park Beach Rr 
+    ##                                       3                                     106 
+    ##      Yuba City Train Bridge Upstream Rl            Yuba River 1mi Downstream Rl 
+    ##                                      82                                     266 
+    ##           Yuba Train Bridge Upstream Rr 
+    ##                                       6
+
+**NA and Unknown Values**
+
+No NA values:
+
+-   0 % of values in the `site_name` column are NA.
+
+### Variable: `location_lu_channel`
+
+Describes where in feather river based on channel type:
+
+-   LFC - Low Flow Channel
+-   HFC - High Flow Channel (After thermilito afterbay)
+-   HFC DS LYR - High Flow Channel…TODO?
+
+``` r
+table(cleaner_seine_data$location_lu_channel)
+```
+
+    ## 
+    ##        HFC HFC DS LYR        LFC 
+    ##       3949       2131       3678
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
+**NA and Unknown Values**
+
+No NA values:
+
+-   3.4 % of values in the `location_lu_channel` column are NA.
+
+### Variable: `run`
+
+``` r
+table(cleaner_seine_data$run)
+```
+
+    ## 
+    ##    fall  spring unknown  winter 
+    ##    8690     988      42      60
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
+``` r
+cleaner_seine_data$run <- ifelse(cleaner_seine_data$run  == "unknown", NA, cleaner_seine_data$run)
+table(cleaner_seine_data$run)
+```
+
+    ## 
+    ##   fall spring winter 
+    ##   8690    988     60
+
+**NA and Unknown Values**
+
+No NA values:
+
+-   3.6 % of values in the `run` column are NA.
 
 ## Summary of identified issues
 
