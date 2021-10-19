@@ -12,6 +12,7 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library(leaflet)
+library(gridExtra)
 ```
 # Yuba River RST Data  
 
@@ -83,7 +84,7 @@ glimpse(raw_data)
 
 ```{r}
 cleaner_data <- raw_data %>% 
-  select(-c('Catch_Entry_SampleRowID', 'CatchRowID')) %>% 
+  select(-c('Catch_Entry_SampleRowID', 'CatchRowID', 'Comments')) %>% 
   rename('id' = Sample_Entry_SampleRowID,
          'date'= SampleDate,
          'time' = SampleTime,
@@ -98,10 +99,12 @@ cleaner_data <- raw_data %>%
          'rpms_after' = RPMsAfter,
          'organism_code' = OrganismCode,
          'fork_length' = ForkLength,
-         'stage_code' = StageCode
+         'stage_code' = StageCode,
+         'latitude' = Northing,
+         'longitude' = Easting
          ) %>%
   mutate(time = hms::as_hms(time)) %>%
-  filter(organism_code == 'CHN', rm.na = TRUE) %>% 
+  filter(organism_code == 'CHN', rm.na = TRUE) %>%
   glimpse()
 ```
 ```{r}
@@ -110,6 +113,118 @@ cleaner_data <- cleaner_data %>%
   glimpse()
 ```
 
+## Explore Categorical Variables
+```{r}
+cleaner_data %>% select_if(is.character) %>% colnames()
+```
+### Variable: `method`
+
+#Description: 'method' is an alphanumeric code defining the type of sampling action taken.
+
+* FSR - Fish Screen Diversion Trap
+
+* RSTR - Rotary Screen Trap
+
+```{r}
+table(cleaner_data$method) 
+```
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(method = if_else(method == 'FSR', 'Fish Screen Diversion Trap', method),
+         method = if_else(method == 'RSTR', 'Rotary Screen Trap', method))
+table(cleaner_data$method)
+```
+**NA and Unknown Values**  
+
+* `r round(sum(is.na(cleaner_data$'method'))/nrow(cleaner_data), 3)*100` % of values in the `method` column are NA.
+
+
+### Variable: `trap_status`
+
+#Description: trap_status indicate if trap was checked for fish or just set or pulled.
+
+```{r}
+table(cleaner_data$trap_status) 
+```
+**NA and Unknown Values**  
+
+* `r round(sum(is.na(cleaner_data$'trap_status'))/nrow(cleaner_data), 3)*100` % of values in the `trap_status` column are NA.
+
+### Variable: `organism_code`
+
+#Description: organism_code indicate the alphanumeric code for a species of fish or other oragnism present in the catch.
+Note: previous filtering data to Chinook salmon only. 
+```{r}
+table(cleaner_data$organism_code)
+
+```
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(organism_code = if_else(organism_code == 'CHN', 'Chinook Salmon', organism_code))
+table(cleaner_data$organism_code)
+```
+**NA and Unknown Values**  
+
+* `r round(sum(is.na(cleaner_data$'organism_code'))/nrow(cleaner_data), 3)*100` % of values in the `organism_code` column are NA.
+
+### Variable: `stage_code`
+#Description: Code describing the life stage of an organism
+
+* FR - Fall Run salmon
+* FRY - Fry
+* lfr - Late Fall Run salmon
+* n/p - Not Provided
+* out - Outlier Salmon
+* PAR - Parr 
+* SMT - Smolt
+* SPR - Silvery Parr
+* SR - Spring Run salmon
+* UNK - Unknown
+* YSF - Yolk-sac Fry
+
+```{r}
+table(cleaner_data$stage_code) 
+```
+```{r}
+#Create a new column 'run' for 'fall run salmon', 'late fall run salmon', 'outlier salmon', 'spring run salmon' and 'unknown'
+
+cleaner_data <- cleaner_data %>% 
+  mutate(stage_code = set_names(tolower(stage_code)),
+        run = ifelse(stage_code == 'fr','fall',
+        if_else(stage_code == 'lfr','late fall',
+        if_else(stage_code == 'unk','unknown',
+        if_else(stage_code == 'out','outlier salmon',
+        if_else(stage_code == 'sr','spring',
+               "unknown"))))),
+         stage_code = if_else(stage_code =='n/p', 'not provided',
+         if_else(stage_code =='par', 'parr',
+         if_else(stage_code == 'smt', 'smolt',
+         if_else(stage_code == 'spr', 'silvery parr',
+         if_else(stage_code == 'ysf', 'yolk-sac fry',
+                 'not provided')))))) %>% 
+  glimpse()
+```
+
+
+**NA and Unknown Values**  
+
+* `r round(sum(is.na(cleaner_data$'stage_code'))/nrow(cleaner_data), 3)*100` % of values in the `stage_code` column are NA.
+* `r round(sum(is.na(cleaner_data$'run'))/nrow(cleaner_data), 3)*100` % of values in the `run` column are NA.
+
+### Variable: `location`
+
+```{r}
+table(cleaner_data$location)
+```
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(location = if_else(location == '5 foot RST at Halwood', '5 foot RST at Hallwood', location),
+         location = if_else(location == 'RST # 2 at Hallwood', 'RST 2 at Hallwood', location),
+         location = if_else(location == 'RST 1 at Hallwood on Yuba River', 'RST 1 at Hallwood on Yuba River', location))
+table(cleaner_data$location)
+```
+
+#Description: location of Rotary Screw Traps
 ## Explore Numeric Variables
 
 ```{r}
@@ -118,8 +233,9 @@ cleaner_data %>%
 ```
 
 ### Variable:`water_temp`
-#TODO: figure out what's happenign with the high temperature
-#note: 2000 - fst had lower temperature (15s) while rst had high temp (60s) on the same day
+
+TODO: figure out what's happenign with the high temperature
+note: 2000 - fst had lower temperature (15s) while rst had high temp (60s) on the same day
 
 ```{r}
 cleaner_data %>% 
@@ -171,6 +287,16 @@ summary(cleaner_data$water_temp)
 ### Variable:`turbidity`
 ```{r}
 cleaner_data %>% 
+  group_by(location) %>% 
+  summarise(mean_turbidity = mean(turbidity, na.rm = TRUE)) %>% 
+  ggplot(aes(y = location,
+             x = mean_turbidity))+
+  geom_bar(position = 'stack', stat = 'identity') +
+  labs(title = "Mean Turbidity by Location")
+```
+
+```{r}
+cleaner_data %>% 
   group_by(date) %>%
   mutate(avg_turb = mean(turbidity, na.rm = T)) %>%
   ungroup() %>% 
@@ -212,6 +338,16 @@ summary(cleaner_data$turbidity)
 
 ### Variable:`water_velocity`
 ## TODO: 1999 has 1 value? 
+```{r}
+cleaner_data %>% 
+  group_by(location) %>% 
+  summarise(mean_water_velocity = mean(water_velocity, na.rm = TRUE)) %>% 
+  ggplot(aes(y = location,
+             x = mean_water_velocity))+
+  geom_bar(position = 'stack', stat = 'identity') +
+  labs(title = "Mean Water Velocity by Location",
+       x = 'Water Velocity (m/s)')
+```
 
 ```{r}
 cleaner_data %>% 
@@ -255,24 +391,29 @@ summary(cleaner_data$water_velocity)
 * `r round(sum(is.na(cleaner_data$'water_velocity'))/nrow(cleaner_data), 3)*100` % of values in the `water_velocity` column are NA.
 
 ### Variable:`trap_revolutions`
+
+#Description: Number of trap revoltuions corresponding to a particular catch.
+
 ```{r}
 #Filter out significant high outliers (revolution > 10,000 )
-cleaner_data %>% 
+revolution_plot_1 <- cleaner_data %>% 
   ggplot(aes(x=trap_revolutions))+
   geom_histogram(binwidth = 1000)+
-  labs(title = "Trap Revolutions Distribution")
+  labs(title = "Trap Revolutions Distribution Without Filtering")
 ```
-
-
 
 ```{r}
 #Filter out significant significant higher values (277 points at revolution between 112178 rpms and 890793 rpms )
-cleaner_data %>% 
+revolution_plot_2 <- cleaner_data %>% 
   filter(trap_revolutions < 100000) %>% 
   ggplot(aes(x=trap_revolutions))+
   geom_histogram(binwidth = 1000)+
-  labs(title = "Trap Revolutions Distribution")
+  labs(title = "Trap Revolutions Distribution After Filtering")
 ```
+```{r}
+grid.arrange(revolution_plot_1, revolution_plot_2, ncol=2)
+```
+
 **Numeric Summary of trap_revolutions 1999 to 2009**
 ```{r}
 summary(cleaner_data$trap_revolutions)
@@ -283,14 +424,27 @@ summary(cleaner_data$trap_revolutions)
 * `r round(sum(is.na(cleaner_data$'trap_revolutions'))/nrow(cleaner_data), 3)*100` % of values in the `trap_revolutions` column are NA.
 
 ### Variable:`trap_revolutions2`
+
+#Description: Number of trap revolutions corresponding to a particular catch, results from second counter.
+```{r}
+revolution2_plot_1 <- cleaner_data %>% 
+  ggplot(aes(x=trap_revolutions2))+
+  geom_histogram(binwidth = 1000)+
+  labs(title = "Trap Revolutions2 Distribution Before Filtering")
+```
+
 ```{r}
 #Filter out significant significant higher values (220 points at revolution between 112178 rpms and 890793 rpms )
-cleaner_data %>% 
+revolution2_plot_2 <- cleaner_data %>% 
   filter(trap_revolutions2 < 100000) %>%
   ggplot(aes(x=trap_revolutions2))+
   geom_histogram(binwidth = 1000)+
-  labs(title = "Trap Revolutions Distribution")
+  labs(title = "Trap Revolutions2 Distribution After Filtering")
 ```
+```{r}
+grid.arrange(revolution2_plot_1, revolution2_plot_2, ncol=2)
+```
+
 
 **Numeric Summary of trap_revolutions2 1999 to 2009**
 ```{r}
@@ -302,6 +456,8 @@ summary(cleaner_data$trap_revolutions2)
 * `r round(sum(is.na(cleaner_data$'trap_revolutions2'))/nrow(cleaner_data), 3)*100` % of values in the `trap_revolutions2` column are NA.
 
 ### Variable:`rpms_before`
+
+#Description: Revolutions per minute before the trap was sampled.
 
 ```{r}
 cleaner_data %>% 
@@ -327,27 +483,33 @@ summary(cleaner_data$rpms_before)
 
 ### Variable:`rpms_after`
 
+#Description: Revolutions per minute after the trap was sampled
+
 ```{r}
-cleaner_data %>% 
+rpms_after_plot_1 <- cleaner_data %>% 
   ggplot(aes(x = rpms_after, y = location)) + 
   geom_boxplot() + 
   theme_minimal() +
-  labs(title = "RPMS After summarized by locations",
-       x = "RPMs After") + 
-  theme(text = element_text(size = 15),
+  labs(title = "rpms_after summarized by locations",
+       x = "rpms_after") + 
+  theme(text = element_text(size = 10),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 ```{r}
-cleaner_data %>% 
-  filter(rpms_after < 50) %>% #filter out 149 points that had significantly higher value-66 points at 50 rpm, 83 points at 1877 rpm (TODO)
+rpms_after_plot_2 <- cleaner_data %>% 
+  filter(rpms_after < 50) %>% #filter out 149 points that had significantly higher value-66 points at 50 rpm, 83 points at 1877 rpm 
   ggplot(aes(x = rpms_after, y = location)) + 
   geom_boxplot() + 
   theme_minimal() +
-  labs(title = "RPMS After summarized by locations",
-       x = "RPMs After") + 
-  theme(text = element_text(size = 15),
+  labs(title = "rpms_after summarized by locations after filtering",
+       x = "rpms_after") + 
+  theme(text = element_text(size = 10),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
+```{r}
+grid.arrange(rpms_after_plot_1, rpms_after_plot_2, ncol=2)
+```
+
 
 **Numeric Summary of rpms_after 1999 to 2009**
 ```{r}
@@ -365,7 +527,7 @@ summary(cleaner_data$rpms_after)
 cleaner_data %>% 
   ggplot(aes(x=fork_length))+
   # geom_histogram()
-  geom_histogram(breaks = seq(0,150, by =2))+
+  geom_histogram(breaks = seq(0,110, by =2))+
   # scale_x_continuous(breaks=seq(0, 110, by=10)) +
   labs(title = "Fork Length Distribution")+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1 ))
@@ -383,7 +545,13 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 ```{r}
-#TODO Add graph fork length by lifestage
+cleaner_data %>% 
+  ggplot(aes(x = fork_length, y = stage_code)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Fork length summarized by lifestage") + 
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 **Numeric Summary of fork_length from 1999 to 2009**
@@ -396,9 +564,9 @@ summary(cleaner_data$fork_length)
 
 ### Variable:`weight`
 ```{r}
-#
+#Filter out 9 points that are 
 cleaner_data %>% 
-  filter(weight<50) %>% 
+  filter(weight<10) %>% 
   ggplot(aes(x=weight))+
   geom_histogram(breaks = seq(0,10, by =0.2))+
   scale_x_continuous(breaks=seq(0, 10, by=1)) +
@@ -406,7 +574,14 @@ cleaner_data %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1 ))
 ```
 ```{r}
-#TODO: weight by lifestage
+cleaner_data %>% 
+  filter(weight< 60) %>% 
+  ggplot(aes(x = weight, y = stage_code)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Weight summarized by lifestage") + 
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 **Numeric Summary of weight from 1999 to 2009**
@@ -421,23 +596,10 @@ summary(cleaner_data$weight)
 
 ```{r}
 cleaner_data %>% 
-  ggplot(aes(x = as.Date(date), y = count)) + 
-  geom_col()+ 
-  facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 8,angle = 90, vjust = 0.5, hjust=0.1)) +
-  theme(axis.text.y = element_text(size = 8))+
-  labs(title = "Salmon Count Over the Years",
-       x = "Date")
-```
-```{r}
-cleaner_data %>% 
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  filter(water_year < 2010) %>%
   group_by(date) %>%
   mutate(total_daily_catch = sum(count)) %>%
   ungroup() %>%
@@ -451,13 +613,11 @@ cleaner_data %>%
   labs(title = "Total Daily Raw Passage 2000 - 2010",
        y = "Total daily catch",
        x = "Date")+ 
-  facet_wrap(~water_year, scales = "free") + 
-  scale_fill_manual(values = palette)
+  facet_wrap(~water_year, scales = "free")
 ```
 
 ```{r}
 cleaner_data  %>%
-  # filter(year(date) < 2021) %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = year, y = count)) + 
   geom_col() + 
@@ -466,7 +626,7 @@ cleaner_data  %>%
        y = "Total fish count") + 
   theme(text = element_text(size = 10),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  facet_wrap(~stage_code, scales = "free_y")
+  facet_wrap(~run, scales = "free_y")
 ```
 
 **Numeric Summary of count from 1999 to 2009**
@@ -476,3 +636,10 @@ summary(cleaner_data$count)
 **NA and Unknown Values**  
 
 * `r round(sum(is.na(cleaner_data$'count'))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
+
+### Variable:`longitude` and`latitude`
+```{r}
+summary(cleaner_data$longitude)
+summary(cleaner_data$latitude)
+```
+
