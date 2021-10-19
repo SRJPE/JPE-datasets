@@ -1,0 +1,435 @@
+---
+title: "Battle Creek Upstream Passasge - Trap and Spawning Building QC"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+```
+
+# Battle Creek Upstream Passasge - Trap and Spawning Building
+
+## Description of Monitoring Data
+
+These data were collected to capture the number of fish that pass the barrier weir at Coleman National Fish Hatchery from 2001 to 2019. Data come from two sampling methods- a barrier weir trap and spawning building operations. In 2008, a new fish ladder was built and from 2009-2012 the trap was moved to the middle of the newly constructed fish ladder. For spawning building operations, fish were diverted to holding ponds and processed daily, rather than in 30 minute increments through an ~8 hour period during barrier weir trapping. 						
+
+**Timeframe:** 2001 - 2019
+
+**Sampling Season:** March - July
+
+**Completeness of Record throughout timeframe:** Some years with no data. 
+
+**Sampling Location:** Battle Creek 
+
+**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov)
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+gcs_get_object(object_name = 
+                 "adult-upstream-passage-monitoring/battle-creek/data-raw/battle_creek_upstream_passage_datas.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_battle_creek_passage_data.xlsx",
+               overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data sheet: 
+```{r}
+sheets <- readxl::excel_sheets("raw_battle_creek_passage_data.xlsx")
+sheets
+raw_passage_data <- read_excel("raw_battle_creek_passage_data.xlsx", 
+                               sheet = "Trap and Spawning Building", 
+                               col_types = c("text", "date", "date", 
+                                             "date", "date", "text", 
+                                             "numeric", "text", "text",
+                                             "numeric", "text", "text", 
+                                             "text", "text", "text", 
+                                             "text", "text", "text")) %>% glimpse()
+```
+
+## Data transformations
+
+```{r}
+cleaner_passage_data <- raw_passage_data %>% 
+  janitor::clean_names() %>% 
+  filter(species == "CHN") %>%
+  rename("date" = sample_date,
+         "passed_up" = no_passed_up,
+         "fork_length" = fl_mm,
+         "recapture_type" = recap_type,
+         "confidence_in_sex" = confidence,
+         "tag_number" = tag_no) %>%
+  mutate(date = as.Date(date),
+         time = hms::as_hms(time)) %>%
+  select(-project, -species) %>% # all species = chn, all project = video 
+  glimpse()
+
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+cleaner_passage_data %>% select_if(is.numeric) %>% colnames()
+```
+
+### Variable: `passed_up`
+
+**Plotting Passage Counts Moving Up over Period of Record**
+
+```{r}
+cleaner_passage_data %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = passed_up)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), 
+               limits = c(as.Date("1901-03-01"), as.Date("1901-08-01")), 
+               date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Count of Upstream Passage All Runs", 
+       x = "Date")  
+```
+
+Data gaps 2011, 2012, 2017, 2018
+
+```{r}
+# Boxplots of daily counts by year
+cleaner_passage_data %>% group_by(date) %>%
+  mutate(daily_count_upstream = sum(passed_up)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ungroup() %>%
+  ggplot(aes(x = year, y = daily_count_upstream)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(text = element_text(size = 23)) + 
+  labs(title = "Daily Count of Upstream Passage Sumarized by Year All Runs") 
+```
+
+```{r}
+cleaner_passage_data  %>%
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = year, y = passed_up)) + 
+  geom_col() + 
+  theme_minimal() +
+  labs(title = "Total Yearly Fish Counts by Run",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+* Data gaps 2011, 2012, 2017, 2018
+* Small total counts 2008 - 2018 
+* Overall not looking at that many fish counted each year 
+
+
+**Numeric Summary of Passage Counts Moving Up over Period of Record**
+
+```{r}
+# Table with summary statistics
+summary(cleaner_passage_data$passed_up)
+
+# daily numeric summary 
+cleaner_passage_data %>% group_by(date) %>%
+  summarise(count = sum(passed_up, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$passed_up))/nrow(cleaner_passage_data), 3) * 100` % of values in the `passed_up` column are NA. However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
+
+### Variable: `fork_length`
+
+**Plotting fork_length**
+  
+```{r}
+cleaner_passage_data %>% 
+  ggplot(aes(x = fork_length)) + 
+  geom_histogram() + 
+  theme_minimal() +
+  labs(title = "Fork length distribution (mm)") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_passage_data %>% 
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = fork_length, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Fork length summarized by year") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of fork_length over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_passage_data$fork_length)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_passage_data$fork_length))/nrow(cleaner_passage_data), 3) * 100` % of values in the `fork_length` column are NA. 
+
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+cleaner_passage_data %>% select_if(is.character) %>% colnames()
+```
+
+
+### Variable: `sex`
+```{r}
+table(cleaner_passage_data$sex) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+# Fix yes/no/unknown
+cleaner_passage_data$sex = if_else(cleaner_passage_data$sex == "UNK" | cleaner_passage_data$sex == "Unk" , "unknown", cleaner_passage_data$sex)
+table(cleaner_passage_data$sex) 
+```
+
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$sex))/nrow(cleaner_passage_data), 3) * 100` % of values in the `sex` column are NA.
+* `r round(sum(cleaner_passage_data$sex == "unknown", na.rm = T)/nrow(cleaner_passage_data), 3) * 100` % of values in the `sex` column are`unknown`.
+
+### Variable: `confidence_in_sex`
+
+`confidence_in_sex` describes confidence in sex call: 
+
+* C - confident in sex call 
+* NC - not confident in sex call 
+
+```{r}
+table(cleaner_passage_data$confidence_in_sex) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+# Fix yes/no/unknown
+cleaner_passage_data$confidence_in_sex = case_when(
+  cleaner_passage_data$confidence_in_sex == "C" ~ "confident", 
+  cleaner_passage_data$confidence_in_sex == "NC" ~ "not confident"
+)
+table(cleaner_passage_data$confidence_in_sex) 
+```
+
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$confidence_in_sex))/nrow(cleaner_passage_data), 3) * 100` % of values in the `confidence_in_sex` column are NA.
+
+### Variable: `adipose`
+```{r}
+table(cleaner_passage_data$adipose) 
+```
+Fix inconsistencies with spelling, capitalization, and abbreviations.  
+
+```{r}
+# Fix yes/no/unknown
+cleaner_passage_data$adipose = case_when(
+  cleaner_passage_data$adipose == "A" ~ "absent",
+  cleaner_passage_data$adipose == "P" ~ "present",
+  cleaner_passage_data$adipose == "Unk" ~ "unknown",
+)
+table(cleaner_passage_data$adipose) 
+```
+  
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$adipose))/nrow(cleaner_passage_data), 3) * 100` % of values in the `adipose` column are NA. 
+* `r round(sum(cleaner_passage_data$adipose == "unknown", na.rm = T)/nrow(cleaner_passage_data), 3) * 100` % of values in the `adipose` column are`unknown`.
+
+### Variable: `condition`
+Describes fish coloration, B=Bright, D=Dark, F=Fungus				
+
+
+```{r}
+table(cleaner_passage_data$condition)
+```
+
+```{r}
+cleaner_passage_data$condition = case_when(
+  cleaner_passage_data$condition == "B" ~ "bright",
+  cleaner_passage_data$condition == "D" ~ "dark",
+  cleaner_passage_data$condition == "F" ~ "fungus",
+)
+table(cleaner_passage_data$condition)
+```
+
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$condition))/nrow(cleaner_passage_data), 3) * 100` % of values in the `condition` column are NA. 
+
+### Variable: `mature`
+
+fish sexual maturity, N/A=not applicable, R=Ripe, G=Green (or unripe)				
+
+```{r}
+table(cleaner_passage_data$mature)
+```
+
+```{r}
+cleaner_passage_data$mature = case_when(
+  cleaner_passage_data$mature == "G" ~ "green",
+  cleaner_passage_data$mature == "R" ~ "ripe"
+)
+table(cleaner_passage_data$mature)
+```
+
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$mature))/nrow(cleaner_passage_data), 3) * 100` % of values in the `mature` column are NA. 
+
+### Variable: `status`
+
+location of fish, DIP=Dead in pond, downstream=released downstream, ESC=escaped, Hatch=given to the hatchery, Lost=Lost the fish, Mort=Mortality, P=Pass (upstream), Recap=Recaptured fish, Sac=Sacraficed 				
+			
+
+```{r}
+table(cleaner_passage_data$status)
+```
+
+```{r}
+cleaner_passage_data$status = case_when(
+  cleaner_passage_data$status == "DIP" | cleaner_passage_data$status == "Dip" ~ "dead in pond",
+  cleaner_passage_data$status == "Downstream" | cleaner_passage_data$status == "Rel Down" ~ "released downstream",
+  cleaner_passage_data$status == "Esc" ~ "escaped",
+  cleaner_passage_data$status == "Hatch" ~ "given to the hatchery",
+  cleaner_passage_data$status == "LOST" ~ "lost the fish",
+  cleaner_passage_data$status == "Mort" ~ "mortality",
+  cleaner_passage_data$status == "RECAP" ~ "recaptured fish",
+  cleaner_passage_data$status == "Sac" ~ "sacraficed",
+)
+table(cleaner_passage_data$status)
+```
+
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$status))/nrow(cleaner_passage_data), 3) * 100` % of values in the `status` column are NA. 
+
+### Variable: `recapture`
+
+was the fish a recapture Y=Yes, N=No	- (change to booleen)		
+
+```{r}
+table(cleaner_passage_data$recapture)
+```
+
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$recapture))/nrow(cleaner_passage_data), 3) * 100` % of values in the `recapture` column are NA. 
+
+There are no Na so I can go ahead and change all Y = TRUE, all n, N = FALSE
+```{r}
+cleaner_passage_data$recapture = ifelse(cleaner_passage_data$recapture == "Y", TRUE, FALSE)
+table(cleaner_passage_data$recapture)
+```
+
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$recapture))/nrow(cleaner_passage_data), 3) * 100` % of values in the `recapture` column are NA. 
+
+### Variable: `recapture_type``
+
+what type of recap U=Upper caudal punch, L=Lower caudal punch, VIE=VIE marked, Floy=Floy tag attached, Radio=Radio tag				
+
+```{r}
+table(cleaner_passage_data$recapture_type)
+```
+
+```{r}
+cleaner_passage_data$recapture_type = case_when(
+  cleaner_passage_data$recapture_type == "Floy Tag" ~ "floy tag",
+  cleaner_passage_data$recapture_type == "Radio" ~ "radio tag",
+  cleaner_passage_data$recapture_type == "Lower" ~ "lower caudal punch",
+  cleaner_passage_data$recapture_type == "Upper" ~ "upper caudal punch",
+  cleaner_passage_data$recapture_type == "None" ~ "none",
+)
+table(cleaner_passage_data$recapture_type)
+```
+
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$recapture_type))/nrow(cleaner_passage_data), 3) * 100` % of values in the `mature` column are NA. 
+
+### Variable: `tag_number``
+
+Floy tag number				
+
+```{r}
+length(unique(cleaner_passage_data$tag_number))
+
+unique(cleaner_passage_data$tag_number)[1:5]
+```
+There are 138 unique tag numbers. 138 is greater than the total number of recaptures according to `recapture` and `recapture_type` columns
+
+
+**NA or Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$tag_number))/nrow(cleaner_passage_data), 3) * 100` % of values in the `tag_number` column are NA. 
+
+### Variable: `comments`
+
+10 unique comments are shown bellow. Comments are only present on 12% of the data. 
+
+```{r}
+unique(cleaner_passage_data$comments)[1:10]
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$comments))/nrow(cleaner_passage_data), 3) * 100` % of values in the `comments` column are NA.
+
+## Summary of identified issues
+
+* No data on Run
+* No or very little data 2009 - 2018
+* they have information on recaptures but there are more unique floy tag numbers than total fish recaptured.
+
+## Save cleaned data back to google cloud 
+
+```{r}
+battle_passage_trap <- cleaner_passage_data %>% 
+  glimpse()
+```
+
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(battle_passage_trap,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/battle-creek/data/battle_passage_trap.csv")
+```
