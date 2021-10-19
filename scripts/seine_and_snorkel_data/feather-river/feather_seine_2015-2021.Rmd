@@ -23,7 +23,7 @@ Feather River Seine data 2015 - 2021. All new data will be stored in this format
 
 **Timeframe:** 2015 - 2021
 
-**Seine Season:** Appears to be Feb - August (but not consistant across years sampled)
+**Seine Season:** Appears to be Feb - August (but not consistent across years sampled)
 
 **Completeness of Record throughout timeframe:** 
 

@@ -25,9 +25,9 @@ Feather River Seine data 1997 - 2021. This dataset contains less attributes than
 
 **Timeframe:** 1997 - 2001
 
-**Seine Season:** ? TODO 
+**Seine Season:** First survey can be done as early as mid December and then sampling can continue until late August. 
 
-**Completeness of Record throughout timeframe:** 
+**Completeness of Record throughout timeframe:** Sampled all 5 years in date range. Sampling does not occur at regular time intervals throughout the years sampled. 
 
 **Sampling Location:** Feather River
 
@@ -186,12 +186,14 @@ Provide a stat on NA or unknown values
 
 ```{r}
 cleaner_seine_data %>% 
+  group_by(date) %>%
+  summarize(count = sum(count)) %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   ggplot(aes(x = fake_date, y = count)) + 
   geom_col() + 
-  facet_wrap(~year(date), scales = "free") + 
+  facet_wrap(~year(date), scales = "free_y") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(text = element_text(size = 20),
@@ -237,8 +239,7 @@ cleaner_seine_data %>% select_if(is.character) %>% colnames()
 
 ### Variable: `seine_id`
 
-TODO join seineData onto 
-Seine Id can be used to get additional information describing seine equipment. (Information on crew, depth, temp, ect...)
+Seine Id can be used to get additional information describing seine equipment. (Information on crew, depth, temp, ect...). We have this data in access database if we decide we want it. 
 
 **NA and Unknown Values**
 
