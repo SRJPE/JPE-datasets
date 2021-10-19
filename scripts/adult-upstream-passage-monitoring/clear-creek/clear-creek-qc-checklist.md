@@ -11,7 +11,7 @@ Erin Cain
 
 **Timeframe:** 2013-2020
 
-**Video Season:** TODO
+**Video Season:** August through December
 
 **Completeness of Record throughout timeframe:** Data are not padded -
 missing data indicate a period where footage was not collected by USFWS
@@ -200,7 +200,10 @@ cleaner_video_data %>% group_by(date) %>%
 cleaner_video_data  %>%
   mutate(year = as.factor(year(date))) %>%
   filter(run %in% c("LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
-  ggplot(aes(x = year, y = up)) + 
+  group_by(year(date)) %>%
+  mutate(total_catch = sum(up)) %>%
+  ungroup() %>%
+  ggplot(aes(x = year, y = total_catch)) + 
   geom_col() + 
   theme_minimal() +
   labs(title = "Total Yearly Fish Counts by Run",
@@ -297,7 +300,10 @@ cleaner_video_data %>% group_by(date) %>%
 cleaner_video_data  %>%
   mutate(year = as.factor(year(date))) %>%
   filter(run %in% c("LF", "SR", "WR")) %>%
-  ggplot(aes(x = year, y = down)) + 
+  group_by(year(date)) %>%
+  mutate(total_catch = sum(down)) %>%
+  ungroup() %>%
+  ggplot(aes(x = year, y = total_catch)) + 
   geom_col() + 
   theme_minimal() +
   labs(title = "Total Yearly Fish Counts by Run",
@@ -332,7 +338,7 @@ cleaner_video_data %>% group_by(date) %>%
 
 **NA and Unknown Values**
 
--   0 % of values in the `up` column are NA.
+-   0 % of values in the `down` column are NA.
 
 ## Explore Categorical variables:
 
@@ -533,7 +539,7 @@ cleaner_video_data$run = if_else(cleaner_video_data$run == "UNK", "unknown", cle
 **NA or Unknown Values**
 
 -   21.3 % of values in the `run` column are NA.
--   0.7 % of values in the `run` column are`unknown`.
+-   1.2 % of values in the `run` column are`unknown`.
 
 ``` r
 clear_passage <- cleaner_video_data %>% 
