@@ -314,18 +314,27 @@ cleaner_data_2009 %>%
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ``` r
+#Find the most distinctive colours for visual
+colourCount = length(unique(cleaner_data_2009$location))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
+
 cleaner_data_2009  %>%
-  ggplot(aes(y = location, x = redd_count))+
-  geom_boxplot() +
+  ggplot(aes(x = redd_count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram() +
   theme_minimal() +
   theme(text = element_text(size = 12))+
   theme(axis.text.x = element_text(size = 10,vjust = 0.5, hjust=0.1))+
-  labs(title = "Redd Count By Locations")
+  labs(title = "Daily Redd Count Distribution",
+       x = 'Daily Redd Count')+
+  guides(fill = guide_legend(nrow = 10))
 ```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
 ![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
-**Numeric Daily Summary of redd\_count Over 2009**
+**Numeric Daily Summary of total redd\_count Over 2009**
 
 ``` r
 cleaner_data_2009 %>%
@@ -397,10 +406,6 @@ summary(cleaner_data_2009$redd_length_m)
 ### Variable:`percent_fine_substrate`
 
 ``` r
-#Find the most distinctive colours for visual
-colourCount = length(unique(cleaner_data_2009$location))
-getPalette = colorRampPalette(brewer.pal(12, "Paired"))
-
 cleaner_data_2009 %>%
   ggplot(aes(x = percent_fine_substrate, fill = location)) +
   scale_fill_manual(values = getPalette(colourCount))+
@@ -673,28 +678,28 @@ gcs_upload(feather_redd_survey_2009,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv")
 ```
 
-    ## i 2021-10-15 16:25:54 > File size detected as  19.8 Kb
+    ## i 2021-10-19 13:58:13 > File size detected as  19.8 Kb
 
-    ## i 2021-10-15 16:25:55 > Request Status Code:  400
+    ## i 2021-10-19 13:58:13 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-15 16:25:55 > File size detected as  19.8 Kb
+    ## i 2021-10-19 13:58:13 > File size detected as  19.8 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv 
     ## Type:                csv 
     ## Size:                19.8 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv?generation=1634340354794079&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv?generation=1634677093435071&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv/1634340354794079 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv/1634677093435071 
     ## MD5 Hash:            nqfUAaw5wY2t18jOk96N8g== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-15 23:25:54 
-    ## Updated:             2021-10-15 23:25:54 
-    ## Generation:          1634340354794079 
+    ## Created:             2021-10-19 20:58:13 
+    ## Updated:             2021-10-19 20:58:13 
+    ## Generation:          1634677093435071 
     ## Meta Generation:     1 
-    ## eTag:                CN/EqKLIzfMCEAE= 
+    ## eTag:                CL+N6Nuu1/MCEAE= 
     ## crc32c:              oXTTdw==

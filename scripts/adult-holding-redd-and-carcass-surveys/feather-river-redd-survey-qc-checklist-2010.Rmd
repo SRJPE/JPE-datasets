@@ -4,7 +4,7 @@ author: "Inigo Peng"
 date: "10/6/2021"
 output: rmarkdown::github_document
 ---
-```{r setup, include=FALSE, fig.width=15, fig.height=10}
+```{r}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 library(tidyverse)
 library(lubridate)
@@ -12,6 +12,7 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library(leaflet)
+library (RColorBrewer)
 ```
 # Feather River Redd Survey Data  
 
@@ -97,6 +98,21 @@ cleaner_data_2010 <- cleaner_data_2010 %>%
   set_names(tolower(colnames(cleaner_data_2010))) %>%
   glimpse()
 ```
+## Explore `date`
+```{r}
+cleaner_data_2010 %>%
+  ggplot(aes(x = date)) +
+  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  labs(title = "Value Counts For Survey Season Dates")+
+  theme(legend.text = element_text(size = 8))
+```
+```{r}
+summary(cleaner_data_2010$date)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data_2010$date))/nrow(cleaner_data_2010), 3)*100` % of values in the `date` column are NA.
 
 ## Explore Categorical Variables
 
@@ -180,20 +196,26 @@ cleaner_data_2010 %>%
 ```
 
 ```{r fig.height = 8, fig.width = 8}
+colourCount = length(unique(cleaner_data_2010$location))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
+
 cleaner_data_2010  %>%
-  ggplot(aes(y = location, x = salmon_count))+
-  geom_boxplot() +
+  ggplot(aes(x = salmon_count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram() +
   theme_minimal() +
-  theme(text = element_text(size = 10))+
-  scale_y_discrete()+
-  theme(axis.text.y = element_text(size = 8,vjust = 0.1, hjust=0.2))+
-  labs(title = "Salmon Count By Locations")
+  theme(text = element_text(size = 8))+
+  theme(axis.text.x = element_text(size = 8,vjust = 0.5, hjust=0.1))+
+  labs(title = "Daily Salmon Count Distribution",
+       x = 'Daily Salmon Count')+
+  theme(legend.text = element_text(size=5))+
+  guides(fill = guide_legend(nrow = 20))
 ```
 
-**Numeric summary of salmon_count by location in 2010**
+**Numeric Daily Summary of total salmon_count in 2010**
 ```{r}
 cleaner_data_2010 %>%
-  group_by(location) %>% 
+  group_by(date) %>% 
   summarise(count = sum(salmon_count, na.rm = T)) %>% 
   pull(count) %>%
   summary()
@@ -217,13 +239,18 @@ cleaner_data_2010 %>%
   labs(title = "Daily Count of Redds in 2010")
 ```
 ```{r}
+
 cleaner_data_2010  %>%
-  ggplot(aes(y = location, x = redd_count))+
-  geom_boxplot() +
+  ggplot(aes(x = redd_count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram() +
   theme_minimal() +
   theme(text = element_text(size = 8))+
-  theme(axis.text.x = element_text(size = 10,vjust = 0.5, hjust=0.1))+
-  labs(title = "Redd Count By Locations")
+  theme(axis.text.x = element_text(size = 8,vjust = 0.5, hjust=0.1))+
+  labs(title = "Daily Redd Count Distribution",
+       x = 'Daily Redd Count')+
+  theme(legend.text = element_text(size=5))+
+  guides(fill = guide_legend(nrow = 20))
 ```
 
 **Numeric Daily Summary of redd_count Over 2010**
@@ -235,17 +262,13 @@ cleaner_data_2010 %>%
   summary()
 ```
 
+**NA and Unknown Values**  
+
+* `r round(sum(is.na(cleaner_data_2010$redd_count))/nrow(cleaner_data_2010), 5)*100` % of values in the `redd_count` column are NA. 
+
+
 ### Variable:`redd_width_m`
-```{r fig.height = 8, fig.width = 8}
-cleaner_data_2010 %>%
-  group_by(location) %>%
-  summarise(mean_redd_width = mean(redd_width_m, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_redd_width)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Mean Redd Width By Location")
-```
+
 ```{r}
 cleaner_data_2010 %>%
   ggplot(aes(x = redd_width_m)) +
@@ -265,16 +288,7 @@ summary(cleaner_data_2010$redd_width_m)
 
 
 ### Variable: `redd_length_m`
-```{r fig.height = 8, fig.width = 8}
-cleaner_data_2010 %>%
-  group_by(location) %>%
-  summarise(mean_redd_length = mean(redd_length_m, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_redd_length)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Mean Redd Length By Location")
-```
+
 ```{r}
 cleaner_data_2010 %>%
   ggplot(aes(x = redd_length_m)) +
@@ -296,15 +310,12 @@ summary(cleaner_data_2010$redd_length_m)
 ### Variable:`percent_fine_substrate`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2010 %>%
-  group_by(location) %>% 
-  summarise(mean_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_fine_substrate)) +
-  xlab("Percent Fine Substrate")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Fine Substrate By Location")
+  ggplot(aes(x = percent_fine_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 5, position = 'stack', color = "black") +
+  labs(title = "Percent Fine Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 15))
 ```
 
 **Numeric Summary of percent_fine_substrate Over 2010**
@@ -318,15 +329,12 @@ summary(cleaner_data_2010$percent_fine_substrate)
 ### Variable:`percent_small_substrate`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2010 %>%
-  group_by(location) %>% 
-  summarise(mean_small_substrate = mean(percent_small_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_small_substrate)) +
-  xlab("Percent Small Substrate")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Small Substrate By Location")
+  ggplot(aes(x = percent_small_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 10, position = 'stack', color = "black") +
+  labs(title = "Percent Small Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 15))
 ```
 
 **Numeric Summary of percent_small_substrate Over 2010**
@@ -341,15 +349,12 @@ summary(cleaner_data_2010$percent_small_substrate)
 ### Variable:`percent_medium_substrate`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2010 %>%
-  group_by(location) %>% 
-  summarise(mean_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_medium_substrate)) +
-  xlab("Percent Medium Substrate")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Medium Substrate By Location")
+  ggplot(aes(x = percent_medium_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 10, position = 'stack', color = "black") +
+  labs(title = "Percent Medium Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 15))
 ```
 
 **Numeric Summary of percent_medium_substrate Over 2010**
@@ -363,15 +368,12 @@ summary(cleaner_data_2010$percent_medium_substrate)
 ### Variable:`percent_large_substrate`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2010 %>%
-  group_by(location) %>% 
-  summarise(mean_large_substrate = mean(percent_large_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_large_substrate)) +
-  xlab("Percent Large Substrate")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Large Substrate By Location")
+  ggplot(aes(x = percent_large_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 10, position = 'stack', color = "black") +
+  labs(title = "Percent Large Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 15))
 ```
 
 **Numeric Summary of percent_large_substrate Over 2010**
@@ -385,15 +387,12 @@ summary(cleaner_data_2010$percent_large_substrate)
 ### Variable:`percent_boulder`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2010 %>%
-  group_by(location) %>% 
-  summarise(mean_boulder = mean(percent_boulder, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_boulder)) +
-  xlab("Percent Boulder Substrate")+
-  ylab("Location")+
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Boulder By Location")
+  ggplot(aes(x = percent_boulder, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  labs(title = "Percent Boulder Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 15))
 ```
 
 **Numeric Summary of percent_boulder Over 2010**
@@ -406,16 +405,39 @@ NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data_2010$'percent_boulder'))/nrow(cleaner_data_2010), 3)*100` % of values in the `percent_large_substrate` column are NA.
 
-### Variable: `depth_m`
+### Summary of Mean Percent Substrate In Each Location
+
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2010 %>% 
   group_by(location) %>% 
-  summarise(mean_depth_m = mean(depth_m, na.rm = TRUE)) %>%
-  ggplot(aes(x = mean_depth_m, y = location)) + 
-  geom_col() + 
-  theme_minimal() + 
-  theme(text = element_text(size = 8))+
-  labs(title = "Average Depth By Location")
+  summarise(mean_percent_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE),
+            mean_percent_small_substrate = mean(percent_small_substrate, na.rm = TRUE),
+            mean_percent_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE),
+            mean_percent_large_substrate = mean(percent_large_substrate, na.rm = TRUE),
+            mean_percent_boulder = mean(percent_boulder, na.rm = TRUE),
+            ) %>% 
+  pivot_longer(
+    cols = starts_with("mean"),
+    names_to = "substrate_type",
+    values_to = "percent",
+    values_drop_na = TRUE
+  ) %>%
+  ggplot(aes(fill = substrate_type,
+             y = location,
+             x = percent))+
+  geom_bar(position = 'stack', stat = 'identity', color = 'black')+
+  labs(title = "Mean Percent Substrate by Location")
+```
+
+### Variable: `depth_m`
+```{r fig.height = 8, fig.width = 8}
+cleaner_data_2010 %>%
+  ggplot(aes(x = depth_m, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 0.15, position = 'stack', color = "black") +
+  labs(title = "Depth Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 15))
 ```
 **Numeric Summary of depth_m Over 2010**
 ```{r}
@@ -429,14 +451,13 @@ summary(cleaner_data_2010$depth_m)
 
 ### Variable: `pot_depth_m`
 ```{r fig.height = 8, fig.width = 8}
-cleaner_data_2010 %>% 
-   group_by(location) %>% 
-  summarise(mean_pot_depth_m = mean(pot_depth_m, na.rm = TRUE)) %>%
-  ggplot(aes(x = mean_pot_depth_m, y = location)) + 
-  geom_col() + 
-  theme_minimal() + 
-  theme(text = element_text(size = 8))+
-  labs(title = "Average Pot Depth By Location")
+cleaner_data_2010 %>%
+  ggplot(aes(x = pot_depth_m, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 0.15, position = 'stack', color = "black") +
+  labs(title = "Pot Depth Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 15))
 ```
 **Numeric Summary of pot_depth_m Over 2010**
 ```{r}
@@ -449,14 +470,13 @@ summary(cleaner_data_2010$pot_depth_m)
 
 ### Variable: `velocity_m_per_s`
 ```{r fig.height = 8, fig.width = 8}
-cleaner_data_2010 %>% 
-  group_by(location) %>% 
-  summarise(`mean_velocity_m_per_s` = mean(`velocity_m_per_s`, na.rm = TRUE)) %>%
-  ggplot(aes(x = `mean_velocity_m_per_s`, y = location)) + 
-  geom_col() + 
-  theme_minimal() + 
-  theme(text = element_text(size = 8))+
-  labs(title = "Average Velocity By Location")
+cleaner_data_2010 %>%
+  ggplot(aes(x = velocity_m_per_s, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 0.75, position = 'stack', color = "black") +
+  labs(title = "Mean Velocity Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 15))
 ```
 **Numeric Summary of velocity_m_per_s Over 2010**
 ```{r}

@@ -4,7 +4,7 @@ author: "Inigo Peng"
 date: "10/6/2021"
 output: rmarkdown::github_document
 ---
-```{r setup, include=FALSE, fig.width=15, fig.height=10}
+```{r}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 library(tidyverse)
 library(lubridate)
@@ -232,16 +232,23 @@ cleaner_data_2009 %>%
   labs(title = "Daily Count of Redds in 2009")
 ```
 ```{r}
+#Find the most distinctive colours for visual
+colourCount = length(unique(cleaner_data_2009$location))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
+
 cleaner_data_2009  %>%
-  ggplot(aes(y = location, x = redd_count))+
-  geom_boxplot() +
+  ggplot(aes(x = redd_count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram() +
   theme_minimal() +
   theme(text = element_text(size = 12))+
   theme(axis.text.x = element_text(size = 10,vjust = 0.5, hjust=0.1))+
-  labs(title = "Redd Count By Locations")
+  labs(title = "Daily Redd Count Distribution",
+       x = 'Daily Redd Count')+
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-**Numeric Daily Summary of redd_count Over 2009**
+**Numeric Daily Summary of total redd_count Over 2009**
 ```{r}
 cleaner_data_2009 %>%
   group_by(date) %>%
@@ -301,10 +308,6 @@ summary(cleaner_data_2009$redd_length_m)
 
 ### Variable:`percent_fine_substrate`
 ```{r}
-#Find the most distinctive colours for visual
-colourCount = length(unique(cleaner_data_2009$location))
-getPalette = colorRampPalette(brewer.pal(12, "Paired"))
-
 cleaner_data_2009 %>%
   ggplot(aes(x = percent_fine_substrate, fill = location)) +
   scale_fill_manual(values = getPalette(colourCount))+
