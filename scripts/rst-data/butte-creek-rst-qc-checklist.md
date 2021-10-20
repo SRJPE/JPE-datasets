@@ -1,40 +1,79 @@
----
-title: "butte-creek-rst-qc-checklist"
-author: "Inigo Peng"
-date: "10/19/2021"
-output: rmarkdown::github_document
----
-```{r}
+butte-creek-rst-qc-checklist
+================
+Inigo Peng
+10/19/2021
+
+``` r
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 library(tidyverse)
+```
+
+    ## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+
+    ## v ggplot2 3.3.5     v purrr   0.3.4
+    ## v tibble  3.1.4     v dplyr   1.0.7
+    ## v tidyr   1.1.3     v stringr 1.4.0
+    ## v readr   2.0.1     v forcats 0.5.1
+
+    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+    ## x dplyr::filter() masks stats::filter()
+    ## x dplyr::lag()    masks stats::lag()
+
+``` r
 library(lubridate)
+```
+
+    ## 
+    ## Attaching package: 'lubridate'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     date, intersect, setdiff, union
+
+``` r
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
+```
+
+    ## 
+    ## Attaching package: 'scales'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     discard
+
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
+
+``` r
 library (RColorBrewer)
 ```
-# Butte Creek RST Data  
+
+# Butte Creek RST Data
 
 ## Description of Monitoring Data
-This dataset contains data for all Chinook salmon that were captured in the Butte Creek rotary screw trap (RSTR) or diversion fyke trap (DSTR) between the 1995-96 and 2014-15 trapping seasons.
 
-**Timeframe:** 
+This dataset contains data for all Chinook salmon that were captured in
+the Butte Creek rotary screw trap (RSTR) or diversion fyke trap (DSTR)
+between the 1995-96 and 2014-15 trapping seasons.
 
+**Timeframe:**
 
 **Completeness of Record throughout timeframe:**
 
-* Life stage information lacks after 2005
-* Inconsistent completeness of physical data after 2008
+-   Life stage information lacks after 2005
+-   Inconsistent completeness of physical data after 2008
 
-**Sampling Location:** 
+**Sampling Location:**
 
-
-**Data Contact:** [Jessica Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
-
+**Data Contact:** [Jessica
+Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ## Access Cloud Data
 
-```{r, eval=FALSE}
+``` r
 # Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
 # Open object from google cloud storage
 # Set your authentication using gcs_auth
@@ -48,7 +87,8 @@ gcs_get_object(object_name = "rst/butte-creek/data-raw/CDFW_Butte_Creek_RST_Capt
                saveToDisk = "butte_creek_rst_raw.xlsx",
                Overwrite = TRUE)
 ```
-```{r}
+
+``` r
 raw_data = readxl::read_excel('butte_creek_rst_raw.xlsx',
                               col_types = c("date",
                                             "text",
@@ -80,8 +120,38 @@ raw_data = readxl::read_excel('butte_creek_rst_raw.xlsx',
 glimpse(raw_data)
 ```
 
+    ## Rows: 63,418
+    ## Columns: 26
+    ## $ SampleDate       <dttm> 1995-11-29, 1995-11-29, 1995-11-29, 1995-11-29, 1995~
+    ## $ StationCode      <chr> "BCOKIE-1", "BCOKIE-1", "BCOKIE-1", "BCOKIE-1", "BCOK~
+    ## $ MethodCode       <chr> "DSTR", "DSTR", "DSTR", "DSTR", "DSTR", "DSTR", "DSTR~
+    ## $ TrapStatus       <chr> "Check", "Check", "Check", "Check", "Check", "Check",~
+    ## $ OrganismCode     <chr> "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN~
+    ## $ Dead             <chr> "No", "No", "No", "Yes", "Yes", "Yes", "Yes", "Yes", ~
+    ## $ Count            <dbl> 1, 2, 1, 8, 1, 5, 4, 1, 1, 1, 3, 3, 5, 3, 4, 1, 2, 1,~
+    ## $ ForkLength       <dbl> 38, 37, 39, 35, 33, 34, 36, 37, 36, 34, 33, 34, 35, 3~
+    ## $ Weight           <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,~
+    ## $ MarkCode         <chr> "n/p", "n/p", "n/p", "n/p", "n/p", "n/p", "n/p", "n/p~
+    ## $ StageCode        <chr> "n/p", "n/p", "n/p", "n/p", "n/p", "n/p", "n/p", "n/p~
+    ## $ SampleTime       <dttm> 1899-12-31 09:30:00, 1899-12-31 09:30:00, 1899-12-31~
+    ## $ GearID           <chr> "DSTR1", "DSTR1", "DSTR1", "DSTR1", "DSTR1", "DSTR1",~
+    ## $ WeatherCode      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "CLD", "CLD",~
+    ## $ WaterTemperature <dbl> 8.333333, 8.333333, 8.333333, 8.333333, 8.333333, 8.3~
+    ## $ Turbidity        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ Secchi           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ WaterVelocity    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ NorthBrush       <chr> "FALSE", "FALSE", "FALSE", "FALSE", "FALSE", "FALSE",~
+    ## $ SouthBrush       <chr> "FALSE", "FALSE", "FALSE", "FALSE", "FALSE", "FALSE",~
+    ## $ StaffGauge       <dbl> 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, NA, NA, NA, N~
+    ## $ TrapRevolutions  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ Debris           <chr> "Medium", "Medium", "Medium", "Medium", "Medium", "Me~
+    ## $ RPMsStart        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ RPMsEnd          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ Comments         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+
 ## Data Transformation
-```{r}
+
+``` r
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>%
   select(-c('dead','weathercode','markcode', 'southbrush', 'northbrush', 'secchi','comments')) %>% 
@@ -104,124 +174,200 @@ cleaner_data <- raw_data %>%
   filter(organism_code =='CHN', rm.na = TRUE) %>%
   glimpse()
 ```
+
+    ## Rows: 63,418
+    ## Columns: 19
+    ## $ date              <dttm> 1995-11-29, 1995-11-29, 1995-11-29, 1995-11-29, 199~
+    ## $ station           <chr> "BCOKIE-1", "BCOKIE-1", "BCOKIE-1", "BCOKIE-1", "BCO~
+    ## $ method            <chr> "DSTR", "DSTR", "DSTR", "DSTR", "DSTR", "DSTR", "DST~
+    ## $ trap_status       <chr> "Check", "Check", "Check", "Check", "Check", "Check"~
+    ## $ organism_code     <chr> "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CH~
+    ## $ count             <dbl> 1, 2, 1, 8, 1, 5, 4, 1, 1, 1, 3, 3, 5, 3, 4, 1, 2, 1~
+    ## $ fork_length       <dbl> 38, 37, 39, 35, 33, 34, 36, 37, 36, 34, 33, 34, 35, ~
+    ## $ weight            <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00~
+    ## $ stage_code        <chr> "n/p", "n/p", "n/p", "n/p", "n/p", "n/p", "n/p", "n/~
+    ## $ time              <time> 09:30:00, 09:30:00, 09:30:00, 09:30:00, 09:30:00, 0~
+    ## $ gear_id           <chr> "DSTR1", "DSTR1", "DSTR1", "DSTR1", "DSTR1", "DSTR1"~
+    ## $ water_temperature <dbl> 8.333333, 8.333333, 8.333333, 8.333333, 8.333333, 8.~
+    ## $ turbidity         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ water_velocity    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ staff_gauge       <dbl> 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, NA, NA, NA, ~
+    ## $ trap_revolutions  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ debris            <chr> "Medium", "Medium", "Medium", "Medium", "Medium", "M~
+    ## $ rpms_start        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ rpms_end          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+
 ## Explore `date`
-```{r}
+
+``` r
 cleaner_data %>%
   ggplot(aes(x = date)) +
   geom_histogram(position = 'stack', color = "black") +
   labs(title = "Value Counts For Survey Season Dates")+
   theme(legend.text = element_text(size = 8))
 ```
-```{r}
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
 summary(cleaner_data$date)
 ```
 
-**NA and Unknown Values**  
+    ##                  Min.               1st Qu.                Median 
+    ## "1995-11-29 00:00:00" "2000-05-11 00:00:00" "2003-05-08 00:00:00" 
+    ##                  Mean               3rd Qu.                  Max. 
+    ## "2004-06-15 02:18:49" "2007-02-05 00:00:00" "2015-06-03 00:00:00"
 
-*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+**NA and Unknown Values**
+
+-   0 % of values in the `date` column are NA.
 
 ## Explore Categorical Variables
 
-```{r}
+``` r
 cleaner_data %>% select_if(is.character) %>% colnames()
 ```
+
+    ## [1] "station"       "method"        "trap_status"   "organism_code"
+    ## [5] "stage_code"    "gear_id"       "debris"
+
 ### Variable `station`
 
-#Description: trap location
+\#Description: trap location
 
-* BCADAMS - Adams Dam
+-   BCADAMS - Adams Dam
 
-* BCOKIE-1 - Okie Dam 1
+-   BCOKIE-1 - Okie Dam 1
 
-* BCOKIE-2 - Okie Dam 2
+-   BCOKIE-2 - Okie Dam 2
 
-```{r}
+``` r
 table(cleaner_data$station)
 ```
-```{r}
+
+    ## 
+    ##  BCADAMS BCOKIE-1 BCOKIE-2 
+    ##      701    61991      726
+
+``` r
 cleaner_data <- cleaner_data %>% 
   mutate(station = if_else(station == 'BCADAMS', 'Adams Dam', station),
          station = if_else(station == 'BCOKIE-1', 'Okie Dam 1', station),
          station = if_else(station == 'BCOKIE-2', 'Okie Dam 2', station))
 table(cleaner_data$station)
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$station))/nrow(cleaner_data), 3)*100` % of values in the `station` column are NA.
+    ## 
+    ##  Adams Dam Okie Dam 1 Okie Dam 2 
+    ##        701      61991        726
 
+**NA and Unknown Values**
+
+-   0 % of values in the `station` column are NA.
 
 ### Variable `method`
 
-#Description: method of capture
+\#Description: method of capture
 
-* DSTR - Diversion fyke trap
+-   DSTR - Diversion fyke trap
 
-* RSTR - Rotary screw trap
-```{r}
+-   RSTR - Rotary screw trap
+
+``` r
 table(cleaner_data$method)
 ```
-```{r}
+
+    ## 
+    ##  DSTR  RSTR 
+    ## 32066 31352
+
+``` r
 cleaner_data <- cleaner_data %>% 
   mutate(method = if_else(method == 'DSTR', 'Diversion Fyke Trap', method),
          method = if_else(method == 'RSTR', 'Rotary Screw Trap', method))
 table(cleaner_data$method)
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$method))/nrow(cleaner_data), 3)*100` % of values in the `method` column are NA.
+    ## 
+    ## Diversion Fyke Trap   Rotary Screw Trap 
+    ##               32066               31352
 
+**NA and Unknown Values**
+
+-   0 % of values in the `method` column are NA.
 
 ### Variable `trap_status`
 
-#Description: 
+\#Description:
 
-* Check - trap was checked normally , continued fishing
+-   Check - trap was checked normally , continued fishing
 
-* Pull - trap was pulled after trap check
+-   Pull - trap was pulled after trap check
 
-* Set - trap was set upon arrival 
-```{r}
+-   Set - trap was set upon arrival
+
+``` r
 table(cleaner_data$trap_status)
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$trap_status))/nrow(cleaner_data), 3)*100` % of values in the `trap_status` column are NA.
+    ## 
+    ## Check  Pull   Set 
+    ## 63130   130    15
 
+**NA and Unknown Values**
+
+-   0.2 % of values in the `trap_status` column are NA.
 
 ### Variable `organism_code`
 
-#Description: we are interested in Chinooks only
+\#Description: we are interested in Chinooks only
 
-```{r}
+``` r
 table(cleaner_data$organism_code)
 ```
-```{r}
+
+    ## 
+    ##   CHN 
+    ## 63418
+
+``` r
 cleaner_data <- cleaner_data %>% 
   mutate(organism_code = if_else(organism_code == 'CHN', 'Chinook Salmon', organism_code))
 table(cleaner_data$organism_code)
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$organism_code))/nrow(cleaner_data), 3)*100` % of values in the `organism_code` column are NA.
+    ## 
+    ## Chinook Salmon 
+    ##          63418
 
+**NA and Unknown Values**
+
+-   0 % of values in the `organism_code` column are NA.
 
 ### Variable `stage_code`
 
-#Description: Renaming to `lifestage`
+\#Description: Renaming to `lifestage`
 
-* 1 - Fry with visible yolk sac
-* 2 - Fry with no visible yolk sac
-* 3 - Parr
-* 4 - Fingerling
-* 5 - Smolt
-* AD - Adult
-* n/p - not provided 
-* UNK - unknown
+-   1 - Fry with visible yolk sac
+-   2 - Fry with no visible yolk sac
+-   3 - Parr
+-   4 - Fingerling
+-   5 - Smolt
+-   AD - Adult
+-   n/p - not provided
+-   UNK - unknown
 
-```{r}
+``` r
 table(cleaner_data$stage_code)
 ```
-```{r}
+
+    ## 
+    ##     1     2     3     4     5    AD   n/p   UNK 
+    ##    51  5364  3558  1067    26    96 53255     1
+
+``` r
 cleaner_data$stage_code <- ifelse(cleaner_data$stage_code == 'n/p', NA, cleaner_data$stage_code)
 cleaner_data <- cleaner_data %>% 
   mutate(stage_code = if_else(stage_code == 1, 'yolk sac fry', stage_code),
@@ -234,54 +380,83 @@ cleaner_data <- cleaner_data %>%
   rename('lifestage' = stage_code)
 table(cleaner_data$lifestage)
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$lifestage))/nrow(cleaner_data), 3)*100` % of values in the `lifestage` column are NA.
+    ## 
+    ##        adult   fingerling          fry         parr        smolt      unknown 
+    ##           96         1067         5364         3558           26            1 
+    ## yolk sac fry 
+    ##           51
+
+**NA and Unknown Values**
+
+-   84 % of values in the `lifestage` column are NA.
 
 ### Variable `gear_id`
 
-#Description:
+\#Description:
 
-* DSTR1 - Diversion Fyke Trap 1
+-   DSTR1 - Diversion Fyke Trap 1
 
-* RSTR1 - Rotary Screw Trap 1
+-   RSTR1 - Rotary Screw Trap 1
 
-* RSTR2 - Rotary Screw Trap 2
+-   RSTR2 - Rotary Screw Trap 2
 
-```{r}
+``` r
 table(cleaner_data$gear_id)
 ```
-```{r}
+
+    ## 
+    ## DSTR1 RSTR1 RSTR2 
+    ## 28882    35 29270
+
+``` r
 cleaner_data <- cleaner_data %>% 
   mutate(gear_id = if_else(gear_id == 'DSTR1', 'Diversion Fyke Trap 1', gear_id),
          gear_id = if_else(gear_id == 'RSTR1', 'Rotary Screw Trap 1', gear_id),
          gear_id = if_else(gear_id == 'RSTR2', 'ROtary Screw Trap 2', gear_id))
 table(cleaner_data$gear_id)
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$gear_id))/nrow(cleaner_data), 3)*100` % of values in the `gear_id` column are NA.
+    ## 
+    ## Diversion Fyke Trap 1   Rotary Screw Trap 1   ROtary Screw Trap 2 
+    ##                 28882                    35                 29270
+
+**NA and Unknown Values**
+
+-   8.2 % of values in the `gear_id` column are NA.
 
 ### Variable `debris`
 
 # Description: visual assessment of debris in trap
-```{r}
+
+``` r
 table(cleaner_data$debris)
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$debris))/nrow(cleaner_data), 3)*100` % of values in the `debris` column are NA.
+    ## 
+    ##      Heavy      Light     Medium       None Very Heavy 
+    ##       7321      38342      16532         31        341
+
+**NA and Unknown Values**
+
+-   1.3 % of values in the `debris` column are NA.
 
 ## Explore Numerical Variables
 
-```{r}
+``` r
 cleaner_data %>% select_if(is.numeric) %>% colnames()
 ```
+
+    ##  [1] "count"             "fork_length"       "weight"           
+    ##  [4] "water_temperature" "turbidity"         "water_velocity"   
+    ##  [7] "staff_gauge"       "trap_revolutions"  "rpms_start"       
+    ## [10] "rpms_end"
+
 ### Variable `count`
 
-#Description: fish count
+\#Description: fish count
 
-```{r}
+``` r
 cleaner_data %>% 
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   mutate(year = as.factor(year(date)),
@@ -302,7 +477,10 @@ cleaner_data %>%
        x = "Date")+ 
   facet_wrap(~water_year, scales = "free")
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   mutate(year = as.factor(year(date))) %>% 
   ggplot(aes(x = year, y = count))+
@@ -313,19 +491,25 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90,  vjust = 0.5, hjust=1))+
   facet_wrap(~lifestage, scales = 'free')
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+``` r
 summary(cleaner_data$count)
 ```
 
-**NA and Unknown Values**  
+    ##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+    ##      0.00      1.00      1.00     75.02      4.00 220000.00
 
-*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
+**NA and Unknown Values**
+
+-   0 % of values in the `count` column are NA.
 
 ### Variable `fork_length`
 
-#Description: fork length in millimeters (mm)
+\#Description: fork length in millimeters (mm)
 
-```{r}
+``` r
 cleaner_data %>% 
   filter(fork_length < 250) %>% #filtered out 52 points to see more clear distribution
   ggplot(aes(x = fork_length))+
@@ -336,7 +520,10 @@ cleaner_data %>%
   theme(text = element_text(size=15),
         axis.text.x = element_text(vjust =0.5, hjust = 1))
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   ggplot(aes(x = fork_length, y = lifestage))+
   geom_boxplot()+
@@ -345,20 +532,24 @@ cleaner_data %>%
   theme(text = element_text(size = 12))
 ```
 
-```{r}
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+``` r
 summary(cleaner_data$fork_length)
 ```
 
-**NA and Unknown Values**  
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    0.00   35.00   44.00   50.75   65.00 1035.00    3272
 
-*  `r round(sum(is.na(cleaner_data$fork_length))/nrow(cleaner_data), 3)*100` % of values in the `fork_length` column are NA.
+**NA and Unknown Values**
 
+-   5.2 % of values in the `fork_length` column are NA.
 
 ### Variable `weight`
 
-#Description: wet weight in grams(g)
+\#Description: wet weight in grams(g)
 
-```{r}
+``` r
 cleaner_data %>% 
   filter(weight< 30) %>%  #filtered out 26 data points to see more clear distribution
   ggplot(aes(x = weight))+
@@ -367,7 +558,10 @@ cleaner_data %>%
   theme_minimal()+
   labs(title = "Weight Distribution")
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   filter(weight < 50) %>% 
   ggplot(aes(x = weight, y= lifestage))+
@@ -377,20 +571,24 @@ cleaner_data %>%
   theme_minimal()
 ```
 
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
-```{r}
+``` r
 summary(cleaner_data$weight)
 ```
 
-**NA and Unknown Values**  
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+    ##    0.000    0.000    0.290    1.617    2.275 3046.000    25299
 
-*  `r round(sum(is.na(cleaner_data$weight))/nrow(cleaner_data), 3)*100` % of values in the `weight` column are NA.
+**NA and Unknown Values**
+
+-   39.9 % of values in the `weight` column are NA.
 
 ### Variable `water_temperature`
 
-#Description: temperature of water in degrees Celsius
+\#Description: temperature of water in degrees Celsius
 
-```{r}
+``` r
 cleaner_data %>%
   filter(water_temperature < 100) %>% #filter out 36 points with water temperature > 100 degrees
   ggplot(aes(x= water_temperature, y = station))+
@@ -398,7 +596,10 @@ cleaner_data %>%
   theme_minimal()+
   labs(title = "Water Temperature by Station")
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+
+``` r
 #group water data by date
 #find average daily temp
 #set water year
@@ -425,7 +626,10 @@ cleaner_data %>%
        x = 'Date',
        y = 'Average Daily Temp')
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   filter(water_temperature < 100) %>% 
   mutate(year = as.factor(year(date))) %>% 
@@ -437,19 +641,24 @@ cleaner_data %>%
         axis.text.x = element_text(vjust =0.5, hjust = 1))
 ```
 
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
-```{r}
+``` r
 summary(cleaner_data$water_temperature)
 ```
 
-**NA and Unknown Values**  
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   -1.00    7.00    9.00    9.96   12.00  805.00    3917
 
-*  `r round(sum(is.na(cleaner_data$water_temperature))/nrow(cleaner_data), 3)*100` % of values in the `water_temperature` column are NA.
+**NA and Unknown Values**
+
+-   6.2 % of values in the `water_temperature` column are NA.
 
 ### Variable `turbidity`
 
-#Description: Turbidity of water in NTU
-```{r}
+\#Description: Turbidity of water in NTU
+
+``` r
 cleaner_data %>% 
   group_by(date) %>% 
   mutate(daily_avg_turb = mean(turbidity)) %>% 
@@ -468,7 +677,10 @@ cleaner_data %>%
        x = 'Date',
        y = 'Average Daily Turbidity')
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   mutate(year = as.factor(year(date))) %>% 
   ggplot(aes(x = turbidity, y = year))+
@@ -479,26 +691,32 @@ cleaner_data %>%
         axis.text.x = element_text(vjust =0.5, hjust = 1))
 ```
 
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
-
-```{r}
+``` r
 summary(cleaner_data$turbidity)
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$turbidity))/nrow(cleaner_data), 3)*100` % of values in the `turbidity` column are NA.
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.200   1.870   2.770   5.359   4.700 189.000   21066
+
+**NA and Unknown Values**
+
+-   33.2 % of values in the `turbidity` column are NA.
 
 ### Variable `water_velocity`
 
-#Description: water velocity measured in ft/s
+\#Description: water velocity measured in ft/s
 
-#Data transformation
-```{r}
+\#Data transformation
+
+``` r
 #Convert water velocity from ft/s to m/s
 cleaner_data <- cleaner_data %>% 
   mutate(water_velocity = water_velocity/3.281)
 ```
-```{r}
+
+``` r
 cleaner_data %>%
   filter(water_velocity < 100) %>% 
   ggplot(aes(x= water_velocity, y = station))+
@@ -506,7 +724,10 @@ cleaner_data %>%
   theme_minimal()+
   labs(title = "Water Velocity by Station")
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   filter(water_velocity < 100) %>%  #filter out 36 points with water temperature > 100 degrees (entry error?)
   group_by(date) %>% 
@@ -526,7 +747,10 @@ cleaner_data %>%
        x = 'Date',
        y = 'Average Daily Velocity')
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   filter(water_velocity<100) %>% 
   mutate(year = as.factor(year(date))) %>% 
@@ -538,20 +762,27 @@ cleaner_data %>%
         axis.text.x = element_text(vjust =0.5, hjust = 1))
 ```
 
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
 
-#Numeric summary of `water_velocity` from 1995-2015
-```{r}
+\#Numeric summary of `water_velocity` from 1995-2015
+
+``` r
 summary(cleaner_data$water_velocity)
 ```
 
-**NA and Unknown Values**  
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    0.00    0.20    0.27    0.34    0.37  104.24   38937
 
-*  `r round(sum(is.na(cleaner_data$water_velocity))/nrow(cleaner_data), 3)*100` % of values in the `water_velocity` column are NA.
+**NA and Unknown Values**
+
+-   61.4 % of values in the `water_velocity` column are NA.
 
 ### Variable `trap_revolutions`
 
-#Description: Number of revolutions the RST cone had made since last being checked
-```{r}
+\#Description: Number of revolutions the RST cone had made since last
+being checked
+
+``` r
 cleaner_data %>% 
   ggplot(aes(x = trap_revolutions))+
   geom_histogram(binwidth = 500)+
@@ -559,7 +790,10 @@ cleaner_data %>%
   theme_minimal()+
   theme(text = element_text(size = 12))
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   filter(station != "Adams Dam") %>% 
   ggplot(aes(y= station, x = trap_revolutions))+
@@ -569,20 +803,27 @@ cleaner_data %>%
   theme(text = element_text(size = 12))
 ```
 
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
 
-#Numeric summary of `trap_revolutions` from 1995-2015
-```{r}
+\#Numeric summary of `trap_revolutions` from 1995-2015
+
+``` r
 summary(cleaner_data$trap_revolutions)
 ```
 
-**NA and Unknown Values**  
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##       0    2741    4000    4118    5439   11795   41363
 
-*  `r round(sum(is.na(cleaner_data$trap_revolutions))/nrow(cleaner_data), 3)*100` % of values in the `trap_revolutions` column are NA.
+**NA and Unknown Values**
 
-### Variable `rpms_start``
+-   65.2 % of values in the `trap_revolutions` column are NA.
 
-#Description: rotations per minute of RST cone at start of trapping window
-```{r}
+### Variable \`rpms\_start\`\`
+
+\#Description: rotations per minute of RST cone at start of trapping
+window
+
+``` r
 cleaner_data %>% 
   filter(rpms_start < 10) %>% #filtered out 28 data points to show more clear distribution
   ggplot(aes(x = rpms_start))+
@@ -591,7 +832,10 @@ cleaner_data %>%
   theme_minimal()+
   theme(text = element_text(size = 12))
 ```
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   filter(rpms_start < 10) %>% 
   ggplot(aes(y= station, x = rpms_start))+
@@ -600,18 +844,27 @@ cleaner_data %>%
   theme_minimal()+
   theme(text = element_text(size = 12))
 ```
-#Numeric summary of `rpms_start`` from 1995-2015
-```{r}
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
+\#Numeric summary of \`rpms\_start\`\` from 1995-2015
+
+``` r
 summary(cleaner_data$rpms_start)
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$rpms_start))/nrow(cleaner_data), 3)*100` % of values in the `rpms_start`` column are NA.
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    0.00    2.10    3.00    4.92    4.00 3698.00   34932
+
+**NA and Unknown Values**
+
+-   55.1 % of values in the \`rpms\_start\`\` column are NA.
 
 ### Variable `rpms_end`
 
-#Description: rotations per minute of RST cone at end of trapping window
-```{r}
+\#Description: rotations per minute of RST cone at end of trapping
+window
+
+``` r
 cleaner_data %>% 
   filter(rpms_end < 10) %>% #filtered out 28 data points to show more clear distribution
   ggplot(aes(x = rpms_end))+
@@ -621,7 +874,9 @@ cleaner_data %>%
   theme(text = element_text(size = 12))
 ```
 
-```{r}
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+
+``` r
 cleaner_data %>% 
   filter(rpms_end < 10) %>% 
   ggplot(aes(y= station, x = rpms_end))+
@@ -630,7 +885,8 @@ cleaner_data %>%
   theme_minimal()+
   theme(text = element_text(size = 12))
 ```
-**NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$rpms_end))/nrow(cleaner_data), 3)*100` % of values in the `rpms_end` column are NA.
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
+**NA and Unknown Values**
 
+-   58.9 % of values in the `rpms_end` column are NA.
