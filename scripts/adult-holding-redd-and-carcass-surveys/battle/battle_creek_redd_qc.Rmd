@@ -53,7 +53,13 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 ```{r}
 sheets <- excel_sheets("raw_adult_spawn_hold_carcass.xlsx")
 sheets 
-raw_redd_data <-read_excel("raw_adult_spawn_hold_carcass.xlsx", sheet = "Redd Survey") %>% glimpse()
+raw_redd_data <-read_excel("raw_adult_spawn_hold_carcass.xlsx", 
+                           sheet = "Redd Survey",
+                           col_types = c("text", "numeric", "numeric", "numeric", "date", 
+                                         "text", "numeric", "text", "text", "text", "text", 
+                                         "text", "text", "text", "date", "numeric", "numeric", 
+                                         "numeric", "numeric", "numeric", "text", "numeric", "numeric",
+                                         "date", "date", "numeric", "numeric", "numeric", "text")) %>% glimpse()
 ```
 
 ## Data transformations
@@ -85,37 +91,36 @@ cleaner_redd_data <- raw_redd_data %>%
 
 ```{r}
 cleaner_redd_data %>% select_if(is.numeric) %>% colnames()
+
+unique(cleaner_redd_data$start_80)
 ```
 
 ### Variable: `longitude`, `latitude`
 
-**Plotting [Variable] over Period of Record**
-
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+summary(cleaner_redd_data$latitude)
+summary(cleaner_redd_data$longitude)
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
-
-```{r}
-# Table with summary statistics
-```
+All values look within an expected range 
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
-
+* `r round(sum(is.na(cleaner_redd_data$latitude))/nrow(cleaner_redd_data), 3) * 100` % of values in the `latitude` column are NA.
+* `r round(sum(is.na(cleaner_redd_data$longitude))/nrow(cleaner_redd_data), 3) * 100` % of values in the `longitude` column are NA.
 
 ### Variable: `river_mile`
 
-**Plotting [Variable] over Period of Record**
+**Plotting river mile over Period of Record**
 
 ```{r}
 cleaner_redd_data %>% 
   ggplot(aes(x = river_mile, y = year(date))) +
-  geom_point(alpha = .75) + 
-  theme_minimal()
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "River Mile", 
+       y = "Date") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 It looks like river miles 0 - 4 and 11 - 12 most commonly have redds. In most recent years almost all the redds are before mile 5. 
@@ -124,7 +129,9 @@ It looks like river miles 0 - 4 and 11 - 12 most commonly have redds. In most re
 cleaner_redd_data %>% 
   ggplot(aes(x = river_mile)) +
   geom_histogram(alpha = .75) + 
-  theme_minimal()
+  labs(x = "River Mile") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 **Numeric Summary of river mile over Period of Record**
@@ -146,7 +153,10 @@ summary(cleaner_redd_data$river_mile)
 cleaner_redd_data %>%
   ggplot(aes(x = pre_redd_depth)) +
   geom_histogram() +
-  theme_minimal()
+  labs(x = "Redd Depth", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 **Numeric Summary of pre redd depth over Period of Record**
@@ -168,7 +178,10 @@ summary(cleaner_redd_data$pre_redd_depth)
 cleaner_redd_data %>% 
   ggplot(aes(x = redd_pit_depth)) +
   geom_histogram() +
-  theme_minimal()
+  labs(x = "River Pitt Depth", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 **Numeric Summary of Redd pit depth over Period of Record**
@@ -192,7 +205,10 @@ summary(cleaner_redd_data$redd_pit_depth)
 cleaner_redd_data %>% 
   ggplot(aes(x = redd_tail_depth)) +
   geom_histogram() +
-  theme_minimal()
+  labs(x = "Redd tail depth", 
+       y = "count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 **Numeric Summary of Redd tail depth over Period of Record**
@@ -216,7 +232,10 @@ summary(cleaner_redd_data$redd_tail_depth)
 cleaner_redd_data %>% 
   ggplot(aes(x = redd_length_in)) +
   geom_histogram() +
-  theme_minimal()
+  labs(x = "Redd Length In", 
+       y = "Cpunt") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 **Numeric Summary of Redd length inches over Period of Record**
@@ -241,7 +260,10 @@ summary(cleaner_redd_data$redd_length_in)
 cleaner_redd_data %>% 
   ggplot(aes(x = redd_width_in)) +
   geom_histogram() +
-  theme_minimal()
+  labs(x = "Redd Width In", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 **Numeric Summary of Redd width inches over Period of Record**
@@ -266,14 +288,20 @@ summary(cleaner_redd_data$redd_width_in)
 cleaner_redd_data %>% 
   ggplot(aes(x = flow_fps)) +
   geom_histogram() +
-  theme_minimal()
+  labs(x = "Flow Feet per second", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 ```{r}
 cleaner_redd_data %>% 
   ggplot(aes(x = flow_fps, y = reach)) +
   geom_boxplot() +
-  theme_minimal()
+  labs(x = "Flow Feet Per Second", 
+       y = "Reach") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 **Numeric Summary of flow over Period of Record**
 
@@ -287,7 +315,7 @@ summary(cleaner_redd_data$flow_fps)
 * There are a lot of 0 values. Could these be NA?
 
 
-TODO Add in start time and end, see if I can fix format of them first
+TODO Add in start, end, time, start_80, end_80, time_80, see if I can fix format of them first
 
 ## Explore Categorical variables: {.tabset}
 
@@ -297,14 +325,14 @@ cleaner_redd_data %>% select_if(is.character) %>% colnames()
 ```
 
 
-### Variable: `reach``
+### Variable: `reach`
 ```{r}
 table(cleaner_redd_data$reach) 
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$reach))/nrow(cleaner_redd_data), 3) * 100` % of values in the `reach`` column are NA. 
+* `r round(sum(is.na(cleaner_redd_data$reach))/nrow(cleaner_redd_data), 3) * 100` % of values in the `reach`column are NA. 
 
 
 ### Variable: `pre_redd_substrate_size`
@@ -499,9 +527,18 @@ unique(cleaner_redd_data$comments)[1:10]
 
 ## Save cleaned data back to google cloud 
 
+```{r}
+battle_redd <- cleaner_redd_data %>% glimpse
+```
 
 
 ```{r}
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+gcs_list_objects()
+
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(battle_redd,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_redd.csv")
 ```
