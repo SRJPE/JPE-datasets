@@ -59,7 +59,7 @@ raw_redd_data <-read_excel("raw_adult_spawn_hold_carcass.xlsx",
                                          "text", "numeric", "text", "text", "text", "text", 
                                          "text", "text", "text", "date", "numeric", "numeric", 
                                          "numeric", "numeric", "numeric", "text", "numeric", "numeric",
-                                         "date", "date", "numeric", "numeric", "numeric", "text")) %>% glimpse()
+                                         "numeric", "numeric", "numeric", "numeric", "numeric", "text")) %>% glimpse()
 ```
 
 ## Data transformations
@@ -79,8 +79,13 @@ cleaner_redd_data <- raw_redd_data %>%
          "redd_pit_depth" = pit_depth, 
          "redd_tail_depth" = tail_depth,
          "redd_length_in" = length_in, 
-         "redd_width_in" = width_in
-         ) %>%
+         "redd_width_in" = width_in,
+         "start_number_flow_meter" = start, 
+         "end_number_flow_meter" = end,
+         "flow_meter_time" = time,
+         "start_number_flow_meter_80" = start_80, 
+         "end_number_flow_meter_80" = end_80,
+         "flow_meter_time_80" = secs_80) %>%
   mutate(date = as.Date(date)) %>%
   select(-project, -year, -date_measured, 
          -species_run) %>% #All are spring run 
@@ -170,7 +175,7 @@ summary(cleaner_redd_data$pre_redd_depth)
 * `r round(sum(is.na(cleaner_redd_data$pre_redd_depth))/nrow(cleaner_redd_data), 3) * 100` % of values in the `pre_redd_depth` column are NA. 
 * There are a lot of 0 values. Could these also be NA?
 
-### Variable: `redd_pit_depth``
+### Variable: `redd_pit_depth`
 
 **Plotting distribution of redd pit depth**
 
@@ -251,7 +256,7 @@ summary(cleaner_redd_data$redd_length_in)
 
 
 
-### Variable: `redd_width_in``
+### Variable: `redd_width_in`
 
 
 **Plotting distribution of redd width inches**
@@ -314,8 +319,129 @@ summary(cleaner_redd_data$flow_fps)
 * `r round(sum(is.na(cleaner_redd_data$flow_fps))/nrow(cleaner_redd_data), 3) * 100` % of values in the `flow_fps` column are NA. 
 * There are a lot of 0 values. Could these be NA?
 
+### Variables: `start_flow_meter`, `start_flow_meter_80`
 
+
+**Plotting distribution of flow number start per second**
+
+```{r}
+p1 <- cleaner_redd_data %>% 
+  ggplot(aes(x = start_number_flow_meter)) +
+  geom_histogram() +
+  labs(x = "Start Number", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+
+p2 <- cleaner_redd_data %>% 
+  ggplot(aes(x = start_number_flow_meter_80)) +
+  geom_histogram() +
+  labs(x = "Start Number", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+
+gridExtra::grid.arrange(p1, p2)
+```
+
+Very few reccords of start number at 80 % depth. Most of these are 0. 
+
+**Numeric Summary of flow over Period of Record**
+
+```{r}
+summary(cleaner_redd_data$start_number_flow_meter)
+summary(cleaner_redd_data$start_number_flow_meter_80)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_redd_data$start_number_flow_meter))/nrow(cleaner_redd_data), 3) * 100` % of values in the `start_number_flow_meter` column are NA. 
+* `r round(sum(is.na(cleaner_redd_data$start_number_flow_meter_80))/nrow(cleaner_redd_data), 3) * 100` % of values in the `start_number_flow_meter_80` column are NA.
+* There are a lot of 0 values. Could these be NA?
 TODO Add in start, end, time, start_80, end_80, time_80, see if I can fix format of them first
+
+### Variables: `end_number_flow_meter`, `end_number_flow_meter_80`
+
+
+**Plotting distribution of flow meter end number per second**
+
+```{r}
+p1 <- cleaner_redd_data %>% 
+  ggplot(aes(x = end_number_flow_meter)) +
+  geom_histogram() +
+  labs(x = "End Number", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+
+p2 <- cleaner_redd_data %>% 
+  ggplot(aes(x = end_number_flow_meter_80)) +
+  geom_histogram() +
+  labs(x = "End Number", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+
+gridExtra::grid.arrange(p1, p2)
+```
+
+Very few records of end number at 80 % depth. Most of these are 0. 
+
+**Numeric Summary of flow over Period of Record**
+
+```{r}
+summary(cleaner_redd_data$start_number_flow_meter)
+summary(cleaner_redd_data$end_number_flow_meter_80)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_redd_data$end_number_flow_meter))/nrow(cleaner_redd_data), 3) * 100` % of values in the `end_number_flow_meter` column are NA. 
+* `r round(sum(is.na(cleaner_redd_data$end_number_flow_meter_80))/nrow(cleaner_redd_data), 3) * 100` % of values in the `end_number_flow_meter_80` column are NA.
+* There are a lot of 0 values. Could these be NA?
+
+
+### Variables: `flow_meter_time`, `flow_meter_time_80`
+
+
+**Plotting distribution of flow meter end number per second**
+
+```{r}
+p1 <- cleaner_redd_data %>% 
+  ggplot(aes(x = flow_meter_time)) +
+  geom_histogram() +
+  labs(x = "Time Seconds", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+
+p2 <- cleaner_redd_data %>% 
+  ggplot(aes(x = flow_meter_time_80)) +
+  geom_histogram() +
+  labs(x = "Time Seconds", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+
+gridExtra::grid.arrange(p1, p2)
+```
+
+Most (all for Time 80) of the flow meter times are at 100 seconds. 
+
+**Numeric Summary of flow over Period of Record**
+
+```{r}
+summary(cleaner_redd_data$flow_meter_time)
+summary(cleaner_redd_data$flow_meter_time_80)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_redd_data$flow_meter_time))/nrow(cleaner_redd_data), 3) * 100` % of values in the `flow_meter_time` column are NA. 
+* `r round(sum(is.na(cleaner_redd_data$flow_meter_time_80))/nrow(cleaner_redd_data), 3) * 100` % of values in the `flow_meter_time_80` column are NA.
+* There are a lot of 0 values. Could these be NA?
+
+
 
 ## Explore Categorical variables: {.tabset}
 
@@ -532,9 +658,8 @@ battle_redd <- cleaner_redd_data %>% glimpse
 ```
 
 
-```{r}
-gcs_list_objects()
-
+```{r, eval=FALSE}
+# gcs_list_objects()
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(battle_redd,
