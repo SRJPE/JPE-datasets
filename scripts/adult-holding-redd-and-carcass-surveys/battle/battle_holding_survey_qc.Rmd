@@ -67,10 +67,8 @@ cleaner_holding_data <- raw_holding_data %>%
          "count" = quantity) %>%
   mutate(date = as.Date(date),
          jacks = as.numeric(jacks)) %>%
-  select(-project, -year) %>%
+  select(-project, -year) %>% # All projects = snorkel, year can be pulled from date
   glimpse
-  
-raw_holding_data$Project %>% unique()
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -106,7 +104,7 @@ cleaner_holding_data %>%
   theme(text = element_text(size = 15)) 
 ```
 
-It looks like river miles 0 - 6 and 12 - 17 most commonly have holding chinooks. In most recent years almost all the holding chinooks are before mile 5. 
+It looks like river miles 0 - 6 and 12 - 17 most commonly have holding chinooks. In most recent years there are less points and many of the holding chinooks are before mile 5. 
 
 ```{r}
 cleaner_holding_data %>% 
@@ -207,7 +205,7 @@ cleaner_holding_data %>%
   theme(text = element_text(size = 15)) 
 ```
 
-most of the jacks are 1
+most of the jacks are 0
 
 **Numeric Summary of jacks over Period of Record**
 

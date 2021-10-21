@@ -77,7 +77,7 @@ cleaner_holding_data <- raw_holding_data %>%
          "count" = quantity) %>%
   mutate(date = as.Date(date),
          jacks = as.numeric(jacks)) %>%
-  select(-project, -year) %>%
+  select(-project, -year) %>% # All projects = snorkel, year can be pulled from date
   glimpse
 ```
 
@@ -91,12 +91,6 @@ cleaner_holding_data <- raw_holding_data %>%
     ## $ count      <dbl> 4, 1, 3, 4, 5, 2, 1, 1, 3, 1, 5, 3, 4, 1, 3, 6, 3, 5, 7, 3,~
     ## $ jacks      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
     ## $ notes      <chr> "WP203", "WP204", "WP205", "WP206", "WP207", "WP33", "WP34"~
-
-``` r
-raw_holding_data$Project %>% unique()
-```
-
-    ## [1] "Snorkel"
 
 ## Explore Numeric Variables:
 
@@ -145,8 +139,8 @@ cleaner_holding_data %>%
 ![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 It looks like river miles 0 - 6 and 12 - 17 most commonly have holding
-chinooks. In most recent years almost all the holding chinooks are
-before mile 5.
+chinooks. In most recent years there are less points and many of the
+holding chinooks are before mile 5.
 
 ``` r
 cleaner_holding_data %>% 
@@ -268,7 +262,7 @@ cleaner_holding_data %>%
 
 ![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
-most of the jacks are 1
+most of the jacks are 0
 
 **Numeric Summary of jacks over Period of Record**
 
