@@ -81,23 +81,17 @@ cleaner_holding_data %>% select_if(is.numeric) %>% colnames()
 
 ### Variable: `longitude`, `latitude`
 
-**Plotting [Variable] over Period of Record**
+**Numeric Summary of lat long over Period of Record**
 
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
-```
-
-**Numeric Summary of [Variable] over Period of Record**
-
-```{r}
-# Table with summary statistics
+summary(cleaner_holding_data$latitude)
+summary(cleaner_holding_data$longitude)
 ```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
-
+* `r round(sum(is.na(cleaner_holding_data$latitude))/nrow(cleaner_holding_data), 3) * 100` % of values in the `latitude` column are NA.
+* `r round(sum(is.na(cleaner_holding_data$longitude))/nrow(cleaner_holding_data), 3) * 100` % of values in the `longitude` column are NA.
 
 ### Variable: `river_mile`
 
@@ -106,8 +100,10 @@ Provide a stat on NA or unknown values
 ```{r}
 cleaner_holding_data %>% 
   ggplot(aes(x = river_mile, y = year(date))) +
-  geom_point(alpha = .75) + 
-  theme_minimal()
+  geom_point(alpha = .75, size = 1.5, color = "blue") + 
+  labs(y = "Year", x = "River Mile") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 It looks like river miles 0 - 6 and 12 - 17 most commonly have holding chinooks. In most recent years almost all the holding chinooks are before mile 5. 
@@ -116,7 +112,8 @@ It looks like river miles 0 - 6 and 12 - 17 most commonly have holding chinooks.
 cleaner_holding_data %>% 
   ggplot(aes(x = river_mile)) +
   geom_histogram(alpha = .75) + 
-  theme_minimal()
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 **Numeric Summary of river mile over Period of Record**
@@ -172,7 +169,7 @@ cleaner_holding_data  %>%
   ggplot(aes(x = year, y = total_catch)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
+  labs(title = "Total Yearly Fish Count",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
@@ -195,7 +192,7 @@ cleaner_holding_data %>% group_by(date) %>%
 
 * `r round(sum(is.na(cleaner_holding_data$count))/nrow(cleaner_holding_data), 3) * 100` % of values in the `count` column are NA. 
 
-### Variable: `jacks``
+### Variable: `jacks`
 
 **Plotting distribution of jacks**
 
@@ -206,7 +203,8 @@ number of jacks seen
 cleaner_holding_data %>% 
   ggplot(aes(x = jacks)) +
   geom_histogram(bins = 4) +
-  theme_minimal()
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 most of the jacks are 1
@@ -228,7 +226,7 @@ summary(cleaner_holding_data$jacks)
 cleaner_holding_data %>% select_if(is.character) %>% colnames()
 ```
 
-### Variable: `reach``
+### Variable: `reach`
 ```{r}
 table(cleaner_holding_data$reach) 
 ```
@@ -248,11 +246,19 @@ unique(cleaner_holding_data$notes)[1:5]
 
 ## Summary of identified issues
 
-* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
+* Looks like not a lot of surveys done every year
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+battle_holding <- cleaner_holding_data %>% select(date, reach, river_mile, count, jacks, latitude, longitude, notes) %>%glimpse()
+```
+
+```{r, eval=FALSE}
+gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(battle_holding,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_holding.csv")
 ```

@@ -108,22 +108,26 @@ cleaner_holding_data %>% select_if(is.numeric) %>% colnames()
 
 ### Variable: `longitude`, `latitude`
 
-**Plotting \[Variable\] over Period of Record**
+**Numeric Summary of lat long over Period of Record**
 
 ``` r
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+summary(cleaner_holding_data$latitude)
 ```
 
-**Numeric Summary of \[Variable\] over Period of Record**
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   40.38   40.41   40.42   40.42   40.42   40.43
 
 ``` r
-# Table with summary statistics
+summary(cleaner_holding_data$longitude)
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##  -122.2  -122.0  -122.0  -122.0  -122.0  -121.9
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+-   0 % of values in the `latitude` column are NA.
+-   0 % of values in the `longitude` column are NA.
 
 ### Variable: `river_mile`
 
@@ -132,11 +136,13 @@ Provide a stat on NA or unknown values
 ``` r
 cleaner_holding_data %>% 
   ggplot(aes(x = river_mile, y = year(date))) +
-  geom_point(alpha = .75) + 
-  theme_minimal()
+  geom_point(alpha = .75, size = 1.5, color = "blue") + 
+  labs(y = "Year", x = "River Mile") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
-![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 It looks like river miles 0 - 6 and 12 - 17 most commonly have holding
 chinooks. In most recent years almost all the holding chinooks are
@@ -146,12 +152,13 @@ before mile 5.
 cleaner_holding_data %>% 
   ggplot(aes(x = river_mile)) +
   geom_histogram(alpha = .75) + 
-  theme_minimal()
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 **Numeric Summary of river mile over Period of Record**
 
@@ -185,7 +192,7 @@ cleaner_holding_data %>%
        x = "Date")  
 ```
 
-![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 cleaner_holding_data %>% 
@@ -201,7 +208,7 @@ cleaner_holding_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
 ```
 
-![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 cleaner_holding_data  %>%
@@ -212,13 +219,13 @@ cleaner_holding_data  %>%
   ggplot(aes(x = year, y = total_catch)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
+  labs(title = "Total Yearly Fish Count",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 **Numeric Summary of Passage Counts over Period of Record**
 
@@ -245,7 +252,7 @@ cleaner_holding_data %>% group_by(date) %>%
 
 -   0 % of values in the `count` column are NA.
 
-### Variable: \`jacks\`\`
+### Variable: `jacks`
 
 **Plotting distribution of jacks**
 
@@ -255,10 +262,11 @@ number of jacks seen
 cleaner_holding_data %>% 
   ggplot(aes(x = jacks)) +
   geom_histogram(bins = 4) +
-  theme_minimal()
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
-![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 most of the jacks are 1
 
@@ -283,7 +291,7 @@ cleaner_holding_data %>% select_if(is.character) %>% colnames()
 
     ## [1] "reach" "notes"
 
-### Variable: \`reach\`\`
+### Variable: `reach`
 
 ``` r
 table(cleaner_holding_data$reach) 
@@ -311,12 +319,30 @@ unique(cleaner_holding_data$notes)[1:5]
 
 ## Summary of identified issues
 
--   List things that are funcky/bothering us but that we don’t feel like
-    should be changed without more investigation
+-   Looks like not a lot of surveys done every year
 
 ## Save cleaned data back to google cloud
 
 ``` r
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+battle_holding <- cleaner_holding_data %>% select(date, reach, river_mile, count, jacks, latitude, longitude, notes) %>%glimpse()
+```
+
+    ## Rows: 1,339
+    ## Columns: 8
+    ## $ date       <date> 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19~
+    ## $ reach      <chr> "R3", "R3", "R3", "R3", "R3", "R4", "R4", "R5", "R3", "R3",~
+    ## $ river_mile <dbl> 0.764266, 1.825265, 2.049952, 2.137590, 2.492432, 15.943712~
+    ## $ count      <dbl> 4, 1, 3, 4, 5, 2, 1, 1, 3, 1, 5, 3, 4, 1, 3, 6, 3, 5, 7, 3,~
+    ## $ jacks      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ latitude   <dbl> 40.41491, 40.40429, 40.40363, 40.40277, 40.40204, 40.42620,~
+    ## $ longitude  <dbl> -121.9902, -121.9793, -121.9754, -121.9743, -121.9687, -122~
+    ## $ notes      <chr> "WP203", "WP204", "WP205", "WP206", "WP207", "WP33", "WP34"~
+
+``` r
+gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(battle_holding,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_holding.csv")
 ```
