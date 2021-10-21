@@ -73,7 +73,7 @@ cleaner_passage_data <- raw_passage_data %>%
   janitor::clean_names() %>% 
   filter(species == "CHN") %>%
   rename("date" = sample_date,
-         "passed_up" = no_passed_up,
+         "count" = no_passed_up,
          "fork_length" = fl_mm,
          "recapture_type" = recap_type,
          "confidence_in_sex" = confidence,
@@ -91,7 +91,7 @@ cleaner_passage_data <- raw_passage_data %>%
 cleaner_passage_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-### Variable: `passed_up`
+### Variable: `count`
 
 **Plotting Passage Counts Moving Up over Period of Record**
 
@@ -100,7 +100,7 @@ cleaner_passage_data %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = passed_up)) + 
+  ggplot(aes(x = fake_date, y = count)) + 
   geom_col() + 
   facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), 
@@ -118,7 +118,7 @@ Data gaps 2011, 2012, 2017, 2018
 ```{r}
 # Boxplots of daily counts by year
 cleaner_passage_data %>% group_by(date) %>%
-  mutate(daily_count_upstream = sum(passed_up)) %>%
+  mutate(daily_count_upstream = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
   ggplot(aes(x = year, y = daily_count_upstream)) + 
@@ -131,7 +131,7 @@ cleaner_passage_data %>% group_by(date) %>%
 ```{r}
 cleaner_passage_data  %>%
   mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = year, y = passed_up)) + 
+  ggplot(aes(x = year, y = count)) + 
   geom_col() + 
   theme_minimal() +
   labs(title = "Total Yearly Fish Counts by Run",
@@ -149,18 +149,18 @@ cleaner_passage_data  %>%
 
 ```{r}
 # Table with summary statistics
-summary(cleaner_passage_data$passed_up)
+summary(cleaner_passage_data$count)
 
 # daily numeric summary 
 cleaner_passage_data %>% group_by(date) %>%
-  summarise(count = sum(passed_up, na.rm = T)) %>%
+  summarise(count = sum(count, na.rm = T)) %>%
   pull(count) %>%
   summary()
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_passage_data$passed_up))/nrow(cleaner_passage_data), 3) * 100` % of values in the `passed_up` column are NA. However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
+* `r round(sum(is.na(cleaner_passage_data$count))/nrow(cleaner_passage_data), 3) * 100` % of values in the `count` column are NA. However, there are clearly gaps in data. More investigation needs to be done to see if 0 is a real 0 or if it can be explained by other factors (outages).
 
 ### Variable: `fork_length`
 

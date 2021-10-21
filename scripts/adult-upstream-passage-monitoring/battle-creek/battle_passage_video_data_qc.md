@@ -62,8 +62,22 @@ sheets
     ## [3] "Trap and Spawning Building" "Upstream Passage Estimates"
 
 ``` r
-raw_video_data <- read_excel("raw_battle_creek_passage_data.xlsx", sheet = "Video")
+raw_video_data <- read_excel("raw_battle_creek_passage_data.xlsx", sheet = "Video") %>% glimpse()
 ```
+
+    ## Rows: 4,791
+    ## Columns: 11
+    ## $ Project     <chr> "Video", "Video", "Video", "Video", "Video", "Video", "Vid~
+    ## $ Sample_Date <dttm> 1998-06-01, 1998-06-01, 1998-06-02, 1998-06-02, 1998-06-0~
+    ## $ Species     <chr> "Chinook Salmon (CHN)", "Chinook Salmon (CHN)", "Chinook S~
+    ## $ Time_Passed <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ Passed_Up   <dbl> 1, 1, 5, 1, 2, 2, 2, 1, 2, 1, 1, 0, 2, 2, 2, 3, 1, 1, 1, 1~
+    ## $ Passed_Down <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
+    ## $ Net_Total   <dbl> 1, 1, 5, 1, 2, 2, 2, 1, 2, 1, 1, 0, 2, 2, 2, 3, 1, 1, 1, 1~
+    ## $ Adipose_Fin <chr> "Present", "Unknown", "Present", "Absent", "Present", "Unk~
+    ## $ Comments    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ Run_Call    <chr> "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR"~
+    ## $ Notes       <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
 
 ## Data transformations
 
@@ -74,30 +88,29 @@ cleaner_video_data <- raw_video_data %>%
   rename("run" = run_call,
          "adipose" = adipose_fin, 
          "date" = sample_date,
-         "time" = time_passed) %>%
+         "time" = time_passed,
+         "up" = passed_up,
+         "down" = passed_down) %>%
   mutate(date = as.Date(date),
          time = hms::as_hms(time)) %>%
-  select(-project, -species, # all species = chn, all project = video 
+  select(-net_total, # net total just equals difference in count up and count down 
+         -project, -species, # all species = chn, all project = video 
          -notes) %>% # all notes = NA
+  pivot_longer(!c(date, time, adipose:run), 
+               names_to = "passage_direction",
+               values_to = "count") %>%
   glimpse()
 ```
 
-    ## Rows: 4,775
-    ## Columns: 8
-    ## $ date        <date> 1998-06-01, 1998-06-01, 1998-06-02, 1998-06-02, 1998-06-0~
-    ## $ time        <time> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ passed_up   <dbl> 1, 1, 5, 1, 2, 2, 2, 1, 2, 1, 1, 0, 2, 2, 2, 3, 1, 1, 1, 1~
-    ## $ passed_down <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
-    ## $ net_total   <dbl> 1, 1, 5, 1, 2, 2, 2, 1, 2, 1, 1, 0, 2, 2, 2, 3, 1, 1, 1, 1~
-    ## $ adipose     <chr> "Present", "Unknown", "Present", "Absent", "Present", "Unk~
-    ## $ comments    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ run         <chr> "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR"~
-
-``` r
-unique(cleaner_video_data$notes)
-```
-
-    ## NULL
+    ## Rows: 9,550
+    ## Columns: 7
+    ## $ date              <date> 1998-06-01, 1998-06-01, 1998-06-01, 1998-06-01, 199~
+    ## $ time              <time> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ adipose           <chr> "Present", "Present", "Unknown", "Unknown", "Present~
+    ## $ comments          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ run               <chr> "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR"~
+    ## $ passage_direction <chr> "up", "down", "up", "down", "up", "down", "up", "dow~
+    ## $ count             <dbl> 1, 0, 1, 0, 5, 0, 1, 0, 2, 0, 2, 0, 2, 0, 1, 0, 2, 0~
 
 ## Explore Numeric Variables:
 
@@ -105,9 +118,9 @@ unique(cleaner_video_data$notes)
 cleaner_video_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "passed_up"   "passed_down" "net_total"
+    ## [1] "count"
 
-### Variable: `passed_up`
+### Variable: `count`
 
 **Plotting Passage Counts Moving Up over Period of Record**
 
@@ -116,7 +129,7 @@ cleaner_video_data %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = passed_up)) + 
+  ggplot(aes(x = fake_date, y = count, fill = passage_direction)) + 
   geom_col() + 
   facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), limits = c(as.Date("1901-04-01"), as.Date("1901-09-01")), date_breaks = "1 month") + 
@@ -129,270 +142,71 @@ cleaner_video_data %>%
 
 ![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-``` r
-cleaner_video_data %>% 
-  filter(run == "SR") %>%
-  mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = passed_up)) + 
-  geom_col() + 
-  facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1901-04-01"), as.Date("1901-10-01")), date_breaks = "1 month") + 
-  theme_minimal() + 
-  theme(text = element_text(size = 23),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Spring Run Daily Count Upstream Passage", 
-       x = "Date")  
-```
-
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
-
 Spring Run Chinook appear to be seen moving upstream April through
 September.
 
 ``` r
 # Boxplots of daily counts by year
 cleaner_video_data %>% group_by(date) %>%
-  mutate(daily_count_upstream = sum(passed_up)) %>%
+  mutate(daily_count_upstream = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
-  ggplot(aes(x = year, y = daily_count_upstream)) + 
+  ggplot(aes(x = year, y = daily_count_upstream, color = passage_direction)) + 
   geom_boxplot() + 
   theme_minimal() +
-  theme(text = element_text(size = 23)) + 
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
   labs(title = "Daily Count of Upstream Passage Sumarized by Year All Runs") 
 ```
 
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 cleaner_video_data  %>%
   mutate(year = as.factor(year(date))) %>%
   filter(run %in% c("FR", "LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
-  ggplot(aes(x = year, y = passed_up)) + 
+  ggplot(aes(x = year, y = count, fill = passage_direction)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
+  labs(title = "Total Yearly Upstream Fish Counts by Run",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
   facet_grid(~run)
 ```
 
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 **Numeric Summary of Passage Counts Moving Up over Period of Record**
 
 ``` r
 # Table with summary statistics
-summary(cleaner_video_data$passed_up)
+summary(cleaner_video_data$count)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##  0.0000  1.0000  1.0000  0.9037  1.0000  7.0000
+    ##  0.0000  0.0000  0.0000  0.5069  1.0000  7.0000
 
 ``` r
 # daily numeric summary 
 cleaner_video_data %>% group_by(date) %>%
-  summarise(count = sum(passed_up, na.rm = T)) %>%
+  summarise(count = sum(count, na.rm = T)) %>%
   pull(count) %>%
   summary()
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##   0.000   1.000   2.000   4.141   5.000  51.000
+    ##   1.000   1.000   2.000   4.646   5.000  62.000
 
 **NA and Unknown Values**
 
--   0 % of values in the `passed_up` column are NA. However, there are
+-   0 % of values in the `count` column are NA. However, there are
     clearly gaps in data. More investigation needs to be done to see if
     0 is a real 0 or if it can be explained by other factors (outages).
 
-### Variable: `down`
+### Variable: `count_down`
 
 Downstream count data begins in 2010.
-
-**Plotting Passage Counts Moving Down over Period of Record**
-
-``` r
-cleaner_video_data %>% 
-  filter(year(date) > 2009) %>% # filter to years greater than 2009 because no downstream passage counted pre 2009 
-  mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = passed_down)) + 
-  geom_col() + 
-  facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1901-04-01"), as.Date("1901-09-01")), date_breaks = "1 month") +  
-  theme_minimal() + 
-  theme(text = element_text(size = 23),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Count of Downstream Passage all Runs", 
-       x = "Date")  
-```
-
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
-
-``` r
-cleaner_video_data %>% 
-  filter(run == "SR", year(date) > 2009) %>% # filter to years greater than 2009 because no downstream passage counted pre 2009 
-  mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = passed_down)) +  
-  geom_col() + 
-  facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1901-04-01"), as.Date("1901-09-01")), date_breaks = "1 month") + 
-  theme_minimal() + 
-  theme(text = element_text(size = 23),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Spring Run Daily Count Downstream Passage", 
-       x = "Date")  
-```
-
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
-
-Spring Run Chinook appear to be seen moving downstream April through
-august.
-
-``` r
-cleaner_video_data %>% 
-  filter(year(date) > 2009) %>%
-  group_by(date) %>%
-  summarise(daily_count_downstream = sum(passed_down)) %>%
-  mutate(year = as.factor(year(date))) %>% 
-  ggplot(aes(x = year, y = daily_count_downstream)) + 
-  geom_boxplot() + 
-  theme_minimal() +
-  labs(title = "Daily Count of Downstream Passage Sumarized by Year all Runs") + 
-  theme(text = element_text(size = 23)) 
-```
-
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
-
-``` r
-cleaner_video_data  %>%
-  filter(year(date) > 2009) %>%
-  mutate(year = as.factor(year(date))) %>%
-  filter(run %in% c("FR", "LF", "SR", "WR")) %>%
-  ggplot(aes(x = year, y = passed_down)) + 
-  geom_col() + 
-  theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
-       y = "Total fish count") + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  facet_grid(~run)
-```
-
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
-
-**Numeric Summary of Passage Counts Moving Down over Period of Record**
-
-``` r
-# Table with summary statistics 
-summary(cleaner_video_data$passed_down)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##  0.0000  0.0000  0.0000  0.1102  0.0000  1.0000
-
-``` r
-# Daily numeric summary of passage data
-cleaner_video_data %>% group_by(date) %>%
-  summarise(count = sum(passed_down, na.rm = T)) %>%
-  pull(count) %>%
-  summary()
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##  0.0000  0.0000  0.0000  0.5048  0.0000 16.0000
-
-**NA and Unknown Values**
-
--   0 % of values in the `passed_down` column are NA.
-
-### Variable: `net_total`
-
-**Plotting Net Total Passage Counts over Period of Record**
-
-``` r
-cleaner_video_data %>% 
-  filter(run == "SR") %>%
-  mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = net_total)) + 
-  geom_col() + 
-  facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1901-04-01"), as.Date("1901-09-01")), date_breaks = "1 month") + 
-  theme_minimal() + 
-  theme(text = element_text(size = 23),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Net Total Passage count all Runs", 
-       x = "Date")  
-```
-
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
-
-``` r
-cleaner_video_data %>% group_by(date) %>%
-  summarise(daily_count = sum(net_total)) %>%
-  mutate(year = as.factor(year(date))) %>% 
-  ggplot(aes(x = year, y = daily_count)) + 
-  geom_boxplot() + 
-  theme_minimal() +
-  labs(title = "Net Daily Passage Count Sumarized by Year all Runs") + 
-  theme(text = element_text(size = 23)) 
-```
-
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
-
-``` r
-cleaner_video_data  %>%
-  mutate(year = as.factor(year(date))) %>%
-  filter(run %in% c("LF", "SR", "WR", "FR")) %>%
-  group_by(year(date)) %>%
-  mutate(total_catch = sum(net_total)) %>%
-  ungroup() %>%
-  ggplot(aes(x = year, y = total_catch)) + 
-  geom_col() + 
-  theme_minimal() +
-  labs(title = "Total Net Yearly Fish Counts by Run",
-       y = "Total fish count") + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  facet_grid(~run)
-```
-
-![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
-Most of the data is on Spring Run chinook.
-
-**Numeric Summary of Total Counts over Period of Record**
-
-``` r
-# Table with summary statistics 
-summary(cleaner_video_data$net_total)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ## -1.0000  1.0000  1.0000  0.7935  1.0000  7.0000
-
-``` r
-# Daily numeric summary of passage data
-cleaner_video_data %>% group_by(date) %>%
-  summarise(count = sum(net_total, na.rm = T)) %>%
-  pull(count) %>%
-  summary()
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##  -1.000   1.000   2.000   3.636   4.000  47.000
-
-**NA and Unknown Values**
-
--   0 % of values in the `net_total` column are NA.
 
 ## Explore Categorical variables:
 
@@ -400,7 +214,8 @@ cleaner_video_data %>% group_by(date) %>%
 cleaner_video_data %>% select_if(is.character) %>% colnames()
 ```
 
-    ## [1] "adipose"  "comments" "run"
+    ## [1] "adipose"           "comments"          "run"              
+    ## [4] "passage_direction"
 
 ### Variable: `adipose`
 
@@ -410,7 +225,7 @@ table(cleaner_video_data$adipose)
 
     ## 
     ##  Absent present Present Unknown 
-    ##     812       1    3904      58
+    ##    1624       2    7808     116
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -422,7 +237,7 @@ table(cleaner_video_data$adipose)
 
     ## 
     ##  absent present unknown 
-    ##     812    3905      58
+    ##    1624    7810     116
 
 **NA or Unknown Values**
 
@@ -437,7 +252,7 @@ table(cleaner_video_data$run)
 
     ## 
     ##   FR   LF   SR  UNK   WR 
-    ##    6  181 4520   29   39
+    ##   12  362 9040   58   78
 
 ``` r
 # description <- domain_description[which(domain_description$Domain == "Run"), ]$Description
@@ -479,6 +294,20 @@ unique(cleaner_video_data$comments)[1:10]
 
 -   88 % of values in the `comments` column are NA.
 
+### Variable: `passage_direction`
+
+``` r
+table(cleaner_video_data$passage_direction)
+```
+
+    ## 
+    ## down   up 
+    ## 4775 4775
+
+**NA and Unknown Values**
+
+-   0 % of values in the `passage_direction` column are NA.
+
 ## Summary of identified issues
 
 -   No info on viewing condition/outages/gaps in sampling
@@ -490,16 +319,15 @@ battle_passage_video <- cleaner_video_data %>%
   glimpse()
 ```
 
-    ## Rows: 4,775
-    ## Columns: 8
-    ## $ date        <date> 1998-06-01, 1998-06-01, 1998-06-02, 1998-06-02, 1998-06-0~
-    ## $ time        <time> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ passed_up   <dbl> 1, 1, 5, 1, 2, 2, 2, 1, 2, 1, 1, 0, 2, 2, 2, 3, 1, 1, 1, 1~
-    ## $ passed_down <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
-    ## $ net_total   <dbl> 1, 1, 5, 1, 2, 2, 2, 1, 2, 1, 1, 0, 2, 2, 2, 3, 1, 1, 1, 1~
-    ## $ adipose     <chr> "present", "unknown", "present", "absent", "present", "unk~
-    ## $ comments    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ run         <chr> "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR"~
+    ## Rows: 9,550
+    ## Columns: 7
+    ## $ date              <date> 1998-06-01, 1998-06-01, 1998-06-01, 1998-06-01, 199~
+    ## $ time              <time> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ adipose           <chr> "present", "present", "unknown", "unknown", "present~
+    ## $ comments          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ run               <chr> "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR", "SR"~
+    ## $ passage_direction <chr> "up", "down", "up", "down", "up", "down", "up", "dow~
+    ## $ count             <dbl> 1, 0, 1, 0, 5, 0, 1, 0, 2, 0, 2, 0, 2, 0, 1, 0, 2, 0~
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)

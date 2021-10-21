@@ -139,7 +139,7 @@ cleaner_passage_estimates <- raw_passage_estimates %>%
 
 ``` r
 # Gather columns to have adipose, passage_estimates, raw_counts
-cleaner_passage_long <- cleaner_passage_estimates %>% 
+cleaner_passage_estimates <- cleaner_passage_estimates %>% 
   pivot_longer(!c(week:hours_of_taped_passage, start_date, end_date), 
                names_to = c("type", "type2", "adipose"), 
                names_sep = "_",
@@ -166,7 +166,7 @@ cleaner_passage_long <- cleaner_passage_estimates %>%
 ## Explore Numeric Variables:
 
 ``` r
-cleaner_passage_long %>% select_if(is.numeric) %>% colnames()
+cleaner_passage_estimates %>% select_if(is.numeric) %>% colnames()
 ```
 
     ## [1] "week"                   "hours_of_passage"       "hours_of_taped_passage"
@@ -177,21 +177,21 @@ cleaner_passage_long %>% select_if(is.numeric) %>% colnames()
 **Plotting weeks per year over Period of Record**
 
 ``` r
-cleaner_passage_long %>% 
+cleaner_passage_estimates %>% 
   group_by(year = year(start_date)) %>% 
   summarise(num_weeks_sampled = max(week)) %>% 
   ggplot() + 
   geom_col(aes(x = year, y = num_weeks_sampled))
 ```
 
-![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 Every year there were between 22 and 28 weeks sampled.
 
 **Numeric Summary of week over Period of Record**
 
 ``` r
-summary(cleaner_passage_long$week)
+summary(cleaner_passage_estimates$week)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
@@ -207,7 +207,7 @@ summary(cleaner_passage_long$week)
 Record**
 
 ``` r
-cleaner_passage_long %>% 
+cleaner_passage_estimates %>% 
   group_by(year = year(start_date)) %>%
   summarise(total_hours_passage = sum(hours_of_passage, na.rm = T), 
             total_tapped_hours = sum(hours_of_taped_passage, na.rm = T)) %>%
@@ -219,7 +219,7 @@ cleaner_passage_long %>%
   theme_minimal()
 ```
 
-![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
   # scale_fill_manual(values = c("blue", "orange"))
@@ -229,7 +229,7 @@ Pre 2010 less hours of passage tapped and total hours of passage than
 post 2010.
 
 ``` r
-cleaner_passage_long %>% 
+cleaner_passage_estimates %>% 
   mutate(year = as.factor(year(start_date))) %>%
   ggplot() + 
   geom_boxplot(aes(x = hours_of_taped_passage, y = year)) + 
@@ -239,24 +239,24 @@ cleaner_passage_long %>%
   theme_minimal()
 ```
 
-![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 The red line is at 168, the total number of hours in a year. It appears
 that from 2001 - 2006 they did not have tapped passage for the full week
 very often. The recent years are better with some variation. 2019 must
 not be complete data.
 
-**Numeric Summary of \[Variable\] over Period of Record**
+**Numeric Summary of passage hours over Period of Record**
 
 ``` r
-summary(cleaner_passage_long$hours_of_passage)
+summary(cleaner_passage_estimates$hours_of_passage)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##     8.0   168.0   168.0   155.5   168.0   205.0     570
 
 ``` r
-summary(cleaner_passage_long$hours_of_taped_passage)
+summary(cleaner_passage_estimates$hours_of_taped_passage)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
@@ -283,22 +283,21 @@ one week.
 **Plotting passage estimate over Period of Record**
 
 ``` r
-# TODO figure out
-cleaner_passage_long %>% 
+cleaner_passage_estimates %>% 
   ggplot(aes(x = week, y = passage_estimate, color = adipose)) +
-  geom_line() + 
+  geom_line(size = 1.4) + 
   facet_wrap(~year(start_date)) + 
   theme_minimal()
 ```
 
-![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
   # scale_fill_manual(values = c("blue", "orange"))
 ```
 
 ``` r
-cleaner_passage_long  %>%
+cleaner_passage_estimates  %>%
   group_by(year = year(start_date), adipose) %>%
   summarise(yearly_total_pasage_estimate = sum(passage_estimate, na.rm = T)) %>%
   ggplot(aes(x = year, y = yearly_total_pasage_estimate, fill = adipose)) + 
@@ -312,15 +311,15 @@ cleaner_passage_long  %>%
 
     ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
-![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 Looks like there is one negative value for passage estimates which seems
 like an error.
 
-**Numeric Summary of \[Variable\] over Period of Record**
+**Numeric Summary of passage estimate over Period of Record**
 
 ``` r
-summary(cleaner_passage_long$passage_estimate)
+summary(cleaner_passage_estimates$passage_estimate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
@@ -341,21 +340,21 @@ just the actual passage number.
 **Plotting raw count of fish over Period of Record**
 
 ``` r
-cleaner_passage_long %>% 
+cleaner_passage_estimates %>% 
   ggplot(aes(x = week, y = raw_count, color = adipose)) +
-  geom_line() + 
+  geom_line(size = 1.4) + 
   facet_wrap(~year(start_date), scales = "free_y") + 
   theme_minimal()
 ```
 
-![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
   # scale_fill_manual(values = c("blue", "orange"))
 ```
 
 ``` r
-cleaner_passage_long  %>%
+cleaner_passage_estimates  %>%
   group_by(year = year(start_date), adipose) %>%
   summarise(yearly_total_fish_count = sum(raw_count, na.rm = T)) %>%
   ggplot(aes(x = year, y = yearly_total_fish_count, fill = adipose)) + 
@@ -369,12 +368,12 @@ cleaner_passage_long  %>%
 
     ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
-![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 **Numeric Summary of raw count over Period of Record**
 
 ``` r
-summary(cleaner_passage_long$raw_count)
+summary(cleaner_passage_estimates$raw_count)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
@@ -387,7 +386,7 @@ summary(cleaner_passage_long$raw_count)
 ## Explore Categorical variables:
 
 ``` r
-cleaner_passage_long %>% select_if(is.character) %>% colnames()
+cleaner_passage_estimates %>% select_if(is.character) %>% colnames()
 ```
 
     ## [1] "method"  "adipose"
@@ -397,7 +396,7 @@ cleaner_passage_long %>% select_if(is.character) %>% colnames()
 method of observation (trap-barrier weir trap, spawning building, video)
 
 ``` r
-table(cleaner_passage_long$method) 
+table(cleaner_passage_estimates$method) 
 ```
 
     ## 
@@ -409,13 +408,13 @@ table(cleaner_passage_long$method)
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-cleaner_passage_long$method <- case_when(
-  cleaner_passage_long$method == "Spawning Building" ~ "spwaning building",
-  cleaner_passage_long$method == "Spawning Building/Trap" ~ "spawning building or trap", 
-  cleaner_passage_long$method == "Trap" ~ "trap",
-  cleaner_passage_long$method == "Video" ~ "video")
+cleaner_passage_estimates$method <- case_when(
+  cleaner_passage_estimates$method == "Spawning Building" ~ "spwaning building",
+  cleaner_passage_estimates$method == "Spawning Building/Trap" ~ "spawning building or trap", 
+  cleaner_passage_estimates$method == "Trap" ~ "trap",
+  cleaner_passage_estimates$method == "Video" ~ "video")
 
-table(cleaner_passage_long$method) 
+table(cleaner_passage_estimates$method) 
 ```
 
     ## 
@@ -433,7 +432,7 @@ table(cleaner_passage_long$method)
 Adipose clipped, unclipped or unknown,
 
 ``` r
-table(cleaner_passage_long$adipose) 
+table(cleaner_passage_estimates$adipose) 
 ```
 
     ## 
@@ -448,12 +447,14 @@ table(cleaner_passage_long$adipose)
 
 -   Negative value for passage count with clipped adipose in 2012
 -   Total hours of passage varies quite a but over the years,
-    differnt/shorter sampling seasons pre 2010 contribute to this
+    different/shorter sampling seasons pre 2010 contribute to this
+-   There are a few values that do not have a date (start\_date 21,
+    end\_date 24).
 
 ## Save cleaned data back to google cloud
 
 ``` r
-cleaner_passage_long %>% glimpse()
+battle_passage_estimates <- cleaner_passage_estimates %>% glimpse()
 ```
 
     ## Rows: 1,398
@@ -469,6 +470,36 @@ cleaner_passage_long %>% glimpse()
     ## $ passage_estimate       <dbl> 0, 3, NA, 0, 0, NA, 0, 1, NA, 0, 2, NA, 0, 1, N~
 
 ``` r
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(battle_passage_estimates,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/battle-creek/data/battle_passage_estimates.csv")
 ```
+
+    ## i 2021-10-21 08:38:05 > File size detected as  71.9 Kb
+
+    ## i 2021-10-21 08:38:05 > Request Status Code:  400
+
+    ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
+
+    ## i 2021-10-21 08:38:05 > File size detected as  71.9 Kb
+
+    ## ==Google Cloud Storage Object==
+    ## Name:                adult-upstream-passage-monitoring/battle-creek/data/battle_passage_estimates.csv 
+    ## Type:                csv 
+    ## Size:                71.9 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fbattle-creek%2Fdata%2Fbattle_passage_estimates.csv?generation=1634830686133529&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fbattle-creek%2Fdata%2Fbattle_passage_estimates.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fbattle-creek%2Fdata%2Fbattle_passage_estimates.csv 
+    ## Bucket:              jpe-dev-bucket 
+    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/battle-creek/data/battle_passage_estimates.csv/1634830686133529 
+    ## MD5 Hash:            asQ8ifIDFC2w2222qoKv9w== 
+    ## Class:               STANDARD 
+    ## Created:             2021-10-21 15:38:06 
+    ## Updated:             2021-10-21 15:38:06 
+    ## Generation:          1634830686133529 
+    ## Meta Generation:     1 
+    ## eTag:                CJm6wvLq2/MCEAE= 
+    ## crc32c:              226jSQ==

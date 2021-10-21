@@ -97,7 +97,7 @@ cleaner_passage_data <- raw_passage_data %>%
   janitor::clean_names() %>% 
   filter(species == "CHN") %>%
   rename("date" = sample_date,
-         "passed_up" = no_passed_up,
+         "count" = no_passed_up,
          "fork_length" = fl_mm,
          "recapture_type" = recap_type,
          "confidence_in_sex" = confidence,
@@ -114,7 +114,7 @@ cleaner_passage_data <- raw_passage_data %>%
     ## $ trap_beg          <dttm> 1899-12-31 07:30:00, 1899-12-31 07:30:00, 1899-12-3~
     ## $ trap_end          <dttm> 1899-12-31 15:15:00, 1899-12-31 15:15:00, 1899-12-3~
     ## $ time              <time> 07:30:00, 07:30:00, 12:30:00, 15:15:00, 07:30:00, 0~
-    ## $ passed_up         <dbl> 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1~
+    ## $ count             <dbl> 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1~
     ## $ sex               <chr> "F", "F", "Unk", "Unk", "F", "Unk", "M", "F", "M", "~
     ## $ confidence_in_sex <chr> "C", "C", NA, NA, "C", NA, "C", "C", "C", "C", "C", ~
     ## $ fork_length       <dbl> 806, 910, 725, 755, 611, 810, 525, 668, 771, 870, 77~
@@ -133,9 +133,9 @@ cleaner_passage_data <- raw_passage_data %>%
 cleaner_passage_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "passed_up"   "fork_length"
+    ## [1] "count"       "fork_length"
 
-### Variable: `passed_up`
+### Variable: `count`
 
 **Plotting Passage Counts Moving Up over Period of Record**
 
@@ -144,7 +144,7 @@ cleaner_passage_data %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = passed_up)) + 
+  ggplot(aes(x = fake_date, y = count)) + 
   geom_col() + 
   facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), 
@@ -164,7 +164,7 @@ Data gaps 2011, 2012, 2017, 2018
 ``` r
 # Boxplots of daily counts by year
 cleaner_passage_data %>% group_by(date) %>%
-  mutate(daily_count_upstream = sum(passed_up)) %>%
+  mutate(daily_count_upstream = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
   ggplot(aes(x = year, y = daily_count_upstream)) + 
@@ -179,7 +179,7 @@ cleaner_passage_data %>% group_by(date) %>%
 ``` r
 cleaner_passage_data  %>%
   mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = year, y = passed_up)) + 
+  ggplot(aes(x = year, y = count)) + 
   geom_col() + 
   theme_minimal() +
   labs(title = "Total Yearly Fish Counts by Run",
@@ -198,7 +198,7 @@ cleaner_passage_data  %>%
 
 ``` r
 # Table with summary statistics
-summary(cleaner_passage_data$passed_up)
+summary(cleaner_passage_data$count)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
@@ -207,7 +207,7 @@ summary(cleaner_passage_data$passed_up)
 ``` r
 # daily numeric summary 
 cleaner_passage_data %>% group_by(date) %>%
-  summarise(count = sum(passed_up, na.rm = T)) %>%
+  summarise(count = sum(count, na.rm = T)) %>%
   pull(count) %>%
   summary()
 ```
@@ -217,7 +217,7 @@ cleaner_passage_data %>% group_by(date) %>%
 
 **NA and Unknown Values**
 
--   0 % of values in the `passed_up` column are NA. However, there are
+-   0 % of values in the `count` column are NA. However, there are
     clearly gaps in data. More investigation needs to be done to see if
     0 is a real 0 or if it can be explained by other factors (outages).
 
@@ -601,7 +601,7 @@ battle_passage_trap <- cleaner_passage_data %>%
     ## $ trap_beg          <dttm> 1899-12-31 07:30:00, 1899-12-31 07:30:00, 1899-12-3~
     ## $ trap_end          <dttm> 1899-12-31 15:15:00, 1899-12-31 15:15:00, 1899-12-3~
     ## $ time              <time> 07:30:00, 07:30:00, 12:30:00, 15:15:00, 07:30:00, 0~
-    ## $ passed_up         <dbl> 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1~
+    ## $ count             <dbl> 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1~
     ## $ sex               <chr> "F", "F", "unknown", "unknown", "F", "unknown", "M",~
     ## $ confidence_in_sex <chr> "confident", "confident", NA, NA, "confident", NA, "~
     ## $ fork_length       <dbl> 806, 910, 725, 755, 611, 810, 525, 668, 771, 870, 77~
