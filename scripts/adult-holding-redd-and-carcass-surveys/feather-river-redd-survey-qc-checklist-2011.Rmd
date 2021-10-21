@@ -151,7 +151,6 @@ cleaner_data_2011 <- cleaner_data_2011 %>%
          location = if_else(location == "Top of Matthews", "Top of Mathews", location),
          location = if_else(location == "Upper Matthews", "Upper Mathews", location),
          location = if_else(location == "Upper Moe's Channel", "Upper Moes Channel", location),
-         location = if_else(location == "Top Vance East", "Upper Vance East", location),
          location = if_else(location == "Uppper Auditorium", "Upper Auditorium", location)
          )
 table(cleaner_data_2011$location)
@@ -160,7 +159,7 @@ table(cleaner_data_2011$location)
 
 * `r round(sum(is.na(cleaner_data_2011$location))/nrow(cleaner_data_2011), 3)*100` % of values in the `location` column are NA.
 
-## Variable:`Type`
+## Variable:`type`
 
 Description:    
 
@@ -430,6 +429,7 @@ cleaner_data_2011 %>%
   geom_bar(position = 'stack', stat = 'identity', color = 'black')+
   labs(title = "Mean Percent Substrate by Location")
 ```
+
 ### Variable: `depth_m`
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data_2011 %>%
@@ -475,7 +475,7 @@ cleaner_data_2011 %>%
   ggplot(aes(x = velocity_m_per_s, fill = location, )) +
   scale_fill_manual(values = getPalette(colourCount))+
   geom_histogram(binwidth = 0.1, position = 'stack', color = "black") +
-  labs(title = "Mean Velocity Distribution")+
+  labs(title = "Velocity Distribution")+
   theme(legend.text = element_text(size = 8)) +
   guides(fill = guide_legend(nrow = 10))
 ```

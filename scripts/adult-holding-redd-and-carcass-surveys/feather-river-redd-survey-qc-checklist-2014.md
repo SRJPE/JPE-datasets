@@ -9,25 +9,26 @@ Inigo Peng
 
 **Timeframe:** 2014
 
-**Completeness of Record throughout timeframe: **  
+**Completeness of Record throughout timeframe:**
 
 -   Longitude and latitude data are not available for 2009, 2010, 2011,
     2012, 2019, 2020. NA values will be filled in for these data sets in
     final cleaned data set.
 
-**Sampling Location:** Feather River
+**Sampling Location:** Various sampling locations on Feather River.
 
-**Data Contact:** [Chris Cook](Chris.Cook@water.ca.gov)
+**Data Contact:** [Chris Cook](mailto::Chris.Cook@water.ca.gov)
 
 Additional Info:  
 1. Latitude and longitude are in NAD 1983 UTM Zone 10N  
 2. The substrate is observed visually and an estimate of the percentage
-of 5 size classes:  
-\* fines &lt;1cm  
-\* small 1-5cm  
-\* medium 6-15cm  
-\* large 16-30cm  
-\* boulder &gt;30cm
+of 5 size classes:
+
+-   fines &lt;1cm  
+-   small 1-5cm  
+-   medium 6-15cm  
+-   large 16-30cm  
+-   boulder &gt;30cm
 
 ## Access Cloud Data
 
@@ -75,17 +76,18 @@ glimpse(raw_data_2014)
     ## $ `redd width (m)`  <dbl> 1.1, 2.5, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1.5, 2~
     ## $ `redd length (m)` <dbl> 2.0, 3.5, NA, NA, NA, NA, NA, NA, NA, NA, NA, 2.0, 2~
 
-## Data Transformation
+## Data Transformations
 
 ``` r
 cleaner_data_2014 <- raw_data_2014 %>% 
-  select(-c('Survey Wk', 'File #', '# of redds')) %>% 
-  rename('salmon_counted'= '# salmon',
+  select(-c('Survey Wk', 'File #')) %>% 
+  rename('redd_count' = '# of redds',
+         'salmon_count'= '# salmon',
          'latitude' = 'Latitude',
          'longitude' = 'Longitude',
          'depth_m' = 'Depth (m)',
          'pot_depth_m' = 'Pot Depth (m)',
-         'velocity_m/s' = 'Velocity (m/s)',
+         'velocity_m_per_s' = 'Velocity (m/s)',
          'percent_fine_substrate' = '% fines',
          'percent_small_substrate' = '% small',
          'percent_medium_substrate'= '% med',
@@ -94,55 +96,58 @@ cleaner_data_2014 <- raw_data_2014 %>%
          'redd_width_m' = 'redd width (m)',
          'redd_length_m' = 'redd length (m)',
          ) %>%
-  mutate(Date = as.Date(as.numeric(Date), origin = "1899-12-30")) %>% 
-  filter(salmon_counted > 0, rm.na = TRUE) %>% 
-  glimpse()
-```
-
-    ## Rows: 771
-    ## Columns: 16
-    ## $ Date                     <date> 2014-09-09, 2014-09-09, 2014-09-15, 2014-09-~
-    ## $ Location                 <chr> "Moe's Side Channel", "Upper Cottonwood", "Co~
-    ## $ type                     <chr> "p", "p", "p", "p", "p", "p", "p", "p", "p", ~
-    ## $ salmon_counted           <dbl> 1, 1, 1, 3, 1, 1, 3, 1, 1, 1, 2, 3, 2, 1, 2, ~
-    ## $ latitude                 <dbl> 4375043, 4375121, 4375108, 4375110, 4375105, ~
-    ## $ longitude                <dbl> 6239424.4, 624284.0, 624147.7, 624158.1, 6242~
-    ## $ depth_m                  <dbl> 0.30, 0.62, NA, NA, 0.72, 0.55, 0.32, 0.62, 0~
-    ## $ pot_depth_m              <dbl> 0.50, 0.70, NA, NA, 0.76, 0.62, 0.40, 0.68, 0~
-    ## $ `velocity_m/s`           <dbl> 0.61, 0.89, NA, NA, 0.55, 0.77, 0.28, 0.74, 0~
-    ## $ percent_fine_substrate   <dbl> 40, 0, NA, NA, 0, 10, 20, 20, 10, 10, NA, 0, ~
-    ## $ percent_small_substrate  <dbl> 20, 65, NA, NA, 40, 20, 50, 20, 30, 30, NA, 2~
-    ## $ percent_medium_substrate <dbl> 35, 30, NA, NA, 50, 40, 50, 20, 40, 50, NA, 5~
-    ## $ percent_large_substrate  <dbl> 5, 5, NA, NA, 10, 30, 0, 10, 20, 10, NA, 30, ~
-    ## $ percent_boulder          <dbl> 0, 0, NA, NA, 0, 0, 0, 30, 0, 0, NA, 0, 0, 0,~
-    ## $ redd_width_m             <dbl> 1.10, 2.50, NA, NA, 1.50, 1.00, 1.00, 1.60, 2~
-    ## $ redd_length_m            <dbl> 2.00, 3.50, NA, NA, 2.00, 1.50, 1.90, 1.80, 1~
-
-``` r
+  mutate(Date = as.Date(as.numeric(Date), origin = "1899-12-30"))
 cleaner_data_2014 <- cleaner_data_2014 %>% 
   set_names(tolower(colnames(cleaner_data_2014))) %>% 
-  mutate(date = as.Date(date)) %>% 
   glimpse()
 ```
 
-    ## Rows: 771
-    ## Columns: 16
+    ## Rows: 1,911
+    ## Columns: 17
     ## $ date                     <date> 2014-09-09, 2014-09-09, 2014-09-15, 2014-09-~
     ## $ location                 <chr> "Moe's Side Channel", "Upper Cottonwood", "Co~
     ## $ type                     <chr> "p", "p", "p", "p", "p", "p", "p", "p", "p", ~
-    ## $ salmon_counted           <dbl> 1, 1, 1, 3, 1, 1, 3, 1, 1, 1, 2, 3, 2, 1, 2, ~
-    ## $ latitude                 <dbl> 4375043, 4375121, 4375108, 4375110, 4375105, ~
-    ## $ longitude                <dbl> 6239424.4, 624284.0, 624147.7, 624158.1, 6242~
-    ## $ depth_m                  <dbl> 0.30, 0.62, NA, NA, 0.72, 0.55, 0.32, 0.62, 0~
-    ## $ pot_depth_m              <dbl> 0.50, 0.70, NA, NA, 0.76, 0.62, 0.40, 0.68, 0~
-    ## $ `velocity_m/s`           <dbl> 0.61, 0.89, NA, NA, 0.55, 0.77, 0.28, 0.74, 0~
-    ## $ percent_fine_substrate   <dbl> 40, 0, NA, NA, 0, 10, 20, 20, 10, 10, NA, 0, ~
-    ## $ percent_small_substrate  <dbl> 20, 65, NA, NA, 40, 20, 50, 20, 30, 30, NA, 2~
-    ## $ percent_medium_substrate <dbl> 35, 30, NA, NA, 50, 40, 50, 20, 40, 50, NA, 5~
-    ## $ percent_large_substrate  <dbl> 5, 5, NA, NA, 10, 30, 0, 10, 20, 10, NA, 30, ~
-    ## $ percent_boulder          <dbl> 0, 0, NA, NA, 0, 0, 0, 30, 0, 0, NA, 0, 0, 0,~
-    ## $ redd_width_m             <dbl> 1.10, 2.50, NA, NA, 1.50, 1.00, 1.00, 1.60, 2~
-    ## $ redd_length_m            <dbl> 2.00, 3.50, NA, NA, 2.00, 1.50, 1.90, 1.80, 1~
+    ## $ redd_count               <dbl> 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
+    ## $ salmon_count             <dbl> 1, 1, 1, 0, 3, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, ~
+    ## $ latitude                 <dbl> 4375043, 4375121, 4375108, 4375106, 4375110, ~
+    ## $ longitude                <dbl> 6239424.4, 624284.0, 624147.7, 624150.0, 6241~
+    ## $ depth_m                  <dbl> 0.30, 0.62, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ pot_depth_m              <dbl> 0.50, 0.70, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ velocity_m_per_s         <dbl> 0.61, 0.89, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ percent_fine_substrate   <dbl> 40, 0, NA, NA, NA, NA, NA, NA, NA, NA, NA, 0,~
+    ## $ percent_small_substrate  <dbl> 20, 65, NA, NA, NA, NA, NA, NA, NA, NA, NA, 4~
+    ## $ percent_medium_substrate <dbl> 35, 30, NA, NA, NA, NA, NA, NA, NA, NA, NA, 5~
+    ## $ percent_large_substrate  <dbl> 5, 5, NA, NA, NA, NA, NA, NA, NA, NA, NA, 10,~
+    ## $ percent_boulder          <dbl> 0, 0, NA, NA, NA, NA, NA, NA, NA, NA, NA, 0, ~
+    ## $ redd_width_m             <dbl> 1.1, 2.5, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ redd_length_m            <dbl> 2.0, 3.5, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+
+## Explore `date`
+
+``` r
+cleaner_data_2014 %>%
+  ggplot(aes(x = date)) +
+  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  labs(title = "Value Counts For Survey Season Dates")+
+  theme(legend.text = element_text(size = 8))
+```
+
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+**Numeric Summary of `date` in 2014**
+
+``` r
+summary(cleaner_data_2014$date)
+```
+
+    ##         Min.      1st Qu.       Median         Mean      3rd Qu.         Max. 
+    ## "2014-09-09" "2014-09-29" "2014-10-10" "2014-10-13" "2014-10-20" "2014-11-21" 
+    ##         NA's 
+    ##         "80"
+
+**NA and Unknown Values**
+
+-   4.2 % of values in the `date` column are NA.
 
 ## Explore Categorical Variables
 
@@ -160,81 +165,95 @@ table(cleaner_data_2014$location)
 ```
 
     ## 
-    ##               Big Bar         Big Hole East            Big Riffle 
-    ##                     2                     2                     3 
-    ##            Cottonwood       G95 East Bottom       Hatchery Riffle 
-    ##                    39                     2                   127 
+    ##   Below Big Hole East               Big Bar         Big Hole East 
+    ##                     1                     3                     2 
+    ##            Big Riffle            Cottonwood     Developing Riffle 
+    ##                     5                   101                     2 
+    ##       G95 East Bottom              G95 Main       Hatchery Riffle 
+    ##                     3                     1                   316 
     ##               Keister      Lower Auditorium       Lower McFarland 
-    ##                     3                   222                     2 
+    ##                     5                   525                     4 
     ##        Mid Auditorium              Mid Hour    Moe's Side Channel 
-    ##                    32                     6                    68 
+    ##                    95                    12                   102 
     ##     Top of Auditorium      Upper Auditorium      Upper Cottonwood 
-    ##                   101                    49                    39 
-    ## Upper Hatchery Riffle            Upper Hour            Vance East 
-    ##                    71                     1                     2
+    ##                   230                   194                   110 
+    ## Upper Hatchery Riffle            Upper Hour       Upper Hour east 
+    ##                   192                     2                     2 
+    ##       Upper McFarland            Vance East 
+    ##                     1                     3
 
 Locations names are changed to be consistent with the rest of the
 Feather River redd survey files:
 
 ``` r
 cleaner_data_2014 <- cleaner_data_2014 %>% 
-  mutate(location = tolower(location),
-         location = if_else(location == "g95 east bottom", "g95 east side channel bottom", location)
+  mutate(location = if_else(location == "G95 East Bottom", "G95 East Side Channel Bottom", location),
+         location = if_else(location == "Upper Hour east", "Upper Hour East", location)
          )
 table(cleaner_data_2014$location)
 ```
 
     ## 
-    ##                      big bar                big hole east 
-    ##                            2                            2 
-    ##                   big riffle                   cottonwood 
-    ##                            3                           39 
-    ## g95 east side channel bottom              hatchery riffle 
-    ##                            2                          127 
-    ##                      keister             lower auditorium 
-    ##                            3                          222 
-    ##              lower mcfarland               mid auditorium 
-    ##                            2                           32 
-    ##                     mid hour           moe's side channel 
-    ##                            6                           68 
-    ##            top of auditorium             upper auditorium 
-    ##                          101                           49 
-    ##             upper cottonwood        upper hatchery riffle 
-    ##                           39                           71 
-    ##                   upper hour                   vance east 
-    ##                            1                            2
+    ##          Below Big Hole East                      Big Bar 
+    ##                            1                            3 
+    ##                Big Hole East                   Big Riffle 
+    ##                            2                            5 
+    ##                   Cottonwood            Developing Riffle 
+    ##                          101                            2 
+    ## G95 East Side Channel Bottom                     G95 Main 
+    ##                            3                            1 
+    ##              Hatchery Riffle                      Keister 
+    ##                          316                            5 
+    ##             Lower Auditorium              Lower McFarland 
+    ##                          525                            4 
+    ##               Mid Auditorium                     Mid Hour 
+    ##                           95                           12 
+    ##           Moe's Side Channel            Top of Auditorium 
+    ##                          102                          230 
+    ##             Upper Auditorium             Upper Cottonwood 
+    ##                          194                          110 
+    ##        Upper Hatchery Riffle                   Upper Hour 
+    ##                          192                            2 
+    ##              Upper Hour East              Upper McFarland 
+    ##                            2                            1 
+    ##                   Vance East 
+    ##                            3
+
+**NA and Unknown Values**
 
 -   0 % of values in the `location` column are NA.
 
-## Variable:`Type`
+## Variable:`type`
 
-Description:  
-Area - polygon mapped with Trimble GPS unit Point - points mapped with
-Trimble GPS unit Questionable redds - polygon mapped with Trimble GPS
-unit where the substrate was disturbed but did not have the proper
-characteristics to be called a redd - it was no longer recorded after
-2014
+Description:
+
+-   Area - polygon mapped with Trimble GPS unit
+
+-   Point - points mapped with Trimble GPS unit
+
+-   Questionable redds - polygon mapped with Trimble GPS unit where the
+    substrate was disturbed but did not have the proper characteristics
+    to be called a redd - it was no longer recorded after 2011
 
 ``` r
 table(cleaner_data_2014$type)
 ```
 
     ## 
-    ##   a   p 
-    ##   6 765
+    ##    a    p 
+    ##    6 1905
 
 ``` r
 cleaner_data_2014 <- cleaner_data_2014 %>% 
   mutate(type = tolower(type),
          type = if_else(type == 'a', 'Area', type),
-         type = if_else(type == 'p', 'Point', type),
-         type = if_else(type == 'q', 'Questionable Redds', type))
+         type = if_else(type == 'p', 'Point', type))
 table(cleaner_data_2014$type)
 ```
 
     ## 
     ##  Area Point 
-    ##     6   765
+    ##     6  1905
 
 ## Expore Numeric Variables
 
@@ -243,37 +262,37 @@ cleaner_data_2014 %>%
   select_if(is.numeric) %>% colnames()
 ```
 
-    ##  [1] "salmon_counted"           "latitude"                
-    ##  [3] "longitude"                "depth_m"                 
-    ##  [5] "pot_depth_m"              "velocity_m/s"            
-    ##  [7] "percent_fine_substrate"   "percent_small_substrate" 
-    ##  [9] "percent_medium_substrate" "percent_large_substrate" 
-    ## [11] "percent_boulder"          "redd_width_m"            
-    ## [13] "redd_length_m"
+    ##  [1] "redd_count"               "salmon_count"            
+    ##  [3] "latitude"                 "longitude"               
+    ##  [5] "depth_m"                  "pot_depth_m"             
+    ##  [7] "velocity_m_per_s"         "percent_fine_substrate"  
+    ##  [9] "percent_small_substrate"  "percent_medium_substrate"
+    ## [11] "percent_large_substrate"  "percent_boulder"         
+    ## [13] "redd_width_m"             "redd_length_m"
 
-### Variable:`salmon_counted`
-
-#### Plotting salmon counted in 2014
+### Variable:`salmon_count`
 
 ``` r
 cleaner_data_2014 %>% 
-  ggplot(aes(x = date, y = salmon_counted)) + 
+  filter(is.na(date)==FALSE) %>% 
+  ggplot(aes(x = date, y = salmon_count)) + 
   geom_col() +
   facet_wrap(~year(date), scales = "free") +
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
   theme_minimal() +
   theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
   theme(axis.text.y = element_text(size = 8))+
-  labs(title = "Daily Salmon Counted in 2014")
+  labs(title = "Daily Count of Salmon in 2014")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
-**Numeric Daily Summary of salmon\_counted Over 2014**
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+**Numeric Daily Summary of salmon\_count Over 2014**
 
 ``` r
 cleaner_data_2014 %>%
   group_by(date) %>%
-  summarise(count = sum(salmon_counted, na.rm = T)) %>%
+  summarise(count = sum(salmon_count, na.rm = T)) %>%
   pull(count) %>%
   summary()
 ```
@@ -282,57 +301,109 @@ cleaner_data_2014 %>%
     ##    2.00   30.00   52.50   66.91   87.00  224.00
 
 ``` r
+#Find the most distinctive colours for visual
+colourCount = length(unique(cleaner_data_2014$location))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
+
 cleaner_data_2014  %>%
-  ggplot(aes(y = location, x = salmon_counted))+
-  geom_boxplot() +
+  ggplot(aes(x = salmon_count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram() +
   theme_minimal() +
-  theme(text = element_text(size = 10))+
-  scale_y_discrete()+
-  theme(axis.text.y = element_text(size = 8,vjust = 0.1, hjust=0.2))+
-  labs(title = "Salmon Count By Locations")
+  theme(text = element_text(size = 7))+
+  theme(axis.text.x = element_text(size = 10,vjust = 0.5, hjust=0.1))+
+  labs(title = "Daily Salmon Count Distribution",
+       x = 'Daily Salmon Count')+
+  guides(fill = guide_legend(nrow = 13),
+         shape = guide_legend(orride.aes = list(size =0.5)),
+         color = guide_legend(orride.aes = list(size = 0.5)))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
-**Numeric summary of salmon\_counted by location in 2014**
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+**Numeric summary of salmon\_count by location in 2014**
 
 ``` r
 cleaner_data_2014 %>%
   group_by(location) %>% 
-  summarise(count = sum(salmon_counted, na.rm = T)) %>% 
+  summarise(count = sum(salmon_count, na.rm = T)) %>% 
   pull(count) %>%
   summary()
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##    1.00    4.00   30.50   81.78  101.00  399.00
+    ##       0       2       4      64      66     399
 
-**NA and Unknown Values** \* 0 % of values in the `salmon_counted`
-column are NA.
+**NA and Unknown Values**
 
-### Variable:`redd_width_m`
+-   0 % of values in the `salmon_count` column are NA.
+
+### Variable:`redd_count`
+
+``` r
+cleaner_data_2014 %>% 
+  filter(is.na(date)==FALSE) %>% 
+  ggplot(aes(x = date, y = redd_count)) + 
+  geom_col() +
+  facet_wrap(~year(date), scales = "free") +
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
+  theme(axis.text.y = element_text(size = 8))+
+  labs(title = "Daily Count of Redds in 2014")
+```
+
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+``` r
+cleaner_data_2014  %>%
+  ggplot(aes(x = redd_count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram() +
+  theme_minimal() +
+  theme(text = element_text(size = 7))+
+  theme(axis.text.x = element_text(size = 10,vjust = 0.5, hjust=0.1))+
+  labs(title = "Daily Redd Count Distribution",
+       x = 'Daily Redd Count')+
+  guides(fill = guide_legend(nrow = 13),
+         shape = guide_legend(orride.aes = list(size =0.5)),
+         color = guide_legend(orride.aes = list(size = 0.5)))
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+**Numeric Daily Summary of redd\_count Over 2014**
 
 ``` r
 cleaner_data_2014 %>%
-  group_by(location) %>%
-  summarise(mean_redd_width = mean(redd_width_m, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_redd_width)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Mean Redd Width By Location")
+  group_by(date) %>%
+  summarise(count = sum(redd_count, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    1.00   50.00   83.50   90.05  121.75  187.00
+
+**NA and Unknown Values**
+
+-   0 % of values in the `redd_count` column are NA.
+
+### Variable:`redd_width_m`
 
 ``` r
 cleaner_data_2014 %>%
   ggplot(aes(x = redd_width_m)) +
   geom_histogram(binwidth = 0.3, color = "black", fill = "white") +
   scale_x_continuous(breaks = round(seq(min(cleaner_data_2014$redd_width_m, na.rm = TRUE), max(cleaner_data_2014$redd_width_m, na.rm = TRUE), by = 0.5),0))+
-  labs(title = "Count of Redd Width")
+  labs(title = "Redd Width Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Numeric Summary of redd\_width\_m Over 2014**
 
@@ -341,35 +412,23 @@ summary(cleaner_data_2014$redd_width_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.400   1.000   1.200   1.286   1.500   3.000     646
+    ##   0.400   1.000   1.200   1.266   1.500   4.000    1611
 
-**NA and Unknown Values** \* 83.8 % of values in the `redd_width_m`
-column are NA.
+**NA and Unknown Values**
+
+-   84.3 % of values in the `redd_width_m` column are NA.
 
 ### Variable: `redd_length_m`
-
-``` r
-cleaner_data_2014 %>%
-  group_by(location) %>%
-  summarise(mean_redd_length = mean(redd_length_m, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_redd_length)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Mean Redd Length By Location")
-```
-
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
 cleaner_data_2014 %>%
   ggplot(aes(x = redd_length_m)) +
   geom_histogram(binwidth = 0.5, color = "black", fill = "white") +
   scale_x_continuous(breaks = round(seq(min(cleaner_data_2014$redd_length_m, na.rm = TRUE), max(cleaner_data_2014$redd_length_m, na.rm = TRUE), by = 1),0))+
-  labs(title = "Count of Redd Length")
+  labs(title = "Redd Length Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Numeric Summary of redd\_length\_m Over 2014**
 
@@ -378,51 +437,44 @@ summary(cleaner_data_2014$redd_length_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.800   1.600   2.200   2.266   2.800   5.000     646
+    ##   0.700   1.600   2.150   2.234   2.825   5.000    1611
 
-**NA and Unknown Values** \* 83.8 % of values in the `redd_length_m`
-column are NA.
+**NA and Unknown Values**
 
-### Location Physical Attributes
+-   84.3 % of values in the `redd_length_m` column are NA.
+
+### Physical Attributes
 
 ### Variable: `longitude and latitude`
 
 ``` r
-# TODO: Mutate coordinate in the dataframe 
-utm_coords <- na.omit(subset(cleaner_data_2014, select = c("longitude", "latitude")))
-utm_coords <- SpatialPoints(utm_coords,
-                            proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
-long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
-summary(long_lat_coords)
+#Issue
+# utm_coords <- na.omit(subset(cleaner_data_2014, select = c("longitude", "latitude")))
+# utm_coords <- SpatialPoints(utm_coords,
+                            # proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
+# long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
+# summary(long_lat_coords)
 ```
 
-    ## Object of class SpatialPoints
-    ## Coordinates:
-    ##                   min       max
-    ## longitude -121.880687 -69.98774
-    ## latitude     3.954053  39.51689
-    ## Is projected: FALSE 
-    ## proj4string : [+proj=longlat +datum=WGS84 +no_defs]
-    ## Number of points: 764
+**NA and Unknown Values**
 
-**NA and Unknown Values** \* 0.9 % of values in the `longitude` column
-are NA.  
-\* 0.9 % of values in the `latitude` column are NA.
+-   0.4 % of values in the `longitude` column are NA.
+
+-   0.4 % of values in the `latitude` column are NA.
 
 ### Variable:`percent_fine_substrate`
 
 ``` r
 cleaner_data_2014 %>%
-  group_by(location) %>% 
-  summarise(mean_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_fine_substrate)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Fine Substrate By Location")
+  ggplot(aes(x = percent_fine_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 5, position = 'stack', color = "black") +
+  labs(title = "Percent Fine Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 **Numeric Summary of percent\_fine\_substrate Over 2014**
 
@@ -431,25 +483,25 @@ summary(cleaner_data_2014$percent_fine_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.000   0.000   5.000   7.366  10.000  90.000     640
+    ##   0.000   0.000   5.000   6.913  10.000  90.000    1600
 
-**NA and Unknown Values** \* 83 % of values in the
-`percent_fine_substrate` column are NA.
+**NA and Unknown Values**
+
+-   83.7 % of values in the `percent_fine_substrate` column are NA.
 
 ### Variable:`percent_small_substrate`
 
 ``` r
 cleaner_data_2014 %>%
-  group_by(location) %>% 
-  summarise(mean_small_substrate = mean(percent_small_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_small_substrate)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Small Substrate By Location")
+  ggplot(aes(x = percent_small_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 10, position = 'stack', color = "black") +
+  labs(title = "Percent Small Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 **Numeric Summary of percent\_small\_substrate Over 2014**
 
@@ -458,25 +510,25 @@ summary(cleaner_data_2014$percent_small_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##     0.0    20.0    30.0    31.3    40.0    90.0     640
+    ##    0.00   20.00   30.00   34.36   45.00   90.00    1600
 
-**NA and Unknown Values** \* 83 % of values in the
-`percent_small_substrate` column are NA.
+**NA and Unknown Values**
+
+-   83.7 % of values in the `percent_small_substrate` column are NA.
 
 ### Variable:`percent_medium_substrate`
 
 ``` r
 cleaner_data_2014 %>%
-  group_by(location) %>% 
-  summarise(mean_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_medium_substrate)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Medium Substrate By Location")
+  ggplot(aes(x = percent_medium_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 10, position = 'stack', color = "black") +
+  labs(title = "Percent Medium Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 **Numeric Summary of percent\_medium\_substrate Over 2014**
 
@@ -485,25 +537,25 @@ summary(cleaner_data_2014$percent_medium_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##     5.0    30.0    40.0    39.5    50.0    70.0     640
+    ##    0.00   30.00   40.00   38.73   50.00   75.00    1600
 
-**NA and Unknown Values** \* 83 % of values in the
-`percent_medium_substrate` column are NA.
+**NA and Unknown Values**
+
+-   83.7 % of values in the `percent_medium_substrate` column are NA.
 
 ### Variable:`percent_large_substrate`
 
 ``` r
 cleaner_data_2014 %>%
-  group_by(location) %>% 
-  summarise(mean_large_substrate = mean(percent_large_substrate, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_large_substrate)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Large Substrate By Location")
+  ggplot(aes(x = percent_large_substrate, fill = location)) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 10, position = 'stack', color = "black") +
+  labs(title = "Percent Large Substrate Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Numeric Summary of percent\_large\_substrate Over 2014**
 
@@ -512,25 +564,25 @@ summary(cleaner_data_2014$percent_large_substrate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00    5.00   15.00   19.31   30.00   60.00     640
+    ##    0.00    5.00   10.00   17.77   30.00   80.00    1600
 
-**NA and Unknown Values** \* 83 % of values in the
-`percent_large_substrate` column are NA.
+**NA and Unknown Values**
+
+-   83.7 % of values in the `percent_large_substrate` column are NA.
 
 ### Variable:`percent_boulder`
 
 ``` r
 cleaner_data_2014 %>%
-  group_by(location) %>% 
-  summarise(mean_boulder = mean(percent_boulder, na.rm = TRUE)) %>%
-  ggplot(aes(y = location, x = mean_boulder)) +
-  geom_col() +
-  theme_minimal() +
-  theme(text = element_text(size = 8)) +
-  labs(title = "Average Percentage of Boulder By Location")
+  ggplot(aes(x = percent_boulder, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  labs(title = "Percent Boulder Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 **Numeric Summary of percent\_boulder Over 2014**
 
@@ -539,25 +591,51 @@ summary(cleaner_data_2014$percent_boulder)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.000   0.000   0.000   2.939   0.000  55.000     640
+    ##   0.000   0.000   0.000   2.363   0.000  55.000    1600
 
-**NA and Unknown Values** NA and Unknown Values\*\* \* 83 % of values in
-the `percent_large_substrate` column are NA.
+**NA and Unknown Values**
 
-### Variable: `depth_m`
+-   83.7 % of values in the `percent_large_substrate` column are NA.
+
+### Summary of Mean Percent Substrate In Each Location
 
 ``` r
 cleaner_data_2014 %>% 
   group_by(location) %>% 
-  summarise(mean_depth_m = mean(depth_m, na.rm = TRUE)) %>%
-  ggplot(aes(x = mean_depth_m, y = location)) + 
-  geom_col() + 
-  theme_minimal() + 
-  theme(text = element_text(size = 8))+
-  labs(title = "Average Depth By Location")
+  summarise(mean_percent_fine_substrate = mean(percent_fine_substrate, na.rm = TRUE),
+            mean_percent_small_substrate = mean(percent_small_substrate, na.rm = TRUE),
+            mean_percent_medium_substrate = mean(percent_medium_substrate, na.rm = TRUE),
+            mean_percent_large_substrate = mean(percent_large_substrate, na.rm = TRUE),
+            mean_percent_boulder = mean(percent_boulder, na.rm = TRUE),
+            ) %>% 
+  pivot_longer(
+    cols = starts_with("mean"),
+    names_to = "substrate_type",
+    values_to = "percent",
+    values_drop_na = TRUE
+  ) %>%
+  ggplot(aes(fill = substrate_type,
+             y = location,
+             x = percent))+
+  geom_bar(position = 'stack', stat = 'identity', color = 'black')+
+  labs(title = "Mean Percent Substrate by Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+
+### Variable: `depth_m`
+
+``` r
+cleaner_data_2014 %>%
+  ggplot(aes(x = depth_m, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 0.15, position = 'stack', color = "black") +
+  labs(title = "Depth Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
+```
+
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 **Numeric Summary of depth\_m Over 2014**
 
 ``` r
@@ -565,25 +643,25 @@ summary(cleaner_data_2014$depth_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.1000  0.3250  0.4600  0.4744  0.5900  1.3000     640
+    ##  0.1000  0.3700  0.5000  0.5125  0.6400  1.3000    1599
 
-**NA and Unknown Values** NA and Unknown Values\*\* \* 83 % of values in
-the `depth_m` column are NA.
+**NA and Unknown Values**
+
+-   83.7 % of values in the `depth_m` column are NA.
 
 ### Variable: `pot_depth_m`
 
 ``` r
-cleaner_data_2014 %>% 
-  group_by(location) %>% 
-  summarise(mean_pot_depth_m = mean(pot_depth_m, na.rm = TRUE)) %>%
-  ggplot(aes(x = mean_pot_depth_m, y = location)) + 
-  geom_col() + 
-  theme_minimal() + 
-  theme(text = element_text(size = 8))+
-  labs(title = "Average Pot Depth By Location")
+cleaner_data_2014 %>%
+  ggplot(aes(x = pot_depth_m, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 0.15, position = 'stack', color = "black") +
+  labs(title = "Pot Depth Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 **Numeric Summary of pot\_depth\_m Over 2014**
 
 ``` r
@@ -591,61 +669,64 @@ summary(cleaner_data_2014$pot_depth_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.2600  0.4600  0.5500  0.5644  0.6800  1.2000     640
+    ##  0.2600  0.4800  0.5800  0.5949  0.7000  1.2000    1600
 
-**NA and Unknown Values** NA and Unknown Values\*\* \* 83 % of values in
-the `pot_depth_m` column are NA.
+**NA and Unknown Values**
 
-### Variable: `velocity_m/s`
+-   83.7 % of values in the `pot_depth_m` column are NA.
+
+### Variable: `velocity_m_per_s`
 
 ``` r
-cleaner_data_2014 %>% 
-  group_by(location) %>% 
-  summarise(`mean_velocity_m/s` = mean(`velocity_m/s`, na.rm = TRUE)) %>%
-  ggplot(aes(x = `mean_velocity_m/s`, y = location)) + 
-  geom_col() + 
-  theme_minimal() + 
-  theme(text = element_text(size = 8))+
-  labs(title = "Average Velocity By Location")
+cleaner_data_2014 %>%
+  ggplot(aes(x = velocity_m_per_s, fill = location, )) +
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram(binwidth = 0.25, position = 'stack', color = "black") +
+  labs(title = "Velocity Distribution")+
+  theme(legend.text = element_text(size = 8)) +
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
-**Numeric Summary of velocity\_m/s Over 2014**
+![](feather-river-redd-survey-qc-checklist-2014_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+
+**Numeric Summary of velocity\_m\_per\_s Over 2014**
 
 ``` r
-summary(cleaner_data_2014$`velocity_m/s`)
+summary(cleaner_data_2014$`velocity_m_per_s`)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.0900  0.4500  0.5600  0.6118  0.7400  1.9800     646
+    ##   0.060   0.450   0.560   0.601   0.720   1.980    1612
 
-**NA and Unknown Values** NA and Unknown Values\*\* \* 83.8 % of values
-in the `velocity_m/s` column are NA.
+**NA and Unknown Values**
+
+-   84.4 % of values in the `velocity_m_per_s` column are NA.
+
+### Add cleaned data back onto google cloud
 
 ``` r
 feather_redd_survey_2014 <- cleaner_data_2014 %>% glimpse()
 ```
 
-    ## Rows: 771
-    ## Columns: 16
+    ## Rows: 1,911
+    ## Columns: 17
     ## $ date                     <date> 2014-09-09, 2014-09-09, 2014-09-15, 2014-09-~
-    ## $ location                 <chr> "moe's side channel", "upper cottonwood", "co~
+    ## $ location                 <chr> "Moe's Side Channel", "Upper Cottonwood", "Co~
     ## $ type                     <chr> "Point", "Point", "Point", "Point", "Point", ~
-    ## $ salmon_counted           <dbl> 1, 1, 1, 3, 1, 1, 3, 1, 1, 1, 2, 3, 2, 1, 2, ~
-    ## $ latitude                 <dbl> 4375043, 4375121, 4375108, 4375110, 4375105, ~
-    ## $ longitude                <dbl> 6239424.4, 624284.0, 624147.7, 624158.1, 6242~
-    ## $ depth_m                  <dbl> 0.30, 0.62, NA, NA, 0.72, 0.55, 0.32, 0.62, 0~
-    ## $ pot_depth_m              <dbl> 0.50, 0.70, NA, NA, 0.76, 0.62, 0.40, 0.68, 0~
-    ## $ `velocity_m/s`           <dbl> 0.61, 0.89, NA, NA, 0.55, 0.77, 0.28, 0.74, 0~
-    ## $ percent_fine_substrate   <dbl> 40, 0, NA, NA, 0, 10, 20, 20, 10, 10, NA, 0, ~
-    ## $ percent_small_substrate  <dbl> 20, 65, NA, NA, 40, 20, 50, 20, 30, 30, NA, 2~
-    ## $ percent_medium_substrate <dbl> 35, 30, NA, NA, 50, 40, 50, 20, 40, 50, NA, 5~
-    ## $ percent_large_substrate  <dbl> 5, 5, NA, NA, 10, 30, 0, 10, 20, 10, NA, 30, ~
-    ## $ percent_boulder          <dbl> 0, 0, NA, NA, 0, 0, 0, 30, 0, 0, NA, 0, 0, 0,~
-    ## $ redd_width_m             <dbl> 1.10, 2.50, NA, NA, 1.50, 1.00, 1.00, 1.60, 2~
-    ## $ redd_length_m            <dbl> 2.00, 3.50, NA, NA, 2.00, 1.50, 1.90, 1.80, 1~
-
-### Add cleaned data back onto google cloud
+    ## $ redd_count               <dbl> 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
+    ## $ salmon_count             <dbl> 1, 1, 1, 0, 3, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, ~
+    ## $ latitude                 <dbl> 4375043, 4375121, 4375108, 4375106, 4375110, ~
+    ## $ longitude                <dbl> 6239424.4, 624284.0, 624147.7, 624150.0, 6241~
+    ## $ depth_m                  <dbl> 0.30, 0.62, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ pot_depth_m              <dbl> 0.50, 0.70, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ velocity_m_per_s         <dbl> 0.61, 0.89, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ percent_fine_substrate   <dbl> 40, 0, NA, NA, NA, NA, NA, NA, NA, NA, NA, 0,~
+    ## $ percent_small_substrate  <dbl> 20, 65, NA, NA, NA, NA, NA, NA, NA, NA, NA, 4~
+    ## $ percent_medium_substrate <dbl> 35, 30, NA, NA, NA, NA, NA, NA, NA, NA, NA, 5~
+    ## $ percent_large_substrate  <dbl> 5, 5, NA, NA, NA, NA, NA, NA, NA, NA, NA, 10,~
+    ## $ percent_boulder          <dbl> 0, 0, NA, NA, NA, NA, NA, NA, NA, NA, NA, 0, ~
+    ## $ redd_width_m             <dbl> 1.1, 2.5, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ redd_length_m            <dbl> 2.0, 3.5, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
@@ -653,31 +734,31 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(feather_redd_survey_2014,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/2014_Chinook_Redd_Survey_Data.csv")
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2014.csv")
 ```
 
-    ## i 2021-10-13 09:44:03 > File size detected as  67.2 Kb
+    ## i 2021-10-21 14:21:07 > File size detected as  170.2 Kb
 
-    ## i 2021-10-13 09:44:04 > Request Status Code:  400
+    ## i 2021-10-21 14:21:07 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-13 09:44:04 > File size detected as  67.2 Kb
+    ## i 2021-10-21 14:21:07 > File size detected as  170.2 Kb
 
     ## ==Google Cloud Storage Object==
-    ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/2014_Chinook_Redd_Survey_Data.csv 
+    ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2014.csv 
     ## Type:                csv 
-    ## Size:                67.2 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2F2014_Chinook_Redd_Survey_Data.csv?generation=1634143444311943&alt=media 
-    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2F2014_Chinook_Redd_Survey_Data.csv 
-    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2F2014_Chinook_Redd_Survey_Data.csv 
+    ## Size:                170.2 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2014.csv?generation=1634851267773684&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2014.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2014.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/2014_Chinook_Redd_Survey_Data.csv/1634143444311943 
-    ## MD5 Hash:            uBfgUrQo/7JU+5kxzhmC+Q== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2014.csv/1634851267773684 
+    ## MD5 Hash:            Z3F+jHQwDPPeq5f5QPoloQ== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-13 16:44:04 
-    ## Updated:             2021-10-13 16:44:04 
-    ## Generation:          1634143444311943 
+    ## Created:             2021-10-21 21:21:07 
+    ## Updated:             2021-10-21 21:21:07 
+    ## Generation:          1634851267773684 
     ## Meta Generation:     1 
-    ## eTag:                CIe/itzqx/MCEAE= 
-    ## crc32c:              LPnysA==
+    ## eTag:                CPSJzsi33PMCEAE= 
+    ## crc32c:              MihXBw==

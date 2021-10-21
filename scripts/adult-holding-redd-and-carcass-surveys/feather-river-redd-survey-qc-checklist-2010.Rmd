@@ -143,7 +143,7 @@ table(cleaner_data_2010$location)
 
 *  `r round(sum(is.na(cleaner_data_2010$location))/nrow(cleaner_data_2010), 3)*100` % of values in the `location` column are NA.
 
-## Variable:`Type`
+## Variable:`type`
 
 Description:    
 
@@ -389,7 +389,7 @@ summary(cleaner_data_2010$percent_large_substrate)
 cleaner_data_2010 %>%
   ggplot(aes(x = percent_boulder, fill = location)) +
   scale_fill_manual(values = getPalette(colourCount))+
-  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  geom_histogram(binwidth = 2, position = 'stack', color = "black") +
   labs(title = "Percent Boulder Distribution")+
   theme(legend.text = element_text(size = 8)) +
   guides(fill = guide_legend(nrow = 15))
@@ -473,8 +473,8 @@ summary(cleaner_data_2010$pot_depth_m)
 cleaner_data_2010 %>%
   ggplot(aes(x = velocity_m_per_s, fill = location, )) +
   scale_fill_manual(values = getPalette(colourCount))+
-  geom_histogram(binwidth = 0.75, position = 'stack', color = "black") +
-  labs(title = "Mean Velocity Distribution")+
+  geom_histogram(binwidth = 0.2, position = 'stack', color = "black") +
+  labs(title = "Velocity Distribution")+
   theme(legend.text = element_text(size = 8)) +
   guides(fill = guide_legend(nrow = 15))
 ```

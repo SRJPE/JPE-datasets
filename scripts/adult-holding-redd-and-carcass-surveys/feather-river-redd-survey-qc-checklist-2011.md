@@ -315,7 +315,6 @@ cleaner_data_2011 <- cleaner_data_2011 %>%
          location = if_else(location == "Top of Matthews", "Top of Mathews", location),
          location = if_else(location == "Upper Matthews", "Upper Mathews", location),
          location = if_else(location == "Upper Moe's Channel", "Upper Moes Channel", location),
-         location = if_else(location == "Top Vance East", "Upper Vance East", location),
          location = if_else(location == "Uppper Auditorium", "Upper Auditorium", location)
          )
 table(cleaner_data_2011$location)
@@ -368,20 +367,20 @@ table(cleaner_data_2011$location)
     ##                            6                          103 
     ##            Top Of Auditorium                  Top Of Hour 
     ##                           17                            8 
-    ##              Top Of Matthews                 Trailer Park 
-    ##                            2                          124 
-    ##             Upper Auditorium                Upper Bedrock 
-    ##                           19                           21 
-    ##               Upper Hatchery                Upper Mathews 
-    ##                           17                           68 
-    ##              Upper Mcfarland           Upper Moes Channel 
-    ##                            3                            2 
-    ##      Upper Moes Side Channel               Upper Robinson 
-    ##                            8                           79 
-    ##                  Upper Steep                  Upper Vance 
-    ##                            6                            1 
-    ##             Upper Vance East                   Vance East 
-    ##                           20                            3 
+    ##              Top Of Matthews               Top Vance East 
+    ##                            2                           20 
+    ##                 Trailer Park             Upper Auditorium 
+    ##                          124                           19 
+    ##                Upper Bedrock               Upper Hatchery 
+    ##                           21                           17 
+    ##                Upper Mathews              Upper Mcfarland 
+    ##                           68                            3 
+    ##           Upper Moes Channel      Upper Moes Side Channel 
+    ##                            2                            8 
+    ##               Upper Robinson                  Upper Steep 
+    ##                           79                            6 
+    ##                  Upper Vance                   Vance East 
+    ##                            1                            3 
     ##                   Vance West                         Weir 
     ##                            9                           31
 
@@ -389,7 +388,7 @@ table(cleaner_data_2011$location)
 
 -   0 % of values in the `location` column are NA.
 
-## Variable:`Type`
+## Variable:`type`
 
 Description:
 
@@ -749,7 +748,8 @@ cleaner_data_2011 %>%
 ```
 
 ![](feather-river-redd-survey-qc-checklist-2011_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
-\#\#\# Variable: `depth_m`
+
+### Variable: `depth_m`
 
 ``` r
 cleaner_data_2011 %>%
@@ -808,7 +808,7 @@ cleaner_data_2011 %>%
   ggplot(aes(x = velocity_m_per_s, fill = location, )) +
   scale_fill_manual(values = getPalette(colourCount))+
   geom_histogram(binwidth = 0.1, position = 'stack', color = "black") +
-  labs(title = "Mean Velocity Distribution")+
+  labs(title = "Velocity Distribution")+
   theme(legend.text = element_text(size = 8)) +
   guides(fill = guide_legend(nrow = 10))
 ```
@@ -862,28 +862,28 @@ gcs_upload(feather_redd_survey_2011,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2011.csv")
 ```
 
-    ## i 2021-10-19 15:04:06 > File size detected as  97.2 Kb
+    ## i 2021-10-21 14:00:14 > File size detected as  97.1 Kb
 
-    ## i 2021-10-19 15:04:06 > Request Status Code:  400
+    ## i 2021-10-21 14:00:14 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-19 15:04:06 > File size detected as  97.2 Kb
+    ## i 2021-10-21 14:00:14 > File size detected as  97.1 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2011.csv 
     ## Type:                csv 
-    ## Size:                97.2 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2011.csv?generation=1634681046086992&alt=media 
+    ## Size:                97.1 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2011.csv?generation=1634850014219288&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2011.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2011.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2011.csv/1634681046086992 
-    ## MD5 Hash:            85q6phJxv2OdkzOBjk57Rg== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2011.csv/1634850014219288 
+    ## MD5 Hash:            1aPVYY7tBC/VLJA19PqP1A== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-19 22:04:06 
-    ## Updated:             2021-10-19 22:04:06 
-    ## Generation:          1634681046086992 
+    ## Created:             2021-10-21 21:00:14 
+    ## Updated:             2021-10-21 21:00:14 
+    ## Generation:          1634850014219288 
     ## Meta Generation:     1 
-    ## eTag:                CNDqyri91/MCEAE= 
-    ## crc32c:              Za+k4g==
+    ## eTag:                CJiY7/Ky3PMCEAE= 
+    ## crc32c:              qVasnQ==

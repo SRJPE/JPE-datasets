@@ -311,7 +311,7 @@ table(cleaner_data_2010$location)
 
 -   0 % of values in the `location` column are NA.
 
-## Variable:`Type`
+## Variable:`type`
 
 Description:
 
@@ -643,7 +643,7 @@ summary(cleaner_data_2010$percent_large_substrate)
 cleaner_data_2010 %>%
   ggplot(aes(x = percent_boulder, fill = location)) +
   scale_fill_manual(values = getPalette(colourCount))+
-  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  geom_histogram(binwidth = 2, position = 'stack', color = "black") +
   labs(title = "Percent Boulder Distribution")+
   theme(legend.text = element_text(size = 8)) +
   guides(fill = guide_legend(nrow = 15))
@@ -748,8 +748,8 @@ summary(cleaner_data_2010$pot_depth_m)
 cleaner_data_2010 %>%
   ggplot(aes(x = velocity_m_per_s, fill = location, )) +
   scale_fill_manual(values = getPalette(colourCount))+
-  geom_histogram(binwidth = 0.75, position = 'stack', color = "black") +
-  labs(title = "Mean Velocity Distribution")+
+  geom_histogram(binwidth = 0.2, position = 'stack', color = "black") +
+  labs(title = "Velocity Distribution")+
   theme(legend.text = element_text(size = 8)) +
   guides(fill = guide_legend(nrow = 15))
 ```
@@ -803,28 +803,28 @@ gcs_upload(feather_redd_survey_2010,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2010.csv")
 ```
 
-    ## i 2021-10-19 14:28:44 > File size detected as  67.1 Kb
+    ## i 2021-10-21 14:03:28 > File size detected as  67.1 Kb
 
-    ## i 2021-10-19 14:28:44 > Request Status Code:  400
+    ## i 2021-10-21 14:03:28 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-19 14:28:44 > File size detected as  67.1 Kb
+    ## i 2021-10-21 14:03:28 > File size detected as  67.1 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2010.csv 
     ## Type:                csv 
     ## Size:                67.1 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2010.csv?generation=1634678924271165&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2010.csv?generation=1634850208639759&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2010.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2010.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2010.csv/1634678924271165 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2010.csv/1634850208639759 
     ## MD5 Hash:            f2t5i8njqBSiM4C7CwQ04g== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-19 21:28:44 
-    ## Updated:             2021-10-19 21:28:44 
-    ## Generation:          1634678924271165 
+    ## Created:             2021-10-21 21:03:28 
+    ## Updated:             2021-10-21 21:03:28 
+    ## Generation:          1634850208639759 
     ## Meta Generation:     1 
-    ## eTag:                CL286cS11/MCEAE= 
+    ## eTag:                CI/Wyc+z3PMCEAE= 
     ## crc32c:              /sJQHw==
