@@ -1,0 +1,620 @@
+---
+title: "Lower Sacramento (Knight's Landing) RST data QC - sampling effort"
+author: "Ashley Vizek"
+date: "10/19/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+```
+
+# Lower Sacramento (Knight's Landing) Rotary Screw Trap Data
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+10/04/2002 through 05/31/2021
+
+**Completeness of Record throughout timeframe:** 
+
+- The 2013 sampling period is not complete (Oct 2012 through Dec 2012)
+- We are missing data for 2017 and 2018. 
+
+**Sampling Location:**
+
+Knight's Landing
+
+
+**Data Contact:** 
+
+[Jeanine Phillips](mailto::Jeanine.Phillips@wildlife.ca.gov)
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+
+get_data <- function(name) {
+gcs_get_object(object_name = paste0("rst/lower-sac-river/data/knights-landing/knl_combine_", name,".csv"),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = paste0("knl_combine_", name, ".csv"),
+               overwrite = TRUE)
+}
+
+get_data("sampling_effort")
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet.
+Need to change data, start_date, stop_date into appropriate format. Make changes
+in changes section at end.
+
+```{r}
+# read in data to clean 
+knl_effort <- read.csv("knl_combine_sampling_effort.csv")
+glimpse(knl_effort)
+```
+
+## Data transformations
+
+This work was done in other rmd (1_knights_landing_initial_clean.Rmd, 2_knights_landing_combined_data.Rmd)
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables (this way we know we do not miss any)
+knl_effort %>%
+  select_if(is.numeric) %>%
+  colnames()
+```
+
+### Variable: `number_traps`
+
+**Plotting `number_traps` over Period of Record**
+
+This variable exists for years 2002-2011 and is consistently 2; except in a few cases.
+
+```{r}
+ggplot(knl_effort, aes(y = number_traps)) +
+  geom_boxplot() +
+  facet_wrap(~year(date))
+```
+
+**Numeric Summary of `number_traps` over Period of Record**
+
+```{r}
+knl_effort %>%
+  group_by(year(date)) %>%
+  summarize(mean = mean(number_traps, na.rm = T),
+            median = median(number_traps, na.rm = T),
+            min = min(number_traps, na.rm = T),
+            max = max(number_traps, na.rm = T),
+            na = length(which(is.na(number_traps))))
+```
+
+**NA and Unknown Values**
+
+Percent of NA:
+
+`r round(sum(is.na(knl_effort$number_traps))/nrow(knl_effort), 3) * 100` % of values in the `number_traps` column are NA.
+
+### Variable: `hrs_fished`
+
+**Plotting `hrs_fished` over Period of Record**
+
+
+```{r}
+# knl_effort %>%
+#   mutate(fake_year = 2000, 
+#          fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  
+  
+  ggplot(knl_effort, aes(hrs_fished)) +
+  geom_histogram() +
+  facet_wrap(~year(date))
+```
+
+**Numeric Summary of `hrs_fished` over Period of Record**
+
+```{r}
+knl_effort %>%
+  group_by(year(date)) %>%
+  summarize(mean = round(mean(hrs_fished, na.rm = T),2),
+            median = round(median(hrs_fished, na.rm = T),2),
+            min = round(min(hrs_fished, na.rm = T),2),
+            max = round(max(hrs_fished, na.rm = T),2),
+            na = length(which(is.na(hrs_fished))))
+```
+
+**NA and Unknown Values**
+
+Percent of NA:
+
+`r round(sum(is.na(knl_effort$hrs_fished))/nrow(knl_effort), 3) * 100` % of values in the `hrs_fished` column are NA.
+
+
+### Variable: `sampling_period_hrs`
+
+**Plotting `sampling_period_hrs` over Period of Record**
+
+Data for this variable was collected beginning in 2011 (sampling year 2012).
+
+```{r}
+ggplot(filter(knl_effort, year(date) >= 2011), aes(sampling_period_hrs)) +
+  geom_histogram() +
+  facet_wrap(~year(date))
+```
+
+**Numeric Summary of `sampling_period_hrs` over Period of Record**
+
+```{r}
+filter(knl_effort, year(date) >= 2011) %>%
+  group_by(year(date)) %>%
+  summarize(mean = round(mean(sampling_period_hrs, na.rm = T),2),
+            median = round(median(sampling_period_hrs, na.rm = T),2),
+            min = round(min(sampling_period_hrs, na.rm = T),2),
+            max = round(max(sampling_period_hrs, na.rm = T),2),
+            na = length(which(is.na(sampling_period_hrs))))
+```
+
+**NA and Unknown Values**
+
+Percent of NA:
+
+`r round(sum(is.na(knl_effort$sampling_period_hrs))/nrow(knl_effort), 3) * 100` % of values in the `sampling_period_hrs` column are NA.
+
+### Variable: `flow_cfs`
+
+**Plotting `flow_cfs` over Period of Record**
+
+```{r}
+ggplot(knl_effort, aes(y = flow_cfs)) +
+  geom_histogram() +
+  facet_wrap(~year(date))
+```
+
+```{r}
+knl_effort %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = flow_cfs)) +
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("") +
+  facet_wrap(~wy)
+```
+
+**Numeric Summary of `flow_cfs` over Period of Record**
+
+```{r}
+knl_effort %>%
+  group_by(year(date)) %>%
+  summarize(mean = round(mean(flow_cfs, na.rm = T),2),
+            median = round(median(flow_cfs, na.rm = T),2),
+            min = round(min(flow_cfs, na.rm = T),2),
+            max = round(max(flow_cfs, na.rm = T),2),
+            na = length(which(is.na(flow_cfs))))
+```
+
+**NA and Unknown Values**
+
+Percent of NA:
+
+`r round(sum(is.na(knl_effort$flow_cfs))/nrow(knl_effort), 3) * 100` % of values in the `flow_cfs` column are NA.
+
+### Variable: `secchi_ft`
+
+**Plotting `secchi_ft` over Period of Record**
+
+Data for this variable was not collected after 2014.
+
+```{r}
+ggplot(filter(knl_effort, year(date) <= 2014), aes(y = secchi_ft)) +
+  geom_histogram() +
+  facet_wrap(~year(date))
+```
+
+```{r}
+knl_effort %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = secchi_ft)) +
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("") +
+  facet_wrap(~wy)
+```
+
+**Numeric Summary of `secchi_ft` over Period of Record**
+
+```{r}
+filter(knl_effort, year(date) <= 2014) %>%
+  group_by(year(date)) %>%
+  summarize(mean = round(mean(secchi_ft, na.rm = T),2),
+            median = round(median(secchi_ft, na.rm = T),2),
+            min = round(min(secchi_ft, na.rm = T),2),
+            max = round(max(secchi_ft, na.rm = T),2),
+            na = length(which(is.na(secchi_ft))))
+```
+
+**NA and Unknown Values**
+
+Percent of NA:
+
+`r round(sum(is.na(knl_effort$secchi_ft))/nrow(knl_effort), 3) * 100` % of values in the `secchi_ft` column are NA.
+
+
+### Variable: `water_t_f`
+
+**Plotting `water_t_f` over Period of Record**
+
+
+```{r}
+ggplot(knl_effort, aes(y = water_t_f)) +
+  geom_histogram() +
+  facet_wrap(~year(date))
+```
+
+```{r}
+knl_effort %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = water_t_f)) +
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("") +
+  facet_wrap(~wy)
+```
+
+**Numeric Summary of `water_t_f` over Period of Record**
+
+
+```{r}
+knl_effort %>%
+  group_by(year(date)) %>%
+  summarize(mean = round(mean(water_t_f, na.rm = T),2),
+            median = round(median(water_t_f, na.rm = T),2),
+            min = round(min(water_t_f, na.rm = T),2),
+            max = round(max(water_t_f, na.rm = T),2),
+            na = length(which(is.na(water_t_f))))
+```
+
+Seems unlikely that water temp would be 0 in 2009. Check to make sure this isn't a typo.
+I think this is a typo and should be changed to 70. Made that change to knl_effort_changes 
+in change section below.
+
+```{r}
+filter(knl_effort, year(date) == 2009, water_t_f == 0)
+filter(knl_effort, year(date) == 2009, month(date) == 6)
+```
+
+**NA and Unknown Values**
+
+Percent of NA:
+
+`r round(sum(is.na(knl_effort$water_t_f))/nrow(knl_effort), 3) * 100` % of values in the `water_t_f` column are NA.
+
+### Variable: `klci`
+
+**Plotting `klci` over Period of Record**
+  
+Data for this variable was only collected in 2020 and 2021.
+Very few observations that are not 0. I may remove this variable from the combined dataset
+because there is so little information.
+
+```{r}
+ggplot(knl_effort, aes(y = klci)) +
+  geom_histogram()
+```
+
+**Numeric Summary of `klci` over Period of Record**
+  
+```{r}
+knl_effort %>%
+  group_by(year(date)) %>%
+  summarize(mean = round(mean(klci, na.rm = T),2),
+            median = round(median(klci, na.rm = T),2),
+            min = round(min(klci, na.rm = T),2),
+            max = round(max(klci, na.rm = T),2),
+            na = length(which(is.na(klci))))
+```
+
+**NA and Unknown Values**
+  
+  Percent of NA:
+  
+  `r round(sum(is.na(knl_effort$klci))/nrow(knl_effort), 3) * 100` % of values in the `klci` column are NA.
+  
+### Variable: `turbidity`
+
+**Plotting `turbidity` over Period of Record**
+  
+There are two turbidity units - NTU and FTU. FTU was only collected in 2014.
+I didn't notice any big differences though between values for NTU v FTU. There
+are some cases where turbidity gets to 1,000 which is in the realm of possibility.
+
+```{r}
+knl_effort %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = turbidity)) +
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("") +
+  facet_wrap(~wy)
+```
+
+**Numeric Summary of `turbidity` over Period of Record**
+  
+```{r}
+knl_effort %>%
+  group_by(year(date)) %>%
+  summarize(mean = round(mean(turbidity, na.rm = T),2),
+            median = round(median(turbidity, na.rm = T),2),
+            min = round(min(turbidity, na.rm = T),2),
+            max = round(max(turbidity, na.rm = T),2),
+            na = length(which(is.na(turbidity))))
+```
+
+**NA and Unknown Values**
+  
+  Percent of NA:
+  
+  `r round(sum(is.na(knl_effort$turbidity))/nrow(knl_effort), 3) * 100` % of values in the `turbidity` column are NA.
+  
+### Variable: `cone_id`
+
+**Plotting `cone_id` over Period of Record**
+  
+Data exists for all years.
+This variable should be re-categorized as a character.
+
+```{r}
+# knl_effort %>%
+#   mutate(fake_year = 2000, 
+#          fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+
+unique(knl_effort$cone_id)
+```
+
+
+**Numeric Summary of `cone_id` over Period of Record**
+  
+```{r}
+knl_effort %>%
+  group_by(year(date)) %>%
+  summarize(na = length(which(is.na(cone_id))))
+```
+
+**NA and Unknown Values**
+  
+  Percent of NA:
+  
+  `r round(sum(is.na(knl_effort$cone_id))/nrow(knl_effort), 3) * 100` % of values in the `cone_id` column are NA.
+
+### Variable: `cone_rpm`
+
+**Plotting `cone_rpm` over Period of Record**
+
+Data collected beginning in 2011 (sampling year 2012).
+
+```{r}
+ggplot(filter(knl_effort, year(date) >= 2011), aes(y = cone_rpm)) +
+  geom_histogram() +
+  facet_wrap(~year(date))
+```
+
+**Numeric Summary of `cone_rpm` over Period of Record**
+  
+```{r}
+knl_effort %>%
+  group_by(year(date)) %>%
+  summarize(mean = round(mean(cone_rpm, na.rm = T),2),
+            median = round(median(cone_rpm, na.rm = T),2),
+            min = round(min(cone_rpm, na.rm = T),2),
+            max = round(max(cone_rpm, na.rm = T),2),
+            na = length(which(is.na(cone_rpm))))
+```
+
+**NA and Unknown Values**
+  
+  Percent of NA:
+  
+`r round(sum(is.na(knl_effort$cone_rpm))/nrow(knl_effort), 3) * 100` % of values in the `cone_rpm` column are NA.
+  
+### Variable: `total_cone_rev`
+
+**Plotting `total_cone_rev` over Period of Record**
+
+Data for this variable was collected beginning in 2011 (sampling year 2012).
+
+```{r}
+ggplot(filter(knl_effort, year(date) >= 2011), aes(y = total_cone_rev)) +
+  geom_histogram() +
+  facet_wrap(~year(date))
+```
+
+**Numeric Summary of `total_cone_rev` over Period of Record**
+  
+```{r}
+knl_effort %>%
+  group_by(year(date)) %>%
+  summarize(mean = round(mean(total_cone_rev, na.rm = T),2),
+            median = round(median(total_cone_rev, na.rm = T),2),
+            min = round(min(total_cone_rev, na.rm = T),2),
+            max = round(max(total_cone_rev, na.rm = T),2),
+            na = length(which(is.na(total_cone_rev))))
+```
+It seems like the total_cone_rev at 20,495 is a typo but not enough information to be sure. Will leave as is.
+
+```{r}
+filter(knl_effort, total_cone_rev > 20000)
+filter(knl_effort, total_cone_rev > 12000)
+```
+
+**NA and Unknown Values**
+  
+  Percent of NA:
+  
+`r round(sum(is.na(knl_effort$total_cone_rev))/nrow(knl_effort), 3) * 100` % of values in the `total_cone_rev` column are NA.
+  
+  
+## Explore Categorical variables: {.tabset}
+
+General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
+
+Need to change dates to appropriate format!
+
+```{r}
+knl_effort %>%
+  select_if(is.character) %>%
+  colnames()
+```
+
+
+### Variable: `location`
+```{r}
+table(knl_effort$location) 
+```
+
+Some years do not have location variable filled in. Fill in for these years.
+
+```{r}
+filter(knl_effort, is.na(location)) %>%
+  group_by(year(date)) %>%
+  tally()
+```
+
+**NA and Unknown Values**
+
+`r round(sum(is.na(knl_effort$location))/nrow(knl_effort), 3) * 100` % of values in the `location` column are NA.
+
+### Variable: `gear`
+
+```{r}
+table(knl_effort$gear) 
+```
+
+Some years do not have gear filled in. Leave blank because do not know what gear type.
+Change to "2x 8 in" for the 2 x 8. I think these mean two 8 in cones.
+
+```{r}
+filter(knl_effort, is.na(gear)) %>%
+  group_by(year(date)) %>%
+  tally()
+```
+
+**NA and Unknown Values**
+
+`r round(sum(is.na(knl_effort$gear))/nrow(knl_effort), 3) * 100` % of values in the `gear` column are NA.
+
+### Variable: `cone_sampling_effort`
+
+I don't think this variable is very informative. Missing values for every year.
+
+```{r}
+table(knl_effort$cone_sampling_effort) 
+```
+
+
+```{r}
+filter(knl_effort, is.na(cone_sampling_effort)) %>%
+  group_by(year(date)) %>%
+  tally()
+```
+
+**NA and Unknown Values**
+
+`r round(sum(is.na(knl_effort$cone_sampling_effort))/nrow(knl_effort), 3) * 100` % of values in the `cone_sampling_effort` column are NA.
+
+### Variable: `turbidity_units`
+```{r}
+table(knl_effort$turbidity_units) 
+```
+
+Some years do not have location variable filled in. Fill in for these years.
+
+```{r}
+filter(knl_effort, is.na(turbidity_units)) %>%
+  group_by(year(date)) %>%
+  tally()
+```
+
+**NA and Unknown Values**
+
+`r round(sum(is.na(knl_effort$turbidity_units))/nrow(knl_effort), 3) * 100` % of values in the `turbidity_units` column are NA.
+
+### Variable: `comments`
+
+```{r}
+filter(knl_effort, is.na(comments)) %>%
+  group_by(year(date)) %>%
+  tally()
+```
+
+**NA and Unknown Values**
+
+`r round(sum(is.na(knl_effort$comments))/nrow(knl_effort), 3) * 100` % of values in the `comments` column are NA.
+
+## Make any changes identified
+
+```{r make_changes}
+knl_effort_changes <- knl_effort %>%
+  # fix typo in water_t_f
+  mutate(water_t_f = case_when(date == "2009-06-17" ~ 70,
+                               T ~ water_t_f),
+         # cone_id as character instead of numeric
+         cone_id = as.character(cone_id),
+         # fix date formatting
+         date = as.Date(date),
+         start_date = ymd_hms(start_date),
+         stop_date = ymd_hms(stop_date),
+         # fill in location for all
+         location = "KL",
+         # change name for gear
+         gear = case_when(gear %in% c("2 x 8' Cone", "2X 8' Cone") ~ "2x 8 in cone",
+                          # all rst data so just leave blank for now
+                          gear == "RST" ~ NA_character_,
+                          T ~ gear)) %>%
+  # very little data, only for sampling year 2021 so remove.
+  select(-klci)
+```
+
+### Save cleaned data back to google cloud 
+
+```{r}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+upload_data <- function(data, name) {
+gcs_upload(data,
+           object_function = f,
+           type = "csv",
+           name = paste0("rst/lower-sac-river/data/knights-landing/knl_combine_", name, ".csv"))
+}
+
+upload_data(knl_effort_changes, "sampling_effort")
+```
