@@ -1,0 +1,914 @@
+---
+title: "Lower Sacramento (Knight's Landing) RST data QC - clean all years"
+author: "Ashley Vizek"
+date: "10/08/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(openxlsx)
+# used with clean_names()
+library(janitor)
+# used with japply
+library(taRifx)
+library()
+```
+
+# Lower Sacramento (Knight's Landing) Rotary Screw Trap Data
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+10/04/2002 through 05/31/2021
+
+**Completeness of Record throughout timeframe:** 
+
+- The 2013 sampling period is not complete (Oct 2012 through Dec 2012)
+- We are missing data for 2017 and 2018. 
+
+**Sampling Location:**
+
+Knight's Landing
+
+
+**Data Contact:** 
+
+[Jeanine Phillips](mailto::Jeanine.Phillips@wildlife.ca.gov)
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+# git data and save as xlsx
+files <- tibble(year = c(2003, 2004, 2006, 2008:2013, 2005, 2007, 2014:2016, 2019:2021),
+                filetype = c(rep(".xls", 9), rep(".xlsx", 5), rep(".csv", 3)))
+get_data <- function(year, filetype) {
+gcs_get_object(object_name = paste0("rst/lower-sac-river/data-raw/knights-landing/knights_landing_RST_", year, filetype),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = paste0("raw_knights_landing_rst_data_", year, filetype),
+               overwrite = TRUE)
+}
+
+pmap(files, get_data)
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r, include = F}
+# read in data to clean 
+# not all of these data sheets are the same so need to individually address
+# TODO could probably condense this using pmap
+rst_2003_raw <- readxl::read_xls("raw_knights_landing_rst_data_2003.xls", skip = 3)
+rst_2004_raw <- readxl::read_xls("raw_knights_landing_rst_data_2004.xls", skip = 3)
+rst_2005_raw <- readxl::read_xlsx("raw_knights_landing_rst_data_2005.xlsx", skip = 3)
+rst_2006_raw <- readxl::read_xls("raw_knights_landing_rst_data_2006.xls", skip = 3)
+rst_2007_raw <- readxl::read_xlsx("raw_knights_landing_rst_data_2007.xlsx", skip = 3)
+rst_2008_raw <- readxl::read_xls("raw_knights_landing_rst_data_2008.xls", skip = 3)
+# added n_max because there is a character in date column "End" that is messing up how dates are being read in
+rst_2009_raw <- readxl::read_xls("raw_knights_landing_rst_data_2009.xls", skip = 3, n_max = 138)
+rst_2010_raw <- readxl::read_xls("raw_knights_landing_rst_data_2010.xls", skip = 3, n_max = 140)
+rst_2011_raw <- readxl::read_xls("raw_knights_landing_rst_data_2011.xls", skip = 3)
+# there are merged cells here
+rst_2012_raw <- readxl::read_xls("raw_knights_landing_rst_data_2012.xls", skip = 3)
+rst_2013_raw <- readxl::read_xls("raw_knights_landing_rst_data_2013.xls", skip = 3)
+rst_2014_raw <- readxl::read_xlsx("raw_knights_landing_rst_data_2014.xlsx", skip = 3)
+rst_2015_raw <- readxl::read_xlsx("raw_knights_landing_rst_data_2015.xlsx", skip = 3)
+rst_2016_raw <- readxl::read_xlsx("raw_knights_landing_rst_data_2016.xlsx", skip = 3)
+rst_2019_raw <- read.csv("raw_knights_landing_rst_data_2019.csv", skip = 4)
+rst_2020_raw <- read.csv("raw_knights_landing_rst_data_2020.csv", skip = 4)
+rst_2021_raw <- read.csv("raw_knights_landing_rst_data_2021.csv", skip = 4)
+```
+
+## Data transformations
+
+The data cleaning process used here has 4 main steps. The goal is to get the variable names and formats for all years to match the main list of column names (i.e. "new names"); and to complete an initial cleaning to make sure these steps worked correctly.
+
+1. Prepare the data to be mapped to new column names.
+
+- The `prep_data` function is used to create unique variable names for columns named with a number. Some of the datasets contained merged cells. The first row of the merged cell was read so the name was assigned to first column in the merged cells and other others were assigned a number. These numbers map to specific variable names but the same number might map to two different names depending on the year. The `prep_data` function pastes the year to the column names where the name is a number so they can be mapped to the correct new name based on the years.
+
+2. Rename old names to new names.
+
+- I manually created a mapping of variable names where all the different varieties of the old name are mapped to the new name.
+- The function `rename_cols` renames a column in the dataframe with the new name if the current name matches one of the names in the list of old names.
+- It would be more efficient to code `rename_cols` iteratively across all column mappings instead of applying each separately.
+
+3. Variable formatting
+
+- Some of the dates are not read in correctly. This is fixed using `date_handling`
+- Some columns that should be numeric are read as characters. This is fixed using `format_numeric_cols`
+- There are a few case-by-case transformations that are also made.
+
+4. Check cleaning and additional processing
+
+- The last step of this process is to check that the transformations are working and not causing additional errors. This is done by visual inspections of variable names, checking for duplicate dates, checking for dates that are outside of the sampling period for that year, and checking NAs. In some cases, an NA may exist because some of the reformatting did not work correctly. For instance, some times were not formatted with a colon and were not transformed correctly. These will show up as an NA and were manually checked against the raw data. If any additional changes were needed they were made here.
+
+Clean "raw" data are uploaded back to the cloud for each year.
+
+```{r prep_data, include = F}
+# function for cleaning names
+# some datasets include merged cells so they have variable names with a number. These numbers will map to variable names but sometimes the same number maps to a different variable name depending on the year so i added year to all columns with a number
+
+prep_data <- function(data) {
+  date_cols <- c("Date","Stop Date","Stop.Date")
+  yr <- data %>%
+    select(which(names(data) %in% date_cols)) %>%
+    rename_with(~ paste("date")) %>%
+    mutate(year = as.numeric(year(date))) %>%
+  slice_max(date)
+  yr <- as.character(yr$year)
+
+  data %>%
+    clean_names() %>%
+    rename_with(~ paste0(yr, .), starts_with("x"))
+}
+```
+
+```{r rename_cols, include = F}
+# mapping variables
+# TODO make this into an iterative function
+
+# Fork length
+fork_length_min_mm <- c("min_fl", "2012x15", "2013x15","2014x18", "unmarked_chinook_catch","unmarked_cs_min_fl")
+fork_length_max_mm <- c("max_fl", "2012x16", "2013x16","2014x19", "2015x15","2016x15", "unmarked_cs_max_fl")
+# counts
+number_marked_cs <- c("number_ad_clip_cs", "marked_chinook_catch")
+number_marked_sh <- c("number_ad_clip_sh", "marked_steelhead_catch")
+number_unmarked_sh <- c("number_unclip_sh", "unmarked_steelhead_catch")
+number_marked_fall <- c("marked_fall_cs")
+number_marked_spring <- c("marked_spring_cs")
+number_marked_winter <- c("marked_winter_cs")
+number_marked_late_fall <- c("marked_late_fall_cs")
+number_fall <- c("2012x17", "2013x17","2014x20", "2015x16","2016x16", "unmarked_fall_cs")
+number_spring <- c("2012x18","2013x18", "2014x21","2015x17","2016x17", "unmarked_spring_cs")
+number_winter <- c("2012x19", "2013x19","2014x22","2015x18","2016x18", "unmarked_winter_cs")
+number_late_fall <- c("2012x20", "2013x20","2014x23","2015x19","2016x19", "unmarked_late_fall_cs")
+number_older_juv <- c("unmarked_older_juv_cs")
+# total catch for unmarked included in some years
+catch <- c("unmarked_chinook")
+species <- c("spp")
+# cpue
+cpue_fall <- c("fall_spring_cpue", "fall_spring_cpue_catch_per_hour", "catch_per_unit_effort_catch_per_hour",
+               "cpue_fall_run_chinook")
+cpue_spring <- c("fall_spring_cpue", "fall_spring_cpue_catch_per_hour", "2015x24","2016x24",
+                 "cpue_spring_run_chinook")
+cpue_winter <- c("winter_late_fall_cpue", "winter_late_fall_cpue_catch_per_hour", "2015x25","2016x25",
+                 "cpue_winter_run_chinook")
+cpue_late_fall <- c("winter_late_fall_cpue", "winter_late_fall_cpue_catch_per_hour","2015x26","2016x26",
+                    "cpue_late_fall_run_chinook")
+cpue_steelhead <- c("unclip_sh_cpue", "unclip_sh_cpue_catch_per_hour","2015x27","2016x27")
+# sampling time and hours
+sampling_period_hrs <- c("hrs_since_last_trap_check","num_of_hours_during_sampling_period")
+hrs_fished <- c("total_hrs_fished", "total_hours_fished")
+# cone information
+total_cone_rev_8_4 <- c("2012x9", "2013x9","2014x12", "2015x9","2016x9","total_cone_rev_8_4_rl")
+total_cone_rev_8_3 <- c("total_cone_rev","total_cone_rev_8_3_rr")
+cone_rpm_8_3 <- c("cone_rpm","cone_rpm_8_3_rr")
+cone_rpm_8_4 <- c("2012x7", "2013x7","2014x10", "2015x7","2016x7","cone_rpm_8_4_rl")
+number_traps <- c("number_rs_ts")
+# environmental variables
+water_t_f <- c("2015x12","2016x12")
+turbidity_ntu <- c("2015x13","2016x13")
+flow_cfs <- c("flow_cfs_wlk", "environmental_information","river_flow_cfs_wlk")
+# comments
+comments <- c("2009x24", "2010x24", "2011x24")
+
+rename_cols <- function(data) {
+  data %>%
+    rename_with(~ paste("number_traps"), which(names(data) %in% number_traps)) %>%
+    rename_with(~ paste("species"), which(names(data) %in% species)) %>%
+    rename_with(~ paste("catch"), which(names(data) %in% catch)) %>%
+    rename_with(~ paste("fork_length_min_mm"), which(names(data) %in% fork_length_min_mm))  %>%
+    rename_with(~ paste("fork_length_max_mm"), which(names(data) %in% fork_length_max_mm)) %>%
+    rename_with(~ paste("number_marked_cs"), which(names(data) %in% number_marked_cs)) %>%
+    rename_with(~ paste("number_marked_sh"), which(names(data) %in% number_marked_sh)) %>%
+    rename_with(~ paste("number_unmarked_sh"), which(names(data) %in% number_unmarked_sh)) %>%
+    rename_with(~ paste("number_marked_fall"), which(names(data) %in% number_marked_fall)) %>%
+    rename_with(~ paste("number_marked_spring"), which(names(data) %in% number_marked_spring)) %>%
+    rename_with(~ paste("number_marked_winter"), which(names(data) %in% number_marked_winter)) %>%
+    rename_with(~ paste("number_marked_late_fall"), which(names(data) %in% number_marked_late_fall)) %>%
+    rename_with(~ paste("number_fall"), which(names(data) %in% number_fall)) %>%
+    rename_with(~ paste("number_spring"), which(names(data) %in% number_spring)) %>%
+    rename_with(~ paste("number_winter"), which(names(data) %in% number_winter)) %>%
+    rename_with(~ paste("number_late_fall"), which(names(data) %in% number_late_fall)) %>%
+    rename_with(~ paste("number_older_juv"), which(names(data) %in% number_older_juv)) %>%
+    rename_with(~ paste("cpue_fall"), which(names(data) %in% cpue_fall)) %>%
+    rename_with(~ paste("cpue_spring"), which(names(data) %in% cpue_spring)) %>%
+    rename_with(~ paste("cpue_winter"), which(names(data) %in% cpue_winter)) %>%
+    rename_with(~ paste("cpue_late_fall"), which(names(data) %in% cpue_late_fall)) %>%
+    rename_with(~ paste("cpue_steelhead"), which(names(data) %in% cpue_steelhead)) %>%
+    rename_with(~ paste("sampling_period_hrs"), which(names(data) %in% sampling_period_hrs)) %>%
+    rename_with(~ paste("total_cone_rev_8_4"), which(names(data) %in% total_cone_rev_8_4)) %>%
+    rename_with(~ paste("total_cone_rev_8_3"), which(names(data) %in% total_cone_rev_8_3)) %>%
+    rename_with(~ paste("cone_rpm_8_3"), which(names(data) %in% cone_rpm_8_3)) %>%
+    rename_with(~ paste("cone_rpm_8_4"), which(names(data) %in% cone_rpm_8_4)) %>%
+    rename_with(~ paste("hrs_fished"), which(names(data) %in% hrs_fished)) %>%
+    rename_with(~ paste("flow_cfs"), which(names(data) %in% flow_cfs)) %>%
+    rename_with(~ paste("water_t_f"), which(names(data) %in% water_t_f)) %>%
+    rename_with(~ paste("turbidity_ntu"), which(names(data) %in% turbidity_ntu)) %>%
+    rename_with(~ paste("comments"), which(names(data) %in% comments)) 
+}
+
+# col_test <- function(old, new) {
+#   rst_2003_clean %>%
+#     rename_with(~ paste(new), which(names(rst_2003_clean) %in% old))
+# }
+# 
+# fork_length_min_mm <- c("min_fl", "2012x15", "2013x15","2014x18", "unmarked_chinook_catch","unmarked_cs_min_fl")
+# fork_length_max_mm <- c("max_fl", "2012x16", "2013x16","2014x19", "2015x15","2016x15", "unmarked_cs_max_fl")
+# 
+# col_map <- tibble(new = list(c("fork_length_min_mm"),
+#                           c("fork_length_max_mm")),
+#                   old = list(c("min_fl", "2012x15", "2013x15","2014x18", "unmarked_chinook_catch","unmarked_cs_min_fl"),
+#                              c("max_fl", "2012x16", "2013x16","2014x19", "2015x15","2016x15", "unmarked_cs_max_fl")))
+# test <- map_df(col_map, col_test)
+# 
+# test <- col_test("fork_length_min_mm", c("min_fl", "2012x15", "2013x15","2014x18", "unmarked_chinook_catch","unmarked_cs_min_fl"))
+# test <- map(col_map, col_test)
+```
+
+```{r date_handling, include = F}
+# date handling for 2019, 2020, 2021
+date_handling <- function(data) {
+  data %>%
+    filter(`Start.Date` != "", !is.na(`Start.Date`)) %>%
+  # dates were read in weird
+  mutate(`Start.Date` = mdy(`Start.Date`), 
+         `Stop.Date` = mdy(`Stop.Date`),
+         # there are some missing so replace using stop/start
+          `Start.Date` = case_when(is.na(`Start.Date`) ~ `Stop.Date`- 1, 
+                                   T ~ `Start.Date`),
+          `Stop.Date` = case_when(is.na(`Stop.Date`) ~ `Start.Date`+ 1, 
+                                   T ~ `Stop.Date`),
+         `Start.Date` = as.POSIXct(paste(as.Date(`Start.Date`), "00:00:00")),
+         `Start.Time` = as.POSIXct(hm(`Start.Time`), origin = "1970-01-01", tz = "UTC"),
+         `Stop.Date` = as.POSIXct(paste(as.Date(`Stop.Date`), "00:00:00")),
+         `Stop.Time` = as.POSIXct(hm(`Stop.Time`), origin = "1970-01-01", tz = "UTC"),
+         `River.Flow..cfs....WLK` = as.numeric(gsub(",","", `River.Flow..cfs....WLK`)))
+}
+```
+
+```{r format_numeric_cols, include = F}
+# function for formatting variables that should be numeric as numeric
+numeric_cols <- c("catch","flow_cfs", "water_t_f","secchi_ft", "klci",
+                  "fork_length_min_mm", "fork_length_max_mm", "turbidity_ntu",
+                  "turbidity_ftu", "hrs_fished", "sampling_period_hrs", 
+                  "number_fall", "number_late_fall", "number_marked_cs", "number_marked_fall",
+                  "number_marked_late_fall", "number_marked_sh","number_marked_spring",
+                  "number_marked_winter", "number_older_juv","number_spring", "number_traps",
+                  "number_unmarked_sh", "number_winter", "total_cone_rev_8_3", "total_cone_rev_8_4",
+                  "cone_rpm_8_3","cone_rpm_8_4","cpue_fall", "cpue_late_fall",
+                  "cpue_spring","cpue_steelhead", "cpue_winter")
+format_numeric_cols <- function(data) {
+    japply(data, (which(names(data) %in% numeric_cols)), as.numeric)
+}
+```
+
+```{r apply_data_cleaning, include = F}
+# For each year apply the prep_data, rename_cols, and format_numeric_cols functions
+# some years may have a few one-off changes to make
+
+# 2003 ####
+rst_2003_fmt <- filter(rst_2003_raw, !is.na(Location)) %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols() %>%
+  as.data.frame()
+
+# 2004 ####
+# the last column here is moved down a row. it needs to be moved up.
+rst_2004_col23 <- rst_2004_raw[,23] %>%
+  rename("Unclip SH CPUE" = `...23`) %>%
+  filter(`Unclip SH CPUE` != "Unclip SH CPUE")
+rst_2004_fmt <- rst_2004_raw[,1:22] %>%
+  filter(!is.na(Location)) %>%
+  cbind(rst_2004_col23) %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols()
+
+# 2005 ####
+rst_2005_fmt <- filter(rst_2005_raw, !is.na(Date)) %>%
+  prep_data() %>%
+  rename_cols() %>%
+  format_numeric_cols()
+  
+# 2006 ####
+rst_2006_fmt <- rst_2006_raw %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols()
+
+# 2007 ####
+rst_2007_fmt <- rst_2007_raw %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols()
+
+# 2008 ####
+rst_2008_fmt <- rst_2008_raw %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols()
+
+# 2009 ####
+# 2009. Only column additional is notes column
+# last column is for notes but is not labeled
+# last two rows do not contain data
+rst_2009_fmt <- rst_2009_raw %>%
+  filter(!is.na(Location)) %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols()
+
+# 2010 ####
+# 2010. Only column additional is notes column
+# last column is for notes but is not labeled
+# last two rows do not contain data
+rst_2010_fmt <- rst_2010_raw %>%
+  filter(!is.na(Location)) %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols()
+
+# 2011 ####
+# last column is for notes but is not labeled
+rst_2011_fmt <- rst_2011_raw %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols()
+
+# 2012 ####
+# There were merged cells in the data so that is why the names look so weird
+rst_2012_fmt <- rst_2012_raw %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # one extra row at top read in due to merged cells
+  filter(!is.na(location)) %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols()
+
+# 2013 ####
+# There were merged cells in the data so that is why the names look so weird
+# labeled with year 2012 because only has data through december 2012
+rst_2013_fmt <- rst_2013_raw %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # one extra row at top read in due to merged cells
+  filter(!is.na(location)) %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>%
+  format_numeric_cols()
+
+# 2014 ####
+rst_2014_fmt <- rst_2014_raw %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # one extra row at top read in due to merged cells
+  filter(!is.na(location)) %>%
+  # combined fall/spring, winter/late-fall cpue so only renamed to one, add in other
+  mutate(cpue_fall = cpue_spring,
+         cpue_winter = cpue_late_fall) %>% 
+  format_numeric_cols()
+
+# 2015 ####
+rst_2015_fmt <- rst_2015_raw %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # two rows at top were read in due to merged cells
+  filter(!is.na(start_date)) %>%
+  format_numeric_cols()
+
+# 2016 ####
+rst_2016_fmt <- rst_2016_raw %>%
+  mutate(
+         # times read in as numbers
+         `Start Time` = as.POSIXct((`Start Time`) * 86400, origin = "1970-01-01", tz = "UTC"),
+         `Stop Time` = as.POSIXct((`Stop Time`) * 86400, origin = "1970-01-01", tz = "UTC")) %>%
+  prep_data() %>%
+  rename_cols() %>%
+  # extra rows at top due to reading in merged cells
+  filter(!is.na(start_date)) %>%
+  format_numeric_cols()
+
+# 2019 ####
+rst_2019_fmt <- rst_2019_raw %>%
+  date_handling() %>%
+  prep_data() %>%
+  rename_cols() %>%
+  format_numeric_cols()
+
+# 2020 ####
+rst_2020_fmt <- rst_2020_raw %>%
+  date_handling() %>%
+  prep_data() %>%
+  rename_cols() %>%
+  format_numeric_cols()
+
+# 2021 #####
+rst_2021_fmt <- rst_2021_raw %>%
+  date_handling() %>%
+  prep_data() %>%
+  rename_cols() %>%
+  format_numeric_cols()
+```
+
+**Summary of years with additional changes**
+- 2004: Duplicate dates (1). Decided that one of the duplicates was maybe a typo and assigned it to date prior.
+- 2006: Duplicate dates (2). This was not a typo because dates before and after exist. Decided to combine into one row. These might be real duplicates but since there is no time variable we can not distinguish them.
+- 2014: Dates with wrong year (4). Corrected.
+- 2016: Dates with wrong year (1). Corrected.
+- 2019: Start times formatted incorrectly (3). Corrected using raw.
+- 2021: Stop time formatted incorrectly (1). Corrected using raw.
+
+```{r check_2003}
+# final checks to make sure variables are formatted correctly
+# 2003
+str(rst_2003_fmt)
+# any duplicate dates ?
+rst_2003_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2003_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2002, 2003))
+# 3 rows where species is NA. Confirmed with raw data. These are days when they
+# weren't fishing.
+# How do we want to handle those? We could add 0 to counts. For now I will leave as NA
+# days when catch is.na corresponds to the days with no fishing
+
+# fork_length will be NA when 0 fish were caught
+# same number of na min/max fork length
+
+# 3 missing for all count and cpue variables
+rst_2003_fmt[rowSums(is.na(rst_2003_fmt)) > 0,]
+
+# 2003 initial cleaning complete.
+```
+
+```{r check_2004}
+# 2004
+str(rst_2004_fmt)
+# any duplicate dates ?
+rst_2004_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# there is one duplicate date - 2003-12-08?? 
+rst_2004_fmt %>%
+  mutate(date = as.Date(date)) %>%
+  filter(date == "2003-12-08")
+# make sure all dates are in the sample frame
+rst_2004_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2003, 2004))
+# there are some cases where min fork length is not entered even if catch for unmarked cs
+# there is always a max if unmarked cs are caught
+rst_2004_fmt[rowSums(is.na(rst_2004_fmt)) > 0,]
+
+# we can either combine into one row or make the judgement call that maybe the first entry was for 12/6 or 12/7?
+# i think we should change to 12/7
+rst_2004_fmt_changes <- rst_2004_fmt %>%
+  mutate(date = case_when(as.Date(date) == "2003-12-08" & hrs_fished == 145.75 ~ as.POSIXct("2003-12-07"),
+                          T ~ date))
+
+# 2004 initial cleaning complete
+```
+
+```{r check_2005}
+# 2005 
+str(rst_2005_fmt)
+# any duplicate dates ?
+rst_2005_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2005_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2004, 2005))
+# there are some cases where min/max fork length is not entered even if catch for unmarked cs
+# one case where number_unmarked_sh is NA but will just leave as is
+rst_2005_fmt[rowSums(is.na(rst_2005_fmt)) > 0,]
+
+# 2005 initial cleaning complete.
+```
+
+```{r check_2006}
+# 2006 
+str(rst_2006_fmt)
+# any duplicate dates ?
+# there are duplicate dates
+rst_2006_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+rst_2006_fmt %>%
+  mutate(date = as.Date(date)) %>%
+  filter(date == "2005-12-04" | date == "2005-12-21")
+# make sure all dates are in the sample frame
+rst_2006_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2005, 2006))
+
+rst_2006_fmt[rowSums(is.na(rst_2006_fmt)) > 0,]
+
+# decided to combine the duplicate rows into one row because no dates before or after are missing
+# entered character variables in manually after double checking them
+rst_2006_fmt_changes <- rst_2006_fmt %>%
+  group_by(date) %>%
+  summarize(
+    location = "KL",
+    gear = "RST",
+    number_traps = mean(number_traps),
+    hrs_fished = sum(hrs_fished),
+    flow_cfs = mean(flow_cfs),
+    water_t_f = mean(water_t_f),
+    secchi_ft = mean(secchi_ft),
+    turbidity_ntu = mean(turbidity_ntu),
+    species = "CS",
+    catch = sum(catch),
+    fork_length_min_mm = min(fork_length_min_mm),
+    fork_length_max_mm = max(fork_length_max_mm),
+    number_fall = sum(number_fall),
+    number_spring = sum(number_spring),
+    number_winter = sum(number_winter),
+    number_late_fall = sum(number_late_fall),
+    number_marked_cs = sum(number_marked_cs),
+    number_marked_sh = sum(number_marked_sh),
+    cpue_spring = (number_fall + number_spring) / (hrs_fished/24),
+    cpue_late_fall = (number_late_fall = number_winter) / (hrs_fished/24),
+    cpue_steelhead = number_marked_sh / (hrs_fished/24),
+    cpue_fall = cpue_spring,
+    cpue_winter = cpue_late_fall)
+    
+rst_2006_fmt_changes %>%
+  mutate(date = as.Date(date)) %>%
+  filter(date == "2005-12-04" | date == "2005-12-21")
+
+# 2006 initial cleaning complete
+```
+
+```{r check_2007}
+# 2007
+str(rst_2007_fmt)
+  # any duplicate dates ?
+rst_2007_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2007_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2006, 2007))
+# missing min/mx fl mostly when no cs unmarked catch except for one instance
+rst_2007_fmt[rowSums(is.na(rst_2007_fmt)) > 0,]
+# 2007 initial cleaning complete. no changes
+```
+
+```{r check_2008}
+# 2008
+str(rst_2008_fmt)
+  # any duplicate dates ?
+rst_2008_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2008_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2007, 2008))
+# missing min/mx fl when no cs catch
+rst_2008_fmt[rowSums(is.na(rst_2008_fmt)) > 0,]
+
+# 2008 initial cleaning complete
+```
+
+```{r check_2009}
+# 2009 
+str(rst_2009_fmt)
+  # any duplicate dates ?
+rst_2009_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2009_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2008, 2009))
+# missing min/mx fl mostly when no cs unmarked catch except for one instance
+rst_2009_fmt[rowSums(is.na(select(rst_2009_fmt, -comments))) > 0,]
+
+# 2009 initial cleaning complete
+```
+
+```{r check_2010}
+# 2010
+str(rst_2010_fmt)
+  # any duplicate dates ?
+rst_2010_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2010_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2009, 2010))
+# missing min/mx fl no cs catch
+rst_2010_fmt[rowSums(is.na(select(rst_2010_fmt, -comments))) > 0,]
+
+# 2010 initial cleaning complete
+```
+
+```{r check_2011}
+# 2011
+str(rst_2011_fmt)
+  # any duplicate dates ?
+rst_2011_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2011_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2010, 2011))
+# missing min/mx fl when no cs catch
+rst_2011_fmt[rowSums(is.na(select(rst_2011_fmt, -comments, -turbidity_ntu))) > 0,]
+
+# 2011 initial cleaning complete
+```
+
+```{r check_2012}
+# 2012
+str(rst_2012_fmt)
+  # any duplicate dates ?
+rst_2012_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2012_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2011, 2012))
+# missing min/mx fl mostly when no cs unmarked catch except for one instance
+# missing one total cone rev 8_4
+# one cpue_steelhead missing leave as is
+rst_2012_fmt[rowSums(is.na(select(rst_2012_fmt, -comments))) > 0,]
+
+# 2012 initial cleaning complete
+```
+
+```{r check_2013}
+# 2013
+str(rst_2013_fmt)
+  # any duplicate dates ?
+rst_2013_fmt %>%
+  group_by(date) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2013_fmt %>%
+  mutate(date = as.Date(date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2012, 2013))
+# one date when 0 catch
+rst_2013_fmt[rowSums(is.na(select(rst_2013_fmt, -comments))) > 0,]
+filter(rst_2013_fmt, is.na(hrs_fished))
+
+# 2013 initial cleaning is complete
+```
+
+```{r check_2014}
+# 2014
+str(rst_2014_fmt)
+  # any duplicate dates ?
+rst_2014_fmt %>%
+  group_by(start_date, start_time) %>%
+  tally() %>%
+  filter(n > 1)
+# there are a lot of duplicate dates. i think this is because a trap in started and stopped and then restarted in same day
+# the start times are different
+# i think that it is easier to use the data as daily instead of day/time but maybe that is analyst decision
+# we can leave these in for now because they are real duplicates
+# make sure all dates are in the sample frame
+
+# few instances where the year in the date is incorrect. need to fix these
+rst_2014_fmt %>%
+  mutate(date = as.Date(stop_date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2013, 2014))
+# one date when 0 catch
+rst_2014_fmt[rowSums(is.na(select(rst_2014_fmt, -comments))) > 0,]
+
+rst_2014_fmt_changes <- rst_2014_fmt %>%
+  mutate(stop_date = case_when(as.Date(stop_date) == "2012-11-08" ~ as.POSIXct("2013-11-08"),
+                               as.Date(stop_date) == "2012-11-09" ~ as.POSIXct("2013-11-09"),
+                               as.Date(stop_date) == "2012-11-10" ~ as.POSIXct("2013-11-10"),
+                               as.Date(stop_date) == "2012-11-11" ~ as.POSIXct("2013-11-11"),
+                               T ~ stop_date))
+
+# 2014 initial cleaning complete
+```
+
+```{r check_2015}
+# 2015
+str(rst_2015_fmt)
+  # any duplicate dates ?
+rst_2015_fmt %>%
+  group_by(start_date, start_time) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+# few instances where the year in the date is incorrect. need to fix these
+rst_2015_fmt %>%
+  mutate(date = as.Date(stop_date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2014, 2015))
+# only one missing turbidity value
+rst_2015_fmt[rowSums(is.na(select(rst_2015_fmt, -comments))) > 0,]
+
+# 2015 initial cleaning complete
+```
+
+```{r check_2016}
+# 2016 
+str(rst_2016_fmt)
+  # any duplicate dates ?
+rst_2016_fmt %>%
+  group_by(start_date, start_time) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+# one where the year in the date is incorrect. need to fix these
+rst_2016_fmt %>%
+  mutate(date = as.Date(stop_date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2015, 2016))
+filter(rst_2016_fmt, as.Date(stop_date) == "2014-10-05")
+
+str(rst_2016_fmt_changes)
+# one date when 0 catch
+glimpse(rst_2016_fmt[rowSums(is.na(select(rst_2016_fmt, -comments))) > 0,])
+
+rst_2016_fmt_changes <- rst_2016_fmt %>%
+  mutate(stop_date = case_when(as.Date(stop_date) == "2014-10-05" ~ as.POSIXct("2015-10-05"),
+                               T ~ stop_date),
+         total_cone_rev_8_3 = as.numeric(total_cone_rev_8_3),
+         total_cone_rev_8_4 = as.numeric(total_cone_rev_8_4))
+
+# 2016 initial cleaning complete
+```
+
+```{r check_2019}
+# 2019
+str(rst_2019_fmt)
+  # any duplicate dates ?
+rst_2019_fmt %>%
+  group_by(start_date, start_time) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2019_fmt %>%
+  mutate(date = as.Date(stop_date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2018, 2019))
+# one date when 0 catch
+glimpse(rst_2019_fmt[rowSums(is.na(select(rst_2019_fmt, -comments))) > 0,])
+# NAs in start time because they weren't formatted correctly. fix based on raw
+filter(rst_2019_fmt, is.na(start_time))
+
+rst_2019_fmt_changes <- rst_2019_fmt %>%
+  mutate(start_time = case_when(as.Date(start_date) == "2018-11-24" ~ as.POSIXct("1970-01-01 11:00:00"),
+                                as.Date(start_date) == "2019-04-17" ~ as.POSIXct("1970-01-01 10:15:00"),
+                                T ~ start_time),
+         stop_time = case_when(as.Date(start_date) == "2018-11-23" ~ as.POSIXct("1970-01-01 11:00:00"),
+                               T ~ stop_time))
+
+# 2019 initial cleaning complete
+```
+
+```{r check_2020}
+# 2020
+str(rst_2020_fmt)
+  # any duplicate dates ?
+rst_2020_fmt %>%
+  group_by(start_date, start_time) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2020_fmt %>%
+  mutate(date = as.Date(stop_date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2019, 2020))
+# one date when 0 catch
+glimpse(rst_2020_fmt[rowSums(is.na(select(rst_2020_fmt, -comments))) > 0,])
+
+# 2020 initial cleaning complete
+```
+
+```{r check_2021}
+# 2021
+str(rst_2021_fmt)
+  # any duplicate dates ?
+rst_2021_fmt %>%
+  group_by(start_date, start_time) %>%
+  tally() %>%
+  filter(n > 1)
+# make sure all dates are in the sample frame
+rst_2021_fmt %>%
+  mutate(date = as.Date(stop_date),
+         year = year(date)) %>% 
+  filter(! year %in% c(2020, 2021))
+# one date when 0 catch
+rst_2021_fmt[rowSums(is.na(select(rst_2021_fmt, -comments))) > 0,]
+# NAs in stop time because they weren't formatted correctly. fix based on raw
+filter(rst_2021_fmt, is.na(stop_time))
+
+rst_2021_fmt_changes <- rst_2021_fmt %>%
+  mutate(stop_time = case_when(as.Date(start_date) == "2021-01-13" ~ as.POSIXct("1970-01-01 12:00:00"),
+                               T ~ stop_time))
+
+# 2021 initial cleaning complete
+```
+
+```{r cleaned_raw_uploads, include = F}
+f <- function(input, output) write_csv(input, file = output)
+
+upload_data <- function(data, year) {
+gcs_upload(data,
+           object_function = f,
+           type = "csv",
+           name = paste0("rst/lower-sac-river/data/knights-landing/knl_rst_", year, ".csv"))
+}
+
+upload_data(rst_2003_fmt, 2003)
+upload_data(rst_2004_fmt_changes, 2004)
+upload_data(rst_2005_fmt, 2005)
+upload_data(rst_2006_fmt_changes, 2006)
+upload_data(rst_2007_fmt, 2007)
+upload_data(rst_2008_fmt, 2008)
+upload_data(rst_2009_fmt, 2009)
+upload_data(rst_2010_fmt, 2010)
+upload_data(rst_2011_fmt, 2011)
+upload_data(rst_2012_fmt, 2012)
+upload_data(rst_2013_fmt, 2013)
+upload_data(rst_2014_fmt_changes, 2014)
+upload_data(rst_2015_fmt, 2015)
+upload_data(rst_2016_fmt_changes, 2016)
+upload_data(rst_2019_fmt_changes, 2019)
+upload_data(rst_2020_fmt, 2020)
+upload_data(rst_2021_fmt_changes, 2021)
+```
