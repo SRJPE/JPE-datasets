@@ -694,28 +694,28 @@ gcs_upload(feather_redd_survey_2016,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2016.csv")
 ```
 
-    ## i 2021-10-21 14:31:50 > File size detected as  140 Kb
+    ## i 2021-10-22 13:32:07 > File size detected as  140 Kb
 
-    ## i 2021-10-21 14:31:50 > Request Status Code:  400
+    ## i 2021-10-22 13:32:07 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-21 14:31:50 > File size detected as  140 Kb
+    ## i 2021-10-22 13:32:07 > File size detected as  140 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2016.csv 
     ## Type:                csv 
     ## Size:                140 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2016.csv?generation=1634851910642586&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2016.csv?generation=1634934727637032&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2016.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2016.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2016.csv/1634851910642586 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2016.csv/1634934727637032 
     ## MD5 Hash:            YwOQl6WVBz6jDGMrE2IsYA== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-21 21:31:50 
-    ## Updated:             2021-10-21 21:31:50 
-    ## Generation:          1634851910642586 
+    ## Created:             2021-10-22 20:32:07 
+    ## Updated:             2021-10-22 20:32:07 
+    ## Generation:          1634934727637032 
     ## Meta Generation:     1 
-    ## eTag:                CJrXk/u53PMCEAE= 
+    ## eTag:                CKjwr73u3vMCEAE= 
     ## crc32c:              OlcVjQ==

@@ -117,9 +117,16 @@ cleaner_data_2012 %>%
   labs(title = "Value Counts For Survey Season Dates")+
   theme(legend.text = element_text(size = 8))
 ```
+
+**Numeric summary of date in 2012**
 ```{r}
 summary(cleaner_data_2012$date)
 ```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data_2012$'date'))/nrow(cleaner_data_2012), 3)*100` % of values in the `date` column are NA.
+
 ## Explore Categorical Variables
 
 ```{r}
@@ -198,7 +205,7 @@ cleaner_data_2012 %>%
   labs(title = "Daily Count of Salmon in 2012")
 ```
 
-**Numeric Daily Summary of salmon_counted Over 2012**
+**Numeric Daily Summary of salmon_count Over 2012**
 ```{r}
 cleaner_data_2012 %>%
   group_by(date) %>%
@@ -225,7 +232,7 @@ cleaner_data_2012  %>%
          color = guide_legend(orride.aes = list(size = 0.5)))
 ```
 
-**Numeric summary of salmon_counted by location in 2012**
+**Numeric summary of salmon_count by location in 2012**
 ```{r}
 cleaner_data_2012 %>%
   group_by(location) %>% 

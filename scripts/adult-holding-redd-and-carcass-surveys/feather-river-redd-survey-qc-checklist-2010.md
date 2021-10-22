@@ -803,28 +803,28 @@ gcs_upload(feather_redd_survey_2010,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2010.csv")
 ```
 
-    ## i 2021-10-21 14:03:28 > File size detected as  67.1 Kb
+    ## i 2021-10-22 13:28:55 > File size detected as  67.1 Kb
 
-    ## i 2021-10-21 14:03:28 > Request Status Code:  400
+    ## i 2021-10-22 13:28:56 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-21 14:03:28 > File size detected as  67.1 Kb
+    ## i 2021-10-22 13:28:56 > File size detected as  67.1 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2010.csv 
     ## Type:                csv 
     ## Size:                67.1 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2010.csv?generation=1634850208639759&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2010.csv?generation=1634934535948645&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2010.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2010.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2010.csv/1634850208639759 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2010.csv/1634934535948645 
     ## MD5 Hash:            f2t5i8njqBSiM4C7CwQ04g== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-21 21:03:28 
-    ## Updated:             2021-10-21 21:03:28 
-    ## Generation:          1634850208639759 
+    ## Created:             2021-10-22 20:28:55 
+    ## Updated:             2021-10-22 20:28:55 
+    ## Generation:          1634934535948645 
     ## Meta Generation:     1 
-    ## eTag:                CI/Wyc+z3PMCEAE= 
+    ## eTag:                COWS/OHt3vMCEAE= 
     ## crc32c:              /sJQHw==

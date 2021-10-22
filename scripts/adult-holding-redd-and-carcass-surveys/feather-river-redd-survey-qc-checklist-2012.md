@@ -153,12 +153,18 @@ cleaner_data_2012 %>%
 
 ![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
+**Numeric summary of date in 2012**
+
 ``` r
 summary(cleaner_data_2012$date)
 ```
 
     ##         Min.      1st Qu.       Median         Mean      3rd Qu.         Max. 
     ## "2012-08-08" "2012-09-28" "2012-10-05" "2012-10-09" "2012-10-17" "2012-11-07"
+
+**NA and Unknown Values**
+
+-   0 % of values in the `date` column are NA.
 
 ## Explore Categorical Variables
 
@@ -374,7 +380,7 @@ cleaner_data_2012 %>%
 
 ![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
-**Numeric Daily Summary of salmon\_counted Over 2012**
+**Numeric Daily Summary of salmon\_count Over 2012**
 
 ``` r
 cleaner_data_2012 %>%
@@ -410,7 +416,7 @@ cleaner_data_2012  %>%
 
 ![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
-**Numeric summary of salmon\_counted by location in 2012**
+**Numeric summary of salmon\_count by location in 2012**
 
 ``` r
 cleaner_data_2012 %>%
@@ -807,28 +813,28 @@ gcs_upload(feather_redd_survey_2012,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv")
 ```
 
-    ## i 2021-10-21 14:13:20 > File size detected as  129.8 Kb
+    ## i 2021-10-22 13:21:23 > File size detected as  129.8 Kb
 
-    ## i 2021-10-21 14:13:20 > Request Status Code:  400
+    ## i 2021-10-22 13:21:23 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-21 14:13:20 > File size detected as  129.8 Kb
+    ## i 2021-10-22 13:21:23 > File size detected as  129.8 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv 
     ## Type:                csv 
     ## Size:                129.8 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv?generation=1634850800766714&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv?generation=1634934083077301&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv/1634850800766714 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv/1634934083077301 
     ## MD5 Hash:            MsxIb4tJJHvmaQKc+hvsKg== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-21 21:13:20 
-    ## Updated:             2021-10-21 21:13:20 
-    ## Generation:          1634850800766714 
+    ## Created:             2021-10-22 20:21:23 
+    ## Updated:             2021-10-22 20:21:23 
+    ## Generation:          1634934083077301 
     ## Meta Generation:     1 
-    ## eTag:                CPqd9um13PMCEAE= 
+    ## eTag:                CLWJg4rs3vMCEAE= 
     ## crc32c:              kOyPWg==

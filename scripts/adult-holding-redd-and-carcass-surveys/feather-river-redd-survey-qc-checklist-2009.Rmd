@@ -195,13 +195,20 @@ cleaner_data_2009 %>%
 ```
 
 ```{r}
+#Find the most distinctive colours for visual
+colourCount = length(unique(cleaner_data_2009$location))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
+
 cleaner_data_2009  %>%
-  ggplot(aes(y = location, x = salmon_count))+
-  geom_boxplot() +
+  ggplot(aes(x = salmon_count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram() +
   theme_minimal() +
   theme(text = element_text(size = 12))+
   theme(axis.text.x = element_text(size = 10,vjust = 0.5, hjust=0.1))+
-  labs(title = "Salmon Count By Locations")
+  labs(title = "Daily Salmon Count Distribution",
+       x = 'Daily Salmon Count')+
+  guides(fill = guide_legend(nrow = 10))
 ```
 
 **Numeric Daily Summary of salmon_count Over 2009**
@@ -232,10 +239,6 @@ cleaner_data_2009 %>%
   labs(title = "Daily Count of Redds in 2009")
 ```
 ```{r}
-#Find the most distinctive colours for visual
-colourCount = length(unique(cleaner_data_2009$location))
-getPalette = colorRampPalette(brewer.pal(12, "Paired"))
-
 cleaner_data_2009  %>%
   ggplot(aes(x = redd_count, fill = location))+
   scale_fill_manual(values = getPalette(colourCount))+

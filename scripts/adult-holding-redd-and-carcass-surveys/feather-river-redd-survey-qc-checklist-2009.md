@@ -3,6 +3,63 @@ feather-river-adult-holding-redd-survey-qc-checklist-2009
 Inigo Peng
 10/6/2021
 
+``` r
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+```
+
+    ## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+
+    ## v ggplot2 3.3.5     v purrr   0.3.4
+    ## v tibble  3.1.4     v dplyr   1.0.7
+    ## v tidyr   1.1.3     v stringr 1.4.0
+    ## v readr   2.0.1     v forcats 0.5.1
+
+    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+    ## x dplyr::filter() masks stats::filter()
+    ## x dplyr::lag()    masks stats::lag()
+
+``` r
+library(lubridate)
+```
+
+    ## 
+    ## Attaching package: 'lubridate'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     date, intersect, setdiff, union
+
+``` r
+library(googleCloudStorageR)
+```
+
+    ## v Setting scopes to https://www.googleapis.com/auth/devstorage.full_control and https://www.googleapis.com/auth/cloud-platform
+
+    ## v Successfully auto-authenticated via ../../config.json
+
+    ## v Set default bucket name to 'jpe-dev-bucket'
+
+``` r
+library(ggplot2)
+library(scales)
+```
+
+    ## 
+    ## Attaching package: 'scales'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     discard
+
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
+
+``` r
+library (RColorBrewer)
+```
+
 # Feather River Redd Survey Data
 
 ## Description of Monitoring Data
@@ -149,7 +206,7 @@ cleaner_data_2009 %>%
   theme(legend.text = element_text(size = 8))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data_2009$date)
@@ -266,19 +323,28 @@ cleaner_data_2009 %>%
   labs(title = "Daily Count of Salmon in 2009")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
+#Find the most distinctive colours for visual
+colourCount = length(unique(cleaner_data_2009$location))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
+
 cleaner_data_2009  %>%
-  ggplot(aes(y = location, x = salmon_count))+
-  geom_boxplot() +
+  ggplot(aes(x = salmon_count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_histogram() +
   theme_minimal() +
   theme(text = element_text(size = 12))+
   theme(axis.text.x = element_text(size = 10,vjust = 0.5, hjust=0.1))+
-  labs(title = "Salmon Count By Locations")
+  labs(title = "Daily Salmon Count Distribution",
+       x = 'Daily Salmon Count')+
+  guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 **Numeric Daily Summary of salmon\_count Over 2009**
 
@@ -311,13 +377,9 @@ cleaner_data_2009 %>%
   labs(title = "Daily Count of Redds in 2009")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
-#Find the most distinctive colours for visual
-colourCount = length(unique(cleaner_data_2009$location))
-getPalette = colorRampPalette(brewer.pal(12, "Paired"))
-
 cleaner_data_2009  %>%
   ggplot(aes(x = redd_count, fill = location))+
   scale_fill_manual(values = getPalette(colourCount))+
@@ -332,7 +394,7 @@ cleaner_data_2009  %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 **Numeric Daily Summary of total redd\_count Over 2009**
 
@@ -361,7 +423,7 @@ cleaner_data_2009 %>%
   labs(title = "Redd Width Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 **Numeric Summary of redd\_width\_m Over 2009**
 
@@ -386,7 +448,7 @@ cleaner_data_2009 %>%
   labs(title = "Redd Length Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 **Numeric Summary of redd\_length\_m Over 2009**
 
@@ -415,7 +477,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 **Numeric Summary of percent\_fine\_substrate Over 2009**
 
@@ -442,7 +504,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 **Numeric Summary of percent\_small\_substrate Over 2009**
 
@@ -469,7 +531,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 **Numeric Summary of percent\_medium\_substrate Over 2009**
 
@@ -496,7 +558,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 **Numeric Summary of percent\_large\_substrate Over 2009**
 
@@ -523,7 +585,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Numeric Summary of percent\_boulder Over 2009**
 
@@ -562,7 +624,7 @@ cleaner_data_2009 %>%
   labs(title = "Mean Percent Substrate by Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 ### Variable: `depth_m`
 
@@ -576,7 +638,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 
 **Numeric Summary of depth\_m Over 2009**
 
@@ -603,7 +665,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 **Numeric Summary of pot\_depth\_m Over 2009**
 
@@ -630,7 +692,7 @@ cleaner_data_2009 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2009_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 
 **Numeric Summary of velocity\_m\_per\_s Over 2009**
 
@@ -678,28 +740,28 @@ gcs_upload(feather_redd_survey_2009,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv")
 ```
 
-    ## i 2021-10-19 13:58:13 > File size detected as  19.8 Kb
+    ## i 2021-10-22 13:24:48 > File size detected as  19.8 Kb
 
-    ## i 2021-10-19 13:58:13 > Request Status Code:  400
+    ## i 2021-10-22 13:24:48 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-19 13:58:13 > File size detected as  19.8 Kb
+    ## i 2021-10-22 13:24:48 > File size detected as  19.8 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv 
     ## Type:                csv 
     ## Size:                19.8 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv?generation=1634677093435071&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv?generation=1634934288489718&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2009.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv/1634677093435071 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2009.csv/1634934288489718 
     ## MD5 Hash:            nqfUAaw5wY2t18jOk96N8g== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-19 20:58:13 
-    ## Updated:             2021-10-19 20:58:13 
-    ## Generation:          1634677093435071 
+    ## Created:             2021-10-22 20:24:48 
+    ## Updated:             2021-10-22 20:24:48 
+    ## Generation:          1634934288489718 
     ## Meta Generation:     1 
-    ## eTag:                CL+N6Nuu1/MCEAE= 
+    ## eTag:                CPa5/Ovs3vMCEAE= 
     ## crc32c:              oXTTdw==
