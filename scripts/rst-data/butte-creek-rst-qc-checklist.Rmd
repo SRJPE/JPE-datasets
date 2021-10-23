@@ -20,6 +20,7 @@ This dataset contains data for all Chinook salmon that were captured in the Butt
 
 **Timeframe:** 
 
+1995 - 2015
 
 **Completeness of Record throughout timeframe:**
 
@@ -28,6 +29,7 @@ This dataset contains data for all Chinook salmon that were captured in the Butt
 
 **Sampling Location:** 
 
+3 locations on Butte Creek
 
 **Data Contact:** [Jessica Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
@@ -80,7 +82,7 @@ raw_data = readxl::read_excel('butte_creek_rst_raw.xlsx',
 glimpse(raw_data)
 ```
 
-## Data Transformation
+## Data Transformations
 ```{r}
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>%
@@ -127,7 +129,7 @@ cleaner_data %>% select_if(is.character) %>% colnames()
 ```
 ### Variable `station`
 
-#Description: trap location
+# Description: trap location
 
 * BCADAMS - Adams Dam
 
@@ -152,7 +154,7 @@ table(cleaner_data$station)
 
 ### Variable `method`
 
-#Description: method of capture
+# Description: method of capture
 
 * DSTR - Diversion fyke trap
 
@@ -166,6 +168,7 @@ cleaner_data <- cleaner_data %>%
          method = if_else(method == 'RSTR', 'Rotary Screw Trap', method))
 table(cleaner_data$method)
 ```
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$method))/nrow(cleaner_data), 3)*100` % of values in the `method` column are NA.
@@ -173,7 +176,7 @@ table(cleaner_data$method)
 
 ### Variable `trap_status`
 
-#Description: 
+# Description: 
 
 * Check - trap was checked normally , continued fishing
 
@@ -183,6 +186,7 @@ table(cleaner_data$method)
 ```{r}
 table(cleaner_data$trap_status)
 ```
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$trap_status))/nrow(cleaner_data), 3)*100` % of values in the `trap_status` column are NA.
@@ -190,7 +194,7 @@ table(cleaner_data$trap_status)
 
 ### Variable `organism_code`
 
-#Description: we are interested in Chinooks only
+# Description: we are interested in Chinooks only
 
 ```{r}
 table(cleaner_data$organism_code)
@@ -240,7 +244,7 @@ table(cleaner_data$lifestage)
 
 ### Variable `gear_id`
 
-#Description:
+# Description:
 
 * DSTR1 - Diversion Fyke Trap 1
 
@@ -279,7 +283,7 @@ cleaner_data %>% select_if(is.numeric) %>% colnames()
 ```
 ### Variable `count`
 
-#Description: fish count
+# Description: fish count
 
 ```{r}
 cleaner_data %>% 
@@ -323,7 +327,7 @@ summary(cleaner_data$count)
 
 ### Variable `fork_length`
 
-#Description: fork length in millimeters (mm)
+# Description: fork length in millimeters (mm)
 
 ```{r}
 cleaner_data %>% 
@@ -388,7 +392,7 @@ summary(cleaner_data$weight)
 
 ### Variable `water_temperature`
 
-#Description: temperature of water in degrees Celsius
+# Description: temperature of water in degrees Celsius
 
 ```{r}
 cleaner_data %>%
@@ -399,13 +403,6 @@ cleaner_data %>%
   labs(title = "Water Temperature by Station")
 ```
 ```{r}
-#group water data by date
-#find average daily temp
-#set water year
-#create factor year
-#create fake year (reset year value when october hits)
-#create fake date by joining fake year, month and date
-#
 cleaner_data %>% 
   filter(water_temperature < 100) %>%  #filter out 36 points with water temperature > 100 degrees (entry error?)
   group_by(date) %>% 
@@ -448,7 +445,7 @@ summary(cleaner_data$water_temperature)
 
 ### Variable `turbidity`
 
-#Description: Turbidity of water in NTU
+# Description: Turbidity of water in NTU
 ```{r}
 cleaner_data %>% 
   group_by(date) %>% 
@@ -490,7 +487,7 @@ summary(cleaner_data$turbidity)
 
 ### Variable `water_velocity`
 
-#Description: water velocity measured in ft/s
+# Description: water velocity measured in ft/s
 
 #Data transformation
 ```{r}
@@ -500,7 +497,7 @@ cleaner_data <- cleaner_data %>%
 ```
 ```{r}
 cleaner_data %>%
-  filter(water_velocity < 100) %>% 
+  filter(water_velocity < 8) %>% #filtered out 8 data points to show a more clear graph
   ggplot(aes(x= water_velocity, y = station))+
   geom_boxplot()+
   theme_minimal()+
@@ -508,7 +505,7 @@ cleaner_data %>%
 ```
 ```{r}
 cleaner_data %>% 
-  filter(water_velocity < 100) %>%  #filter out 36 points with water temperature > 100 degrees (entry error?)
+  filter(water_velocity < 5) %>% #filtered out one point to show a more clear graph
   group_by(date) %>% 
   mutate(daily_avg_velocity = mean(water_velocity)) %>% 
   ungroup() %>% 
@@ -528,7 +525,7 @@ cleaner_data %>%
 ```
 ```{r}
 cleaner_data %>% 
-  filter(water_velocity<100) %>% 
+  filter(water_velocity<6) %>% 
   mutate(year = as.factor(year(date))) %>% 
   ggplot(aes(x = water_velocity, y = year))+
   geom_boxplot()+
@@ -634,3 +631,22 @@ cleaner_data %>%
 
 *  `r round(sum(is.na(cleaner_data$rpms_end))/nrow(cleaner_data), 3)*100` % of values in the `rpms_end` column are NA.
 
+### Issues Identified
+* 50 points in water temperature reaches over 50 degrees celsius
+
+* Turbidity data lacks in some years
+
+### Add cleaned data back into google cloud
+```{r}
+butte_creek_rst <- cleaner_data %>% glimpse()
+```
+
+```{r}
+
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(butte_creek_rst,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data/butte-creek-rst.csv")
+```

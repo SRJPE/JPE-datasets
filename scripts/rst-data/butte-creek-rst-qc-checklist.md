@@ -32,6 +32,15 @@ library(lubridate)
 
 ``` r
 library(googleCloudStorageR)
+```
+
+    ## v Setting scopes to https://www.googleapis.com/auth/devstorage.full_control and https://www.googleapis.com/auth/cloud-platform
+
+    ## v Successfully auto-authenticated via ../../config.json
+
+    ## v Set default bucket name to 'jpe-dev-bucket'
+
+``` r
 library(ggplot2)
 library(scales)
 ```
