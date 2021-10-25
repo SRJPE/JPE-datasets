@@ -76,7 +76,10 @@ cleaner_seine_data <- raw_seine_2015 %>%
   janitor::clean_names() %>% 
   rename("bs_depth_half" = bs_depth_1_2, 
          "lifestage" = salmonid_life_stage,
-         "stream_features" = rpg_ru) %>%
+         "stream_features" = rpg_ru, 
+         "condition" = condition_code,
+         "weather" = weather_code,
+         "gear" = gear_code) %>%
   filter(species %in% c("CHN", "CHNF", "CHNFT", "CHNI",
                         "CHNL", "CHNS", "CHNST", "CHNT","CHNW")) %>%
   mutate(date = as.Date(date),
@@ -84,7 +87,7 @@ cleaner_seine_data <- raw_seine_2015 %>%
          weight_g = as.numeric(weight_g),
          sample_id = as.character(sample_id),
          id = as.character(id),
-         condition_code = as.character(condition_code),
+         condition = as.character(condition),
          lifestage = as.character(lifestage),
          substrate_1 = as.character(substrate_1), # Should I change these to the actual cover type ex: fine_substrate T/F values?
          substrate_2 = as.character(substrate_2),
@@ -443,9 +446,9 @@ table(cleaner_seine_data$lifestage)
 
 * `r round(sum(is.na(cleaner_seine_data$lifestage))/nrow(cleaner_seine_data), 3) * 100` % of values in the `lifestage` column are NA.
 
-### Variable: `gear_code`
+### Variable: `gear`
 ```{r}
-table(cleaner_seine_data$gear_code)
+table(cleaner_seine_data$gear)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. Update gear codes with gear names:
@@ -454,20 +457,20 @@ Fix inconsistencies with spelling, capitalization, and abbreviations. Update gea
 * SEIN50 - Gear description 25 foot beach seine with bag
 
 ```{r}
-cleaner_seine_data$gear_code <- case_when(cleaner_seine_data$gear_code == "1" ~ "SEIN25",
-                                          cleaner_seine_data$gear_code == "3" ~ "SEIN50")
+cleaner_seine_data$gear <- case_when(cleaner_seine_data$gear == "1" ~ "SEIN25",
+                                          cleaner_seine_data$gear == "3" ~ "SEIN50")
 
-table(cleaner_seine_data$gear_code)
+table(cleaner_seine_data$gear)
 ```
 
 **NA and Unknown Values**
 
 
-* `r round(sum(is.na(cleaner_seine_data$gear_code))/nrow(cleaner_seine_data), 3) * 100` % of values in the `gear_code` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$gear))/nrow(cleaner_seine_data), 3) * 100` % of values in the `gear` column are NA.
 
-### Variable: `condition_code`
+### Variable: `condition`
 ```{r}
-table(cleaner_seine_data$condition_code)
+table(cleaner_seine_data$condition)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
@@ -481,42 +484,50 @@ Descriptions:
 All other values (0, 4) corresond to NA
 
 ```{r}
-cleaner_seine_data$condition_code <- case_when(cleaner_seine_data$condition_code == "1" ~ "good",
-                                               cleaner_seine_data$condition_code == "2" ~ "fair",
-                                               cleaner_seine_data$condition_code == "3" ~ "poor")
+cleaner_seine_data$condition <- case_when(cleaner_seine_data$condition == "1" ~ "good",
+                                               cleaner_seine_data$condition == "2" ~ "fair",
+                                               cleaner_seine_data$condition == "3" ~ "poor")
 
 
-table(cleaner_seine_data$condition_code)
+table(cleaner_seine_data$condition)
 ```
 
 **NA and Unknown Values**
 
 
-* `r round(sum(is.na(cleaner_seine_data$condition_code))/nrow(cleaner_seine_data), 3) * 100` % of values in the `condition_code` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$condition))/nrow(cleaner_seine_data), 3) * 100` % of values in the `condition` column are NA.
 
-### Variable: `weather_code`
+### Variable: `weather`
 ```{r}
-table(cleaner_seine_data$weather_code)
+table(cleaner_seine_data$weather)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-cleaner_seine_data$weather_code <- case_when(cleaner_seine_data$weather_code == "CLD" ~ "overcast",
-                                             cleaner_seine_data$weather_code == "CLR" ~ "sunny",
-                                             cleaner_seine_data$weather_code == "FOG" ~ "foggy",
-                                             cleaner_seine_data$weather_code == "RAN" ~ "precipitation")
+cleaner_seine_data$weather <- case_when(cleaner_seine_data$weather == "CLD" ~ "overcast",
+                                             cleaner_seine_data$weather == "CLR" ~ "sunny",
+                                             cleaner_seine_data$weather == "FOG" ~ "foggy",
+                                             cleaner_seine_data$weather == "RAN" ~ "precipitation")
 
 
-table(cleaner_seine_data$weather_code)
+table(cleaner_seine_data$weather)
 ```
 
 **NA and Unknown Values**
 
 
-* `r round(sum(is.na(cleaner_seine_data$weather_code))/nrow(cleaner_seine_data), 3) * 100` % of values in the `weather_code` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$weather))/nrow(cleaner_seine_data), 3) * 100` % of values in the `weather` column are NA.
 
 ### Variable: `substrate_1`, `substrate_2`, `substrate_3`,  `substrate_4`, `substrate_5`
+
+| SubstrateCode |	Substrate |
+| -------------- | ---------------------- |
+| 1 |	Fine - small gravel (0-50mm) (0-2in.) |
+| 2 |	Small - medium gravel (50-150mm) (2-6in.) |
+| 3 |	Medium - large cobble (150-300mm) (6-12in.) |
+| 4 |	Boulder (>300mm) (>12in.) |
+| 5 |	Pavement (Boat Ramp) |
 
 TODO fix substrate stuff 
 
@@ -558,6 +569,23 @@ table(cleaner_seine_data$cover_5)
 unique(cleaner_seine_data$cover_6)
 ```
 
+**Create lookup rda for cover encoding:** 
+```{r}
+feather_seine_cover <- c("A", "B", "C", "D", "E", "BD", "DE" )
+names(feather_seine_cover) <- c("no apparent cover",
+"small instream objects",
+"large instream objects",
+"overhead objects",
+"submerged aquatic vegetation",
+"small instream objects and overhead objects",
+"overhead objects and submerged aquatic vegetation")
+
+tibble(code = feather_seine_cover, 
+       definitions = names(feather_seine_cover))
+
+# write_rds(feather_seine_cover, "../../../data/feather_seine_cover.rds")
+```
+
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_seine_data$cover_1))/nrow(cleaner_seine_data), 3) * 100` % of values in the `cover_1` column are NA.
@@ -571,7 +599,7 @@ unique(cleaner_seine_data$cover_6)
 table(cleaner_seine_data$stream_features)
 ```
 
-**Create lookup rda for rpg_ru encoding:** 
+**Create stream features encoding:** 
 ```{r}
 feather_seine_stream_features <- c("G", "GP", "GR", "GRRU", "GRU", "P", "PRU", "R", "RRU", "RU")
 names(feather_seine_stream_features) <- c( "Glide", "Glide & Pool", "Glide & Riffle", "Glide & Riffle & Run", "Glide & Run", "Pool",

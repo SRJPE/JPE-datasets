@@ -12,7 +12,8 @@ this format in the current access database.
 
 **Timeframe:** 2015 - 2021
 
-**Seine Season:** ? TODO
+**Seine Season:** Appears to be Feb - August (but not consistent across
+years sampled)
 
 **Completeness of Record throughout timeframe:**
 
@@ -121,17 +122,18 @@ cleaner_seine_data <- raw_seine_2015 %>%
   janitor::clean_names() %>% 
   rename("bs_depth_half" = bs_depth_1_2, 
          "lifestage" = salmonid_life_stage,
-         "stream_features" = rpg_ru) %>%
+         "stream_features" = rpg_ru, 
+         "condition" = condition_code,
+         "weather" = weather_code,
+         "gear" = gear_code) %>%
   filter(species %in% c("CHN", "CHNF", "CHNFT", "CHNI",
                         "CHNL", "CHNS", "CHNST", "CHNT","CHNW")) %>%
   mutate(date = as.Date(date),
          time = hms::as_hms(time),
-         total_length = as.numeric(total_length),
          weight_g = as.numeric(weight_g),
          sample_id = as.character(sample_id),
          id = as.character(id),
-         site_id = as.character(site_id),
-         condition_code = as.character(condition_code),
+         condition = as.character(condition),
          lifestage = as.character(lifestage),
          substrate_1 = as.character(substrate_1), # Should I change these to the actual cover type ex: fine_substrate T/F values?
          substrate_2 = as.character(substrate_2),
@@ -164,10 +166,10 @@ cleaner_seine_data <- raw_seine_2015 %>%
     ## $ weight_g             <dbl> 1.1, 2.0, 2.3, 1.3, 2.9, 2.4, 2.0, 2.5, 3.4, 2.3,~
     ## $ date                 <date> 2015-05-19, 2015-05-19, 2015-05-19, 2015-05-19, ~
     ## $ time                 <time> 10:30:00, 10:30:00, 10:30:00, 10:30:00, 10:30:00~
-    ## $ gear_code            <dbl> 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3~
-    ## $ condition_code       <chr> "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",~
+    ## $ gear                 <dbl> 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3~
+    ## $ condition            <chr> "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",~
     ## $ temperature          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ weather_code         <chr> "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", ~
+    ## $ weather              <chr> "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", ~
     ## $ flow                 <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ efbs_length          <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ efbs_width           <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
@@ -205,7 +207,7 @@ cleaner_seine_data <- raw_seine_2015 %>%
 cleaner_seine_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ##  [1] "count"           "fork_length"     "weight_g"        "gear_code"      
+    ##  [1] "count"           "fork_length"     "weight_g"        "gear"           
     ##  [5] "temperature"     "bs_start_length" "bs_distance_out" "bs_depth_half"  
     ##  [9] "utm_easting"     "utm_northing"
 
@@ -528,10 +530,10 @@ summary(cleaner_seine_data$bs_depth_half)
 
 ### Variables: `utm_northing`, `utm_easting`
 
-These are the location columns.
+These are the location columns. TODO (fix the rest)
 
 ``` r
-# Check that they are in consistant format
+# Check that they are in consistent format
 # Map
 ```
 
@@ -547,7 +549,7 @@ cleaner_seine_data %>% select_if(is.character) %>% colnames()
 ```
 
     ##  [1] "sample_id"           "lifestage"           "id"                 
-    ##  [4] "condition_code"      "weather_code"        "substrate_1"        
+    ##  [4] "condition"           "weather"             "substrate_1"        
     ##  [7] "substrate_2"         "substrate_3"         "substrate_4"        
     ## [10] "substrate_5"         "cover_1"             "cover_2"            
     ## [13] "cover_3"             "cover_4"             "cover_5"            
@@ -610,10 +612,10 @@ table(cleaner_seine_data$lifestage)
 
 -   9.9 % of values in the `lifestage` column are NA.
 
-### Variable: `gear_code`
+### Variable: `gear`
 
 ``` r
-table(cleaner_seine_data$gear_code)
+table(cleaner_seine_data$gear)
 ```
 
     ## 
@@ -627,10 +629,10 @@ Update gear codes with gear names:
 -   SEIN50 - Gear description 25 foot beach seine with bag
 
 ``` r
-cleaner_seine_data$gear_code <- case_when(cleaner_seine_data$gear_code == "1" ~ "SEIN25",
-                                          cleaner_seine_data$gear_code == "3" ~ "SEIN50")
+cleaner_seine_data$gear <- case_when(cleaner_seine_data$gear == "1" ~ "SEIN25",
+                                          cleaner_seine_data$gear == "3" ~ "SEIN50")
 
-table(cleaner_seine_data$gear_code)
+table(cleaner_seine_data$gear)
 ```
 
     ## 
@@ -639,12 +641,12 @@ table(cleaner_seine_data$gear_code)
 
 **NA and Unknown Values**
 
--   0 % of values in the `gear_code` column are NA.
+-   0 % of values in the `gear` column are NA.
 
-### Variable: `condition_code`
+### Variable: `condition`
 
 ``` r
-table(cleaner_seine_data$condition_code)
+table(cleaner_seine_data$condition)
 ```
 
     ## 
@@ -666,12 +668,12 @@ Descriptions:
 All other values (0, 4) corresond to NA
 
 ``` r
-cleaner_seine_data$condition_code <- case_when(cleaner_seine_data$condition_code == "1" ~ "good",
-                                               cleaner_seine_data$condition_code == "2" ~ "fair",
-                                               cleaner_seine_data$condition_code == "3" ~ "poor")
+cleaner_seine_data$condition <- case_when(cleaner_seine_data$condition == "1" ~ "good",
+                                               cleaner_seine_data$condition == "2" ~ "fair",
+                                               cleaner_seine_data$condition == "3" ~ "poor")
 
 
-table(cleaner_seine_data$condition_code)
+table(cleaner_seine_data$condition)
 ```
 
     ## 
@@ -680,12 +682,12 @@ table(cleaner_seine_data$condition_code)
 
 **NA and Unknown Values**
 
--   1.2 % of values in the `condition_code` column are NA.
+-   1.2 % of values in the `condition` column are NA.
 
-### Variable: `weather_code`
+### Variable: `weather`
 
 ``` r
-table(cleaner_seine_data$weather_code)
+table(cleaner_seine_data$weather)
 ```
 
     ## 
@@ -695,13 +697,13 @@ table(cleaner_seine_data$weather_code)
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-cleaner_seine_data$weather_code <- case_when(cleaner_seine_data$weather_code == "CLD" ~ "overcast",
-                                             cleaner_seine_data$weather_code == "CLR" ~ "sunny",
-                                             cleaner_seine_data$weather_code == "FOG" ~ "foggy",
-                                             cleaner_seine_data$weather_code == "RAN" ~ "precipitation")
+cleaner_seine_data$weather <- case_when(cleaner_seine_data$weather == "CLD" ~ "overcast",
+                                             cleaner_seine_data$weather == "CLR" ~ "sunny",
+                                             cleaner_seine_data$weather == "FOG" ~ "foggy",
+                                             cleaner_seine_data$weather == "RAN" ~ "precipitation")
 
 
-table(cleaner_seine_data$weather_code)
+table(cleaner_seine_data$weather)
 ```
 
     ## 
@@ -710,9 +712,17 @@ table(cleaner_seine_data$weather_code)
 
 **NA and Unknown Values**
 
--   0.5 % of values in the `weather_code` column are NA.
+-   0.5 % of values in the `weather` column are NA.
 
 ### Variable: `substrate_1`, `substrate_2`, `substrate_3`, `substrate_4`, `substrate_5`
+
+| SubstrateCode | Substrate                                   |
+|---------------|---------------------------------------------|
+| 1             | Fine - small gravel (0-50mm) (0-2in.)       |
+| 2             | Small - medium gravel (50-150mm) (2-6in.)   |
+| 3             | Medium - large cobble (150-300mm) (6-12in.) |
+| 4             | Boulder (&gt;300mm) (&gt;12in.)             |
+| 5             | Pavement (Boat Ramp)                        |
 
 TODO fix substrate stuff
 
@@ -818,6 +828,37 @@ unique(cleaner_seine_data$cover_6)
 
     ## [1] NA
 
+**Create lookup rda for cover encoding:**
+
+``` r
+feather_seine_cover <- c("A", "B", "C", "D", "E", "BD", "DE" )
+names(feather_seine_cover) <- c("no apparent cover",
+"small instream objects",
+"large instream objects",
+"overhead objects",
+"submerged aquatic vegetation",
+"small instream objects and overhead objects",
+"overhead objects and submerged aquatic vegetation")
+
+tibble(code = feather_seine_cover, 
+       definitions = names(feather_seine_cover))
+```
+
+    ## # A tibble: 7 x 2
+    ##   code  definitions                                      
+    ##   <chr> <chr>                                            
+    ## 1 A     no apparent cover                                
+    ## 2 B     small instream objects                           
+    ## 3 C     large instream objects                           
+    ## 4 D     overhead objects                                 
+    ## 5 E     submerged aquatic vegetation                     
+    ## 6 BD    small instream objects and overhead objects      
+    ## 7 DE    overhead objects and submerged aquatic vegetation
+
+``` r
+# write_rds(feather_seine_cover, "../../../data/feather_seine_cover.rds")
+```
+
 **NA and Unknown Values**
 
 -   0.8 % of values in the `cover_1` column are NA.
@@ -836,7 +877,7 @@ table(cleaner_seine_data$stream_features)
     ##    G   GP   GR GRRU  GRU    P  PRU    R  RRU   RU 
     ## 5268   86   10   16  100 1433  100 1528   51 1350
 
-**Create lookup rda for rpg\_ru encoding:**
+**Create stream features encoding:**
 
 ``` r
 feather_seine_stream_features <- c("G", "GP", "GR", "GRRU", "GRU", "P", "PRU", "R", "RRU", "RU")

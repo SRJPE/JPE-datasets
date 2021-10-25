@@ -19,9 +19,7 @@ library(readxl)
 
 ## Description of Monitoring Data
 
-Feather River Seine data 1997 - 2021. This dataset contains less attributes than the more recent data.
-
-? TODO elaborate
+Feather River Seine data 1997 - 2021. This dataset contains less attributes than the more recent data and sampling occurs relatively infrequently. 
 
 **Timeframe:** 1997 - 2001
 
@@ -48,7 +46,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = 
-                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/all_seine_1997-2001.xlsx",
+                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/JPE_SR_all_individuals1997-2001.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "raw_seine_1997-2001.xlsx",
                overwrite = TRUE)
@@ -73,14 +71,23 @@ cleaner_seine_data <- raw_seine_1997 %>%
   rename("cover" = hu_ccover, 
          "substrate" = hu_csubstrate, 
          "HUC_stream_feature" = hu_cunit,
-         "count" = total_catch) %>% 
+         "lifestage" = salmon_life_stage_code,
+         "run" = race,
+         "depth_1" = depth1,
+         "depth_2" = depth2,
+         "depth_1_dist" = depth1dist,
+         "depth_2_dist" = depth2dist,
+         "gear" = gear_size_code,
+         "condition" = condition_code, 
+         "weather" = weather_code) %>% 
   mutate(time = hms::as_hms(time),
          seine_id = as.character(seine_id), 
-         substrate = as.character(substrate)) %>%
-  select(-year, -month, -species_code) %>% 
+         substrate = as.character(substrate),
+         count = 1) %>% # each row is a individual fish catch
+  select(-species_code, -individ_auto_id, -mark, -recorder, -gear_type, -crew) %>% 
   glimpse()
 
-```
+``` 
 
 
 ## Explore Numeric Variables: {.tabset}
@@ -132,6 +139,55 @@ cleaner_seine_data %>%
 summary(cleaner_seine_data$water_temp)
 ```
 
+### Variable: `sechi`
+
+**Plotting sechi over Period of Record**
+
+```{r}
+cleaner_seine_data %>% 
+  group_by(date = as.Date(date)) %>%
+  mutate(avg_sechi = mean(sechi)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_sechi, color = year)) + 
+  geom_point(alpha = .75, size = 2) + 
+  geom_line(alpha = .25) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom") + 
+  labs(title = "Daily Average Sechi (colored by year)",
+       y = "Sechi", 
+       x = "Date")  
+```
+
+Most secchi measurments are 0. 
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot(aes(x = sechi)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Sechi distribution") +  
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of sechi over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$sechi)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$sechi))/nrow(cleaner_seine_data), 3) * 100` % of values in the `sechi` column are NA. 
+
 ### Variable: `flow`
 
 **Plotting flow over Period of Record**
@@ -178,7 +234,32 @@ summary(cleaner_seine_data$flow)
 ```
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
+* `r round(sum(is.na(cleaner_seine_data$flow))/nrow(cleaner_seine_data), 3) * 100` % of values in the `flow` column are NA. 
+
+### Variable: `distance_out`
+
+**Plotting distribution of `distance_out`**
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot(aes(x = distance_out)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Distance Seine Out") +  
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of seine distance out over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$distance_out)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$distance_out))/nrow(cleaner_seine_data), 3) * 100` % of values in the `distance_out` column are NA. 
+
 
 ### Variable: `count`
 
@@ -230,6 +311,200 @@ cleaner_seine_data %>% group_by(date) %>%
 * `r round(sum(is.na(cleaner_seine_data$count))/nrow(cleaner_seine_data), 3) * 100` % of values in the `count` column are NA. However, there are clearly gaps in data. 
 
 
+### Variable: `start_width`, `end_width`
+
+**Plotting distribution of start and end width**
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot() + 
+  geom_histogram(aes(x = start_width), alpha = .5) +
+  geom_histogram(aes(x = end_width), fill = "blue", alpha = .5) +
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Distance Seine Out",
+       x = "Start (gray) and end (blue) width") +  
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+Start width has a much more spread out distribution. End width is mostly clustered between 4 and 10
+
+**Numeric Summary of seine start and end width out over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$start_width)
+summary(cleaner_seine_data$end_width)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$start_width))/nrow(cleaner_seine_data), 3) * 100` % of values in the `start_width` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$end_width))/nrow(cleaner_seine_data), 3) * 100` % of values in the `end_width` column are NA.
+
+### Variable: `length`
+
+**Plotting distribution of `length`**
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot(aes(x = length)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Length beach seine") +  
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of length over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$length)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$length))/nrow(cleaner_seine_data), 3) * 100` % of values in the `length` column are NA.
+
+
+### Variable: `width`
+
+**Plotting distribution of `width`**
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot(aes(x = width)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of width over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$width)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$width))/nrow(cleaner_seine_data), 3) * 100` % of values in the `width` column are NA.
+
+
+### Variable: `depth_1`, `depth_2`
+
+**Plotting distribution of `depth_1`, `depth_2`**
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot() + 
+  geom_histogram(aes(x = depth_1), alpha = .5) + 
+  geom_histogram(aes(x = depth_2), fill = "blue", alpha = .5) +
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(title = "Distance Seine Out") +  
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+Depth 1 goes up to about 1.7, depth 2 goes all the way up to 7
+Most values still fall before 2.
+
+**Numeric Summary of depth over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$depth_1)
+summary(cleaner_seine_data$depth_2)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$depth_1))/nrow(cleaner_seine_data), 3) * 100` % of values in the `depth_1` column are NA.
+
+* `r round(sum(is.na(cleaner_seine_data$depth_2))/nrow(cleaner_seine_data), 3) * 100` % of values in the `depth_2` column are NA.
+
+
+### Variable: `depth_1_dist`, `depth_2_dist`
+
+TODO figure out what these mean
+
+**Plotting distribution of depth 1 and 2 dist**
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot() + 
+  geom_histogram(aes(x = depth_1_dist), alpha = .5) + 
+  geom_histogram(aes(x = depth_2_dist), fill = "blue", alpha = .5) +
+  scale_x_continuous() +
+  theme_minimal() +
+  labs(x = "Depth 1 dist (gray) and Depth 2 dist (blue)") +  
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of depth dist over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$depth_1_dist)
+summary(cleaner_seine_data$depth_2_dist)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$depth_1_dist))/nrow(cleaner_seine_data), 3) * 100` % of values in the `depth_1_dist` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$depth_2_dist))/nrow(cleaner_seine_data), 3) * 100` % of values in the `depth_2_dist` column are NA.
+
+
+### Variable: `sample_area`
+
+**Plotting distribution of `sample_area`**
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot(aes(x = sample_area)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of sample area over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$sample_area)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$sample_area))/nrow(cleaner_seine_data), 3) * 100` % of values in the `sample_area` column are NA.
+
+
+
+### Variable: `sample_shape`
+
+**Plotting distribution of `sample_shape`**
+
+```{r}
+cleaner_seine_data %>%  
+  ggplot(aes(x = sample_shape)) + 
+  geom_histogram() + 
+  scale_x_continuous() +
+  theme_minimal() +
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+Sample shape values appear to be either 0, 1, or 2. No info in access database describing what these mean. TODO ask Casey. 
+
+**Numeric Summary of seine distance out over Period of Record**
+
+```{r}
+summary(cleaner_seine_data$sample_shape)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$sample_shape))/nrow(cleaner_seine_data), 3) * 100` % of values in the `sample_shape` column are NA.
+
+
 ## Explore Categorical variables: {.tabset}
 
 ```{r}
@@ -239,13 +514,54 @@ cleaner_seine_data %>% select_if(is.character) %>% colnames()
 
 ### Variable: `seine_id`
 
-Seine Id can be used to get additional information describing seine equipment. (Information on crew, depth, temp, ect...). We have this data in access database if we decide we want it. 
-
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_seine_data$seine_id))/nrow(cleaner_seine_data), 3) * 100` % of values in the `seine_id` column are NA.
 
+### Variable: `lifestage`
+
+```{r}
+table(cleaner_seine_data$lifestage)
+```
+```{r}
+cleaner_seine_data$lifestage <- case_when(
+  cleaner_seine_data$lifestage == 1 ~ "yolk-sac fry",
+  cleaner_seine_data$lifestage == 2 ~ "fry",
+  cleaner_seine_data$lifestage == 4 ~ "silvery parr",
+  cleaner_seine_data$lifestage == "P" | 
+    cleaner_seine_data$lifestage == 3 ~ "parr",
+  cleaner_seine_data$lifestage == "S" | 
+    cleaner_seine_data$lifestage == 5 ~ "smolt",
+  cleaner_seine_data$lifestage == "X" ~ "between parr and smolt",)
+
+table(cleaner_seine_data$lifestage)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$lifestage))/nrow(cleaner_seine_data), 3) * 100` % of values in the `lifestage` column are NA.
+
+### Variable: `run`
+
+
+```{r}
+table(cleaner_seine_data$run)
+```
+```{r}
+cleaner_seine_data$run <- case_when(cleaner_seine_data$run == "F" ~ "fall",
+                                    cleaner_seine_data$run == "LF" ~ "late fall",
+                                    cleaner_seine_data$run == "S" ~ "spring", 
+                                    cleaner_seine_data$run == "W" ~ "winter")
+table(cleaner_seine_data$run)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$seine_id))/nrow(cleaner_seine_data), 3) * 100` % of values in the `run` column are NA.
+
+
 ### Variable: `location`
+
 ```{r}
 table(cleaner_seine_data$location)
 ```
@@ -256,6 +572,8 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 format_site_name <- function(string) {
   clean <- str_replace_all(string, "1/2", "half") %>%
     str_replace_all("1/4", "quarter") %>%
+    str_replace_all("d/s", "downstream") %>%
+    str_replace_all("u/s", "upstream") %>%
     str_replace_all("S.C.", "SC") %>%
     str_replace_all("'", "") %>%
     str_replace_all("G-95", "G95") %>% 
@@ -275,7 +593,6 @@ table(cleaner_seine_data$location)
 
 ### Variable: `station_code`
 
-TODO add to this
 
 ```{r}
 table(cleaner_seine_data$station_code)
@@ -285,11 +602,103 @@ table(cleaner_seine_data$station_code)
 
 * `r round(sum(is.na(cleaner_seine_data$seine_id))/nrow(cleaner_seine_data), 3) * 100` % of values in the `station_code` column are NA.
 
-### Variable: `substrate`
+### Variable: `gear`
 
-TODO add to this 
+| GearNum |	GearCode |	Gear description |
+| -------| ------- | ------------------- | 
+| 1 |	SEIN25 |	25 foot beach seine with bag |
+| 2 |	SEIN39 |	39 foot beach seine with bag |
+| 3 |	SEIN50 |	50 foot beach seine with bag |
+| 4 |	SEIN100 |	100 foot beach seine with bag |
+| 5 |	EFSEIN |	backpack shock into any seine |
 
 ```{r}
+table(cleaner_seine_data$gear)
+```
+```{r}
+cleaner_seine_data$gear <- case_when(
+  cleaner_seine_data$gear == "1" ~ "SEIN25", 
+  cleaner_seine_data$gear == "2" ~ "SEIN39"
+)
+
+table(cleaner_seine_data$gear)
+```
+
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$gear))/nrow(cleaner_seine_data), 3) * 100` % of values in the `gear` column are NA.
+
+### Variable: `condition`
+
+```{r}
+table(cleaner_seine_data$condition)
+```
+
+* Good - The haul went smoothly without getting hung up on anything or net rolling.
+* Fair - The haul went relatively smoothly, but you had to stop once or twice to get it unsnagged or take big rocks out of the net.
+* Poor - The haul didn’t go well; you had to stop numerous times while the poles were still a good distance from the shore to free the seine from snags or big rocks.
+
+All other values (0, 4) corresond to NA
+
+```{r}
+cleaner_seine_data$condition <- case_when(cleaner_seine_data$condition == "1" ~ "good",
+                                               cleaner_seine_data$condition == "2" ~ "fair",
+                                               cleaner_seine_data$condition == "3" ~ "poor")
+
+
+table(cleaner_seine_data$condition)
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$condition))/nrow(cleaner_seine_data), 3) * 100` % of values in the `condition` column are NA.
+
+
+### Variable: `weather`
+
+```{r}
+table(cleaner_seine_data$weather)
+```
+
+```{r}
+cleaner_seine_data$weather <- case_when(
+  cleaner_seine_data$weather == "CLD" ~ "overcast",
+  cleaner_seine_data$weather == "CLR" ~ "sunny",
+  cleaner_seine_data$weather == "RAN" ~ "precipitation")
+
+
+table(cleaner_seine_data$weather)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$weather))/nrow(cleaner_seine_data), 3) * 100` % of values in the `weather` column are NA.
+
+### Variable: `substrate`
+
+| SubstrateCode |	Substrate |
+| -------------- | ---------------------- |
+| 1 |	Fine - small gravel (0-50mm) (0-2in.) |
+| 2 |	Small - medium gravel (50-150mm) (2-6in.) |
+| 3 |	Medium - large cobble (150-300mm) (6-12in.) |
+| 4 |	Boulder (>300mm) (>12in.) |
+| 5 |	Pavement (Boat Ramp) |
+
+```{r}
+table(cleaner_seine_data$substrate)
+```
+
+```{r}
+cleaner_seine_data$substrate <- case_when(
+  cleaner_seine_data$substrate == "1" ~ "fine",
+  cleaner_seine_data$substrate == "2" ~ "small",
+  cleaner_seine_data$substrate == "3" ~ "medium",
+  cleaner_seine_data$substrate == "4" ~ "boulder",
+  cleaner_seine_data$substrate == "5" ~ "pavement")
+
 table(cleaner_seine_data$substrate)
 ```
 
@@ -299,11 +708,27 @@ table(cleaner_seine_data$substrate)
 
 ### Variable: `cover`
 
-TODO add to this 
-
 ```{r}
 table(cleaner_seine_data$cover)
 ```
+
+**Create lookup rda for cover encoding:** 
+```{r}
+feather_seine_cover <- c("A", "B", "C", "D", "E", "BD", "DE" )
+names(feather_seine_cover) <- c("no apparent cover",
+"small instream objects",
+"large instream objects",
+"overhead objects",
+"submerged aquatic vegetation",
+"small instream objects and overhead objects",
+"overhead objects and submerged aquatic vegetation")
+
+tibble(code = feather_seine_cover, 
+       definitions = names(feather_seine_cover))
+
+# write_rds(feather_seine_cover, "../../../data/feather_seine_cover.rds")
+```
+
 
 **NA and Unknown Values**
 
@@ -311,19 +736,50 @@ table(cleaner_seine_data$cover)
 
 ### Variable: `HUC_strean_feature`
 
-TODO add to this 
+| UnitCode |	Unit |
+| --------- | ------ |
+| G |	Glide |
+| GM |	Glide Edgewater |
+| M |	Riffle Margin Eddy |
+| P |	Pool |
+| R |	Riffle |
+| RM |	Riffle Edgewater |
+| W |	Backwater |
 
 ```{r}
-table(cleaner_seine_data$HUC_strean_feature)
+table(cleaner_seine_data$HUC_stream_feature)
+```
+
+```{r}
+cleaner_seine_data$HUC_stream_feature <- case_when(
+  cleaner_seine_data$HUC_stream_feature == "G" ~ "glide",
+  cleaner_seine_data$HUC_stream_feature == "GM" ~ "glide edgewater",
+  cleaner_seine_data$HUC_stream_feature == "M" ~ "riffle margin eddy",
+  cleaner_seine_data$HUC_stream_feature == "P" ~ "pool",
+  cleaner_seine_data$HUC_stream_feature == "R" ~ "riffle",
+  cleaner_seine_data$HUC_stream_feature == "RM" ~ "riffle edgewater",
+  cleaner_seine_data$HUC_stream_feature == "W" ~ "backwater")
+
+table(cleaner_seine_data$HUC_stream_feature)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_seine_data$HUC_strean_feature))/nrow(cleaner_seine_data), 3) * 100` % of values in the `HUC_strean_feature` column are NA.
+* `r round(sum(is.na(cleaner_seine_data$HUC_stream_feature))/nrow(cleaner_seine_data), 3) * 100` % of values in the `HUC_stream_feature` column are NA.
+
+### Variable: `comments`
+
+
+```{r}
+unique(cleaner_seine_data$comments)[1:5]
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$comments))/nrow(cleaner_seine_data), 3) * 100` % of values in the `comments` column are NA.
 
 ## Summary of identified issues
 
-* There is no data on runs (or fork length) so we cannot differentiate spring from other runs. 
 * Sampling does not occur that frequently each year
 
 ## Save cleaned data back to google cloud 
