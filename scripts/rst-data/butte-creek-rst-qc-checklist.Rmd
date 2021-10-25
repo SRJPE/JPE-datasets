@@ -211,7 +211,7 @@ table(cleaner_data$organism_code)
 
 ### Variable `stage_code`
 
-#Description: Renaming to `lifestage`
+# Description: Renaming to `lifestage`
 
 * 1 - Fry with visible yolk sac
 * 2 - Fry with no visible yolk sac
@@ -360,7 +360,7 @@ summary(cleaner_data$fork_length)
 
 ### Variable `weight`
 
-#Description: wet weight in grams(g)
+# Description: wet weight in grams(g)
 
 ```{r}
 cleaner_data %>% 
@@ -489,7 +489,7 @@ summary(cleaner_data$turbidity)
 
 # Description: water velocity measured in ft/s
 
-#Data transformation
+# Data transformation
 ```{r}
 #Convert water velocity from ft/s to m/s
 cleaner_data <- cleaner_data %>% 
@@ -536,7 +536,7 @@ cleaner_data %>%
 ```
 
 
-#Numeric summary of `water_velocity` from 1995-2015
+# Numeric summary of `water_velocity` from 1995-2015
 ```{r}
 summary(cleaner_data$water_velocity)
 ```
@@ -547,7 +547,7 @@ summary(cleaner_data$water_velocity)
 
 ### Variable `trap_revolutions`
 
-#Description: Number of revolutions the RST cone had made since last being checked
+# Description: Number of revolutions the RST cone had made since last being checked
 ```{r}
 cleaner_data %>% 
   ggplot(aes(x = trap_revolutions))+
@@ -567,7 +567,7 @@ cleaner_data %>%
 ```
 
 
-#Numeric summary of `trap_revolutions` from 1995-2015
+# Numeric summary of `trap_revolutions` from 1995-2015
 ```{r}
 summary(cleaner_data$trap_revolutions)
 ```
@@ -578,7 +578,7 @@ summary(cleaner_data$trap_revolutions)
 
 ### Variable `rpms_start``
 
-#Description: rotations per minute of RST cone at start of trapping window
+# Description: rotations per minute of RST cone at start of trapping window
 ```{r}
 cleaner_data %>% 
   filter(rpms_start < 10) %>% #filtered out 28 data points to show more clear distribution
@@ -597,17 +597,19 @@ cleaner_data %>%
   theme_minimal()+
   theme(text = element_text(size = 12))
 ```
-#Numeric summary of `rpms_start`` from 1995-2015
+
+# Numeric summary of `rpms_start`` from 1995-2015
 ```{r}
 summary(cleaner_data$rpms_start)
 ```
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$rpms_start))/nrow(cleaner_data), 3)*100` % of values in the `rpms_start`` column are NA.
 
 ### Variable `rpms_end`
 
-#Description: rotations per minute of RST cone at end of trapping window
+# Description: rotations per minute of RST cone at end of trapping window
 ```{r}
 cleaner_data %>% 
   filter(rpms_end < 10) %>% #filtered out 28 data points to show more clear distribution
@@ -627,6 +629,7 @@ cleaner_data %>%
   theme_minimal()+
   theme(text = element_text(size = 12))
 ```
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$rpms_end))/nrow(cleaner_data), 3)*100` % of values in the `rpms_end` column are NA.
