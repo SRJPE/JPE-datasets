@@ -23,7 +23,7 @@ Robyn Bilski sent the Yuba RST data in an Access Database via email. The data is
 **Timeframe:** 2000-2009
 
 
-**Completeness of Record throughout timeframe: **
+**Completeness of Record throughout timeframe:**
 
 * There is no longitude or latitude data  for RST locations
 * Fish life stage data was only tracked from 2007-2009
@@ -48,7 +48,7 @@ gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = "rst/yuba-river/data-raw/yuba-river-rst-data.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "yuba-rst.xlsx",
+               saveToDisk = "yuba_rst_raw.xlsx",
                overwrite = TRUE)
 
 
@@ -56,30 +56,9 @@ gcs_get_object(object_name = "rst/yuba-river/data-raw/yuba-river-rst-data.xlsx",
 
 Read in data from google cloud, glimpse raw data:
 ```{r}
-raw_data = readxl::read_excel('yuba-rst.xlsx', col_types = c("text",
-                                                             "date",
-                                                             "date",
-                                                             "text",
-                                                             "numeric",
-                                                             "numeric",
-                                                             "numeric",
-                                                             "text",
-                                                             "numeric",
-                                                             "numeric",
-                                                             "text",
-                                                             "numeric",
-                                                             "numeric",
-                                                             "text",
-                                                             "text",
-                                                             "text",
-                                                             "text",
-                                                             "numeric",
-                                                             "numeric",
-                                                             "text",
-                                                             "numeric",
-                                                             'text',
-                                                             'numeric',
-                                                             'numeric'))
+raw_data = readxl::read_excel('yuba_rst_raw.xlsx', col_types = c("text","date","date","text","numeric","numeric","numeric",
+                                                             "text","numeric","numeric","text","numeric","numeric","text",
+                                                             "text","text","text","numeric","numeric","text","numeric",'text','numeric','numeric'))
 glimpse(raw_data)
 ```
 
@@ -118,7 +97,7 @@ cleaner_data %>% select_if(is.character) %>% colnames()
 ```
 ### Variable: `method`
 
-# Description: 'method' is an alphanumeric code defining the type of sampling action taken.
+**Description: 'method' is an alphanumeric code defining the type of sampling action taken.**
 
 * FSR - Fish Screen Diversion Trap
 
@@ -140,7 +119,7 @@ table(cleaner_data$method)
 
 ### Variable: `trap_status`
 
-# Description: trap_status indicate if trap was checked for fish or just set or pulled.
+**Description: trap_status indicate if trap was checked for fish or just set or pulled.**
 
 ```{r}
 table(cleaner_data$trap_status) 
@@ -151,7 +130,7 @@ table(cleaner_data$trap_status)
 
 ### Variable: `organism_code`
 
-# Description: organism_code indicate the alphanumeric code for a species of fish or other oragnism present in the catch.
+**Description: organism_code indicate the alphanumeric code for a species of fish or other oragnism present in the catch.**
 
 Note: previously filtered data to Chinook salmon only. 
 ```{r}
@@ -169,7 +148,7 @@ table(cleaner_data$organism_code)
 
 ### Variable: `stage_code`
 
-# Description: stage_code describes the life stage of an organism. It is a combination of 'run' and 'lifestage' data. The following operations creates a new column based on run. 
+**Description: stage_code describes the life stage of an organism. It is a combination of 'run' and 'lifestage' data. The following operations creates a new column based on run.** 
 
 * FR - Fall Run salmon
 * FRY - Fry
@@ -214,6 +193,7 @@ cleaner_data <- cleaner_data %>%
 * `r round(sum(is.na(cleaner_data$'run'))/nrow(cleaner_data), 3)*100` % of values in the `run` column are NA.
 
 ### Variable: `location`
+**Description: location of Rotary Screw Traps**
 
 ```{r}
 table(cleaner_data$location)
@@ -226,7 +206,6 @@ cleaner_data <- cleaner_data %>%
 table(cleaner_data$location)
 ```
 
-#Description: location of Rotary Screw Traps
 ## Explore Numeric Variables
 
 ```{r}
@@ -236,7 +215,7 @@ cleaner_data %>%
 
 ### Variable:`water_temp`
 
-# Description: water_temperature measured with an ACME Industries infrared Cramomatic 444 automatic sensor. Units: degrees Celsius. 
+**Description: water_temperature measured with an ACME Industries infrared Cramomatic 444 automatic sensor. Units: degrees Celsius.** 
 
 ```{r}
 cleaner_data %>% 
@@ -287,7 +266,7 @@ summary(cleaner_data$water_temp)
 
 ### Variable:`turbidity`
 
-# Description: water turbidity measured with an ACME Industries Turbido2000 meter. Units: NTU.
+**Description: water turbidity measured with an ACME Industries Turbido2000 meter. Units: NTU.**
 
 ```{r}
 cleaner_data %>% 
@@ -344,7 +323,7 @@ summary(cleaner_data$turbidity)
 
 ### Variable:`water_velocity`
 
-# Description: Water velocity measured with ACME Industries' heavy duty Torpedo 3000 velorecroder. Unit: feet per second. The following operations convert the data to m per second for standardization with the rest of the JPE data. 
+**Description: Water velocity measured with ACME Industries' heavy duty Torpedo 3000 velorecroder. Unit: feet per second. The following operations convert the data to m per second for standardization with the rest of the JPE data.** 
 
 ```{r}
 cleaner_data <- cleaner_data %>% 
@@ -403,7 +382,7 @@ summary(cleaner_data$water_velocity)
 
 ### Variable:`trap_revolutions`
 
-#Description: Number of trap revoltuions corresponding to a particular catch.
+**Description: Number of trap revoltuions corresponding to a particular catch.**
 
 ```{r}
 #Filter out significant high outliers (revolution > 10,000 )
@@ -440,7 +419,7 @@ summary(cleaner_data$trap_revolutions)
 
 ### Variable:`trap_revolutions2`
 
-#Description: Number of trap revolutions corresponding to a particular catch, results from second counter.
+**Description: Number of trap revolutions corresponding to a particular catch, results from second counter.**
 ```{r}
 revolution2_plot_1 <- cleaner_data %>% 
   ggplot(aes(x=trap_revolutions2))+
@@ -476,7 +455,7 @@ summary(cleaner_data$trap_revolutions2)
 
 ### Variable:`rpms_before`
 
-#Description: Revolutions per minute before the trap was sampled.
+**Description: Revolutions per minute before the trap was sampled.**
 
 ```{r}
 cleaner_data %>% 
@@ -501,7 +480,7 @@ summary(cleaner_data$rpms_before)
 
 ### Variable:`rpms_after`
 
-#Description: Revolutions per minute after the trap was sampled
+**Description: Revolutions per minute after the trap was sampled**
 
 
 ```{r}
@@ -679,8 +658,9 @@ summary(cleaner_data$count)
 # Name file [watershed]_[data type].csv
 
 yuba_rst <- cleaner_data %>% glimpse()
+write_csv(yuba_rst, "yuba_rst.csv")
 ```
-```{r}
+```{r, eval=FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(yuba_rst,
