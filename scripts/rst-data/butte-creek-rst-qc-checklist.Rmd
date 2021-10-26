@@ -52,32 +52,9 @@ gcs_get_object(object_name = "rst/butte-creek/data-raw/CDFW_Butte_Creek_RST_Capt
 ```
 ```{r}
 raw_data = readxl::read_excel('butte_creek_rst_raw.xlsx',
-                              col_types = c("date",
-                                            "text",
-                                            "text",
-                                            "text",
-                                            "text",
-                                            "text",
-                                            "numeric",
-                                            "numeric",
-                                            "numeric",
-                                            "text",
-                                            "text",
-                                            "date",
-                                            "text",
-                                            "text",
-                                            "numeric",
-                                            "numeric",
-                                            "numeric",
-                                            "numeric",
-                                            "text",
-                                            "text",
-                                            "numeric",
-                                            "numeric",
-                                            "text",
-                                            "numeric",
-                                            "numeric",
-                                            "text"
+                              col_types = c("date","text","text","text","text","text","numeric","numeric","numeric","text",
+                                            "text","date","text","text","numeric","numeric","numeric","numeric","text","text",
+                                            "numeric","numeric","text","numeric","numeric","text"
                                             ))
 glimpse(raw_data)
 ```
@@ -643,8 +620,12 @@ cleaner_data %>%
 ```{r}
 butte_creek_rst <- cleaner_data %>% glimpse()
 ```
-
 ```{r}
+write_csv(butte_creek_rst, "butte_rst.csv")
+```
+
+
+```{r, eval= FALSE}
 
 f <- function(input, output) write_csv(input, file = output)
 

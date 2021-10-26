@@ -70,12 +70,16 @@ between the 1995-96 and 2014-15 trapping seasons.
 
 **Timeframe:**
 
+1995 - 2015
+
 **Completeness of Record throughout timeframe:**
 
 -   Life stage information lacks after 2005
 -   Inconsistent completeness of physical data after 2008
 
 **Sampling Location:**
+
+3 locations on Butte Creek
 
 **Data Contact:** [Jessica
 Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
@@ -99,32 +103,9 @@ gcs_get_object(object_name = "rst/butte-creek/data-raw/CDFW_Butte_Creek_RST_Capt
 
 ``` r
 raw_data = readxl::read_excel('butte_creek_rst_raw.xlsx',
-                              col_types = c("date",
-                                            "text",
-                                            "text",
-                                            "text",
-                                            "text",
-                                            "text",
-                                            "numeric",
-                                            "numeric",
-                                            "numeric",
-                                            "text",
-                                            "text",
-                                            "date",
-                                            "text",
-                                            "text",
-                                            "numeric",
-                                            "numeric",
-                                            "numeric",
-                                            "numeric",
-                                            "text",
-                                            "text",
-                                            "numeric",
-                                            "numeric",
-                                            "text",
-                                            "numeric",
-                                            "numeric",
-                                            "text"
+                              col_types = c("date","text","text","text","text","text","numeric","numeric","numeric","text",
+                                            "text","date","text","text","numeric","numeric","numeric","numeric","text","text",
+                                            "numeric","numeric","text","numeric","numeric","text"
                                             ))
 glimpse(raw_data)
 ```
@@ -158,7 +139,7 @@ glimpse(raw_data)
     ## $ RPMsEnd          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ Comments         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
 
-## Data Transformation
+## Data Transformations
 
 ``` r
 cleaner_data <- raw_data %>% 
@@ -244,7 +225,7 @@ cleaner_data %>% select_if(is.character) %>% colnames()
 
 ### Variable `station`
 
-\#Description: trap location
+# Description: trap location
 
 -   BCADAMS - Adams Dam
 
@@ -278,7 +259,7 @@ table(cleaner_data$station)
 
 ### Variable `method`
 
-\#Description: method of capture
+# Description: method of capture
 
 -   DSTR - Diversion fyke trap
 
@@ -309,7 +290,7 @@ table(cleaner_data$method)
 
 ### Variable `trap_status`
 
-\#Description:
+# Description:
 
 -   Check - trap was checked normally , continued fishing
 
@@ -331,7 +312,7 @@ table(cleaner_data$trap_status)
 
 ### Variable `organism_code`
 
-\#Description: we are interested in Chinooks only
+# Description: we are interested in Chinooks only
 
 ``` r
 table(cleaner_data$organism_code)
@@ -357,7 +338,7 @@ table(cleaner_data$organism_code)
 
 ### Variable `stage_code`
 
-\#Description: Renaming to `lifestage`
+# Description: Renaming to `lifestage`
 
 -   1 - Fry with visible yolk sac
 -   2 - Fry with no visible yolk sac
@@ -402,7 +383,7 @@ table(cleaner_data$lifestage)
 
 ### Variable `gear_id`
 
-\#Description:
+# Description:
 
 -   DSTR1 - Diversion Fyke Trap 1
 
@@ -463,7 +444,7 @@ cleaner_data %>% select_if(is.numeric) %>% colnames()
 
 ### Variable `count`
 
-\#Description: fish count
+# Description: fish count
 
 ``` r
 cleaner_data %>% 
@@ -516,7 +497,7 @@ summary(cleaner_data$count)
 
 ### Variable `fork_length`
 
-\#Description: fork length in millimeters (mm)
+# Description: fork length in millimeters (mm)
 
 ``` r
 cleaner_data %>% 
@@ -556,7 +537,7 @@ summary(cleaner_data$fork_length)
 
 ### Variable `weight`
 
-\#Description: wet weight in grams(g)
+# Description: wet weight in grams(g)
 
 ``` r
 cleaner_data %>% 
@@ -595,7 +576,7 @@ summary(cleaner_data$weight)
 
 ### Variable `water_temperature`
 
-\#Description: temperature of water in degrees Celsius
+# Description: temperature of water in degrees Celsius
 
 ``` r
 cleaner_data %>%
@@ -609,13 +590,6 @@ cleaner_data %>%
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 ``` r
-#group water data by date
-#find average daily temp
-#set water year
-#create factor year
-#create fake year (reset year value when october hits)
-#create fake date by joining fake year, month and date
-#
 cleaner_data %>% 
   filter(water_temperature < 100) %>%  #filter out 36 points with water temperature > 100 degrees (entry error?)
   group_by(date) %>% 
@@ -665,7 +639,7 @@ summary(cleaner_data$water_temperature)
 
 ### Variable `turbidity`
 
-\#Description: Turbidity of water in NTU
+# Description: Turbidity of water in NTU
 
 ``` r
 cleaner_data %>% 
@@ -715,9 +689,9 @@ summary(cleaner_data$turbidity)
 
 ### Variable `water_velocity`
 
-\#Description: water velocity measured in ft/s
+# Description: water velocity measured in ft/s
 
-\#Data transformation
+# Data transformation
 
 ``` r
 #Convert water velocity from ft/s to m/s
@@ -727,7 +701,7 @@ cleaner_data <- cleaner_data %>%
 
 ``` r
 cleaner_data %>%
-  filter(water_velocity < 100) %>% 
+  filter(water_velocity < 8) %>% #filtered out 8 data points to show a more clear graph
   ggplot(aes(x= water_velocity, y = station))+
   geom_boxplot()+
   theme_minimal()+
@@ -738,7 +712,7 @@ cleaner_data %>%
 
 ``` r
 cleaner_data %>% 
-  filter(water_velocity < 100) %>%  #filter out 36 points with water temperature > 100 degrees (entry error?)
+  filter(water_velocity < 5) %>% #filtered out one point to show a more clear graph
   group_by(date) %>% 
   mutate(daily_avg_velocity = mean(water_velocity)) %>% 
   ungroup() %>% 
@@ -761,7 +735,7 @@ cleaner_data %>%
 
 ``` r
 cleaner_data %>% 
-  filter(water_velocity<100) %>% 
+  filter(water_velocity<6) %>% 
   mutate(year = as.factor(year(date))) %>% 
   ggplot(aes(x = water_velocity, y = year))+
   geom_boxplot()+
@@ -773,7 +747,7 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
 
-\#Numeric summary of `water_velocity` from 1995-2015
+# Numeric summary of `water_velocity` from 1995-2015
 
 ``` r
 summary(cleaner_data$water_velocity)
@@ -788,8 +762,7 @@ summary(cleaner_data$water_velocity)
 
 ### Variable `trap_revolutions`
 
-\#Description: Number of revolutions the RST cone had made since last
-being checked
+# Description: Number of revolutions the RST cone had made since last being checked
 
 ``` r
 cleaner_data %>% 
@@ -814,7 +787,7 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
 
-\#Numeric summary of `trap_revolutions` from 1995-2015
+# Numeric summary of `trap_revolutions` from 1995-2015
 
 ``` r
 summary(cleaner_data$trap_revolutions)
@@ -829,8 +802,7 @@ summary(cleaner_data$trap_revolutions)
 
 ### Variable \`rpms\_start\`\`
 
-\#Description: rotations per minute of RST cone at start of trapping
-window
+# Description: rotations per minute of RST cone at start of trapping window
 
 ``` r
 cleaner_data %>% 
@@ -855,7 +827,8 @@ cleaner_data %>%
 ```
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
-\#Numeric summary of \`rpms\_start\`\` from 1995-2015
+
+# Numeric summary of \`rpms\_start\`\` from 1995-2015
 
 ``` r
 summary(cleaner_data$rpms_start)
@@ -870,8 +843,7 @@ summary(cleaner_data$rpms_start)
 
 ### Variable `rpms_end`
 
-\#Description: rotations per minute of RST cone at end of trapping
-window
+# Description: rotations per minute of RST cone at end of trapping window
 
 ``` r
 cleaner_data %>% 
@@ -896,6 +868,54 @@ cleaner_data %>%
 ```
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
+
 **NA and Unknown Values**
 
 -   58.9 % of values in the `rpms_end` column are NA.
+
+### Issues Identified
+
+-   50 points in water temperature reaches over 50 degrees celsius
+
+-   Turbidity data lacks in some years
+
+### Add cleaned data back into google cloud
+
+``` r
+butte_creek_rst <- cleaner_data %>% glimpse()
+```
+
+    ## Rows: 63,418
+    ## Columns: 19
+    ## $ date              <dttm> 1995-11-29, 1995-11-29, 1995-11-29, 1995-11-29, 199~
+    ## $ station           <chr> "Okie Dam 1", "Okie Dam 1", "Okie Dam 1", "Okie Dam ~
+    ## $ method            <chr> "Diversion Fyke Trap", "Diversion Fyke Trap", "Diver~
+    ## $ trap_status       <chr> "Check", "Check", "Check", "Check", "Check", "Check"~
+    ## $ organism_code     <chr> "Chinook Salmon", "Chinook Salmon", "Chinook Salmon"~
+    ## $ count             <dbl> 1, 2, 1, 8, 1, 5, 4, 1, 1, 1, 3, 3, 5, 3, 4, 1, 2, 1~
+    ## $ fork_length       <dbl> 38, 37, 39, 35, 33, 34, 36, 37, 36, 34, 33, 34, 35, ~
+    ## $ weight            <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00~
+    ## $ lifestage         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ time              <time> 09:30:00, 09:30:00, 09:30:00, 09:30:00, 09:30:00, 0~
+    ## $ gear_id           <chr> "Diversion Fyke Trap 1", "Diversion Fyke Trap 1", "D~
+    ## $ water_temperature <dbl> 8.333333, 8.333333, 8.333333, 8.333333, 8.333333, 8.~
+    ## $ turbidity         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ water_velocity    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ staff_gauge       <dbl> 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, NA, NA, NA, ~
+    ## $ trap_revolutions  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ debris            <chr> "Medium", "Medium", "Medium", "Medium", "Medium", "M~
+    ## $ rpms_start        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ rpms_end          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+
+``` r
+write_csv(butte_creek_rst, "butte_rst.csv")
+```
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(butte_creek_rst,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data/butte-creek-rst.csv")
+```
