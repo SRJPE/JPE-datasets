@@ -79,8 +79,8 @@ months <- str_extract_all(raw_passage_estimates$dates, '[a-zA-z]+', simplify = T
   mutate(start_month = V1,
          end_month = ifelse(V2=='', V1, V2))
 
-month_lookup <- 1:12
-names(month_lookup) <- month.name
+month_lookup <- c(1:12, 8, 4)
+names(month_lookup) <- c(month.name, "Aug", "Apri")
 
 raw_passage_estimates$start_month <- month_lookup[months$start_month]
 raw_passage_estimates$end_month <- month_lookup[months$end_month]
@@ -89,7 +89,9 @@ raw_passage_estimates$end_day <- days[, 2]
 
 cleaner_passage_estimates <- raw_passage_estimates %>% 
   mutate(start_date = as.Date(paste0(year, "-", start_month, "-", start_day)),
-         end_date = as.Date(paste0(year, "-", end_month, "-", end_day))) %>%
+         end_date = as.Date(paste0(year, "-", end_month, "-", end_day)),
+         start_date = if_else(is.na(start_date), as.Date.numeric(as.numeric(dates), origin = "1884-12-30"), start_date), # this orgin date doesn't make sense but it generates a normal date....figure it out. 
+         end_date = if_else(is.na(end_date), as.Date.numeric(as.numeric(dates), origin = "1884-12-30"), end_date)) %>%
   select(-year, -dates, -start_day, -end_day, -start_month, -end_month) %>%
   glimpse()
 
@@ -143,17 +145,17 @@ summary(cleaner_passage_estimates$week)
 cleaner_passage_estimates %>% 
   group_by(year = year(start_date)) %>%
   summarise(total_hours_passage = sum(hours_of_passage, na.rm = T), 
-            total_tapped_hours = sum(hours_of_taped_passage, na.rm = T)) %>%
+            total_taped_hours = sum(hours_of_taped_passage, na.rm = T)) %>%
   pivot_longer(!year, names_to = "type", values_to = "hours") %>%
   ggplot(aes(x = year, y = hours, fill = type)) + 
   geom_col(position = "dodge", alpha = .75) + 
   # geom_vline(xintercept = 168, color = "red") + 
-  labs(title = "Total hours of passage and hours of tapped passage") +
+  labs(title = "Total hours of passage and hours of taped passage") +
   theme_minimal()
   # scale_fill_manual(values = c("blue", "orange"))
 ```
 
-Pre 2010 less hours of passage tapped and total hours of passage than post 2010.
+Pre 2010 less hours of passage taped and total hours of passage than post 2010.
 
 ```{r}
 cleaner_passage_estimates %>% 
@@ -166,7 +168,7 @@ cleaner_passage_estimates %>%
   theme_minimal()
 ```
 
-The red line is at 168, the total number of hours in a year. It appears that from 2001 - 2006 they did not have tapped passage for the full week very often. The recent years are better with some variation. 2019 must not be complete data. 
+The red line is at 168, the total number of hours in a week. It appears that from 2001 - 2006 they did not have taped passage for the full week very often. The recent years are better with some variation. 2019 must not be complete data. 
 
 
 **Numeric Summary of passage hours over Period of Record**
@@ -223,7 +225,7 @@ summary(cleaner_passage_estimates$passage_estimate)
 
 ```
 
-We see that the negative passage estimate value is -10.5. 
+We see that the negative passage estimate value is -10.5. Take the absolute value of the passage_estimate column to remove negative values. 
 
 **NA and Unknown Values**
 
@@ -263,8 +265,18 @@ cleaner_passage_estimates  %>%
 ```{r}
 summary(cleaner_passage_estimates$raw_count)
 
+# Raw counts from traps
+summary(cleaner_passage_estimates %>% 
+          filter(method %in% c("Trap", "Spawning Building/Trap", "Spawning Building")) %>% 
+          pull(raw_count))
+
+# Raw counts from video
+summary(cleaner_passage_estimates %>% 
+          filter(method == c("Video")) %>% 
+          pull(raw_count))
 ```
 
+Take the absolute value of the `raw_count` column to remove negitive values. 
 
 **NA and Unknown Values**
 
@@ -304,7 +316,7 @@ table(cleaner_passage_estimates$method)
 
 ### Variable: `adipose`
 
-Adipose clipped, unclipped or unknown, 
+Adipose clipped, unclipped or unknown
 
 ```{r}
 table(cleaner_passage_estimates$adipose) 
@@ -316,18 +328,21 @@ table(cleaner_passage_estimates$adipose)
 
 ## Summary of identified issues
 
-* Negative value for passage count with clipped adipose in 2012
+* Negative value for passage count with clipped adipose in 2012 - take abs value (below)
 * Total hours of passage varies quite a but over the years, different/shorter sampling seasons pre 2010 contribute to this
 * There are a few values that do not have a date (start_date 21, end_date 24).  
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-battle_passage_estimates <- cleaner_passage_estimates %>% glimpse()
+battle_passage_estimates <- cleaner_passage_estimates %>% 
+  mutate(raw_count = abs(raw_count),
+         passage_estimate = abs(passage_estimate)) %>%
+  glimpse()
 
 ```
 
-```{r}
+```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(battle_passage_estimates,

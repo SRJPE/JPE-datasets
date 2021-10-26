@@ -147,7 +147,7 @@ September.
 
 ``` r
 # Boxplots of daily counts by year
-cleaner_video_data %>% group_by(date) %>%
+cleaner_video_data %>% group_by(date, passage_direction) %>%
   mutate(daily_count_upstream = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
@@ -165,7 +165,9 @@ cleaner_video_data %>% group_by(date) %>%
 cleaner_video_data  %>%
   mutate(year = as.factor(year(date))) %>%
   filter(run %in% c("FR", "LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
-  ggplot(aes(x = year, y = count, fill = passage_direction)) + 
+  group_by(year, passage_direction) %>%
+  mutate(total_count = sum(count)) %>%
+  ggplot(aes(x = year, y = total_count, fill = passage_direction)) + 
   geom_col() + 
   theme_minimal() +
   labs(title = "Total Yearly Upstream Fish Counts by Run",
@@ -203,10 +205,6 @@ cleaner_video_data %>% group_by(date) %>%
 -   0 % of values in the `count` column are NA. However, there are
     clearly gaps in data. More investigation needs to be done to see if
     0 is a real 0 or if it can be explained by other factors (outages).
-
-### Variable: `count_down`
-
-Downstream count data begins in 2010.
 
 ## Explore Categorical variables:
 

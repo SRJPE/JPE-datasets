@@ -256,12 +256,15 @@ table(cleaner_passage_data$adipose)
 ```
 Fix inconsistencies with spelling, capitalization, and abbreviations.  
 
+A = Absent - changes to FALSE
+P = present - changes to TRUE 
+(there are 6 unknown values that turn to NA)
+
 ```{r}
 # Fix yes/no/unknown
 cleaner_passage_data$adipose = case_when(
-  cleaner_passage_data$adipose == "A" ~ "absent",
-  cleaner_passage_data$adipose == "P" ~ "present",
-  cleaner_passage_data$adipose == "Unk" ~ "unknown",
+  cleaner_passage_data$adipose == "A" ~ FALSE,
+  cleaner_passage_data$adipose == "P" ~ TRUE,
 )
 table(cleaner_passage_data$adipose) 
 ```
@@ -269,7 +272,7 @@ table(cleaner_passage_data$adipose)
 **NA or Unknown Values**
 
 * `r round(sum(is.na(cleaner_passage_data$adipose))/nrow(cleaner_passage_data), 3) * 100` % of values in the `adipose` column are NA. 
-* `r round(sum(cleaner_passage_data$adipose == "unknown", na.rm = T)/nrow(cleaner_passage_data), 3) * 100` % of values in the `adipose` column are`unknown`.
+
 
 ### Variable: `condition`
 Describes fish coloration, B=Bright, D=Dark, F=Fungus				
@@ -295,6 +298,7 @@ table(cleaner_passage_data$condition)
 ### Variable: `mature`
 
 fish sexual maturity, N/A=not applicable, R=Ripe, G=Green (or unripe)				
+Changes to TRUE for R (sexually mature), and FALSE for G (sexually unripe)
 
 ```{r}
 table(cleaner_passage_data$mature)
@@ -302,8 +306,8 @@ table(cleaner_passage_data$mature)
 
 ```{r}
 cleaner_passage_data$mature = case_when(
-  cleaner_passage_data$mature == "G" ~ "green",
-  cleaner_passage_data$mature == "R" ~ "ripe"
+  cleaner_passage_data$mature == "G" ~ FALSE,
+  cleaner_passage_data$mature == "R" ~ TRUE
 )
 table(cleaner_passage_data$mature)
 ```

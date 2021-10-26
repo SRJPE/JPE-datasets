@@ -108,8 +108,8 @@ months <- str_extract_all(raw_passage_estimates$dates, '[a-zA-z]+', simplify = T
   mutate(start_month = V1,
          end_month = ifelse(V2=='', V1, V2))
 
-month_lookup <- 1:12
-names(month_lookup) <- month.name
+month_lookup <- c(1:12, 8, 4)
+names(month_lookup) <- c(month.name, "Aug", "Apri")
 
 raw_passage_estimates$start_month <- month_lookup[months$start_month]
 raw_passage_estimates$end_month <- month_lookup[months$end_month]
@@ -118,7 +118,9 @@ raw_passage_estimates$end_day <- days[, 2]
 
 cleaner_passage_estimates <- raw_passage_estimates %>% 
   mutate(start_date = as.Date(paste0(year, "-", start_month, "-", start_day)),
-         end_date = as.Date(paste0(year, "-", end_month, "-", end_day))) %>%
+         end_date = as.Date(paste0(year, "-", end_month, "-", end_day)),
+         start_date = if_else(is.na(start_date), as.Date.numeric(as.numeric(dates), origin = "1884-12-30"), start_date), # this orgin date doesn't make sense but it generates a normal date....figure it out. 
+         end_date = if_else(is.na(end_date), as.Date.numeric(as.numeric(dates), origin = "1884-12-30"), end_date)) %>%
   select(-year, -dates, -start_day, -end_day, -start_month, -end_month) %>%
   glimpse()
 ```
@@ -210,12 +212,12 @@ Record**
 cleaner_passage_estimates %>% 
   group_by(year = year(start_date)) %>%
   summarise(total_hours_passage = sum(hours_of_passage, na.rm = T), 
-            total_tapped_hours = sum(hours_of_taped_passage, na.rm = T)) %>%
+            total_taped_hours = sum(hours_of_taped_passage, na.rm = T)) %>%
   pivot_longer(!year, names_to = "type", values_to = "hours") %>%
   ggplot(aes(x = year, y = hours, fill = type)) + 
   geom_col(position = "dodge", alpha = .75) + 
   # geom_vline(xintercept = 168, color = "red") + 
-  labs(title = "Total hours of passage and hours of tapped passage") +
+  labs(title = "Total hours of passage and hours of taped passage") +
   theme_minimal()
 ```
 
@@ -225,7 +227,7 @@ cleaner_passage_estimates %>%
   # scale_fill_manual(values = c("blue", "orange"))
 ```
 
-Pre 2010 less hours of passage tapped and total hours of passage than
+Pre 2010 less hours of passage taped and total hours of passage than
 post 2010.
 
 ``` r
@@ -241,8 +243,8 @@ cleaner_passage_estimates %>%
 
 ![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-The red line is at 168, the total number of hours in a year. It appears
-that from 2001 - 2006 they did not have tapped passage for the full week
+The red line is at 168, the total number of hours in a week. It appears
+that from 2001 - 2006 they did not have taped passage for the full week
 very often. The recent years are better with some variation. 2019 must
 not be complete data.
 
@@ -325,7 +327,9 @@ summary(cleaner_passage_estimates$passage_estimate)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ## -10.500   0.000   1.000   3.764   4.000  74.000     470
 
-We see that the negative passage estimate value is -10.5.
+We see that the negative passage estimate value is -10.5. Take the
+absolute value of the passage\_estimate column to remove negative
+values.
 
 **NA and Unknown Values**
 
@@ -379,6 +383,29 @@ summary(cleaner_passage_estimates$raw_count)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ## -10.000   0.000   0.000   3.652   3.000 171.000       6
 
+``` r
+# Raw counts from traps
+summary(cleaner_passage_estimates %>% 
+          filter(method %in% c("Trap", "Spawning Building/Trap", "Spawning Building")) %>% 
+          pull(raw_count))
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.000   0.000   0.000   4.374   3.000 171.000       6
+
+``` r
+# Raw counts from video
+summary(cleaner_passage_estimates %>% 
+          filter(method == c("Video")) %>% 
+          pull(raw_count))
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -10.000   0.000   0.000   3.161   3.000  74.000
+
+Take the absolute value of the `raw_count` column to remove negitive
+values.
+
 **NA and Unknown Values**
 
 -   0.4 % of values in the `raw_count` column are NA.
@@ -429,7 +456,7 @@ table(cleaner_passage_estimates$method)
 
 ### Variable: `adipose`
 
-Adipose clipped, unclipped or unknown,
+Adipose clipped, unclipped or unknown
 
 ``` r
 table(cleaner_passage_estimates$adipose) 
@@ -445,7 +472,8 @@ table(cleaner_passage_estimates$adipose)
 
 ## Summary of identified issues
 
--   Negative value for passage count with clipped adipose in 2012
+-   Negative value for passage count with clipped adipose in 2012 - take
+    abs value (below)
 -   Total hours of passage varies quite a but over the years,
     different/shorter sampling seasons pre 2010 contribute to this
 -   There are a few values that do not have a date (start\_date 21,
@@ -454,7 +482,10 @@ table(cleaner_passage_estimates$adipose)
 ## Save cleaned data back to google cloud
 
 ``` r
-battle_passage_estimates <- cleaner_passage_estimates %>% glimpse()
+battle_passage_estimates <- cleaner_passage_estimates %>% 
+  mutate(raw_count = abs(raw_count),
+         passage_estimate = abs(passage_estimate)) %>%
+  glimpse()
 ```
 
     ## Rows: 1,398
@@ -477,29 +508,3 @@ gcs_upload(battle_passage_estimates,
            type = "csv",
            name = "adult-upstream-passage-monitoring/battle-creek/data/battle_passage_estimates.csv")
 ```
-
-    ## i 2021-10-21 08:38:05 > File size detected as  71.9 Kb
-
-    ## i 2021-10-21 08:38:05 > Request Status Code:  400
-
-    ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
-
-    ## i 2021-10-21 08:38:05 > File size detected as  71.9 Kb
-
-    ## ==Google Cloud Storage Object==
-    ## Name:                adult-upstream-passage-monitoring/battle-creek/data/battle_passage_estimates.csv 
-    ## Type:                csv 
-    ## Size:                71.9 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fbattle-creek%2Fdata%2Fbattle_passage_estimates.csv?generation=1634830686133529&alt=media 
-    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fbattle-creek%2Fdata%2Fbattle_passage_estimates.csv 
-    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fbattle-creek%2Fdata%2Fbattle_passage_estimates.csv 
-    ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/battle-creek/data/battle_passage_estimates.csv/1634830686133529 
-    ## MD5 Hash:            asQ8ifIDFC2w2222qoKv9w== 
-    ## Class:               STANDARD 
-    ## Created:             2021-10-21 15:38:06 
-    ## Updated:             2021-10-21 15:38:06 
-    ## Generation:          1634830686133529 
-    ## Meta Generation:     1 
-    ## eTag:                CJm6wvLq2/MCEAE= 
-    ## crc32c:              226jSQ==

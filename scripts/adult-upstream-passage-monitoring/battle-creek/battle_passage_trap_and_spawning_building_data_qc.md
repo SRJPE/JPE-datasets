@@ -350,24 +350,25 @@ table(cleaner_passage_data$adipose)
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
+A = Absent - changes to FALSE P = present - changes to TRUE (there are 6
+unknown values that turn to NA)
+
 ``` r
 # Fix yes/no/unknown
 cleaner_passage_data$adipose = case_when(
-  cleaner_passage_data$adipose == "A" ~ "absent",
-  cleaner_passage_data$adipose == "P" ~ "present",
-  cleaner_passage_data$adipose == "Unk" ~ "unknown",
+  cleaner_passage_data$adipose == "A" ~ FALSE,
+  cleaner_passage_data$adipose == "P" ~ TRUE,
 )
 table(cleaner_passage_data$adipose) 
 ```
 
     ## 
-    ##  absent present unknown 
-    ##    2008     684       6
+    ## FALSE  TRUE 
+    ##  2008   684
 
 **NA or Unknown Values**
 
--   0 % of values in the `adipose` column are NA.
--   0.2 % of values in the `adipose` column are`unknown`.
+-   0.2 % of values in the `adipose` column are NA.
 
 ### Variable: `condition`
 
@@ -400,7 +401,9 @@ table(cleaner_passage_data$condition)
 
 ### Variable: `mature`
 
-fish sexual maturity, N/A=not applicable, R=Ripe, G=Green (or unripe)
+fish sexual maturity, N/A=not applicable, R=Ripe, G=Green (or unripe)  
+Changes to TRUE for R (sexually mature), and FALSE for G (sexually
+unripe)
 
 ``` r
 table(cleaner_passage_data$mature)
@@ -412,14 +415,14 @@ table(cleaner_passage_data$mature)
 
 ``` r
 cleaner_passage_data$mature = case_when(
-  cleaner_passage_data$mature == "G" ~ "green",
-  cleaner_passage_data$mature == "R" ~ "ripe"
+  cleaner_passage_data$mature == "G" ~ FALSE,
+  cleaner_passage_data$mature == "R" ~ TRUE
 )
 table(cleaner_passage_data$mature)
 ```
 
     ## 
-    ## green  ripe 
+    ## FALSE  TRUE 
     ##   935  1713
 
 **NA or Unknown Values**
@@ -605,9 +608,9 @@ battle_passage_trap <- cleaner_passage_data %>%
     ## $ sex               <chr> "F", "F", "unknown", "unknown", "F", "unknown", "M",~
     ## $ confidence_in_sex <chr> "confident", "confident", NA, NA, "confident", NA, "~
     ## $ fork_length       <dbl> 806, 910, 725, 755, 611, 810, 525, 668, 771, 870, 77~
-    ## $ adipose           <chr> "absent", "absent", "present", "present", "absent", ~
+    ## $ adipose           <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE,~
     ## $ condition         <chr> "dark", "dark", "dark", "bright", "bright", "bright"~
-    ## $ mature            <chr> "ripe", "ripe", "ripe", "green", "green", "green", "~
+    ## $ mature            <lgl> TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, T~
     ## $ status            <chr> "sacraficed", "sacraficed", NA, NA, NA, NA, "sacrafi~
     ## $ recapture         <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL~
     ## $ recapture_type    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
