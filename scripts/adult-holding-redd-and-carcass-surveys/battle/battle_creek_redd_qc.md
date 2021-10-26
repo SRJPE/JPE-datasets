@@ -7,14 +7,14 @@ Erin Cain
 
 ## Description of Monitoring Data
 
-These data were aquired via snorkel and kayak surveys on Battle Creek
+These data were acquired via snorkel and kayak surveys on Battle Creek
 from 2001 to 2019. Red location, size, substrate and flow were measured.
 Annual monitoring questions and conditions drove the frequency and
 detail of individual redd measurements.
 
 **Timeframe:** 2001 - 2019
 
-**Survey Season:**
+**Survey Season:** September - October
 
 **Completeness of Record throughout timeframe:** Sampled each year
 
@@ -199,7 +199,7 @@ All values look within an expected range
 
 ``` r
 cleaner_redd_data %>% 
-  ggplot(aes(x = river_mile, y = year(date))) +
+  ggplot(aes(x = river_mile, y =as.factor(year(date)))) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "River Mile", 
        y = "Date") +
@@ -240,6 +240,8 @@ summary(cleaner_redd_data$river_mile)
 
 ### Variable: `pre_redd_depth`
 
+pre redd depth - depth measurement before redd was created
+
 **Plotting distribution of pre redd depth**
 
 ``` r
@@ -278,7 +280,7 @@ summary(cleaner_redd_data$pre_redd_depth)
 cleaner_redd_data %>% 
   ggplot(aes(x = redd_pit_depth)) +
   geom_histogram() +
-  labs(x = "River Pitt Depth", 
+  labs(x = "River Pit Depth", 
        y = "Count") +
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
@@ -492,9 +494,7 @@ summary(cleaner_redd_data$start_number_flow_meter_80)
 
 -   65.7 % of values in the `start_number_flow_meter` column are NA.
 -   91 % of values in the `start_number_flow_meter_80` column are NA.
--   There are a lot of 0 values. Could these be NA? TODO Add in start,
-    end, time, start\_80, end\_80, time\_80, see if I can fix format of
-    them first
+-   There are a lot of 0 values. Could these be NA?
 
 ### Variables: `end_number_flow_meter`, `end_number_flow_meter_80`
 
@@ -551,6 +551,9 @@ summary(cleaner_redd_data$end_number_flow_meter_80)
 
 ### Variables: `flow_meter_time`, `flow_meter_time_80`
 
+Start number for flow bomb at 80% depth; 80% depth was measured when the
+redd was &gt;22" deep
+
 **Plotting distribution of flow meter end number per second**
 
 ``` r
@@ -600,7 +603,6 @@ summary(cleaner_redd_data$flow_meter_time_80)
 
 -   65.7 % of values in the `flow_meter_time` column are NA.
 -   91 % of values in the `flow_meter_time_80` column are NA.
--   There are a lot of 0 values. Could these be NA?
 
 ## Explore Categorical variables:
 
@@ -888,6 +890,8 @@ unique(cleaner_redd_data$comments)[1:10]
 -   there are a lot of zero values for the physical characteristics of
     redds, I need to figure out if these are not measured values or are
     actually zero
+-   Need to make sure to standardize all units (chose metric units that
+    we want to use) this one has redd measures in Inches
 
 ## Save cleaned data back to google cloud
 
