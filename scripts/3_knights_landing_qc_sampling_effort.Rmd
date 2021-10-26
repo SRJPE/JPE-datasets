@@ -89,8 +89,9 @@ knl_effort %>%
 This variable exists for years 2002-2011 and is consistently 2; except in a few cases.
 
 ```{r}
-ggplot(knl_effort, aes(y = number_traps)) +
-  geom_boxplot() +
+filter(knl_effort, year(date) <= 2011) %>%
+ggplot(aes(y = number_traps)) +
+  geom_histogram() +
   facet_wrap(~year(date))
 ```
 
@@ -616,5 +617,5 @@ gcs_upload(data,
            name = paste0("rst/lower-sac-river/data/knights-landing/knl_combine_", name, ".csv"))
 }
 
-upload_data(knl_effort_changes, "sampling_effort")
+upload_data(knl_effort_changes, "sampling_effort_clean")
 ```
