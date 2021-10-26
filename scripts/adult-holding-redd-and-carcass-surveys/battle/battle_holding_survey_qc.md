@@ -199,7 +199,8 @@ cleaner_holding_data %>%
   theme_minimal() +
   labs(title = "Daily Count Sumarized by Year") + 
   theme(text = element_text(size = 23),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))   + 
+  scale_y_continuous(limits = c(0, 101))
 ```
 
 ![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
@@ -250,7 +251,7 @@ cleaner_holding_data %>% group_by(date) %>%
 
 **Plotting distribution of jacks**
 
-number of jacks seen
+Number of jacks seen
 
 ``` r
 cleaner_holding_data %>% 
@@ -262,7 +263,7 @@ cleaner_holding_data %>%
 
 ![](battle_holding_survey_qc_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
-most of the jacks are 0
+Most of the jacks are 0
 
 **Numeric Summary of jacks over Period of Record**
 
@@ -286,6 +287,8 @@ cleaner_holding_data %>% select_if(is.character) %>% colnames()
     ## [1] "reach" "notes"
 
 ### Variable: `reach`
+
+The stream section
 
 ``` r
 table(cleaner_holding_data$reach) 
