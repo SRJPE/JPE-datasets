@@ -639,6 +639,7 @@ There are `r length(unique(cleaner_rst_environmental$sample_id))` unique sample 
 ### Variable: `weather_code`
 
 A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table			
+
 | code | description |			
 | ---- | ------------ |
 | CLR |	sunny |
@@ -729,6 +730,7 @@ table(cleaner_rst_environmental$trap_sample_type)
 ### Variable: `habitat`
 
 The type of flow habitat the trap fished in, see VariableCodesLookUp table	
+
 | code | definition |
 | ---- | ---------- |
 | P |	plunge pool |
@@ -784,6 +786,7 @@ table(cleaner_rst_environmental$thalweg)
 
 The time of day relative to the sun, see VariableCodesLookUp table	
 
+
 | code | definition |
 | ---- | ---------- |
 | C1 |	pre-sunrise |
@@ -815,6 +818,7 @@ table(cleaner_rst_environmental$diel)
 
 The type of debris found in the live-box, see VariableCodesLookUp table			
 
+
 | code | definition |
 | ----- | -------------- |
 | a |	aquatic vegetation |
@@ -833,9 +837,25 @@ table(cleaner_rst_environmental$debris_type)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$debris_type <- tolower(cleaner_rst_environmental$debris_type)
+table(cleaner_rst_environmental$debris_type) 
 ```
-
+**Create lookup rda for gear debris encoding:** 
+```{r}
+# View description of domain for viewing condition 
+battle_rst_debris_type <- c('a','l','s','al','as','ls','als')
+names(battle_rst_debris_type) <- c(
+  "aquatic vegetation",
+  "large woody debris",
+  "sticks",
+  "veg + wood",
+  "veg + sticks",
+  "wood + sticks",
+  "veg + wood + sticks")
+# write_rds(battle_rst_debris_type, "../../../data/battle_rst_debris_type.rds")
+tibble(code = battle_rst_debris_type, 
+       definitions = names(battle_rst_debris_type))
+```
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_rst_environmental$debris_type))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `debris_type` column are NA.
@@ -872,12 +892,6 @@ TODO figure out what each one stands for
 table(cleaner_rst_environmental$sub_week) 
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-# Fix any inconsistencies with categorical variables
-```
-
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_rst_environmental$sub_week))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `sub_week` column are NA.
@@ -894,7 +908,8 @@ unique(cleaner_rst_environmental$trap_comments)[1:5]
 
 ### Variable: `gear_condition_code`
 
-A code for the condition of the trap on the SampleDate and SampleTime; see VariableCodesLookUp table							
+A code for the condition of the trap on the SampleDate and SampleTime; see VariableCodesLookUp table				
+
 | code | definition  |
 | ---- | ----------- |
 | n	|normal |
@@ -967,12 +982,19 @@ table(cleaner_rst_environmental$partial_sample)
 
 ## Summary of identified issues
 
-* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
+* Need to figure out what sub_week column values stand for. 
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
+battle_rst_environmental <- cleaner_rst_environmental %>% glimpse()
+```
+```{r, eval=FALSE}
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(battle_rst_environmental,
+           object_function = f,
+           type = "csv",
+           name = "rst/battle-creek/data/battle_rst_environmental.csv")
 ```
-

@@ -939,10 +939,14 @@ There are 3742 unique sample IDs.
 ### Variable: `weather_code`
 
 A code for the weather conditions on the SampleDate and SampleTime. See
-VariableCodesLookUp table  
-\| code \| description \|  
-\| —- \| ———— \| \| CLR \| sunny \| \| RAN \| precipitation \| \| FOG \|
-foggy \| \| CLD \| overcast \|
+VariableCodesLookUp table
+
+| code | description   |
+|------|---------------|
+| CLR  | sunny         |
+| RAN  | precipitation |
+| FOG  | foggy         |
+| CLD  | overcast      |
 
 ``` r
 table(cleaner_rst_environmental$weather_code) 
@@ -1053,10 +1057,15 @@ table(cleaner_rst_environmental$trap_sample_type)
 ### Variable: `habitat`
 
 The type of flow habitat the trap fished in, see VariableCodesLookUp
-table  
-\| code \| definition \| \| —- \| ———- \| \| P \| plunge pool \| \| R \|
-run \| \| G \| glide \| \| B \| backwater pool \| \| L \| lateral flood
-\|
+table
+
+| code | definition     |
+|------|----------------|
+| P    | plunge pool    |
+| R    | run            |
+| G    | glide          |
+| B    | backwater pool |
+| L    | lateral flood  |
 
 ``` r
 table(cleaner_rst_environmental$habitat) 
@@ -1179,8 +1188,42 @@ table(cleaner_rst_environmental$debris_type)
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$debris_type <- tolower(cleaner_rst_environmental$debris_type)
+table(cleaner_rst_environmental$debris_type) 
 ```
+
+    ## 
+    ##    a   al  als   as    l   ls 
+    ##  343   20 3185  136    5   29
+
+**Create lookup rda for gear debris encoding:**
+
+``` r
+# View description of domain for viewing condition 
+battle_rst_debris_type <- c('a','l','s','al','as','ls','als')
+names(battle_rst_debris_type) <- c(
+  "aquatic vegetation",
+  "large woody debris",
+  "sticks",
+  "veg + wood",
+  "veg + sticks",
+  "wood + sticks",
+  "veg + wood + sticks")
+# write_rds(battle_rst_debris_type, "../../../data/battle_rst_debris_type.rds")
+tibble(code = battle_rst_debris_type, 
+       definitions = names(battle_rst_debris_type))
+```
+
+    ## # A tibble: 7 x 2
+    ##   code  definitions        
+    ##   <chr> <chr>              
+    ## 1 a     aquatic vegetation 
+    ## 2 l     large woody debris 
+    ## 3 s     sticks             
+    ## 4 al    veg + wood         
+    ## 5 as    veg + sticks       
+    ## 6 ls    wood + sticks      
+    ## 7 als   veg + wood + sticks
 
 **NA and Unknown Values**
 
@@ -1231,12 +1274,6 @@ table(cleaner_rst_environmental$sub_week)
     ##    A    B    C 
     ## 3477  267    7
 
-Fix inconsistencies with spelling, capitalization, and abbreviations.
-
-``` r
-# Fix any inconsistencies with categorical variables
-```
-
 **NA and Unknown Values**
 
 -   0 % of values in the `sub_week` column are NA.
@@ -1260,9 +1297,14 @@ unique(cleaner_rst_environmental$trap_comments)[1:5]
 ### Variable: `gear_condition_code`
 
 A code for the condition of the trap on the SampleDate and SampleTime;
-see VariableCodesLookUp table  
-\| code \| definition \| \| —- \| ———– \| \| n \|normal \| \| pb\|
-partial block \| \| tb\| total block \| \| nr\| not rotating \|
+see VariableCodesLookUp table
+
+| code | definition    |
+|------|---------------|
+| n    | normal        |
+| pb   | partial block |
+| tb   | total block   |
+| nr   | not rotating  |
 
 ``` r
 table(cleaner_rst_environmental$gear_condition_code) 
@@ -1347,12 +1389,59 @@ table(cleaner_rst_environmental$partial_sample)
 
 ## Summary of identified issues
 
--   List things that are funcky/bothering us but that we don’t feel like
-    should be changed without more investigation
+-   Need to figure out what sub\_week column values stand for.
 
 ## Save cleaned data back to google cloud
 
 ``` r
+battle_rst_environmental <- cleaner_rst_environmental %>% glimpse()
+```
+
+    ## Rows: 3,751
+    ## Columns: 36
+    ## $ sample_id           <chr> "274_03", "275_03", "276_03", "277_03", "278_03", ~
+    ## $ trap_start_date     <date> 2003-09-30, 2003-10-01, 2003-10-02, 2003-10-03, 2~
+    ## $ trap_start_time     <time> 14:35:00, 14:22:00, 13:20:00, 08:25:00, 11:57:00,~
+    ## $ sample_date         <date> 2003-10-01, 2003-10-02, 2003-10-03, 2003-10-04, 2~
+    ## $ sample_time         <time> 14:22:00, 13:20:00, 08:25:00, 11:57:00, 11:07:00,~
+    ## $ counter             <dbl> 2417, 2260, 1954, 2943, 2649, 3087, 2208, 6750, 19~
+    ## $ flow_start_meter    <dbl> 939000, 13400, 23000, 91800, 118400, 187000, 26200~
+    ## $ flow_end_meter      <dbl> 953398, 23664, 31605, 97155, 123798, 200379, 27058~
+    ## $ flow_set_time       <dbl> 900, 627, 556, 330, 323, 840, 503, 510, 780, 1320,~
+    ## $ velocity            <dbl> 1.40, 1.43, 1.35, 1.42, 1.46, 1.39, 133.09, 1.29, ~
+    ## $ turbidity           <dbl> 1.7, 1.2, 1.3, 1.1, 1.8, 1.7, 1.5, 1.4, 1.7, 1.4, ~
+    ## $ sample_weight       <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
+    ## $ cone                <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
+    ## $ weather_code        <chr> "clear", "clear", "clear", "clear", "clear", "clea~
+    ## $ lunar_phase         <chr> "half", "half", "half", "half", "half", "half", "f~
+    ## $ river_left_depth    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ river_center_depth  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ river_right_depth   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ trap_sample_type    <chr> "non-intensive", "non-intensive", "non-intensive",~
+    ## $ habitat             <chr> "run", "run", "run", "run", "run", "run", "run", "~
+    ## $ thalweg             <lgl> TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TR~
+    ## $ diel                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ depth_adjust        <dbl> 29, 29, 29, 29, 28, 29, 29, 29, 28, 29, 28, 28, 28~
+    ## $ debris_type         <chr> "als", "als", "als", "als", "als", "als", "als", "~
+    ## $ debris_tubs         <dbl> 0.7, 0.4, 1.3, 0.8, 0.5, 0.5, 0.7, 1.0, 1.5, 4.2, ~
+    ## $ avg_time_per_rev    <dbl> 160, 164, 127, 89, 80, 90, 90, 115, 115, 126, 111,~
+    ## $ fish_properly       <lgl> TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TR~
+    ## $ sub_week            <chr> "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", ~
+    ## $ baileys_eff         <dbl> 0.0782, 0.0782, 0.0782, 0.0782, 0.0782, 0.0782, 0.~
+    ## $ num_released        <dbl> 490, 490, 490, 490, 490, 490, 490, 490, 490, 490, ~
+    ## $ trap_comments       <chr> NA, NA, NA, NA, NA, NA, "Flow end meter data incor~
+    ## $ gear_condition_code <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ start_counter       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ trap_fishing        <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ partial_sample      <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ report_baileys_eff  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+
+``` r
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(battle_rst_environmental,
+           object_function = f,
+           type = "csv",
+           name = "rst/battle-creek/data/battle_rst_environmental.csv")
 ```
