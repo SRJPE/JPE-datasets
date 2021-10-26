@@ -391,6 +391,7 @@ knl_effort %>%
   
 Data exists for all years.
 This variable should be re-categorized as a character.
+Changes are made in the make_changes section below.
 
 ```{r}
 # knl_effort %>%
