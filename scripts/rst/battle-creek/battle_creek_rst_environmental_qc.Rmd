@@ -109,7 +109,8 @@ cleaner_rst_environmental %>%
   geom_boxplot(aes(x = counter, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
   theme_minimal() + 
   theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
 ```
 
 
@@ -202,7 +203,17 @@ cleaner_rst_environmental %>%
 ```
 
 ```{r}
-# TODO add another graph
+cleaner_rst_environmental %>%
+  mutate(wy = factor(ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(sample_date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(sample_date), day(sample_date)))) %>%
+  ggplot(aes(x = fake_date, y = velocity)) +
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("") +
+  facet_wrap(~wy, scales = "free") + 
+  theme_minimal()
 ```
 
 
@@ -233,10 +244,7 @@ cleaner_rst_environmental %>%
 ```
   
 ```{r}
-# TODO fix this 
 
-# Make whatever plot is appropriate 
-# maybe 2 plots is appropriate
 cleaner_rst_environmental %>% 
   group_by(date = as.Date(sample_date)) %>%
   mutate(avg_turbidity_ntu = mean(turbidity)) %>%
@@ -257,18 +265,18 @@ cleaner_rst_environmental %>%
        x = "Date", 
        y = "Average Daily Turbidity NTUs")  
 ```
+
 ```{r}
-# TODO fix plot
-cleaner_rst_environmental %>% 
-  filter(year(as.Date(sample_date)) > 1999) %>% # Filter because only a few measure before this date
-  mutate(year = as.factor(year(as.Date(sample_date)))) %>%
-  ggplot(aes(x = turbidity, y = year)) + 
-  geom_boxplot() + 
-  theme_minimal() +
-  labs(title = "Water Turbidity measures summarized by year",
-       x = "Turbidity NTUs") + 
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+cleaner_rst_environmental %>%
+  mutate(wy = factor(ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(sample_date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(sample_date), day(sample_date)))) %>%
+  ggplot(aes(x = fake_date, y = turbidity)) +
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("") +
+  facet_wrap(~wy, scales = "free") + theme_minimal()
 ```
 
 Most turbidity measures are low but a few outliers going up until 850
@@ -322,71 +330,288 @@ summary(cleaner_rst_environmental$sample_weight)
   
 * `r round(sum(is.na(cleaner_rst_environmental$sample_weight))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `sample_weight` column are NA.
 
-### Variable: `turbidity`
+### Variable: `river_left_depth`, `river_right_depth`, `river_center_depth`
 
-Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime							
+* River depth from directly in the center of cone off crossbeam #2 (cone crossbeam)							
+* River depth from inside of the river left (facing down stream) pontoon off crossbeam #2 (cone crossbeam)							
+* River depth from inside of the river right (facing down stream) pontoon off crossbeam #2 (cone crossbeam)					
 
-**Plotting distribution of turbidity**
+**Plotting distribution of depth measures**
 ```{r}
-cleaner_rst_environmental %>% 
-  filter(counter < 200) %>% # filter out values < 200
+depth_1 <- cleaner_rst_environmental %>% 
+  # filter(counter < 200) %>% # filter out values < 200
   ggplot() +
-  geom_histogram(aes(x = turbidity), fill = "blue", alpha = .5) +
+  geom_histogram(aes(x = river_left_depth), fill = "blue", alpha = .5) +
+  geom_histogram(aes(x = river_center_depth), fill = "gray", alpha = .75) +
+  geom_histogram(aes(x = river_right_depth), fill = "green", alpha = .5) +
   theme_minimal() + 
   theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-  
-```{r}
-# TODO fix this 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "River Depth: left (blue), right (green), and center (gray)")
 
-# Make whatever plot is appropriate 
-# maybe 2 plots is appropriate
-cleaner_rst_environmental %>% 
-  group_by(date = as.Date(sample_date)) %>%
-  mutate(avg_turbidity_ntu = mean(turbidity)) %>%
-  filter(avg_turbidity_ntu < 100) %>%
-  ungroup() %>%
- mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = avg_turbidity_ntu, color = year)) + 
-  geom_point(alpha = .25) + 
-  # facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+depth_2 <- cleaner_rst_environmental %>% 
+  filter(river_right_depth > 1) %>% # filter out values < 200
+  ggplot() +
+  geom_histogram(aes(x = river_left_depth), fill = "blue", alpha = .5) +
+  geom_histogram(aes(x = river_center_depth), fill = "gray", alpha = .75) +
+  geom_histogram(aes(x = river_right_depth), fill = "green", alpha = .5) +
   theme_minimal() + 
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "none") + 
-  labs(title = "Daily Turbidity Measures (colored by year)",
-       x = "Date", 
-       y = "Average Daily Turbidity NTUs")  
-```
-```{r}
-# TODO fix plot
-cleaner_rst_environmental %>% 
-  filter(year(as.Date(sample_date)) > 1999) %>% # Filter because only a few measure before this date
-  mutate(year = as.factor(year(as.Date(sample_date)))) %>%
-  ggplot(aes(x = turbidity, y = year)) + 
-  geom_boxplot() + 
-  theme_minimal() +
-  labs(title = "Water Turbidity measures summarized by year",
-       x = "Turbidity NTUs") + 
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "River Depth: left (blue), right (green), and center (gray)",
+       title = "Filtered Depth Distribution")
+gridExtra::grid.arrange(depth_1, depth_2)
 ```
 
-Most turbidity measures are low but a few outliers going up until 850
 
-**Numeric Summary of turbidity over Period of Record**
+**Numeric Summary of river depth over Period of Record**
   
 ```{r}
-summary(cleaner_rst_environmental$turbidity)
+summary(cleaner_rst_environmental$river_left_depth)
+summary(cleaner_rst_environmental$river_center_depth)
+summary(cleaner_rst_environmental$river_right_depth)
 ```
 
 **NA and Unknown Values**
   
-* `r round(sum(is.na(cleaner_rst_environmental$turbidity))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `turbidity` column are NA.
+* `r round(sum(is.na(cleaner_rst_environmental$river_left_depth))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `river_left_depth` column are NA.
+* `r round(sum(is.na(cleaner_rst_environmental$river_center_depth))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `river_center_depth` column are NA.
+* `r round(sum(is.na(cleaner_rst_environmental$river_right_depth))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `river_right_depth` column are NA.
+
+
+### Variable: `depth_adjust`
+
+The depth of the bottom of the cone							
+
+**Plotting distribution of depth adjustment**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = depth_adjust), fill = "blue", alpha = .5, binwidth = 1) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = depth_adjust, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+Looks like depth adjust varies by year depending on how the trap was positioned. 
+
+
+**Numeric Summary of depth adjustment over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$depth_adjust)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$depth_adjust))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `depth_adjust` column are NA.
+
+### Variable: `debris_tubs`
+
+The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically)							
+**Plotting distribution of debris_tubs**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = debris_tubs), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = debris_tubs, y = as.factor(month(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+
+Debris looks relitivly evenly distributed throughout the months. 
+
+**Numeric Summary of debris over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$debris_tubs)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$debris_tubs))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `debris_tubs` column are NA.
+
+### Variable: `avg_time_per_rev`
+
+The average time per cone rotation (average of three rotations)							
+
+**Plotting distribution of average time per revolution**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = avg_time_per_rev), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = avg_time_per_rev, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+
+
+
+**Numeric Summary of average time per rev over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$avg_time_per_rev)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$avg_time_per_rev))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `avg_time_per_rev` column are NA.
+
+
+### Variable: `baileys_eff`
+
+Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage							
+						
+
+**Plotting distribution of counter**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = baileys_eff), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = baileys_eff, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+
+**Numeric Summary of baileys efficency over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$baileys_eff)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$baileys_eff))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `baileys_eff` column are NA.
+
+### Variable: `num_released`
+
+Number fish released					
+
+**Plotting distribution of number released**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = num_released), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = num_released, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+
+
+
+**Numeric Summary of counter over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$num_released)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$num_released))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `num_released` column are NA.
+
+
+### Variable: `start_counter`
+
+Beginning cone revolution counter number, usually zero.							
+							
+
+All values either 0 or NA. 
+
+**Numeric Summary of counter over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$start_counter)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$start_counter))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `start_counter` column are NA.
+
+
+### Variable: `report_baileys_eff`
+
+The Bailey's efficiency used in old reports. Bailey's efficiency has been standardized to only four significant digits.							
+
+**Plotting distribution of counter**
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_histogram(aes(x = report_baileys_eff), fill = "blue", alpha = .5, binwidth = .01) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of baileys efficency measures for reports over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$report_baileys_eff)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$report_baileys_eff))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `report_baileys_eff` column are NA.
+
 
 
 ## Explore Categorical variables: {.tabset}
@@ -401,21 +626,10 @@ cleaner_rst_environmental %>% select_if(is.character) %>% colnames
 The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)	
 
 ```{r}
-#table() 
-```
+nrow(cleaner_rst_environmental) == length(unique(cleaner_rst_environmental$sample_id))
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-# Fix any inconsistencies with categorical variables
 ```
-
-**Create lookup rda for [variable] encoding:** 
-```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
+There are `r length(unique(cleaner_rst_environmental$sample_id))` unique sample IDs.
 
 **NA and Unknown Values**
 
@@ -424,7 +638,13 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ### Variable: `weather_code`
 
-A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table							
+A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table			
+| code | description |			
+| ---- | ------------ |
+| CLR |	sunny |
+| RAN |	precipitation |
+| FOG |	foggy |
+| CLD |	overcast |
 
 
 ```{r}
@@ -434,7 +654,17 @@ table(cleaner_rst_environmental$weather_code)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$weather_code <- case_when(
+  cleaner_rst_environmental$weather_code %in% c("CLD", "cld", "CLOUDY") ~ "cloudy", 
+  cleaner_rst_environmental$weather_code == "CLR" ~ "clear",
+  cleaner_rst_environmental$weather_code == "FOG" ~ "fog", 
+  cleaner_rst_environmental$weather_code == "PCLD" ~ "partially cloudy", 
+  cleaner_rst_environmental$weather_code == "RAN" ~ "precipitation",
+  cleaner_rst_environmental$weather_code == "WIN/CLR" ~ "windy and clear",
+  cleaner_rst_environmental$weather_code == "WINDY" ~ "windy"
+)
+
+table(cleaner_rst_environmental$weather_code) 
 ```
 
 **NA and Unknown Values**
@@ -452,7 +682,13 @@ table(cleaner_rst_environmental$lunar_phase)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$lunar_phase <- case_when(
+  cleaner_rst_environmental$lunar_phase == "F" ~ "full", 
+  cleaner_rst_environmental$lunar_phase == "H" ~ "half", 
+  cleaner_rst_environmental$lunar_phase == "N" ~ "new"
+)
+
+table(cleaner_rst_environmental$lunar_phase) 
 ```
 
 **NA and Unknown Values**
@@ -461,7 +697,15 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ### Variable: `trap_sample_type`
 
-The type of sample regime, see VariableCodesLookUp table							
+The type of sample regime, see VariableCodesLookUp table	
+
+| code |  definition  |
+| --- | ------------ | 
+| N |	non-intensive |
+| I | intensive |
+| S | sunrise-sunset |
+| R | random |
+
 
 ```{r}
 table(cleaner_rst_environmental$trap_sample_type) 
@@ -470,7 +714,12 @@ table(cleaner_rst_environmental$trap_sample_type)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$trap_sample_type <- case_when(
+  cleaner_rst_environmental$trap_sample_type == "N" ~ "non-intensive",
+  cleaner_rst_environmental$trap_sample_type == "R" ~ "random"
+)
+
+table(cleaner_rst_environmental$trap_sample_type) 
 ```
 
 **NA and Unknown Values**
@@ -479,7 +728,15 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ### Variable: `habitat`
 
-The type of flow habitat the trap fished in, see VariableCodesLookUp table							
+The type of flow habitat the trap fished in, see VariableCodesLookUp table	
+| code | definition |
+| ---- | ---------- |
+| P |	plunge pool |
+| R |	run |
+| G |	glide |
+| B |	backwater pool |
+| L |	lateral flood |
+
 
 ```{r}
 table(cleaner_rst_environmental$habitat) 
@@ -488,7 +745,12 @@ table(cleaner_rst_environmental$habitat)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$habitat <- case_when(
+  cleaner_rst_environmental$habitat == "B" ~ "backwater pool",
+  cleaner_rst_environmental$habitat == "R" ~ "run"
+)
+
+table(cleaner_rst_environmental$habitat) 
 ```
 
 **NA and Unknown Values**
@@ -506,7 +768,12 @@ table(cleaner_rst_environmental$thalweg)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$thalweg <- case_when(
+  cleaner_rst_environmental$thalweg == "Y" ~ TRUE, 
+  cleaner_rst_environmental$thalweg == "N" ~ FALSE
+)
+
+table(cleaner_rst_environmental$thalweg) 
 ```
 
 **NA and Unknown Values**
@@ -515,7 +782,17 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ### Variable: `diel`
 
-The time of day relative to the sun, see VariableCodesLookUp table							
+The time of day relative to the sun, see VariableCodesLookUp table	
+
+| code | definition |
+| ---- | ---------- |
+| C1 |	pre-sunrise |
+| C2 |	post-sunrise |
+| C3 |	pre-sunset |
+| C4 |	post-sunset |
+| D |	day |
+| N |	night |
+
 
 ```{r}
 table(cleaner_rst_environmental$diel) 
@@ -524,7 +801,10 @@ table(cleaner_rst_environmental$diel)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$diel <- case_when(cleaner_rst_environmental$diel == "D" ~ "day", 
+                                            cleaner_rst_environmental$diel == "N" ~ "night", 
+                                            cleaner_rst_environmental$diel == "C1" ~ "pre-sunrise")
+table(cleaner_rst_environmental$diel) 
 ```
 
 **NA and Unknown Values**
@@ -533,7 +813,19 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ### Variable: `debris_type`
 
-The type of debris found in the live-box, see VariableCodesLookUp table							
+The type of debris found in the live-box, see VariableCodesLookUp table			
+
+| code | definition |
+| ----- | -------------- |
+| a |	aquatic vegetation |
+| l |	large woody debris |
+| s |	sticks |
+| al |	veg + wood |
+| as |	veg + sticks |
+| ls |	wood + sticks |
+| als |	veg + wood + sticks |
+
+
 ```{r}
 table(cleaner_rst_environmental$debris_type) 
 ```
@@ -559,7 +851,12 @@ table(cleaner_rst_environmental$fish_properly)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$fish_properly <- case_when(
+  cleaner_rst_environmental$fish_properly == "Y" ~ TRUE, 
+  cleaner_rst_environmental$fish_properly == "N" ~ FALSE
+)
+
+table(cleaner_rst_environmental$fish_properly) 
 ```
 
 **NA and Unknown Values**
@@ -568,7 +865,8 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ### Variable: `sub_week`
 
-If sample week has more than one efficiency, which part of week is sample from		
+If sample week has more than one efficiency, which part of week is sample from	
+TODO figure out what each one stands for
 
 ```{r}
 table(cleaner_rst_environmental$sub_week) 
@@ -587,13 +885,7 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 ### Variable: `trap_comments`
 
 ```{r}
-table(cleaner_rst_environmental$trap_comments) 
-```
-
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-# Fix any inconsistencies with categorical variables
+unique(cleaner_rst_environmental$trap_comments)[1:5]
 ```
 
 **NA and Unknown Values**
@@ -602,6 +894,15 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ### Variable: `gear_condition_code`
 
+A code for the condition of the trap on the SampleDate and SampleTime; see VariableCodesLookUp table							
+| code | definition  |
+| ---- | ----------- |
+| n	|normal |
+| pb|	partial block |
+| tb|	total block |
+| nr|	not rotating |
+
+
 ```{r}
 table(cleaner_rst_environmental$gear_condition_code) 
 ```
@@ -609,7 +910,12 @@ table(cleaner_rst_environmental$gear_condition_code)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$gear_condition_code <- case_when(
+  cleaner_rst_environmental$gear_condition_code == "BP" ~ "partial block",
+  cleaner_rst_environmental$gear_condition_code == "N" ~ "normal", 
+  cleaner_rst_environmental$gear_condition_code == "NR" ~ "not rotating",
+  cleaner_rst_environmental$gear_condition_code == "TB" ~ "total block"
+)
 ```
 
 **NA and Unknown Values**
@@ -625,7 +931,12 @@ table(cleaner_rst_environmental$trap_fishing)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$trap_fishing <- case_when(
+  cleaner_rst_environmental$trap_fishing == "Yes" ~ TRUE, 
+  cleaner_rst_environmental$trap_fishing == "No" ~ FALSE
+)
+
+table(cleaner_rst_environmental$trap_fishing) 
 ```
 
 **NA and Unknown Values**
@@ -641,13 +952,17 @@ table(cleaner_rst_environmental$partial_sample)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-# Fix any inconsistencies with categorical variables
+cleaner_rst_environmental$partial_sample <- case_when(
+  cleaner_rst_environmental$partial_sample == "Yes" ~ TRUE, 
+  cleaner_rst_environmental$partial_sample == "No" ~ FALSE
+)
+
+table(cleaner_rst_environmental$partial_sample) 
 ```
 
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_rst_environmental$partial_sample))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `partial_sample` column are NA.
-
 
 
 ## Summary of identified issues

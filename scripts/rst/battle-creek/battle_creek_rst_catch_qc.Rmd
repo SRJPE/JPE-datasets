@@ -204,7 +204,7 @@ cleaner_rst_count %>% select_if(is.character) %>% colnames()
 length(unique(cleaner_rst_count$sample_id)) 
 ```
 
-There are 31835 unique sample ID
+There are `r length(unique(cleaner_rst_count$sample_id))`  unique sample ID
 
 **NA and Unknown Values**
 
@@ -215,7 +215,6 @@ There are 31835 unique sample ID
 table(cleaner_rst_count$run)
 ```
 
-There are 31835 unique sample ID
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
@@ -241,7 +240,6 @@ Life stage of the catch (CHN = C0 - yolk-sac fry, C1 - fry, C2 - parr, C3 - silv
 table(cleaner_rst_count$lifestage)
 ```
 
-There are 31835 unique sample ID
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
@@ -268,7 +266,6 @@ Indicates if the fish was a mortality (YES = mortality)
 table(cleaner_rst_count$dead)
 ```
 
-There are 31835 unique sample ID
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
@@ -290,7 +287,6 @@ Is count value an interpolated catch for times the trap did not fish? Yes = the 
 table(cleaner_rst_count$interpolated)
 ```
 
-There are 31835 unique sample ID
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 

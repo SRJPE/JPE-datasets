@@ -256,7 +256,7 @@ length(unique(cleaner_rst_count$sample_id))
 
     ## [1] 2278
 
-There are 31835 unique sample ID
+There are 2278 unique sample ID
 
 **NA and Unknown Values**
 
@@ -271,8 +271,6 @@ table(cleaner_rst_count$run)
     ## 
     ##     F     L   N/P     S     W 
     ## 27601   472    50  3371   283
-
-There are 31835 unique sample ID
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -306,8 +304,6 @@ table(cleaner_rst_count$lifestage)
     ##    C0    C1    C2    C3    C4   N/P 
     ##   258 25773   771  1688  2925   420
 
-There are 31835 unique sample ID
-
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
@@ -339,8 +335,6 @@ table(cleaner_rst_count$dead)
     ##     N    NO   YES 
     ##    29 31249   557
 
-There are 31835 unique sample ID
-
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
@@ -369,8 +363,6 @@ table(cleaner_rst_count$interpolated)
     ## 
     ##    NO   YES 
     ## 31465   370
-
-There are 31835 unique sample ID
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
