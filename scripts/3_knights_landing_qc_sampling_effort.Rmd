@@ -232,7 +232,7 @@ ggplot(filter(knl_effort, year(date) <= 2014), aes(y = secchi_ft)) +
 ```
 
 ```{r}
-knl_effort %>%
+filter(knl_effort, year(date) <= 2014) %>%
   mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
          fake_year = 2000,
          fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
