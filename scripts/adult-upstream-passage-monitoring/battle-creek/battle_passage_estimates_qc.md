@@ -119,8 +119,11 @@ raw_passage_estimates$end_day <- days[, 2]
 cleaner_passage_estimates <- raw_passage_estimates %>% 
   mutate(start_date = as.Date(paste0(year, "-", start_month, "-", start_day)),
          end_date = as.Date(paste0(year, "-", end_month, "-", end_day)),
-         start_date = if_else(is.na(start_date), as.Date.numeric(as.numeric(dates), origin = "1884-12-30"), start_date), # this orgin date doesn't make sense but it generates a normal date....figure it out. 
-         end_date = if_else(is.na(end_date), as.Date.numeric(as.numeric(dates), origin = "1884-12-30"), end_date)) %>%
+         start_date = if_else(is.na(start_date), 
+                              as.Date.numeric(as.numeric(dates), 
+                                              origin = paste0(as.character(1899 - (2021 - year)), "-12-29")),
+                              start_date), # this origin date doesn't make sense but it generates the date given in excel doc, date given was just year, month (so auto put 2021 - when actual year is not 2021) TODO check out again more extensivly 
+         end_date = if_else(is.na(end_date), start_date, end_date)) %>%
   select(-year, -dates, -start_day, -end_day, -start_month, -end_month) %>%
   glimpse()
 ```
@@ -410,6 +413,28 @@ values.
 
 -   0.4 % of values in the `raw_count` column are NA.
 
+``` r
+cleaner_passage_estimates  %>%
+  filter(adipose == "unclipped") %>%
+  select(start_date, passage_estimate, raw_count) %>%
+  pivot_longer(-start_date, names_to = c("count_type"), values_to = "count") %>%
+  group_by(year = year(start_date), count_type) %>%
+  summarise(yearly_total_fish_count = sum(count, na.rm = T)) %>%
+  ggplot(aes(x = year, y = yearly_total_fish_count, fill = count_type)) + 
+  geom_col(position = "dodge") + 
+  theme_minimal() +
+  labs(title = "Total Yearly Fish Counts and Passage Estimates (unclipped - natural chinook)",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+    ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
+
+![](battle_passage_estimates_qc_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+Passage estimates are slightly greater than raw count most years.
+
 ## Explore Categorical variables:
 
 ``` r
@@ -476,8 +501,14 @@ table(cleaner_passage_estimates$adipose)
     abs value (below)
 -   Total hours of passage varies quite a but over the years,
     different/shorter sampling seasons pre 2010 contribute to this
--   There are a few values that do not have a date (start\_date 21,
-    end\_date 24).
+-   Date values started off in a very weird format, I tried to convert
+    them all to a start date and an end date for a week. If a dates
+    column stated May 30 - June 6 and the year column was 2019 I
+    converted start\_date = “2019-05-30” and end\_date = “2019-06-06”.
+    However there were also some values in the date column that were 5
+    digit numbers ex: 44364. I still need to figure out origin years for
+    these ones. The typical origin date is not mapping to the year given
+    in the year column.
 
 ## Save cleaned data back to google cloud
 
