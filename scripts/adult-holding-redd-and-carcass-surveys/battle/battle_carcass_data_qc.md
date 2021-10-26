@@ -238,7 +238,7 @@ summary(cleaner_carcass_data$fork_length)
 
 **NA and Unknown Values**
 
--   80.6 % of values in the `river_mile` column are NA.
+-   14.6 % of values in the `fork_length` column are NA.
 
 ## Explore Categorical variables:
 
@@ -287,13 +287,15 @@ table(cleaner_carcass_data$method)
     ##               662
 
 It looks like most carcasses are from barrier weir trap and snorkel
-survey **NA and Unknown Values**
+survey
+
+**NA and Unknown Values**
 
 -   0 % of values in the `method` column are NA.
 
 ### Variable: `location`
 
-reach number (1-7); other location
+Reach number (1-7); other location
 
 -   CNFH - Coleman National Fish Hatchery
 
@@ -309,7 +311,7 @@ table(cleaner_carcass_data$location)
 
 **NA and Unknown Values**
 
--   9.4 % of values in the `method` column are NA.
+-   9.4 % of values in the `location` column are NA.
 
 ### Variable: `sex`
 
@@ -417,7 +419,7 @@ table(cleaner_carcass_data$carcass_live_status)
 **NA and Unknown Values**
 
 -   0.2 % of values in the `carcass_live_status` column are NA.
--   NA % of values in the `carcass_live_status` column are `Unknown`.
+-   23.6 % of values in the `carcass_live_status` column are `Unknown`.
 
 ### Variable: `spawn_condition`
 
@@ -444,7 +446,7 @@ table(cleaner_carcass_data$spawn_condition)
 **NA and Unknown Values**
 
 -   0.2 % of values in the `spawn_condition` column are NA.
--   NA % of values in the `spawn_condition` column are `Unknown`.
+-   53.8 % of values in the `spawn_condition` column are `Unknown`.
 
 ### Variable: \`run\`\`
 
@@ -465,9 +467,11 @@ cleaner_carcass_data$run <- ifelse(cleaner_carcass_data$run == "SCS", "spring", 
 **NA and Unknown Values**
 
 -   0.3 % of values in the `run` column are NA.
--   NA % of values in the ``` run`` column are ```Unknown\`.
+-   22.3 % of values in the ``` run`` column are ```Unknown\`.
 
 ### Variable: `cwt_code`
+
+TODO Figure out what NTD means
 
 ``` r
 table(cleaner_carcass_data$cwt_code) 

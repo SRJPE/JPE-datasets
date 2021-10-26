@@ -165,7 +165,7 @@ summary(cleaner_carcass_data$fork_length)
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_carcass_data$river_mile))/nrow(cleaner_carcass_data), 3) * 100` % of values in the `river_mile` column are NA.
+* `r round(sum(is.na(cleaner_carcass_data$fork_length))/nrow(cleaner_carcass_data), 3) * 100` % of values in the `fork_length` column are NA.
 
 ## Explore Categorical variables: {.tabset}
 
@@ -196,13 +196,14 @@ table(cleaner_carcass_data$method)
 ```
 
 It looks like most carcasses are from barrier weir trap and snorkel survey 
+
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_carcass_data$method))/nrow(cleaner_carcass_data), 3) * 100` % of values in the `method` column are NA.
 
 ### Variable: `location`
 
-reach number (1-7); other location	
+Reach number (1-7); other location	
 
 * CNFH - Coleman National Fish Hatchery 
 
@@ -212,7 +213,7 @@ table(cleaner_carcass_data$location)
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_carcass_data$location))/nrow(cleaner_carcass_data), 3) * 100` % of values in the `method` column are NA.
+* `r round(sum(is.na(cleaner_carcass_data$location))/nrow(cleaner_carcass_data), 3) * 100` % of values in the `location` column are NA.
 
 
 ### Variable: `sex`
@@ -290,7 +291,7 @@ table(cleaner_carcass_data$carcass_live_status)
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_carcass_data$carcass_live_status))/nrow(cleaner_carcass_data), 3) * 100` % of values in the `carcass_live_status` column are NA.
-* `r round(sum(cleaner_carcass_data$carcass_live_status == "unknown")/nrow(cleaner_carcass_data), 3) * 100` % of values in the `carcass_live_status` column are `Unknown`.
+* `r round(sum(cleaner_carcass_data$carcass_live_status == "unknown", na.rm = T)/nrow(cleaner_carcass_data), 3) * 100` % of values in the `carcass_live_status` column are `Unknown`.
 
 ### Variable: `spawn_condition`
 ```{r}
@@ -308,7 +309,7 @@ table(cleaner_carcass_data$spawn_condition)
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_carcass_data$spawn_condition))/nrow(cleaner_carcass_data), 3) * 100` % of values in the `spawn_condition` column are NA.
-* `r round(sum(cleaner_carcass_data$spawn_condition == "unknown")/nrow(cleaner_carcass_data), 3) * 100` % of values in the `spawn_condition` column are `Unknown`.
+* `r round(sum(cleaner_carcass_data$spawn_condition == "unknown", na.rm = T)/nrow(cleaner_carcass_data), 3) * 100` % of values in the `spawn_condition` column are `Unknown`.
 
 ### Variable: `run``
 ```{r}
@@ -324,9 +325,12 @@ cleaner_carcass_data$run <- ifelse(cleaner_carcass_data$run == "SCS", "spring", 
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_carcass_data$run))/nrow(cleaner_carcass_data), 3) * 100` % of values in the `run` column are NA.
-* `r round(sum(cleaner_carcass_data$run == "unknown")/nrow(cleaner_carcass_data), 3) * 100` % of values in the `run`` column are `Unknown`.
+* `r round(sum(cleaner_carcass_data$run == "unknown", na.rm = T)/nrow(cleaner_carcass_data), 3) * 100` % of values in the `run`` column are `Unknown`.
 
 ### Variable: `cwt_code`
+
+TODO Figure out what NTD means
+
 ```{r}
 table(cleaner_carcass_data$cwt_code) 
 ```
