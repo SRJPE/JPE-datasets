@@ -223,10 +223,14 @@ Feather River redd survey files:
 
 ``` r
 cleaner_data_2020 <- cleaner_data_2020 %>% 
-  mutate(location = if_else(location == "Moe's Side Channel", "Moes Side Channel", location),
+  mutate(location = str_to_title(location),
+         location = if_else(location == "Moe's Side Channel", "Moes Side Channel", location),
          location = if_else(location == "G95 East Top", "G95 East Side Channel Top", location),
+         location = if_else(location == "G95 East Bottom", "G95 East Side Channel Bottom", location),
          location = if_else(location == "G95 West Bottom", "G95 West Side Channel Bottom", location),
-         location = if_else(location == "Middle Auditorium", "Mid Auditorium", location)
+         location = if_else(location == "Middle Auditorium", "Mid Auditorium", location),
+         location = if_else(location == "Lower Mcfarland", "Lower McFarland", location),
+         location = if_else(location == "Upper Mcfarland", "Upper McFarland", location)
          )
 table(cleaner_data_2020$location)
 ```
@@ -234,18 +238,16 @@ table(cleaner_data_2020$location)
     ## 
     ##                 Aleck Riffle               Bedrock Riffle 
     ##                           27                          262 
-    ##          Below Big hole East          Below Big Hole East 
-    ##                            1                            7 
-    ##       Below Lower Auditorium                Big Hole East 
-    ##                          115                           55 
-    ##                Big Hole West                   Big Riffle 
-    ##                            7                           28 
-    ##                   Cottonwood            Developing Riffle 
-    ##                          156                            1 
-    ##                          Eye             Eye Side Channel 
-    ##                           13                           33 
-    ##              G95 East Bottom G95 East Side Channel Bottom 
-    ##                           11                           34 
+    ##          Below Big Hole East       Below Lower Auditorium 
+    ##                            8                          115 
+    ##                Big Hole East                Big Hole West 
+    ##                           55                            7 
+    ##                   Big Riffle                   Cottonwood 
+    ##                           28                          156 
+    ##            Developing Riffle                          Eye 
+    ##                            1                           13 
+    ##             Eye Side Channel G95 East Side Channel Bottom 
+    ##                           33                           45 
     ##    G95 East Side Channel Top                     G95 Main 
     ##                           49                           29 
     ##        G95 West Side Channel G95 West Side Channel Bottom 
@@ -270,7 +272,7 @@ table(cleaner_data_2020$location)
     ##                            1                           79 
     ##           Steep Side Channel               Table Mountain 
     ##                           63                          195 
-    ##            Top of Auditorium                 Trailer Park 
+    ##            Top Of Auditorium                 Trailer Park 
     ##                          468                          439 
     ##             Upper Auditorium             Upper Cottonwood 
     ##                          328                           15 
@@ -396,7 +398,7 @@ cleaner_data_2020 %>%
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##    0.00    0.00    2.00    5.26    6.00   39.00
+    ##   0.000   0.000   2.000   5.479   6.000  39.000
 
 **NA and Unknown Values**
 
@@ -764,28 +766,28 @@ gcs_upload(feather_redd_survey_2020,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2020.csv")
 ```
 
-    ## i 2021-10-22 13:21:41 > File size detected as  391.4 Kb
+    ## i 2021-10-27 11:21:45 > File size detected as  391.5 Kb
 
-    ## i 2021-10-22 13:21:41 > Request Status Code:  400
+    ## i 2021-10-27 11:21:45 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-22 13:21:41 > File size detected as  391.4 Kb
+    ## i 2021-10-27 11:21:45 > File size detected as  391.5 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2020.csv 
     ## Type:                csv 
-    ## Size:                391.4 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2020.csv?generation=1634934101783231&alt=media 
+    ## Size:                391.5 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2020.csv?generation=1635358905517531&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2020.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2020.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2020.csv/1634934101783231 
-    ## MD5 Hash:            6zEQOBkCVQpzwEh4LSnM8Q== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2020.csv/1635358905517531 
+    ## MD5 Hash:            M51heoWK0c5HvxZmevPA1Q== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-22 20:21:41 
-    ## Updated:             2021-10-22 20:21:41 
-    ## Generation:          1634934101783231 
+    ## Created:             2021-10-27 18:21:45 
+    ## Updated:             2021-10-27 18:21:45 
+    ## Generation:          1635358905517531 
     ## Meta Generation:     1 
-    ## eTag:                CL/l+JLs3vMCEAE= 
-    ## crc32c:              Xrr4dQ==
+    ## eTag:                CNuLk9Wa6/MCEAE= 
+    ## crc32c:              2qC6tg==

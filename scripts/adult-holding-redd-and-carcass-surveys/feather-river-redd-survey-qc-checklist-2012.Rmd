@@ -142,17 +142,23 @@ table(cleaner_data_2012$location)
 Locations names are changed to be consistent with the rest of the Feather River redd survey files:
 ```{r}
 cleaner_data_2012 <- cleaner_data_2012 %>% 
-  mutate(location = if_else(location == "Bottom G95 East Side Chnl", "G95 East Side Channel Bottom", location),
+  mutate(location = str_to_title(location),
+         location = if_else(location == "G95 West Side Chnl", "G95 West Side Channel", location),
+         location = if_else(location == "Bottom G95 East Side Chnl", "G95 East Side Channel Bottom", location),
          location = if_else(location == "Lower Steep Side Chnl", "Lower Steep Side Channel", location),
          location = if_else(location == "Lower Table Mtn", "Lower Table Mountain", location),
          location = if_else(location == "Mid G95 East Side Chnl", "G95 East Side Channel Mid", location),
          location = if_else(location == "Moes", "Moes Ditch", location),
+         location = if_else(location == "Middle Auditorium", "Mid Auditorium", location),
          location = if_else(location == "Table Mtn", "Table Mountain", location),
          location = if_else(location == "Top G95 East Side Chnl", "G95 East Side Channel Top", location),
          location = if_else(location == "Top G95 West Side Chnl", "G95 West Side Channel Top", location),
          location = if_else(location == "Top G95 Main", "G95 Main Top", location),
-         location = if_else(location == "Top Hour", "Top of Hour", location),
+         location = if_else(location == "Top Hour", "Top Of Hour", location),
          location = if_else(location == "Upper Moes", "Upper Moes Ditch", location),
+         location = if_else(location == "Mid Mcfarland", "Mid McFarland", location),
+         location = if_else(location == "Upper Mcfarland", "Upper McFarland", location),
+         location = if_else(location == "Lower Mcfarland", "Lower McFarland", location)
          )
 table(cleaner_data_2012$location)
 ```

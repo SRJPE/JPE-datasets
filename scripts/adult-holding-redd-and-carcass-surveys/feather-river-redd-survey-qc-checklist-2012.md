@@ -232,17 +232,23 @@ Feather River redd survey files:
 
 ``` r
 cleaner_data_2012 <- cleaner_data_2012 %>% 
-  mutate(location = if_else(location == "Bottom G95 East Side Chnl", "G95 East Side Channel Bottom", location),
+  mutate(location = str_to_title(location),
+         location = if_else(location == "G95 West Side Chnl", "G95 West Side Channel", location),
+         location = if_else(location == "Bottom G95 East Side Chnl", "G95 East Side Channel Bottom", location),
          location = if_else(location == "Lower Steep Side Chnl", "Lower Steep Side Channel", location),
          location = if_else(location == "Lower Table Mtn", "Lower Table Mountain", location),
          location = if_else(location == "Mid G95 East Side Chnl", "G95 East Side Channel Mid", location),
          location = if_else(location == "Moes", "Moes Ditch", location),
+         location = if_else(location == "Middle Auditorium", "Mid Auditorium", location),
          location = if_else(location == "Table Mtn", "Table Mountain", location),
          location = if_else(location == "Top G95 East Side Chnl", "G95 East Side Channel Top", location),
          location = if_else(location == "Top G95 West Side Chnl", "G95 West Side Channel Top", location),
          location = if_else(location == "Top G95 Main", "G95 Main Top", location),
-         location = if_else(location == "Top Hour", "Top of Hour", location),
+         location = if_else(location == "Top Hour", "Top Of Hour", location),
          location = if_else(location == "Upper Moes", "Upper Moes Ditch", location),
+         location = if_else(location == "Mid Mcfarland", "Mid McFarland", location),
+         location = if_else(location == "Upper Mcfarland", "Upper McFarland", location),
+         location = if_else(location == "Lower Mcfarland", "Lower McFarland", location)
          )
 table(cleaner_data_2012$location)
 ```
@@ -262,10 +268,10 @@ table(cleaner_data_2012$location)
     ##                            5                           14 
     ##    G95 East Side Channel Mid    G95 East Side Channel Top 
     ##                            9                            8 
-    ##                 G95 Main Top    G95 West Side Channel Top 
-    ##                           10                            4 
-    ##           G95 West Side Chnl                      Gateway 
-    ##                            2                            3 
+    ##                 G95 Main Top        G95 West Side Channel 
+    ##                           10                            2 
+    ##    G95 West Side Channel Top                      Gateway 
+    ##                            4                            3 
     ##                        Goose               Hatchery Ditch 
     ##                            1                           88 
     ##                Hatchery Pipe              Hatchery Riffle 
@@ -283,35 +289,33 @@ table(cleaner_data_2012$location)
     ##             Lower Vance East                      Mathews 
     ##                            2                            2 
     ##               Mid Auditorium                     Mid Hour 
-    ##                            8                            1 
-    ##                Mid McFarland            Middle Auditorium 
-    ##                            1                            5 
-    ##                   Moes Ditch                        Steep 
-    ##                           17                           15 
-    ##           Steep Side Channel               Table Mountain 
-    ##                           22                           94 
-    ##                   Thermalito            Top Big Hole East 
-    ##                            2                           21 
-    ##          Top Big River Right                  Top Keister 
-    ##                            1                            3 
-    ##            Top of Auditorium                  Top of Hour 
-    ##                           39                           19 
-    ##            Top of Moes Ditch               Top Vance East 
-    ##                            2                           18 
-    ##               Top Vance West                 Trailer Park 
-    ##                            9                            6 
-    ##             Upper Auditorium                Upper Bedrock 
-    ##                           72                           40 
-    ##         Upper Hatchery Ditch        Upper Hatchery Riffle 
-    ##                           12                          100 
-    ##                Upper Mathews              Upper McFarland 
-    ##                           59                            1 
-    ##             Upper Moes Ditch               Upper Robinson 
-    ##                           34                          114 
-    ##                  Upper Steep           Upper Trailer Park 
-    ##                            8                           17 
-    ##                         Weir 
-    ##                           32
+    ##                           13                            1 
+    ##                Mid McFarland                   Moes Ditch 
+    ##                            1                           17 
+    ##                        Steep           Steep Side Channel 
+    ##                           15                           22 
+    ##               Table Mountain                   Thermalito 
+    ##                           94                            2 
+    ##            Top Big Hole East          Top Big River Right 
+    ##                           21                            1 
+    ##                  Top Keister            Top Of Auditorium 
+    ##                            3                           39 
+    ##                  Top Of Hour            Top Of Moes Ditch 
+    ##                           19                            2 
+    ##               Top Vance East               Top Vance West 
+    ##                           18                            9 
+    ##                 Trailer Park             Upper Auditorium 
+    ##                            6                           72 
+    ##                Upper Bedrock         Upper Hatchery Ditch 
+    ##                           40                           12 
+    ##        Upper Hatchery Riffle                Upper Mathews 
+    ##                          100                           59 
+    ##              Upper McFarland             Upper Moes Ditch 
+    ##                            1                           34 
+    ##               Upper Robinson                  Upper Steep 
+    ##                          114                            8 
+    ##           Upper Trailer Park                         Weir 
+    ##                           17                           32
 
 **NA and Unknown Values**
 
@@ -427,7 +431,7 @@ cleaner_data_2012 %>%
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##    0.00    0.50    5.00   20.11   20.00  181.00
+    ##    0.00    1.00    5.00   20.44   20.50  181.00
 
 **NA and Unknown Values**
 
@@ -813,28 +817,28 @@ gcs_upload(feather_redd_survey_2012,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv")
 ```
 
-    ## i 2021-10-22 13:21:23 > File size detected as  129.8 Kb
+    ## i 2021-10-27 11:20:09 > File size detected as  129.8 Kb
 
-    ## i 2021-10-22 13:21:23 > Request Status Code:  400
+    ## i 2021-10-27 11:20:09 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-22 13:21:23 > File size detected as  129.8 Kb
+    ## i 2021-10-27 11:20:10 > File size detected as  129.8 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv 
     ## Type:                csv 
     ## Size:                129.8 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv?generation=1634934083077301&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv?generation=1635358809536183&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv/1634934083077301 
-    ## MD5 Hash:            MsxIb4tJJHvmaQKc+hvsKg== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv/1635358809536183 
+    ## MD5 Hash:            XagjuGIC+u5P2YdRXjvrag== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-22 20:21:23 
-    ## Updated:             2021-10-22 20:21:23 
-    ## Generation:          1634934083077301 
+    ## Created:             2021-10-27 18:20:09 
+    ## Updated:             2021-10-27 18:20:09 
+    ## Generation:          1635358809536183 
     ## Meta Generation:     1 
-    ## eTag:                CLWJg4rs3vMCEAE= 
-    ## crc32c:              kOyPWg==
+    ## eTag:                CLftsKea6/MCEAE= 
+    ## crc32c:              ZvJG8Q==

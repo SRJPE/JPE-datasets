@@ -129,10 +129,11 @@ table(cleaner_data_2010$location)
 Locations names are changed to be consistent with the rest of the Feather River redd survey files:
 ```{r}
 cleaner_data_2010 <- cleaner_data_2010 %>% 
-  mutate(location = if_else(location == "G95 East Top", "G95 East Side Channel Top", location),
+  mutate(location = str_to_title(location),
+         location = if_else(location == "G95 East Top", "G95 East Side Channel Top", location),
          location = if_else(location == "Middle Auditorium", "Mid Auditorium", location),
          location = if_else(location == "Moe's Side Channel", "Moes Side Channel", location),
-         location = if_else(location == "Upper McFarlin", "Upper Mcfarland", location),
+         location = if_else(location == "Upper Mcfarlin", "Upper McFarland", location),
          location = if_else(location == "Vance East Top", "Upper Vance East", location),
          location = if_else(location == "G95 Bottom", "G95 Main Bottom", location)
          )

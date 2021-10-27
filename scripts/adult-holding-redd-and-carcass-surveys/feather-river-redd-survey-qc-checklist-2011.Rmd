@@ -145,10 +145,13 @@ Locations names are changed to be consistent with the rest of the Feather River 
 ```{r}
 cleaner_data_2011 <- cleaner_data_2011 %>% 
   mutate(location = str_to_title(location),
-    location = if_else(location == "Matthews", "Mathews", location),
-          location = if_else(location == "Moe's Ditch", "Moes Ditch", location),
+         location = if_else(location == "Upper Mcfarland", "Upper McFarland", location),
+         location = if_else(location == "Lower Mcfarland", "Lower McFarland", location),
+         location = if_else(location == "Matthews", "Mathews", location),
+         location = if_else(location == "Middle Auditorium", "Mid Auditorium", location),
+         location = if_else(location == "Moe's Ditch", "Moes Ditch", location),
          location = if_else(location == "Top Moes Side Channel", "Upper Moes Side Channel", location),
-         location = if_else(location == "Top of Matthews", "Top of Mathews", location),
+         location = if_else(location == "Top Of Matthews", "Top of Mathews", location),
          location = if_else(location == "Upper Matthews", "Upper Mathews", location),
          location = if_else(location == "Upper Moe's Channel", "Upper Moes Channel", location),
          location = if_else(location == "Uppper Auditorium", "Upper Auditorium", location)

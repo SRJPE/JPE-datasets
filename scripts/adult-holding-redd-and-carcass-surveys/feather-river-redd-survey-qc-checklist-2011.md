@@ -309,10 +309,13 @@ Feather River redd survey files:
 ``` r
 cleaner_data_2011 <- cleaner_data_2011 %>% 
   mutate(location = str_to_title(location),
-    location = if_else(location == "Matthews", "Mathews", location),
-          location = if_else(location == "Moe's Ditch", "Moes Ditch", location),
+         location = if_else(location == "Upper Mcfarland", "Upper McFarland", location),
+         location = if_else(location == "Lower Mcfarland", "Lower McFarland", location),
+         location = if_else(location == "Matthews", "Mathews", location),
+         location = if_else(location == "Middle Auditorium", "Mid Auditorium", location),
+         location = if_else(location == "Moe's Ditch", "Moes Ditch", location),
          location = if_else(location == "Top Moes Side Channel", "Upper Moes Side Channel", location),
-         location = if_else(location == "Top of Matthews", "Top of Mathews", location),
+         location = if_else(location == "Top Of Matthews", "Top of Mathews", location),
          location = if_else(location == "Upper Matthews", "Upper Mathews", location),
          location = if_else(location == "Upper Moe's Channel", "Upper Moes Channel", location),
          location = if_else(location == "Uppper Auditorium", "Upper Auditorium", location)
@@ -351,29 +354,29 @@ table(cleaner_data_2011$location)
     ##                          121                            1 
     ##                Lower Gateway               Lower Hatchery 
     ##                            3                           16 
-    ##                   Lower Hour              Lower Mcfarland 
+    ##                   Lower Hour              Lower McFarland 
     ##                            3                            6 
     ##               Lower Robinson         Lower Table Mountain 
     ##                           68                           40 
     ##             Lower Vance East                      Mathews 
     ##                           16                            2 
-    ##                     Mid Hour               Mid Vance East 
-    ##                            2                            4 
-    ##            Middle Auditorium                   Moes Ditch 
-    ##                           18                           19 
+    ##               Mid Auditorium                     Mid Hour 
+    ##                           18                            2 
+    ##               Mid Vance East                   Moes Ditch 
+    ##                            4                           19 
     ##                         Palm                     Robinson 
     ##                            4                           20 
     ##           Steep Side Channel               Table Mountain 
     ##                            6                          103 
     ##            Top Of Auditorium                  Top Of Hour 
     ##                           17                            8 
-    ##              Top Of Matthews               Top Vance East 
+    ##               Top of Mathews               Top Vance East 
     ##                            2                           20 
     ##                 Trailer Park             Upper Auditorium 
     ##                          124                           19 
     ##                Upper Bedrock               Upper Hatchery 
     ##                           21                           17 
-    ##                Upper Mathews              Upper Mcfarland 
+    ##                Upper Mathews              Upper McFarland 
     ##                           68                            3 
     ##           Upper Moes Channel      Upper Moes Side Channel 
     ##                            2                            8 
@@ -862,28 +865,28 @@ gcs_upload(feather_redd_survey_2011,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2011.csv")
 ```
 
-    ## i 2021-10-22 13:28:38 > File size detected as  97.1 Kb
+    ## i 2021-10-27 11:09:57 > File size detected as  97.1 Kb
 
-    ## i 2021-10-22 13:28:38 > Request Status Code:  400
+    ## i 2021-10-27 11:09:57 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-22 13:28:38 > File size detected as  97.1 Kb
+    ## i 2021-10-27 11:09:57 > File size detected as  97.1 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2011.csv 
     ## Type:                csv 
     ## Size:                97.1 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2011.csv?generation=1634934518343054&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2011.csv?generation=1635358197215165&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2011.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2011.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2011.csv/1634934518343054 
-    ## MD5 Hash:            1aPVYY7tBC/VLJA19PqP1A== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2011.csv/1635358197215165 
+    ## MD5 Hash:            c5x0/2LrD+C8StFz5Zn2qQ== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-22 20:28:38 
-    ## Updated:             2021-10-22 20:28:38 
-    ## Generation:          1634934518343054 
+    ## Created:             2021-10-27 18:09:57 
+    ## Updated:             2021-10-27 18:09:57 
+    ## Generation:          1635358197215165 
     ## Meta Generation:     1 
-    ## eTag:                CI7Lydnt3vMCEAE= 
-    ## crc32c:              qVasnQ==
+    ## eTag:                CL3fs4OY6/MCEAE= 
+    ## crc32c:              +6+eww==

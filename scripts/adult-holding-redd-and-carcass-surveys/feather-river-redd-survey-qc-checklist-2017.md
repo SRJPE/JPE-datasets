@@ -205,11 +205,13 @@ Feather River redd survey files:
 
 ``` r
 cleaner_data_2017 <- cleaner_data_2017 %>% 
-  mutate(location = if_else(location == "G-95 East Side Channel Bottom", "G95 East Side Channel Bottom", location),
+  mutate(location = str_to_title(location),
+         location = if_else(location == "Middle Auditorium", "Mid Auditorium", location),
+         location = if_else(location == "G-95 East Side Channel Bottom", "G95 East Side Channel Bottom", location),
          location = if_else(location == "G-95 West Side Channel Bottom", "G95 West Side Channel Bottom", location),
          location = if_else(location == "G95 East Bottom", "G95 East Side Channel Bottom", location),
          location = if_else(location == "G95 East Top", "G95 East Side Channel Top", location),
-         location = if_else(location == "Middle Auditoium", "Mid auditorium", location),
+         location = if_else(location == "Middle Auditoium", "Mid Auditorium", location),
          location = if_else(location == "Moe's Side Channel", "Moes Side Channel", location)
          )
 table(cleaner_data_2017$location)
@@ -234,13 +236,13 @@ table(cleaner_data_2017$location)
     ##                            6                          149 
     ##         Lower Table Mountain             Lower Vance East 
     ##                           16                            4 
-    ##                      Mathews            Middle Auditorium 
+    ##                      Mathews               Mid Auditorium 
     ##                           68                           74 
     ##            Moes Side Channel                 Steep Riffle 
     ##                          488                           25 
     ##           Steep Side Channel               Table Mountain 
     ##                            1                           30 
-    ##            Top of Auditorium              Top of Hatchery 
+    ##            Top Of Auditorium              Top Of Hatchery 
     ##                          371                            9 
     ##                 Trailer Park             Upper Auditorium 
     ##                          105                          204 
@@ -754,7 +756,7 @@ feather_redd_survey_2017 <- cleaner_data_2017 %>% glimpse()
     ## Rows: 2,717
     ## Columns: 17
     ## $ date                     <date> 2017-10-03, 2017-10-03, 2017-10-03, 2017-10-~
-    ## $ location                 <chr> "Hatchery", "Hatchery", "Top of Auditorium", ~
+    ## $ location                 <chr> "Hatchery", "Hatchery", "Top Of Auditorium", ~
     ## $ type                     <chr> "Point", "Point", "Point", "Point", "Point", ~
     ## $ redd_count               <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
     ## $ salmon_count             <dbl> 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, ~
@@ -780,28 +782,28 @@ gcs_upload(feather_redd_survey_2017,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2017.csv")
 ```
 
-    ## i 2021-10-22 13:32:52 > File size detected as  240 Kb
+    ## i 2021-10-27 11:18:34 > File size detected as  239.8 Kb
 
-    ## i 2021-10-22 13:32:52 > Request Status Code:  400
+    ## i 2021-10-27 11:18:34 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-22 13:32:52 > File size detected as  240 Kb
+    ## i 2021-10-27 11:18:35 > File size detected as  239.8 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2017.csv 
     ## Type:                csv 
-    ## Size:                240 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2017.csv?generation=1634934772515783&alt=media 
+    ## Size:                239.8 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2017.csv?generation=1635358714585085&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2017.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2017.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2017.csv/1634934772515783 
-    ## MD5 Hash:            8C34iwYaHXNQcYG5ioWJ1w== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2017.csv/1635358714585085 
+    ## MD5 Hash:            KXCX1xrlyErmzKjL40vYXw== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-22 20:32:52 
-    ## Updated:             2021-10-22 20:32:52 
-    ## Generation:          1634934772515783 
+    ## Created:             2021-10-27 18:18:34 
+    ## Updated:             2021-10-27 18:18:34 
+    ## Generation:          1635358714585085 
     ## Meta Generation:     1 
-    ## eTag:                CMeH49Lu3vMCEAE= 
-    ## crc32c:              K9kuxQ==
+    ## eTag:                CP2/jfqZ6/MCEAE= 
+    ## crc32c:              6/UCJA==

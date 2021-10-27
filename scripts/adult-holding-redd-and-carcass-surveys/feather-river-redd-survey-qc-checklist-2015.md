@@ -199,7 +199,9 @@ Feather River redd survey files:
 
 ``` r
 cleaner_data_2015 <- cleaner_data_2015 %>% 
-  mutate(
+  mutate(location = str_to_title(location),
+         location = if_else(location == "Lower Mcfarland", "Lower McFarland", location),
+         location = if_else(location == "Upper Mcfarland", "Upper McFarland", location),
          location = if_else(location == "G-95 East Side Channel", "G95 East Side Channel", location),
          location = if_else(location == "G-95 Main", "G95 Main", location),
          location = if_else(location == "Middle Auditorium", "Mid Auditorium", location),
@@ -215,7 +217,7 @@ table(cleaner_data_2015$location)
     ##                           16                          128 
     ##                   Developing        G95 East Side Channel 
     ##                            1                            1 
-    ## G95 East Side Channel Bottom    G95 East side Channel Top 
+    ## G95 East Side Channel Bottom    G95 East Side Channel Top 
     ##                            8                            4 
     ##                     G95 Main        G95 West Side Channel 
     ##                            9                            5 
@@ -229,7 +231,7 @@ table(cleaner_data_2015$location)
     ##                            7                            7 
     ##               Mid Auditorium            Moes Side Channel 
     ##                          180                          215 
-    ##               Table Mountain            Top of Auditorium 
+    ##               Table Mountain            Top Of Auditorium 
     ##                            5                          178 
     ##             Upper Auditorium             Upper Cottonwood 
     ##                          164                          143 
@@ -766,28 +768,28 @@ gcs_upload(feather_redd_survey_2015,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2015.csv")
 ```
 
-    ## i 2021-10-22 13:31:24 > File size detected as  206.5 Kb
+    ## i 2021-10-27 10:14:23 > File size detected as  206.5 Kb
 
-    ## i 2021-10-22 13:31:24 > Request Status Code:  400
+    ## i 2021-10-27 10:14:23 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-22 13:31:24 > File size detected as  206.5 Kb
+    ## i 2021-10-27 10:14:23 > File size detected as  206.5 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2015.csv 
     ## Type:                csv 
     ## Size:                206.5 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2015.csv?generation=1634934684125837&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2015.csv?generation=1635354863158091&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2015.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2015.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2015.csv/1634934684125837 
-    ## MD5 Hash:            HeZmX8R3XSkY20DOyZuw/A== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2015.csv/1635354863158091 
+    ## MD5 Hash:            V2qjBC85bFiPVtedESt8BA== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-22 20:31:24 
-    ## Updated:             2021-10-22 20:31:24 
-    ## Generation:          1634934684125837 
+    ## Created:             2021-10-27 17:14:23 
+    ## Updated:             2021-10-27 17:14:23 
+    ## Generation:          1635354863158091 
     ## Meta Generation:     1 
-    ## eTag:                CI2V0Kju3vMCEAE= 
-    ## crc32c:              5bMTbQ==
+    ## eTag:                CMuGzc2L6/MCEAE= 
+    ## crc32c:              KzQ8qA==
