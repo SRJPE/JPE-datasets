@@ -296,7 +296,8 @@ cleaner_data <- cleaner_data %>%
   mutate(location = case_when(
     location == '5 foot RST at Halwood' ~ '5 foot RST at Hallwood',
     location == 'RST # 2 at Hallwood' ~  'RST 2 at Hallwood',
-    location == 'RST 1 at Hallwood on Yuba River' ~ 'RST 1 at Hallwood on Yuba River')
+    location == 'RST 1 at Hallwood on Yuba River' ~ 'RST 1 at Hallwood on Yuba River',
+    TRUE ~ as.character(location))
   )
 table(cleaner_data$location)
 ```
@@ -304,8 +305,8 @@ table(cleaner_data$location)
     ## 
     ##          5 foot RST at Hallwood RST 1 at Hallwood on Yuba River 
     ##                           21963                           47811 
-    ##               RST 2 at Hallwood 
-    ##                           23192
+    ##               RST 2 at Hallwood                      Yuba River 
+    ##                           23192                           40251
 
 ## Explore Numeric Variables
 
