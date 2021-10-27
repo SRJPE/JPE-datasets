@@ -463,7 +463,7 @@ cleaner_carcass_data$run <- ifelse(cleaner_carcass_data$run == "SCS", "spring", 
 **NA and Unknown Values**
 
 -   0.3 % of values in the `run` column are NA.
--   22.3 % of values in the ``` run`` column are ```Unknown\`.
+-   22.3 % of values in the `run` column are `Unknown`.
 
 ### Variable: `cwt_code`
 

@@ -326,7 +326,7 @@ cleaner_carcass_data$run <- ifelse(cleaner_carcass_data$run == "SCS", "spring", 
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_carcass_data$run))/nrow(cleaner_carcass_data), 3) * 100` % of values in the `run` column are NA.
-* `r round(sum(cleaner_carcass_data$run == "unknown", na.rm = T)/nrow(cleaner_carcass_data), 3) * 100` % of values in the `run`` column are `Unknown`.
+* `r round(sum(cleaner_carcass_data$run == "unknown", na.rm = T)/nrow(cleaner_carcass_data), 3) * 100` % of values in the `run` column are `Unknown`.
 
 ### Variable: `cwt_code`
 
