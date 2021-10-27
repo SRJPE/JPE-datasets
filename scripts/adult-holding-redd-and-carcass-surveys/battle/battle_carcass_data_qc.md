@@ -13,9 +13,11 @@ carcasses found within and along Battle Creek.
 
 **Timeframe:** 1996 - 2019
 
-**Survey Season:**
+**Survey Season:** March through October (most years not the entire
+timeframe)
 
-**Completeness of Record throughout timeframe:**
+**Completeness of Record throughout timeframe:** Values for ever year in
+timeframe
 
 **Sampling Location:** Battle Creek
 
@@ -56,7 +58,7 @@ sheets
 ``` r
 raw_carcass_data <- read_excel("raw_adult_spawn_hold_carcass.xlsx", 
                                sheet = "Carcass",
-                               col_types = c("numeric", "numeric", "numeric", "numeric", "date", "text", 
+                               col_types = c("numeric", "numeric", "numeric", "numeric", "text", "text", 
                                              "text", "text", "text", "text", "numeric", "text", 
                                              "text", "text", "text", "text", "text", "text")) %>% glimpse()
 ```
@@ -67,7 +69,7 @@ raw_carcass_data <- read_excel("raw_adult_spawn_hold_carcass.xlsx",
     ## $ LATITUDE            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ RIVERMILE           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ SPAWN_YEAR          <dbl> 1996, 1996, 1996, 1997, 1997, 1997, 1997, 1997, 19~
-    ## $ DATE                <dttm> 1996-10-01, 1996-10-01, 1996-10-09, 1997-03-11, 1~
+    ## $ DATE                <chr> "35339", "35339", "35347", "35500", "35500", "3550~
     ## $ METHOD              <chr> "Snorkel Survey", "Snorkel Survey", "Snorkel Surve~
     ## $ LOCATION            <chr> NA, NA, NA, "CNFH", "CNFH", "CNFH", "CNFH", "CNFH"~
     ## $ SPECIES             <chr> "Chinook", "Chinook", "Chinook", "Chinook", "Chino~
@@ -89,8 +91,10 @@ cleaner_carcass_data <- raw_carcass_data %>%
   janitor::clean_names() %>% 
   rename("river_mile" = rivermile,
          "run" = fws_run_call) %>%
-  mutate(date = as.Date(date)) %>%
-  select(-species, -spawn_year) %>% # All either CHINOOK or Chinook
+  mutate(date1 = date, 
+         date2 = as.Date.numeric(as.numeric(date), origin = "1899-12-30"),
+         date = if_else(is.na(date2), as.Date(date, format = "%m/%d/%Y"), date2)) %>% # see if there is a better way to deal with mixed date format
+  select(-species, -spawn_year, -date1, -date2) %>% # All either CHINOOK or Chinook
   glimpse()
 ```
 
@@ -112,14 +116,6 @@ cleaner_carcass_data <- raw_carcass_data %>%
     ## $ cwt_code            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ other_tag           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ comments            <chr> NA, NA, NA, "Couldn't locate samples 6/2014", "Cou~
-
-``` r
-cleaner_carcass_data$method %>% unique
-```
-
-    ## [1] "Snorkel Survey"    "Barrier Weir Trap" "Other (CDFG)"     
-    ## [4] "Kayak Survey"      "Other"             "Fish Rescue"      
-    ## [7] "Weir"
 
 ## Explore Numeric Variables:
 
@@ -551,8 +547,6 @@ unique(cleaner_carcass_data$comments)[1:5]
     ## [3] "Sample missing -sending 3rd shipment"                                                                                                                                                                                                        
     ## [4] "Test plate AFTC"                                                                                                                                                                                                                             
     ## [5] "Visibility was good.  Tail section onlyThere were probably only two carcasses but three pieces of carcasss were found so 3 samples were taken.  Biosample IDs (01-1721) (01-1710) (01-1703).  RBT observed but not counted. Dry samples sent"
-
-Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 **NA and Unknown Values**
 

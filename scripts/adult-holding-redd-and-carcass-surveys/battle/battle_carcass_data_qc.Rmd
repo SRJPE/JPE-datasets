@@ -24,9 +24,9 @@ These data were aquired via snorkel and kayak surveys on Battle Creek from 1996 
 
 **Timeframe:** 1996 - 2019
 
-**Survey Season:** 
+**Survey Season:** March through October (most years not the entire timeframe)
 
-**Completeness of Record throughout timeframe:** 
+**Completeness of Record throughout timeframe:** Values for ever year in timeframe
 
 **Sampling Location:** Battle Creek 
 
@@ -59,9 +59,10 @@ sheets <- excel_sheets("raw_adult_spawn_hold_carcass.xlsx")
 sheets 
 raw_carcass_data <- read_excel("raw_adult_spawn_hold_carcass.xlsx", 
                                sheet = "Carcass",
-                               col_types = c("numeric", "numeric", "numeric", "numeric", "date", "text", 
+                               col_types = c("numeric", "numeric", "numeric", "numeric", "text", "text", 
                                              "text", "text", "text", "text", "numeric", "text", 
                                              "text", "text", "text", "text", "text", "text")) %>% glimpse()
+
 ```
 
 ## Data transformations
@@ -71,11 +72,11 @@ cleaner_carcass_data <- raw_carcass_data %>%
   janitor::clean_names() %>% 
   rename("river_mile" = rivermile,
          "run" = fws_run_call) %>%
-  mutate(date = as.Date(date)) %>%
-  select(-species, -spawn_year) %>% # All either CHINOOK or Chinook
+  mutate(date1 = date, 
+         date2 = as.Date.numeric(as.numeric(date), origin = "1899-12-30"),
+         date = if_else(is.na(date2), as.Date(date, format = "%m/%d/%Y"), date2)) %>% # see if there is a better way to deal with mixed date format
+  select(-species, -spawn_year, -date1, -date2) %>% # All either CHINOOK or Chinook
   glimpse()
-
-cleaner_carcass_data$method %>% unique
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -373,7 +374,6 @@ table(cleaner_carcass_data$other_tag)
 unique(cleaner_carcass_data$comments)[1:5]
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 **NA and Unknown Values**
 
