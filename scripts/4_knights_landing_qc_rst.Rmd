@@ -427,7 +427,8 @@ knl_rst_changes <- knl_rst %>%
          fork_length_max_mm = case_when(fork_length_max_mm == 0 ~ NA_real_,
                                         T ~ as.numeric(fork_length_max_mm)),
          fork_length_min_mm = case_when(fork_length_min_mm == 0 ~ NA_real_,
-                                        T ~ as.numeric(fork_length_min_mm)))
+                                        T ~ as.numeric(fork_length_min_mm))) %>%
+  rename(catch_per_unit_effort = cpue)
 ```
 
 ## Questions for follow up
