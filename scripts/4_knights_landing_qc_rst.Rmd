@@ -57,7 +57,7 @@ get_data("rst")
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet.
-Need to change data, start_date, stop_date into appropriate format. Make changes
+Need to change date, start_date, stop_date into appropriate format. Make changes
 in changes section at end.
 
 ```{r}
