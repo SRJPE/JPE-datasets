@@ -229,21 +229,35 @@ ggplot(aes(y = count, x = fake_date)) +
 
 **Numeric Summary of `count` over Period of Record**
 
-Only providing summary for natural Chinook.
+Only providing summary for natural Chinook. 
+
+Summary by water year
 
 ```{r}
-knl_rst %>%
+knitr::kable(knl_rst %>%
   filter(species == "Chinook", marked == F) %>%
-  group_by(year(date), at_capture_run, species, marked, lifestage) %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date)))) %>%
+  group_by(wy) %>%
   summarize(mean = round(mean(count, na.rm = T),2),
             median = round(median(count, na.rm = T),2),
             min = round(min(count, na.rm = T),2),
             max = round(max(count, na.rm = T),2),
-            na = length(which(is.na(count))))
+            na = length(which(is.na(count)))))
+```
+
+Total counts by year and run
+
+```{r}
+knitr::kable(knl_rst %>%
+  filter(species == "Chinook", marked == F) %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date)))) %>%
+  group_by(wy, at_capture_run) %>%
+  summarize(cumulative = sum(count, na.rm = T)) %>%
+  pivot_wider(names_from = at_capture_run, values_from = cumulative))
 ```
 
 Some of the max counts are in the tens of thousands. Either there was an error in some data transformations or perhaps some of these are passage estimates and not raw counts. Check raw data to see if these large counts exist. If not, may need to reach back out to data contact.
-These values exist in the data. Keep track of these questions to ask.
+These values exist in the data. Contacted Jeanine and she said they seem right to her.
 
 ```{r}
 filter(knl_rst, count > 5000)
