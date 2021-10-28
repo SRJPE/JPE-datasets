@@ -169,7 +169,8 @@ ggplot(aes(y = count, x = fake_date, color = at_capture_run)) +
   scale_x_date(date_breaks = "3 month", date_labels = "%b") +
   geom_line() +
   facet_wrap(~wy, scales = "free_y") +
-  xlab("")
+  xlab("") +
+  theme(legend.position="bottom")
 ```
 
 *Marked Chinook*
