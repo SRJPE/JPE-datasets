@@ -26,9 +26,20 @@ The adult holding survey data is in two separate files: first one is from 1986 t
 
 **Completeness of Record throughout timeframe:**
 
+* Some data lacks for Trail 2E17 to Dillon Cove
 
 **Sampling Location:** 
-**Other Notes:**
+
+* Upper Falls to Potato Patch
+* Potato Patch to Lower Falls
+* Lower Falls to A-Line
+* A-Line to Wilson Cove
+* Wilson Cove to Polk Springs
+* Polk Springs to Murphy Trail
+* Murphy Trail to Ponderosa Way
+* Ponderosa Way to Trail 2E17
+* Trail 2E17 to Dillon Cove     
+
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 

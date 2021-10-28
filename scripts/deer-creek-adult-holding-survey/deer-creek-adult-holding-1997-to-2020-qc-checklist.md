@@ -17,7 +17,19 @@ snorkel counts.The data has been qced and summed up.
 
 **Completeness of Record throughout timeframe:**
 
-**Sampling Location:** **Other Notes:**
+-   Some data lacks for Trail 2E17 to Dillon Cove
+
+**Sampling Location:**
+
+-   Upper Falls to Potato Patch
+-   Potato Patch to Lower Falls
+-   Lower Falls to A-Line
+-   A-Line to Wilson Cove
+-   Wilson Cove to Polk Springs
+-   Polk Springs to Murphy Trail
+-   Murphy Trail to Ponderosa Way
+-   Ponderosa Way to Trail 2E17
+-   Trail 2E17 to Dillon Cove
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 
@@ -184,28 +196,28 @@ gcs_upload(deer_adult_holding_survey_1997_to_2020,
            name = "adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv")
 ```
 
-    ## i 2021-10-28 14:35:04 > File size detected as  7.4 Kb
+    ## i 2021-10-28 14:42:13 > File size detected as  7.4 Kb
 
-    ## i 2021-10-28 14:35:04 > Request Status Code:  400
+    ## i 2021-10-28 14:42:13 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-28 14:35:04 > File size detected as  7.4 Kb
+    ## i 2021-10-28 14:42:13 > File size detected as  7.4 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv 
     ## Type:                csv 
     ## Size:                7.4 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv?generation=1635456904703609&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv?generation=1635457333727317&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv/1635456904703609 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv/1635457333727317 
     ## MD5 Hash:            DnTMbLIbmsBZ5KPoeyC17Q== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-28 21:35:04 
-    ## Updated:             2021-10-28 21:35:04 
-    ## Generation:          1635456904703609 
+    ## Created:             2021-10-28 21:42:13 
+    ## Updated:             2021-10-28 21:42:13 
+    ## Generation:          1635457333727317 
     ## Meta Generation:     1 
-    ## eTag:                CPnc5t6H7vMCEAE= 
+    ## eTag:                CNWgsKuJ7vMCEAE= 
     ## crc32c:              b0QIqA==
