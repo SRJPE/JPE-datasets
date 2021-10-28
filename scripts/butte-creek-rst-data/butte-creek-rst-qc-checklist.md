@@ -3,63 +3,6 @@ butte-creek-rst-qc-checklist
 Inigo Peng
 10/19/2021
 
-``` r
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
-library(tidyverse)
-```
-
-    ## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
-
-    ## v ggplot2 3.3.5     v purrr   0.3.4
-    ## v tibble  3.1.4     v dplyr   1.0.7
-    ## v tidyr   1.1.3     v stringr 1.4.0
-    ## v readr   2.0.1     v forcats 0.5.1
-
-    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
-    ## x dplyr::filter() masks stats::filter()
-    ## x dplyr::lag()    masks stats::lag()
-
-``` r
-library(lubridate)
-```
-
-    ## 
-    ## Attaching package: 'lubridate'
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     date, intersect, setdiff, union
-
-``` r
-library(googleCloudStorageR)
-```
-
-    ## v Setting scopes to https://www.googleapis.com/auth/devstorage.full_control and https://www.googleapis.com/auth/cloud-platform
-
-    ## v Successfully auto-authenticated via ../../config.json
-
-    ## v Set default bucket name to 'jpe-dev-bucket'
-
-``` r
-library(ggplot2)
-library(scales)
-```
-
-    ## 
-    ## Attaching package: 'scales'
-
-    ## The following object is masked from 'package:purrr':
-    ## 
-    ##     discard
-
-    ## The following object is masked from 'package:readr':
-    ## 
-    ##     col_factor
-
-``` r
-library (RColorBrewer)
-```
-
 # Butte Creek RST Data
 
 **Description of Monitoring Data**
@@ -85,6 +28,30 @@ between the 1995-96 and 2014-15 trapping seasons.
 Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ## Access Cloud Data
+
+``` r
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = "rst/butte-creek/data-raw/CDFW_Butte_Creek_RST_Captures.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "butte_creek_rst_raw.xlsx",
+               Overwrite = TRUE)
+```
+
+``` r
+raw_data = readxl::read_excel('butte_creek_rst_raw.xlsx',
+                              col_types = c("date","text","text","text","text","text","numeric","numeric","numeric","text",
+                                            "text","date","text","text","numeric","numeric","numeric","numeric","text","text",
+                                            "numeric","numeric","text","numeric","numeric","text"
+                                            ))
+glimpse(raw_data)
+```
 
     ## Rows: 63,418
     ## Columns: 26
@@ -117,6 +84,30 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ## Data Transformations
 
+``` r
+cleaner_data <- raw_data %>% 
+  set_names(tolower(colnames(raw_data))) %>%
+  select(-c('dead','weathercode','markcode', 'southbrush', 'northbrush', 'secchi','comments')) %>% 
+  rename('date'= sampledate,
+         'station' = stationcode,
+         'method'= methodcode,
+         'trap_status' = trapstatus,
+         'species'= organismcode,
+         'fork_length' = forklength,
+         'lifestage' = stagecode,
+         'time' = sampletime,
+         'gear_id' = gearid,
+         'temperature' = watertemperature,
+         'velocity' = watervelocity,
+         'staff_gauge' = staffgauge,
+         'trap_revolutions' = traprevolutions,
+         'rpms_start' = rpmsstart,
+         'rpms_end'= rpmsend) %>% 
+  mutate(time = hms::as_hms(time)) %>%
+  filter(species =='CHN', rm.na = TRUE) %>%
+  glimpse()
+```
+
     ## Rows: 63,418
     ## Columns: 19
     ## $ date             <dttm> 1995-11-29, 1995-11-29, 1995-11-29, 1995-11-29, 1995~
@@ -141,9 +132,21 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ## Explore `date`
 
+``` r
+cleaner_data %>%
+  ggplot(aes(x = date)) +
+  geom_histogram(position = 'stack', color = "black") +
+  labs(title = "Value Counts For Survey Season Dates")+
+  theme(legend.text = element_text(size = 8))
+```
+
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$date)
+```
 
     ##                  Min.               1st Qu.                Median 
     ## "1995-11-29 00:00:00" "2000-05-11 00:00:00" "2003-05-08 00:00:00" 
@@ -156,12 +159,16 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ## Explore Categorical Variables
 
+``` r
+cleaner_data %>% select_if(is.character) %>% colnames()
+```
+
     ## [1] "station"     "method"      "trap_status" "species"     "lifestage"  
     ## [6] "gear_id"     "debris"
 
 ### Variable `station`
 
-**Description: trap location**
+**Description:** trap location
 
 -   BCADAMS - Adams Dam
 
@@ -169,7 +176,17 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 -   BCOKIE-2 - Okie Dam 2
 
-<!-- -->
+``` r
+cleaner_data <- cleaner_data %>% 
+  mutate(station = case_when(
+    station == 'BCADAMS' ~ 'Adams Dam',
+    station == 'BCOKIE-1'~ 'Okie Dam 1',
+    station == 'BCOKIE-2' ~ 'Okie Dam 2',
+    TRUE ~ as.character(station)
+  ))
+
+table(cleaner_data$station)
+```
 
     ## 
     ##  Adams Dam Okie Dam 1 Okie Dam 2 
@@ -181,13 +198,22 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ### Variable `method`
 
-**Description: method of capture**
+**Description:** method of capture
 
 -   DSTR - Diversion fyke trap
 
 -   RSTR - Rotary screw trap
 
-<!-- -->
+``` r
+cleaner_data <- cleaner_data %>% 
+  mutate(method = set_names(tolower(method))) %>% 
+  mutate(method = case_when(
+          method =='dstr'~ 'diversion fyke trap',
+          method =='rstr'~ 'rotary screw trap'
+  )
+)
+table(cleaner_data$method)
+```
 
     ## 
     ## diversion fyke trap   rotary screw trap 
@@ -207,7 +233,12 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 -   Set - trap was set upon arrival
 
-<!-- -->
+``` r
+cleaner_data <- cleaner_data %>% 
+  mutate(trap_status = set_names(tolower(trap_status)))
+
+table(cleaner_data$trap_status)
+```
 
     ## 
     ## check  pull   set 
@@ -219,7 +250,7 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ### Variable `species`
 
-**Description: we are interested in Chinooks only**
+**Description:** we are interested in Chinooks only
 
 **NA and Unknown Values**
 
@@ -227,7 +258,7 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ### Variable `lifestage`
 
-**Description: Renaming to `lifestage`**
+**Description:** Renaming to `lifestage`
 
 -   1 - Fry with visible yolk sac
 -   2 - Fry with no visible yolk sac
@@ -238,11 +269,35 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 -   n/p - not provided
 -   UNK - unknown
 
-<!-- -->
+``` r
+table(cleaner_data$lifestage)
+```
 
     ## 
     ##     1     2     3     4     5    AD   n/p   UNK 
     ##    51  5364  3558  1067    26    96 53255     1
+
+``` r
+cleaner_data <- cleaner_data %>% 
+  mutate(method = set_names(tolower(method))) %>% 
+  mutate(method = case_when(
+          method =='dstr'~ 'diversion fyke trap',
+          method =='rstr'~ 'rotary screw trap'
+  )
+)
+# cleaner_data$lifestage <- ifelse(cleaner_data$lifestage == 'n/p', NA, cleaner_data$lifestage)
+cleaner_data <- cleaner_data %>% 
+  mutate(lifestage = case_when(
+    lifestage == 1~ 'yolk sac fry',
+    lifestage == 2~ 'fry',
+    lifestage == 3~ 'parr',
+    lifestage == 4~ 'fingerling',
+    lifestage == 5~ 'smolt',
+    lifestage == 'AD'~ 'adult',
+    lifestage == 'UNK'~ 'unknown'
+  ))
+table(cleaner_data$lifestage)
+```
 
     ## 
     ##        adult   fingerling          fry         parr        smolt      unknown 
@@ -264,7 +319,16 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 -   RSTR2 - Rotary Screw Trap 2
 
-<!-- -->
+``` r
+cleaner_data <- cleaner_data %>% 
+  mutate(gear_id = case_when(
+    gear_id == 'DSTR1' ~ 'diversion fyke trap 1',
+    gear_id == 'RSTR1' ~ 'rotary screw trap 1',
+    gear_id == 'RSTR2' ~ 'rotary screw trap 2'
+  ))
+
+table(cleaner_data$gear_id)
+```
 
     ## 
     ## diversion fyke trap 1   rotary screw trap 1   rotary screw trap 2 
@@ -276,7 +340,13 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ### Variable `debris`
 
-**Description: visual assessment of debris in trap**
+**Description:** visual assessment of debris in trap
+
+``` r
+cleaner_data <- cleaner_data %>% 
+  mutate(debris = set_names(tolower(debris)))
+table(cleaner_data$debris)
+```
 
     ## 
     ##      heavy      light     medium       none very heavy 
@@ -288,16 +358,56 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ## Explore Numerical Variables
 
+``` r
+cleaner_data %>% select_if(is.numeric) %>% colnames()
+```
+
     ##  [1] "count"            "fork_length"      "weight"           "temperature"     
     ##  [5] "turbidity"        "velocity"         "staff_gauge"      "trap_revolutions"
     ##  [9] "rpms_start"       "rpms_end"
 
 ### Variable `count`
 
-\*\*Description: fish \*count\*\*
+``` r
+cleaner_data %>% 
+  mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  group_by(date) %>% 
+  mutate(total_daily_catch = sum(count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = fake_date, y = total_daily_catch)) +
+  geom_col()+
+  # scale_x_date(labels = date_format("%b"), limits = c(as.Date("1995-10-01"), as.Date("2016-06-01")), date_breaks = "1 month")+
+  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-06-01")), date_breaks = "1 month") + 
+  theme_minimal()+
+  theme(text = element_text(size = 10),
+        axis.text.x = element_text(angle = 90))+
+  labs(title = "Total Daily Raw Passage 1995 - 2015",
+       y = "Total daily catch",
+       x = "Date")+ 
+  facet_wrap(~water_year, scales = "free")
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = year, y = count))+
+  geom_col()+
+  theme_minimal()+
+  labs(title = "Total Fish Count By Year")+
+  theme(text = element_text(size = 10),
+        axis.text.x = element_text(angle = 90,  vjust = 0.5, hjust=1))
+```
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$count)
+```
 
     ##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
     ##      0.00      1.00      1.00     75.02      4.00 220000.00
@@ -308,10 +418,36 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ### Variable `fork_length`
 
-**Description: fork length in millimeters (mm)**
+**Description:** fork length in millimeters (mm)
+
+``` r
+cleaner_data %>% 
+  filter(fork_length < 250) %>% #filtered out 52 points to see more clear distribution
+  ggplot(aes(x = fork_length))+
+  geom_histogram(binwidth = 2)+
+  theme_minimal()+
+  scale_x_continuous(breaks = seq(0, 250, by=25))+
+  labs(title = "Fork Length Distribution")+
+  theme(text = element_text(size=15),
+        axis.text.x = element_text(vjust =0.5, hjust = 1))
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = fork_length, y = lifestage))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = 'Fork length summarized by life stage')+
+  theme(text = element_text(size = 12))
+```
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$fork_length)
+```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##    0.00   35.00   44.00   50.75   65.00 1035.00    3272
@@ -322,10 +458,35 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ### Variable `weight`
 
-**Description: wet weight in grams(g)**
+**Description:** wet weight in grams(g)
+
+``` r
+cleaner_data %>% 
+  filter(weight< 30) %>%  #filtered out 26 data points to see more clear distribution
+  ggplot(aes(x = weight))+
+  geom_histogram(binwidth = 1)+
+  scale_x_continuous(breaks = seq(0, 30, by=2))+
+  theme_minimal()+
+  labs(title = "Weight Distribution")
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  filter(weight < 50) %>% 
+  ggplot(aes(x = weight, y= lifestage))+
+  geom_boxplot()+
+  labs(title = 'Weight summarized by life stage')+
+  theme(text = element_text(size = 12))+
+  theme_minimal()
+```
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$weight)
+```
 
     ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
     ##    0.000    0.000    0.290    1.617    2.275 3046.000    25299
@@ -336,11 +497,59 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ### Variable `temperature`
 
-**Description: temperature of water in degrees Celsius**
+**Description:** temperature of water in degrees Celsius
+
+``` r
+cleaner_data %>%
+  filter(temperature < 100) %>% #filter out 36 points with water temperature > 100 degrees
+  ggplot(aes(x= temperature, y = station))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Water Temperature by Station")
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  filter(temperature < 100) %>%  #filter out 36 points with water temperature > 100 degrees (entry error?)
+  group_by(date) %>% 
+  mutate(daily_avg_temp = mean(temperature)) %>% 
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900,1901),
+         fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = daily_avg_temp, color = year))+
+  geom_point()+
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal()+
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")+
+  labs(title = "Daily Water Temperature (colored by year)",
+       x = 'Date',
+       y = 'Average Daily Temp')
+```
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  filter(temperature < 100) %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = temperature, y = year))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Water Temperature summarized by year")+
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(vjust =0.5, hjust = 1))
+```
+
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$temperature)
+```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##   -1.00    7.00    9.00    9.96   12.00  805.00    3917
@@ -351,9 +560,46 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ### Variable `turbidity`
 
-**Description: Turbidity of water in NTU**
+**Description:** Turbidity of water in NTU
+
+``` r
+cleaner_data %>% 
+  group_by(date) %>% 
+  mutate(daily_avg_turb = mean(turbidity)) %>% 
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900,1901),
+         fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = daily_avg_turb, color = year))+
+  geom_point()+
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal()+
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")+
+  labs(title = "Daily Turbidity (colored by year)",
+       x = 'Date',
+       y = 'Average Daily Turbidity')
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = turbidity, y = year))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Turbidity summarized by year")+
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(vjust =0.5, hjust = 1))
+```
+
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$turbidity)
+```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##   0.200   1.870   2.770   5.359   4.700 189.000   21066
@@ -364,15 +610,69 @@ Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
 ### Variable `velocity`
 
-**Description: water velocity measured in ft/s**
+**Description:** water velocity measured in ft/s
 
 Data Transformation
 
+``` r
+#Convert water velocity from ft/s to m/s
+cleaner_data <- cleaner_data %>% 
+  mutate(velocity = velocity/3.281)
+```
+
+``` r
+cleaner_data %>%
+  filter(velocity < 8) %>% #filtered out 8 data points to show a more clear graph
+  ggplot(aes(x= velocity, y = station))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Water Velocity by Station")
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  filter(velocity < 5) %>% #filtered out one point to show a more clear graph
+  group_by(date) %>% 
+  mutate(daily_avg_velocity = mean(velocity)) %>% 
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900,1901),
+         fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = daily_avg_velocity, color = year))+
+  geom_point()+
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal()+
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")+
+  labs(title = "Daily Water Velocity (colored by year)",
+       x = 'Date',
+       y = 'Average Daily Velocity')
+```
+
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  filter(velocity<6) %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = velocity, y = year))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Water Velocity summarized by year")+
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(vjust =0.5, hjust = 1))
+```
+
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 # Numeric summary of `velocity` from 1995-2015
+
+``` r
+summary(cleaner_data$velocity)
+```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##    0.00    0.20    0.27    0.34    0.37  104.24   38937
@@ -383,12 +683,37 @@ Data Transformation
 
 ### Variable `trap_revolutions`
 
-**Description: Number of revolutions the RST cone had made since last
-being checked**
+**Description:** Number of revolutions the RST cone had made since last
+being checked
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = trap_revolutions))+
+  geom_histogram(binwidth = 500)+
+  labs(title = "Distribution of Trap Revolutions")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  filter(station != "Adams Dam") %>% 
+  ggplot(aes(y= station, x = trap_revolutions))+
+  geom_boxplot()+
+  labs(title = "Trap Revolutions Summarized by Location")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
 
 # Numeric summary of `trap_revolutions` from 1995-2015
+
+``` r
+summary(cleaner_data$trap_revolutions)
+```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##       0    2741    4000    4118    5439   11795   41363
@@ -399,12 +724,38 @@ being checked**
 
 ### Variable `rpms_start`
 
-**Description: rotations per minute of RST cone at start of trapping
-window**
+**Description:** rotations per minute of RST cone at start of trapping
+window
+
+``` r
+cleaner_data %>% 
+  filter(rpms_start < 10) %>% #filtered out 28 data points to show more clear distribution
+  ggplot(aes(x = rpms_start))+
+  geom_histogram(binwidth = 1)+
+  labs(title = "Distribution of RPMs Start")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  filter(rpms_start < 10) %>% 
+  ggplot(aes(y= station, x = rpms_start))+
+  geom_boxplot()+
+  labs(title = "RPMs Start Summarized by Location")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
 
 # Numeric summary of `rpms_start` from 1995-2015
+
+``` r
+summary(cleaner_data$rpms_start)
+```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##    0.00    2.10    3.00    4.92    4.00 3698.00   34932
@@ -415,11 +766,32 @@ window**
 
 ### Variable `rpms_end`
 
-**Description: rotations per minute of RST cone at end of trapping
-window**
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
+**Description:** rotations per minute of RST cone at end of trapping
+window
 
-![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
+``` r
+cleaner_data %>% 
+  filter(rpms_end < 10) %>% #filtered out 28 data points to show more clear distribution
+  ggplot(aes(x = rpms_end))+
+  geom_histogram(binwidth = 1)+
+  labs(title = "Distribution of RPMs End")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  filter(rpms_end < 10) %>% 
+  ggplot(aes(y= station, x = rpms_end))+
+  geom_boxplot()+
+  labs(title = "RPMs End Summarized by Location")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
+![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
 
 **NA and Unknown Values**
 
@@ -432,6 +804,10 @@ window**
 -   Turbidity data lacks in some years
 
 ### Add cleaned data back into google cloud
+
+``` r
+butte_creek_rst <- cleaner_data %>% glimpse()
+```
 
     ## Rows: 63,418
     ## Columns: 19
@@ -454,3 +830,16 @@ window**
     ## $ debris           <chr> "medium", "medium", "medium", "medium", "medium", "me~
     ## $ rpms_start       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ rpms_end         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+
+``` r
+write_csv(butte_creek_rst, "butte_rst.csv")
+```
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(butte_creek_rst,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data/butte-creek-rst.csv")
+```

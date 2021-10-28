@@ -4,8 +4,8 @@ author: "Inigo Peng"
 date: "10/19/2021"
 output: rmarkdown::github_document
 ---
-```{r}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
@@ -107,7 +107,7 @@ cleaner_data %>% select_if(is.character) %>% colnames()
 ```
 ### Variable `station`
 
-**Description: trap location**
+**Description:** trap location
 
 * BCADAMS - Adams Dam
 
@@ -134,7 +134,7 @@ table(cleaner_data$station)
 
 ### Variable `method`
 
-**Description: method of capture**
+**Description:** method of capture
 
 * DSTR - Diversion fyke trap
 
@@ -179,7 +179,7 @@ table(cleaner_data$trap_status)
 
 ### Variable `species`
 
-**Description: we are interested in Chinooks only**
+**Description:** we are interested in Chinooks only
 
 **NA and Unknown Values**  
 
@@ -188,7 +188,7 @@ table(cleaner_data$trap_status)
 
 ### Variable `lifestage`
 
-**Description: Renaming to `lifestage`**
+**Description:** Renaming to `lifestage`
 
 * 1 - Fry with visible yolk sac
 * 2 - Fry with no visible yolk sac
@@ -253,7 +253,7 @@ table(cleaner_data$gear_id)
 
 ### Variable `debris`
 
-**Description: visual assessment of debris in trap**
+**Description:** visual assessment of debris in trap
 
 ```{r}
 
@@ -271,8 +271,6 @@ table(cleaner_data$debris)
 cleaner_data %>% select_if(is.numeric) %>% colnames()
 ```
 ### Variable `count`
-
-**Description: fish *count**
 
 ```{r fig.height = 8, fig.width = 8}
 cleaner_data %>% 
@@ -315,7 +313,7 @@ summary(cleaner_data$count)
 
 ### Variable `fork_length`
 
-**Description: fork length in millimeters (mm)**
+**Description:** fork length in millimeters (mm)
 
 ```{r}
 cleaner_data %>% 
@@ -348,7 +346,7 @@ summary(cleaner_data$fork_length)
 
 ### Variable `weight`
 
-**Description: wet weight in grams(g)**
+**Description:** wet weight in grams(g)
 
 ```{r}
 cleaner_data %>% 
@@ -380,7 +378,7 @@ summary(cleaner_data$weight)
 
 ### Variable `temperature`
 
-**Description: temperature of water in degrees Celsius**
+**Description:** temperature of water in degrees Celsius
 
 ```{r}
 cleaner_data %>%
@@ -433,7 +431,7 @@ summary(cleaner_data$temperature)
 
 ### Variable `turbidity`
 
-**Description: Turbidity of water in NTU**
+**Description:** Turbidity of water in NTU
 ```{r}
 cleaner_data %>% 
   group_by(date) %>% 
@@ -475,7 +473,7 @@ summary(cleaner_data$turbidity)
 
 ### Variable `velocity`
 
-**Description: water velocity measured in ft/s**
+**Description:** water velocity measured in ft/s
 
 Data Transformation
 ```{r}
@@ -535,7 +533,7 @@ summary(cleaner_data$velocity)
 
 ### Variable `trap_revolutions`
 
-**Description: Number of revolutions the RST cone had made since last being checked**
+**Description:** Number of revolutions the RST cone had made since last being checked
 ```{r}
 cleaner_data %>% 
   ggplot(aes(x = trap_revolutions))+
@@ -566,7 +564,7 @@ summary(cleaner_data$trap_revolutions)
 
 ### Variable `rpms_start`
 
-**Description: rotations per minute of RST cone at start of trapping window**
+**Description:** rotations per minute of RST cone at start of trapping window
 ```{r}
 cleaner_data %>% 
   filter(rpms_start < 10) %>% #filtered out 28 data points to show more clear distribution
@@ -597,7 +595,7 @@ summary(cleaner_data$rpms_start)
 
 ### Variable `rpms_end`
 
-**Description: rotations per minute of RST cone at end of trapping window**
+**Description:** rotations per minute of RST cone at end of trapping window
 ```{r}
 cleaner_data %>% 
   filter(rpms_end < 10) %>% #filtered out 28 data points to show more clear distribution
