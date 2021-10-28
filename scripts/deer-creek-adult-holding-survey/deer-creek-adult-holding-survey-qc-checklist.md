@@ -1,4 +1,4 @@
-deer-creek-adult-holding-survey-qc-checklist
+deer-creek-adult-holding-survey-1986-to-1996-qc-checklist
 ================
 Inigo Peng
 10/19/2021
@@ -10,6 +10,9 @@ Inigo Peng
 The adult holding survey data is in two separate files: first one is
 from 1986 to 1996, second one is 1997 to 2020. The data is collected via
 snorkel counts.The data has been qced and summed up.
+
+The data from 1986 to 1996 has been reformatted for better access. Both
+original file and reformatted file could be found on google cloud.
 
 **Timeframe:**
 
@@ -131,7 +134,8 @@ cleaner_data %>%
   scale_fill_manual(values = getPalette(colourCount))+
   geom_col()+
   theme_minimal()+
-  labs(title = "Adult Holding Count By Year")
+  labs(title = "Adult Holding Count By Year")+
+  ylim(0, 1500)
 ```
 
 ![](deer-creek-adult-holding-survey-qc-checklist_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
@@ -149,6 +153,19 @@ cleaner_data %>%
 **NA and Unknown Values**
 
 -   0 % of values in the `count` column are NA.
+
+**Numeric Annual Summary of count From 1986 to 1996**
+
+``` r
+cleaner_data %>%
+  group_by(year) %>%
+  summarise(count = sum(count, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    24.0   127.0   166.0   319.1   372.0  1295.0
 
 ### Add cleaned data back onto google cloud
 
@@ -170,28 +187,28 @@ gcs_upload(deer_adult_holding_survey_1986_to_1996,
            name = "adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv")
 ```
 
-    ## i 2021-10-28 12:50:03 > File size detected as  1.6 Kb
+    ## i 2021-10-28 14:37:02 > File size detected as  1.6 Kb
 
-    ## i 2021-10-28 12:50:03 > Request Status Code:  400
+    ## i 2021-10-28 14:37:02 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-28 12:50:03 > File size detected as  1.6 Kb
+    ## i 2021-10-28 14:37:02 > File size detected as  1.6 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv 
     ## Type:                csv 
     ## Size:                1.6 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv?generation=1635450603466333&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv?generation=1635457022082485&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv/1635450603466333 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv/1635457022082485 
     ## MD5 Hash:            9OnNRd61ubjplHVbJIniiA== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-28 19:50:03 
-    ## Updated:             2021-10-28 19:50:03 
-    ## Generation:          1635450603466333 
+    ## Created:             2021-10-28 21:37:02 
+    ## Updated:             2021-10-28 21:37:02 
+    ## Generation:          1635457022082485 
     ## Meta Generation:     1 
-    ## eTag:                CN3ckaLw7fMCEAE= 
+    ## eTag:                CLX74paI7vMCEAE= 
     ## crc32c:              d2sACw==
