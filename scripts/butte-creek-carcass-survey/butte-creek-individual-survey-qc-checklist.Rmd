@@ -1,0 +1,264 @@
+---
+title: "butte-creek-individual-survey-qc-checklist"
+author: "Inigo Peng"
+date: "10/21/2021"
+output: rmarkdown::github_document
+---
+---
+```{r}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+```
+# BUtte Creek Individual Survey Data  
+
+## Description of Monitoring Data
+
+**Timeframe:** 2014-2020
+
+
+**Completeness of Record throughout timeframe:**  
+
+
+
+**Sampling Location:** Various sampling locations on Butte Creek.
+
+TODO: Upper survey?
+
+
+**Data Contact:** [Jessica Nichols](mailto::Jessica.Nichols@Wildlife.ca.gov)
+
+
+Additional Info:  
+The carcass data came in 12 documents for each year. We identified the 'SurveyChops' and 'SurveyIndividuals' datasets as the documents with the most complete information and joined them for all of the years.
+
+## Access Cloud Data
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+
+# git data and save as xlsx
+read_from_cloud <- function(year){
+  gcs_get_object(object_name = paste0("adult-holding-redd-and-carcass-surveys/butte-creek/data-raw/", year, "_SurveyIndividuals.xlsx"),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = paste0(year,"_raw_surveyindividuals.xlsx"),
+               overwrite = TRUE)
+  data <- readxl::read_excel(paste0(year,"_raw_surveyindividuals.xlsx")) %>% 
+    glimpse()
+}
+
+open_files <- function(year){
+  data <- readxl::read_excel(paste0(year, "_raw_surveyindividuals.xlsx"),
+                   col_types = c("numeric",
+                                 "text",
+                                 "numeric",
+                                 "numeric",
+                                 "date",
+                                 "text",
+                                 "text",
+                                 "text",
+                                 "text",
+                                 "numeric",
+                                 "text",
+                                 "numeric",
+                                 "numeric",
+                                 "text",
+                                 "text",
+                                 "text",
+                                 "text",
+                                 "numeric",
+                                 "text",
+                                 "text",
+                                 "text",
+                                 "text",
+                                 "text",
+                                 "text",
+                                 "text",
+                                 "text"))
+  return (data)
+}
+years <- c(2014,2015,2016, 2017, 2018, 2020)
+# year <- 2020
+# raw_data <- purrr::map(years, read_from_cloud)
+
+raw_data <- purrr::map(years, open_files) %>%  
+  reduce(bind_rows) %>% 
+write_csv(raw_data, "raw_individual_data.csv")
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean 
+raw_individuals_data <- read_csv("raw_individual_data.csv")%>% 
+  glimpse()
+```
+
+## Data Transformations
+
+
+```{r}
+cleaner_data<- raw_individuals_data %>%
+  janitor::clean_names() %>%
+  rename('location' = 'location_cd',
+         'fork_length_cm' = 'f_lcm',
+         'condition' = 'condition_cd',
+         'spawning_status' = 'spawned_cd') %>% 
+  select(-c('week', 'year', 'f_lmm','location', 'species_code','disposition',
+         'survey','other_marks')) %>% #all location the same,all chinook, all tagged
+  mutate(date = as.Date(date),
+         comments = as.character(comments),
+         cwt_status_id = as.numeric(cwt_status_id),
+         cwt_status = as.character(cwt_status)) %>%
+  glimpse()
+```
+
+## Explore `date`
+```{r}
+cleaner_data%>%
+  ggplot(aes(x = date)) +
+  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
+  labs(title = "Value Counts For Survey Season Dates")+
+  theme(legend.text = element_text(size = 8))
+```
+
+```{r}
+summary(cleaner_data$date)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+
+## Explore Categorical Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.character) %>% colnames()
+```
+
+### Variable:`section_cd`
+```{r}
+table(cleaner_data$section_cd)
+```
+
+### Variable:`way_pt`
+TODO: need lookup table
+```{r}
+table(cleaner_data$way_pt)
+```
+```{r}
+cleaner_data <- cleaner_data %>%
+  mutate(way_pt = set_names(toupper(way_pt)))
+table(cleaner_data$way_pt)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$way_pt))/nrow(cleaner_data), 3)*100` % of values in the `way_pt` column are NA.
+
+
+### Variable:`sex`
+```{r}
+table(cleaner_data$sex)
+
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$sex))/nrow(cleaner_data), 3)*100` % of values in the `sex` column are NA.
+
+### Variable:`condition`
+TODO: need lookup table
+```{r}
+table(cleaner_data$condition)
+cleaner_data <- cleaner_data %>% 
+  mutate(condition = set_names(tolower(condition)),
+         condition = case_when(
+           condition == "n/r" ~ 'not recorded',
+           TRUE ~ as.character(condition)
+         ))
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$condition))/nrow(cleaner_data), 3)*100` % of values in the `condition` column are NA.
+
+### Variable:`spawning_status`
+TODO: need lookup table
+```{r}
+table(cleaner_data$spawning_status)
+cleaner_data <- cleaner_data %>% 
+  mutate(spawning_status = set_names(tolower(spawning_status)),
+         spawning_status = 
+           case_when(spawning_status == "n" ~ "no",
+                     spawning_status == "y" ~ "yes",
+                     spawning_status == "n/r" ~ 'not recorded',
+                     spawning_status == "unk" ~ "unknown",
+                     TRUE ~ as.character(spawning_status)
+    
+  ))
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$spawning_status))/nrow(cleaner_data), 3)*100` % of values in the `spawning_status` column are NA.
+
+### Variable:`tissue_nu`
+
+TODO: need look up table or description
+```{r}
+table(cleaner_data$tissue_nu)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$tissue_nu))/nrow(cleaner_data), 3)*100` % of values in the `tissue_nu` column are NA.
+
+### Variable:`otolith_nu`
+
+TODO: need lookup table or description
+```{r}
+table(cleaner_data$otolith_nu)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$otolith_nu))/nrow(cleaner_data), 3)*100` % of values in the `otolith_nu` column are NA.
+
+## Explore Numerical Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.numeric) %>% colnames()
+```
+### Variable:`disc_tag_applied`
+```{r}
+summary(cleaner_data$disc_tag_applied)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$disc_tag_applied))/nrow(cleaner_data), 3)*100` % of values in the `disc_tag_applied` column are NA.
+
+### Variable:`fork_length_cm`
+```{r}
+cleaner_data %>% 
+  # mutate(years = as.factor(year(date))) %>%
+  filter(fork_length_cm < 200) %>%  #filter out one large value for better view of distribution
+  ggplot(aes(x = fork_length_cm))+
+  geom_histogram(bin = 10)+
+  labs(title = "Distribution of Fork Length")
+```
+
+```{r}
+summary(cleaner_data$fork_length_cm)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$fork_length_cm))/nrow(cleaner_data), 3)*100` % of values in the `fork_length_cm` column are NA.
+
