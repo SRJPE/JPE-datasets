@@ -1,0 +1,647 @@
+---
+title: "butte-creek-rst-qc-checklist"
+author: "Inigo Peng"
+date: "10/19/2021"
+output: rmarkdown::github_document
+---
+```{r}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+```
+# Butte Creek RST Data  
+
+**Description of Monitoring Data**
+
+This dataset contains data for all Chinook salmon that were captured in the Butte Creek rotary screw trap (RSTR) or diversion fyke trap (DSTR) between the 1995-96 and 2014-15 trapping seasons.
+
+**Timeframe:** 
+
+1995 - 2015
+
+**Completeness of Record throughout timeframe:**
+
+* Life stage information lacks after 2005
+* Inconsistent completeness of physical data after 2008
+
+**Sampling Location:** 
+
+3 locations on Butte Creek
+
+**Data Contact:** [Jessica Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
+
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = "rst/butte-creek/data-raw/CDFW_Butte_Creek_RST_Captures.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "butte_creek_rst_raw.xlsx",
+               Overwrite = TRUE)
+```
+```{r}
+raw_data = readxl::read_excel('butte_creek_rst_raw.xlsx',
+                              col_types = c("date","text","text","text","text","text","numeric","numeric","numeric","text",
+                                            "text","date","text","text","numeric","numeric","numeric","numeric","text","text",
+                                            "numeric","numeric","text","numeric","numeric","text"
+                                            ))
+glimpse(raw_data)
+```
+
+## Data Transformations
+```{r}
+cleaner_data <- raw_data %>% 
+  set_names(tolower(colnames(raw_data))) %>%
+  select(-c('dead','weathercode','markcode', 'southbrush', 'northbrush', 'secchi','comments')) %>% 
+  rename('date'= sampledate,
+         'station' = stationcode,
+         'method'= methodcode,
+         'trap_status' = trapstatus,
+         'species'= organismcode,
+         'fork_length' = forklength,
+         'lifestage' = stagecode,
+         'time' = sampletime,
+         'gear_id' = gearid,
+         'temperature' = watertemperature,
+         'velocity' = watervelocity,
+         'staff_gauge' = staffgauge,
+         'trap_revolutions' = traprevolutions,
+         'rpms_start' = rpmsstart,
+         'rpms_end'= rpmsend) %>% 
+  mutate(time = hms::as_hms(time)) %>%
+  filter(species =='CHN', rm.na = TRUE) %>%
+  glimpse()
+```
+## Explore `date`
+```{r}
+cleaner_data %>%
+  ggplot(aes(x = date)) +
+  geom_histogram(position = 'stack', color = "black") +
+  labs(title = "Value Counts For Survey Season Dates")+
+  theme(legend.text = element_text(size = 8))
+```
+```{r}
+summary(cleaner_data$date)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+
+## Explore Categorical Variables
+
+```{r}
+cleaner_data %>% select_if(is.character) %>% colnames()
+```
+### Variable `station`
+
+**Description: trap location**
+
+* BCADAMS - Adams Dam
+
+* BCOKIE-1 - Okie Dam 1
+
+* BCOKIE-2 - Okie Dam 2
+
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(station = case_when(
+    station == 'BCADAMS' ~ 'Adams Dam',
+    station == 'BCOKIE-1'~ 'Okie Dam 1',
+    station == 'BCOKIE-2' ~ 'Okie Dam 2',
+    TRUE ~ as.character(station)
+  ))
+
+table(cleaner_data$station)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$station))/nrow(cleaner_data), 3)*100` % of values in the `station` column are NA.
+
+
+### Variable `method`
+
+**Description: method of capture**
+
+* DSTR - Diversion fyke trap
+
+* RSTR - Rotary screw trap
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(method = set_names(tolower(method))) %>% 
+  mutate(method = case_when(
+          method =='dstr'~ 'diversion fyke trap',
+          method =='rstr'~ 'rotary screw trap'
+  )
+)
+table(cleaner_data$method)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$method))/nrow(cleaner_data), 3)*100` % of values in the `method` column are NA.
+
+
+### Variable `trap_status`
+
+**Description:** 
+
+* Check - trap was checked normally , continued fishing
+
+* Pull - trap was pulled after trap check
+
+* Set - trap was set upon arrival 
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(trap_status = set_names(tolower(trap_status)))
+
+table(cleaner_data$trap_status)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$trap_status))/nrow(cleaner_data), 3)*100` % of values in the `trap_status` column are NA.
+
+
+### Variable `species`
+
+**Description: we are interested in Chinooks only**
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3)*100` % of values in the `species` column are NA.
+
+
+### Variable `lifestage`
+
+**Description: Renaming to `lifestage`**
+
+* 1 - Fry with visible yolk sac
+* 2 - Fry with no visible yolk sac
+* 3 - Parr
+* 4 - Fingerling
+* 5 - Smolt
+* AD - Adult
+* n/p - not provided 
+* UNK - unknown
+
+```{r}
+table(cleaner_data$lifestage)
+```
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(method = set_names(tolower(method))) %>% 
+  mutate(method = case_when(
+          method =='dstr'~ 'diversion fyke trap',
+          method =='rstr'~ 'rotary screw trap'
+  )
+)
+# cleaner_data$lifestage <- ifelse(cleaner_data$lifestage == 'n/p', NA, cleaner_data$lifestage)
+cleaner_data <- cleaner_data %>% 
+  mutate(lifestage = case_when(
+    lifestage == 1~ 'yolk sac fry',
+    lifestage == 2~ 'fry',
+    lifestage == 3~ 'parr',
+    lifestage == 4~ 'fingerling',
+    lifestage == 5~ 'smolt',
+    lifestage == 'AD'~ 'adult',
+    lifestage == 'UNK'~ 'unknown'
+  ))
+table(cleaner_data$lifestage)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$lifestage))/nrow(cleaner_data), 3)*100` % of values in the `lifestage` column are NA.
+
+### Variable `gear_id`
+
+**Description:**
+
+* DSTR1 - Diversion Fyke Trap 1
+
+* RSTR1 - Rotary Screw Trap 1
+
+* RSTR2 - Rotary Screw Trap 2
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(gear_id = case_when(
+    gear_id == 'DSTR1' ~ 'diversion fyke trap 1',
+    gear_id == 'RSTR1' ~ 'rotary screw trap 1',
+    gear_id == 'RSTR2' ~ 'rotary screw trap 2'
+  ))
+
+table(cleaner_data$gear_id)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$gear_id))/nrow(cleaner_data), 3)*100` % of values in the `gear_id` column are NA.
+
+### Variable `debris`
+
+**Description: visual assessment of debris in trap**
+
+```{r}
+
+cleaner_data <- cleaner_data %>% 
+  mutate(debris = set_names(tolower(debris)))
+table(cleaner_data$debris)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$debris))/nrow(cleaner_data), 3)*100` % of values in the `debris` column are NA.
+
+## Explore Numerical Variables
+
+```{r}
+cleaner_data %>% select_if(is.numeric) %>% colnames()
+```
+### Variable `count`
+
+**Description: fish *count**
+
+```{r fig.height = 8, fig.width = 8}
+cleaner_data %>% 
+  mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  group_by(date) %>% 
+  mutate(total_daily_catch = sum(count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = fake_date, y = total_daily_catch)) +
+  geom_col()+
+  # scale_x_date(labels = date_format("%b"), limits = c(as.Date("1995-10-01"), as.Date("2016-06-01")), date_breaks = "1 month")+
+  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-06-01")), date_breaks = "1 month") + 
+  theme_minimal()+
+  theme(text = element_text(size = 10),
+        axis.text.x = element_text(angle = 90))+
+  labs(title = "Total Daily Raw Passage 1995 - 2015",
+       y = "Total daily catch",
+       x = "Date")+ 
+  facet_wrap(~water_year, scales = "free")
+```
+```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = year, y = count))+
+  geom_col()+
+  theme_minimal()+
+  labs(title = "Total Fish Count By Year")+
+  theme(text = element_text(size = 10),
+        axis.text.x = element_text(angle = 90,  vjust = 0.5, hjust=1))
+```
+```{r}
+summary(cleaner_data$count)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
+
+### Variable `fork_length`
+
+**Description: fork length in millimeters (mm)**
+
+```{r}
+cleaner_data %>% 
+  filter(fork_length < 250) %>% #filtered out 52 points to see more clear distribution
+  ggplot(aes(x = fork_length))+
+  geom_histogram(binwidth = 2)+
+  theme_minimal()+
+  scale_x_continuous(breaks = seq(0, 250, by=25))+
+  labs(title = "Fork Length Distribution")+
+  theme(text = element_text(size=15),
+        axis.text.x = element_text(vjust =0.5, hjust = 1))
+```
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = fork_length, y = lifestage))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = 'Fork length summarized by life stage')+
+  theme(text = element_text(size = 12))
+```
+
+```{r}
+summary(cleaner_data$fork_length)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$fork_length))/nrow(cleaner_data), 3)*100` % of values in the `fork_length` column are NA.
+
+
+### Variable `weight`
+
+**Description: wet weight in grams(g)**
+
+```{r}
+cleaner_data %>% 
+  filter(weight< 30) %>%  #filtered out 26 data points to see more clear distribution
+  ggplot(aes(x = weight))+
+  geom_histogram(binwidth = 1)+
+  scale_x_continuous(breaks = seq(0, 30, by=2))+
+  theme_minimal()+
+  labs(title = "Weight Distribution")
+```
+```{r}
+cleaner_data %>% 
+  filter(weight < 50) %>% 
+  ggplot(aes(x = weight, y= lifestage))+
+  geom_boxplot()+
+  labs(title = 'Weight summarized by life stage')+
+  theme(text = element_text(size = 12))+
+  theme_minimal()
+```
+
+
+```{r}
+summary(cleaner_data$weight)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$weight))/nrow(cleaner_data), 3)*100` % of values in the `weight` column are NA.
+
+### Variable `temperature`
+
+**Description: temperature of water in degrees Celsius**
+
+```{r}
+cleaner_data %>%
+  filter(temperature < 100) %>% #filter out 36 points with water temperature > 100 degrees
+  ggplot(aes(x= temperature, y = station))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Water Temperature by Station")
+```
+```{r}
+cleaner_data %>% 
+  filter(temperature < 100) %>%  #filter out 36 points with water temperature > 100 degrees (entry error?)
+  group_by(date) %>% 
+  mutate(daily_avg_temp = mean(temperature)) %>% 
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900,1901),
+         fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = daily_avg_temp, color = year))+
+  geom_point()+
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal()+
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")+
+  labs(title = "Daily Water Temperature (colored by year)",
+       x = 'Date',
+       y = 'Average Daily Temp')
+```
+```{r}
+cleaner_data %>% 
+  filter(temperature < 100) %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = temperature, y = year))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Water Temperature summarized by year")+
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(vjust =0.5, hjust = 1))
+```
+
+
+```{r}
+summary(cleaner_data$temperature)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$temperature))/nrow(cleaner_data), 3)*100` % of values in the `temperature` column are NA.
+
+### Variable `turbidity`
+
+**Description: Turbidity of water in NTU**
+```{r}
+cleaner_data %>% 
+  group_by(date) %>% 
+  mutate(daily_avg_turb = mean(turbidity)) %>% 
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900,1901),
+         fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = daily_avg_turb, color = year))+
+  geom_point()+
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal()+
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")+
+  labs(title = "Daily Turbidity (colored by year)",
+       x = 'Date',
+       y = 'Average Daily Turbidity')
+```
+```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = turbidity, y = year))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Turbidity summarized by year")+
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(vjust =0.5, hjust = 1))
+```
+
+
+
+```{r}
+summary(cleaner_data$turbidity)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$turbidity))/nrow(cleaner_data), 3)*100` % of values in the `turbidity` column are NA.
+
+### Variable `velocity`
+
+**Description: water velocity measured in ft/s**
+
+Data Transformation
+```{r}
+#Convert water velocity from ft/s to m/s
+cleaner_data <- cleaner_data %>% 
+  mutate(velocity = velocity/3.281)
+```
+```{r}
+cleaner_data %>%
+  filter(velocity < 8) %>% #filtered out 8 data points to show a more clear graph
+  ggplot(aes(x= velocity, y = station))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Water Velocity by Station")
+```
+```{r}
+cleaner_data %>% 
+  filter(velocity < 5) %>% #filtered out one point to show a more clear graph
+  group_by(date) %>% 
+  mutate(daily_avg_velocity = mean(velocity)) %>% 
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900,1901),
+         fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = daily_avg_velocity, color = year))+
+  geom_point()+
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal()+
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")+
+  labs(title = "Daily Water Velocity (colored by year)",
+       x = 'Date',
+       y = 'Average Daily Velocity')
+```
+```{r}
+cleaner_data %>% 
+  filter(velocity<6) %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = velocity, y = year))+
+  geom_boxplot()+
+  theme_minimal()+
+  labs(title = "Water Velocity summarized by year")+
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(vjust =0.5, hjust = 1))
+```
+
+
+# Numeric summary of `velocity` from 1995-2015
+```{r}
+summary(cleaner_data$velocity)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$velocity))/nrow(cleaner_data), 3)*100` % of values in the `velocity` column are NA.
+
+### Variable `trap_revolutions`
+
+**Description: Number of revolutions the RST cone had made since last being checked**
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = trap_revolutions))+
+  geom_histogram(binwidth = 500)+
+  labs(title = "Distribution of Trap Revolutions")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+```{r}
+cleaner_data %>% 
+  filter(station != "Adams Dam") %>% 
+  ggplot(aes(y= station, x = trap_revolutions))+
+  geom_boxplot()+
+  labs(title = "Trap Revolutions Summarized by Location")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
+
+# Numeric summary of `trap_revolutions` from 1995-2015
+```{r}
+summary(cleaner_data$trap_revolutions)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$trap_revolutions))/nrow(cleaner_data), 3)*100` % of values in the `trap_revolutions` column are NA.
+
+### Variable `rpms_start`
+
+**Description: rotations per minute of RST cone at start of trapping window**
+```{r}
+cleaner_data %>% 
+  filter(rpms_start < 10) %>% #filtered out 28 data points to show more clear distribution
+  ggplot(aes(x = rpms_start))+
+  geom_histogram(binwidth = 1)+
+  labs(title = "Distribution of RPMs Start")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+```{r}
+cleaner_data %>% 
+  filter(rpms_start < 10) %>% 
+  ggplot(aes(y= station, x = rpms_start))+
+  geom_boxplot()+
+  labs(title = "RPMs Start Summarized by Location")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
+# Numeric summary of `rpms_start` from 1995-2015
+```{r}
+summary(cleaner_data$rpms_start)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$rpms_start))/nrow(cleaner_data), 3)*100` % of values in the `rpms_start`` column are NA.
+
+### Variable `rpms_end`
+
+**Description: rotations per minute of RST cone at end of trapping window**
+```{r}
+cleaner_data %>% 
+  filter(rpms_end < 10) %>% #filtered out 28 data points to show more clear distribution
+  ggplot(aes(x = rpms_end))+
+  geom_histogram(binwidth = 1)+
+  labs(title = "Distribution of RPMs End")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
+```{r}
+cleaner_data %>% 
+  filter(rpms_end < 10) %>% 
+  ggplot(aes(y= station, x = rpms_end))+
+  geom_boxplot()+
+  labs(title = "RPMs End Summarized by Location")+
+  theme_minimal()+
+  theme(text = element_text(size = 12))
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$rpms_end))/nrow(cleaner_data), 3)*100` % of values in the `rpms_end` column are NA.
+
+### Issues Identified
+* 50 points in water temperature reaches over 50 degrees celsius
+
+* Turbidity data lacks in some years
+
+### Add cleaned data back into google cloud
+```{r}
+butte_creek_rst <- cleaner_data %>% glimpse()
+```
+```{r}
+write_csv(butte_creek_rst, "butte_rst.csv")
+```
+
+
+```{r, eval= FALSE}
+
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(butte_creek_rst,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data/butte-creek-rst.csv")
+```
