@@ -501,7 +501,7 @@ knl_effort %>%
 table(knl_effort$location) 
 ```
 
-Some years do not have location variable filled in. Fill in for these years.
+Some years do not have location variable filled in. Fill in with `KL` for these years.
 
 ```{r}
 filter(knl_effort, is.na(location)) %>%
