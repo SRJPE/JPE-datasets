@@ -29,7 +29,10 @@ library (RColorBrewer)
 
 **Completeness of Record throughout timeframe:**
 
-
+* Missing some elevation data
+* Buckhorn Gulch To Upper Dam missing significant count data
+* Savercool Place  To Black Rock and Canyon Camp to Sooner Place missing count data
+from 1997 - 2006
 
 **Sampling Location:** 
 
@@ -49,7 +52,6 @@ library (RColorBrewer)
 * Pape Place to Buckhorn Gulch 
 * Buckhorn Gulch to Upper Dam (aerial survey)
 
-TODO: issues, completeness of data
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 

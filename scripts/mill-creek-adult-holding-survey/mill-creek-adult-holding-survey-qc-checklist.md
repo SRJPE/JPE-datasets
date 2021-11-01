@@ -19,6 +19,11 @@ Inigo Peng
 
 **Completeness of Record throughout timeframe:**
 
+-   Missing some elevation data
+-   Buckhorn Gulch To Upper Dam missing significant count data
+-   Savercool Place To Black Rock and Canyon Camp to Sooner Place
+    missing count data from 1997 - 2006
+
 **Sampling Location:**
 
 -   Above Hwy 36
@@ -36,8 +41,6 @@ Inigo Peng
 -   Above Avery to Pape Place
 -   Pape Place to Buckhorn Gulch
 -   Buckhorn Gulch to Upper Dam (aerial survey)
-
-TODO: issues, completeness of data
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 
@@ -284,28 +287,28 @@ gcs_upload(mill_adult_holding_survey,
            name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv")
 ```
 
-    ## i 2021-11-01 16:18:01 > File size detected as  14.8 Kb
+    ## i 2021-11-01 16:23:52 > File size detected as  14.8 Kb
 
-    ## i 2021-11-01 16:18:01 > Request Status Code:  400
+    ## i 2021-11-01 16:23:53 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-01 16:18:01 > File size detected as  14.8 Kb
+    ## i 2021-11-01 16:23:53 > File size detected as  14.8 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv 
     ## Type:                csv 
     ## Size:                14.8 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv?generation=1635808679969670&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv?generation=1635809031838958&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv/1635808679969670 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv/1635809031838958 
     ## MD5 Hash:            gm8eDGy5gBljUOlcnYmM9w== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-01 23:17:59 
-    ## Updated:             2021-11-01 23:17:59 
-    ## Generation:          1635808679969670 
+    ## Created:             2021-11-01 23:23:51 
+    ## Updated:             2021-11-01 23:23:51 
+    ## Generation:          1635809031838958 
     ## Meta Generation:     1 
-    ## eTag:                CIaHqZqm+PMCEAE= 
+    ## eTag:                CO65jcKn+PMCEAE= 
     ## crc32c:              TjJEuA==
