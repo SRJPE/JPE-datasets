@@ -7,9 +7,9 @@ Erin Cain
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service’s, Red
-Bluff Fish and Wildlife Office’s, Battle Creek Monitoring Program. These
-data represent brood years (BY) 2003-2020 The fish were captured in the
+These data were collected by the U.S. Fish and Wildlife Service, Red
+Bluff Fish and Wildlife Office, Battle Creek Monitoring Program. These
+data represent brood years (BY) 2003-2020. The fish were captured in the
 upper Battle Creek rotary screw trap site (UBC), Shasta County,
 California, from September 30, 2003, through June 30, 2021. The catch
 data were collected using a 5-ft diameter rotary screw trap located at
@@ -21,7 +21,10 @@ BY2019 sampling.
 
 **Screw Trap Season:** September - June
 
-**Completeness of Record throughout timeframe:**
+**Completeness of Record throughout timeframe:** Sample Year tab on
+excel sheet describes start and end date for trap each year. Sampled
+every year from 1998 - 2019, some years not fished on weekends or during
+high flow events.
 
 **Sampling Location:** Upper Battle Creek (UBC)
 
@@ -117,6 +120,17 @@ sum(cleaner_rst_count$interpolated == "YES")/nrow(cleaner_rst_count) * 100
 
     ## [1] 1.162243
 
+Notes: \* `r_catch` value has an interpolated catch for times the trap
+did not fish. Not an estimate just for missed days interpolates values
+based on prior/future days \* I selected only one race, the data has two
+races, I do not know which one is best to keep, here are details on the
+two: \* fWSRace - USFWS run designation base upon location or emergence
+timing used in reports and for passage indices, W=winter-run,
+S=spring-run, F=fall-run, L=late-fall run Chinook Salmon  
+\* race - Database generated Sheila Greene run designation of catch,
+W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon,
+see RunDesignation and RunChart tables
+
 ## Explore Numeric Variables:
 
 ``` r
@@ -168,12 +182,35 @@ summary(cleaner_rst_count$fork_length)
 **NA and Unknown Values**
 
 -   0 % of values in the `fork_length` column are NA.
+
 -   0 for `fork_length` seems like an NA or error
+
+``` r
+cleaner_rst_count %>% filter(fork_length == 0 & !is.na(count))
+```
+
+    ## # A tibble: 750 x 8
+    ##    date       sample_id run   fork_length lifestage count dead  interpolated
+    ##    <date>     <chr>     <chr>       <dbl> <chr>     <dbl> <chr> <chr>       
+    ##  1 2003-12-13 347_03    S               0 N/P           1 NO    NO          
+    ##  2 2003-12-13 347_03    F               0 C1            2 NO    NO          
+    ##  3 2003-12-14 348_03    S               0 N/P          28 NO    YES         
+    ##  4 2003-12-14 348_03    F               0 N/P         125 NO    YES         
+    ##  5 2003-12-21 355_03    F               0 C1          109 NO    NO          
+    ##  6 2003-12-28 363_03    F               0 N/P          33 NO    YES         
+    ##  7 2003-12-30 364_03    F               0 N/P          39 NO    YES         
+    ##  8 2004-01-01 001_04    F               0 N/P          62 NO    YES         
+    ##  9 2004-01-02 002_04    F               0 N/P          62 NO    YES         
+    ## 10 2004-01-10 010_04    F               0 C0           30 YES   NO          
+    ## # ... with 740 more rows
 
 ### Variable: `count`
 
 Catch number used to generate passage indices for reports, plus counts
 are split into races, zero fork lengths have been assigned
+
+-   Definition given in Spreadsheet metadata, do not know what 0 fork
+    lengths have been assigned means TODO ask Mike
 
 **Plotting fish counts over period of record**
 
@@ -205,13 +242,17 @@ cleaner_rst_count %>%
 
     ## Joining, by = "water_year"
 
-![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 cleaner_rst_count  %>%
-  filter(year(date) < 2021, run %in% c("F", "L", "S", "W")) %>% 
+  filter(year(date) < 2021, 
+         run %in% c("F", "L", "S", "W")
+         ) %>% 
   mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = year, y = count)) + 
+  group_by(year) %>%
+  mutate(total_yearly_catch = sum(count)) %>%
+  ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
   labs(title = "Total Fish Counted each Year by run",
@@ -221,7 +262,7 @@ cleaner_rst_count  %>%
   facet_wrap(~run, scales = "free_y")
 ```
 
-![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 **Numeric Summary of counts over Period of Record**
 
@@ -250,6 +291,9 @@ cleaner_rst_count %>% select_if(is.character) %>% colnames()
 
 ### Variable: `sample_id`
 
+The calendar year Julian date and year code for that \~24-h sample
+period (ddd\_yy)
+
 ``` r
 length(unique(cleaner_rst_count$sample_id)) 
 ```
@@ -273,6 +317,7 @@ table(cleaner_rst_count$run)
     ## 27601   472    50  3371   283
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
+“N/P” is changed to NA in the case\_when statement below.
 
 ``` r
 cleaner_rst_count$run <- case_when(cleaner_rst_count$run == "F" ~ "fall", 
@@ -294,7 +339,8 @@ table(cleaner_rst_count$run)
 
 Life stage of the catch (CHN = C0 - yolk-sac fry, C1 - fry, C2 - parr,
 C3 - silvery parr, C4 - smolt, n/p - Not provided; RBT = R1 - yolk-sac
-fry, R2 - fry, R3 - parr, R4 - silvery parr, R5 - smolt, R6 - adult)
+fry, R2 - fry, R3 - parr, R4 - silvery parr, R5 - smolt, R6 - adult).
+“N/P” is changed to NA in the case\_when statement below.
 
 ``` r
 table(cleaner_rst_count$lifestage)

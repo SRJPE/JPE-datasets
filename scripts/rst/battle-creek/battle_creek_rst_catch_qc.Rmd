@@ -20,13 +20,13 @@ palette <- wesanderson::wes_palette(name = "Moonrise2")
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Battle Creek Monitoring Program. These data represent brood years (BY) 2003-2020 The fish were captured in the upper Battle Creek rotary screw trap site (UBC), Shasta County, California, from September 30, 2003, through June 30, 2021. The catch data were collected using a 5-ft diameter rotary screw trap located at river mile 6.2. The data represent both the raw catch and processed catch values. The trap was only fished through March 25, 2020, during BY2019 sampling.									
+These data were collected by the U.S. Fish and Wildlife Service, Red Bluff Fish and Wildlife Office, Battle Creek Monitoring Program. These data represent brood years (BY) 2003-2020. The fish were captured in the upper Battle Creek rotary screw trap site (UBC), Shasta County, California, from September 30, 2003, through June 30, 2021. The catch data were collected using a 5-ft diameter rotary screw trap located at river mile 6.2. The data represent both the raw catch and processed catch values. The trap was only fished through March 25, 2020, during BY2019 sampling.									
 
 **Timeframe:** 2003 - 2021
 
 **Screw Trap Season:** September - June
 
-**Completeness of Record throughout timeframe:** 
+**Completeness of Record throughout timeframe:** Sample Year tab on excel sheet describes start and end date for trap each year. Sampled every year from 1998 - 2019, some years not fished on weekends or during high flow events. 
 
 **Sampling Location:** Upper Battle Creek (UBC)
 
@@ -81,6 +81,17 @@ cleaner_rst_count <- raw_rst_count_data %>%
 sum(cleaner_rst_count$interpolated == "YES")/nrow(cleaner_rst_count) * 100
 ```
  
+Notes: 
+* `r_catch` value has an interpolated catch for times the trap did not fish. Not an estimate just for missed days interpolates values based on prior/future days 
+* I selected only one race, the data has two races, I do not know which one is best to keep, here are details on the two: 
+  * fWSRace - USFWS run designation base upon location or emergence timing used in reports and for passage indices, W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon					
+  * race - Database generated Sheila Greene run designation of catch, W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon, see RunDesignation and RunChart tables							
+
+
+
+
+ 
+ 
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
@@ -123,12 +134,18 @@ summary(cleaner_rst_count$fork_length)
 **NA and Unknown Values**
   
 * `r round(sum(is.na(cleaner_rst_count$fork_length))/nrow(cleaner_rst_count), 3) * 100` % of values in the `fork_length` column are NA. 
+
 * 0 for `fork_length` seems like an NA or error
+```{r}
+cleaner_rst_count %>% filter(fork_length == 0 & !is.na(count))
+```
+
 
 ### Variable: `count`
 
-Catch number used to generate passage indices for reports, plus counts are split into races, zero fork lengths have been assigned							
+Catch number used to generate passage indices for reports, plus counts are split into races, zero fork lengths have been assigned	
 
+*  Definition given in Spreadsheet metadata, do not know what 0 fork lengths have been assigned means TODO ask Mike
 
 **Plotting fish counts over period of record**
 ```{r, include=FALSE}
@@ -166,9 +183,13 @@ cleaner_rst_count %>%
   
 ```{r}
 cleaner_rst_count  %>%
-  filter(year(date) < 2021, run %in% c("F", "L", "S", "W")) %>% 
+  filter(year(date) < 2021, 
+         run %in% c("F", "L", "S", "W")
+         ) %>% 
   mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = year, y = count)) + 
+  group_by(year) %>%
+  mutate(total_yearly_catch = sum(count)) %>%
+  ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
   labs(title = "Total Fish Counted each Year by run",
@@ -200,6 +221,9 @@ cleaner_rst_count %>% select_if(is.character) %>% colnames()
 
 
 ### Variable: `sample_id`
+
+The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)							
+
 ```{r}
 length(unique(cleaner_rst_count$sample_id)) 
 ```
@@ -216,7 +240,7 @@ table(cleaner_rst_count$run)
 ```
 
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
+Fix inconsistencies with spelling, capitalization, and abbreviations. "N/P" is changed to NA in the case_when statement below.
 
 ```{r}
 cleaner_rst_count$run <- case_when(cleaner_rst_count$run == "F" ~ "fall", 
@@ -233,7 +257,7 @@ table(cleaner_rst_count$run)
 
 ### Variable: `lifestage`
 
-Life stage of the catch (CHN = C0 - yolk-sac fry, C1 - fry, C2 - parr, C3 - silvery parr, C4 - smolt, n/p - Not provided; RBT = R1 - yolk-sac fry, R2 - fry, R3 - parr, R4 - silvery parr, R5 - smolt, R6 - adult)							
+Life stage of the catch (CHN = C0 - yolk-sac fry, C1 - fry, C2 - parr, C3 - silvery parr, C4 - smolt, n/p - Not provided; RBT = R1 - yolk-sac fry, R2 - fry, R3 - parr, R4 - silvery parr, R5 - smolt, R6 - adult). "N/P" is changed to NA in the case_when statement below.							
 
 
 ```{r}
