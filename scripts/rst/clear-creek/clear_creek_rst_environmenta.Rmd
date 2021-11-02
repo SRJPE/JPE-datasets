@@ -26,7 +26,7 @@ These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fis
 
 **Screw Trap Season:** September - June
 
-**Completeness of Record throughout timeframe:** 
+**Completeness of Record throughout timeframe:**  Some variation across years but sampled every year.
 
 **Sampling Location:** Upper clear Creek (UBC)
 
@@ -78,8 +78,7 @@ raw_environmental_lower_2 <- read_excel("raw_lower_clear_rst_data.xlsx",
 
 ```{r}
 raw_rst_environmental <- bind_rows(raw_environmental_upper_1, raw_environmental_upper_2,
-                                   raw_environmental_lower_1, raw_environmental_lower_2) %>% 
-  glimpse()
+                                   raw_environmental_lower_1, raw_environmental_lower_2) 
 
 cleaner_rst_environmental <- raw_rst_environmental %>%
   janitor::clean_names() %>%
@@ -88,10 +87,14 @@ cleaner_rst_environmental <- raw_rst_environmental %>%
          trap_start_time = hms::as_hms(trap_start_time),
          sample_date = as.Date(sample_date),
          sample_time = hms::as_hms(sample_time)) %>%
-  select(-station_code, -user_name, -user_name2) %>%
+  select(-user_name, -user_name2,
+          -sample_weight, # remove sample weight because it is defined to be the same as cone) %>%
+         -report_baileys_eff) %>% # remove report baileys eff all NA
   glimpse
 
 ```
+
+
 
 ## Explore Numeric Variables: {.tabset}
 
@@ -173,7 +176,10 @@ summary(cleaner_rst_environmental$flow_end_meter)
 
 ### Variable: `flow_set_time`
 
-How long the General Oceanics mechanical flow meter (Oceanic ® Model 2030) was in the water taking a reading, used to calculate water velocity in front of the cone							
+How long the General Oceanics mechanical flow meter (Oceanic ® Model 2030) was in the water taking a reading, used to calculate water velocity in front of the cone
+
+Time is in seconds 
+
 **Plotting distribution of flow set time**
 
 ```{r}
@@ -185,7 +191,7 @@ cleaner_rst_environmental %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-Flow set times appear mainly between 100 and 1000 with a few values up to almost 4000. 
+Flow set times appear mainly between 100 and 1000 with some values up to almost 4500. 
 
 **Numeric Summary of flow set time over Period of Record**
 
@@ -236,6 +242,8 @@ cleaner_rst_environmental %>%
 summary(cleaner_rst_environmental$velocity)
 ```
 
+A velocity of 280 seems out of the range of posibilities. It seems like every velocity greater than 7 is probably a mistake that should be scaled down or filtered out. 
+
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_rst_environmental$velocity))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `velocity` column are NA.
@@ -262,19 +270,16 @@ cleaner_rst_environmental %>%
   mutate(avg_turbidity_ntu = mean(turbidity)) %>%
   filter(avg_turbidity_ntu < 100) %>%
   ungroup() %>%
- mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = avg_turbidity_ntu, color = year)) + 
-  geom_point(alpha = .25) + 
+  ggplot() + 
+  geom_boxplot(aes(x = as.factor(month(date)), y = avg_turbidity_ntu)) + 
   # facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  # scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "none") + 
-  labs(title = "Daily Turbidity Measures (colored by year)",
-       x = "Date", 
+  labs(title = "Daily Turbidity Measures sumarized by month",
+       x = "Month", 
        y = "Average Daily Turbidity NTUs")  
 ```
 
@@ -291,7 +296,7 @@ cleaner_rst_environmental %>%
   facet_wrap(~wy, scales = "free") + theme_minimal()
 ```
 
-Most turbidity measures are low but a few outliers going up until 850
+Most turbidity measures are low but a few outliers going up until over 2500. This seems WAY too high! Should probably be scaled down or removed. 
 
 **Numeric Summary of turbidity over Period of Record**
   
@@ -299,26 +304,18 @@ Most turbidity measures are low but a few outliers going up until 850
 summary(cleaner_rst_environmental$turbidity)
 ```
 
+
+
 **NA and Unknown Values**
   
 * `r round(sum(is.na(cleaner_rst_environmental$turbidity))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `turbidity` column are NA.
 
 
+### Variables: `cone`
 
-
-### Variables: `sample_weight`, `cone`
-
-Definition for both `sample_weight` and `cone`:
-Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting							
-**Plotting distribution of sample_weight**
-```{r}
-cleaner_rst_environmental %>% 
-  ggplot() +
-  geom_histogram(aes(x = sample_weight), fill = "blue", alpha = .5) +
-  theme_minimal() + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
+Definition `cone`:
+Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting				
+(same as `sample_weight` column removed above)
 
 **Plotting distribution of cone**
 ```{r}
@@ -332,17 +329,19 @@ cleaner_rst_environmental %>%
 
 All sample weights and cone measures are either .5 o 1. 
 
-**Numeric Summary of turbidity over Period of Record**
+**Numeric Summary of cone over Period of Record**
   
 ```{r}
-summary(cleaner_rst_environmental$sample_weight)
+summary(cleaner_rst_environmental$cone)
 ```
 
 **NA and Unknown Values**
   
-* `r round(sum(is.na(cleaner_rst_environmental$sample_weight))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `sample_weight` column are NA.
+* `r round(sum(is.na(cleaner_rst_environmental$cone))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `cone` column are NA.
 
 ### Variable: `river_left_depth`, `river_right_depth`, `river_center_depth`
+
+Unit for depth is feet, definitions of measurements are: 
 
 * River depth from directly in the center of cone off crossbeam #2 (cone crossbeam)							
 * River depth from inside of the river left (facing down stream) pontoon off crossbeam #2 (cone crossbeam)							
@@ -393,7 +392,8 @@ summary(cleaner_rst_environmental$river_right_depth)
 
 ### Variable: `depth_adjust`
 
-The depth of the bottom of the cone							
+The depth of the bottom of the cone	(measured in Inches)
+Depth in relation to the cone (not to the surface of the water) - not sure how it is used. 
 
 **Plotting distribution of depth adjustment**
 
@@ -454,7 +454,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-Debris looks relitivly evenly distributed throughout the months. 
+Debris look a bit higher in the late fall early winter months
 
 **Numeric Summary of debris over Period of Record**
 
@@ -468,7 +468,7 @@ summary(cleaner_rst_environmental$debris_tubs)
 
 ### Variable: `avg_time_per_rev`
 
-The average time per cone rotation (average of three rotations)							
+The average time per cone rotation (average of three rotations)	- units are seconds 					
 
 **Plotting distribution of average time per revolution**
 
@@ -532,7 +532,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-**Numeric Summary of baileys efficency over Period of Record**
+**Numeric Summary of baileys efficiency over Period of Record**
 
 ```{r}
 summary(cleaner_rst_environmental$baileys_eff)
@@ -599,39 +599,22 @@ summary(cleaner_rst_environmental$start_counter)
 * `r round(sum(is.na(cleaner_rst_environmental$start_counter))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `start_counter` column are NA.
 
 
-### Variable: `report_baileys_eff`
-
-The Bailey's efficiency used in old reports. Bailey's efficiency has been standardized to only four significant digits.							
-
-**Plotting distribution of counter**
-
-```{r}
-cleaner_rst_environmental %>% 
-  ggplot() +
-  geom_histogram(aes(x = report_baileys_eff), fill = "blue", alpha = .5, binwidth = .01) +
-  theme_minimal() + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-
-**Numeric Summary of baileys efficency measures for reports over Period of Record**
-
-```{r}
-summary(cleaner_rst_environmental$report_baileys_eff)
-```
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_rst_environmental$report_baileys_eff))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `report_baileys_eff` column are NA.
-
-
-
 ## Explore Categorical variables: {.tabset}
 
 ```{r}
 cleaner_rst_environmental %>% select_if(is.character) %>% colnames
 ```
+### Variable: `station_code`
 
+The station code, two stations Lower Clear Creek (LCC) and Upper Clear Creek (UCC)
+
+```{r}
+table(cleaner_rst_environmental$station_code)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$station_code))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `station_code` column are NA. 
 
 ### Variable: `sample_id`
 
@@ -672,8 +655,9 @@ cleaner_rst_environmental$weather_code <- case_when(
   cleaner_rst_environmental$weather_code == "CLR" ~ "clear",
   cleaner_rst_environmental$weather_code == "FOG" ~ "fog", 
   cleaner_rst_environmental$weather_code == "PCLD" ~ "partially cloudy", 
-  cleaner_rst_environmental$weather_code == "RAN" ~ "precipitation",
+  cleaner_rst_environmental$weather_code %in% c("RAN", "RAIN") ~ "precipitation",
   cleaner_rst_environmental$weather_code == "WIN/CLR" ~ "windy and clear",
+  cleaner_rst_environmental$weather_code == "WIN/RAN" ~ "windy and precipitation",
   cleaner_rst_environmental$weather_code == "WINDY" ~ "windy"
 )
 
@@ -729,7 +713,9 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 ```{r}
 cleaner_rst_environmental$trap_sample_type <- case_when(
   cleaner_rst_environmental$trap_sample_type == "N" ~ "non-intensive",
-  cleaner_rst_environmental$trap_sample_type == "R" ~ "random"
+  cleaner_rst_environmental$trap_sample_type == "R" ~ "random",
+  cleaner_rst_environmental$trap_sample_type == "I" ~ "intensive",
+  cleaner_rst_environmental$trap_sample_type == "S" ~ "sunrise-sunset"
 )
 
 table(cleaner_rst_environmental$trap_sample_type) 
@@ -760,7 +746,7 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ```{r}
 cleaner_rst_environmental$habitat <- case_when(
-  cleaner_rst_environmental$habitat == "B" ~ "backwater pool",
+  cleaner_rst_environmental$habitat == "G" ~ "glide",
   cleaner_rst_environmental$habitat == "R" ~ "run"
 )
 
@@ -994,7 +980,13 @@ table(cleaner_rst_environmental$partial_sample)
 
 ## Summary of identified issues
 
-* Need to figure out what sub_week column values stand for. 
+* Need to figure out what sub_week column values stand for. Answer from Mike: The sub weeks do not describe specific days of the week, they indicate when a stratum (usually one week) is split into substrata based upon the trap efficiency used for the strata or substrata. If a stratum is not split all days in the stratum will be an A. If it is split the days in the first substratum are A's, the second are B's, etc.  
+* Outliers in some of the numeric variables: 
+  * Velocity (some outliers that need to be addressed)
+  * Turbidity (some outliers that need to be addressed)
+  * Counter (some outliers that need to be addressed)
+* There are a few variables that I am unsure of how they would be used (ex `depth_adjust`). Asking Mike and these may not be relevant to us and can be filtered out. 
+
 
 ## Save cleaned data back to google cloud 
 
@@ -1010,4 +1002,3 @@ gcs_upload(clear_rst_environmental,
            type = "csv",
            name = "rst/clear-creek/data/clear_rst_environmental.csv")
 ```
-
