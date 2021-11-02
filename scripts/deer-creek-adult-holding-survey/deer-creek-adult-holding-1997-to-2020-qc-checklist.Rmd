@@ -83,7 +83,9 @@ cleaner_data <- raw_data %>%
 
 ### Variable `location`
 ```{r}
-cleaner_data$location = str_to_title(cleaner_data$location)
+cleaner_data <- cleaner_data %>% 
+  mutate(location = str_to_title(location),
+         location = gsub("-", " ", location))
 table(cleaner_data$location)
 ```
 
