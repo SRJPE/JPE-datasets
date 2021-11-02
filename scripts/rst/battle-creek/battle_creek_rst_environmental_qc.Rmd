@@ -20,13 +20,13 @@ palette <- wesanderson::wes_palette(name = "Moonrise2")
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Battle Creek Monitoring Program. These data represent environmental conditions for Battle Creek RST. 									
+These data were collected by the U.S. Fish and Wildlife Service, Red Bluff Fish and Wildlife Office, Battle Creek Monitoring Program. These data represent environmental conditions for Battle Creek RST. 									
 
 **Timeframe:** 2003 - 2021
 
 **Screw Trap Season:** September - June
 
-**Completeness of Record throughout timeframe:** 
+**Completeness of Record throughout timeframe:** Sample Year tab on excel sheet describes start and end date for trap each year. Sampled every year from 1998 - 2019, some years not fished on weekends or during high flow events. Proxy dates are used when environmental conditions were not measured (see WeekSub column).
 
 **Sampling Location:** Upper Battle Creek (UBC)
 
@@ -76,7 +76,8 @@ cleaner_rst_environmental <- raw_rst_environmental %>%
          trap_start_time = hms::as_hms(trap_start_time),
          sample_date = as.Date(sample_date),
          sample_time = hms::as_hms(sample_time)) %>%
-  select(-station_code, -user_name, -user_name2) %>%
+  select(-station_code, -user_name, -user_name2, 
+         -sample_weight) %>% # remove sample weight because it is defined to be the same as cone
   glimpse
 
 ```
@@ -161,7 +162,10 @@ summary(cleaner_rst_environmental$flow_end_meter)
 
 ### Variable: `flow_set_time`
 
-How long the General Oceanics mechanical flow meter (Oceanic ® Model 2030) was in the water taking a reading, used to calculate water velocity in front of the cone							
+How long the General Oceanics mechanical flow meter (Oceanic ® Model 2030) was in the water taking a reading, used to calculate water velocity in front of the cone
+
+Time is in seconds 
+
 **Plotting distribution of flow set time**
 
 ```{r}
@@ -224,6 +228,8 @@ cleaner_rst_environmental %>%
 summary(cleaner_rst_environmental$velocity)
 ```
 
+A velocity of 155.090 seems out of the range of posibilities. It seems like every velocity greater than 7 is probably a mistake that should be scaled down or filtered out. 
+
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_rst_environmental$velocity))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `velocity` column are NA.
@@ -250,19 +256,16 @@ cleaner_rst_environmental %>%
   mutate(avg_turbidity_ntu = mean(turbidity)) %>%
   filter(avg_turbidity_ntu < 100) %>%
   ungroup() %>%
- mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = avg_turbidity_ntu, color = year)) + 
-  geom_point(alpha = .25) + 
+  ggplot() + 
+  geom_boxplot(aes(x = as.factor(month(date)), y = avg_turbidity_ntu)) + 
   # facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  # scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "none") + 
-  labs(title = "Daily Turbidity Measures (colored by year)",
-       x = "Date", 
+  labs(title = "Daily Turbidity Measures sumarized by month",
+       x = "Month", 
        y = "Average Daily Turbidity NTUs")  
 ```
 
@@ -294,19 +297,11 @@ summary(cleaner_rst_environmental$turbidity)
 
 
 
-### Variables: `sample_weight`, `cone`
+### Variables: `cone`
 
-Definition for both `sample_weight` and `cone`:
-Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting							
-**Plotting distribution of sample_weight**
-```{r}
-cleaner_rst_environmental %>% 
-  ggplot() +
-  geom_histogram(aes(x = sample_weight), fill = "blue", alpha = .5) +
-  theme_minimal() + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
+Definition `cone`:
+Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting				
+(same as `sample_weight` column removed above)
 
 **Plotting distribution of cone**
 ```{r}
@@ -320,17 +315,19 @@ cleaner_rst_environmental %>%
 
 All sample weights and cone measures are either .5 o 1. 
 
-**Numeric Summary of turbidity over Period of Record**
+**Numeric Summary of cone over Period of Record**
   
 ```{r}
-summary(cleaner_rst_environmental$sample_weight)
+summary(cleaner_rst_environmental$cone)
 ```
 
 **NA and Unknown Values**
   
-* `r round(sum(is.na(cleaner_rst_environmental$sample_weight))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `sample_weight` column are NA.
+* `r round(sum(is.na(cleaner_rst_environmental$cone))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `cone` column are NA.
 
 ### Variable: `river_left_depth`, `river_right_depth`, `river_center_depth`
+
+Unit for depth is feet, definitions of measurements are: 
 
 * River depth from directly in the center of cone off crossbeam #2 (cone crossbeam)							
 * River depth from inside of the river left (facing down stream) pontoon off crossbeam #2 (cone crossbeam)							
@@ -381,7 +378,8 @@ summary(cleaner_rst_environmental$river_right_depth)
 
 ### Variable: `depth_adjust`
 
-The depth of the bottom of the cone							
+The depth of the bottom of the cone	(measured in Inches)
+Depth in relation to the cone (not to the surface of the water) - not sure how it is used. 
 
 **Plotting distribution of depth adjustment**
 
@@ -442,7 +440,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-Debris looks relitivly evenly distributed throughout the months. 
+Debris looks relatively evenly distributed throughout the months. 
 
 **Numeric Summary of debris over Period of Record**
 
@@ -456,7 +454,7 @@ summary(cleaner_rst_environmental$debris_tubs)
 
 ### Variable: `avg_time_per_rev`
 
-The average time per cone rotation (average of three rotations)							
+The average time per cone rotation (average of three rotations)	- units are seconds 					
 
 **Plotting distribution of average time per revolution**
 
@@ -982,7 +980,13 @@ table(cleaner_rst_environmental$partial_sample)
 
 ## Summary of identified issues
 
-* Need to figure out what sub_week column values stand for. 
+* Need to figure out what sub_week column values stand for. Answer from Mike: The sub weeks do not describe specific days of the week, they indicate when a stratum (usually one week) is split into substrata based upon the trap efficiency used for the strata or substrata. If a stratum is not split all days in the stratum will be an A. If it is split the days in the first substratum are A's, the second are B's, etc.  
+* Outliers in some of the numeric variables: 
+  * Velocity (seems like anything greater than 7 needs to be addressed)
+  * Turbidity (everything greater than 100 needs to be addressed)
+  * Counter (one value way larger than the others)
+* There are a few variables that I am unsure of how they would be used (ex `depth_adjust`). Asking Mike and these may not be relevant to us and can be filtered out. 
+
 
 ## Save cleaned data back to google cloud 
 

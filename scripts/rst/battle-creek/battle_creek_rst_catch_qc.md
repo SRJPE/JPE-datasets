@@ -115,21 +115,26 @@ cleaner_rst_count <- raw_rst_count_data %>%
     ## $ interpolated <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO~
 
 ``` r
-sum(cleaner_rst_count$interpolated == "YES")/nrow(cleaner_rst_count) * 100
+sum(cleaner_rst_count$interpolated == "YES")/nrow(cleaner_rst_count) * 100 # % of the catch data is interpolated
 ```
 
     ## [1] 1.162243
 
-Notes: \* `r_catch` value has an interpolated catch for times the trap
-did not fish. Not an estimate just for missed days interpolates values
-based on prior/future days \* I selected only one race, the data has two
-races, I do not know which one is best to keep, here are details on the
-two: \* fWSRace - USFWS run designation base upon location or emergence
-timing used in reports and for passage indices, W=winter-run,
-S=spring-run, F=fall-run, L=late-fall run Chinook Salmon  
-\* race - Database generated Sheila Greene run designation of catch,
-W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon,
-see RunDesignation and RunChart tables
+Notes:
+
+-   `r_catch` value has an interpolated catch for times the trap did not
+    fish. Not an estimate just for missed days interpolates values based
+    on prior/future days
+
+-   I selected only one race, the data has two races, I do not know
+    which one is best to keep, here are details on the two:
+
+    -   fWSRace - USFWS run designation base upon location or emergence
+        timing used in reports and for passage indices, W=winter-run,
+        S=spring-run, F=fall-run, L=late-fall run Chinook Salmon  
+    -   race - Database generated Sheila Greene run designation of
+        catch, W=winter-run, S=spring-run, F=fall-run, L=late-fall run
+        Chinook Salmon, see RunDesignation and RunChart tables
 
 ## Explore Numeric Variables:
 
@@ -140,6 +145,8 @@ cleaner_rst_count %>% select_if(is.numeric) %>% colnames()
     ## [1] "fork_length" "count"
 
 ### Variable: `fork_length`
+
+Fork length of the fish captured, is zero if the fish was not measured
 
 **Plotting fork\_length**
 
@@ -204,13 +211,19 @@ cleaner_rst_count %>% filter(fork_length == 0 & !is.na(count))
     ## 10 2004-01-10 010_04    F               0 C0           30 YES   NO          
     ## # ... with 740 more rows
 
+``` r
+cleaner_rst_count$fork_length <- ifelse(cleaner_rst_count$fork_length == 0, NA, cleaner_rst_count$fork_length)
+```
+
 ### Variable: `count`
 
 Catch number used to generate passage indices for reports, plus counts
 are split into races, zero fork lengths have been assigned
 
 -   Definition given in Spreadsheet metadata, do not know what 0 fork
-    lengths have been assigned means TODO ask Mike
+    lengths have been assigned means (i know if fish is not measured
+    they give it a fork length of 0 so maybe they are assigning these 0
+    values lifestages or counts on interpolated days) TODO ask Mike
 
 **Plotting fish counts over period of record**
 
@@ -430,7 +443,12 @@ table(cleaner_rst_count$interpolated)
 
 -   Count values are interpolated on days where the traps were not
     fished, to see if interpolated or not refer to `interpolated`
-    column,
+    column - not exactly clear how interpolation is calculated
+-   Need to decide what Race (run) measure to keep (`fws_race` or
+    `race`)
+-   Investigate what it means for: zero fork lengths have been
+    assigned - 0 `fork_length` values mean fish was not measured. TODO
+    Ask Mike
 
 ## Save cleaned data back to google cloud
 

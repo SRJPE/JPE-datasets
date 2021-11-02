@@ -7,15 +7,19 @@ Erin Cain
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service’s, Red
-Bluff Fish and Wildlife Office’s, Battle Creek Monitoring Program. These
+These data were collected by the U.S. Fish and Wildlife Service, Red
+Bluff Fish and Wildlife Office, Battle Creek Monitoring Program. These
 data represent environmental conditions for Battle Creek RST.
 
 **Timeframe:** 2003 - 2021
 
 **Screw Trap Season:** September - June
 
-**Completeness of Record throughout timeframe:**
+**Completeness of Record throughout timeframe:** Sample Year tab on
+excel sheet describes start and end date for trap each year. Sampled
+every year from 1998 - 2019, some years not fished on weekends or during
+high flow events. Proxy dates are used when environmental conditions
+were not measured (see WeekSub column).
 
 **Sampling Location:** Upper Battle Creek (UBC)
 
@@ -196,12 +200,13 @@ cleaner_rst_environmental <- raw_rst_environmental %>%
          trap_start_time = hms::as_hms(trap_start_time),
          sample_date = as.Date(sample_date),
          sample_time = hms::as_hms(sample_time)) %>%
-  select(-station_code, -user_name, -user_name2) %>%
+  select(-station_code, -user_name, -user_name2, 
+         -sample_weight) %>% # remove sample weight because it is defined to be the same as cone
   glimpse
 ```
 
     ## Rows: 3,751
-    ## Columns: 36
+    ## Columns: 35
     ## $ sample_id           <chr> "274_03", "275_03", "276_03", "277_03", "278_03", ~
     ## $ trap_start_date     <date> 2003-09-30, 2003-10-01, 2003-10-02, 2003-10-03, 2~
     ## $ trap_start_time     <time> 14:35:00, 14:22:00, 13:20:00, 08:25:00, 11:57:00,~
@@ -213,7 +218,6 @@ cleaner_rst_environmental <- raw_rst_environmental %>%
     ## $ flow_set_time       <dbl> 900, 627, 556, 330, 323, 840, 503, 510, 780, 1320,~
     ## $ velocity            <dbl> 1.40, 1.43, 1.35, 1.42, 1.46, 1.39, 133.09, 1.29, ~
     ## $ turbidity           <dbl> 1.7, 1.2, 1.3, 1.1, 1.8, 1.7, 1.5, 1.4, 1.7, 1.4, ~
-    ## $ sample_weight       <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
     ## $ cone                <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
     ## $ weather_code        <chr> "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", "~
     ## $ lunar_phase         <chr> "H", "H", "H", "H", "H", "H", "F", "F", "F", "F", ~
@@ -247,10 +251,10 @@ cleaner_rst_environmental %>% select_if(is.numeric) %>% colnames
 
     ##  [1] "counter"            "flow_start_meter"   "flow_end_meter"    
     ##  [4] "flow_set_time"      "velocity"           "turbidity"         
-    ##  [7] "sample_weight"      "cone"               "river_left_depth"  
-    ## [10] "river_center_depth" "river_right_depth"  "depth_adjust"      
-    ## [13] "debris_tubs"        "avg_time_per_rev"   "baileys_eff"       
-    ## [16] "num_released"       "start_counter"      "report_baileys_eff"
+    ##  [7] "cone"               "river_left_depth"   "river_center_depth"
+    ## [10] "river_right_depth"  "depth_adjust"       "debris_tubs"       
+    ## [13] "avg_time_per_rev"   "baileys_eff"        "num_released"      
+    ## [16] "start_counter"      "report_baileys_eff"
 
 ### Variable: `counter`
 
@@ -346,7 +350,10 @@ summary(cleaner_rst_environmental$flow_end_meter)
 
 How long the General Oceanics mechanical flow meter (Oceanic ® Model
 2030) was in the water taking a reading, used to calculate water
-velocity in front of the cone  
+velocity in front of the cone
+
+Time is in seconds
+
 **Plotting distribution of flow set time**
 
 ``` r
@@ -425,6 +432,10 @@ summary(cleaner_rst_environmental$velocity)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##   0.000   1.870   2.270   2.601   2.740 155.090     107
 
+A velocity of 155.090 seems out of the range of posibilities. It seems
+like every velocity greater than 7 is probably a mistake that should be
+scaled down or filtered out.
+
 **NA and Unknown Values**
 
 -   2.9 % of values in the `velocity` column are NA.
@@ -456,19 +467,16 @@ cleaner_rst_environmental %>%
   mutate(avg_turbidity_ntu = mean(turbidity)) %>%
   filter(avg_turbidity_ntu < 100) %>%
   ungroup() %>%
- mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = avg_turbidity_ntu, color = year)) + 
-  geom_point(alpha = .25) + 
+  ggplot() + 
+  geom_boxplot(aes(x = as.factor(month(date)), y = avg_turbidity_ntu)) + 
   # facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  # scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "none") + 
-  labs(title = "Daily Turbidity Measures (colored by year)",
-       x = "Date", 
+  labs(title = "Daily Turbidity Measures sumarized by month",
+       x = "Month", 
        y = "Average Daily Turbidity NTUs")  
 ```
 
@@ -504,24 +512,11 @@ summary(cleaner_rst_environmental$turbidity)
 
 -   2.6 % of values in the `turbidity` column are NA.
 
-### Variables: `sample_weight`, `cone`
+### Variables: `cone`
 
-Definition for both `sample_weight` and `cone`: Was the trap fished at
-cone full-cone (1.0) or half-cone (0.5) setting  
-**Plotting distribution of sample\_weight**
-
-``` r
-cleaner_rst_environmental %>% 
-  ggplot() +
-  geom_histogram(aes(x = sample_weight), fill = "blue", alpha = .5) +
-  theme_minimal() + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+Definition `cone`: Was the trap fished at cone full-cone (1.0) or
+half-cone (0.5) setting  
+(same as `sample_weight` column removed above)
 
 **Plotting distribution of cone**
 
@@ -536,24 +531,26 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 All sample weights and cone measures are either .5 o 1.
 
-**Numeric Summary of turbidity over Period of Record**
+**Numeric Summary of cone over Period of Record**
 
 ``` r
-summary(cleaner_rst_environmental$sample_weight)
+summary(cleaner_rst_environmental$cone)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.5000  1.0000  1.0000  0.9359  1.0000  1.0000     364
+    ##  0.5000  1.0000  1.0000  0.9412  1.0000  1.0000      27
 
 **NA and Unknown Values**
 
--   9.7 % of values in the `sample_weight` column are NA.
+-   0.7 % of values in the `cone` column are NA.
 
 ### Variable: `river_left_depth`, `river_right_depth`, `river_center_depth`
+
+Unit for depth is feet, definitions of measurements are:
 
 -   River depth from directly in the center of cone off crossbeam \#2
     (cone crossbeam)  
@@ -597,7 +594,7 @@ gridExtra::grid.arrange(depth_1, depth_2)
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Numeric Summary of river depth over Period of Record**
 
@@ -630,7 +627,9 @@ summary(cleaner_rst_environmental$river_right_depth)
 
 ### Variable: `depth_adjust`
 
-The depth of the bottom of the cone
+The depth of the bottom of the cone (measured in Inches) Depth in
+relation to the cone (not to the surface of the water) - not sure how it
+is used.
 
 **Plotting distribution of depth adjustment**
 
@@ -644,7 +643,7 @@ cleaner_rst_environmental %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -656,7 +655,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 Looks like depth adjust varies by year depending on how the trap was
 positioned.
 
@@ -691,7 +690,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -703,9 +702,9 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
-Debris looks relitivly evenly distributed throughout the months.
+Debris looks relatively evenly distributed throughout the months.
 
 **Numeric Summary of debris over Period of Record**
 
@@ -722,7 +721,8 @@ summary(cleaner_rst_environmental$debris_tubs)
 
 ### Variable: `avg_time_per_rev`
 
-The average time per cone rotation (average of three rotations)
+The average time per cone rotation (average of three rotations) - units
+are seconds
 
 **Plotting distribution of average time per revolution**
 
@@ -738,7 +738,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -750,7 +750,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Numeric Summary of average time per rev over Period of Record**
 
@@ -784,7 +784,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -796,7 +796,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 
 **Numeric Summary of baileys efficency over Period of Record**
 
@@ -829,7 +829,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -841,7 +841,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
 **Numeric Summary of counter over Period of Record**
 
@@ -891,7 +891,7 @@ cleaner_rst_environmental %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
+![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
 
 **Numeric Summary of baileys efficency measures for reports over Period
 of Record**
@@ -1389,7 +1389,21 @@ table(cleaner_rst_environmental$partial_sample)
 
 ## Summary of identified issues
 
--   Need to figure out what sub\_week column values stand for.
+-   Need to figure out what sub\_week column values stand for. Answer
+    from Mike: The sub weeks do not describe specific days of the week,
+    they indicate when a stratum (usually one week) is split into
+    substrata based upon the trap efficiency used for the strata or
+    substrata. If a stratum is not split all days in the stratum will be
+    an A. If it is split the days in the first substratum are A’s, the
+    second are B’s, etc.  
+-   Outliers in some of the numeric variables:
+    -   Velocity (seems like anything greater than 7 needs to be
+        addressed)
+    -   Turbidity (everything greater than 100 needs to be addressed)
+    -   Counter (one value way larger than the others)
+-   There are a few variables that I am unsure of how they would be used
+    (ex `depth_adjust`). Asking Mike and these may not be relevant to us
+    and can be filtered out.
 
 ## Save cleaned data back to google cloud
 
@@ -1398,7 +1412,7 @@ battle_rst_environmental <- cleaner_rst_environmental %>% glimpse()
 ```
 
     ## Rows: 3,751
-    ## Columns: 36
+    ## Columns: 35
     ## $ sample_id           <chr> "274_03", "275_03", "276_03", "277_03", "278_03", ~
     ## $ trap_start_date     <date> 2003-09-30, 2003-10-01, 2003-10-02, 2003-10-03, 2~
     ## $ trap_start_time     <time> 14:35:00, 14:22:00, 13:20:00, 08:25:00, 11:57:00,~
@@ -1410,7 +1424,6 @@ battle_rst_environmental <- cleaner_rst_environmental %>% glimpse()
     ## $ flow_set_time       <dbl> 900, 627, 556, 330, 323, 840, 503, 510, 780, 1320,~
     ## $ velocity            <dbl> 1.40, 1.43, 1.35, 1.42, 1.46, 1.39, 133.09, 1.29, ~
     ## $ turbidity           <dbl> 1.7, 1.2, 1.3, 1.1, 1.8, 1.7, 1.5, 1.4, 1.7, 1.4, ~
-    ## $ sample_weight       <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
     ## $ cone                <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
     ## $ weather_code        <chr> "clear", "clear", "clear", "clear", "clear", "clea~
     ## $ lunar_phase         <chr> "half", "half", "half", "half", "half", "half", "f~
