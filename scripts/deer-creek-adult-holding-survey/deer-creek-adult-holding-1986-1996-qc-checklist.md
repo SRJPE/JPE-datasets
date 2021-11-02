@@ -42,10 +42,10 @@ original file and reformatted file could be found on google cloud.
 
 **Other Notes:**
 
-1/ In 1989 the section from Hwy 32 to Lower Falls was omitted from the
-indicator reach. Fro 1992 through 1996, an average of 2% of the total
-salmon observed were in the omitted section: hwy 32 to lower falls. This
-leaves 29% of the salmon holding in the reduced indicator reach.
+In 1989 the section from Hwy 32 to Lower Falls was omitted from the
+indicator reach. From 1992 to 1996, an average of 2% of the total salmon
+observed were in the omitted section: hwy 32 to lower falls. This leaves
+29% of the salmon holding in the reduced indicator reach.
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 
@@ -96,16 +96,18 @@ cleaner_data <- raw_data %>%
 ### Variable `location`
 
 ``` r
-cleaner_data$location = str_to_title(cleaner_data$location)
+cleaner_data <- cleaner_data %>% 
+  mutate(location = str_to_title(location),
+         location = gsub("-", " ", location))
 table(cleaner_data$location)
 ```
 
     ## 
-    ##            A-Line To Wilson         Beaver To Ponderosa 
+    ##            A Line To Wilson         Beaver To Ponderosa 
     ##                           5                           5 
-    ##           Homestead To 2e17            Hwy 32 To A-Line 
+    ##           Homestead To 2e17            Hwy 32 To A Line 
     ##                           2                           3 
-    ##       Hwy 32 To Lower Falls       Lower Falls To A-Line 
+    ##       Hwy 32 To Lower Falls       Lower Falls To A Line 
     ##                           5                           8 
     ##            Murphy To Beaver      Polk Springs To Murphy 
     ##                           5                           5 
@@ -176,7 +178,7 @@ deer_adult_holding_survey_1986_to_1996 <- cleaner_data %>% glimpse()
     ## Rows: 55
     ## Columns: 3
     ## $ year     <dbl> 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1992, 1992, 1992, 1~
-    ## $ location <chr> "Hwy 32 To A-Line", "Hwy 32 To A-Line", "Hwy 32 To A-Line", "~
+    ## $ location <chr> "Hwy 32 To A Line", "Hwy 32 To A Line", "Hwy 32 To A Line", "~
     ## $ count    <dbl> 166, 62, 115, 24, 142, 139, 12, 5, 7, 65, 13, 51, 21, 33, 2, ~
 
 ``` r
@@ -187,28 +189,28 @@ gcs_upload(deer_adult_holding_survey_1986_to_1996,
            name = "adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv")
 ```
 
-    ## i 2021-10-29 15:22:05 > File size detected as  1.6 Kb
+    ## i 2021-11-02 10:49:29 > File size detected as  1.6 Kb
 
-    ## i 2021-10-29 15:22:05 > Request Status Code:  400
+    ## i 2021-11-02 10:49:29 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-29 15:22:05 > File size detected as  1.6 Kb
+    ## i 2021-11-02 10:49:29 > File size detected as  1.6 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv 
     ## Type:                csv 
     ## Size:                1.6 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv?generation=1635546124504899&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv?generation=1635875368653104&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv/1635546124504899 
-    ## MD5 Hash:            9OnNRd61ubjplHVbJIniiA== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv/1635875368653104 
+    ## MD5 Hash:            csn3IgVajSpZGY84qcLHMg== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-29 22:22:04 
-    ## Updated:             2021-10-29 22:22:04 
-    ## Generation:          1635546124504899 
+    ## Created:             2021-11-02 17:49:28 
+    ## Updated:             2021-11-02 17:49:28 
+    ## Generation:          1635875368653104 
     ## Meta Generation:     1 
-    ## eTag:                CMOej47U8PMCEAE= 
-    ## crc32c:              d2sACw==
+    ## eTag:                CLCi+9Ge+vMCEAE= 
+    ## crc32c:              qD4iWg==
