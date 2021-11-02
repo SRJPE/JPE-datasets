@@ -1,5 +1,5 @@
 ---
-title: "deer-creek-adult-upstream-passage-monitoring-qc-checklist"
+title: "deer-creek-upstream-monitoring-qc-checklist"
 author: "Inigo Peng"
 date: "10/19/2021"
 output: rmarkdown::github_document
@@ -14,9 +14,11 @@ library(scales)
 library (RColorBrewer)
 ```
 
-# Deer Creek Adult Holding Survey Data 2014 to 2020 
+# Deer Creek Adult Upstream Passage Monitoring Data 2014 to 2020 
 
 **Description of Monitoring Data**
+
+Adult spring run salmon passage daily estimate is recorded at SVRIC Dam on Deer River via video monitoring.
 
 **Timeframe:** 
 
@@ -29,7 +31,6 @@ Some missing data for variable flow
 **Sampling Location:** 
 
 * SVRIC Dam   
-
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 
@@ -49,11 +50,13 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-
                saveToDisk = "deer_creek_passage_estimate_raw.xlsx")
 ```
 
-
+Data for each year is in a separate sheet 
 ```{r}
 sheets <- readxl::excel_sheets('deer_creek_passage_estimate_raw.xlsx')
 list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_passage_estimate_raw.xlsx", sheet = x, col_types = c("text", "numeric", "numeric", "numeric", "text")))
-
+```
+Bind the sheets into one file
+```{r}
 raw_data <- dplyr::bind_rows(list_all) %>% 
   glimpse()
 ```
@@ -64,7 +67,7 @@ raw_data <- dplyr::bind_rows(list_all) %>%
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>% 
   select(-"...5") %>% #comments describe dates
-  rename("count" =  'adult spring-run passing svric dam',
+  rename("passage_estimate" =  'adult spring-run passing svric dam',
          "flow" = "avg daily flow below svric dam",
          "temperature"= "avg daily h2o temp below svric dam") %>% 
   filter(date != "Totals:", date != "Total:") %>%
@@ -76,13 +79,8 @@ cleaner_data <- raw_data %>%
 ```
 
 ## Explore `date`
-```{r}
-cleaner_data%>%
-  ggplot(aes(x = date)) +
-  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
-  labs(title = "Value Counts For Survey Season Dates")+
-  theme(legend.text = element_text(size = 8))
-```
+
+Check for outlier and NA values
 
 ```{r}
 summary(cleaner_data$date)
@@ -94,11 +92,16 @@ summary(cleaner_data$date)
 
 ## Explore Numerical Values
 
-### Variable:`count` 
+```{r}
+cleaner_data %>% select_if(is.numeric) %>% colnames()
+```
+
+
+### Variable:`passage_estimate` 
 ```{r}
 cleaner_data %>% 
   mutate(year = as.factor(year(date))) %>% 
-  ggplot(aes(x=date, y = count))+
+  ggplot(aes(x=date, y = passage_estimate))+
   geom_line()+
   facet_wrap(~year, scales = "free")+
   theme_minimal()+
@@ -110,27 +113,27 @@ cleaner_data %>%
 cleaner_data %>% 
   mutate(year = as.factor(year(date))) %>% 
   group_by(year) %>% 
-  summarise(total = sum(count)) %>%
+  summarise(total = sum(passage_estimate)) %>%
   ggplot(aes(x = year, y = total, group = 1))+
   geom_line()+
   geom_point(aes(x=year, y = total))+
   theme_minimal()+
   labs(title = "Passage Estimate from 2014 - 2020",
-       y = "Total Count")
+       y = "Total passage_estimate")
 ```
 
-**Numeric Monthly Summary of count From 2014 to 2020**
+**Numeric Monthly Summary of passage_estimate From 2014 to 2020**
 ```{r}
 cleaner_data %>%
   group_by(month(date)) %>%
-  summarise(count = sum(count, na.rm = T)) %>%
-  pull(count) %>%
+  summarise(passage_estimate = sum(passage_estimate, na.rm = T)) %>%
+  pull(passage_estimate) %>%
   summary()
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
+*  `r round(sum(is.na(cleaner_data$passage_estimate))/nrow(cleaner_data), 3)*100` % of values in the `passage_estimate` column are NA.
 
 ### Variable:`flow`
 
@@ -238,4 +241,4 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(deer_upstream_estimate,
            object_function = f,
            type = "csv",
-           name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_estimate.csv")
+           name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv")

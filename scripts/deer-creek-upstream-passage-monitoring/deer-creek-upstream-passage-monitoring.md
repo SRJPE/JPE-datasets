@@ -1,11 +1,14 @@
-deer-creek-adult-upstream-passage-monitoring-qc-checklist
+deer-creek-upstream-monitoring-qc-checklist
 ================
 Inigo Peng
 10/19/2021
 
-# Deer Creek Adult Holding Survey Data 2014 to 2020
+# Deer Creek Adult Upstream Passage Monitoring Data 2014 to 2020
 
 **Description of Monitoring Data**
+
+Adult spring run salmon passage daily estimate is recorded at SVRIC Dam
+on Deer River via video monitoring.
 
 **Timeframe:**
 
@@ -37,6 +40,8 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-
                saveToDisk = "deer_creek_passage_estimate_raw.xlsx")
 ```
 
+Data for each year is in a separate sheet
+
 ``` r
 sheets <- readxl::excel_sheets('deer_creek_passage_estimate_raw.xlsx')
 list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_passage_estimate_raw.xlsx", sheet = x, col_types = c("text", "numeric", "numeric", "numeric", "text")))
@@ -57,6 +62,8 @@ list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_pas
     ## New names:
     ## * `` -> ...5
 
+Bind the sheets into one file
+
 ``` r
 raw_data <- dplyr::bind_rows(list_all) %>% 
   glimpse()
@@ -76,7 +83,7 @@ raw_data <- dplyr::bind_rows(list_all) %>%
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>% 
   select(-"...5") %>% #comments describe dates
-  rename("count" =  'adult spring-run passing svric dam',
+  rename("passage_estimate" =  'adult spring-run passing svric dam',
          "flow" = "avg daily flow below svric dam",
          "temperature"= "avg daily h2o temp below svric dam") %>% 
   filter(date != "Totals:", date != "Total:") %>%
@@ -89,22 +96,14 @@ cleaner_data <- raw_data %>%
 
     ## Rows: 951
     ## Columns: 4
-    ## $ date        <date> 2014-02-20, 2014-02-21, 2014-02-22, 2014-02-23, 2014-02-2~
-    ## $ count       <dbl> 0, 0, 0, 0, 0, 0, 0, 3, 16, 2, 0, 0, 0, 5, 6, 2, 0, 2, 8, ~
-    ## $ flow        <dbl> 111, 98, 91, 86, 81, 78, 80, 198, 297, 429, 274, 327, 857,~
-    ## $ temperature <dbl> 49.35426, 49.84375, 50.09583, 50.25729, 51.05313, 51.65208~
+    ## $ date             <date> 2014-02-20, 2014-02-21, 2014-02-22, 2014-02-23, 2014~
+    ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 3, 16, 2, 0, 0, 0, 5, 6, 2, 0, 2~
+    ## $ flow             <dbl> 111, 98, 91, 86, 81, 78, 80, 198, 297, 429, 274, 327,~
+    ## $ temperature      <dbl> 49.35426, 49.84375, 50.09583, 50.25729, 51.05313, 51.~
 
 ## Explore `date`
 
-``` r
-cleaner_data%>%
-  ggplot(aes(x = date)) +
-  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
-  labs(title = "Value Counts For Survey Season Dates")+
-  theme(legend.text = element_text(size = 8))
-```
-
-![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+Check for outlier and NA values
 
 ``` r
 summary(cleaner_data$date)
@@ -119,42 +118,48 @@ summary(cleaner_data$date)
 
 ## Explore Numerical Values
 
-### Variable:`count`
+``` r
+cleaner_data %>% select_if(is.numeric) %>% colnames()
+```
+
+    ## [1] "passage_estimate" "flow"             "temperature"
+
+### Variable:`passage_estimate`
 
 ``` r
 cleaner_data %>% 
   mutate(year = as.factor(year(date))) %>% 
-  ggplot(aes(x=date, y = count))+
+  ggplot(aes(x=date, y = passage_estimate))+
   geom_line()+
   facet_wrap(~year, scales = "free")+
   theme_minimal()+
   labs(title = "Daily Passage Estimate From 2014 - 2020")
 ```
 
-![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
   mutate(year = as.factor(year(date))) %>% 
   group_by(year) %>% 
-  summarise(total = sum(count)) %>%
+  summarise(total = sum(passage_estimate)) %>%
   ggplot(aes(x = year, y = total, group = 1))+
   geom_line()+
   geom_point(aes(x=year, y = total))+
   theme_minimal()+
   labs(title = "Passage Estimate from 2014 - 2020",
-       y = "Total Count")
+       y = "Total passage_estimate")
 ```
 
-![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-**Numeric Monthly Summary of count From 2014 to 2020**
+**Numeric Monthly Summary of passage\_estimate From 2014 to 2020**
 
 ``` r
 cleaner_data %>%
   group_by(month(date)) %>%
-  summarise(count = sum(count, na.rm = T)) %>%
-  pull(count) %>%
+  summarise(passage_estimate = sum(passage_estimate, na.rm = T)) %>%
+  pull(passage_estimate) %>%
   summary()
 ```
 
@@ -163,7 +168,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   0 % of values in the `count` column are NA.
+-   0 % of values in the `passage_estimate` column are NA.
 
 ### Variable:`flow`
 
@@ -187,7 +192,7 @@ cleaner_data %>%
        x = "Date")  
 ```
 
-![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -201,7 +206,7 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 **Numeric Annual Summary of flow From 2014 to 2020**
 
@@ -242,7 +247,7 @@ cleaner_data %>%
        x = "Date")  
 ```
 
-![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -254,7 +259,7 @@ cleaner_data %>%
   labs(title = "Distribution of Temperature")
 ```
 
-![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 **Numeric Annual Summary of temperature From 2014 to 2020**
 
@@ -287,10 +292,10 @@ deer_upstream_estimate <- cleaner_data %>% glimpse()
 
     ## Rows: 951
     ## Columns: 4
-    ## $ date        <date> 2014-02-20, 2014-02-21, 2014-02-22, 2014-02-23, 2014-02-2~
-    ## $ count       <dbl> 0, 0, 0, 0, 0, 0, 0, 3, 16, 2, 0, 0, 0, 5, 6, 2, 0, 2, 8, ~
-    ## $ flow        <dbl> 111, 98, 91, 86, 81, 78, 80, 198, 297, 429, 274, 327, 857,~
-    ## $ temperature <dbl> 49.35426, 49.84375, 50.09583, 50.25729, 51.05313, 51.65208~
+    ## $ date             <date> 2014-02-20, 2014-02-21, 2014-02-22, 2014-02-23, 2014~
+    ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 3, 16, 2, 0, 0, 0, 5, 6, 2, 0, 2~
+    ## $ flow             <dbl> 111, 98, 91, 86, 81, 78, 80, 198, 297, 429, 274, 327,~
+    ## $ temperature      <dbl> 49.35426, 49.84375, 50.09583, 50.25729, 51.05313, 51.~
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
@@ -298,31 +303,31 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(deer_upstream_estimate,
            object_function = f,
            type = "csv",
-           name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_estimate.csv")
+           name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv")
 ```
 
-    ## i 2021-11-02 11:14:19 > File size detected as  39.7 Kb
+    ## i 2021-11-02 16:42:28 > File size detected as  39.7 Kb
 
-    ## i 2021-11-02 11:14:19 > Request Status Code:  400
+    ## i 2021-11-02 16:42:28 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-02 11:14:19 > File size detected as  39.7 Kb
+    ## i 2021-11-02 16:42:29 > File size detected as  39.7 Kb
 
     ## ==Google Cloud Storage Object==
-    ## Name:                adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_estimate.csv 
+    ## Name:                adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv 
     ## Type:                csv 
     ## Size:                39.7 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_estimate.csv?generation=1635876858283709&alt=media 
-    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_estimate.csv 
-    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_estimate.csv 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv?generation=1635896547628722&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_estimate.csv/1635876858283709 
-    ## MD5 Hash:            dI/7L2VfXjDaa1EtkStXww== 
+    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv/1635896547628722 
+    ## MD5 Hash:            09uD8o/DxSh/prRp3PlM8g== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-02 18:14:18 
-    ## Updated:             2021-11-02 18:14:18 
-    ## Generation:          1635876858283709 
+    ## Created:             2021-11-02 23:42:27 
+    ## Updated:             2021-11-02 23:42:27 
+    ## Generation:          1635896547628722 
     ## Meta Generation:     1 
-    ## eTag:                CL2No5ik+vMCEAE= 
-    ## crc32c:              YZr+oA==
+    ## eTag:                CLKt8cTt+vMCEAE= 
+    ## crc32c:              eYkzNA==
