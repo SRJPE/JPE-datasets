@@ -148,40 +148,29 @@ cleaner_data <- raw_data %>%
 
 ``` r
 cleaner_data$location = str_to_title(cleaner_data$location)
+cleaner_data <- cleaner_data %>%
+  mutate(location = gsub("-", " ", location),
+         location = if_else(location == "Buckhorn Gulch To Upper Dam (Aerial Survey)", "Buckhorn Gulch To Upper Dam", location ))
 table(cleaner_data$location)
 ```
 
     ## 
-    ##                   Above Avery To Pape Place 
-    ##                                          24 
-    ##                                Above Hwy 36 
-    ##                                          24 
-    ##            Below Ranch House To Above Avery 
-    ##                                          24 
-    ##                     Big Bend To Canyon Camp 
-    ##                                          24 
-    ##             Black Rock To Below Ranch House 
-    ##                                          24 
-    ## Buckhorn Gulch To Upper Dam (Aerial Survey) 
-    ##                                          24 
-    ##                 Canyon Camp To Sooner Place 
-    ##                                          24 
-    ##           Hole-In-Ground To Ishi Trail Head 
-    ##                                          24 
-    ##             Hwy 36 To Little Hole-In-Ground 
-    ##                                          24 
-    ##                 Ishi Trail Head To Big Bend 
-    ##                                          24 
-    ##      Litte Hole-In-Ground To Hole-In-Ground 
-    ##                                          24 
-    ##           Mccarthy Place To Savercool Place 
-    ##                                          24 
-    ##                Pape Place To Buckhorn Gulch 
-    ##                                          24 
-    ##              Savercool Place  To Black Rock 
-    ##                                          24 
-    ##              Sooner Place To Mccarthy Place 
-    ##                                          24
+    ##              Above Avery To Pape Place                           Above Hwy 36 
+    ##                                     24                                     24 
+    ##       Below Ranch House To Above Avery                Big Bend To Canyon Camp 
+    ##                                     24                                     24 
+    ##        Black Rock To Below Ranch House            Buckhorn Gulch To Upper Dam 
+    ##                                     24                                     24 
+    ##            Canyon Camp To Sooner Place      Hole In Ground To Ishi Trail Head 
+    ##                                     24                                     24 
+    ##        Hwy 36 To Little Hole In Ground            Ishi Trail Head To Big Bend 
+    ##                                     24                                     24 
+    ## Litte Hole In Ground To Hole In Ground      Mccarthy Place To Savercool Place 
+    ##                                     24                                     24 
+    ##           Pape Place To Buckhorn Gulch         Savercool Place  To Black Rock 
+    ##                                     24                                     24 
+    ##         Sooner Place To Mccarthy Place 
+    ##                                     24
 
 **NA and Unknown Values**
 
@@ -287,28 +276,28 @@ gcs_upload(mill_adult_holding_survey,
            name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv")
 ```
 
-    ## i 2021-11-01 16:23:52 > File size detected as  14.8 Kb
+    ## i 2021-11-02 10:28:43 > File size detected as  14.5 Kb
 
-    ## i 2021-11-01 16:23:53 > Request Status Code:  400
+    ## i 2021-11-02 10:28:44 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-01 16:23:53 > File size detected as  14.8 Kb
+    ## i 2021-11-02 10:28:44 > File size detected as  14.5 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv 
     ## Type:                csv 
-    ## Size:                14.8 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv?generation=1635809031838958&alt=media 
+    ## Size:                14.5 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv?generation=1635874123296105&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv/1635809031838958 
-    ## MD5 Hash:            gm8eDGy5gBljUOlcnYmM9w== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv/1635874123296105 
+    ## MD5 Hash:            XJB68WbwVJxACxP1cUP5Mg== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-01 23:23:51 
-    ## Updated:             2021-11-01 23:23:51 
-    ## Generation:          1635809031838958 
+    ## Created:             2021-11-02 17:28:43 
+    ## Updated:             2021-11-02 17:28:43 
+    ## Generation:          1635874123296105 
     ## Meta Generation:     1 
-    ## eTag:                CO65jcKn+PMCEAE= 
-    ## crc32c:              TjJEuA==
+    ## eTag:                COnakICa+vMCEAE= 
+    ## crc32c:              XbBhGA==

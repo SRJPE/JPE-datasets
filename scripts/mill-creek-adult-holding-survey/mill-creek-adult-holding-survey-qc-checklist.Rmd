@@ -98,6 +98,9 @@ cleaner_data <- raw_data %>%
 
 ```{r}
 cleaner_data$location = str_to_title(cleaner_data$location)
+cleaner_data <- cleaner_data %>%
+  mutate(location = gsub("-", " ", location),
+         location = if_else(location == "Buckhorn Gulch To Upper Dam (Aerial Survey)", "Buckhorn Gulch To Upper Dam", location ))
 table(cleaner_data$location)
 ```
 **NA and Unknown Values**  
