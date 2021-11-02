@@ -437,7 +437,7 @@ cleaner_rst_environmental %>%
   theme_minimal() + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  labs(y = "Year")
+  labs(y = "Month")
 ```
 
 Debris looks relatively evenly distributed throughout the months. 
