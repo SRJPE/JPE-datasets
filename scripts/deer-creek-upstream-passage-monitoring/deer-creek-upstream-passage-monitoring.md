@@ -13,6 +13,8 @@ Inigo Peng
 
 **Completeness of Record throughout timeframe:**
 
+Some missing data for variable flow
+
 **Sampling Location:**
 
 -   SVRIC Dam
@@ -161,7 +163,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   0 % of values in the `date` column are NA.
+-   0 % of values in the `count` column are NA.
 
 ### Variable:`flow`
 
@@ -216,7 +218,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   0 % of values in the `date` column are NA.
+-   14.7 % of values in the `flow` column are NA.
 
 ### Variable:`temperature`
 
@@ -247,12 +249,10 @@ cleaner_data %>%
   mutate(year = as.factor(year(date))) %>% 
   ggplot(aes(x=temperature, fill = year))+
   scale_fill_brewer(palette = "Dark2")+
-  geom_histogram(bin = 5)+
+  geom_histogram(bins = 5)+
   theme_minimal()+
   labs(title = "Distribution of Temperature")
 ```
-
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
 ![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
@@ -271,7 +271,13 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   0 % of values in the `date` column are NA.
+-   0 % of values in the `temperature` column are NA.
+
+### Notes and Issues
+
+-   Temperature in F? Need to double check
+
+-   Units for flow?
 
 ### Add cleaned data back onto google cloud
 
@@ -295,28 +301,28 @@ gcs_upload(deer_upstream_estimate,
            name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_estimate.csv")
 ```
 
-    ## i 2021-10-29 14:48:06 > File size detected as  39.7 Kb
+    ## i 2021-11-02 11:14:19 > File size detected as  39.7 Kb
 
-    ## i 2021-10-29 14:48:06 > Request Status Code:  400
+    ## i 2021-11-02 11:14:19 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-29 14:48:06 > File size detected as  39.7 Kb
+    ## i 2021-11-02 11:14:19 > File size detected as  39.7 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_estimate.csv 
     ## Type:                csv 
     ## Size:                39.7 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_estimate.csv?generation=1635544085341994&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_estimate.csv?generation=1635876858283709&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_estimate.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_estimate.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_estimate.csv/1635544085341994 
+    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_estimate.csv/1635876858283709 
     ## MD5 Hash:            dI/7L2VfXjDaa1EtkStXww== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-29 21:48:05 
-    ## Updated:             2021-10-29 21:48:05 
-    ## Generation:          1635544085341994 
+    ## Created:             2021-11-02 18:14:18 
+    ## Updated:             2021-11-02 18:14:18 
+    ## Generation:          1635876858283709 
     ## Meta Generation:     1 
-    ## eTag:                CKrO4sHM8PMCEAE= 
+    ## eTag:                CL2No5ik+vMCEAE= 
     ## crc32c:              YZr+oA==
