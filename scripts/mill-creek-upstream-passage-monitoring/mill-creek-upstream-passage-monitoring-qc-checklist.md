@@ -13,7 +13,8 @@ Inigo Peng
 
 **Completeness of Record throughout timeframe:**
 
-TODO
+-   Few missing value count for count
+-   10 - 15 % missing values for physical variables
 
 **Sampling Location:**
 
@@ -21,7 +22,7 @@ TODO
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 
-TODO: Add issues, descriptions \#\# Access Cloud Data
+## Access Cloud Data
 
 ``` r
 # Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
@@ -175,7 +176,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   2.9 % of values in the `date` column are NA.
+-   2.9 % of values in the `count` column are NA.
 
 ### Variable:`flow`
 
@@ -231,7 +232,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   2.9 % of values in the `date` column are NA.
+-   16.6 % of values in the `flow` column are NA.
 
 ### Variable:`temperature`
 
@@ -264,12 +265,10 @@ cleaner_data %>%
   mutate(year = as.factor(year(date))) %>% 
   ggplot(aes(x=temperature, fill = year))+
   scale_fill_brewer(palette = "Dark2")+
-  geom_histogram(bin = 5)+
+  geom_histogram(bins = 10)+
   theme_minimal()+
   labs(title = "Distribution of Temperature")
 ```
-
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
 ![](mill-creek-upstream-passage-monitoring-qc-checklist_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
@@ -288,7 +287,13 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   2.9 % of values in the `date` column are NA.
+-   11.9 % of values in the `temperature` column are NA.
+
+### Notes and Issues:
+
+-   Count drops significantly after 2014
+-   Water temperature in F? Need to double check
+-   Also need to check the units for flow
 
 ### Add cleaned data back onto google cloud
 
@@ -311,28 +316,28 @@ gcs_upload(mill_upstream_estimate,
            name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_estimate.csv")
 ```
 
-    ## i 2021-10-29 17:13:07 > File size detected as  48.6 Kb
+    ## i 2021-11-02 10:41:00 > File size detected as  48.6 Kb
 
-    ## i 2021-10-29 17:13:07 > Request Status Code:  400
+    ## i 2021-11-02 10:41:01 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-29 17:13:07 > File size detected as  48.6 Kb
+    ## i 2021-11-02 10:41:01 > File size detected as  48.6 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_estimate.csv 
     ## Type:                csv 
     ## Size:                48.6 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_estimate.csv?generation=1635552786434878&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_estimate.csv?generation=1635874860213627&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_estimate.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_estimate.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_estimate.csv/1635552786434878 
+    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_estimate.csv/1635874860213627 
     ## MD5 Hash:            3NUfhMFRD9TCkOInm3D7OA== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-30 00:13:06 
-    ## Updated:             2021-10-30 00:13:06 
-    ## Generation:          1635552786434878 
+    ## Created:             2021-11-02 17:41:00 
+    ## Updated:             2021-11-02 17:41:00 
+    ## Generation:          1635874860213627 
     ## Meta Generation:     1 
-    ## eTag:                CL6W4/bs8PMCEAE= 
+    ## eTag:                CPvKwt+c+vMCEAE= 
     ## crc32c:              4WbcBQ==

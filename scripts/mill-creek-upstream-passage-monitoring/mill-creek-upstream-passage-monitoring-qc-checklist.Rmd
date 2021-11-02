@@ -24,7 +24,8 @@ library (RColorBrewer)
 
 **Completeness of Record throughout timeframe:**
 
-TODO
+* Few missing value count for count
+* 10 - 15 % missing values for physical variables
 
 **Sampling Location:** 
 
@@ -32,7 +33,6 @@ TODO
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 
-TODO: Add issues, descriptions
 ## Access Cloud Data
 
 ```{r, eval=FALSE}
@@ -135,7 +135,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
 
 ### Variable:`flow`
 
@@ -180,7 +180,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+*  `r round(sum(is.na(cleaner_data$flow))/nrow(cleaner_data), 3)*100` % of values in the `flow` column are NA.
 
 ### Variable:`temperature`
 
@@ -211,7 +211,7 @@ cleaner_data %>%
   mutate(year = as.factor(year(date))) %>% 
   ggplot(aes(x=temperature, fill = year))+
   scale_fill_brewer(palette = "Dark2")+
-  geom_histogram(bin = 5)+
+  geom_histogram(bins = 10)+
   theme_minimal()+
   labs(title = "Distribution of Temperature")
 ```
@@ -227,9 +227,16 @@ cleaner_data %>%
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+*  `r round(sum(is.na(cleaner_data$temperature))/nrow(cleaner_data), 3)*100` % of values in the `temperature` column are NA.
+
+### Notes and Issues:
+
+* Count drops significantly after 2014
+* Water temperature in F? Need to double check
+* Also need to check the units for flow
 
 ### Add cleaned data back onto google cloud
+
 ```{r}
 mill_upstream_estimate <- cleaner_data %>% glimpse()
 ```
