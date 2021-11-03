@@ -1,11 +1,14 @@
-mill-creek-adult-upstream-passage-monitoring-qc-checklist
+mill-creek-upstream-passage-estimation-qc-checklist
 ================
 Inigo Peng
 10/19/2021
 
-# Mill Creek Adult Holding Survey Data 2012 to 2020
+# Mill Creek Adult Upstream Passage Estimate Data 2012 to 2020
 
 **Description of Monitoring Data**
+
+Adult spring run daily passage estimate is recorded at Ward Dam via
+video monitoring.
 
 **Timeframe:**
 
@@ -13,7 +16,7 @@ Inigo Peng
 
 **Completeness of Record throughout timeframe:**
 
--   Few missing value count for count
+-   Few missing value passage\_estimate for passage\_estimate
 -   10 - 15 % missing values for physical variables
 
 **Sampling Location:**
@@ -37,6 +40,8 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data-
                bucket = gcs_get_global_bucket(),
                saveToDisk = "mill_creek_passage_estimate_raw.xlsx")
 ```
+
+Data for each year is in a separate sheet
 
 ``` r
 sheets <- readxl::excel_sheets('mill_creek_passage_estimate_raw.xlsx')
@@ -62,6 +67,8 @@ list_all <- lapply(sheets, function(x) readxl::read_excel(path = "mill_creek_pas
     ## New names:
     ## * `` -> ...5
 
+Bind the sheets into one file
+
 ``` r
 raw_data <- dplyr::bind_rows(list_all) %>% 
   glimpse()
@@ -81,7 +88,7 @@ raw_data <- dplyr::bind_rows(list_all) %>%
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>% 
   select(-"...5") %>% #comments describe dates
-  rename("count" =  'adult spring-run passing ward dam',
+  rename("passage_estimate" =  'adult spring-run passing ward dam',
          "flow" = "avg daily flow below ward dam",
          "temperature"= "avg daily h2o temp below ward dam") %>% 
   filter(date != "Totals:", date != "Total:") %>%
@@ -95,22 +102,14 @@ cleaner_data <- raw_data %>%
 
     ## Rows: 1,316
     ## Columns: 4
-    ## $ date        <date> 2012-02-20, 2012-02-21, 2012-02-22, 2012-02-23, 2012-02-2~
-    ## $ count       <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0~
-    ## $ flow        <dbl> 112.0938, 110.0208, 109.9479, 113.1042, 112.8021, 114.6979~
-    ## $ temperature <dbl> 45.60833, 46.89688, 50.28125, 49.93229, 49.24583, 48.69375~
+    ## $ date             <date> 2012-02-20, 2012-02-21, 2012-02-22, 2012-02-23, 2012~
+    ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,~
+    ## $ flow             <dbl> 112.0938, 110.0208, 109.9479, 113.1042, 112.8021, 114~
+    ## $ temperature      <dbl> 45.60833, 46.89688, 50.28125, 49.93229, 49.24583, 48.~
 
 ## Explore `date`
 
-``` r
-cleaner_data%>%
-  ggplot(aes(x = date)) +
-  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
-  labs(title = "Value Counts For Survey Season Dates")+
-  theme(legend.text = element_text(size = 8))
-```
-
-![](mill-creek-upstream-passage-monitoring-qc-checklist_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+Check for outlier and NA values
 
 ``` r
 summary(cleaner_data$date)
@@ -127,14 +126,14 @@ summary(cleaner_data$date)
 
 ## Explore Numerical Values
 
-### Variable:`count`
+### Variable:`passage_estimate`
 
 ``` r
 cleaner_data %>%
   filter(date != is.na(date)) %>%
   mutate(year = as.factor(year(date))) %>% 
   # glimpse()
-  ggplot(aes(x=date, y = count))+
+  ggplot(aes(x=date, y = passage_estimate))+
   geom_line()+
   facet_wrap(~year, scales = "free")+
   theme_minimal()+
@@ -149,25 +148,25 @@ cleaner_data %>%
   mutate(year = as.factor(year(date))) %>%
   # glimpse()
   group_by(year) %>% 
-  summarise(total = sum(count, na.rm  = TRUE)) %>%
+  summarise(total = sum(passage_estimate, na.rm  = TRUE)) %>%
   # glimpse()
   ggplot(aes(x = year, y = total, group = 1))+
   geom_line()+
   geom_point(aes(x=year, y = total))+
   theme_minimal()+
-  labs(title = "Passage Estimate from 2012 - 2020",
-       y = "Total Count")
+  labs(title = "Total Annual Passage Estimate from 2012 - 2020",
+       y = "Total passage_estimate")
 ```
 
 ![](mill-creek-upstream-passage-monitoring-qc-checklist_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-**Numeric Monthly Summary of count From 2012 to 2020**
+**Numeric Monthly Summary of passage\_estimate From 2012 to 2020**
 
 ``` r
 cleaner_data %>%
   group_by(month(date)) %>%
-  summarise(count = sum(count, na.rm = T)) %>%
-  pull(count) %>%
+  summarise(passage_estimate = sum(passage_estimate, na.rm = T)) %>%
+  pull(passage_estimate) %>%
   summary()
 ```
 
@@ -176,7 +175,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   2.9 % of values in the `count` column are NA.
+-   2.9 % of values in the `passage_estimate` column are NA.
 
 ### Variable:`flow`
 
@@ -291,7 +290,7 @@ cleaner_data %>%
 
 ### Notes and Issues:
 
--   Count drops significantly after 2014
+-   passage\_estimate drops significantly after 2014
 -   Water temperature in F? Need to double check
 -   Also need to check the units for flow
 
@@ -303,41 +302,41 @@ mill_upstream_estimate <- cleaner_data %>% glimpse()
 
     ## Rows: 1,316
     ## Columns: 4
-    ## $ date        <date> 2012-02-20, 2012-02-21, 2012-02-22, 2012-02-23, 2012-02-2~
-    ## $ count       <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0~
-    ## $ flow        <dbl> 112.0938, 110.0208, 109.9479, 113.1042, 112.8021, 114.6979~
-    ## $ temperature <dbl> 45.60833, 46.89688, 50.28125, 49.93229, 49.24583, 48.69375~
+    ## $ date             <date> 2012-02-20, 2012-02-21, 2012-02-22, 2012-02-23, 2012~
+    ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,~
+    ## $ flow             <dbl> 112.0938, 110.0208, 109.9479, 113.1042, 112.8021, 114~
+    ## $ temperature      <dbl> 45.60833, 46.89688, 50.28125, 49.93229, 49.24583, 48.~
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
 gcs_upload(mill_upstream_estimate,
            object_function = f,
            type = "csv",
-           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_estimate.csv")
+           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv")
 ```
 
-    ## i 2021-11-02 10:41:00 > File size detected as  48.6 Kb
+    ## i 2021-11-02 17:01:59 > File size detected as  48.6 Kb
 
-    ## i 2021-11-02 10:41:01 > Request Status Code:  400
+    ## i 2021-11-02 17:02:00 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-02 10:41:01 > File size detected as  48.6 Kb
+    ## i 2021-11-02 17:02:00 > File size detected as  48.6 Kb
 
     ## ==Google Cloud Storage Object==
-    ## Name:                adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_estimate.csv 
+    ## Name:                adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv 
     ## Type:                csv 
     ## Size:                48.6 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_estimate.csv?generation=1635874860213627&alt=media 
-    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_estimate.csv 
-    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_estimate.csv 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv?generation=1635897718758420&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_estimate.csv/1635874860213627 
-    ## MD5 Hash:            3NUfhMFRD9TCkOInm3D7OA== 
+    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv/1635897718758420 
+    ## MD5 Hash:            dlaBSTRDmM3oyQSlNqDS4w== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-02 17:41:00 
-    ## Updated:             2021-11-02 17:41:00 
-    ## Generation:          1635874860213627 
+    ## Created:             2021-11-03 00:01:58 
+    ## Updated:             2021-11-03 00:01:58 
+    ## Generation:          1635897718758420 
     ## Meta Generation:     1 
-    ## eTag:                CPvKwt+c+vMCEAE= 
-    ## crc32c:              4WbcBQ==
+    ## eTag:                CJS4qfPx+vMCEAE= 
+    ## crc32c:              35Ok/w==

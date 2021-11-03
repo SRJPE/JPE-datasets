@@ -1,5 +1,5 @@
 ---
-title: "mill-creek-adult-upstream-passage-monitoring-qc-checklist"
+title: "mill-creek-upstream-passage-estimation-qc-checklist"
 author: "Inigo Peng"
 date: "10/19/2021"
 output: rmarkdown::github_document
@@ -14,9 +14,11 @@ library(scales)
 library (RColorBrewer)
 ```
 
-# Mill Creek Adult Holding Survey Data 2012 to 2020 
+# Mill Creek Adult Upstream Passage Estimate Data 2012 to 2020 
 
 **Description of Monitoring Data**
+
+Adult spring run daily passage estimate is recorded at Ward Dam via video monitoring.
 
 **Timeframe:** 
 
@@ -24,7 +26,7 @@ library (RColorBrewer)
 
 **Completeness of Record throughout timeframe:**
 
-* Few missing value count for count
+* Few missing value passage_estimate for passage_estimate
 * 10 - 15 % missing values for physical variables
 
 **Sampling Location:** 
@@ -49,10 +51,15 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data-
                saveToDisk = "mill_creek_passage_estimate_raw.xlsx")
 ```
 
-
+Data for each year is in a separate sheet
 ```{r}
 sheets <- readxl::excel_sheets('mill_creek_passage_estimate_raw.xlsx')
 list_all <- lapply(sheets, function(x) readxl::read_excel(path = "mill_creek_passage_estimate_raw.xlsx", sheet = x, col_types = c("text", "numeric", "numeric", "numeric", "text")))
+```
+
+Bind the sheets into one file
+
+```{r}
 raw_data <- dplyr::bind_rows(list_all) %>% 
   glimpse()
 ```
@@ -63,7 +70,7 @@ raw_data <- dplyr::bind_rows(list_all) %>%
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>% 
   select(-"...5") %>% #comments describe dates
-  rename("count" =  'adult spring-run passing ward dam',
+  rename("passage_estimate" =  'adult spring-run passing ward dam',
          "flow" = "avg daily flow below ward dam",
          "temperature"= "avg daily h2o temp below ward dam") %>% 
   filter(date != "Totals:", date != "Total:") %>%
@@ -76,13 +83,8 @@ cleaner_data <- raw_data %>%
 ```
 
 ## Explore `date`
-```{r}
-cleaner_data%>%
-  ggplot(aes(x = date)) +
-  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
-  labs(title = "Value Counts For Survey Season Dates")+
-  theme(legend.text = element_text(size = 8))
-```
+
+Check for outlier and NA values
 
 ```{r}
 summary(cleaner_data$date)
@@ -94,13 +96,13 @@ summary(cleaner_data$date)
 
 ## Explore Numerical Values
 
-### Variable:`count` 
+### Variable:`passage_estimate` 
 ```{r}
 cleaner_data %>%
   filter(date != is.na(date)) %>%
   mutate(year = as.factor(year(date))) %>% 
   # glimpse()
-  ggplot(aes(x=date, y = count))+
+  ggplot(aes(x=date, y = passage_estimate))+
   geom_line()+
   facet_wrap(~year, scales = "free")+
   theme_minimal()+
@@ -114,28 +116,28 @@ cleaner_data %>%
   mutate(year = as.factor(year(date))) %>%
   # glimpse()
   group_by(year) %>% 
-  summarise(total = sum(count, na.rm  = TRUE)) %>%
+  summarise(total = sum(passage_estimate, na.rm  = TRUE)) %>%
   # glimpse()
   ggplot(aes(x = year, y = total, group = 1))+
   geom_line()+
   geom_point(aes(x=year, y = total))+
   theme_minimal()+
-  labs(title = "Passage Estimate from 2012 - 2020",
-       y = "Total Count")
+  labs(title = "Total Annual Passage Estimate from 2012 - 2020",
+       y = "Total passage_estimate")
 ```
 
-**Numeric Monthly Summary of count From 2012 to 2020**
+**Numeric Monthly Summary of passage_estimate From 2012 to 2020**
 ```{r}
 cleaner_data %>%
   group_by(month(date)) %>%
-  summarise(count = sum(count, na.rm = T)) %>%
-  pull(count) %>%
+  summarise(passage_estimate = sum(passage_estimate, na.rm = T)) %>%
+  pull(passage_estimate) %>%
   summary()
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
+*  `r round(sum(is.na(cleaner_data$passage_estimate))/nrow(cleaner_data), 3)*100` % of values in the `passage_estimate` column are NA.
 
 ### Variable:`flow`
 
@@ -231,7 +233,7 @@ cleaner_data %>%
 
 ### Notes and Issues:
 
-* Count drops significantly after 2014
+* passage_estimate drops significantly after 2014
 * Water temperature in F? Need to double check
 * Also need to check the units for flow
 
@@ -246,4 +248,4 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(mill_upstream_estimate,
            object_function = f,
            type = "csv",
-           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_estimate.csv")
+           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv")
