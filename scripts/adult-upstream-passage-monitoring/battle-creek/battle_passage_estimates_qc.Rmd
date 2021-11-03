@@ -1,0 +1,372 @@
+---
+title: "Battle Creek Adult Upstream Passage Estimates QC"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+```
+
+# Battle Creek Adult Upstream Passage Estimates
+
+## Description of Monitoring Data
+
+This dataset contains video outage information and extrapolated passage estimates for Chinook Salmon using count data from the Video and Trap and Spawning Building worksheets from 2001 to 2019. Estimates include all runs of Chinook Salmon.						
+
+**Timeframe:** 2001 - 2019 
+
+**Completeness of Record throughout timeframe:** Passage estimates calculated for every year in timeframe. 
+
+**Sampling Location:** Battle Creek 
+
+**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov)
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+gcs_get_object(object_name = 
+                 "adult-upstream-passage-monitoring/battle-creek/data-raw/battle_creek_upstream_passage_datas.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_battle_creek_passage_data.xlsx",
+               overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+
+# read in data to clean 
+sheets <- readxl::excel_sheets("raw_battle_creek_passage_data.xlsx")
+sheets
+raw_passage_estimates <- read_excel("raw_battle_creek_passage_data.xlsx", 
+                                    sheet = "Upstream Passage Estimates") %>% glimpse()
+```
+
+## Data transformations
+
+```{r}
+raw_passage_estimates <- raw_passage_estimates %>% 
+  janitor::clean_names() %>% 
+  mutate(actual_number_clipped = as.numeric(actual_number_clipped),
+         actual_number_unclipped = as.numeric(actual_number_unclipped),
+         actual_number_unknown = as.numeric(actual_number_unknown),
+         passage_estimate_clipped = as.numeric(passage_estimate_clipped),
+         passage_estimate_unclipped = as.numeric(passage_estimate_unclipped)) %>%
+  glimpse()
+
+# Create actual dates (not 3 - 10 March)
+days <-  str_extract_all(raw_passage_estimates$dates, '\\d+', simplify = TRUE)
+months <- str_extract_all(raw_passage_estimates$dates, '[a-zA-z]+', simplify = TRUE) %>%
+  as.data.frame() %>%
+  mutate(start_month = V1,
+         end_month = ifelse(V2=='', V1, V2))
+
+month_lookup <- c(1:12, 8, 4)
+names(month_lookup) <- c(month.name, "Aug", "Apri")
+
+raw_passage_estimates$start_month <- month_lookup[months$start_month]
+raw_passage_estimates$end_month <- month_lookup[months$end_month]
+raw_passage_estimates$start_day <- days[, 1]
+raw_passage_estimates$end_day <- days[, 2]
+
+cleaner_passage_estimates <- raw_passage_estimates %>% 
+  mutate(start_date = as.Date(paste0(year, "-", start_month, "-", start_day)),
+         end_date = as.Date(paste0(year, "-", end_month, "-", end_day)),
+         start_date = if_else(is.na(start_date), 
+                              as.Date.numeric(as.numeric(dates), 
+                                              origin = paste0(as.character(1899 - (2021 - year)), "-12-29")),
+                              start_date), # this origin date doesn't make sense but it generates the date given in excel doc, date given was just year, month (so auto put 2021 - when actual year is not 2021) TODO check out again more extensivly 
+         end_date = if_else(is.na(end_date), start_date, end_date)) %>%
+  select(-year, -dates, -start_day, -end_day, -start_month, -end_month) %>%
+  glimpse()
+
+# Gather columns to have adipose, passage_estimates, raw_counts
+cleaner_passage_estimates <- cleaner_passage_estimates %>% 
+  pivot_longer(!c(week:hours_of_taped_passage, start_date, end_date), 
+               names_to = c("type", "type2", "adipose"), 
+               names_sep = "_",
+               values_to = "count") %>%
+  mutate(count_type = paste(type, type2, sep = "_")) %>%
+  select(-type, -type2) %>%
+  pivot_wider(names_from = c("count_type"), values_from = "count") %>% 
+  rename("raw_count" = actual_number) %>%
+  glimpse()
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+cleaner_passage_estimates %>% select_if(is.numeric) %>% colnames()
+```
+
+### Variable: `week`
+
+**Plotting weeks per year over Period of Record**
+
+```{r}
+cleaner_passage_estimates %>% 
+  group_by(year = year(start_date)) %>% 
+  summarise(num_weeks_sampled = max(week)) %>% 
+  ggplot() + 
+  geom_col(aes(x = year, y = num_weeks_sampled))
+```
+
+Every year there were between 22 and 28 weeks sampled. 
+
+**Numeric Summary of week over Period of Record**
+
+```{r}
+summary(cleaner_passage_estimates$week)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_estimates$week))/nrow(cleaner_passage_estimates), 3) * 100` % of values in the `week` column are NA.
+
+### Variable: `hours_of_passage`, `hours_of_taped_passage`
+
+**Plotting hours of passage and hours of taped passage over Period of Record**
+```{r}
+cleaner_passage_estimates %>% 
+  group_by(year = year(start_date)) %>%
+  summarise(total_hours_passage = sum(hours_of_passage, na.rm = T), 
+            total_taped_hours = sum(hours_of_taped_passage, na.rm = T)) %>%
+  pivot_longer(!year, names_to = "type", values_to = "hours") %>%
+  ggplot(aes(x = year, y = hours, fill = type)) + 
+  geom_col(position = "dodge", alpha = .75) + 
+  # geom_vline(xintercept = 168, color = "red") + 
+  labs(title = "Total hours of passage and hours of taped passage") +
+  theme_minimal()
+  # scale_fill_manual(values = c("blue", "orange"))
+```
+
+Pre 2010 less hours of passage taped and total hours of passage than post 2010.
+
+```{r}
+cleaner_passage_estimates %>% 
+  mutate(year = as.factor(year(start_date))) %>%
+  ggplot() + 
+  geom_boxplot(aes(x = hours_of_taped_passage, y = year)) + 
+  geom_vline(xintercept = 168, color = "red") + 
+  labs(title = "Weekly hours of passage summarized by year", 
+       x = "weekly hour of taped passage") + 
+  theme_minimal()
+```
+
+The red line is at 168, the total number of hours in a week. It appears that from 2001 - 2006 they did not have taped passage for the full week very often. The recent years are better with some variation. 2019 must not be complete data. 
+
+
+**Numeric Summary of passage hours over Period of Record**
+
+```{r}
+summary(cleaner_passage_estimates$hours_of_passage)
+summary(cleaner_passage_estimates$hours_of_taped_passage)
+```
+
+The numeric summary shows us that not all the time periods are exactly one week. 
+
+* Min is 8 hours - less than a day.
+* Max is 205 hours - over a full week. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_estimates$hours_of_passage))/nrow(cleaner_passage_estimates), 3) * 100` % of values in the `hours_of_passage` column are NA.
+* `r round(sum(is.na(cleaner_passage_estimates$hours_of_taped_passage))/nrow(cleaner_passage_estimates), 3) * 100` % of values in the `hours_of_taped_passage` column are NA.
+
+* Many of the NAs correspond with traping data. `hours_of_taped_passage` and `hours_of_passage` are only relevant to video data.
+
+
+### Variable: `passage_estimate`
+
+**Plotting passage estimate over Period of Record**
+```{r}
+cleaner_passage_estimates %>% 
+  ggplot(aes(x = week, y = passage_estimate, color = adipose)) +
+  geom_line(size = 1.4) + 
+  facet_wrap(~year(start_date)) + 
+  theme_minimal()
+  # scale_fill_manual(values = c("blue", "orange"))
+```
+
+```{r}
+cleaner_passage_estimates  %>%
+  group_by(year = year(start_date), adipose) %>%
+  summarise(yearly_total_pasage_estimate = sum(passage_estimate, na.rm = T)) %>%
+  ggplot(aes(x = year, y = yearly_total_pasage_estimate, fill = adipose)) + 
+  geom_col(position = "dodge") + 
+  theme_minimal() +
+  labs(title = "Total Yearly Passage Estimates",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+Looks like there is one negative value for passage estimates which seems like an error.  
+
+**Numeric Summary of passage estimate over Period of Record**
+
+```{r}
+summary(cleaner_passage_estimates$passage_estimate)
+
+```
+
+We see that the negative passage estimate value is -10.5. Take the absolute value of the passage_estimate column to remove negative values. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_estimates$passage_estimate))/nrow(cleaner_passage_estimates), 3) * 100` % of values in the `passage_estimate` column are NA.
+
+The negative values appear to mostly correspond to when adipose = unknown. There were no passage estimates generated for these values, just the actual passage number. 
+
+
+### Variable: `raw_count`
+
+**Plotting raw count of fish over Period of Record**
+```{r}
+cleaner_passage_estimates %>% 
+  ggplot(aes(x = week, y = raw_count, color = adipose)) +
+  geom_line(size = 1.4) + 
+  facet_wrap(~year(start_date), scales = "free_y") + 
+  theme_minimal()
+  # scale_fill_manual(values = c("blue", "orange"))
+```
+
+```{r}
+cleaner_passage_estimates  %>%
+  group_by(year = year(start_date), adipose) %>%
+  summarise(yearly_total_fish_count = sum(raw_count, na.rm = T)) %>%
+  ggplot(aes(x = year, y = yearly_total_fish_count, fill = adipose)) + 
+  geom_col(position = "dodge") + 
+  theme_minimal() +
+  labs(title = "Total Yearly Fish Counts",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+**Numeric Summary of raw count over Period of Record**
+
+```{r}
+summary(cleaner_passage_estimates$raw_count)
+
+# Raw counts from traps
+summary(cleaner_passage_estimates %>% 
+          filter(method %in% c("Trap", "Spawning Building/Trap", "Spawning Building")) %>% 
+          pull(raw_count))
+
+# Raw counts from video
+summary(cleaner_passage_estimates %>% 
+          filter(method == c("Video")) %>% 
+          pull(raw_count))
+```
+
+Take the absolute value of the `raw_count` column to remove negitive values. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_estimates$raw_count))/nrow(cleaner_passage_estimates), 3) * 100` % of values in the `raw_count` column are NA.
+
+```{r}
+cleaner_passage_estimates  %>%
+  filter(adipose == "unclipped") %>%
+  select(start_date, passage_estimate, raw_count) %>%
+  pivot_longer(-start_date, names_to = c("count_type"), values_to = "count") %>%
+  group_by(year = year(start_date), count_type) %>%
+  summarise(yearly_total_fish_count = sum(count, na.rm = T)) %>%
+  ggplot(aes(x = year, y = yearly_total_fish_count, fill = count_type)) + 
+  geom_col(position = "dodge") + 
+  theme_minimal() +
+  labs(title = "Total Yearly Fish Counts and Passage Estimates (unclipped - natural chinook)",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+Passage estimates are slightly greater than raw count most years. 
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+cleaner_passage_estimates %>% select_if(is.character) %>% colnames()
+```
+
+
+### Variable: `method`
+
+method of observation (trap-barrier weir trap, spawning building, video)				
+
+```{r}
+table(cleaner_passage_estimates$method) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_passage_estimates$method <- case_when(
+  cleaner_passage_estimates$method == "Spawning Building" ~ "spwaning building",
+  cleaner_passage_estimates$method == "Spawning Building/Trap" ~ "spawning building or trap", 
+  cleaner_passage_estimates$method == "Trap" ~ "trap",
+  cleaner_passage_estimates$method == "Video" ~ "video")
+
+table(cleaner_passage_estimates$method) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_estimates$method))/nrow(cleaner_passage_estimates), 3) * 100` % of values in the `method` column are NA.
+
+### Variable: `adipose`
+
+Adipose clipped, unclipped or unknown
+
+```{r}
+table(cleaner_passage_estimates$adipose) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_estimates$adipose))/nrow(cleaner_passage_estimates), 3) * 100` % of values in the `adipose` column are NA.
+
+## Summary of identified issues
+
+* Negative value for passage count with clipped adipose in 2012 - take abs value (below)
+* Total hours of passage varies quite a but over the years, different/shorter sampling seasons pre 2010 contribute to this
+* Date values started off in a very weird format, I tried to convert them all to a start date and an end date for a week. If a dates column stated May 30 - June 6 and the year column was 2019 I converted start_date = "2019-05-30" and end_date = "2019-06-06". However there were also some values in the date column that were 5 digit numbers ex: 44364. I still need to figure out origin years for these ones. The typical origin date is not mapping to the year given in the year column. 
+
+## Save cleaned data back to google cloud 
+
+```{r}
+battle_passage_estimates <- cleaner_passage_estimates %>% 
+  mutate(raw_count = abs(raw_count),
+         passage_estimate = abs(passage_estimate)) %>%
+  glimpse()
+
+```
+
+```{r, eval = FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(battle_passage_estimates,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/battle-creek/data/battle_passage_estimates.csv")
+```
