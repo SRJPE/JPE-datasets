@@ -1,0 +1,144 @@
+---
+title: "deer-holding-1986-to-1996-qc-checklist"
+author: "Inigo Peng"
+date: "10/19/2021"
+output: rmarkdown::github_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+```
+# Deer Creek Adult Holding Survey Data 1986 to 1996 
+
+**Description of Monitoring Data**
+
+The adult holding survey data is in two separate files: first one is from 1986 to 1996, second one is 1997 to 2020. The data is collected via snorkel counts.The data has been qced and summed up.
+
+The data from 1986 to 1996 has been reformatted for better access. Both original file and reformatted file could be found on google cloud.
+
+**Timeframe:** 
+
+1986 to 1996
+
+**Completeness of Record throughout timeframe:**
+
+* From 1986 to 1988 sampling reach was Hwy 32 to A-Line.
+* From 1989 to 1991 sampling reach was Lower Falls to A-Line.
+* From 1992 to 1996 sampling reach increased to 11 locations.
+
+
+**Sampling Location:** 
+
+* Hwy 32 to A-Line
+* Lower Falls to A-Line
+* Upper Falls to Potato Patch
+* Potato Patch to Hwy 32
+* Hwy 32 to Lower Falls
+* Lower Falls to A-Line
+* A-Line to Wilson
+* Wilson to Polk Springs
+* Polk Springs to Murphy
+* Murphy to Beaver
+* Beaver to Ponderosa
+* Ponderosa to Homestead
+* Homestead to 2E17
+
+**Other Notes:**
+
+In 1989 the section from Hwy 32 to Lower Falls was omitted from the indicator reach.  From 1992 to 1996, an average of 2% of the total salmon observed were in the omitted section: hwy 32 to lower falls.  This leaves 29%  of the salmon  holding  in the reduced indicator reach.
+
+**Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/deer-creek/data-raw/reformatted_deer_creek_snorkel_counts_by_reach_1986_1996.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "deer_creek_holding_raw.xlsx")
+               # Overwrite = TRUE)
+```
+```{r}
+raw_data = readxl::read_excel('deer_creek_holding_raw.xlsx')
+glimpse(raw_data)
+```
+## Data Transformations
+```{r}
+cleaner_data <- raw_data %>% 
+  set_names(tolower(colnames(raw_data))) %>% 
+  glimpse()
+```
+## Explore Categorical Variables
+
+### Variable `location`
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(location = str_to_title(location),
+         location = gsub("-", " ", location))
+table(cleaner_data$location)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$location))/nrow(cleaner_data), 3)*100` % of values in the `location` column are NA.
+
+## Explore Numeric Variables
+
+### Variable `count`
+```{r fig.height=7, fig.width=10}
+#Find the most distinctive colours for visual
+colourCount = length(unique(cleaner_data$location))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
+
+cleaner_data %>%
+  mutate(date =lubridate::ymd(year, truncated = 2L), .keep = "unused") %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = year, y = count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_col()+
+  theme_minimal()+
+  labs(title = "Adult Holding Count By Year")+
+  ylim(0, 1500)
+```
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = count, y = location))+
+  geom_boxplot() +
+  theme_minimal()+
+  labs(title = "Adult Holding Count By Reach")
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
+
+**Numeric Annual Summary of count From 1986 to 1996**
+```{r}
+cleaner_data %>%
+  group_by(year) %>%
+  summarise(count = sum(count, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
+```
+### Add cleaned data back onto google cloud
+```{r}
+deer_adult_holding_survey_1986_to_1996 <- cleaner_data %>% glimpse()
+```
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(deer_adult_holding_survey_1986_to_1996,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv")
+```
