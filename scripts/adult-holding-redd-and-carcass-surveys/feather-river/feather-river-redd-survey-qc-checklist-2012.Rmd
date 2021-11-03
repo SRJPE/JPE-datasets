@@ -11,6 +11,7 @@ library(lubridate)
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
+library(rgdal)
 library (RColorBrewer)
 ```
 # Feather River Redd Survey Data  
@@ -331,6 +332,22 @@ summary(cleaner_data_2012$redd_length_m)
 
 
 ### Physical Attributes
+
+### Variable: `longitude and latitude`
+```{r}
+
+utm_coords <- na.omit(subset(cleaner_data_2012, select = c("longitude", "latitude")))
+utm_coords <- SpatialPoints(utm_coords,
+                            proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
+long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
+summary(long_lat_coords)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data_2012$'longitude'))/nrow(cleaner_data_2012), 3)*100` % of values in the `longitude` column are NA.  
+
+* `r round(sum(is.na(cleaner_data_2012$'latitude'))/nrow(cleaner_data_2012), 3)*100` % of values in the `latitude` column are NA.
 
 ### Variable:`percent_fine_substrate`
 ```{r fig.height = 8, fig.width = 8}

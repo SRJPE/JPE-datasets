@@ -541,6 +541,31 @@ summary(cleaner_data_2012$redd_length_m)
 
 ### Physical Attributes
 
+### Variable: `longitude and latitude`
+
+``` r
+utm_coords <- na.omit(subset(cleaner_data_2012, select = c("longitude", "latitude")))
+utm_coords <- SpatialPoints(utm_coords,
+                            proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
+long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
+summary(long_lat_coords)
+```
+
+    ## Object of class SpatialPoints
+    ## Coordinates:
+    ##                   min         max
+    ## longitude -116.587428 -116.568550
+    ## latitude     3.526243    3.530557
+    ## Is projected: FALSE 
+    ## proj4string : [+proj=longlat +datum=WGS84 +no_defs]
+    ## Number of points: 146
+
+**NA and Unknown Values**
+
+-   91.7 % of values in the `longitude` column are NA.
+
+-   91.8 % of values in the `latitude` column are NA.
+
 ### Variable:`percent_fine_substrate`
 
 ``` r
@@ -553,7 +578,7 @@ cleaner_data_2012 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 **Numeric Summary of percent\_fine\_substrate Over 2012**
 
@@ -580,7 +605,7 @@ cleaner_data_2012 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 **Numeric Summary of percent\_small\_substrate Over 2012**
 
@@ -607,7 +632,7 @@ cleaner_data_2012 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 **Numeric Summary of percent\_medium\_substrate Over 2012**
 
@@ -634,7 +659,7 @@ cleaner_data_2012 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Numeric Summary of percent\_large\_substrate Over 2012**
 
@@ -661,7 +686,7 @@ cleaner_data_2012 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 **Numeric Summary of percent\_boulder Over 2012**
 
@@ -700,7 +725,7 @@ cleaner_data_2012 %>%
   labs(title = "Mean Percent Substrate by Location")
 ```
 
-![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 ### Variable: `depth_m`
 
@@ -714,7 +739,7 @@ cleaner_data_2012 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 **Numeric Summary of depth\_m Over 2012**
 
@@ -741,7 +766,7 @@ cleaner_data_2012 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 **Numeric Summary of pot\_depth\_m Over 2012**
 
 ``` r
@@ -767,7 +792,7 @@ cleaner_data_2012 %>%
   guides(fill = guide_legend(nrow = 10))
 ```
 
-![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist-2012_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
 
 **Numeric Summary of velocity\_m\_per\_s Over 2012**
 
@@ -817,28 +842,28 @@ gcs_upload(feather_redd_survey_2012,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv")
 ```
 
-    ## i 2021-10-27 11:20:09 > File size detected as  129.8 Kb
+    ## i 2021-11-03 15:45:09 > File size detected as  129.8 Kb
 
-    ## i 2021-10-27 11:20:09 > Request Status Code:  400
+    ## i 2021-11-03 15:45:10 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-27 11:20:10 > File size detected as  129.8 Kb
+    ## i 2021-11-03 15:45:10 > File size detected as  129.8 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv 
     ## Type:                csv 
     ## Size:                129.8 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv?generation=1635358809536183&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv?generation=1635979509917736&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2012.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv/1635358809536183 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2012.csv/1635979509917736 
     ## MD5 Hash:            XagjuGIC+u5P2YdRXjvrag== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-27 18:20:09 
-    ## Updated:             2021-10-27 18:20:09 
-    ## Generation:          1635358809536183 
+    ## Created:             2021-11-03 22:45:09 
+    ## Updated:             2021-11-03 22:45:09 
+    ## Generation:          1635979509917736 
     ## Meta Generation:     1 
-    ## eTag:                CLftsKea6/MCEAE= 
+    ## eTag:                CKjQscyi/fMCEAE= 
     ## crc32c:              ZvJG8Q==

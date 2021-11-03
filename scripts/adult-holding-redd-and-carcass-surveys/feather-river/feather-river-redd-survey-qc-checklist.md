@@ -169,16 +169,6 @@ clean_data <- combined_data %>%
 ## Explore `date`
 
 ``` r
-clean_data %>%
-  ggplot(aes(x = date)) +
-  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
-  labs(title = "Value Counts For Survey Season Dates")+
-  theme(legend.text = element_text(size = 8))
-```
-
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
-
-``` r
 summary(clean_data$date)
 ```
 
@@ -382,7 +372,7 @@ clean_data %>%
   labs(title = "Daily Salmon Count From 2012 to 2020")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 clean_data %>% 
@@ -401,7 +391,7 @@ clean_data %>%
        y = 'Total Salmon Count')
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 **Numeric Daily Summary of salmon\_count from 2009 to 2020**
 
@@ -435,7 +425,7 @@ clean_data %>%
   labs(title = "Daily Redd Count From 2012 to 2020")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
 clean_data %>% 
@@ -454,7 +444,7 @@ clean_data %>%
        y = 'Total Redd Count')
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 **Numeric Daily Summary of total redd\_count From 2009 to 2020**
 
@@ -484,7 +474,7 @@ clean_data %>%
   theme_minimal()
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 **Numeric Summary of redd\_width\_m from 2009 to 2020**
 
@@ -510,7 +500,7 @@ clean_data %>%
   theme_minimal()
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 **Numeric Summary of redd\_length\_m 2009 to 2020**
 
@@ -539,7 +529,7 @@ clean_data %>%
   labs(title = "Percent Fine Substrate Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ``` r
   # theme(legend.text = element_text(size = 5)) +
@@ -568,7 +558,7 @@ clean_data %>%
   labs(title = "Percent Small Substrate Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Numeric Summary of percent\_small\_substrate from 2009 to 2020**
 
@@ -592,7 +582,7 @@ clean_data %>%
   labs(title = "Percent Medium Substrate Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 **Numeric Summary of percent\_medium\_substrate from 2009 to 2020**
 
@@ -616,7 +606,7 @@ clean_data %>%
   labs(title = "Percent Large Substrate Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 **Numeric Summary of percent\_large\_substrate from 2009 to 2020**
 
@@ -640,7 +630,7 @@ clean_data %>%
   labs(title = "Percent Boulder Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 **Numeric Summary of percent\_boulder from 2009 to 2020**
 
@@ -680,7 +670,7 @@ clean_data %>%
   theme(axis.text=element_text(size = 7))
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 ### Variable: `depth_m`
 
@@ -691,7 +681,7 @@ clean_data %>%
   labs(title = "Depth Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Numeric Summary of depth\_m from 2009 to 2020**
 
@@ -716,7 +706,7 @@ clean_data %>%
   labs(title = "Pot Depth Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 **Numeric Summary of pot\_depth\_m from 2009 to 2020**
 
@@ -737,10 +727,10 @@ summary(clean_data$pot_depth_m)
 clean_data %>%
   ggplot(aes(x = velocity_m_per_s)) +
   geom_histogram(binwidth = 0.2, position = 'stack', color = "black") +
-  labs(title = "Mean Velocity Distribution")
+  labs(title = "Velocity Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 **Numeric Summary of velocity\_m\_per\_s from 2009 to 2020**
 
@@ -754,6 +744,32 @@ summary(clean_data$`velocity_m_per_s`)
 **NA and Unknown Values**
 
 -   88.5 % of values in the `velocity_m_per_s` column are NA.
+
+### Variable: `latitude and longitude`
+
+**Numeric Summary of latitude from 2009 to 2020**
+
+``` r
+summary(clean_data$latitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  392225 4374974 4375010 3997639 4375053 4394990   18818
+
+**Numeric Summary of longitude from 2009 to 2020**
+
+``` r
+summary(clean_data$longitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  617030  623786  624022  682158  624240 6245105   18817
+
+### Notes and Issues:
+
+-   latitude and longitude were not converted to WGS84
+-   2012,2013,2015 latitude and longitude shows inconsistencies and
+    large variations (refer to specific year Markdown for more info)
 
 ### Add cleaned data back onto google cloud
 

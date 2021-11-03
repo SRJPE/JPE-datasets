@@ -186,7 +186,7 @@ cleaner_data_2013 <- cleaner_data_2013 %>%
   mutate(location = str_to_title(location),
          location = if_else(location == "Lower Mcfarland", "Lower McFarland", location),
          location = if_else(location == "Upper Mcfarland", "Upper McFarland", location),
-         location = if_else(location == "Big HoleWest", "Big Hole West", location),
+         location = if_else(location == "Big Holewest", "Big Hole West", location),
          location = if_else(location == "G95 East Bottom", "G95 East Side Channel Bottom", location),
          location = if_else(location == "G95 East Top", "G95 East Side Channel Top", location),
          location = if_else(location == "G95 West", "G95 West Side Channel", location),
@@ -199,7 +199,7 @@ table(cleaner_data_2013$location)
     ## 
     ##                      Big Bar                Big Hole East 
     ##                           15                           21 
-    ##                 Big Holewest                   Big Riffle 
+    ##                Big Hole West                   Big Riffle 
     ##                            6                            7 
     ##            Developing Riffle                          G95 
     ##                            5                           11 
@@ -455,13 +455,21 @@ summary(cleaner_data_2013$redd_length_m)
 ### Variable: `longitude and latitude`
 
 ``` r
-#Issue
-# utm_coords <- na.omit(subset(cleaner_data_2013, select = c("longitude", "latitude")))
-# utm_coords <- SpatialPoints(utm_coords,
-#                             proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
-# long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
-# summary(long_lat_coords)
+utm_coords <- na.omit(subset(cleaner_data_2013, select = c("longitude", "latitude")))
+utm_coords <- SpatialPoints(utm_coords,
+                            proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
+long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
+summary(long_lat_coords)
 ```
+
+    ## Object of class SpatialPoints
+    ## Coordinates:
+    ##                   min         max
+    ## longitude -116.590890 -116.585962
+    ## latitude     3.526248    3.533767
+    ## Is projected: FALSE 
+    ## proj4string : [+proj=longlat +datum=WGS84 +no_defs]
+    ## Number of points: 748
 
 **NA and Unknown Values**
 
@@ -744,28 +752,28 @@ gcs_upload(feather_redd_survey_2013,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2013.csv")
 ```
 
-    ## i 2021-10-27 10:34:02 > File size detected as  69.4 Kb
+    ## i 2021-11-03 15:42:21 > File size detected as  69.4 Kb
 
-    ## i 2021-10-27 10:34:03 > Request Status Code:  400
+    ## i 2021-11-03 15:42:21 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-10-27 10:34:03 > File size detected as  69.4 Kb
+    ## i 2021-11-03 15:42:21 > File size detected as  69.4 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2013.csv 
     ## Type:                csv 
     ## Size:                69.4 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2013.csv?generation=1635356042731267&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2013.csv?generation=1635979341342576&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2013.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Ffeather-river%2Fdata%2Ffeather_redd_2013.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2013.csv/1635356042731267 
-    ## MD5 Hash:            ZJnh4mSQyBF7SkCEMHWrYA== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_2013.csv/1635979341342576 
+    ## MD5 Hash:            NCqd1U3X4O8578mJrKB1pw== 
     ## Class:               STANDARD 
-    ## Created:             2021-10-27 17:34:02 
-    ## Updated:             2021-10-27 17:34:02 
-    ## Generation:          1635356042731267 
+    ## Created:             2021-11-03 22:42:21 
+    ## Updated:             2021-11-03 22:42:21 
+    ## Generation:          1635979341342576 
     ## Meta Generation:     1 
-    ## eTag:                CIO+iICQ6/MCEAE= 
-    ## crc32c:              FT/syQ==
+    ## eTag:                CPDOgPyh/fMCEAE= 
+    ## crc32c:              VhWlwQ==

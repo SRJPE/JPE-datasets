@@ -310,12 +310,12 @@ summary(cleaner_data_2013$redd_length_m)
 
 ### Variable: `longitude and latitude`
 ```{r}
-#Issue
-# utm_coords <- na.omit(subset(cleaner_data_2013, select = c("longitude", "latitude")))
-# utm_coords <- SpatialPoints(utm_coords,
-#                             proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
-# long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
-# summary(long_lat_coords)
+
+utm_coords <- na.omit(subset(cleaner_data_2013, select = c("longitude", "latitude")))
+utm_coords <- SpatialPoints(utm_coords,
+                            proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
+long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
+summary(long_lat_coords)
 ```
 
 **NA and Unknown Values**

@@ -84,13 +84,6 @@ clean_data <- combined_data %>%
 
 
 ## Explore `date`
-```{r}
-clean_data %>%
-  ggplot(aes(x = date)) +
-  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
-  labs(title = "Value Counts For Survey Season Dates")+
-  theme(legend.text = element_text(size = 8))
-```
 
 ```{r}
 summary(clean_data$date)
@@ -425,7 +418,7 @@ summary(clean_data$pot_depth_m)
 clean_data %>%
   ggplot(aes(x = velocity_m_per_s)) +
   geom_histogram(binwidth = 0.2, position = 'stack', color = "black") +
-  labs(title = "Mean Velocity Distribution")
+  labs(title = "Velocity Distribution")
 ```
 
 **Numeric Summary of velocity_m_per_s from 2009 to 2020**
@@ -437,6 +430,24 @@ summary(clean_data$`velocity_m_per_s`)
 
 * `r round(sum(is.na(clean_data$'velocity_m_per_s'))/nrow(clean_data), 3)*100` % of values in the `velocity_m_per_s` column are NA.
 
+### Variable: `latitude and longitude`
+
+**Numeric Summary of latitude from 2009 to 2020**
+
+```{r}
+summary(clean_data$latitude)
+```
+
+**Numeric Summary of longitude from 2009 to 2020**
+```{r}
+summary(clean_data$longitude)
+```
+
+
+### Notes and Issues:
+
+* latitude and longitude were not converted to WGS84
+* 2012,2013,2015 latitude and longitude shows inconsistencies and large variations (refer to specific year Markdown for more info)
 
 ### Add cleaned data back onto google cloud
 ```{r}
