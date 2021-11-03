@@ -1,5 +1,5 @@
 ---
-title: "mill-creek-redd-survey-qc-checklist"
+title: "mill-creek-adult-holding-survey-qc-checklist"
 author: "Inigo Peng"
 date: "10/19/2021"
 output: rmarkdown::github_document
@@ -13,7 +13,7 @@ library(ggplot2)
 library(scales)
 library (RColorBrewer)
 ```
-# Mill Creek Redd Survey Data 
+# Mill Creek Adult Holding Survey Data 
 
 **Description of Monitoring Data**
 
@@ -68,12 +68,12 @@ gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/mill-creek/data-raw/Mill Creek SRCS Redd Counts by Section 1997-2020 Reformatted.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "mill_creek_redd_raw.xlsx")
+               saveToDisk = "mill_creek_holding_raw.xlsx")
                # Overwrite = TRUE)
 ```
 
 ```{r}
-raw_data = readxl::read_excel('mill_creek_redd_raw.xlsx',
+raw_data = readxl::read_excel('mill_creek_holding_raw.xlsx',
                               sheet = '2007-2020 SR redds') %>% 
   glimpse()
 ```
@@ -88,7 +88,7 @@ cleaner_data <- raw_data %>%
   filter(row_number() <= n()-2) %>% 
   pivot_longer(3:26,
   names_to = "year",
-  values_to = "redd_count") %>%
+  values_to = "count") %>%
   mutate(year = as.numeric(substr(year, 1,4)),
          starting_elevation_ft = as.numeric(str_replace(starting_elevation_ft, "'$", ""))) %>% 
   glimpse()
@@ -109,7 +109,7 @@ table(cleaner_data$location)
 
 ## Explore Numeric Variables
 
-### Variable `redd_count`
+### Variable `count`
 ```{r fig.height=7, fig.width=10}
 #Find the most distinctive colours for visual
 colourCount = length(unique(cleaner_data$location))
@@ -121,7 +121,7 @@ cleaner_data %>%
   scale_fill_manual(values = getPalette(colourCount))+
   geom_col()+
   theme_minimal()+
-  labs(title = "Adult Redd Count By Year")+
+  labs(title = "Adult Holding Count By Year")+
   ylim(0, 800)+
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 ```
@@ -130,7 +130,7 @@ cleaner_data %>%
   ggplot(aes(x = count, y = location))+
   geom_boxplot() +
   theme_minimal()+
-  labs(title = "Redd Count By Reach")
+  labs(title = "Adult Holding Count By Reach")
 ```
 
 **Numeric Annual Summary of count From 1997 to 2020**
@@ -155,7 +155,7 @@ cleaner_data %>%
   geom_col() +
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 90, size = 7))+
-  labs(title = "Starting Elevation By Reach")
+  labs(title = "Adult Holding Count By Reach")
 ```
 
 **Numeric Summary of starting_elevation_ft From 1997 to 2020**
@@ -172,12 +172,12 @@ cleaner_data %>%
 
 ### Add cleaned data back onto google cloud
 ```{r}
-mill_redd_survey <- cleaner_data %>% glimpse()
+mill_adult_holding_survey <- cleaner_data %>% glimpse()
 ```
 ```{r}
 f <- function(input, output) write_csv(input, file = output)
-gcs_upload(mill_redd_survey,
+gcs_upload(mill_adult_holding_survey,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv")
+           name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv")
 ```
