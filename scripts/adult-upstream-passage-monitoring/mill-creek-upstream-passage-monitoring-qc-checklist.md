@@ -315,28 +315,28 @@ gcs_upload(mill_upstream_estimate,
            name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv")
 ```
 
-    ## i 2021-11-02 17:01:59 > File size detected as  48.6 Kb
+    ## i 2021-11-03 08:42:37 > File size detected as  48.6 Kb
 
-    ## i 2021-11-02 17:02:00 > Request Status Code:  400
+    ## i 2021-11-03 08:42:38 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-02 17:02:00 > File size detected as  48.6 Kb
+    ## i 2021-11-03 08:42:38 > File size detected as  48.6 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv 
     ## Type:                csv 
     ## Size:                48.6 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv?generation=1635897718758420&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv?generation=1635954158392860&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv/1635897718758420 
+    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv/1635954158392860 
     ## MD5 Hash:            dlaBSTRDmM3oyQSlNqDS4w== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-03 00:01:58 
-    ## Updated:             2021-11-03 00:01:58 
-    ## Generation:          1635897718758420 
+    ## Created:             2021-11-03 15:42:38 
+    ## Updated:             2021-11-03 15:42:38 
+    ## Generation:          1635954158392860 
     ## Meta Generation:     1 
-    ## eTag:                CJS4qfPx+vMCEAE= 
+    ## eTag:                CJys65PE/PMCEAE= 
     ## crc32c:              35Ok/w==
