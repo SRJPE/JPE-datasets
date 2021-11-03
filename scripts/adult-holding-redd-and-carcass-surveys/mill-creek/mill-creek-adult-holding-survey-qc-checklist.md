@@ -1,9 +1,9 @@
-mill-creek-adult-holding-survey-qc-checklist
+mill-creek-redd-survey-qc-checklist
 ================
 Inigo Peng
 10/19/2021
 
-# Mill Creek Adult Holding Survey Data
+# Mill Creek Redd Survey Data
 
 **Description of Monitoring Data**
 
@@ -22,7 +22,7 @@ Inigo Peng
 -   Missing some elevation data
 -   Buckhorn Gulch To Upper Dam missing significant count data
 -   Savercool Place To Black Rock and Canyon Camp to Sooner Place
-    missing count data from 1997 - 2006
+    missing redd count data from 1997 - 2006
 
 **Sampling Location:**
 
@@ -57,12 +57,12 @@ gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/mill-creek/data-raw/Mill Creek SRCS Redd Counts by Section 1997-2020 Reformatted.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "mill_creek_holding_raw.xlsx")
+               saveToDisk = "mill_creek_redd_raw.xlsx")
                # Overwrite = TRUE)
 ```
 
 ``` r
-raw_data = readxl::read_excel('mill_creek_holding_raw.xlsx',
+raw_data = readxl::read_excel('mill_creek_redd_raw.xlsx',
                               sheet = '2007-2020 SR redds') %>% 
   glimpse()
 ```
@@ -131,7 +131,7 @@ cleaner_data <- raw_data %>%
   filter(row_number() <= n()-2) %>% 
   pivot_longer(3:26,
   names_to = "year",
-  values_to = "count") %>%
+  values_to = "redd_count") %>%
   mutate(year = as.numeric(substr(year, 1,4)),
          starting_elevation_ft = as.numeric(str_replace(starting_elevation_ft, "'$", ""))) %>% 
   glimpse()
@@ -142,7 +142,7 @@ cleaner_data <- raw_data %>%
     ## $ location              <chr> "Above Hwy 36", "Above Hwy 36", "Above Hwy 36", ~
     ## $ starting_elevation_ft <dbl> 5200, 5200, 5200, 5200, 5200, 5200, 5200, 5200, ~
     ## $ year                  <dbl> 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, ~
-    ## $ count                 <dbl> 0, NA, NA, NA, NA, 12, 0, 0, 7, 19, 3, 1, 0, 17,~
+    ## $ redd_count            <dbl> 0, NA, NA, NA, NA, 12, 0, 0, 7, 19, 3, 1, 0, 17,~
 
 ## Explore Categorical Variables
 
@@ -178,7 +178,7 @@ table(cleaner_data$location)
 
 ## Explore Numeric Variables
 
-### Variable `count`
+### Variable `redd_count`
 
 ``` r
 #Find the most distinctive colours for visual
@@ -187,11 +187,11 @@ getPalette = colorRampPalette(brewer.pal(12, "Paired"))
 cleaner_data %>%
   mutate(date =lubridate::ymd(year, truncated = 2L), .keep = "unused") %>% 
   mutate(year = as.factor(year(date))) %>% 
-  ggplot(aes(x = year, y = count, fill = location))+
+  ggplot(aes(x = year, y = redd_count, fill = location))+
   scale_fill_manual(values = getPalette(colourCount))+
   geom_col()+
   theme_minimal()+
-  labs(title = "Adult Holding Count By Year")+
+  labs(title = "Adult Redd Count By Year")+
   ylim(0, 800)+
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 ```
@@ -200,20 +200,20 @@ cleaner_data %>%
 
 ``` r
 cleaner_data %>% 
-  ggplot(aes(x = count, y = location))+
+  ggplot(aes(x = redd_count, y = location))+
   geom_boxplot() +
   theme_minimal()+
-  labs(title = "Adult Holding Count By Reach")
+  labs(title = "Redd Count By Reach")
 ```
 
 ![](mill-creek-adult-holding-survey-qc-checklist_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-**Numeric Annual Summary of count From 1997 to 2020**
+**Numeric Annual Summary of redd\_count From 1997 to 2020**
 
 ``` r
 cleaner_data %>%
   group_by(year) %>%
-  summarise(count = sum(count, na.rm = T)) %>%
+  summarise(count = sum(redd_count, na.rm = T)) %>%
   pull(count) %>%
   summary()
 ```
@@ -223,7 +223,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   11.4 % of values in the `count` column are NA.
+-   11.4 % of values in the `redd_count` column are NA.
 
 ### Variable `starting_elevation_ft`
 
@@ -234,7 +234,7 @@ cleaner_data %>%
   geom_col() +
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 90, size = 7))+
-  labs(title = "Adult Holding Count By Reach")
+  labs(title = "Starting Elevation By Reach")
 ```
 
 ![](mill-creek-adult-holding-survey-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
@@ -253,12 +253,12 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   53.3 % of values in the `count` column are NA.
+-   53.3 % of values in the `starting_elevation_ft` column are NA.
 
 ### Add cleaned data back onto google cloud
 
 ``` r
-mill_adult_holding_survey <- cleaner_data %>% glimpse()
+mill_redd_survey <- cleaner_data %>% glimpse()
 ```
 
     ## Rows: 360
@@ -266,38 +266,38 @@ mill_adult_holding_survey <- cleaner_data %>% glimpse()
     ## $ location              <chr> "Above Hwy 36", "Above Hwy 36", "Above Hwy 36", ~
     ## $ starting_elevation_ft <dbl> 5200, 5200, 5200, 5200, 5200, 5200, 5200, 5200, ~
     ## $ year                  <dbl> 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, ~
-    ## $ count                 <dbl> 0, NA, NA, NA, NA, 12, 0, 0, 7, 19, 3, 1, 0, 17,~
+    ## $ redd_count            <dbl> 0, NA, NA, NA, NA, 12, 0, 0, 7, 19, 3, 1, 0, 17,~
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
-gcs_upload(mill_adult_holding_survey,
+gcs_upload(mill_redd_survey,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv")
+           name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv")
 ```
 
-    ## i 2021-11-02 10:28:43 > File size detected as  14.5 Kb
+    ## i 2021-11-03 16:15:12 > File size detected as  14.5 Kb
 
-    ## i 2021-11-02 10:28:44 > Request Status Code:  400
+    ## i 2021-11-03 16:15:13 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-02 10:28:44 > File size detected as  14.5 Kb
+    ## i 2021-11-03 16:15:13 > File size detected as  14.5 Kb
 
     ## ==Google Cloud Storage Object==
-    ## Name:                adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv 
+    ## Name:                adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv 
     ## Type:                csv 
     ## Size:                14.5 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv?generation=1635874123296105&alt=media 
-    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv 
-    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_adult_holding_survey.csv 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv?generation=1635981312774594&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_adult_holding_survey.csv/1635874123296105 
-    ## MD5 Hash:            XJB68WbwVJxACxP1cUP5Mg== 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv/1635981312774594 
+    ## MD5 Hash:            nGmPSVEMp9ar2Ex5/c8lhg== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-02 17:28:43 
-    ## Updated:             2021-11-02 17:28:43 
-    ## Generation:          1635874123296105 
+    ## Created:             2021-11-03 23:15:12 
+    ## Updated:             2021-11-03 23:15:12 
+    ## Generation:          1635981312774594 
     ## Meta Generation:     1 
-    ## eTag:                COnakICa+vMCEAE= 
-    ## crc32c:              XbBhGA==
+    ## eTag:                CMKjh6ip/fMCEAE= 
+    ## crc32c:              buod9A==
