@@ -18,7 +18,7 @@ library(gridExtra)
 
 ## Description of Monitoring Data:
 
-Robyn Bilski sent the Yuba RST data in an Access Database via email. The data is limited to just from 2000 to 2008. Initial query in the Access Database was required before uploading it to Googlecloud. Furhter information regarding the data could be found in the Draft CAMP screw trap database dictionary.doc and Rotary Screws Traps Report 2007-2008. 
+Robyn Bilski sent the Yuba RST data in an Access Database via email. The data is limited to 2000 through 2008. Initial query in the Access Database was required before uploading it to Googlecloud. Further information regarding the data can be found in the Draft CAMP screw trap database dictionary.doc and Rotary Screws Traps Report 2007-2008. 
 
 **Timeframe:** 2000-2009
 
@@ -66,7 +66,7 @@ glimpse(raw_data)
 
 ```{r}
 cleaner_data <- raw_data %>% 
-  select(-c('Sample_Entry_SampleRowID','Catch_Entry_SampleRowID', 'CatchRowID', 'Comments', 'Northing', 'Easting')) %>% 
+  select(-c('Sample_Entry_SampleRowID','Catch_Entry_SampleRowID', 'CatchRowID', 'Northing', 'Easting')) %>% #Northing, Easting are NA, 
   rename('date'= SampleDate,
          'time' = SampleTime,
          'method' = MethodCode,
@@ -80,10 +80,11 @@ cleaner_data <- raw_data %>%
          'rpms_after' = RPMsAfter,
          'organism_code' = OrganismCode,
          'fork_length' = ForkLength,
-         'lifestage' = StageCode
+         'lifestage' = StageCode,
+         'comments' = Comments
          ) %>%
-  mutate(time = hms::as_hms(time)) %>%
-  filter(organism_code == 'CHN', rm.na = TRUE)
+  mutate(time = hms::as_hms(time))
+  # filter(organism_code == 'CHN', rm.na = TRUE)
 cleaner_data <- cleaner_data %>% 
   set_names(tolower(colnames(cleaner_data))) %>% 
   glimpse()
@@ -93,6 +94,27 @@ cleaner_data <- cleaner_data %>%
 ```{r}
 cleaner_data %>% select_if(is.character) %>% colnames()
 ```
+### Variable: `organism_code`
+
+**Description: organism_code indicate the alphanumeric code for a species of fish or other organism present in the catch.**
+
+```{r}
+table(cleaner_data$organism_code)
+```
+
+Filtering data by Chinooks only.
+```{r}
+cleaner_data <- cleaner_data %>% 
+  filter(organism_code == "CHN")
+
+table(cleaner_data$organism_code)
+```
+
+
+**NA and Unknown Values**  
+
+* `r round(sum(is.na(cleaner_data$'organism_code'))/nrow(cleaner_data), 3)*100` % of values in the `organism_code` column are NA.
+
 ### Variable: `method`
 
 **Description: 'method' is an alphanumeric code defining the type of sampling action taken.**
@@ -108,7 +130,7 @@ table(cleaner_data$method)
 cleaner_data <- cleaner_data %>% 
   mutate(method = case_when(
     method == "FSR" ~ "fish screen diversion trap",
-    method == "RSTR" ~ "rotary screen trap"
+    method == "RSTR" ~ "rotary screw trap"
   ))
 table(cleaner_data$method)
 ```
@@ -122,21 +144,14 @@ table(cleaner_data$method)
 **Description: trap_status indicate if trap was checked for fish or just set or pulled.**
 
 ```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(trap_status = set_names(tolower(trap_status)))
 table(cleaner_data$trap_status) 
 ```
 **NA and Unknown Values**  
 
 * `r round(sum(is.na(cleaner_data$'trap_status'))/nrow(cleaner_data), 3)*100` % of values in the `trap_status` column are NA.
 
-### Variable: `organism_code`
-
-**Description: organism_code indicate the alphanumeric code for a species of fish or other oragnism present in the catch.**
-
-Note: previously filtered data to Chinook salmon only. 
-
-**NA and Unknown Values**  
-
-* `r round(sum(is.na(cleaner_data$'organism_code'))/nrow(cleaner_data), 3)*100` % of values in the `organism_code` column are NA.
 
 ### Variable: `lifestage`
 
@@ -215,7 +230,7 @@ cleaner_data %>%
 
 ### Variable:`temperature`
 
-**Description: temperature measured with an ACME Industries infrared Cramomatic 444 automatic sensor. Units: degrees Celsius.** 
+**Description: water temperature measured with an ACME Industries infrared Cramomatic 444 automatic sensor. Units: degrees Celsius.** 
 
 ```{r}
 cleaner_data %>% 
@@ -515,6 +530,13 @@ summary(cleaner_data$rpms_after)
 
 
 ### Variable:`fork_length`
+
+Transforming fork_length = 0 to NA as there shouldn't be any actual 0 fork_length values
+
+```{r}
+cleaner_data$fork_length[cleaner_data$fork_length == 0] <- NA
+```
+
 ```{r}
 cleaner_data %>%
   filter(fork_length < 200) %>%  #filter out outlier bigger than 110 for more clear distribution graph
@@ -556,6 +578,8 @@ summary(cleaner_data$fork_length)
 
 ### Variable:`weight`
 
+**Description:** Unit grams
+
 ```{r}
 #Filter out 216 points with weight bigger than 12 for a more clear distribution graph
 cleaner_data %>% 
@@ -577,7 +601,7 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of weight from 1999 to 2009**
+**Numeric Daily Summary of weight from 1999 to 2009**
 ```{r}
 summary(cleaner_data$weight)
 ```
@@ -635,7 +659,7 @@ cleaner_data  %>%
 ```
 
 
-**Numeric Summary of count from 1999 to 2009**
+**Numeric Daily Summary of count from 1999 to 2009**
 ```{r}
 summary(cleaner_data$count)
 ```
@@ -646,13 +670,17 @@ summary(cleaner_data$count)
 
 ### Identified issues with this dataset
 
+* Fish screen diversion trap is only for some years. Maybe could be filtered out when standardizing the data.
+
 * There is significant high temperature days (in the 60s) in the early 2000s. On the same day, different trap locations had temperature difference of up to 45 degrees. 
 
 * TrapRevolutions and TrapRevolutions2 both have about 200 points that are significantly higher (750,000 revolutions vs 30,000 revolutions) 
 
+* Depending on the importance of trap revolution and rpms data, we might need more metadata to describe the variable.
+
 * A few outliers for both weight and forklength measured. 
 
-* 2005 had the highest fish count followed by 2009 and 2008.
+* 2005 had the highest fish count followed by 2009 and 2008.However some of these values are extremely big such as max count of 85000/day.
 
 ### Add cleaned data back to google cloud 
 

@@ -8,10 +8,10 @@ Inigo Peng
 ## Description of Monitoring Data:
 
 Robyn Bilski sent the Yuba RST data in an Access Database via email. The
-data is limited to just from 2000 to 2008. Initial query in the Access
-Database was required before uploading it to Googlecloud. Furhter
-information regarding the data could be found in the Draft CAMP screw
-trap database dictionary.doc and Rotary Screws Traps Report 2007-2008.
+data is limited to 2000 through 2008. Initial query in the Access
+Database was required before uploading it to Googlecloud. Further
+information regarding the data can be found in the Draft CAMP screw trap
+database dictionary.doc and Rotary Screws Traps Report 2007-2008.
 
 **Timeframe:** 2000-2009
 
@@ -82,7 +82,7 @@ glimpse(raw_data)
 
 ``` r
 cleaner_data <- raw_data %>% 
-  select(-c('Sample_Entry_SampleRowID','Catch_Entry_SampleRowID', 'CatchRowID', 'Comments', 'Northing', 'Easting')) %>% 
+  select(-c('Sample_Entry_SampleRowID','Catch_Entry_SampleRowID', 'CatchRowID', 'Northing', 'Easting')) %>% #Northing, Easting are NA, 
   rename('date'= SampleDate,
          'time' = SampleTime,
          'method' = MethodCode,
@@ -96,17 +96,18 @@ cleaner_data <- raw_data %>%
          'rpms_after' = RPMsAfter,
          'organism_code' = OrganismCode,
          'fork_length' = ForkLength,
-         'lifestage' = StageCode
+         'lifestage' = StageCode,
+         'comments' = Comments
          ) %>%
-  mutate(time = hms::as_hms(time)) %>%
-  filter(organism_code == 'CHN', rm.na = TRUE)
+  mutate(time = hms::as_hms(time))
+  # filter(organism_code == 'CHN', rm.na = TRUE)
 cleaner_data <- cleaner_data %>% 
   set_names(tolower(colnames(cleaner_data))) %>% 
   glimpse()
 ```
 
-    ## Rows: 133,217
-    ## Columns: 18
+    ## Rows: 168,869
+    ## Columns: 19
     ## $ date              <dttm> 2000-05-07, 2000-05-07, 2000-05-07, 2000-05-07, 200~
     ## $ time              <time> 10:00:00, 10:00:00, 10:00:00, 10:00:00, 10:00:00, 1~
     ## $ method            <chr> "FSR", "FSR", "FSR", "FSR", "FSR", "FSR", "FSR", "FS~
@@ -119,11 +120,12 @@ cleaner_data <- cleaner_data %>%
     ## $ debris            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ rpms_before       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ rpms_after        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ comments          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ organism_code     <chr> "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CH~
-    ## $ fork_length       <dbl> 79, 80, 73, 70, 56, 92, 53, 74, 56, 69, 77, 77, 76, ~
+    ## $ fork_length       <dbl> 79, 80, 73, 70, 56, 92, 53, 74, 56, 69, 77, 77, 88, ~
     ## $ weight            <dbl> 5.29, 5.14, 4.14, 0.00, 0.00, 0.00, 0.00, 4.81, 1.87~
     ## $ lifestage         <chr> "n/p", "n/p", "n/p", "n/p", "n/p", "n/p", "n/p", "n/~
-    ## $ count             <dbl> 1, 1, 1, 3, 2, 2, 2, 1, 1, 2, 2, 1, 1, 2, 3, 1, 1, 2~
+    ## $ count             <dbl> 1, 1, 1, 3, 2, 2, 2, 1, 1, 2, 2, 1, 1, 1, 1, 2, 3, 1~
     ## $ location          <chr> "RST 1 at Hallwood on Yuba River", "RST 1 at Hallwoo~
 
 ## Explore Categorical Variables
@@ -132,8 +134,46 @@ cleaner_data <- cleaner_data %>%
 cleaner_data %>% select_if(is.character) %>% colnames()
 ```
 
-    ## [1] "method"        "trap_status"   "debris"        "organism_code"
-    ## [5] "lifestage"     "location"
+    ## [1] "method"        "trap_status"   "debris"        "comments"     
+    ## [5] "organism_code" "lifestage"     "location"
+
+### Variable: `organism_code`
+
+**Description: organism\_code indicate the alphanumeric code for a
+species of fish or other organism present in the catch.**
+
+``` r
+table(cleaner_data$organism_code)
+```
+
+    ## 
+    ##     AMS     BAS     BGS     BKB     BKS     BRB      BT       C     CAR     CAT 
+    ##     123       3     713       1       6      17       1      10     244       2 
+    ##     CHC     CHN     FHM     GSF     GSM     GSN     HCH      HH     LAM     LMB 
+    ##      13  133217       2     193       2    1226      54     564       8     909 
+    ##      LP     MIN     MQF NOCATCH      PL     PPE     PRS     RES     RFK     RFL 
+    ##       2       6     219      78    3376       1    1683     471       1       2 
+    ##     RFS      RL     RSH     SAS    SASQ    SASU      SH     SIL     SMB     SPD 
+    ##    3204     344     462     113    3482    3204   12577      23      69    1093 
+    ##     SUN     TFS      TP     UNK       W     WAG     WHC     WHS 
+    ##       5     791     235       3     100       4      11       2
+
+Filtering data by Chinooks only.
+
+``` r
+cleaner_data <- cleaner_data %>% 
+  filter(organism_code == "CHN")
+
+table(cleaner_data$organism_code)
+```
+
+    ## 
+    ##    CHN 
+    ## 133217
+
+**NA and Unknown Values**
+
+-   0 % of values in the `organism_code` column are NA.
 
 ### Variable: `method`
 
@@ -156,13 +196,13 @@ table(cleaner_data$method)
 cleaner_data <- cleaner_data %>% 
   mutate(method = case_when(
     method == "FSR" ~ "fish screen diversion trap",
-    method == "RSTR" ~ "rotary screen trap"
+    method == "RSTR" ~ "rotary screw trap"
   ))
 table(cleaner_data$method)
 ```
 
     ## 
-    ## fish screen diversion trap         rotary screen trap 
+    ## fish screen diversion trap          rotary screw trap 
     ##                       3683                     129534
 
 **NA and Unknown Values**
@@ -175,27 +215,18 @@ table(cleaner_data$method)
 just set or pulled.**
 
 ``` r
+cleaner_data <- cleaner_data %>% 
+  mutate(trap_status = set_names(tolower(trap_status)))
 table(cleaner_data$trap_status) 
 ```
 
     ## 
-    ## Breached    Check     Pull      Set Set/Pull 
+    ## breached    check     pull      set set/pull 
     ##       48   130279      308      571      392
 
 **NA and Unknown Values**
 
 -   1.2 % of values in the `trap_status` column are NA.
-
-### Variable: `organism_code`
-
-**Description: organism\_code indicate the alphanumeric code for a
-species of fish or other oragnism present in the catch.**
-
-Note: previously filtered data to Chinook salmon only.
-
-**NA and Unknown Values**
-
--   0 % of values in the `organism_code` column are NA.
 
 ### Variable: `lifestage`
 
@@ -246,19 +277,20 @@ cleaner_data <- cleaner_data %>%
 ```
 
     ## Rows: 133,217
-    ## Columns: 19
+    ## Columns: 20
     ## $ date              <dttm> 2000-05-07, 2000-05-07, 2000-05-07, 2000-05-07, 200~
     ## $ time              <time> 10:00:00, 10:00:00, 10:00:00, 10:00:00, 10:00:00, 1~
     ## $ method            <chr> "fish screen diversion trap", "fish screen diversion~
     ## $ temperature       <dbl> 11.5, 11.5, 11.5, 11.5, 11.5, 11.5, 11.5, 11.5, 11.5~
     ## $ turbidity         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ velocity          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ trap_status       <chr> "Check", "Check", "Check", "Check", "Check", "Check"~
+    ## $ trap_status       <chr> "check", "check", "check", "check", "check", "check"~
     ## $ trap_revolutions  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ trap_revolutions2 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ debris            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ rpms_before       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ rpms_after        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ comments          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ organism_code     <chr> "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CH~
     ## $ fork_length       <dbl> 79, 80, 73, 70, 56, 92, 53, 74, 56, 69, 77, 77, 76, ~
     ## $ weight            <dbl> 5.29, 5.14, 4.14, 0.00, 0.00, 0.00, 0.00, 4.81, 1.87~
@@ -322,8 +354,8 @@ cleaner_data %>%
 
 ### Variable:`temperature`
 
-**Description: temperature measured with an ACME Industries infrared
-Cramomatic 444 automatic sensor. Units: degrees Celsius.**
+**Description: water temperature measured with an ACME Industries
+infrared Cramomatic 444 automatic sensor. Units: degrees Celsius.**
 
 ``` r
 cleaner_data %>% 
@@ -345,7 +377,7 @@ cleaner_data %>%
        x = "Date")  
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 There are a series of temperature points that is above 50 degrees
 celsius. It is unlikely that the water reached such high temperature.
@@ -362,7 +394,7 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 **Numeric Summary of temperature From 1999 to 2009**
 
@@ -401,7 +433,7 @@ cleaner_data %>%
        x = "Turbidity (NTU)")
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -423,7 +455,7 @@ cleaner_data %>%
        x = "Date")  
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -437,7 +469,7 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Numeric Summary of turbidity 1999 to 2009**
 
@@ -473,7 +505,7 @@ cleaner_data %>%
        x = 'Water Velocity (m/s)')
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -495,7 +527,7 @@ cleaner_data %>%
        x = "Date")  
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -509,7 +541,7 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 **Numeric Summary of velocity 1999 to 2009**
 
@@ -554,7 +586,7 @@ revolution_plot_2 <- cleaner_data %>%
 grid.arrange(revolution_plot_1, revolution_plot_2, ncol=2)
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 The trap\_revolutions have a 277 points at revolution between 112178 rpm
 and 890793 rpm. These points are significantly higher than the rest of
@@ -602,7 +634,7 @@ revolution2_plot_2 <- cleaner_data %>%
 grid.arrange(revolution2_plot_1, revolution2_plot_2, ncol=2)
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 
 The trap\_revolutions have a 220 points at revolution between 112178 rpm
 and 890793 rpm. These points are significantly higher than the rest of
@@ -637,7 +669,7 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 **Numeric Summary of rpms\_before 1999 to 2009**
 
@@ -669,7 +701,7 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 
 **Numeric Summary of rpms\_after 1999 to 2009**
 
@@ -686,6 +718,13 @@ summary(cleaner_data$rpms_after)
 
 ### Variable:`fork_length`
 
+Transforming fork\_length = 0 to NA as there shouldn’t be any actual 0
+fork\_length values
+
+``` r
+cleaner_data$fork_length[cleaner_data$fork_length == 0] <- NA
+```
+
 ``` r
 cleaner_data %>%
   filter(fork_length < 200) %>%  #filter out outlier bigger than 110 for more clear distribution graph
@@ -695,7 +734,7 @@ cleaner_data %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1 ))
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -710,7 +749,7 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -723,7 +762,7 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
 
 **Numeric Summary of fork\_length from 1999 to 2009**
 
@@ -731,14 +770,16 @@ cleaner_data %>%
 summary(cleaner_data$fork_length)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##    0.00   36.00   39.00   46.93   59.00  723.00
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##     1.0    37.0    39.0    48.1    59.0   723.0    3223
 
 **NA and Unknown Values**
 
--   0 % of values in the `fork_length` column are NA.
+-   2.4 % of values in the `fork_length` column are NA.
 
 ### Variable:`weight`
+
+**Description:** Unit grams
 
 ``` r
 #Filter out 216 points with weight bigger than 12 for a more clear distribution graph
@@ -751,7 +792,7 @@ cleaner_data %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1 ))
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -764,9 +805,9 @@ cleaner_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
 
-**Numeric Summary of weight from 1999 to 2009**
+**Numeric Daily Summary of weight from 1999 to 2009**
 
 ``` r
 summary(cleaner_data$weight)
@@ -803,7 +844,7 @@ cleaner_data %>%
   facet_wrap(~water_year, scales = "free")
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
 
 ``` r
 cleaner_data  %>%
@@ -818,7 +859,7 @@ cleaner_data  %>%
   facet_wrap(~run, scales = "free_y")
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
 
 ``` r
 cleaner_data  %>%
@@ -833,9 +874,9 @@ cleaner_data  %>%
   facet_wrap(~lifestage, scales = "free_y")
 ```
 
-![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
+![](yuba-river-rst-qc-checklist_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
 
-**Numeric Summary of count from 1999 to 2009**
+**Numeric Daily Summary of count from 1999 to 2009**
 
 ``` r
 summary(cleaner_data$count)
@@ -850,6 +891,9 @@ summary(cleaner_data$count)
 
 ### Identified issues with this dataset
 
+-   Fish screen diversion trap is only for some years. Maybe could be
+    filtered out when standardizing the data.
+
 -   There is significant high temperature days (in the 60s) in the early
     2000s. On the same day, different trap locations had temperature
     difference of up to 45 degrees.
@@ -857,9 +901,14 @@ summary(cleaner_data$count)
 -   TrapRevolutions and TrapRevolutions2 both have about 200 points that
     are significantly higher (750,000 revolutions vs 30,000 revolutions)
 
+-   Depending on the importance of trap revolution and rpms data, we
+    might need more metadata to describe the variable.
+
 -   A few outliers for both weight and forklength measured.
 
--   2005 had the highest fish count followed by 2009 and 2008.
+-   2005 had the highest fish count followed by 2009 and 2008.However
+    some of these values are extremely big such as max count of
+    85000/day.
 
 ### Add cleaned data back to google cloud
 
@@ -871,19 +920,20 @@ yuba_rst <- cleaner_data %>% glimpse()
 ```
 
     ## Rows: 133,217
-    ## Columns: 19
+    ## Columns: 20
     ## $ date              <dttm> 2000-05-07, 2000-05-07, 2000-05-07, 2000-05-07, 200~
     ## $ time              <time> 10:00:00, 10:00:00, 10:00:00, 10:00:00, 10:00:00, 1~
     ## $ method            <chr> "fish screen diversion trap", "fish screen diversion~
     ## $ temperature       <dbl> 11.5, 11.5, 11.5, 11.5, 11.5, 11.5, 11.5, 11.5, 11.5~
     ## $ turbidity         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ velocity          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ trap_status       <chr> "Check", "Check", "Check", "Check", "Check", "Check"~
+    ## $ trap_status       <chr> "check", "check", "check", "check", "check", "check"~
     ## $ trap_revolutions  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ trap_revolutions2 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ debris            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ rpms_before       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ rpms_after        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ comments          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ organism_code     <chr> "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CH~
     ## $ fork_length       <dbl> 79, 80, 73, 70, 56, 92, 53, 74, 56, 69, 77, 77, 76, ~
     ## $ weight            <dbl> 5.29, 5.14, 4.14, 0.00, 0.00, 0.00, 0.00, 4.81, 1.87~
