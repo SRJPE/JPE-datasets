@@ -1,0 +1,233 @@
+---
+title: "clear_holding_survey_qc"
+author: "Inigo Peng"
+date: "11/4/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+```
+
+
+# Clear Creek Adult Holding Survey 
+
+## Description of Monitoring Data
+
+These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon redd index data from 2000 to 2019, spring-run Chinook Salmon escapent index surveys from 2008 to 2019, and spring-run Chinook Salmon carcasses retrieved on redd and escapement index surveys from 2008 to 2019 on Clear Creek. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
+
+
+**Timeframe:** 2008 - 2019
+
+**Completeness of Record throughout timeframe:** 
+
+**Sampling Location:** Clear Creek 
+
+**Data Contact:** [Ryan Schaefer](mailto:ryan_a_schaefer@fws.gov)
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# git data and save as xlsx
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data-raw/FlowWest SCS JPE Data Request_Clear Creek.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_redd_holding_carcass_data.xlsx")
+               # Overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data sheet: 
+
+```{r}
+ 
+raw_holding_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Live") %>% glimpse()
+```
+## Data Transformation
+
+```{r}
+cleaner_data <- raw_holding_data %>% 
+  janitor::clean_names() %>% 
+  select(-c('method','qc_type','qc_date','inspector','year')) %>% #all method is snorkel, year could be extracted from date, 
+  rename('longitude' = 'point_x',
+         'latitude' = 'point_y',
+         'count' = 'total_fish',
+         'jack_count' = 'num_of_jacks') %>% 
+  mutate(date = as.Date(date)) %>% 
+  glimpse()
+```
+## Explore Date
+```{r}
+summary(cleaner_data$date)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+
+## Explore Categorical Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.character) %>% colnames()
+```
+
+### Variable: `reach`
+
+**Description:** reach surveyed on each survey day
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(reach = tolower(cleaner_data$reach))
+table(cleaner_data$reach)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$reach))/nrow(cleaner_data), 3)*100` % of values in the `reach` column are NA.
+
+### Variable: `comments`
+
+```{r}
+unique(cleaner_data$comments)[1:5]
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$comments))/nrow(cleaner_data), 3)*100` % of values in the `comments` column are NA.
+
+### Variable: `species`
+
+
+```{r}
+table(cleaner_data$species)
+
+cleaner_data <- cleaner_data %>% 
+  mutate(species = tolower(species)) %>% 
+  filter(species == 'chinook') 
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3)*100` % of values in the `species` column are NA.
+
+### Variable: `survey_intent`
+
+TODO: does different survey intent matter?
+
+```{r}
+table(cleaner_data$survey_intent)
+
+cleaner_data <- cleaner_data %>% 
+  mutate(survey_intent = tolower(survey_intent))
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$survey_intent))/nrow(cleaner_data), 3)*100` % of values in the `survey_intent` column are NA.
+
+### Variable: `pw_relate`
+
+**Description:** Fish above or below Picket Weir
+
+```{r}
+table(cleaner_data$pw_relate)
+cleaner_data <- cleaner_data %>% 
+  mutate(survey_intent = tolower(pw_relate))
+```
+
+## Explore Numerical Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.numeric) %>% colnames()
+```
+### Variable: `river_mile`
+
+```{r}
+summary(cleaner_data$river_mile)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$river_mile))/nrow(cleaner_data), 3)*100` % of values in the `river_mile` column are NA.
+
+
+## Variable: `longitude` and `latitude`
+
+**Numeric Summary of longitude over Period of Record**
+```{r}
+summary(cleaner_data$longitude)
+```
+**Numeric Summary of latitude over Period of Record**
+
+```{r}
+summary(cleaner_data$latitude)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$longitude))/nrow(cleaner_data), 3)*100` % of values in the `longitude` column are NA.
+
+*  `r round(sum(is.na(cleaner_data$latitude))/nrow(cleaner_data), 3)*100` % of values in the `latitude` column are NA.
+
+
+## Variable: `count`
+
+**Description:** total number of Adult Chinook Salmon encountered including the number of 2-year olds (Jacks/Jills) 
+
+```{r}
+
+```
+
+**Numeric Summary of count over Period of Record**
+```{r}
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
+
+
+## Variable: `jack_count`
+
+**Description:** total number of 2-year old Chinook Salmon (Jacks/Jills) encountered
+
+```{r}
+```
+
+**Numeric Summary of jack count over Period of Record**
+```{r}
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$jack_count))/nrow(cleaner_data), 3)*100` % of values in the `jack_count` column are NA.
+
+
+## Variable: `pw_location_rm`
+
+**Description:** location of the Picket Weir
+
+```{r}
+```
+
+**Numeric Summary of pw_location_rm over Period of Record**
+```{r}
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$pw_location_rm))/nrow(cleaner_data), 3)*100` % of values in the `pw_location_rm` column are NA.
