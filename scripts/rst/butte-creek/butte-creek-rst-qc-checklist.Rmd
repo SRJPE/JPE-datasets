@@ -51,6 +51,7 @@ gcs_get_object(object_name = "rst/butte-creek/data-raw/CDFW_Butte_Creek_RST_Capt
                saveToDisk = "butte_creek_rst_raw.xlsx",
                Overwrite = TRUE)
 ```
+
 ```{r}
 raw_data = readxl::read_excel('butte_creek_rst_raw.xlsx',
                               col_types = c("date","text","text","text","text","text","numeric","numeric","numeric","text",
@@ -64,7 +65,8 @@ glimpse(raw_data)
 ```{r}
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>%
-  select(-c('dead','weathercode','markcode', 'southbrush', 'northbrush', 'secchi','comments')) %>% 
+  select(-c("staffgauge")) %>% #no value associated with reading (e.g. cfs, ft) %>%  
+  # select(-c('dead','weathercode','markcode', 'southbrush', 'northbrush', 'secchi','comments')) %>%
   rename('date'= sampledate,
          'station' = stationcode,
          'method'= methodcode,
@@ -76,29 +78,22 @@ cleaner_data <- raw_data %>%
          'gear_id' = gearid,
          'temperature' = watertemperature,
          'velocity' = watervelocity,
-         'staff_gauge' = staffgauge,
          'trap_revolutions' = traprevolutions,
          'rpms_start' = rpmsstart,
          'rpms_end'= rpmsend) %>% 
-  mutate(time = hms::as_hms(time)) %>%
-  filter(species =='CHN', rm.na = TRUE) %>%
+  mutate(time = hms::as_hms(time),
+         date = as.Date(date)) %>%
   glimpse()
 ```
 ## Explore `date`
-```{r}
-cleaner_data %>%
-  ggplot(aes(x = date)) +
-  geom_histogram(position = 'stack', color = "black") +
-  labs(title = "Value Counts For Survey Season Dates")+
-  theme(legend.text = element_text(size = 8))
-```
+
 ```{r}
 summary(cleaner_data$date)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+* `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
 
 ## Explore Categorical Variables
 
@@ -142,8 +137,8 @@ table(cleaner_data$station)
 
 ```{r}
 cleaner_data <- cleaner_data %>% 
-  mutate(method = set_names(tolower(method))) %>% 
-  mutate(method = case_when(
+  mutate(method = set_names(tolower(method)),
+         method = case_when(
           method =='dstr'~ 'diversion fyke trap',
           method =='rstr'~ 'rotary screw trap'
   )
@@ -179,16 +174,42 @@ table(cleaner_data$trap_status)
 
 ### Variable `species`
 
-**Description:** we are interested in Chinooks only
+Species contain Chinooks Only
 
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3)*100` % of values in the `species` column are NA.
 
+### Variable `dead`
+
+Fix capitalization. n/p is changed to NA.
+
+```{r}
+table(cleaner_data$dead)
+```
+```{r}
+cleaner_data$dead <- case_when(tolower(cleaner_data$dead) == "yes" ~ TRUE, 
+                                    tolower(cleaner_data$dead) == "no" ~ FALSE)
+table(cleaner_data$dead)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$dead))/nrow(cleaner_data), 3)*100` % of values in the `dead` column are NA.
+
+### Variable `markcode`
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(markcode = tolower(cleaner_data$markcode),
+         markcode = ifelse(markcode == "n/p", NA, markcode))
+table(cleaner_data$markcode)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$markcode))/nrow(cleaner_data), 3)*100` % of values in the `markcode` column are NA.
 
 ### Variable `lifestage`
 
-**Description:** Renaming to `lifestage`
 
 * 1 - Fry with visible yolk sac
 * 2 - Fry with no visible yolk sac
@@ -203,14 +224,8 @@ table(cleaner_data$trap_status)
 table(cleaner_data$lifestage)
 ```
 ```{r}
-cleaner_data <- cleaner_data %>% 
-  mutate(method = set_names(tolower(method))) %>% 
-  mutate(method = case_when(
-          method =='dstr'~ 'diversion fyke trap',
-          method =='rstr'~ 'rotary screw trap'
-  )
-)
-# cleaner_data$lifestage <- ifelse(cleaner_data$lifestage == 'n/p', NA, cleaner_data$lifestage)
+#n/p is converted to NA
+
 cleaner_data <- cleaner_data %>% 
   mutate(lifestage = case_when(
     lifestage == 1~ 'yolk sac fry',
@@ -251,6 +266,50 @@ table(cleaner_data$gear_id)
 
 *  `r round(sum(is.na(cleaner_data$gear_id))/nrow(cleaner_data), 3)*100` % of values in the `gear_id` column are NA.
 
+### Variable `weathercode`
+
+**Description:**
+
+* CLD – Cloudy 
+* CLR – Clear 
+* FOG – Foggy 
+* RAN – Rainy 
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(weathercode = case_when(
+    weathercode == "CLD" ~ "cloudy",
+    weathercode == "CLR" ~ "clear",
+    weathercode == "FOG" ~ "foggy",
+    weathercode == "RAN" ~ "rainy"
+  ))
+table(cleaner_data$weathercode)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$weathercode))/nrow(cleaner_data), 3)*100` % of values in the `weathercode` column are NA.
+
+### Variable `northbrush`, `southbrush`
+
+**Description:** for diversion fyke trap, there are diversion screens for clearing debris on the north and south of the trap. 
+
+False - screen not working (not clearing debris)
+True - screen work (clearing debris)
+
+```{r}
+#Not sure if we are interested in diversion fyke trap - keeping the variable for now
+table(cleaner_data$northbrush)
+```
+```{r}
+table(cleaner_data$southbrush)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$northbrush))/nrow(cleaner_data), 3)*100` % of values in the `northbrush` column are NA.
+
+
+*  `r round(sum(is.na(cleaner_data$southbrush))/nrow(cleaner_data), 3)*100` % of values in the `southbrush` column are NA.
+
 ### Variable `debris`
 
 **Description:** visual assessment of debris in trap
@@ -264,6 +323,15 @@ table(cleaner_data$debris)
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$debris))/nrow(cleaner_data), 3)*100` % of values in the `debris` column are NA.
+
+### Variable `comments`
+```{r}
+unique(cleaner_data$comments)[1:5]
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$comments))/nrow(cleaner_data), 3)*100` % of values in the `comments` column are NA.
+
 
 ## Explore Numerical Variables
 
@@ -293,6 +361,7 @@ cleaner_data %>%
        x = "Date")+ 
   facet_wrap(~water_year, scales = "free")
 ```
+
 ```{r}
 cleaner_data %>% 
   mutate(year = as.factor(year(date))) %>% 
@@ -307,6 +376,8 @@ cleaner_data %>%
 summary(cleaner_data$count)
 ```
 
+These numbers are massive. Are they passage estimates? Noted in the bottom.
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
@@ -314,6 +385,14 @@ summary(cleaner_data$count)
 ### Variable `fork_length`
 
 **Description:** fork length in millimeters (mm)
+
+Need to filter out 0s
+```{r}
+cleaner_data %>% filter(fork_length == 0)
+```
+```{r}
+cleaner_data$fork_length <- ifelse(cleaner_data$fork_length == 0, NA, cleaner_data$fork_length)
+```
 
 ```{r}
 cleaner_data %>% 
@@ -347,6 +426,14 @@ summary(cleaner_data$fork_length)
 ### Variable `weight`
 
 **Description:** wet weight in grams(g)
+
+Need to filter out 0s
+```{r}
+cleaner_data %>% filter(weight == 0)
+```
+```{r}
+cleaner_data$fork_length <- ifelse(cleaner_data$weight == 0, NA, cleaner_data$weight)
+```
 
 ```{r}
 cleaner_data %>% 
@@ -487,7 +574,8 @@ cleaner_data %>%
   ggplot(aes(x= velocity, y = station))+
   geom_boxplot()+
   theme_minimal()+
-  labs(title = "Water Velocity by Station")
+  labs(title = "Water Velocity by Station",
+       x= "Velocity (m/s)")
 ```
 ```{r}
 cleaner_data %>% 
@@ -553,7 +641,7 @@ cleaner_data %>%
 ```
 
 
-# Numeric summary of `trap_revolutions` from 1995-2015
+**Numeric summary of trap revolutions from 1995-2015**
 ```{r}
 summary(cleaner_data$trap_revolutions)
 ```
@@ -584,7 +672,7 @@ cleaner_data %>%
   theme(text = element_text(size = 12))
 ```
 
-# Numeric summary of `rpms_start` from 1995-2015
+**Numeric summary of rpms start from 1995-2015**
 ```{r}
 summary(cleaner_data$rpms_start)
 ```
@@ -616,14 +704,44 @@ cleaner_data %>%
   theme(text = element_text(size = 12))
 ```
 
+**Numeric summary of rpms end from 1995-2015**
+```{r}
+summary(cleaner_data$rpms_end)
+```
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$rpms_end))/nrow(cleaner_data), 3)*100` % of values in the `rpms_end` column are NA.
 
-### Issues Identified
+
+### Variable `secchi`
+
+**Description:** Secchi depth in feet
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x=secchi))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "Distribution of Secchi")
+```
+
+**Numeric summary of secchi end from 1995-2015**
+```{r}
+summary(cleaner_data$secchi)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$secchi))/nrow(cleaner_data), 3)*100` % of values in the `secchi` column are NA.
+
+**Issues Identified**
+
 * 50 points in water temperature reaches over 50 degrees celsius
 
 * Turbidity data lacks in some years
+
+* Fish count number is extremely high (up to 220,000 fish in one day)? 
 
 ### Add cleaned data back into google cloud
 ```{r}
