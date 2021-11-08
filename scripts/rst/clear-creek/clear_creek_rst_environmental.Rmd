@@ -28,7 +28,7 @@ These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fis
 
 **Completeness of Record throughout timeframe:**  Some variation across years but sampled every year.
 
-**Sampling Location:** Upper clear Creek (UBC)
+**Sampling Location:** Upper Clear Creek (UCC) and Lower Clear Creek (LCC)
 
 **Data Contact:** [Mike Schraml](mailto:mike_schraml@fws.gov)
 
@@ -155,7 +155,8 @@ cleaner_rst_environmental %>%
   geom_histogram(aes(x = flow_end_meter), fill = "blue", alpha = .5) +
   theme_minimal() + 
   theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(x = "Flow Start and End Meter Numbers")
 
 ```
 
@@ -234,7 +235,7 @@ cleaner_rst_environmental %>%
   theme_minimal()
 ```
 
-
+A lot of outliers are shown. These are clear because they create a large spike and make the other velocity measurements difficult to see. 
 
 **Numeric Summary of velocity**
 
@@ -242,7 +243,7 @@ cleaner_rst_environmental %>%
 summary(cleaner_rst_environmental$velocity)
 ```
 
-A velocity of 280 seems out of the range of posibilities. It seems like every velocity greater than 7 is probably a mistake that should be scaled down or filtered out. 
+A velocity of 280 seems out of the range of possibilities. It seems like every velocity greater than 7 is probably a mistake that should be scaled down or filtered out. 
 
 **NA and Unknown Values**
 

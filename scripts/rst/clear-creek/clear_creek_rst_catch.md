@@ -184,12 +184,13 @@ cleaner_rst_count %>% select_if(is.numeric) %>% colnames()
 
 ### Variable: `fork_length`
 
-Fork length of the fish captured, is zero if the fish was not measured
+Fork length of the fish captured. If it is recorded as zero it indicates
+that the fish was not measured
 
 **Plotting fork\_length**
 
 ``` r
-cleaner_rst_count %>% filter(fork_length < 250) %>% # filter out 13 points so we can more clearly see distribution
+p1 <- cleaner_rst_count %>% filter(fork_length < 250) %>% # filter out 13 points so we can more clearly see distribution
   ggplot(aes(x = fork_length)) + 
   geom_histogram(breaks=seq(0, 200, by=2)) + 
   scale_x_continuous(breaks=seq(0, 200, by=25)) +
@@ -197,6 +198,17 @@ cleaner_rst_count %>% filter(fork_length < 250) %>% # filter out 13 points so we
   labs(title = "Fork length distribution") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
+p2 <- cleaner_rst_count %>% filter(fork_length < 250, fork_length > 0) %>% # filter out 13 points so we can more clearly see distribution
+  ggplot(aes(x = fork_length)) + 
+  geom_histogram(breaks=seq(25, 200, by=2)) + 
+  scale_x_continuous(breaks=seq(25, 200, by=25)) +
+  theme_minimal() +
+  labs(title = "Fork length distribution, filtered to not show 0 values (NA)") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
+gridExtra::grid.arrange(p1, p2)
 ```
 
 ![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
@@ -204,10 +216,15 @@ cleaner_rst_count %>% filter(fork_length < 250) %>% # filter out 13 points so we
 ``` r
 cleaner_rst_count %>% 
   mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = fork_length, y = lifestage)) + 
+  ggplot(aes(x = fork_length, y = case_when(cleaner_rst_count$lifestage == "C0" ~ "yolk-sac fry", 
+                                   cleaner_rst_count$lifestage == "C1" ~ "fry",
+                                   cleaner_rst_count$lifestage %in% c("C2", "c2") ~ "parr",
+                                   cleaner_rst_count$lifestage == "C3" ~ "silvery parr",
+                                   cleaner_rst_count$lifestage == "C4" ~ "smolt"))) + 
   geom_boxplot() + 
   theme_minimal() +
-  labs(title = "Fork length summarized by lifestage") + 
+  labs(title = "Fork length summarized by lifestage",
+       y = "Lifestage") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```

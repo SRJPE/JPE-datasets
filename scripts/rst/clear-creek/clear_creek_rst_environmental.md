@@ -18,7 +18,8 @@ data represent environmental conditions for clear Creek RST.
 **Completeness of Record throughout timeframe:** Some variation across
 years but sampled every year.
 
-**Sampling Location:** Upper clear Creek (UBC)
+**Sampling Location:** Upper Clear Creek (UCC) and Lower Clear Creek
+(LCC)
 
 **Data Contact:** [Mike Schraml](mailto:mike_schraml@fws.gov)
 
@@ -325,7 +326,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -337,7 +338,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 **Numeric Summary of counter over Period of Record**
 
@@ -366,13 +367,14 @@ cleaner_rst_environmental %>%
   geom_histogram(aes(x = flow_end_meter), fill = "blue", alpha = .5) +
   theme_minimal() + 
   theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(x = "Flow Start and End Meter Numbers")
 ```
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 Start times and end times appear to have a similar distribution.
 
@@ -418,7 +420,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 Flow set times appear mainly between 100 and 1000 with some values up to
 almost 4500.
@@ -456,7 +458,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>%
@@ -472,7 +474,10 @@ cleaner_rst_environmental %>%
   theme_minimal()
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+A lot of outliers are shown. These are clear because they create a large
+spike and make the other velocity measurements difficult to see.
 
 **Numeric Summary of velocity**
 
@@ -483,7 +488,7 @@ summary(cleaner_rst_environmental$velocity)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##   0.030   2.230   2.670   2.902   3.380 280.760     278
 
-A velocity of 280 seems out of the range of posibilities. It seems like
+A velocity of 280 seems out of the range of possibilities. It seems like
 every velocity greater than 7 is probably a mistake that should be
 scaled down or filtered out.
 
@@ -510,7 +515,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -531,7 +536,7 @@ cleaner_rst_environmental %>%
        y = "Average Daily Turbidity NTUs")  
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>%
@@ -546,7 +551,7 @@ cleaner_rst_environmental %>%
   facet_wrap(~wy, scales = "free") + theme_minimal()
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 Most turbidity measures are low but a few outliers going up until over
 2500. This seems WAY too high! Should probably be scaled down or
@@ -584,7 +589,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 All sample weights and cone measures are either .5 o 1.
 
@@ -647,7 +652,7 @@ gridExtra::grid.arrange(depth_1, depth_2)
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **Numeric Summary of river depth over Period of Record**
 
@@ -696,7 +701,7 @@ cleaner_rst_environmental %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -708,7 +713,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 Looks like depth adjust varies by year depending on how the trap was
 positioned.
 
@@ -743,7 +748,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -755,7 +760,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 Debris look a bit higher in the late fall early winter months
 
@@ -791,7 +796,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -803,7 +808,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Numeric Summary of average time per rev over Period of Record**
 
@@ -837,7 +842,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -849,7 +854,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 
 **Numeric Summary of baileys efficiency over Period of Record**
 
@@ -882,7 +887,7 @@ cleaner_rst_environmental %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -894,7 +899,7 @@ cleaner_rst_environmental %>%
   labs(y = "Year")
 ```
 
-![](clear_creek_rst_environmenta_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
 **Numeric Summary of counter over Period of Record**
 
