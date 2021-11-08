@@ -66,7 +66,6 @@ glimpse(raw_data)
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>%
   select(-c("staffgauge")) %>% #no value associated with reading (e.g. cfs, ft) %>%  
-  # select(-c('dead','weathercode','markcode', 'southbrush', 'northbrush', 'secchi','comments')) %>%
   rename('date'= sampledate,
          'station' = stationcode,
          'method'= methodcode,
@@ -86,7 +85,6 @@ cleaner_data <- raw_data %>%
   glimpse()
 ```
 ## Explore `date`
-
 ```{r}
 summary(cleaner_data$date)
 ```
@@ -223,8 +221,9 @@ table(cleaner_data$markcode)
 ```{r}
 table(cleaner_data$lifestage)
 ```
+n/p is converted to NA
+
 ```{r}
-#n/p is converted to NA
 
 cleaner_data <- cleaner_data %>% 
   mutate(lifestage = case_when(
@@ -372,6 +371,9 @@ cleaner_data %>%
   theme(text = element_text(size = 10),
         axis.text.x = element_text(angle = 90,  vjust = 0.5, hjust=1))
 ```
+
+**Numeric Summary of count over Period of Record**
+
 ```{r}
 summary(cleaner_data$count)
 ```
@@ -414,6 +416,8 @@ cleaner_data %>%
   theme(text = element_text(size = 12))
 ```
 
+**Numeric Summary of fork_length over Period of Record**
+
 ```{r}
 summary(cleaner_data$fork_length)
 ```
@@ -454,6 +458,7 @@ cleaner_data %>%
   theme_minimal()
 ```
 
+**Numeric Summary of weight over Period of Record**
 
 ```{r}
 summary(cleaner_data$weight)
@@ -508,6 +513,8 @@ cleaner_data %>%
 ```
 
 
+**Numeric Summary of temperature over Period of Record**
+
 ```{r}
 summary(cleaner_data$temperature)
 ```
@@ -549,8 +556,7 @@ cleaner_data %>%
         axis.text.x = element_text(vjust =0.5, hjust = 1))
 ```
 
-
-
+**Numeric Summary of turbidity over Period of Record**
 ```{r}
 summary(cleaner_data$turbidity)
 ```
@@ -610,7 +616,7 @@ cleaner_data %>%
 ```
 
 
-# Numeric summary of `velocity` from 1995-2015
+**Numeric summary of velocity over Period of Record**
 ```{r}
 summary(cleaner_data$velocity)
 ```
@@ -641,7 +647,7 @@ cleaner_data %>%
 ```
 
 
-**Numeric summary of trap revolutions from 1995-2015**
+**Numeric summary of trap_revolutions over Period of Record**
 ```{r}
 summary(cleaner_data$trap_revolutions)
 ```
@@ -672,7 +678,7 @@ cleaner_data %>%
   theme(text = element_text(size = 12))
 ```
 
-**Numeric summary of rpms start from 1995-2015**
+**Numeric summary of rpms_start over Period of Record**
 ```{r}
 summary(cleaner_data$rpms_start)
 ```
@@ -704,7 +710,7 @@ cleaner_data %>%
   theme(text = element_text(size = 12))
 ```
 
-**Numeric summary of rpms end from 1995-2015**
+**Numeric summary of rpms_end over Period of Record**
 ```{r}
 summary(cleaner_data$rpms_end)
 ```
@@ -726,7 +732,7 @@ cleaner_data %>%
   labs(title = "Distribution of Secchi")
 ```
 
-**Numeric summary of secchi end from 1995-2015**
+**Numeric summary of secchi over Period of Record**
 ```{r}
 summary(cleaner_data$secchi)
 ```

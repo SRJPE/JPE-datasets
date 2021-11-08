@@ -88,7 +88,6 @@ glimpse(raw_data)
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>%
   select(-c("staffgauge")) %>% #no value associated with reading (e.g. cfs, ft) %>%  
-  # select(-c('dead','weathercode','markcode', 'southbrush', 'northbrush', 'secchi','comments')) %>%
   rename('date'= sampledate,
          'station' = stationcode,
          'method'= methodcode,
@@ -311,9 +310,9 @@ table(cleaner_data$lifestage)
     ##     1     2     3     4     5    AD   n/p   UNK 
     ##    51  5364  3558  1067    26    96 53255     1
 
-``` r
-#n/p is converted to NA
+n/p is converted to NA
 
+``` r
 cleaner_data <- cleaner_data %>% 
   mutate(lifestage = case_when(
     lifestage == 1~ 'yolk sac fry',
@@ -508,6 +507,8 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
+**Numeric Summary of count over Period of Record**
+
 ``` r
 summary(cleaner_data$count)
 ```
@@ -580,6 +581,8 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
+**Numeric Summary of fork\_length over Period of Record**
+
 ``` r
 summary(cleaner_data$fork_length)
 ```
@@ -648,6 +651,8 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
+**Numeric Summary of weight over Period of Record**
+
 ``` r
 summary(cleaner_data$weight)
 ```
@@ -711,6 +716,8 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
+**Numeric Summary of temperature over Period of Record**
+
 ``` r
 summary(cleaner_data$temperature)
 ```
@@ -760,6 +767,8 @@ cleaner_data %>%
 ```
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+
+**Numeric Summary of turbidity over Period of Record**
 
 ``` r
 summary(cleaner_data$turbidity)
@@ -833,7 +842,7 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
 
-# Numeric summary of `velocity` from 1995-2015
+**Numeric summary of velocity over Period of Record**
 
 ``` r
 summary(cleaner_data$velocity)
@@ -874,7 +883,7 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
 
-**Numeric summary of trap revolutions from 1995-2015**
+**Numeric summary of trap\_revolutions over Period of Record**
 
 ``` r
 summary(cleaner_data$trap_revolutions)
@@ -916,7 +925,7 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-50-1.png)<!-- -->
 
-**Numeric summary of rpms start from 1995-2015**
+**Numeric summary of rpms\_start over Period of Record**
 
 ``` r
 summary(cleaner_data$rpms_start)
@@ -958,7 +967,7 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-53-1.png)<!-- -->
 
-**Numeric summary of rpms end from 1995-2015**
+**Numeric summary of rpms\_end over Period of Record**
 
 ``` r
 summary(cleaner_data$rpms_end)
@@ -987,7 +996,7 @@ cleaner_data %>%
 
 ![](butte-creek-rst-qc-checklist_files/figure-gfm/unnamed-chunk-55-1.png)<!-- -->
 
-**Numeric summary of secchi end from 1995-2015**
+**Numeric summary of secchi over Period of Record**
 
 ``` r
 summary(cleaner_data$secchi)
