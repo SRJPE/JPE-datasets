@@ -87,14 +87,8 @@ cleaner_data<- raw_chops_data %>%
   mutate(date = as.Date(date)) %>% 
   glimpse()
 ```
+
 ## Explore `date`
-```{r}
-cleaner_data%>%
-  ggplot(aes(x = date)) +
-  geom_histogram(binwidth = 7, position = 'stack', color = "black") +
-  labs(title = "Value Counts For Survey Season Dates")+
-  theme(legend.text = element_text(size = 8))
-```
 
 ```{r}
 summary(cleaner_data$date)
@@ -110,12 +104,27 @@ summary(cleaner_data$date)
 cleaner_data %>% 
   select_if(is.character) %>% colnames()
 ```
+
 ### Variable:`section_cd`
 
-TODO: need section_cd lookup
+* A - Quartz Bowl Pool downstream to Whiskey Flat
+
+* B - Whiskey Flat downstream to Helltown Bridge
+
+* C - Helltown Bridge downstream to Quail Run Bridge
+* 'COV-OKIE' - Centerville Covered Brdige to Okie Dam
+* D - Quail Run Bridge downstream to Cable Bridge
+* E - Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream to Centerville Covered Bridge
+
 ```{r}
 table(cleaner_data$section_cd)
 ```
+**Create  lookup rda for section_cd encoding:**
+
+```{r}
+
+```
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$section_cd))/nrow(cleaner_data), 3)*100` % of values in the `section_cd` column are NA.
@@ -129,9 +138,10 @@ table(cleaner_data$way_pt)
 cleaner_data <- cleaner_data %>%
   mutate(way_pt = set_names(toupper(way_pt))) %>% 
   mutate(way_pt = case_when(
-    way_pt == 'N/A' ~ 'NA_character_',
-    way_pt == 'N/R' ~ 'NA_character_', 
+    way_pt == 'N/A' ~ NA_character_,
+    way_pt == 'N/R' ~ NA_character_, 
     TRUE ~ as.character(way_pt)
+    
   ))
 table(cleaner_data$way_pt)
 ```
@@ -157,8 +167,6 @@ cleaner_data %>%
 
 ### Variable:`chop_count`
 ```{r}
-colourCount = length(unique(years))
-getPalette = colorRampPalette(brewer.pal(12, "Paired"))
 
 cleaner_data %>% 
   group_by(date) %>% 
@@ -170,7 +178,6 @@ cleaner_data %>%
          fake_year= if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
   ggplot(aes(x = fake_date, y = chop_count, color = years))+
-  scale_color_manual(values = getPalette(colourCount))+
   theme_minimal()+
   scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1900-11-01")), date_breaks = "1 month")+
   theme(text = element_text(size = 10),
