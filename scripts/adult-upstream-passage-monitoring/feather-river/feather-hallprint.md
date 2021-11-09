@@ -20,12 +20,13 @@ are issues with the return data.
 
 **Provisional or QC data** Data is QC
 
-**Sampling Location:** Some tags have a acoustic location attribute.
+**Sampling Location:** Some tags have a acoustic location attribute. All
+fish are tagged on the Feather River.
 
 **Data Contact:** [Byron Mache](mailto:Byron.Mache@water.ca.gov)
 
-Each fish is given two tags. The `second_tag_number` is NA if the first
-tag and the second tag have the same number.
+Note fron Byron: Each fish is given two tags. The `second_tag_number` is
+NA if the first tag and the second tag have the same number.
 
 ## Access Cloud Data
 
@@ -301,8 +302,9 @@ table(cleaner_hallprint_data$color)
     ##      green hole punch       pink        red    unknown     yellow 
     ##      86631        764       1373       2475         32       7660
 
-**NA and Unknown Values** \* 0 % of values in the `color` column are
-Unknown.
+**NA and Unknown Values**
+
+-   0 % of values in the `color` column are Unknown.
 
 ### Variable: `acoustic`
 
@@ -360,8 +362,10 @@ write_rds(feather_hallprint_acoustic_location, "../../../data/feather_hallprint_
 
 -   99.7 % of values in the `acoustic_location` column are NA.
 
-**Summary of identified issues:** \* One identified issue is that not
-all `tags_numbers` or `second_tag_numbers` are unique.
+**Summary of identified issues:**
+
+-   One identified issue is that not all `tags_numbers` or
+    `second_tag_numbers` are unique.
 
 ### Save cleaned data back to google cloud
 

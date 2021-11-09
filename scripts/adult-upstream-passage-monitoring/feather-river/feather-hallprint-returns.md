@@ -20,9 +20,11 @@ of hallprint tagging data. This markdown is focused on the
 **Season:** Carcass Recoveries appear to be found from September -
 December
 
-**Completeness of Record throughout timeframe:**
+**Completeness of Record throughout timeframe:** Most records are from
+weeks 4 - 10 however we have records from week 2 - 10 and weeks 12 - 14.
 
-**Sampling Location:**
+**Sampling Location:** Locations described by Section, will need more
+information to map each section to a specific location
 
 **Data Contact:** [Byron Mache](mailto:Byron.Mache@water.ca.gov)
 
@@ -462,11 +464,13 @@ cleaner_carcass_data$spring_green <- ifelse(cleaner_carcass_data$comments == "SP
 
 -   0 % of values in the `comments` column are NA.
 
-**Summary of identified issues:** \* Need to figure out what the
-condition codes mean \* Only one year of data, the rest we did not
-receive because they are all in varying formats. This one is also a many
-sheets non tidy excel table. I choose to look at this sheet because it
-seemed the most useful but I am not sure it is the best information.
+**Summary of identified issues:**
+
+-   Need to figure out what the condition codes mean
+-   Only one year of data, the rest we did not receive because they are
+    all in varying formats. This one is also a many sheets non tidy
+    excel table. I choose to look at this sheet because it seemed the
+    most useful but I am not sure it is the best information.
 
 ### Save cleaned data back to google cloud
 
