@@ -229,7 +229,7 @@ This fish were marked with Hallprint tags and acoustic tags in the lower river. 
 table(cleaner_hallprint_data$acoustic_location) 
 ```
 
-**Create lookup rda for [variable] encoding:** 
+**Create lookup rda for acoustic_location encoding:** 
 ```{r}
 feather_hallprint_acoustic_location <- c("SRA", "FRFH")
 names(feather_hallprint_acoustic_location) <- c("Spring Run Angling Project", "Feather River Fish Hatchery")
@@ -247,11 +247,14 @@ write_rds(feather_hallprint_acoustic_location, "../../../data/feather_hallprint_
 ### Save cleaned data back to google cloud 
 
 ```{r}
-cleaner_hallprint_data %>% glimpse()
+feather_hallprint <- cleaner_hallprint_data %>% glimpse()
 ```
 
-```{r}
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+```{r, eval = FALSE}
+f <- function(input, output) write_csv(input, file = output)
 
+gcs_upload(feather_hallprint,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/feather-river/data/feather_hallprint.csv")
 ```

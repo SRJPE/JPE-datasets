@@ -347,7 +347,7 @@ table(cleaner_hallprint_data$acoustic_location)
     ## FRFH  SRA 
     ##  120  174
 
-**Create lookup rda for \[variable\] encoding:**
+**Create lookup rda for acoustic\_location encoding:**
 
 ``` r
 feather_hallprint_acoustic_location <- c("SRA", "FRFH")
@@ -366,7 +366,7 @@ all `tags_numbers` or `second_tag_numbers` are unique.
 ### Save cleaned data back to google cloud
 
 ``` r
-cleaner_hallprint_data %>% glimpse()
+feather_hallprint <- cleaner_hallprint_data %>% glimpse()
 ```
 
     ## Rows: 98,935
@@ -380,6 +380,10 @@ cleaner_hallprint_data %>% glimpse()
     ## $ acoustic_location <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 
 ``` r
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_hallprint,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/feather-river/data/feather_hallprint.csv")
 ```
