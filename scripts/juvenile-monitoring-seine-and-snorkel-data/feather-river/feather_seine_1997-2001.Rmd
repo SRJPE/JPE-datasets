@@ -782,12 +782,21 @@ unique(cleaner_seine_data$comments)[1:5]
 ## Summary of identified issues
 
 * Sampling does not occur that frequently each year
-* Figure out depth measures and sample shape values (TODO contact Casey)
+* Figure out depth measures and sample shape values (waiting to hear back from Casey)
+* There are not a lot of SR catches, mainly FR. Data may not be that useful. 
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+feather_seine_1997_2001 <- cleaner_seine_data %>% glimpse()
 ```
 
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_list_objects()
+gcs_upload(feather_seine_1997_2001,
+           object_function = f,
+           type = "csv",
+           name = "	juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data/feather_seine_1997_2001.csv")
+```

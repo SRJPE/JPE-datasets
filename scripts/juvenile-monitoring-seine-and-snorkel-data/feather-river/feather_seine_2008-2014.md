@@ -1313,7 +1313,10 @@ table(cleaner_seine_data$run)
 ## Summary of identified issues
 
 -   Not a lot of days sampled per year
--   Only 10 rows that include spring data.
+-   Only 10 rows that include spring data.Data may not be very useful
+    for Spring Run JPE purposes.
+-   TODO need to figure out what is going on with the substrate and
+    cover columns. (waiting to hear back from Casey)
 
 ## Save cleaned data back to google cloud
 

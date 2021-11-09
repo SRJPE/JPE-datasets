@@ -684,12 +684,22 @@ table(cleaner_seine_data$run)
 
 ## Summary of identified issues
 
-* TODO need to figure out what is going on with the substrate and cover columns. 
-* There are not a ton of SR catches, mainly FR. 
+* TODO need to figure out what is going on with the substrate and cover columns. (waiting to hear back from Casey)
+* There are not a lot of SR catches, mainly FR. Data may not be that useful. 
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+feather_seine_2015_2021 <- cleaner_seine_data %>% glimpse()
+```
+
+
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_list_objects()
+gcs_upload(feather_seine_2015_2021,
+           object_function = f,
+           type = "csv",
+           name = "	juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data/feather_seine_2015_2021.csv")
 ```

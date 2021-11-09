@@ -593,10 +593,19 @@ summary(cleaner_seine_data$bs_depth_full)
 ### Variable: `x_coord`, `y_coord`
 
 These are the location columns. TODO
+```{r}
+summary(cleaner_seine_data$x_coord)
+summary(cleaner_seine_data$y_coord)
+```
 
 ```{r}
-# Check that they are in consistent format
-# Map
+library(sp)
+utm_coords <- na.omit(subset(cleaner_seine_data, select = c("x_coord", "y_coord")))
+utm_coords <- sp::SpatialPoints(utm_coords,proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
+long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
+summary(long_lat_coords)
+
+# TODO reassign values 
 ```
 
 
@@ -880,11 +889,21 @@ table(cleaner_seine_data$run)
 ## Summary of identified issues
 
 * Not a lot of days sampled per year
-* Only 10 rows that include spring data. 
+* Only 10 rows that include spring data.Data may not be very useful for Spring Run JPE purposes. 
+* TODO need to figure out what is going on with the substrate and cover columns. (waiting to hear back from Casey)
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+feather_seine_2008_2014 <- cleaner_seine_data %>% glimpse()
+```
+
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_list_objects()
+gcs_upload(feather_seine_2008_2014,
+           object_function = f,
+           type = "csv",
+           name = "	juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data/feather_seine_2008_2014.csv")
 ```
