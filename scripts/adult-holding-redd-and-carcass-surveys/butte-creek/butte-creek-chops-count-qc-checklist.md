@@ -5,7 +5,7 @@ Inigo Peng
 
 ------------------------------------------------------------------------
 
-# BUtte Creek Carcass Survey Data
+# Butte Creek Carcass Survey Data
 
 ## Description of Monitoring Data
 
@@ -15,12 +15,10 @@ Inigo Peng
 
 **Sampling Location:** Various sampling locations on Butte Creek.
 
-TODO: Upper survey?
-
 **Data Contact:** [Jessica
 Nichols](mailto::Jessica.Nichols@Wildlife.ca.gov)
 
-Additional Info:  
+**Additional Info:**  
 The carcass data came in 12 documents for each year. We identified the
 ‘SurveyChops’ and ‘SurveyIndividuals’ datasets as the documents with the
 most complete information and joined them for all of the years.
@@ -254,7 +252,6 @@ cleaner_data %>%
   mutate(total_daily_count = sum(chop_count)) %>% 
   ungroup() %>% 
   mutate(water_year = if_else(month(date)%in% 10:12, year(date)+1, year(date))) %>% 
-  glimpse() %>% 
   mutate(years = as.factor(year(date)),
          fake_year= if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
@@ -270,16 +267,6 @@ cleaner_data %>%
        y = 'Total Chop Count')
 ```
 
-    ## Rows: 917
-    ## Columns: 7
-    ## $ date              <date> 2014-09-23, 2014-09-23, 2014-09-23, 2014-09-23, 201~
-    ## $ section_cd        <chr> "A", "A", "A", "A", "B", "B", "B", "A", "A", "A", "A~
-    ## $ way_pt            <chr> "A2", "A3", "A4", "A1", "B1", "B2", "B7", "A5", "A1"~
-    ## $ chop_count        <dbl> 2, 0, 2, 4, 1, 1, 1, 3, 7, 8, 5, 4, 19, 32, 19, 5, 6~
-    ## $ ad_fin_clip       <chr> "unknown", "unknown", "unknown", "unknown", "unknown~
-    ## $ total_daily_count <dbl> 11, 11, 11, 11, 11, 11, 11, 115, 115, 115, 115, 115,~
-    ## $ water_year        <dbl> 2014, 2014, 2014, 2014, 2014, 2014, 2014, 2014, 2014~
-
 ![](butte-creek-chops-count-qc-checklist_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
@@ -292,3 +279,31 @@ summary(cleaner_data$chop_count)
 **NA and Unknown Values**
 
 -   0 % of values in the `chop_count` column are NA.
+
+**Issues and Notes:**
+
+-   No look up table information for way\_pt
+
+## Saved clean data back to google cloud
+
+``` r
+butte_chops <- cleaner_data %>% 
+  glimpse()
+```
+
+    ## Rows: 917
+    ## Columns: 5
+    ## $ date        <date> 2014-09-23, 2014-09-23, 2014-09-23, 2014-09-23, 2014-09-2~
+    ## $ section_cd  <chr> "A", "A", "A", "A", "B", "B", "B", "A", "A", "A", "A", "A"~
+    ## $ way_pt      <chr> "A2", "A3", "A4", "A1", "B1", "B2", "B7", "A5", "A1", "A2"~
+    ## $ chop_count  <dbl> 2, 0, 2, 4, 1, 1, 1, 3, 7, 8, 5, 4, 19, 32, 19, 5, 6, 3, 4~
+    ## $ ad_fin_clip <chr> "unknown", "unknown", "unknown", "unknown", "unknown", "un~
+
+``` r
+f <- function(inputs, output) write_csv(input, file = output)
+
+gcs_upload(butte_chops,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/butte-creek-data/butte_chops.csv")
+```
