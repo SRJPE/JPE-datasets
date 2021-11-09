@@ -11,15 +11,10 @@ Erin Cain
 
 **Timeframe:** 2013-2020
 
-**Video Season:** TODO
+**Video Season:** August through December
 
 **Completeness of Record throughout timeframe:** Data are not padded -
 missing data indicate a period where footage was not collected by USFWS
-(However we are filtering for spring run so it is also possible that
-footage was taken but no spring run were found)
-
--   TODO investigate/talk about outages, is a 0 a real zero or explained
-    by other factors
 
 **Sampling Location:** Located at the mouth of clear creek
 
@@ -113,23 +108,27 @@ cleaner_video_data <- raw_video_data %>%
   mutate(date = as.Date(date),
          time_block = hms::as_hms(time_block),
          time_passed = hms::as_hms(time_passed)) %>%
-  filter(species == "CHN", run == "SR") %>%
-  select(-stt_size, -video_year, -species, -run) %>% 
+  filter(species == "CHN") %>%
+  select(-stt_size, -video_year, -species) %>% 
+  pivot_longer(!c(date:viewing_condition, time_passed:run), 
+               names_to = "passage_direction",
+               values_to = "count") %>%
   glimpse() 
 ```
 
-    ## Rows: 2,279
-    ## Columns: 10
-    ## $ date               <date> 2013-03-26, 2013-03-26, 2013-03-31, 2013-03-31, 20~
-    ## $ time_block         <time> 04:30:00, 22:30:00, 16:00:00, 21:30:00, 11:30:00, ~
-    ## $ viewing_condition  <chr> "0", "0", "0", "0", "0", "1", "1", "1", "1", "0", "~
-    ## $ up                 <dbl> 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
-    ## $ down               <dbl> 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
-    ## $ time_passed        <time> 04:47:00, 22:48:00, 16:09:00, 21:34:00, 11:53:00, ~
-    ## $ adipose            <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "ABSENT",~
-    ## $ sex                <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "U~
-    ## $ spawning_condition <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "~
-    ## $ jack_size          <chr> "YES", "NO", "NO", "NO", "NO", "NO", "NO", "YES", "~
+    ## Rows: 12,054
+    ## Columns: 11
+    ## $ date               <date> 2012-12-17, 2012-12-17, 2012-12-17, 2012-12-17, 20~
+    ## $ time_block         <time> 13:30:00, 13:30:00, 15:30:00, 15:30:00, 18:00:00, ~
+    ## $ viewing_condition  <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "~
+    ## $ time_passed        <time> 13:46:00, 13:46:00, 15:37:00, 15:37:00, 18:19:00, ~
+    ## $ adipose            <chr> "PRESENT", "PRESENT", "PRESENT", "PRESENT", "UNK", ~
+    ## $ sex                <chr> "MALE", "MALE", "UNK", "UNK", "FEMALE", "FEMALE", "~
+    ## $ spawning_condition <chr> "3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "~
+    ## $ jack_size          <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO~
+    ## $ run                <chr> "LF", "LF", "LF", "LF", "LF", "LF", "LF", "LF", "LF~
+    ## $ passage_direction  <chr> "up", "down", "up", "down", "up", "down", "up", "do~
+    ## $ count              <dbl> 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, ~
 
 ## Explore Numeric Variables:
 
@@ -137,120 +136,111 @@ cleaner_video_data <- raw_video_data %>%
 cleaner_video_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "up"   "down"
+    ## [1] "count"
 
-### Variable: `up`
+### Variable: `count`
 
 **Plotting Passage Counts Moving Up over Period of Record**
 
 ``` r
-cleaner_video_data %>% ggplot(aes(x = date, y = up)) + 
+cleaner_video_data %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = count, fill = passage_direction)) + 
   geom_col() + 
   facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-10-01")), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Count of Upstream Passage (2013-2020)")  
+  labs(title = "Daily Count of Upstream Passage All Runs", 
+       x = "Date")  
 ```
 
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
-# Boxplots of daily counts by year
-cleaner_video_data %>% group_by(date) %>%
-  summarise(daily_count_upstream = sum(up)) %>%
-  mutate(year = as.factor(year(date))) %>% 
-  ggplot(aes(x = year, y = daily_count_upstream)) + 
-  geom_boxplot() + 
-  theme_minimal() +
-  theme(text = element_text(size = 23)) + 
-  labs(title = "Daily Count of Upstream Passage (2013-2020) Sumarized by Year")  
-```
-
-![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
-
-**Numeric Summary of Passage Counts Moving Up over Period of Record**
-
-``` r
-# Table with summary statistics
-summary(cleaner_video_data$up)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##  0.0000  1.0000  1.0000  0.7824  1.0000  1.0000
-
-``` r
-# daily numeric summary 
-cleaner_video_data %>% group_by(date) %>%
-  summarise(count = sum(up, na.rm = T)) %>%
-  pull(count) %>%
-  summary()
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##   0.000   1.000   2.000   3.123   4.000  40.000
-
-**NA and Unknown Values**
-
--   0 % of values in the `up` column are NA. However, there are clearly
-    gaps in data. More investigation needs to be done to see if 0 is a
-    real 0 or if it can be explained by other factors (outages).
-
-### Variable: `down`
-
-**Plotting Passage Counts Moving Down over Period of Record**
-
-``` r
-cleaner_video_data %>% ggplot(aes(x = date, y = down)) + 
+cleaner_video_data %>% 
+  filter(run == "SR") %>%
+  ggplot(aes(x = date, y = count, fill = passage_direction)) + 
   geom_col() + 
   facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Count of Downstream Passage (2013-2020)")  
+  labs(title = "Spring Run Daily Count Upstream Passage", 
+       x = "Date")  
+```
+
+![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+Spring Run Chinook appear to be seen moving upstream April through
+August.
+
+``` r
+# Boxplots of daily counts by year
+cleaner_video_data %>% group_by(date, passage_direction) %>%
+  mutate(daily_count = sum(count)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ungroup() %>%
+  ggplot(aes(x = year, y = daily_count, color = passage_direction)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(text = element_text(size = 23)) + 
+  labs(title = "Daily Count of Upstream Passage Sumarized by Year All Runs") 
+```
+
+![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+cleaner_video_data  %>%
+  mutate(year = as.factor(year(date))) %>%
+  filter(run %in% c("LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
+  group_by(year(date)) %>%
+  mutate(total_catch = sum(count)) %>%
+  ungroup() %>%
+  ggplot(aes(x = year, y = total_catch, fill = passage_direction)) + 
+  geom_col(position = "dodge") + 
+  theme_minimal() +
+  labs(title = "Total Yearly Fish Counts by Run",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  facet_grid(~run)
 ```
 
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-``` r
-cleaner_video_data %>% group_by(date) %>%
-  summarise(daily_count_downstream = sum(down)) %>%
-  mutate(year = as.factor(year(date))) %>% 
-  ggplot(aes(x = year, y = daily_count_downstream)) + 
-  geom_boxplot() + 
-  theme_minimal() +
-  labs(title = "Daily Count of Downstream Passage (2013-2020) Sumarized by Year") + 
-  theme(text = element_text(size = 23)) 
-```
+Total passage up = total passage down every year
 
-![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
-
-**Numeric Summary of Passage Counts Moving Down over Period of Record**
+**Numeric Summary of Passage Counts Moving Up over Period of Record**
 
 ``` r
-# Table with summary statistics 
-summary(cleaner_video_data$down)
+# Table with summary statistics
+summary(cleaner_video_data$count)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##  0.0000  0.0000  0.0000  0.2172  0.0000  1.0000
+    ##  0.0000  0.0000  0.0000  0.4991  1.0000  2.0000
 
 ``` r
-# Daily numeric summary of passage data
+# daily numeric summary 
 cleaner_video_data %>% group_by(date) %>%
-  summarise(count = sum(down, na.rm = T)) %>%
+  summarise(count = sum(count, na.rm = T)) %>%
   pull(count) %>%
   summary()
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##  0.0000  0.0000  1.0000  0.8669  1.0000  7.0000
+    ##     1.0     1.0     3.0     5.3     7.0    98.0
 
 **NA and Unknown Values**
 
--   0 % of values in the `up` column are NA.
+-   0 % of values in the `count` column are NA. However, there are
+    clearly gaps in data. More investigation needs to be done to see if
+    0 is a real 0 or if it can be explained by other factors (outages).
 
 ## Explore Categorical variables:
 
@@ -260,7 +250,8 @@ cleaner_video_data %>% select_if(is.character) %>% colnames()
 ```
 
     ## [1] "viewing_condition"  "adipose"            "sex"               
-    ## [4] "spawning_condition" "jack_size"
+    ## [4] "spawning_condition" "jack_size"          "run"               
+    ## [7] "passage_direction"
 
 ### Variable: `viewing_condition`
 
@@ -269,8 +260,8 @@ table(cleaner_video_data$viewing_condition)
 ```
 
     ## 
-    ##    0    1    2 
-    ## 1596  661   22
+    ##    0    1    2    3 
+    ## 9040 2776  232    6
 
 **Create lookup rda for viewing condition encoding:**
 
@@ -284,7 +275,7 @@ names(clear_passage_viewing_condition) <- c(
   "Not Readable (high turbidity or equiptment failure)",
   "Weir is flooded")
 
-write_rds(clear_passage_viewing_condition, "../../data/clear_passage_viewing_condition.rds")
+# write_rds(clear_passage_viewing_condition, "../../data/clear_passage_viewing_condition.rds")
 
 tibble(code = clear_passage_viewing_condition, 
        definitions = names(clear_passage_viewing_condition))
@@ -301,8 +292,8 @@ tibble(code = clear_passage_viewing_condition,
 **NA and Unknown Values**
 
 -   0 % of values in the `viewing_condition` column are NA.
--   0.01 % of values in the `viewing_condition` column are considered
-    Not Readable because of high turbidity or equipment failure.
+-   1.9 % of values in the `viewing_condition` column are considered Not
+    Readable because of high turbidity or equipment failure.
 
 ### Variable: `adipose`
 
@@ -311,8 +302,8 @@ table(cleaner_video_data$adipose)
 ```
 
     ## 
-    ##  Absent  ABSENT PRESENT     UNK UNKNOWN 
-    ##       1     195    1018     845     219
+    ##  Absent  ABSENT Present PRESENT     UNK UNKNOWN 
+    ##      30    2012       6    5786    3710     488
 
 ``` r
 description <- domain_description[which(domain_description$Domain == "ADIPOSE"), ]$Description
@@ -327,8 +318,8 @@ cleaner_video_data$adipose = tolower(if_else(cleaner_video_data$adipose == "UNK"
 
 **NA or Unknown Values**
 
--   0 % of values in the `adipose` column are NA.
--   0.467 % of values in the `adipose` column are`unknown`.
+-   0.2 % of values in the `adipose` column are NA.
+-   34.8 % of values in the `adipose` column are`unknown`.
 
 ### Variable: `sex`
 
@@ -337,8 +328,8 @@ table(cleaner_video_data$sex)
 ```
 
     ## 
-    ##  FEMALE    Male    MALE     UNK UNKNOWN 
-    ##      59       1     104    1648     464
+    ##  Female  FEMALE    Male    MALE     UNK UNKNOWN 
+    ##       6    1250      30    3738    5934    1076
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -349,8 +340,8 @@ cleaner_video_data$sex = tolower(if_else(cleaner_video_data$sex == "UNK", "unkno
 
 **NA or Unknown Values**
 
--   0.001 % of values in the `sex` column are NA.
--   0.927 % of values in the `sex` column are`unknown`.
+-   0.2 % of values in the `sex` column are NA.
+-   58.2 % of values in the `sex` column are`unknown`.
 
 ### Variable: `spawning_condition`
 
@@ -362,7 +353,7 @@ table(cleaner_video_data$spawning_condition)
 
     ## 
     ##    1    2    3    4    5 
-    ## 1879   73   95   29  144
+    ## 4220  986 2580  446 1122
 
 **Create lookup rda for spawning condition encoding:**
 
@@ -377,7 +368,7 @@ names(clear_passage_spawning_condition) <- c(
   "Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred.",
   "Unable to make distinction.")
 
-write_rds(clear_passage_spawning_condition, "../../data/clear_passage_spawning_condition.rds")
+# write_rds(clear_passage_spawning_condition, "../../data/clear_passage_spawning_condition.rds")
 
 tibble(code = clear_passage_spawning_condition, 
        definitions = names(clear_passage_spawning_condition))
@@ -394,9 +385,9 @@ tibble(code = clear_passage_spawning_condition,
 
 **NA or Unknown Values**
 
--   0.026 % of values in the `spawning_condition` column are NA.
+-   22.4 % of values in the `spawning_condition` column are NA.
 
--   0.063 % of values in the `spawning_condition` column are considered
+-   9.3 % of values in the `spawning_condition` column are considered
     Unknown.
 
 ### Variable: `jack_size`
@@ -408,8 +399,8 @@ table(cleaner_video_data$jack_size)
 ```
 
     ## 
-    ##   NO  UNK  Yes  YES 
-    ## 1958   21    1  283
+    ##    No    NO   UNK   Yes   YES 
+    ##    50 10308    82     4  1464
 
 ``` r
 description <- domain_description[which(domain_description$Domain == "JACKSIZE"), ]$Description
@@ -424,26 +415,67 @@ cleaner_video_data$jack_size = tolower(if_else(cleaner_video_data$jack_size == "
 
 **NA or Unknown Values**
 
--   0.007 % of values in the `jack_size` column are NA.
--   0.009 % of values in the `jack_size` column are`unknown`.
+-   1.2 % of values in the `jack_size` column are NA.
+-   0.7 % of values in the `jack_size` column are`unknown`.
+
+### Variable: `run`
+
+``` r
+table(cleaner_video_data$run) 
+```
+
+    ## 
+    ##   FR   LF   SR  UNK   WR 
+    ##    2 3658 4558  150 1114
+
+``` r
+# description <- domain_description[which(domain_description$Domain == "Run"), ]$Description
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
+``` r
+# Fix yes/no/unknown
+cleaner_video_data$run = if_else(cleaner_video_data$run == "UNK", "unknown", cleaner_video_data$run)
+```
+
+**NA or Unknown Values**
+
+-   21.3 % of values in the `run` column are NA.
+-   1.2 % of values in the `run` column are`unknown`.
+
+### Variable: `passage_direction`
+
+``` r
+table(cleaner_video_data$passage_direction) 
+```
+
+    ## 
+    ## down   up 
+    ## 6027 6027
+
+**NA or Unknown Values**
+
+-   0 % of values in the `passage_direction` column are NA.
 
 ``` r
 clear_passage <- cleaner_video_data %>% 
   glimpse()
 ```
 
-    ## Rows: 2,279
-    ## Columns: 10
-    ## $ date               <date> 2013-03-26, 2013-03-26, 2013-03-31, 2013-03-31, 20~
-    ## $ time_block         <time> 04:30:00, 22:30:00, 16:00:00, 21:30:00, 11:30:00, ~
-    ## $ viewing_condition  <chr> "0", "0", "0", "0", "0", "1", "1", "1", "1", "0", "~
-    ## $ up                 <dbl> 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
-    ## $ down               <dbl> 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
-    ## $ time_passed        <time> 04:47:00, 22:48:00, 16:09:00, 21:34:00, 11:53:00, ~
-    ## $ adipose            <chr> "unknown", "unknown", "unknown", "unknown", "unknow~
-    ## $ sex                <chr> "unknown", "unknown", "unknown", "unknown", "unknow~
-    ## $ spawning_condition <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "~
-    ## $ jack_size          <chr> "yes", "no", "no", "no", "no", "no", "no", "yes", "~
+    ## Rows: 12,054
+    ## Columns: 11
+    ## $ date               <date> 2012-12-17, 2012-12-17, 2012-12-17, 2012-12-17, 20~
+    ## $ time_block         <time> 13:30:00, 13:30:00, 15:30:00, 15:30:00, 18:00:00, ~
+    ## $ viewing_condition  <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "~
+    ## $ time_passed        <time> 13:46:00, 13:46:00, 15:37:00, 15:37:00, 18:19:00, ~
+    ## $ adipose            <chr> "present", "present", "present", "present", "unknow~
+    ## $ sex                <chr> "male", "male", "unknown", "unknown", "female", "fe~
+    ## $ spawning_condition <chr> "3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "~
+    ## $ jack_size          <chr> "no", "no", "no", "no", "no", "no", "no", "no", "no~
+    ## $ run                <chr> "LF", "LF", "LF", "LF", "LF", "LF", "LF", "LF", "LF~
+    ## $ passage_direction  <chr> "up", "down", "up", "down", "up", "down", "up", "do~
+    ## $ count              <dbl> 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, ~
 
 ### Save cleaned data back to google cloud
 

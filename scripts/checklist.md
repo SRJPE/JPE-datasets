@@ -15,6 +15,9 @@
   - [ ] Date - `<datetime>` or `<date>` or `<time>`
 - [ ] Within a categorical column check that capitalization is consistent (ex: if a column describes methodology and has “Snorkel” and “snorkel” listed as options fix to make all into snake case “snorkel”)
 - [ ] Within a categorical column check that values are consistent, no typos
+  - [ ] Site Names should all be in Title Case, remove symbols/underscores
+  - [ ] Other categorical data describing conditions, equipment,..ect can be stored as character strings, should be lowercase
+  - [ ] Encoded categorical variables, if acronyms keep uppercase, if abbreviated description or single word have snakecase  
 - [ ] Check for location information for every station (latitude and longitude for every sampling location) 
 - [ ] Remove any redundant columns
 - [ ] Check for outliers (Work on generating a range of reasonable values so that we can identify anything out of the ordinary) 
