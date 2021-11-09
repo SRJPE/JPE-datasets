@@ -39,7 +39,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = 
-                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/JPE_SR_all_individuals1997-2001.xlsx",
+                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/JPE_SR_all_seine_individuals1997-2001.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "raw_seine_1997-2001.xlsx",
                overwrite = TRUE)
@@ -903,6 +903,7 @@ format_site_name <- function(string) {
     str_replace_all("S.C.", "SC") %>%
     str_replace_all("'", "") %>%
     str_replace_all("G-95", "G95") %>% 
+    str_replace_all("Isl", "Island") %>%
     str_replace_all("[^[:alnum:]]", " ") %>% 
     trimws() %>% 
     stringr::str_squish() %>%
@@ -938,7 +939,7 @@ table(cleaner_seine_data$location)
     ##                                                          1 
     ##                                                    Big Bar 
     ##                                                          3 
-    ##                                  Big Hole Island Boat Ramp 
+    ##                               Big Hole Islandand Boat Ramp 
     ##                                                         25 
     ##                                                 Big Riffle 
     ##                                                        222 
@@ -950,7 +951,7 @@ table(cleaner_seine_data$location)
     ##                                                         17 
     ##                                                        G95 
     ##                                                          2 
-    ##              G95 Bar Complex Btwn Big Hole Isl Hour Riffle 
+    ##           G95 Bar Complex Btwn Big Hole Island Hour Riffle 
     ##                                                        379 
     ##                                               Goose Riffle 
     ##                                                        153 
@@ -998,7 +999,7 @@ table(cleaner_seine_data$location)
     ##                                                          4 
     ##             Quarter Mile Downstream Of Yuba City Boat Ramp 
     ##                                                        394 
-    ##                   Quarter Mile Upstream Of Big Hole Island 
+    ##                Quarter Mile Upstream Of Big Hole Islandand 
     ##                                                         50 
     ##               Quarter Mile Upstream Of Boyd Pump Boat Ramp 
     ##                                                         57 
@@ -1299,6 +1300,8 @@ unique(cleaner_seine_data$comments)[1:5]
 ## Summary of identified issues
 
 -   Sampling does not occur that frequently each year
+-   Figure out depth measures and sample shape values (TODO contact
+    Casey)
 
 ## Save cleaned data back to google cloud
 

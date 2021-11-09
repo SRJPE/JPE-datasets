@@ -46,7 +46,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = 
-                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/JPE_SR_all_individuals1997-2001.xlsx",
+                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/JPE_SR_all_seine_individuals1997-2001.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "raw_seine_1997-2001.xlsx",
                overwrite = TRUE)
@@ -577,6 +577,7 @@ format_site_name <- function(string) {
     str_replace_all("S.C.", "SC") %>%
     str_replace_all("'", "") %>%
     str_replace_all("G-95", "G95") %>% 
+    str_replace_all("Isl", "Island") %>%
     str_replace_all("[^[:alnum:]]", " ") %>% 
     trimws() %>% 
     stringr::str_squish() %>%
@@ -781,6 +782,7 @@ unique(cleaner_seine_data$comments)[1:5]
 ## Summary of identified issues
 
 * Sampling does not occur that frequently each year
+* Figure out depth measures and sample shape values (TODO contact Casey)
 
 ## Save cleaned data back to google cloud 
 

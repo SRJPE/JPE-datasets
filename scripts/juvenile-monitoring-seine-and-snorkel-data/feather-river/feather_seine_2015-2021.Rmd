@@ -630,6 +630,7 @@ format_site_name <- function(string) {
     str_replace_all("S.C.", "SC") %>%
     str_replace_all("'", "") %>%
     str_replace_all("G-95", "G95") %>% 
+    str_replace_all("Isl", "Island") %>%
     str_replace_all("[^[:alnum:]]", " ") %>% 
     trimws() %>% 
     stringr::str_squish() %>%
