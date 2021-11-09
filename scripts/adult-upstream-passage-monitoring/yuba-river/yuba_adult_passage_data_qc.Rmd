@@ -334,6 +334,7 @@ States if the fish is moving upstream (Up) or downstream (Down)
 
 ```{r}
 table(cleaner_passage_data$passage_direction) 
+cleaner_passage_data$passage_direction <- tolower(cleaner_passage_data$passage_direction)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
@@ -348,6 +349,7 @@ Refers to which fish ladder observation occured on.
 
 ```{r}
 table(cleaner_passage_data$ladder) 
+cleaner_passage_data$ladder <- tolower(cleaner_passage_data$ladder)
 ```
  
 
@@ -362,13 +364,19 @@ table(cleaner_passage_data$ladder)
 
 ## Save cleaned data back to google cloud 
 ```{r}
-cleaner_passage_data %>% glimpse()
+yuba_upstream_passage <- cleaner_passage_data %>% glimpse()
 ```
 
 
 ```{r, eval=FALSE}
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(yuba_upstream_passage,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/yuba-river/data/yuba_upstream_passage")
 ```
 
 

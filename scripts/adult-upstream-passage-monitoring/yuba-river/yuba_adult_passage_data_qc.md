@@ -524,6 +524,10 @@ table(cleaner_passage_data$passage_direction)
     ##  Down    Up 
     ##  2848 44795
 
+``` r
+cleaner_passage_data$passage_direction <- tolower(cleaner_passage_data$passage_direction)
+```
+
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 **NA and Unknown Values**
@@ -541,6 +545,10 @@ table(cleaner_passage_data$ladder)
     ## 
     ## North South 
     ## 38871  8772
+
+``` r
+cleaner_passage_data$ladder <- tolower(cleaner_passage_data$ladder)
+```
 
 **NA and Unknown Values**
 
@@ -566,8 +574,8 @@ cleaner_passage_data %>% glimpse()
     ## $ depth_mm          <dbl> 130, 92, 143, 153, 190, 186, 167, 123, 135, 120, 101~
     ## $ length_cm         <dbl> 57, 40, 62, 67, 83, 81, 73, 53, 59, 52, 44, 76, 55, ~
     ## $ catagory          <chr> "chn ac -p/+s", "chn -p/+s", "chn -p/+s", "chn -p/+s~
-    ## $ passage_direction <chr> "Up", "Up", "Up", "Up", "Up", "Up", "Up", "Up", "Up"~
-    ## $ ladder            <chr> "South", "South", "South", "South", "South", "South"~
+    ## $ passage_direction <chr> "up", "up", "up", "up", "up", "up", "up", "up", "up"~
+    ## $ ladder            <chr> "south", "south", "south", "south", "south", "south"~
     ## $ speed_m_per_s     <dbl> 0.59, 1.04, 0.45, 0.52, 0.97, 0.71, 0.64, 0.52, 0.66~
     ## $ position_in_frame <dbl> 13, 14, 14, 10, 10, 11, 11, 13, 11, 8, 16, 12, 19, 1~
     ## $ hours             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
