@@ -12,8 +12,7 @@ No associated description or metadata.
 
 **Timeframe:** 2004 - 2019
 
-**Video Season:** Appears to be January through October - we see most
-fish March - June
+**Video Season:** Appears to be January through October
 
 **Completeness of Record throughout timeframe:** Data from each year,
 records on hours sampled each date
