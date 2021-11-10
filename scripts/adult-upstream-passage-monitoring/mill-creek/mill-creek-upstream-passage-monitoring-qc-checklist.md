@@ -160,18 +160,17 @@ cleaner_data %>%
 
 ![](mill-creek-upstream-passage-monitoring-qc-checklist_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-**Numeric Monthly Summary of passage\_estimate From 2012 to 2020**
+**Numeric Summary of passage\_estimate From 2012 to 2020**
 
 ``` r
-cleaner_data %>%
-  group_by(month(date)) %>%
-  summarise(passage_estimate = sum(passage_estimate, na.rm = T)) %>%
-  pull(passage_estimate) %>%
-  summary()
+summary(cleaner_data$passage_estimate)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##    0.00    0.75   68.01  288.55  390.97 1069.22
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  -1.000   0.000   0.000   1.806   2.000  38.765      38
+
+Note: there is a negative estimate in one of the days - need to remove
+that
 
 **NA and Unknown Values**
 
@@ -216,18 +215,14 @@ cleaner_data %>%
 
 ![](mill-creek-upstream-passage-monitoring-qc-checklist_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-**Numeric Annual Summary of flow From 2012 to 2020**
+**Numeric Summary of flow From 2012 to 2020**
 
 ``` r
-cleaner_data %>%
-  group_by(year(date)) %>%
-  summarise(flow = mean(flow, na.rm = T)) %>%
-  pull(flow) %>%
-  summary()
+summary(cleaner_data$flow)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   84.76  177.50  231.13  227.14  276.05  326.35       1
+    ##    0.00   92.04  190.77  223.19  313.00 2559.00     219
 
 **NA and Unknown Values**
 
@@ -271,18 +266,14 @@ cleaner_data %>%
 
 ![](mill-creek-upstream-passage-monitoring-qc-checklist_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
-**Numeric Annual Summary of temperature From 2012 to 2020**
+**Numeric Summary of temperature From 2012 to 2020**
 
 ``` r
-cleaner_data %>%
-  group_by(year(date)) %>%
-  summarise(temperature = mean(temperature, na.rm = T)) %>%
-  pull(temperature) %>%
-  summary()
+summary(cleaner_data$temperature)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   44.27   57.59   58.76   57.57   60.05   62.49       1
+    ##   40.01   50.97   58.18   59.17   66.76   83.00     156
 
 **NA and Unknown Values**
 
@@ -291,7 +282,7 @@ cleaner_data %>%
 ### Notes and Issues:
 
 -   passage\_estimate drops significantly after 2014
--   Water temperature in F? Need to double check
+-   Water temperature in F
 -   Also need to check the units for flow
 
 ### Add cleaned data back onto google cloud
@@ -315,28 +306,28 @@ gcs_upload(mill_upstream_estimate,
            name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv")
 ```
 
-    ## i 2021-11-03 09:04:57 > File size detected as  48.6 Kb
+    ## i 2021-11-10 12:29:45 > File size detected as  48.6 Kb
 
-    ## i 2021-11-03 09:04:57 > Request Status Code:  400
+    ## i 2021-11-10 12:29:46 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-03 09:04:57 > File size detected as  48.6 Kb
+    ## i 2021-11-10 12:29:46 > File size detected as  48.6 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv 
     ## Type:                csv 
     ## Size:                48.6 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv?generation=1635955497909578&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv?generation=1636576185188571&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv/1635955497909578 
+    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv/1636576185188571 
     ## MD5 Hash:            dlaBSTRDmM3oyQSlNqDS4w== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-03 16:04:57 
-    ## Updated:             2021-11-03 16:04:57 
-    ## Generation:          1635955497909578 
+    ## Created:             2021-11-10 20:29:45 
+    ## Updated:             2021-11-10 20:29:45 
+    ## Generation:          1636576185188571 
     ## Meta Generation:     1 
-    ## eTag:                CMr6yJLJ/PMCEAE= 
+    ## eTag:                CNuBqrHRjvQCEAE= 
     ## crc32c:              35Ok/w==

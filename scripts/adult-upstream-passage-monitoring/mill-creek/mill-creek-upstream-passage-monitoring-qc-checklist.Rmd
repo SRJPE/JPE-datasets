@@ -126,14 +126,11 @@ cleaner_data %>%
        y = "Total passage_estimate")
 ```
 
-**Numeric Monthly Summary of passage_estimate From 2012 to 2020**
+**Numeric Summary of passage_estimate From 2012 to 2020**
 ```{r}
-cleaner_data %>%
-  group_by(month(date)) %>%
-  summarise(passage_estimate = sum(passage_estimate, na.rm = T)) %>%
-  pull(passage_estimate) %>%
-  summary()
+summary(cleaner_data$passage_estimate)
 ```
+Note: there is a negative estimate in one of the days - need to remove that
 
 **NA and Unknown Values**  
 
@@ -171,13 +168,9 @@ cleaner_data %>%
   labs(title = "Distribution of Flow")
 ```
 
-**Numeric Annual Summary of flow From 2012 to 2020**
+**Numeric Summary of flow From 2012 to 2020**
 ```{r}
-cleaner_data %>%
-  group_by(year(date)) %>%
-  summarise(flow = mean(flow, na.rm = T)) %>%
-  pull(flow) %>%
-  summary()
+summary(cleaner_data$flow)
 ```
 
 **NA and Unknown Values**  
@@ -218,13 +211,9 @@ cleaner_data %>%
   labs(title = "Distribution of Temperature")
 ```
 
-**Numeric Annual Summary of temperature From 2012 to 2020**
+**Numeric Summary of temperature From 2012 to 2020**
 ```{r}
-cleaner_data %>%
-  group_by(year(date)) %>%
-  summarise(temperature = mean(temperature, na.rm = T)) %>%
-  pull(temperature) %>%
-  summary()
+summary(cleaner_data$temperature)
 ```
 
 **NA and Unknown Values**  
@@ -234,7 +223,7 @@ cleaner_data %>%
 ### Notes and Issues:
 
 * passage_estimate drops significantly after 2014
-* Water temperature in F? Need to double check
+* Water temperature in F
 * Also need to check the units for flow
 
 ### Add cleaned data back onto google cloud
