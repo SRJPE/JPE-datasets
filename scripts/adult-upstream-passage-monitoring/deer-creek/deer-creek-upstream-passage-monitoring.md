@@ -153,18 +153,14 @@ cleaner_data %>%
 
 ![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-**Numeric Monthly Summary of passage\_estimate From 2014 to 2020**
+**Numeric Summary of passage\_estimate From 2014 to 2020**
 
 ``` r
-cleaner_data %>%
-  group_by(month(date)) %>%
-  summarise(passage_estimate = sum(passage_estimate, na.rm = T)) %>%
-  pull(passage_estimate) %>%
-  summary()
+summary(cleaner_data$passage_estimate)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##     0.0    19.5   172.1   401.5   415.7  1599.2
+    ##   0.000   0.000   0.000   2.533   2.000  75.000
 
 **NA and Unknown Values**
 
@@ -208,18 +204,14 @@ cleaner_data %>%
 
 ![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
-**Numeric Annual Summary of flow From 2014 to 2020**
+**Numeric Summary of flow From 2014 to 2020**
 
 ``` r
-cleaner_data %>%
-  group_by(year(date)) %>%
-  summarise(flow = mean(flow, na.rm = T)) %>%
-  pull(flow) %>%
-  summary()
+summary(cleaner_data$flow)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##   73.22  134.62  177.30  208.07  272.87  391.01
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   2.062  67.109 124.250 195.895 290.859 857.000     140
 
 **NA and Unknown Values**
 
@@ -261,18 +253,14 @@ cleaner_data %>%
 
 ![](deer-creek-upstream-passage-monitoring_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
-**Numeric Annual Summary of temperature From 2014 to 2020**
+**Numeric Summary of temperature From 2014 to 2020**
 
 ``` r
-cleaner_data %>%
-  group_by(year(date)) %>%
-  summarise(temperature = mean(temperature, na.rm = T)) %>%
-  pull(temperature) %>%
-  summary()
+summary(cleaner_data$temperature)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##   58.07   59.37   61.28   60.82   62.38   62.90
+    ##   42.28   51.65   59.67   60.74   69.22   81.75
 
 **NA and Unknown Values**
 
@@ -280,9 +268,9 @@ cleaner_data %>%
 
 ### Notes and Issues
 
--   Temperature in F? Need to double check
+-   Temperature in F
 
--   Units for flow?
+-   Lacking Units for flow
 
 ### Add cleaned data back onto google cloud
 
@@ -306,28 +294,28 @@ gcs_upload(deer_upstream_estimate,
            name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv")
 ```
 
-    ## i 2021-11-02 16:42:28 > File size detected as  39.7 Kb
+    ## i 2021-11-10 12:53:05 > File size detected as  39.7 Kb
 
-    ## i 2021-11-02 16:42:28 > Request Status Code:  400
+    ## i 2021-11-10 12:53:05 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-02 16:42:29 > File size detected as  39.7 Kb
+    ## i 2021-11-10 12:53:05 > File size detected as  39.7 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv 
     ## Type:                csv 
     ## Size:                39.7 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv?generation=1635896547628722&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv?generation=1636577584600706&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv/1635896547628722 
+    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv/1636577584600706 
     ## MD5 Hash:            09uD8o/DxSh/prRp3PlM8g== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-02 23:42:27 
-    ## Updated:             2021-11-02 23:42:27 
-    ## Generation:          1635896547628722 
+    ## Created:             2021-11-10 20:53:04 
+    ## Updated:             2021-11-10 20:53:04 
+    ## Generation:          1636577584600706 
     ## Meta Generation:     1 
-    ## eTag:                CLKt8cTt+vMCEAE= 
+    ## eTag:                CIKtz8zWjvQCEAE= 
     ## crc32c:              eYkzNA==

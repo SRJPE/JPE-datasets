@@ -122,13 +122,9 @@ cleaner_data %>%
        y = "Total passage_estimate")
 ```
 
-**Numeric Daily Summary of passage_estimate From 2014 to 2020**
+**Numeric Summary of passage_estimate From 2014 to 2020**
 ```{r}
-cleaner_data %>%
-  group_by(date) %>%
-  summarise(passage_estimate = sum(passage_estimate, na.rm = T)) %>%
-  pull(passage_estimate) %>%
-  summary()
+summary(cleaner_data$passage_estimate)
 ```
 
 **NA and Unknown Values**  
@@ -166,13 +162,9 @@ cleaner_data %>%
   labs(title = "Distribution of Flow")
 ```
 
-**Numeric Daily Summary of flow From 2014 to 2020**
+**Numeric Summary of flow From 2014 to 2020**
 ```{r}
-cleaner_data %>%
-  group_by(date) %>%
-  summarise(flow = mean(flow, na.rm = T)) %>%
-  pull(flow) %>%
-  summary()
+summary(cleaner_data$flow)
 ```
 
 **NA and Unknown Values**  
@@ -211,13 +203,9 @@ cleaner_data %>%
   labs(title = "Distribution of Temperature")
 ```
 
-**Numeric Daily Summary of temperature From 2014 to 2020**
+**Numeric Summary of temperature From 2014 to 2020**
 ```{r}
-cleaner_data %>%
-  group_by(date) %>%
-  summarise(temperature = mean(temperature, na.rm = T)) %>%
-  pull(temperature) %>%
-  summary()
+summary(cleaner_data$temperature)
 ```
 
 **NA and Unknown Values**  
@@ -226,9 +214,9 @@ cleaner_data %>%
 
 ### Notes and Issues
 
-* Temperature in F? Need to double check
+* Temperature in F
 
-* Units for flow?
+* Lacking Units for flow
 
 ### Add cleaned data back onto google cloud
 ```{r}
