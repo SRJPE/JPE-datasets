@@ -12,11 +12,13 @@ No associated description or metadata.
 
 **Timeframe:** 2004 - 2019
 
-**Video Season:**
+**Video Season:** Appears to be January through October - we see most
+fish March - June
 
-**Completeness of Record throughout timeframe:**
+**Completeness of Record throughout timeframe:** Data from each year,
+records on hours sampled each date
 
-**Sampling Location:** Yuba River
+**Sampling Location:** Yuba River North and Sourth Fish Ladder
 
 **Data Contact:** [Mike Healey](mailto:Mike.Healey@wildlife.ca.gov)
 
@@ -133,7 +135,7 @@ cleaner_passage_data %>% filter(year(date) > 2010) %>% # show only last 10 years
   ggplot(aes(x = fake_date, y = total_count, fill = passage_direction)) + 
   geom_col() + 
   facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1901-01-01"), as.Date("1901-09-01")), date_breaks = "1 month") + 
+  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1901-01-01"), as.Date("1901-10-01")), date_breaks = "1 month") + 
   theme_minimal() + 
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
@@ -564,7 +566,7 @@ cleaner_passage_data$ladder <- tolower(cleaner_passage_data$ladder)
 ## Save cleaned data back to google cloud
 
 ``` r
-cleaner_passage_data %>% glimpse()
+yuba_upstream_passage <- cleaner_passage_data %>% glimpse()
 ```
 
     ## Rows: 47,643
@@ -585,4 +587,10 @@ cleaner_passage_data %>% glimpse()
 ``` r
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(yuba_upstream_passage,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/yuba-river/data/yuba_upstream_passage")
 ```
