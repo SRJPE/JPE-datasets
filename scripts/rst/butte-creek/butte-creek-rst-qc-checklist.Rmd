@@ -17,7 +17,7 @@ library (RColorBrewer)
 
 **Description of Monitoring Data**
 
-This dataset contains data for all Chinook salmon that were captured in the Butte Creek rotary screw trap (RSTR) or diversion fyke trap (DSTR) between the 1995-96 and 2014-15 trapping seasons.
+This dataset contains data for all Chinook salmon that were captured in the Butte Creek rotary screw trap (RSTR) or diversion fyke trap (DSTR) from the 1995-96 to the 2014-15 trapping seasons.
 
 **Timeframe:** 
 
@@ -65,14 +65,16 @@ glimpse(raw_data)
 ```{r}
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>%
-  select(-c("staffgauge")) %>% #no value associated with reading (e.g. cfs, ft) %>%  
+  select(-c("staffgauge", "methodcode", "organismcode")) %>% #no value associated with reading (e.g. cfs, ft), #all organisms are chinooks %>%
   rename('date'= sampledate,
          'station' = stationcode,
-         'method'= methodcode,
          'trap_status' = trapstatus,
-         'species'= organismcode,
          'fork_length' = forklength,
          'lifestage' = stagecode,
+         'mark_code' = markcode,
+         'weather' = weathercode,
+         'north_brush' = northbrush,
+         'south_brush' = southbrush,
          'time' = sampletime,
          'gear_id' = gearid,
          'temperature' = watertemperature,
@@ -125,30 +127,6 @@ table(cleaner_data$station)
 *  `r round(sum(is.na(cleaner_data$station))/nrow(cleaner_data), 3)*100` % of values in the `station` column are NA.
 
 
-### Variable `method`
-
-**Description:** method of capture
-
-* DSTR - Diversion fyke trap
-
-* RSTR - Rotary screw trap
-
-```{r}
-cleaner_data <- cleaner_data %>% 
-  mutate(method = set_names(tolower(method)),
-         method = case_when(
-          method =='dstr'~ 'diversion fyke trap',
-          method =='rstr'~ 'rotary screw trap'
-  )
-)
-table(cleaner_data$method)
-```
-
-**NA and Unknown Values**  
-
-*  `r round(sum(is.na(cleaner_data$method))/nrow(cleaner_data), 3)*100` % of values in the `method` column are NA.
-
-
 ### Variable `trap_status`
 
 **Description:** 
@@ -194,13 +172,13 @@ table(cleaner_data$dead)
 
 *  `r round(sum(is.na(cleaner_data$dead))/nrow(cleaner_data), 3)*100` % of values in the `dead` column are NA.
 
-### Variable `markcode`
+### Variable `mark_code`
 
 ```{r}
 cleaner_data <- cleaner_data %>% 
-  mutate(markcode = tolower(cleaner_data$markcode),
-         markcode = ifelse(markcode == "n/p", NA, markcode))
-table(cleaner_data$markcode)
+  mutate(mark_code = tolower(cleaner_data$mark_code),
+         mark_code = ifelse(mark_code == "n/p", NA, mark_code))
+table(cleaner_data$mark_code)
 ```
 **NA and Unknown Values**  
 
@@ -265,7 +243,7 @@ table(cleaner_data$gear_id)
 
 *  `r round(sum(is.na(cleaner_data$gear_id))/nrow(cleaner_data), 3)*100` % of values in the `gear_id` column are NA.
 
-### Variable `weathercode`
+### Variable `weather`
 
 **Description:**
 
@@ -276,19 +254,19 @@ table(cleaner_data$gear_id)
 
 ```{r}
 cleaner_data <- cleaner_data %>% 
-  mutate(weathercode = case_when(
-    weathercode == "CLD" ~ "cloudy",
-    weathercode == "CLR" ~ "clear",
-    weathercode == "FOG" ~ "foggy",
-    weathercode == "RAN" ~ "rainy"
+  mutate(weather = case_when(
+    weather == "CLD" ~ "cloudy",
+    weather == "CLR" ~ "clear",
+    weather == "FOG" ~ "foggy",
+    weather == "RAN" ~ "rainy"
   ))
-table(cleaner_data$weathercode)
+table(cleaner_data$weather)
 ```
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$weathercode))/nrow(cleaner_data), 3)*100` % of values in the `weathercode` column are NA.
+*  `r round(sum(is.na(cleaner_data$weather))/nrow(cleaner_data), 3)*100` % of values in the `weather` column are NA.
 
-### Variable `northbrush`, `southbrush`
+### Variable `north_brush`, `south_brush`
 
 **Description:** for diversion fyke trap, there are diversion screens for clearing debris on the north and south of the trap. 
 
@@ -297,17 +275,17 @@ True - screen work (clearing debris)
 
 ```{r}
 #Not sure if we are interested in diversion fyke trap - keeping the variable for now
-table(cleaner_data$northbrush)
+table(cleaner_data$north_brush)
 ```
 ```{r}
-table(cleaner_data$southbrush)
+table(cleaner_data$south_brush)
 ```
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$northbrush))/nrow(cleaner_data), 3)*100` % of values in the `northbrush` column are NA.
+*  `r round(sum(is.na(cleaner_data$north_brush))/nrow(cleaner_data), 3)*100` % of values in the `north_brush` column are NA.
 
 
-*  `r round(sum(is.na(cleaner_data$southbrush))/nrow(cleaner_data), 3)*100` % of values in the `southbrush` column are NA.
+*  `r round(sum(is.na(cleaner_data$south_brush))/nrow(cleaner_data), 3)*100` % of values in the `south_brush` column are NA.
 
 ### Variable `debris`
 
@@ -436,7 +414,7 @@ Need to filter out 0s
 cleaner_data %>% filter(weight == 0)
 ```
 ```{r}
-cleaner_data$fork_length <- ifelse(cleaner_data$weight == 0, NA, cleaner_data$weight)
+cleaner_data$weight <- ifelse(cleaner_data$weight == 0, NA, cleaner_data$weight)
 ```
 
 ```{r}
@@ -518,6 +496,7 @@ cleaner_data %>%
 ```{r}
 summary(cleaner_data$temperature)
 ```
+Note: max 805 is very high. Likely an error.
 
 **NA and Unknown Values**  
 
@@ -560,6 +539,8 @@ cleaner_data %>%
 ```{r}
 summary(cleaner_data$turbidity)
 ```
+Note: max 189 ntu is very high. Likely an error.
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$turbidity))/nrow(cleaner_data), 3)*100` % of values in the `turbidity` column are NA.
@@ -685,7 +666,7 @@ summary(cleaner_data$rpms_start)
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$rpms_start))/nrow(cleaner_data), 3)*100` % of values in the `rpms_start`` column are NA.
+*  `r round(sum(is.na(cleaner_data$rpms_start))/nrow(cleaner_data), 3)*100` % of values in the `rpms_start` column are NA.
 
 ### Variable `rpms_end`
 
