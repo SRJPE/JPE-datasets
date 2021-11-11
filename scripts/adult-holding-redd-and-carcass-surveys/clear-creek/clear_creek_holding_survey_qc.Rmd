@@ -61,7 +61,7 @@ raw_holding_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", shee
 ```{r}
 cleaner_data <- raw_holding_data %>% 
   janitor::clean_names() %>% 
-  select(-c('method','qc_type','qc_date','inspector','year')) %>% #all method is snorkel, year could be extracted from date, 
+  select(-c('survey','method','qc_type','qc_date','inspector','year')) %>% #all method is snorkel, year could be extracted from date, 
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'count' = 'total_fish',
@@ -90,8 +90,6 @@ cleaner_data %>%
 **Description:** reach surveyed on each survey day
 
 ```{r}
-cleaner_data <- cleaner_data %>% 
-  mutate(reach = tolower(cleaner_data$reach))
 table(cleaner_data$reach)
 ```
 
@@ -111,6 +109,7 @@ unique(cleaner_data$comments)[1:5]
 
 ### Variable: `species`
 
+Edit capitalization; we are only interested in chinook data.
 
 ```{r}
 table(cleaner_data$species)
@@ -129,10 +128,11 @@ cleaner_data <- cleaner_data %>%
 TODO: does different survey intent matter?
 
 ```{r}
-table(cleaner_data$survey_intent)
-
 cleaner_data <- cleaner_data %>% 
   mutate(survey_intent = tolower(survey_intent))
+
+table(cleaner_data$survey_intent)
+
 ```
 
 **NA and Unknown Values**  
@@ -144,9 +144,9 @@ cleaner_data <- cleaner_data %>%
 **Description:** Fish above or below Picket Weir
 
 ```{r}
-table(cleaner_data$pw_relate)
 cleaner_data <- cleaner_data %>% 
-  mutate(survey_intent = tolower(pw_relate))
+  mutate(pw_relate = tolower(pw_relate))
+table(cleaner_data$pw_relate)
 ```
 
 ## Explore Numerical Variables
@@ -155,7 +155,30 @@ cleaner_data <- cleaner_data %>%
 cleaner_data %>% 
   select_if(is.numeric) %>% colnames()
 ```
+
+
 ### Variable: `river_mile`
+
+Plotting river mile over Period of Record
+
+```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = river_mile, y = year)) +
+  geom_point(alpha = .75, size = 1.5, color = "blue") +
+  labs(x = "River Mile", y = "Year", title = "River Mile Over the Years")
+```
+
+```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x= river_mile, y = count, color = year))+
+  geom_point()+
+  theme_minimal()+
+  labs(title = "Total Fish Count Per River Mile")
+```
+
+
 
 ```{r}
 summary(cleaner_data$river_mile)
@@ -172,6 +195,7 @@ summary(cleaner_data$river_mile)
 ```{r}
 summary(cleaner_data$longitude)
 ```
+
 **Numeric Summary of latitude over Period of Record**
 
 ```{r}
@@ -189,11 +213,51 @@ summary(cleaner_data$latitude)
 **Description:** total number of Adult Chinook Salmon encountered including the number of 2-year olds (Jacks/Jills) 
 
 ```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date)),
+         fake_date = as.Date(paste0("1990", "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = count)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free_y") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 13),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Holding Count", 
+       x = "Date")  
+```
+```{r}
+cleaner_data %>% 
+  group_by(date) %>%
+  summarise(daily_count = sum(count)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = year, y = daily_count)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Daily Count Sumarized by Year") + 
+  theme(text = element_text(size = 13),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))   + 
+  scale_y_continuous(limits = c(0, 101))
+```
 
+```{r}
+cleaner_data  %>%
+  mutate(year = as.factor(year(date))) %>%
+  group_by(year(date)) %>%
+  mutate(total_catch = sum(count)) %>%
+  ungroup() %>%
+  ggplot(aes(x = year, y = total_catch)) + 
+  geom_col() + 
+  theme_minimal() +
+  labs(title = "Total Yearly Fish Count",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 13),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 **Numeric Summary of count over Period of Record**
 ```{r}
+summary(cleaner_data$count)
 ```
 
 **NA and Unknown Values**  
