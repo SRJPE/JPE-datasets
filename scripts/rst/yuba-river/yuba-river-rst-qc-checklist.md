@@ -177,7 +177,7 @@ table(cleaner_data$organism_code)
 
 ### Variable: `method`
 
-**Description: ‘method’ is an alphanumeric code defining the type of
+**Description: method is an alphanumeric code defining the type of
 sampling action taken.**
 
 -   FSR - Fish Screen Diversion Trap
