@@ -304,7 +304,7 @@ table(cleaner_hallprint_data$color)
 
 **NA and Unknown Values**
 
--   0 % of values in the `color` column are Unknown.
+-   0.032 % of values in the `color` column are Unknown.
 
 ### Variable: `acoustic`
 
@@ -366,6 +366,8 @@ write_rds(feather_hallprint_acoustic_location, "../../../data/feather_hallprint_
 
 -   One identified issue is that not all `tags_numbers` or
     `second_tag_numbers` are unique.
+-   Each tag is a unique fish, this data may be more helpful as some
+    estimate of fish count, add in a count colum?
 
 ### Save cleaned data back to google cloud
 

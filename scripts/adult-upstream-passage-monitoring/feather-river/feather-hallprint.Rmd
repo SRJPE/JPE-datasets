@@ -203,7 +203,7 @@ table(cleaner_hallprint_data$color)
 
 **NA and Unknown Values**
 
- * `r round(sum(cleaner_hallprint_data$color == "unknown")/nrow(cleaner_hallprint_data), 3)* 100` % of values in the `color` column are Unknown. 
+ * `r round(sum(cleaner_hallprint_data$color == "unknown")/nrow(cleaner_hallprint_data), 5)* 100` % of values in the `color` column are Unknown. 
   
 ### Variable: `acoustic`
 ```{r}
@@ -245,6 +245,7 @@ write_rds(feather_hallprint_acoustic_location, "../../../data/feather_hallprint_
 **Summary of identified issues:**
 
 * One identified issue is that not all `tags_numbers` or `second_tag_numbers` are unique. 
+* Each tag is a unique fish, this data may be more helpful as some estimate of fish count, add in a count colum?
 
 ### Save cleaned data back to google cloud 
 

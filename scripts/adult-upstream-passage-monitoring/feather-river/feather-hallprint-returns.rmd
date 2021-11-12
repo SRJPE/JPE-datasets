@@ -353,7 +353,7 @@ cleaner_carcass_data$spring_green <- ifelse(cleaner_carcass_data$comments == "SP
 
 **Summary of identified issues:**
 
-* Need to figure out what the condition codes mean
+* Need to figure out what the condition codes mean (TODO contact byron)
 * Only one year of data, the rest we did not receive because they are all in varying formats. This one is also a many sheets non tidy excel table. I choose to look at this sheet because it seemed the most useful but I am not sure it is the best information. 
 
 ### Save cleaned data back to google cloud 
