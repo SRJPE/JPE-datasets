@@ -149,7 +149,7 @@ summary(cleaner_passage_estimate$catch)
 ### Variable: `trap_efficiency`
 
 
-**Plotting fork_length**
+**Plotting trap_efficiency**
   
 ```{r}
 cleaner_passage_estimate %>% 
