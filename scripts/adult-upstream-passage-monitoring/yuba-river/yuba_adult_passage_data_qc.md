@@ -8,14 +8,19 @@ Erin Cain
 ## Description of Monitoring Data
 
 Yuba river upstream passage data provided by Mike Healey in a xlsx doc.
-No associated description or metadata.
+No associated description or metadata. We were warned by yuba river
+experts that this data has a lot of inconsistencies and they do not
+think the raw data here accuratly reflects the system. They recomend
+using values calculated in [this
+report.](https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring/yuba-river/data-raw/2020%20Update%20LYR%20Chinook%20Salmon%20Run%20Differentiation_December%202020.pdf)
 
 **Timeframe:** 2004 - 2019
 
 **Video Season:** Appears to be January through October
 
 **Completeness of Record throughout timeframe:** Data from each year,
-records on hours sampled each date
+records on hours sampled each date, seems like non sample hours are due
+to outages in vaki equiptment (based on report)
 
 **Sampling Location:** Yuba River North and Sourth Fish Ladder
 
@@ -339,7 +344,7 @@ cleaner_passage_data %>%
   geom_histogram(breaks=seq(0, 25, by=1)) + 
   scale_x_continuous(breaks=seq(0, 25, by=1)) +
   theme_minimal() +
-  labs(title = "Position in frame distribution") + 
+  labs(title = "Hours monitored distribution") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
@@ -558,9 +563,13 @@ cleaner_passage_data$ladder <- tolower(cleaner_passage_data$ladder)
 ## Summary of identified issues
 
 -   The categories are very confusing, need to get definitions for the
-    different category types (TODO ask about this)
--   not sure if length is fork length or a different measure of length
-    (TODO ask about this)
+    different category types - when asking Yuba exerts about this they
+    stated that the data is very complex and we would need multi-hour
+    meeting to talk through it all.
+-   not sure if length is fork length or a different measure of length -
+    when asking Yuba exerts about this they stated that the data is very
+    complex and we would need multi-hour meeting to talk through it all.
+-   Not sure what position in frame values map to
 
 ## Save cleaned data back to google cloud
 
