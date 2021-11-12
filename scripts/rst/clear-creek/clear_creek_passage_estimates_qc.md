@@ -56,7 +56,7 @@ sheet:
 ``` r
 # read in data to clean
 sheets <- excel_sheets("SR_passage_estimats.xlsx")
-sheets
+sheets # UBC is upper battle creek, please see rst/battle/battle_creek_passage_estimate.md for info on this dataset
 ```
 
     ## [1] "UCC Passage" "LCC Passage" "UBC Passage"
@@ -194,7 +194,7 @@ summary(cleaner_passage_estimate$catch)
 
 ### Variable: `trap_efficiency`
 
-**Plotting fork\_length**
+**Plotting trap\_efficiency**
 
 ``` r
 cleaner_passage_estimate %>% 
