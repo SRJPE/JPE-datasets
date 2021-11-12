@@ -623,8 +623,8 @@ cleaner_rst_data %>% glimpse()
 ``` r
 f <- function(input, output) write_csv(input, file = output)
 
-gcs_upload(battle_rst,
+gcs_upload(deer_rst,
            object_function = f,
            type = "csv",
-           name = "rst/battle-creek/data/battle_rst.csv")
+           name = "rst/deer-creek/data/deer_rst.csv")
 ```
