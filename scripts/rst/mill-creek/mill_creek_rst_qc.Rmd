@@ -1,0 +1,503 @@
+---
+title: "Mill Creek RST Data QC"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+```
+
+# Mill Creek RST Data
+
+## Description of Monitoring Data
+RST data was shared with us in an access database. I quiried it to include both fish catch and trap condions information. 
+
+**Timeframe:** 1995 - 2010 
+
+**Completeness of Record throughout timeframe:** Gaps in sampling
+
+**Sampling Location:** Mill Creek 
+
+**Data Contact:** Matt Johsnson 
+
+Comments from Matt: Let me know if you need any help with interpreting what is in that database.  It is not mine, I inherited it from a retired CDFW biologist, but I did work on those RST’s as a Scientific Aide, and entered data into the database.  So I at least have some working knowledge of the forms/tables in there.  
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))\
+
+gcs_list_objects()
+
+# git data and save as xlsx
+gcs_get_object(object_name = 
+                 "rst/mill-creek/data-raw/mill_deer_rst_trap_catch_and_conditions.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_rst_deer_and_mill.xlsx",
+               overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data: 
+```{r}
+raw_rst_data <- read_excel("raw_rst_deer_and_mill.xlsx", col_types =c("date", "text", "numeric", "text", "numeric", 
+                                                                      "numeric", "numeric", "numeric", "numeric", "numeric", 
+                                                                      "numeric", "numeric", "numeric", "text")) %>% glimpse()
+unique(raw_rst_data$Location)
+```
+
+## Data transformations
+
+```{r}
+cleaner_rst_data <- raw_rst_data%>% 
+  filter(Location == "Mill Creek RSTR",
+         Species == "CHISAL") %>%
+  janitor::clean_names() %>% 
+  mutate(date = as.Date(date),
+         trap_condition_code = as.character(trap_condition_code), 
+         weather = as.character(weather)) %>%
+  select(-species) %>%
+  glimpse()
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+cleaner_rst_data %>% select_if(is.numeric) %>% colnames()
+```
+
+
+### Variable: `count`
+
+**Plotting fish counts over period of record**
+```{r, include=FALSE}
+sac_indices <- waterYearType::water_year_indices %>% 
+    filter(location == "Sacramento Valley") %>% 
+    transmute(water_year = WY, year_type = as.character(Yr_type))
+```
+
+```{r}
+cleaner_rst_data %>% 
+  mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  left_join(sac_indices) %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  filter(water_year < 2021) %>%
+  group_by(date) %>%
+  mutate(total_daily_catch = sum(count)) %>%
+  ungroup() %>%
+  ggplot(aes(x = fake_date, y = total_daily_catch, fill = year_type)) + 
+  geom_col() + 
+  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-06-01")), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom") + 
+  labs(title = "Total Daily Raw Passage 2015 - 2020",
+       y = "Total daily raw catch",
+       x = "Date")+ 
+  facet_wrap(~water_year, scales = "free") +
+  scale_color_manual(palette)
+```
+
+  
+Early years looks like sampling happened infrequently. 
+
+```{r}
+cleaner_rst_data  %>%
+  mutate(year = as.factor(year(date))) %>%
+  group_by(year) %>%
+  mutate(total_yearly_catch = sum(count)) %>%
+  ggplot(aes(x = year, y = total_yearly_catch)) + 
+  geom_col() + 
+  theme_minimal() +
+  labs(title = "Total Fish Counted each Year by run",
+       y = "Total fish raw catch") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+Looks like some sampling gaps.
+
+**Numeric Summary of counts over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_rst_data$count)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_data$count))/nrow(cleaner_rst_data), 3) * 100` % of values in the `count` column are NA.
+
+
+### Variable: `length`
+
+Length of the fish captured					
+
+**Plotting length**
+  
+```{r}
+cleaner_rst_data %>% filter(length < 250) %>% # filter out 13 points so we can more clearly see distribution
+  ggplot(aes(x = length)) + 
+  geom_histogram(breaks=seq(0, 200, by=2)) + 
+  scale_x_continuous(breaks=seq(0, 200, by=25)) +
+  theme_minimal() +
+  labs(title = "Length distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+**Numeric Summary of length over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_rst_data$length)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_data$length))/nrow(cleaner_rst_data), 3) * 100` % of values in the `length` column are NA. 
+
+### Variable: `weight`
+
+weight of the fish captured					
+
+**Plotting weight**
+  
+```{r}
+cleaner_rst_data %>% 
+  ggplot(aes(x = weight)) + 
+  geom_histogram() + 
+  theme_minimal() +
+  labs(title = "Weight distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+**Numeric Summary of weight over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_rst_data$weight)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_data$weight))/nrow(cleaner_rst_data), 3) * 100` % of values in the `weight` column are NA. 
+
+### Variable: `flow`
+
+Flow, units?
+
+**Plotting flow over Period of Record**
+  
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+cleaner_rst_data %>% 
+  group_by(date) %>%
+  mutate(avg_flow = mean(flow)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_flow, color = year)) + 
+  geom_point(alpha = .25) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily Flow Measures (colored by year)",
+       x = "Date", 
+       y = "Average Daily Flow")  
+```
+```{r}
+cleaner_rst_data %>%  
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = flow, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Water Flow measures summarized by year",
+       x = "Flow") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+**Numeric Summary of flow over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_rst_data$flow)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_data$flow))/nrow(cleaner_rst_data), 3) * 100` % of values in the `flow` column are NA.
+
+
+
+### Variable: `time_for_10_revolutions`
+
+Length of the fish captured					
+
+**Plotting time_for_10_revolutions**
+  
+```{r}
+cleaner_rst_data %>% 
+  ggplot(aes(x = time_for_10_revolutions)) + 
+  geom_histogram() + 
+  # scale_x_continuous(breaks=seq(0, 200, by=25)) +
+  theme_minimal() +
+  labs(title = "Time it takes to do 10 revolutions distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+A lot of spread in this time. 0 seems like a non functional trap. Very high values seem like outliers. 
+
+**Numeric Summary of time_for_10_revolutions over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_rst_data$time_for_10_revolutions)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_data$time_for_10_revolutions))/nrow(cleaner_rst_data), 3) * 100` % of values in the `time_for_10_revolutions` column are NA. 
+
+
+### Variable: `tubs_of_debris`
+
+tubs_of_debris of the fish captured					
+
+**Plotting Debris**
+  
+```{r}
+cleaner_rst_data %>% 
+  ggplot(aes(x = tubs_of_debris)) + 
+  geom_histogram() + 
+  theme_minimal() +
+  labs(title = "Tub of debris distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+**Numeric Summary of tub of debris over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_rst_data$tubs_of_debris)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_data$tubs_of_debris))/nrow(cleaner_rst_data), 3) * 100` % of values in the `tubs_of_debris` column are NA. 
+
+
+
+### Variable: `water_temperature`
+
+water_temperature F
+
+**Plotting water_temperature over Period of Record**
+  
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+cleaner_rst_data %>% 
+  group_by(date) %>%
+  mutate(avg_temp = mean(water_temperature)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
+  geom_point(alpha = .25) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily Temp Measures F (colored by year)",
+       x = "Date", 
+       y = "Average Daily Temp")  
+```
+```{r}
+cleaner_rst_data %>%  
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = water_temperature, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Water Temp measures summarized by year",
+       x = "Temp") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+
+**Numeric Summary of water_temperature over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_rst_data$water_temperature)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_data$water_temperature))/nrow(cleaner_rst_data), 3) * 100` % of values in the `water_temperature` column are NA.
+
+
+
+### Variable: `turbidity`
+
+turbidity, units?
+
+**Plotting turbidity over Period of Record**
+  
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+cleaner_rst_data %>% 
+  group_by(date) %>%
+  mutate(avg_turbidity = mean(turbidity)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_turbidity, color = year)) + 
+  geom_point(alpha = .25) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily turbidity Measures (colored by year)",
+       x = "Date", 
+       y = "Average Daily turbidity NTUs")  
+```
+```{r}
+cleaner_rst_data %>%  
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = flow, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Water turbidity measures summarized by year",
+       x = "Turbidity NTUs") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+* High turbidity stream, Still seems like there must be some outliers in here
+
+**Numeric Summary of turbidity over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_rst_data$turbidity)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_data$turbidity))/nrow(cleaner_rst_data), 3) * 100` % of values in the `turbidity` column are NA.
+
+## Explore Categorical variables: {.tabset}
+
+
+```{r}
+cleaner_rst_data %>% select_if(is.character) %>% colnames()
+```
+
+
+### Variable: `location`
+```{r}
+table(cleaner_rst_data$location) 
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_data$location))/nrow(cleaner_rst_data), 3) * 100` % of values in the `location` column are NA.
+
+### Variable: `trap_condition_code`
+
+Code describing trap condition. TODO figure out code definitions (Ask Matt)
+```{r}
+table(cleaner_rst_data$trap_condition_code) 
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_data$trap_condition_code))/nrow(cleaner_rst_data), 3) * 100` % of values in the `trap_condition_code` column are NA.
+
+### Variable: `weather`
+
+Code describing weather condition. TODO figure out code definitions (Ask Matt)
+```{r}
+table(cleaner_rst_data$weather) 
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_data$weather))/nrow(cleaner_rst_data), 3) * 100` % of values in the `weather` column are NA.
+
+### Variable: `comments`
+
+First 5 unique comments displayed to see what info they contain
+
+```{r}
+unique(cleaner_rst_data$comments)[1:5] 
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_data$comments))/nrow(cleaner_rst_data), 3) * 100` % of values in the `comments` column are NA.
+
+## Summary of identified issues
+
+
+* Lots of sampling gaps
+* Some super high turbidity measures 
+* Need to figure out code definitions - weather, condition 
+
+## Save cleaned data back to google cloud 
+
+```{r}
+cleaner_rst_data %>% glimpse()
+```
+
+```{r, eval = FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(mill_rst,
+           object_function = f,
+           type = "csv",
+           name = "rst/mill-creek/data/mill_rst.csv")
+```
