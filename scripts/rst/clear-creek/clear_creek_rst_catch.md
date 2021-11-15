@@ -284,6 +284,8 @@ are split into races, zero fork lengths have been assigned
 
 ``` r
 cleaner_rst_count %>% 
+  group_by(date) %>%
+  summarise(total_daily_catch = sum(count)) %>%
   filter(year(date) > 2014, year(date) < 2021) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
@@ -291,9 +293,6 @@ cleaner_rst_count %>%
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   filter(water_year < 2021) %>%
-  group_by(date) %>%
-  mutate(total_daily_catch = sum(count)) %>%
-  ungroup() %>%
   ggplot(aes(x = fake_date, y = total_daily_catch, fill = year_type)) + 
   geom_col() + 
   scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-06-01")), date_breaks = "1 month") + 
@@ -318,8 +317,8 @@ cleaner_rst_count  %>%
          run %in% c("F", "L", "S", "W")
          ) %>% 
   mutate(year = as.factor(year(date))) %>%
-  group_by(year) %>%
-  mutate(total_yearly_catch = sum(count)) %>%
+  group_by(year, run) %>%
+  summarise(total_yearly_catch = sum(count)) %>%
   ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
@@ -329,6 +328,8 @@ cleaner_rst_count  %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
   facet_wrap(~run, scales = "free_y")
 ```
+
+    ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
 ![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
