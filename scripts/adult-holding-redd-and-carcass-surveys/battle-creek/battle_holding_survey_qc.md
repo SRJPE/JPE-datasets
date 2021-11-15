@@ -208,8 +208,8 @@ cleaner_holding_data %>%
 ``` r
 cleaner_holding_data  %>%
   mutate(year = as.factor(year(date))) %>%
-  group_by(year(date)) %>%
-  mutate(total_catch = sum(count)) %>%
+  group_by(year = year(date)) %>%
+  summarise(total_catch = sum(count, na.rm = T)) %>%
   ungroup() %>%
   ggplot(aes(x = year, y = total_catch)) + 
   geom_col() + 
