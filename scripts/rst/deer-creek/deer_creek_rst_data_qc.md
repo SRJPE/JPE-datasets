@@ -133,7 +133,7 @@ cleaner_rst_data %>% select_if(is.numeric) %>% colnames()
 ``` r
 cleaner_rst_data %>% 
   group_by(date) %>%
-  summarise(total_daily_catch = sum(count)) %>%
+  summarise(total_daily_catch = sum(count, na.rm = T)) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
   mutate(year = as.factor(year(date)),
@@ -165,7 +165,7 @@ Early years looks like sampling happened infrequently.
 cleaner_rst_data  %>%
   mutate(year = as.factor(year(date))) %>%
   group_by(year) %>%
-  mutate(total_yearly_catch = sum(count)) %>%
+  summarise(total_yearly_catch = sum(count, na.rm = T)) %>%
   ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
@@ -176,9 +176,6 @@ cleaner_rst_data  %>%
 ```
 
 ![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
-
-Huge amount of fish in 2002. Sampling occurred every year, just very
-small numbers in comparison to 2002 make bars look tiny
 
 **Numeric Summary of counts over Period of Record**
 
@@ -191,12 +188,12 @@ summary(cleaner_rst_data$count)
     ##    1.000    1.000    1.000    5.677    2.000 4057.000       39
 
 ``` r
-daily_count <- cleaner_rst_data %>% group_by(date) %>% summarise(daily_count = sum(count, na.rm = T)) %>% ggplot(aes(x = date, y = daily_count)) + geom_col()
+daily_count <- cleaner_rst_data %>% group_by(date) %>% summarise(daily_count = sum(count, na.rm = T))
 summary(daily_count$daily_count)
 ```
 
-    ## Length  Class   Mode 
-    ##      0   NULL   NULL
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    0.00    5.00   20.00   93.11   77.00 4275.00
 
 **NA and Unknown Values**
 
@@ -204,7 +201,7 @@ summary(daily_count$daily_count)
 
 ### Variable: `length`
 
-Length of the fish captured
+Length of the fish captured. Units? (Waiting on response from Matt)
 
 **Plotting length**
 
@@ -237,7 +234,7 @@ summary(cleaner_rst_data$length)
 
 ### Variable: `weight`
 
-weight of the fish captured
+Weight of the fish captured. Units? Waiting on Matt.
 
 **Plotting weight**
 
@@ -271,7 +268,7 @@ summary(cleaner_rst_data$weight)
 
 ### Variable: `flow`
 
-Flow, units?
+Flow, units? (Waiting on reply from Matt)
 
 **Plotting flow over Period of Record**
 
@@ -334,9 +331,7 @@ summary(cleaner_rst_data$flow)
 
 ### Variable: `time_for_10_revolutions`
 
-Length of the fish captured
-
-**Plotting time\_for\_10\_revolutions**
+**Plotting time it takes RST to do 10 revolutions**
 
 ``` r
 cleaner_rst_data %>% 
@@ -370,8 +365,6 @@ summary(cleaner_rst_data$time_for_10_revolutions)
 -   27.2 % of values in the `time_for_10_revolutions` column are NA.
 
 ### Variable: `tubs_of_debris`
-
-tubs\_of\_debris of the fish captured
 
 **Plotting Debris**
 
@@ -447,10 +440,6 @@ cleaner_rst_data %>%
 ```
 
 ![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
-
-Notes:
-
--   No measures pre 1997
 
 **Numeric Summary of water\_temperature over Period of Record**
 
@@ -557,8 +546,8 @@ table(cleaner_rst_data$location)
 
 ### Variable: `trap_condition_code`
 
-Code describing trap condition. TODO figure out code definitions (Ask
-Matt)
+Code describing trap condition. TODO figure out code definitions
+(Waiting on reply from Matt)
 
 ``` r
 table(cleaner_rst_data$trap_condition_code) 
@@ -574,8 +563,8 @@ table(cleaner_rst_data$trap_condition_code)
 
 ### Variable: `weather`
 
-Code describing weather condition. TODO figure out code definitions (Ask
-Matt)
+Code describing weather condition. TODO figure out code definitions
+(Waiting on reply from Matt)
 
 ``` r
 table(cleaner_rst_data$weather) 
