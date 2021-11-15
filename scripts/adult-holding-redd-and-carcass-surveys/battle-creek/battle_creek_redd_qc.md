@@ -38,8 +38,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # git data and save as xlsx
 ```
 
-Read in data from google cloud, glimpse raw data and domain description
-sheet:
+Read in data from google cloud, glimpse sheets and raw data:
 
 ``` r
 sheets <- excel_sheets("raw_adult_spawn_hold_carcass.xlsx")
