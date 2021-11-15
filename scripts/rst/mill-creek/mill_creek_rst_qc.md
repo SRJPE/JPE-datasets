@@ -129,7 +129,7 @@ cleaner_rst_data %>% select_if(is.numeric) %>% colnames()
 ``` r
 cleaner_rst_data %>% 
   group_by(date) %>%
-  summarise(total_daily_catch = sum(count)) %>%
+  summarise(total_daily_catch = sum(count, na.rm = T)) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
   mutate(year = as.factor(year(date)),
@@ -160,7 +160,7 @@ Early years looks like sampling happened infrequently.
 cleaner_rst_data  %>%
   mutate(year = as.factor(year(date))) %>%
   group_by(year) %>%
-  summarise(total_yearly_catch = sum(count)) %>%
+  summarise(total_yearly_catch = sum(count, na.rm = T)) %>%
   ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
