@@ -350,8 +350,6 @@ summary(cleaner_rst_data$time_for_10_revolutions)
 
 ### Variable: `tubs_of_debris`
 
-tubs\_of\_debris of the fish captured
-
 **Plotting Debris**
 
 ``` r
