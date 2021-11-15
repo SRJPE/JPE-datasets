@@ -7,7 +7,7 @@ Erin Cain
 
 ## Description of Monitoring Data
 
-These data were aquired via snorkel and kayak surveys on Battle Creek
+These data were acquired via snorkel and kayak surveys on Battle Creek
 from 1996 to 2019 and describe spring-run and unknown run Chinook Salmon
 carcasses found within and along Battle Creek.
 
@@ -238,9 +238,6 @@ summary(cleaner_carcass_data$fork_length)
 
 ## Explore Categorical variables:
 
-General notes: If there is an opportunity to turn yes no into boolean do
-so, but not if you loose value
-
 ``` r
 cleaner_carcass_data %>% select_if(is.character) %>% colnames()
 ```
@@ -444,7 +441,7 @@ table(cleaner_carcass_data$spawn_condition)
 -   0.2 % of values in the `spawn_condition` column are NA.
 -   53.8 % of values in the `spawn_condition` column are `Unknown`.
 
-### Variable: \`run\`\`
+### Variable: `run`
 
 ``` r
 table(cleaner_carcass_data$run) 
@@ -557,6 +554,8 @@ unique(cleaner_carcass_data$comments)[1:5]
 -   Looks like mostly samples after 2010
 -   Other tag column we should probably drop (only one AFTC tag
     identified)
+-   Clarify what NTD means in CWT code and location info that is not
+    reach length (Ask Natasha)
 
 ## Save cleaned data back to google cloud
 
