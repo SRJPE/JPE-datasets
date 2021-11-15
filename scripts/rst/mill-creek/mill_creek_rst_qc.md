@@ -7,16 +7,19 @@ Erin Cain
 
 ## Description of Monitoring Data
 
-RST data was shared with us in an access database. I quiried it to
-include both fish catch and trap condions information.
+RST data was shared with us in an access database. I queried it to
+include both fish catch and trap conditions information.
 
 **Timeframe:** 1995 - 2010
 
-**Completeness of Record throughout timeframe:** Gaps in sampling
+**Completeness of Record throughout timeframe:**
 
-**Sampling Location:** Mill Creek
+-   Very little environmental data collected in beginning of timeframe
+-   Very little trap efficiency data collected in beginning of timeframe
 
-**Data Contact:** Matt Johsnson
+**Sampling Location:** Mill Creek RSTR
+
+**Data Contact:** [Matt Johsnson](Matt.Johnson@wildlife.ca.gov)
 
 Comments from Matt: Let me know if you need any help with interpreting
 what is in that database. It is not mine, I inherited it from a retired
@@ -33,7 +36,7 @@ knowledge of the forms/tables in there.
 # Set your authentication using gcs_auth
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
-gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))\
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 gcs_list_objects()
 
@@ -71,7 +74,7 @@ raw_rst_data <- read_excel("raw_rst_deer_and_mill.xlsx", col_types =c("date", "t
     ## $ Comments                  <chr> "Data sheet does not show sampling method - ~
 
 ``` r
-unique(raw_rst_data$Location)
+unique(raw_rst_data$Location) # View unique locations so I can filter for only Mill 
 ```
 
     ## [1] "Deer Creek Canyon Mouth"           "Deer Creek Canyon Mouth Diversion"
@@ -125,15 +128,14 @@ cleaner_rst_data %>% select_if(is.numeric) %>% colnames()
 
 ``` r
 cleaner_rst_data %>% 
+  group_by(date) %>%
+  summarise(total_daily_catch = sum(count)) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   filter(water_year < 2021) %>%
-  group_by(date) %>%
-  mutate(total_daily_catch = sum(count)) %>%
-  ungroup() %>%
   ggplot(aes(x = fake_date, y = total_daily_catch, fill = year_type)) + 
   geom_col() + 
   scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-06-01")), date_breaks = "1 month") + 
@@ -158,7 +160,7 @@ Early years looks like sampling happened infrequently.
 cleaner_rst_data  %>%
   mutate(year = as.factor(year(date))) %>%
   group_by(year) %>%
-  mutate(total_yearly_catch = sum(count)) %>%
+  summarise(total_yearly_catch = sum(count)) %>%
   ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
@@ -169,8 +171,6 @@ cleaner_rst_data  %>%
 ```
 
 ![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
-
-Looks like some sampling gaps.
 
 **Numeric Summary of counts over Period of Record**
 
@@ -264,13 +264,12 @@ Flow, units?
 # maybe 2 plots is appropriate
 cleaner_rst_data %>% 
   group_by(date) %>%
-  mutate(avg_flow = mean(flow)) %>%
-  ungroup() %>%
+  summarise(avg_flow = mean(flow)) %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   ggplot(aes(x = fake_date, y = avg_flow, color = year)) + 
-  geom_point(alpha = .25) + 
+  geom_point(alpha = .5) + 
   # facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
@@ -394,13 +393,12 @@ water\_temperature F
 # maybe 2 plots is appropriate
 cleaner_rst_data %>% 
   group_by(date) %>%
-  mutate(avg_temp = mean(water_temperature)) %>%
-  ungroup() %>%
+  summarise(avg_temp = mean(water_temperature)) %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
-  geom_point(alpha = .25) + 
+  geom_point(alpha = .5) + 
   # facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
@@ -453,13 +451,12 @@ turbidity, units?
 # maybe 2 plots is appropriate
 cleaner_rst_data %>% 
   group_by(date) %>%
-  mutate(avg_turbidity = mean(turbidity)) %>%
-  ungroup() %>%
+  summarise(avg_turbidity = mean(turbidity)) %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   ggplot(aes(x = fake_date, y = avg_turbidity, color = year)) + 
-  geom_point(alpha = .25) + 
+  geom_point(alpha = .5) + 
   # facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
