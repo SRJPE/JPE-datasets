@@ -7,18 +7,22 @@ Erin Cain
 
 ## Description of Monitoring Data
 
-RST data was shared with us in an access database. I quiried it to
-include both fish catch and trap condions information.
+RST data was shared with us in an access database. I queried it to
+include both fish catch and trap conditions information.
 
-**Timeframe:**
-
-**Video Season:**
+**Timeframe:** 1992 - 2010
 
 **Completeness of Record throughout timeframe:**
 
+-   Very little environmental data collected in beginning of timeframe
+-   Very little trap efficiency data collected in beginning of timeframe
+
 **Sampling Location:**
 
-**Data Contact:**
+4 sites on Deer Creek: Deer Creek Canyon Mouth, Deer Creek Canyon Mouth
+Trap, Deer Creek Canyon Mouth Diversion, Deer Creek RST
+
+**Data Contact:** [Matt Johnson](Matt.Johnson@wildlife.ca.gov)
 
 Comments from Matt: Let me know if you need any help with interpreting
 what is in that database. It is not mine, I inherited it from a retired
@@ -48,9 +52,11 @@ gcs_get_object(object_name =
 Read in data from google cloud, glimpse raw data:
 
 ``` r
-raw_rst_data <- read_excel("raw_rst_deer_and_mill.xlsx", col_types =c("date", "text", "numeric", "text", "numeric", 
-                                                                      "numeric", "numeric", "numeric", "numeric", "numeric", 
-                                                                      "numeric", "numeric", "numeric", "text")) %>% glimpse()
+raw_rst_data <- read_excel("raw_rst_deer_and_mill.xlsx", col_types =c("date", "text", "numeric", "text", 
+                                                                      "numeric", "numeric", "numeric", 
+                                                                      "numeric", "numeric", "numeric", 
+                                                                      "numeric", "numeric", "numeric", 
+                                                                      "text")) %>% glimpse()
 ```
 
     ## Rows: 96,528
@@ -126,14 +132,14 @@ cleaner_rst_data %>% select_if(is.numeric) %>% colnames()
 
 ``` r
 cleaner_rst_data %>% 
+  group_by(date) %>%
+  summarise(total_daily_catch = sum(count)) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   filter(water_year < 2021) %>%
-  group_by(date) %>%
-  mutate(total_daily_catch = sum(count)) %>%
   ungroup() %>%
   ggplot(aes(x = fake_date, y = total_daily_catch, fill = year_type)) + 
   geom_col() + 
@@ -142,7 +148,7 @@ cleaner_rst_data %>%
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "bottom") + 
-  labs(title = "Total Daily Raw Passage 2015 - 2020",
+  labs(title = "Total Daily Raw Catch",
        y = "Total daily raw catch",
        x = "Date")+ 
   facet_wrap(~water_year, scales = "free") +
@@ -171,7 +177,8 @@ cleaner_rst_data  %>%
 
 ![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-Looks like some sampling gaps.
+Huge amount of fish in 2002. Sampling occurred every year, just very
+small numbers in comparison to 2002 make bars look tiny
 
 **Numeric Summary of counts over Period of Record**
 
@@ -182,6 +189,14 @@ summary(cleaner_rst_data$count)
 
     ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
     ##    1.000    1.000    1.000    5.677    2.000 4057.000       39
+
+``` r
+daily_count <- cleaner_rst_data %>% group_by(date) %>% summarise(daily_count = sum(count, na.rm = T)) %>% ggplot(aes(x = date, y = daily_count)) + geom_col()
+summary(daily_count$daily_count)
+```
+
+    ## Length  Class   Mode 
+    ##      0   NULL   NULL
 
 **NA and Unknown Values**
 
