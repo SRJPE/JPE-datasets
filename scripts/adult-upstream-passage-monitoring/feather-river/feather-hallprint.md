@@ -172,8 +172,7 @@ cleaner_hallprint_data %>%
 ``` r
 cleaner_hallprint_data %>% 
   group_by(year = year(date)) %>%
-  mutate(total_tags_per_year = sum(!is.na(tag_number))) %>% 
-  ungroup() %>% 
+  summarise(total_tags_per_year = sum(!is.na(tag_number))) %>% 
   ggplot(aes(x = year, y = total_tags_per_year)) +
   geom_col() + 
   theme_minimal() + 
@@ -188,16 +187,17 @@ tagged are not even over the period of record.
 
 ``` r
 cleaner_hallprint_data %>% 
-  group_by(month = month(date)) %>%
-  mutate(total_tags_per_month = sum(!is.na(tag_number))) %>% 
-  ungroup() %>% 
+  group_by(year = year(date), month = month(date)) %>%
+  summarise(total_tags_per_month = sum(!is.na(tag_number))) %>% 
   ggplot(aes(x = month, y = total_tags_per_month)) +
   geom_col() + 
-  facet_wrap(~year(date)) +  
+  facet_wrap(~year) +  
   theme_minimal() + 
   labs(title = "Tags by month",
        y = "Number of Fish Tagged")  
 ```
+
+    ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
 ![](feather-hallprint_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
@@ -367,7 +367,7 @@ write_rds(feather_hallprint_acoustic_location, "../../../data/feather_hallprint_
 -   One identified issue is that not all `tags_numbers` or
     `second_tag_numbers` are unique.
 -   Each tag is a unique fish, this data may be more helpful as some
-    estimate of fish count, add in a count colum?
+    estimate of fish count, add in a count column?
 
 ### Save cleaned data back to google cloud
 
