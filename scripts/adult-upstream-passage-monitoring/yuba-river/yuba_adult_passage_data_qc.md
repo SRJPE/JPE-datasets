@@ -130,8 +130,8 @@ cleaner_passage_data %>% select_if(is.numeric) %>% colnames()
 
 ``` r
 cleaner_passage_data %>% filter(year(date) > 2010) %>% # show only last 10 years to make graphs more legible 
-  group_by(date) %>%
-  mutate(total_count = sum(count)) %>%
+  group_by(date, passage_direction) %>%
+  summarise(total_count = sum(count)) %>%
   ungroup() %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
@@ -146,6 +146,8 @@ cleaner_passage_data %>% filter(year(date) > 2010) %>% # show only last 10 years
   labs(title = "Daily Count of Passage All Runs", 
        x = "Date")  
 ```
+
+    ## `summarise()` has grouped output by 'date'. You can override using the `.groups` argument.
 
 ![](yuba_adult_passage_data_qc_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
@@ -172,15 +174,17 @@ cleaner_passage_data %>% group_by(date, passage_direction) %>%
 cleaner_passage_data  %>%
   mutate(year = as.factor(year(date))) %>%
   group_by(year, passage_direction) %>%
-  mutate(total_count = sum(count)) %>%
+  summarise(total_count = sum(count)) %>%
   ggplot(aes(x = year, y = total_count, fill = passage_direction)) + 
-  geom_col() + 
+  geom_col(position = "dodge") + 
   theme_minimal() +
   labs(title = "Total Yearly Upstream Fish Counts",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
+
+    ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
 ![](yuba_adult_passage_data_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 

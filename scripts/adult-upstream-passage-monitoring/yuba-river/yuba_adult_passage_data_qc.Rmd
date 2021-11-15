@@ -90,8 +90,8 @@ cleaner_passage_data %>% select_if(is.numeric) %>% colnames()
 
 ```{r}
 cleaner_passage_data %>% filter(year(date) > 2010) %>% # show only last 10 years to make graphs more legible 
-  group_by(date) %>%
-  mutate(total_count = sum(count)) %>%
+  group_by(date, passage_direction) %>%
+  summarise(total_count = sum(count)) %>%
   ungroup() %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
@@ -127,9 +127,9 @@ cleaner_passage_data %>% group_by(date, passage_direction) %>%
 cleaner_passage_data  %>%
   mutate(year = as.factor(year(date))) %>%
   group_by(year, passage_direction) %>%
-  mutate(total_count = sum(count)) %>%
+  summarise(total_count = sum(count)) %>%
   ggplot(aes(x = year, y = total_count, fill = passage_direction)) + 
-  geom_col() + 
+  geom_col(position = "dodge") + 
   theme_minimal() +
   labs(title = "Total Yearly Upstream Fish Counts",
        y = "Total fish count") + 
