@@ -217,6 +217,8 @@ summary(cleaner_catch_data$fork_length)
 
 ``` r
 cleaner_catch_data %>% 
+  group_by(date) %>%
+  summarise(total_daily_catch = sum(count)) %>%
   filter(year(date) > 2014, year(date) < 2021) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
@@ -224,9 +226,6 @@ cleaner_catch_data %>%
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   filter(water_year < 2021) %>%
-  group_by(date) %>%
-  mutate(total_daily_catch = sum(count)) %>%
-  ungroup() %>%
   ggplot(aes(x = fake_date, y = total_daily_catch, fill = year_type)) + 
   geom_col() + 
   scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-06-01")), date_breaks = "1 month") + 
