@@ -99,8 +99,8 @@ raw_video_data <- readxl::read_excel("raw_clear_creek_passage_data.xlsx",
 
 ## Data transformations
 
-We cleaned up the column names, filtered to only show Spring Run Chinook
-data, and removed an unneeded and redundant columns.
+We cleaned up the column names and removed an unneeded and redundant
+columns.
 
 ``` r
 cleaner_video_data <- raw_video_data %>% 
