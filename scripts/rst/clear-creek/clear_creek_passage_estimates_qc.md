@@ -133,6 +133,8 @@ Note shows one daily catch value for both traps.
 
 ``` r
 cleaner_passage_estimate %>% 
+  group_by(date) %>%
+  summarise(total_daily_catch = sum(catch)) %>%
   filter(year(date) > 2014, year(date) < 2021) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
@@ -140,9 +142,6 @@ cleaner_passage_estimate %>%
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   filter(water_year < 2021) %>%
-  group_by(date) %>%
-  mutate(total_daily_catch = sum(catch)) %>%
-  ungroup() %>%
   ggplot(aes(x = fake_date, y = total_daily_catch, fill = year_type)) + 
   geom_col() + 
   scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-06-01")), date_breaks = "1 month") + 
@@ -163,10 +162,9 @@ cleaner_passage_estimate %>%
 
 ``` r
 cleaner_passage_estimate  %>%
-  group_by(year(date), location) %>%
-  mutate(total_yearly_catch = sum(catch, na.rm = T)) %>%
-  ungroup() %>%
-  mutate(year = as.factor(year(date))) %>%
+  group_by(year = year(date), location) %>%
+  summarise(total_yearly_catch = sum(catch, na.rm = T)) %>%
+  mutate(year = as.factor(year)) %>%
   ggplot(aes(x = year, y = total_yearly_catch, fill = location)) + 
   geom_col(position = "dodge") + 
   theme_minimal() +
@@ -175,6 +173,8 @@ cleaner_passage_estimate  %>%
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
+
+    ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
 ![](clear_creek_passage_estimates_qc_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
@@ -236,6 +236,8 @@ caught.
 
 ``` r
 cleaner_passage_estimate %>% 
+  group_by(date) %>%
+  summarise(total_daily_catch = sum(passage_estimate)) %>%
   filter(year(date) > 2014, year(date) < 2021) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(sac_indices) %>%
@@ -243,9 +245,6 @@ cleaner_passage_estimate %>%
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   filter(water_year < 2021) %>%
-  group_by(date) %>%
-  mutate(total_daily_catch = sum(passage_estimate)) %>%
-  ungroup() %>%
   ggplot(aes(x = fake_date, y = total_daily_catch, fill = year_type)) + 
   geom_col() + 
   scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1901-06-01")), date_breaks = "1 month") + 
@@ -266,10 +265,9 @@ cleaner_passage_estimate %>%
 
 ``` r
 cleaner_passage_estimate  %>%
-  group_by(year(date), location) %>%
-  mutate(total_yearly_catch = sum(passage_estimate, na.rm = T)) %>%
-  ungroup() %>%
-  mutate(year = as.factor(year(date))) %>%
+  group_by(year = year(date), location) %>%
+  summarise(total_yearly_catch = sum(passage_estimate, na.rm = T)) %>%
+  mutate(year = as.factor(year)) %>%
   ggplot(aes(x = year, y = total_yearly_catch, fill = location)) + 
   geom_col(position = 'dodge') + 
   theme_minimal() +
@@ -278,6 +276,8 @@ cleaner_passage_estimate  %>%
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
+
+    ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
 ![](clear_creek_passage_estimates_qc_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
