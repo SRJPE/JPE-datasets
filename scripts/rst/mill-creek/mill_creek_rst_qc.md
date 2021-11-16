@@ -433,7 +433,7 @@ cleaner_rst_data %>%
   ggplot(aes(x = water_temperature)) + 
   geom_histogram() + 
   theme_minimal() +
-  labs(title = "Flow distribution") + 
+  labs(title = "Temperature distribution") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
