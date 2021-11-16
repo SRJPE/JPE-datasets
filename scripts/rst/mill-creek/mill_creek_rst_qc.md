@@ -193,7 +193,7 @@ Length of the fish captured
 **Plotting length**
 
 ``` r
-cleaner_rst_data %>% filter(length < 250) %>% # filter out 13 points so we can more clearly see distribution
+cleaner_rst_data %>% 
   ggplot(aes(x = length)) + 
   geom_histogram(breaks=seq(0, 200, by=2)) + 
   scale_x_continuous(breaks=seq(0, 200, by=25)) +
@@ -264,7 +264,7 @@ Flow, units?
 # maybe 2 plots is appropriate
 cleaner_rst_data %>% 
   group_by(date) %>%
-  summarise(avg_flow = mean(flow)) %>%
+  summarise(avg_flow = mean(flow, na.rm = T)) %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
@@ -284,18 +284,36 @@ cleaner_rst_data %>%
 ![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
-cleaner_rst_data %>%  
-  mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = flow, y = year)) + 
-  geom_boxplot() + 
+cleaner_rst_data %>% 
+  ggplot(aes(x = flow)) + 
+  geom_histogram() + 
   theme_minimal() +
-  labs(title = "Water Flow measures summarized by year",
-       x = "Flow") + 
-  theme(text = element_text(size = 15),
+  labs(title = "Flow distribution") + 
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
 ![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+``` r
+cleaner_rst_data %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = flow)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("Date") +
+  facet_wrap(~wy, scales = "free_y") + 
+  theme_minimal()
+```
+
+![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+Lots of gaps in flow data.
 
 **Numeric Summary of flow over Period of Record**
 
@@ -330,7 +348,7 @@ cleaner_rst_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-16-1.png)<!-- --> A
+![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-17-1.png)<!-- --> A
 lot of spread in this time. 0 seems like a non functional trap. Very
 high values seem like outliers.
 
@@ -364,7 +382,7 @@ cleaner_rst_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Numeric Summary of tub of debris over Period of Record**
 
@@ -408,21 +426,39 @@ cleaner_rst_data %>%
        y = "Average Daily Temp")  
 ```
 
-![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
-cleaner_rst_data %>%  
-  mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = water_temperature, y = year)) + 
-  geom_boxplot() + 
+cleaner_rst_data %>% 
+  ggplot(aes(x = water_temperature)) + 
+  geom_histogram() + 
   theme_minimal() +
-  labs(title = "Water Temp measures summarized by year",
-       x = "Temp") + 
-  theme(text = element_text(size = 15),
+  labs(title = "Flow distribution") + 
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+``` r
+cleaner_rst_data %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = water_temperature)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("Date") +
+  facet_wrap(~wy, scales = "free_y") + 
+  theme_minimal()
+```
+
+![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
+Also a lot of gaps in temp data.
 
 **Numeric Summary of water\_temperature over Period of Record**
 
@@ -449,7 +485,8 @@ turbidity, units?
 # maybe 2 plots is appropriate
 cleaner_rst_data %>% 
   group_by(date) %>%
-  summarise(avg_turbidity = mean(turbidity)) %>%
+  summarise(avg_turbidity = mean(turbidity, na.rm = T)) %>%
+  filter(avg_turbidity < 200) %>% # filter out 5 values above 200 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
@@ -466,24 +503,45 @@ cleaner_rst_data %>%
        y = "Average Daily turbidity NTUs")  
 ```
 
-![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 ``` r
-cleaner_rst_data %>%  
-  mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = turbidity, y = year)) + 
-  geom_boxplot() + 
+cleaner_rst_data %>% 
+  ggplot(aes(x = turbidity)) + 
+  geom_histogram() + 
   theme_minimal() +
-  labs(title = "Water turbidity measures summarized by year",
-       x = "Turbidity NTUs") + 
-  theme(text = element_text(size = 15),
+  labs(title = "Turbidity distribution") + 
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-2008 seems like something weird is going on. Some high turbidity values
-throughout the years.
+![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+
+Clustered around very low turbidity measures with some outliers.
+
+``` r
+cleaner_rst_data %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = turbidity)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("Date") +
+  facet_wrap(~wy, scales = "free_y") + 
+  theme_minimal()
+```
+
+![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+Notes:
+
+-   No turbidity values before 1998
+-   Some high turbidity values throughout the years
+-   A lot of data gaps
 
 **Numeric Summary of turbidity over Period of Record**
 
