@@ -88,6 +88,7 @@ cleaner_rst_data <- raw_rst_data%>%
   filter(Location == "Mill Creek RSTR",
          Species == "CHISAL") %>%
   janitor::clean_names() %>% 
+  rename(fork_length = length) %>% # confirmed with matt that this is fork length
   mutate(date = as.Date(date),
          trap_condition_code = as.character(trap_condition_code), 
          weather = as.character(weather)) %>%
@@ -100,7 +101,7 @@ cleaner_rst_data <- raw_rst_data%>%
     ## $ date                    <date> 1995-12-09, 1995-12-13, 1995-12-13, 1995-12-1~
     ## $ location                <chr> "Mill Creek RSTR", "Mill Creek RSTR", "Mill Cr~
     ## $ count                   <dbl> 1, 2, 1, 1, 3, 8, 8, 1, 5, 16, 5, 1, 17, 2, 2,~
-    ## $ length                  <dbl> 32, 34, 35, 35, 36, NA, 36, 38, 37, 35, 33, 31~
+    ## $ fork_length             <dbl> 32, 34, 35, 35, 36, NA, 36, 38, 37, 35, 33, 31~
     ## $ weight                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ flow                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ time_for_10_revolutions <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
@@ -117,7 +118,7 @@ cleaner_rst_data <- raw_rst_data%>%
 cleaner_rst_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "count"                   "length"                 
+    ## [1] "count"                   "fork_length"            
     ## [3] "weight"                  "flow"                   
     ## [5] "time_for_10_revolutions" "tubs_of_debris"         
     ## [7] "water_temperature"       "turbidity"
@@ -186,30 +187,30 @@ summary(cleaner_rst_data$count)
 
 -   0.3 % of values in the `count` column are NA.
 
-### Variable: `length`
+### Variable: `fork_length`
 
-Length of the fish captured
+fork\_length of the fish captured, units: mm
 
-**Plotting length**
+**Plotting fork length**
 
 ``` r
 cleaner_rst_data %>% 
-  ggplot(aes(x = length)) + 
+  ggplot(aes(x = fork_length)) + 
   geom_histogram(breaks=seq(0, 200, by=2)) + 
   scale_x_continuous(breaks=seq(0, 200, by=25)) +
   theme_minimal() +
-  labs(title = "Length distribution") + 
+  labs(title = "fork length distribution") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 ![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
-**Numeric Summary of length over Period of Record**
+**Numeric Summary of fork length over Period of Record**
 
 ``` r
 # Table with summary statistics
-summary(cleaner_rst_data$length)
+summary(cleaner_rst_data$fork_length)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
@@ -217,11 +218,11 @@ summary(cleaner_rst_data$length)
 
 **NA and Unknown Values**
 
--   2.3 % of values in the `length` column are NA.
+-   2.3 % of values in the `fork_length` column are NA.
 
 ### Variable: `weight`
 
-weight of the fish captured
+weight of the fish captured, units: grams
 
 **Plotting weight**
 
@@ -255,7 +256,7 @@ summary(cleaner_rst_data$weight)
 
 ### Variable: `flow`
 
-Flow, units?
+Flow, cfs
 
 **Plotting flow over Period of Record**
 
@@ -330,8 +331,6 @@ summary(cleaner_rst_data$flow)
 -   24.2 % of values in the `flow` column are NA.
 
 ### Variable: `time_for_10_revolutions`
-
-Length of the fish captured
 
 **Plotting time\_for\_10\_revolutions**
 
@@ -476,7 +475,7 @@ summary(cleaner_rst_data$water_temperature)
 
 ### Variable: `turbidity`
 
-turbidity, units?
+turbidity, NTU’s
 
 **Plotting turbidity over Period of Record**
 
@@ -582,8 +581,11 @@ table(cleaner_rst_data$location)
 
 ### Variable: `trap_condition_code`
 
-Code describing trap condition. TODO figure out code definitions (Ask
-Matt)
+Code describing trap condition.
+
+Trap condition codes are referenced by the following numerals only:
+1,2,3 and 4. Any other numerals in that field are data entry errors. 1=
+normal, 2 = partial blockage, 3 = total blockage, and 4 = cone stopped.
 
 ``` r
 table(cleaner_rst_data$trap_condition_code) 
@@ -593,14 +595,33 @@ table(cleaner_rst_data$trap_condition_code)
     ##     1     2     3     4    54    75 
     ## 19225    70    28   207     7    77
 
+Add in definitions in place of codes:
+
+``` r
+cleaner_rst_data$trap_condition_code <- case_when(
+  cleaner_rst_data$trap_condition_code == 1 ~ "normal", 
+  cleaner_rst_data$trap_condition_code == 2 ~ "partial blockage", 
+  cleaner_rst_data$trap_condition_code == 3 ~ "total blockage",
+  cleaner_rst_data$trap_condition_code == 4 ~ "cone stopped")
+
+table(cleaner_rst_data$trap_condition_code) 
+```
+
+    ## 
+    ##     cone stopped           normal partial blockage   total blockage 
+    ##              207            19225               70               28
+
 **NA and Unknown Values**
 
--   23.2 % of values in the `trap_condition_code` column are NA.
+-   23.5 % of values in the `trap_condition_code` column are NA.
 
 ### Variable: `weather`
 
-Code describing weather condition. TODO figure out code definitions (Ask
-Matt)
+Code describing weather condition.
+
+Weather codes are referenced by the following numerals only: 1,2,3,4,5
+and 6. Any other numerals in that field are data entry errors. 1= sunny,
+2= partly cloudy, 3= cloudy, 4= rain, 5= snow, and 6= fog.
 
 ``` r
 table(cleaner_rst_data$weather) 
@@ -610,9 +631,27 @@ table(cleaner_rst_data$weather)
     ##     1     2     3     4    48     6 
     ## 12070  5219  3717  1847    46   316
 
+Add in definitions in place of codes:
+
+``` r
+cleaner_rst_data$weather <- case_when(
+  cleaner_rst_data$weather == 1 ~ "sunny", 
+  cleaner_rst_data$weather == 2 ~ "partly cloudy", 
+  cleaner_rst_data$weather == 3 ~ "cloudy",
+  cleaner_rst_data$weather == 4 ~ "rain",
+  cleaner_rst_data$weather == 5 ~ "snow", 
+  cleaner_rst_data$weather == 6 ~ "fog")
+
+table(cleaner_rst_data$weather) 
+```
+
+    ## 
+    ##        cloudy           fog partly cloudy          rain         sunny 
+    ##          3717           316          5219          1847         12070
+
 **NA and Unknown Values**
 
--   9.1 % of values in the `weather` column are NA.
+-   9.2 % of values in the `weather` column are NA.
 
 ### Variable: `comments`
 
@@ -635,13 +674,12 @@ unique(cleaner_rst_data$comments)[1:5]
 ## Summary of identified issues
 
 -   Lots of sampling gaps
--   Some super high turbidity measures
--   Need to figure out code definitions - weather, condition
+-   Some funky values in weather and condition code, converted to NA
 
 ## Save cleaned data back to google cloud
 
 ``` r
-cleaner_rst_data %>% glimpse()
+mill_rst <- cleaner_rst_data %>% glimpse()
 ```
 
     ## Rows: 25,529
@@ -649,15 +687,15 @@ cleaner_rst_data %>% glimpse()
     ## $ date                    <date> 1995-12-09, 1995-12-13, 1995-12-13, 1995-12-1~
     ## $ location                <chr> "Mill Creek RSTR", "Mill Creek RSTR", "Mill Cr~
     ## $ count                   <dbl> 1, 2, 1, 1, 3, 8, 8, 1, 5, 16, 5, 1, 17, 2, 2,~
-    ## $ length                  <dbl> 32, 34, 35, 35, 36, NA, 36, 38, 37, 35, 33, 31~
+    ## $ fork_length             <dbl> 32, 34, 35, 35, 36, NA, 36, 38, 37, 35, 33, 31~
     ## $ weight                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ flow                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ time_for_10_revolutions <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ tubs_of_debris          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ trap_condition_code     <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "~
+    ## $ trap_condition_code     <chr> "normal", "normal", "normal", "normal", "norma~
     ## $ water_temperature       <dbl> 50, 49, 49, 47, 47, 47, 47, 47, 47, 47, 47, 47~
     ## $ turbidity               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ weather                 <chr> NA, NA, NA, "4", "4", "4", "4", "4", "4", "4",~
+    ## $ weather                 <chr> NA, NA, NA, "rain", "rain", "rain", "rain", "r~
     ## $ comments                <chr> "1995 BY-CHISAL said to weigh 1mg.", "Fished c~
 
 ``` r
