@@ -196,7 +196,7 @@ cleaner_data %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 ```
 
-![](mill-creek-adult-holding-survey-qc-checklist_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](mill-creek-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -206,7 +206,7 @@ cleaner_data %>%
   labs(title = "Redd Count By Reach")
 ```
 
-![](mill-creek-adult-holding-survey-qc-checklist_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](mill-creek-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 **Numeric Annual Summary of redd\_count From 1997 to 2020**
 
@@ -237,7 +237,7 @@ cleaner_data %>%
   labs(title = "Starting Elevation By Reach")
 ```
 
-![](mill-creek-adult-holding-survey-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](mill-creek-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 **Numeric Summary of starting\_elevation\_ft From 1997 to 2020**
 
@@ -276,28 +276,28 @@ gcs_upload(mill_redd_survey,
            name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv")
 ```
 
-    ## i 2021-11-03 16:15:12 > File size detected as  14.5 Kb
+    ## i 2021-11-16 13:24:30 > File size detected as  14.5 Kb
 
-    ## i 2021-11-03 16:15:13 > Request Status Code:  400
+    ## i 2021-11-16 13:24:30 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-03 16:15:13 > File size detected as  14.5 Kb
+    ## i 2021-11-16 13:24:30 > File size detected as  14.5 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv 
     ## Type:                csv 
     ## Size:                14.5 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv?generation=1635981312774594&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv?generation=1637097870604467&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv/1635981312774594 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv/1637097870604467 
     ## MD5 Hash:            nGmPSVEMp9ar2Ex5/c8lhg== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-03 23:15:12 
-    ## Updated:             2021-11-03 23:15:12 
-    ## Generation:          1635981312774594 
+    ## Created:             2021-11-16 21:24:30 
+    ## Updated:             2021-11-16 21:24:30 
+    ## Generation:          1637097870604467 
     ## Meta Generation:     1 
-    ## eTag:                CMKjh6ip/fMCEAE= 
+    ## eTag:                CLPxqOjonfQCEAE= 
     ## crc32c:              buod9A==
