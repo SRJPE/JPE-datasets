@@ -86,6 +86,9 @@ unique(raw_rst_data$Location)
 
 ## Data transformations
 
+Filter to just include Deer Creek Locations and chinook, clean names,
+and edit column types.
+
 ``` r
 cleaner_rst_data <- raw_rst_data%>% 
   filter(Location %in% c("Deer Creek Canyon Mouth", "Deer Creek Canyon Mouth Diversion", 
@@ -298,22 +301,39 @@ cleaner_rst_data %>%
 ![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
-cleaner_rst_data %>%  
-  mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = flow, y = year)) + 
-  geom_boxplot() + 
+cleaner_rst_data %>% 
+  ggplot(aes(x = flow)) + 
+  geom_histogram() + 
   theme_minimal() +
-  labs(title = "Water Flow measures summarized by year",
-       x = "Flow") + 
-  theme(text = element_text(size = 15),
+  labs(title = "Flow distribution") + 
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
 ![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+``` r
+cleaner_rst_data %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = flow)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("Date") +
+  facet_wrap(~wy, scales = "free_y") + 
+  theme_minimal()
+```
+
+![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 Notes:
 
--   No measures pre 1997
+-   No measures pre 1998
+-   Even after 1998 a lot of data gaps
 
 **Numeric Summary of flow over Period of Record**
 
@@ -346,7 +366,7 @@ cleaner_rst_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 A lot of spread in this time. 0 seems like a non functional trap. Very
 high values seem like outliers.
 
@@ -380,7 +400,7 @@ cleaner_rst_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 **Numeric Summary of tub of debris over Period of Record**
 
@@ -398,7 +418,7 @@ summary(cleaner_rst_data$tubs_of_debris)
 
 ### Variable: `water_temperature`
 
-water\_temperature F
+Water Tempearture in degrees F
 
 **Plotting water\_temperature over Period of Record**
 
@@ -425,21 +445,39 @@ cleaner_rst_data %>%
        y = "Average Daily Temp")  
 ```
 
-![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
-cleaner_rst_data %>%  
-  mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = water_temperature, y = year)) + 
-  geom_boxplot() + 
+cleaner_rst_data %>% 
+  ggplot(aes(x = water_temperature)) + 
+  geom_histogram() + 
   theme_minimal() +
-  labs(title = "Water Temp measures summarized by year",
-       x = "Temp") + 
-  theme(text = element_text(size = 15),
+  labs(title = "Temperature distribution") + 
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+``` r
+cleaner_rst_data %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = water_temperature)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("Date") +
+  facet_wrap(~wy, scales = "free_y") + 
+  theme_minimal()
+```
+
+![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
+Gaps in temperature measurements.
 
 **Numeric Summary of water\_temperature over Period of Record**
 
@@ -484,25 +522,41 @@ cleaner_rst_data %>%
        y = "Average Daily turbidity NTUs")  
 ```
 
-![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 ``` r
-cleaner_rst_data %>%  
-  mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = flow, y = year)) + 
-  geom_boxplot() + 
+cleaner_rst_data %>% 
+  ggplot(aes(x = turbidity)) + 
+  geom_histogram() + 
   theme_minimal() +
-  labs(title = "Water turbidity measures summarized by year",
-       x = "Turbidity NTUs") + 
-  theme(text = element_text(size = 15),
+  labs(title = "Turbidity distribution") + 
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+
+``` r
+cleaner_rst_data %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = turbidity)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("Date") +
+  facet_wrap(~wy, scales = "free_y") + 
+  theme_minimal()
+```
+
+![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 Notes:
 
--   No measures pre 1997
+-   No measures pre 1999, 2007 or 2008
 -   One outlier greater than 150
 
 **Numeric Summary of turbidity over Period of Record**

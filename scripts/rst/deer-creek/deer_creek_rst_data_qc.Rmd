@@ -67,6 +67,8 @@ unique(raw_rst_data$Location)
 
 ## Data transformations
 
+Filter to just include Deer Creek Locations and chinook, clean names, and edit column types. 
+
 ```{r}
 cleaner_rst_data <- raw_rst_data%>% 
   filter(Location %in% c("Deer Creek Canyon Mouth", "Deer Creek Canyon Mouth Diversion", 
@@ -242,20 +244,34 @@ cleaner_rst_data %>%
        y = "Average Daily Flow")  
 ```
 ```{r}
-cleaner_rst_data %>%  
-  mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = flow, y = year)) + 
-  geom_boxplot() + 
+cleaner_rst_data %>% 
+  ggplot(aes(x = flow)) + 
+  geom_histogram() + 
   theme_minimal() +
-  labs(title = "Water Flow measures summarized by year",
-       x = "Flow") + 
-  theme(text = element_text(size = 15),
+  labs(title = "Flow distribution") + 
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
+```{r}
+cleaner_rst_data %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = flow)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("Date") +
+  facet_wrap(~wy, scales = "free_y") + 
+  theme_minimal()
+```
+
+
 Notes: 
 
-* No measures pre 1997 
+* No measures pre 1998
+* Even after 1998 a lot of data gaps
 
 **Numeric Summary of flow over Period of Record**
   
@@ -329,7 +345,7 @@ summary(cleaner_rst_data$tubs_of_debris)
 
 ### Variable: `water_temperature`
 
-water_temperature F
+Water Tempearture in degrees F
 
 **Plotting water_temperature over Period of Record**
   
@@ -356,17 +372,30 @@ cleaner_rst_data %>%
        y = "Average Daily Temp")  
 ```
 ```{r}
-cleaner_rst_data %>%  
-  mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = water_temperature, y = year)) + 
-  geom_boxplot() + 
+cleaner_rst_data %>% 
+  ggplot(aes(x = water_temperature)) + 
+  geom_histogram() + 
   theme_minimal() +
-  labs(title = "Water Temp measures summarized by year",
-       x = "Temp") + 
-  theme(text = element_text(size = 15),
+  labs(title = "Temperature distribution") + 
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
+```{r}
+cleaner_rst_data %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = water_temperature)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("Date") +
+  facet_wrap(~wy, scales = "free_y") + 
+  theme_minimal()
+```
+
+Gaps in temperature measurements. 
 
 **Numeric Summary of water_temperature over Period of Record**
   
@@ -410,20 +439,32 @@ cleaner_rst_data %>%
        y = "Average Daily turbidity NTUs")  
 ```
 ```{r}
-cleaner_rst_data %>%  
-  mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = flow, y = year)) + 
-  geom_boxplot() + 
+cleaner_rst_data %>% 
+  ggplot(aes(x = turbidity)) + 
+  geom_histogram() + 
   theme_minimal() +
-  labs(title = "Water turbidity measures summarized by year",
-       x = "Turbidity NTUs") + 
-  theme(text = element_text(size = 15),
+  labs(title = "Turbidity distribution") + 
+  theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_data %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
+  ggplot(aes(x = fake_date, y = turbidity)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("Date") +
+  facet_wrap(~wy, scales = "free_y") + 
+  theme_minimal()
 ```
 
 Notes: 
 
-* No measures pre 1997 
+* No measures pre 1999, 2007 or 2008
 * One outlier greater than 150 
 
 **Numeric Summary of turbidity over Period of Record**
