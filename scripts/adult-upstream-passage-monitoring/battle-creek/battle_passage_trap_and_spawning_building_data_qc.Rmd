@@ -251,11 +251,13 @@ table(cleaner_passage_data$confidence_in_sex)
 * `r round(sum(is.na(cleaner_passage_data$confidence_in_sex))/nrow(cleaner_passage_data), 3) * 100` % of values in the `confidence_in_sex` column are NA.
 
 ### Variable: `adipose`
+
+
 ```{r}
 table(cleaner_passage_data$adipose) 
 ```
-Fix inconsistencies with spelling, capitalization, and abbreviations.  
 
+There are no NA so safe to turn Unknown into NA and then can simplify A/P to F/T. 
 A = Absent - changes to FALSE
 P = present - changes to TRUE 
 (there are 6 unknown values that turn to NA)
@@ -365,7 +367,7 @@ table(cleaner_passage_data$recapture)
 
 * `r round(sum(is.na(cleaner_passage_data$recapture))/nrow(cleaner_passage_data), 3) * 100` % of values in the `recapture` column are NA. 
 
-### Variable: `recapture_type``
+### Variable: `recapture_type`
 
 what type of recap U=Upper caudal punch, L=Lower caudal punch, VIE=VIE marked, Floy=Floy tag attached, Radio=Radio tag				
 

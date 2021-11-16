@@ -1,0 +1,266 @@
+---
+title: "Battle Creek Adult Holding Survey QC"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+```
+
+# Battle Creek Adult Holding Survey 
+
+## Description of Monitoring Data
+
+These data were aquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019 and describe the locations of live adult Chinook Salmon seen in Battle Creek. Generally, spring-run Chinook Salmon are in holding position prior to August 15 and in spawning position after August 15.  						
+
+
+**Timeframe:** 2001 - 2019
+
+**Survey Season:** may - november
+
+**Completeness of Record throughout timeframe:** Data for every year in timeframe, for some years there are only a few sample dates. 
+
+**Sampling Location:** Battle Creek 
+
+**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov)
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+
+```
+
+Read in data from google cloud, glimpse raw data sheet: 
+
+```{r}
+sheets <- excel_sheets("raw_adult_spawn_hold_carcass.xlsx")
+sheets 
+raw_holding_data <-read_excel("raw_adult_spawn_hold_carcass.xlsx", sheet = "Live Holding Spawning") %>% glimpse()
+```
+
+## Data transformations
+
+```{r}
+cleaner_holding_data <- raw_holding_data %>% 
+  janitor::clean_names() %>%
+  rename("date" = sample_date,
+         "river_mile" = rivermile,
+         "count" = quantity) %>%
+  mutate(date = as.Date(date),
+         jacks = as.numeric(jacks)) %>%
+  select(-project, -year) %>% # All projects = snorkel, year can be pulled from date
+  glimpse
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+cleaner_holding_data %>% select_if(is.numeric) %>% colnames()
+```
+
+### Variable: `longitude`, `latitude`
+
+**Numeric Summary of lat long over Period of Record**
+
+```{r}
+summary(cleaner_holding_data$latitude)
+summary(cleaner_holding_data$longitude)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_holding_data$latitude))/nrow(cleaner_holding_data), 3) * 100` % of values in the `latitude` column are NA.
+* `r round(sum(is.na(cleaner_holding_data$longitude))/nrow(cleaner_holding_data), 3) * 100` % of values in the `longitude` column are NA.
+
+### Variable: `river_mile`
+
+**Plotting river mile over Period of Record**
+
+```{r}
+cleaner_holding_data %>% 
+  ggplot(aes(x = river_mile, y = year(date))) +
+  geom_point(alpha = .75, size = 1.5, color = "blue") + 
+  labs(y = "Year", x = "River Mile") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+It looks like river miles 0 - 6 and 12 - 17 most commonly have holding chinooks. In most recent years there are less points and many of the holding chinooks are before mile 5. 
+
+```{r}
+cleaner_holding_data %>% 
+  ggplot(aes(x = river_mile)) +
+  geom_histogram(alpha = .75) + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Numeric Summary of river mile over Period of Record**
+
+```{r}
+summary(cleaner_holding_data$river_mile)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_holding_data$river_mile))/nrow(cleaner_holding_data), 3) * 100` % of values in the `river_mile` column are NA.
+
+### Variable: `count`
+
+**Plotting  Counts over Period of Record**
+```{r}
+cleaner_holding_data %>% 
+  mutate(year = as.factor(year(date)),
+         fake_date = as.Date(paste0("1990", "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = count)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free_y") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Passage Count", 
+       x = "Date")  
+
+```
+
+
+```{r}
+cleaner_holding_data %>% 
+  group_by(date) %>%
+  summarise(daily_count = sum(count)) %>%
+  filter(daily_count < 100) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = year, y = daily_count)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Daily Count Sumarized by Year") + 
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))   + 
+  scale_y_continuous(limits = c(0, 101))
+```
+
+```{r}
+cleaner_holding_data  %>%
+  mutate(year = as.factor(year(date))) %>%
+  group_by(year = year(date)) %>%
+  summarise(total_catch = sum(count, na.rm = T)) %>%
+  ungroup() %>%
+  ggplot(aes(x = year, y = total_catch)) + 
+  geom_col() + 
+  theme_minimal() +
+  labs(title = "Total Yearly Fish Count",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of Passage Counts over Period of Record**
+
+```{r}
+# Table with summary statistics 
+summary(cleaner_holding_data$count)
+
+# Daily numeric summary of passage data
+cleaner_holding_data %>% group_by(date) %>%
+  summarise(count = sum(count, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_holding_data$count))/nrow(cleaner_holding_data), 3) * 100` % of values in the `count` column are NA. 
+
+### Variable: `jacks`
+
+**Plotting distribution of jacks**
+
+Number of jacks seen				
+
+
+```{r}
+cleaner_holding_data %>% 
+  ggplot(aes(x = jacks)) +
+  geom_histogram(bins = 4) +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+Most of the jacks are 0
+
+**Numeric Summary of jacks over Period of Record**
+
+```{r}
+summary(cleaner_holding_data$jacks)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_holding_data$jacks))/nrow(cleaner_holding_data), 3) * 100` % of values in the `jacks` column are NA. 
+
+## Explore Categorical variables: {.tabset}
+
+
+```{r}
+cleaner_holding_data %>% select_if(is.character) %>% colnames()
+```
+
+### Variable: `reach`
+
+The stream section
+
+```{r}
+table(cleaner_holding_data$reach) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_holding_data$reach))/nrow(cleaner_holding_data), 3) * 100` % of values in the `reach` column are NA. 
+
+### Variable: `notes`
+```{r}
+unique(cleaner_holding_data$notes)[1:5]
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_holding_data$notes))/nrow(cleaner_holding_data), 3) * 100` % of values in the `notes` column are NA. 
+
+## Summary of identified issues
+
+* Looks like not a lot of surveys done every year
+
+## Save cleaned data back to google cloud 
+
+```{r}
+battle_holding <- cleaner_holding_data %>% select(date, reach, river_mile, count, jacks, latitude, longitude, notes) %>%glimpse()
+```
+
+```{r, eval=FALSE}
+gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(battle_holding,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_holding.csv")
+```

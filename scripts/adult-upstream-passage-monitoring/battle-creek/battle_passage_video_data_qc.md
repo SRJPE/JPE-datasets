@@ -136,7 +136,7 @@ cleaner_video_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Count of Upstream Passage All Runs", 
+  labs(title = "Daily Count of Passage All Runs", 
        x = "Date")  
 ```
 
@@ -165,8 +165,8 @@ cleaner_video_data %>% group_by(date, passage_direction) %>%
 cleaner_video_data  %>%
   mutate(year = as.factor(year(date))) %>%
   filter(run %in% c("FR", "LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
-  group_by(year, passage_direction) %>%
-  mutate(total_count = sum(count)) %>%
+  group_by(year, passage_direction, run) %>%
+  summarise(total_count = sum(count)) %>%
   ggplot(aes(x = year, y = total_count, fill = passage_direction)) + 
   geom_col() + 
   theme_minimal() +
@@ -176,6 +176,8 @@ cleaner_video_data  %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
   facet_grid(~run)
 ```
+
+    ## `summarise()` has grouped output by 'year', 'passage_direction'. You can override using the `.groups` argument.
 
 ![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 

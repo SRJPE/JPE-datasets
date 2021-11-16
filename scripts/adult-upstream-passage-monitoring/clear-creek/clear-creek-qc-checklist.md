@@ -99,8 +99,8 @@ raw_video_data <- readxl::read_excel("raw_clear_creek_passage_data.xlsx",
 
 ## Data transformations
 
-We cleaned up the column names, filtered to only show Spring Run Chinook
-data, and removed an unneeded and redundant columns.
+We cleaned up the column names and removed an unneeded and redundant
+columns.
 
 ``` r
 cleaner_video_data <- raw_video_data %>% 
@@ -198,9 +198,8 @@ cleaner_video_data %>% group_by(date, passage_direction) %>%
 cleaner_video_data  %>%
   mutate(year = as.factor(year(date))) %>%
   filter(run %in% c("LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
-  group_by(year(date)) %>%
-  mutate(total_catch = sum(count)) %>%
-  ungroup() %>%
+  group_by(year = year(date), passage_direction, run) %>%
+  summarise(total_catch = sum(count)) %>%
   ggplot(aes(x = year, y = total_catch, fill = passage_direction)) + 
   geom_col(position = "dodge") + 
   theme_minimal() +
@@ -210,6 +209,8 @@ cleaner_video_data  %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
   facet_grid(~run)
 ```
+
+    ## `summarise()` has grouped output by 'year', 'passage_direction'. You can override using the `.groups` argument.
 
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 

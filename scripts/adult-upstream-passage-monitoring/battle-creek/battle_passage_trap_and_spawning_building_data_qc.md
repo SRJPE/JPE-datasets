@@ -348,10 +348,9 @@ table(cleaner_passage_data$adipose)
     ##    A    P  Unk 
     ## 2008  684    6
 
-Fix inconsistencies with spelling, capitalization, and abbreviations.
-
-A = Absent - changes to FALSE P = present - changes to TRUE (there are 6
-unknown values that turn to NA)
+There are no NA so safe to turn Unknown into NA and then can simplify
+A/P to F/T. A = Absent - changes to FALSE P = present - changes to TRUE
+(there are 6 unknown values that turn to NA)
 
 ``` r
 # Fix yes/no/unknown
@@ -503,7 +502,7 @@ table(cleaner_passage_data$recapture)
 
 -   0 % of values in the `recapture` column are NA.
 
-### Variable: \`recapture\_type\`\`
+### Variable: `recapture_type`
 
 what type of recap U=Upper caudal punch, L=Lower caudal punch, VIE=VIE
 marked, Floy=Floy tag attached, Radio=Radio tag

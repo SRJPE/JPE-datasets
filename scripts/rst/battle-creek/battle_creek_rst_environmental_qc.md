@@ -391,6 +391,10 @@ Calculated water velocity in front of the cone using a General Oceanics
 mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow
 meter begin)/time in seconds)\*.0875
 
+Since velocity is just a function of flowmeter\_end, flowmeter\_start,
+and flowmeter\_set\_time we probably do not need to include all of
+these.
+
 **Plotting distribution of velocity**
 
 ``` r
@@ -432,9 +436,11 @@ summary(cleaner_rst_environmental$velocity)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##   0.000   1.870   2.270   2.601   2.740 155.090     107
 
-A velocity of 155.090 seems out of the range of posibilities. It seems
+A velocity of 155.090 seems out of the range of possibilities. It seems
 like every velocity greater than 7 is probably a mistake that should be
-scaled down or filtered out.
+scaled down or filtered out. Most likely these were caused by the
+outliers in flow\_start\_time, flow\_end\_time or flow\_set\_time since
+this is a calculatted value.
 
 **NA and Unknown Values**
 
@@ -699,7 +705,7 @@ cleaner_rst_environmental %>%
   theme_minimal() + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  labs(y = "Year")
+  labs(y = "Month")
 ```
 
 ![](battle_creek_rst_environmental_qc_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
@@ -1263,8 +1269,14 @@ table(cleaner_rst_environmental$fish_properly)
 ### Variable: `sub_week`
 
 If sample week has more than one efficiency, which part of week is
-sample from  
-TODO figure out what each one stands for
+sample from
+
+Description from Mike: The sub weeks do not describe specific days of
+the week, they indicate when a stratum (usually one week) is split into
+substrata based upon the trap efficiency used for the strata or
+substrata. If a stratum is not split all days in the stratum will be an
+A. If it is split the days in the first substratum are A’s, the second
+are B’s, etc.
 
 ``` r
 table(cleaner_rst_environmental$sub_week) 
