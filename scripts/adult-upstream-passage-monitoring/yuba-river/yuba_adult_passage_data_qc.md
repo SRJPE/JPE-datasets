@@ -126,7 +126,7 @@ cleaner_passage_data %>% select_if(is.numeric) %>% colnames()
 
 ### Variable: `count`
 
-**Plotting Passage Counts Moving Up over Period of Record**
+**Plotting Passage Counts over Period of Record**
 
 ``` r
 cleaner_passage_data %>% filter(year(date) > 2010) %>% # show only last 10 years to make graphs more legible 
@@ -188,7 +188,7 @@ cleaner_passage_data  %>%
 
 ![](yuba_adult_passage_data_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-**Numeric Summary of Passage Counts Moving Up over Period of Record**
+**Numeric Summary of Passage Counts over Period of Record**
 
 ``` r
 # daily numeric summary 
