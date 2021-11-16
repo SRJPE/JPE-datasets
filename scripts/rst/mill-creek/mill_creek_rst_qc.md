@@ -471,7 +471,7 @@ cleaner_rst_data %>%
 ``` r
 cleaner_rst_data %>%  
   mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = flow, y = year)) + 
+  ggplot(aes(x = turbidity, y = year)) + 
   geom_boxplot() + 
   theme_minimal() +
   labs(title = "Water turbidity measures summarized by year",
@@ -482,8 +482,8 @@ cleaner_rst_data %>%
 
 ![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
--   High turbidity stream, Still seems like there must be some outliers
-    in here
+2008 seems like something weird is going on. Some high turbidity values
+throughout the years.
 
 **Numeric Summary of turbidity over Period of Record**
 
