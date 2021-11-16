@@ -20,7 +20,7 @@ library (RColorBrewer)
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon redd index data from 2000 to 2019, spring-run Chinook Salmon escapent index surveys from 2008 to 2019, and spring-run Chinook Salmon carcasses retrieved on redd and escapement index surveys from 2008 to 2019 on Clear Creek. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
+These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon redd index data from 2000 to 2019. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
 
 
 **Timeframe:** 2008 - 2019
@@ -109,14 +109,15 @@ unique(cleaner_data$comments)[1:5]
 
 ### Variable: `species`
 
-Edit capitalization; we are only interested in chinook data.
+Change to lower-case capitalization; we are only interested in chinook data.
 
 ```{r}
-table(cleaner_data$species)
 
 cleaner_data <- cleaner_data %>% 
   mutate(species = tolower(species)) %>% 
   filter(species == 'chinook') 
+
+table(cleaner_data$species)
 ```
 
 **NA and Unknown Values**  
@@ -124,8 +125,6 @@ cleaner_data <- cleaner_data %>%
 *  `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3)*100` % of values in the `species` column are NA.
 
 ### Variable: `survey_intent`
-
-TODO: does different survey intent matter?
 
 ```{r}
 cleaner_data <- cleaner_data %>% 
@@ -165,7 +164,7 @@ Plotting river mile over Period of Record
 cleaner_data %>% 
   mutate(year = as.factor(year(date))) %>% 
   ggplot(aes(x = river_mile, y = year)) +
-  geom_point(alpha = .75, size = 1.5, color = "blue") +
+  geom_point(alpha = .5, size = 1.5, color = "blue") +
   labs(x = "River Mile", y = "Year", title = "River Mile Over the Years")
 ```
 
@@ -234,7 +233,7 @@ cleaner_data %>%
   ggplot(aes(x = year, y = daily_count)) + 
   geom_boxplot() + 
   theme_minimal() +
-  labs(title = "Daily Count Sumarized by Year") + 
+  labs(title = "Daily Count Summarized by Year") + 
   theme(text = element_text(size = 13),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))   + 
   scale_y_continuous(limits = c(0, 101))
@@ -270,10 +269,16 @@ summary(cleaner_data$count)
 **Description:** total number of 2-year old Chinook Salmon (Jacks/Jills) encountered
 
 ```{r}
+cleaner_data %>% 
+  ggplot(aes(x = jack_count)) +
+  geom_histogram(bins = 4) +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
 ```
 
 **Numeric Summary of jack count over Period of Record**
 ```{r}
+summary(cleaner_data$jack_count)
 ```
 
 **NA and Unknown Values**  
@@ -286,12 +291,40 @@ summary(cleaner_data$count)
 **Description:** location of the Picket Weir
 
 ```{r}
+cleaner_data %>% 
+  ggplot(aes(x = pw_location_rm)) +
+  geom_histogram(bins = 4) +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))+
+  labs(title = "Distribution of pw_location_rm")
 ```
+
+
 
 **Numeric Summary of pw_location_rm over Period of Record**
 ```{r}
+
+summary(cleaner_data$pw_location_rm)
+
 ```
 
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$pw_location_rm))/nrow(cleaner_data), 3)*100` % of values in the `pw_location_rm` column are NA.
+
+## Summary of identified issues
+
+## Save cleaned data back to google cloud
+
+```{r}
+clear_holding <- cleaner_data  
+```
+
+```{r, eval=FALSE}
+gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(clear_holding,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_holding.csv")
+```

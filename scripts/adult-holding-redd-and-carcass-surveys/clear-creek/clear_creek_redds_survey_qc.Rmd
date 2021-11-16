@@ -20,7 +20,7 @@ library (RColorBrewer)
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon redd index data from 2000 to 2019, spring-run Chinook Salmon escapent index surveys from 2008 to 2019, and spring-run Chinook Salmon carcasses retrieved on redd and escapement index surveys from 2008 to 2019 on Clear Creek. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
+These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon escapent index surveys from 2008 to 2019. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
 
 
 **Timeframe:** 2000 - 2019
@@ -54,7 +54,7 @@ Read in data from google cloud, glimpse raw data sheet:
 
 ```{r}
  
-raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Redds") %>% glimpse()
+raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Redds", col_types = c("date", "text", "text", "numeric","text","numeric", "numeric", "numeric","numeric", "numeric", "numeric", "numeric", "text","numeric", "text", "date","text","text","text","numeric","text","text","text","text","text","text","text","text","text","text","date","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric", "date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric", "text","text","date","numeric","numeric")) %>% glimpse()
 ```
 
 ## Data Transformation
@@ -68,16 +68,250 @@ cleaner_data <- raw_redds_data %>%
          'survey' = 'survey_8',
          'picket_weir_location' = 'pw_location',
          'picket_weir_relation' = 'pw_relate',
-         'pre_redd_substrate' = 'pre_sub',
-         'side_redd_substrate' = 'side_sub',
-         'tailspill_substrate' = 'tail_sub',
+         'pre_redd_substrate_size' = 'pre_sub',
+         'redd_substrate_size' = 'side_sub',
+         'tail_substrate_size' = 'tail_sub',
          'fish_on_redd' = 'fish_on_re',
          'pre_redd_depth' = 'pre_in',
-         'pit_depth' = 'pit_in',
-         'tail_spill_depth' = 'tail_in',
-         'length' = 'length_in',
-         'width' = 'width_in'
+         'redd_pit_depth' = 'pit_in',
+         'redd_tail_depth' = 'tail_in',
+         'redd_length_in' = 'length_in',
+         'redd_width_in' = 'width_in',
+         'observation_reach'= 'reach_2',
+         'observation_date' = 'date_2_2',
+         'observation_age'= 'age_2_2',
+         'survey_observed'= 'survey_78',
+         'why_not_measured' = 'why_not_me',
+         'date_measured' = 'date_mea',
+         'measured' = 'measure'
          ) %>% 
   mutate(date = as.Date(date)) %>% 
   glimpse()
 ```
+## Explore date
+
+```{r}
+summary(cleaner_data$date)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3) * 100` % of values in the `date` column are NA.
+
+## Explore Categorical Data
+
+```{r}
+cleaner_data %>% select_if(is.character) %>% colnames()
+```
+### Variable: `method`
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(method = tolower(method))
+  
+table(cleaner_data$method)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$method))/nrow(cleaner_data), 3) * 100` % of values in the `method` column are NA.
+
+### Variable: `ucc_relate`
+
+**Description:** Above or below Upper Clear Creek Rotary Screw Trap
+
+```{r}
+cleaner_data$ucc_relate <- tolower(cleaner_data$ucc_relate)
+table(cleaner_data$ucc_relate)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$ucc_relate))/nrow(cleaner_data), 3) * 100` % of values in the `ucc_relate` column are NA.
+
+### Variable: `picket_weir_relation`
+
+**Description:** Above or below location of the Picket Weir
+
+```{r}
+cleaner_data$picket_weir_relation <- tolower(cleaner_data$picket_weir_relation)
+table(cleaner_data$picket_weir_relation)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$picket_weir_relation))/nrow(cleaner_data), 3) * 100` % of values in the `picket_weir_relation` column are NA.
+
+### Variable: `reach`
+
+**Description:** Reach surveyed on each survey day
+```{r}
+table(cleaner_data$reach)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$reach))/nrow(cleaner_data), 3) * 100` % of values in the `reach`` column are NA.
+
+### Variable: `redd_id`
+
+**Description:** ID assigned to redds by data collection device for each survey day
+
+```{r}
+unique(cleaner_data$redd_id)[1:10]
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$redd_id))/nrow(cleaner_data), 3) * 100` % of values in the `redd_id` column are NA.
+
+### Variable: `species`
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(species = tolower(cleaner_data$species)) %>% 
+  filter(species== 'chinook')
+table(cleaner_data$species)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3) * 100` % of values in the `species` column are NA.
+
+### Variable: `redd_loc`
+
+**Description:** Latitudinal location of the redd in the creek.
+
+RL: river left
+RR: river right
+RC: river center
+
+```{r}
+cleaner_data<- cleaner_data %>% 
+  mutate(redd_loc = case_when(
+  redd_loc == "N/A" ~ NA_character_,
+  TRUE ~ as.character(redd_loc)
+))
+table(cleaner_data$redd_loc)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$redd_loc))/nrow(cleaner_data), 3) * 100` % of values in the `redd_loc` column are NA.
+
+### Variable: `gravel`
+
+**Description:** predominant type of gravel used in redd construction: injection, native, or combo (native and injection)
+```{r}
+cleaner_data$gravel <- tolower(cleaner_data$gravel)
+table(cleaner_data$gravel)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$gravel))/nrow(cleaner_data), 3) * 100` % of values in the `gravel` column are NA.
+
+### Variable: `inj_site`
+
+**Description:** source of the injection gravel (site on Clear Creek)
+
+```{r}
+cleaner_data$inj_site <- tolower(cleaner_data$inj_site)
+table(cleaner_data$inj_site)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$inj_site))/nrow(cleaner_data), 3) * 100` % of values in the `inj_site` column are NA.
+
+### Variable: `pre_redd_substrate_size`
+
+**Description:** dominant substrate size in the pre-redd (area just of stream of the disturbance) TODO
+```{r}
+table(cleaner_data$pre_redd_substrate_size)
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$pre_redd_substrate_size))/nrow(cleaner_data), 3) * 100` % of values in the `pre_redd_substrate_size` column are NA.
+
+### Variable: `redd_substrate_size`
+
+**Description:** Dominant substrate size on the sides of the redd
+
+```{r}
+table(cleaner_data$redd_substrate_size)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$redd_substrate_size))/nrow(cleaner_data), 3) * 100` % of values in the `redd_substrate_size` column are NA.
+
+### Variable: `tail_redd_substrate_size`
+
+**Description:** Dominant substrate size in teh tailspill (excavated material behind the pit)
+
+```{r}
+table(cleaner_data$tail_substrate_size)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$tail_redd_substrate_size))/nrow(cleaner_data), 3) * 100` % of values in the `tail_redd_substrate_size` column are NA.
+
+### Variable: `fish_on_redd`
+
+**Description:** Indicates why a redd wasn't measured
+
+```{r}
+table(cleaner_data$fish_on_redd)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_data$fish_on_redd <- case_when(
+  cleaner_data$fish_on_redd == "No" | cleaner_data$fish_on_redd == "NO" ~FALSE, 
+  cleaner_data$fish_on_redd == "Yes" | cleaner_data$fish_on_redd == "YES" ~TRUE
+)
+table(cleaner_data$fish_on_redd) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$fish_on_redd))/nrow(cleaner_data), 3) * 100` % of values in the `fish_on_redd` column are NA.
+
+
+### Variable: `measured`
+
+**Description:** indicates if a redd was measured
+
+```{r}
+table(cleaner_data$measured)
+```
+
+
+```{r}
+cleaner_data$measured <- case_when(
+  cleaner_data$measured == "NO" ~FALSE, 
+  cleaner_data$measured == "YES"~TRUE
+)
+table(cleaner_data$measured) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$measured))/nrow(cleaner_data), 3) * 100` % of values in the `measured` column are NA.
+
+### Variable: `why_not_measured`
+
+**Description:** Indicates why a redd wasn't measured
+
+```{r}
+table(cleaner_data$why_not_measured)
+```
+```{r}
+cleaner_data<- cleaner_data %>% 
+  mutate(why_not_measured = tolower(why_not_measured),
+         why_not_measured = if_else(why_not_measured == "time-constraint", "time constraints", why_not_measured))
+
+table(cleaner_data$why_not_measured)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$why_not_measured))/nrow(cleaner_data), 3) * 100` % of values in the `why_not_measured` column are NA.
+
+
