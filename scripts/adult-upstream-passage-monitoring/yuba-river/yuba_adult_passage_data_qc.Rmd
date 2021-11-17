@@ -1,0 +1,384 @@
+---
+title: "Yuba River Upstream Passage QC"
+author: "Erin Cain"
+date: "11/8/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+```
+
+# Yuba River Upstream Passage Monitoring Video Data
+
+## Description of Monitoring Data
+
+Yuba river upstream passage data provided by Mike Healey in a xlsx doc. No associated description or metadata. We were warned by yuba river experts that this data has a lot of inconsistencies and they do not think the raw data here accuratly reflects the system. They recomend using values calculated in [this report.](https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring/yuba-river/data-raw/2020%20Update%20LYR%20Chinook%20Salmon%20Run%20Differentiation_December%202020.pdf)  
+					
+
+**Timeframe:** 2004 - 2019
+
+**Video Season:** Appears to be January through October 
+
+**Completeness of Record throughout timeframe:** Data from each year, records on hours sampled each date, seems like non sample hours are due to outages in vaki equiptment (based on report)
+
+**Sampling Location:** Yuba River North and Sourth Fish Ladder
+
+**Data Contact:** [Mike Healey](mailto:Mike.Healey@wildlife.ca.gov)
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+getwd() #to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = 
+                 "adult-upstream-passage-monitoring/yuba-river/data-raw/MASTER_Vaki_ALL PASSAGE and OPS_BY2004-BY2019.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_yuba_river_passage_data.xlsx",
+               overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data: 
+```{r}
+# read in data to clean 
+sheets <- readxl::excel_sheets("raw_yuba_river_passage_data.xlsx")
+sheets
+raw_passage_data <- read_excel("raw_yuba_river_passage_data.xlsx", sheet = "All Passage") %>% glimpse()
+raw_passage_operations <- read_excel("raw_yuba_river_passage_data.xlsx", sheet = "All Ops") %>% glimpse()
+```
+
+## Data transformations
+
+```{r}
+cleaner_passage_data <- raw_passage_data %>% 
+  left_join(raw_passage_operations, c("Date", "Ladder")) %>% # Join passage data, no data on hours monitored in first 2 months
+  janitor::clean_names() %>% 
+  rename(speed_m_per_s = speed_m_s,
+         catagory = categorie,
+         passage_direction = direction_of_passage) %>%
+  mutate(count = 1, 
+         date = as.Date(date), 
+         time = hms::as_hms(time)) %>%
+  select(-percent) %>% # remove because just hours/24
+  glimpse()
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+cleaner_passage_data %>% select_if(is.numeric) %>% colnames()
+```
+### Variable: `count`
+
+**Plotting Passage Counts over Period of Record**
+
+```{r}
+cleaner_passage_data %>% filter(year(date) > 2010) %>% # show only last 10 years to make graphs more legible 
+  group_by(date, passage_direction) %>%
+  summarise(total_count = sum(count)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = total_count, fill = passage_direction)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1901-01-01"), as.Date("1901-10-01")), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Count of Passage All Runs", 
+       x = "Date")  
+```
+
+Spring Run Chinook appear to be seen moving upstream April through September.
+
+```{r}
+# Boxplots of daily counts by year
+cleaner_passage_data %>% group_by(date, passage_direction) %>%
+  mutate(daily_count_upstream = sum(count)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ungroup() %>%
+  ggplot(aes(x = year, y = daily_count_upstream, color = passage_direction)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(text = element_text(size = 23),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Count of Upstream Passage Sumarized") 
+```
+
+```{r}
+cleaner_passage_data  %>%
+  mutate(year = as.factor(year(date))) %>%
+  group_by(year, passage_direction) %>%
+  summarise(total_count = sum(count)) %>%
+  ggplot(aes(x = year, y = total_count, fill = passage_direction)) + 
+  geom_col(position = "dodge") + 
+  theme_minimal() +
+  labs(title = "Total Yearly Upstream Fish Counts",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+**Numeric Summary of Passage Counts over Period of Record**
+
+```{r}
+# daily numeric summary 
+cleaner_passage_data %>% group_by(date) %>%
+  summarise(count = sum(count, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$count))/nrow(cleaner_passage_data), 3) * 100` % of values in the `count` column are NA. Expected given I created the column assuming each row is one fish. 
+
+### Variable: `depth_mm`
+
+**Plotting depth_mm over Period of Record**
+
+```{r}
+cleaner_passage_data %>%
+  ggplot(aes(x = depth_mm)) + 
+  geom_histogram(breaks=seq(25, 275, by=2)) + 
+  scale_x_continuous(breaks=seq(25, 275, by=25)) +
+  theme_minimal() +
+  labs(title = "depth distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of depth_mm over Period of Record**
+
+```{r}
+summary(cleaner_passage_data$depth_mm)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$depth_mm))/nrow(cleaner_passage_data), 3) * 100` % of values in the `depth_mm` column are NA. 
+
+### Variable: `length_cm`
+
+Length of fish in cm							
+
+**Plotting length_cm**
+  
+```{r}
+cleaner_passage_data %>%
+  ggplot(aes(x = length_cm)) + 
+  geom_histogram(breaks=seq(0, 175, by=2)) + 
+  scale_x_continuous(breaks=seq(0, 175, by=25)) +
+  theme_minimal() +
+  labs(title = "length distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+**Numeric Summary of length_cm over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_passage_data$length_cm)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_passage_data$length_cm))/nrow(cleaner_passage_data), 3) * 100` % of values in the `length_cm` column are NA. 
+
+Quite a few 0 values and NA values. Need to figure out if 0 values can also be considered NA. 
+
+### Variable: `speed_m_per_s`
+
+Speed of fish in meter per second 
+
+**Plotting speed_m_per_s over Period of Record**
+
+```{r}
+cleaner_passage_data %>%
+  ggplot(aes(x = speed_m_per_s)) + 
+  geom_histogram(breaks=seq(-3, 4, by=.25)) + 
+  scale_x_continuous(breaks=seq(-3, 5, by=1)) +
+  theme_minimal() +
+  labs(title = "speed distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of speed_m_per_s over Period of Record**
+
+```{r}
+summary(cleaner_passage_data$speed_m_per_s)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$speed_m_per_s))/nrow(cleaner_passage_data), 3) * 100` % of values in the `speed_m_per_s` column are NA. 
+
+### Variable: `position_in_frame`
+
+Fish position in video frame. Not sure how to map numbers to positions. 
+
+**Plotting position_in_frame over Period of Record**
+
+```{r}
+cleaner_passage_data %>%
+  ggplot(aes(x = position_in_frame)) + 
+  geom_histogram(breaks=seq(0, 50, by=1)) + 
+  scale_x_continuous(breaks=seq(0, 50, by=5)) +
+  theme_minimal() +
+  labs(title = "Position in frame distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of position_in_frame over Period of Record**
+
+```{r}
+summary(cleaner_passage_data$position_in_frame)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$position_in_frame))/nrow(cleaner_passage_data), 3) * 100` % of values in the `position_in_frame` column are NA. 
+
+### Variable: `hours`
+
+Number of hours in day that were monitored  
+
+**Plotting hours over Period of Record**
+
+```{r}
+cleaner_passage_data %>%
+  ggplot(aes(x = hours)) + 
+  geom_histogram(breaks=seq(0, 25, by=1)) + 
+  scale_x_continuous(breaks=seq(0, 25, by=1)) +
+  theme_minimal() +
+  labs(title = "Hours monitored distribution") + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of hours over Period of Record**
+
+```{r}
+summary(cleaner_passage_data$hours)
+```
+
+Often monitored all 24 hours. Some days where hours are 0. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$hours))/nrow(cleaner_passage_data), 3) * 100` % of values in the `hours` column are NA. 
+
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+cleaner_passage_data %>% select_if(is.character) %>% colnames()
+```
+
+
+### Variable: `catagory`
+```{r}
+table(cleaner_passage_data$catagory)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+catagories_to_keep <- str_detect(cleaner_passage_data$catagory, c("chinook", "chn")) 
+cleaner_passage_data <- filter(cleaner_passage_data, str_detect(tolower(cleaner_passage_data$catagory), c("chinook", "chn")))
+cleaner_passage_data$catagory <- tolower(cleaner_passage_data$catagory)
+
+# Create a column for adipose 
+cleaner_passage_data$adipose <- case_when(cleaner_passage_data$catagory %in% 
+                                            c("chinook ad-unidentified", "chinook ad undetermined", "chinook ad-undetermi", 
+                                               "chinook ad-undetermined", "chinook ad clip unde", "chinook ad underterm", 
+                                               "chinook ad undetermi") ~ "unknown", 
+                                          cleaner_passage_data$catagory %in% 
+                                            c("chinook ad-clip", "chinook ad clip", "chinook salmon ad cl", 
+                                               "chinook salmon ad c", "chinook salomon ad c") ~ "clipped")
+table(cleaner_passage_data$catagory)
+# TODO figure out what the whole -p/+s and +p/+s means 
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$catagory))/nrow(cleaner_passage_data), 3) * 100` % of values in the `category` column are NA. 
+
+### Variable: `passage_direction`
+
+States if the fish is moving upstream (Up) or downstream (Down)
+
+```{r}
+table(cleaner_passage_data$passage_direction) 
+cleaner_passage_data$passage_direction <- tolower(cleaner_passage_data$passage_direction)
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$passage_direction))/nrow(cleaner_passage_data), 3) * 100` % of values in the `passage_direction` column are NA. 
+
+### Variable: `ladder`
+
+Refers to which fish ladder observation occured on. 
+
+```{r}
+table(cleaner_passage_data$ladder) 
+cleaner_passage_data$ladder <- tolower(cleaner_passage_data$ladder)
+```
+ 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_passage_data$ladder))/nrow(cleaner_passage_data), 3) * 100` % of values in the `category` column are NA. 
+
+## Summary of identified issues
+
+* The categories are very confusing, need to get definitions for the different category types - when asking Yuba exerts about this they stated that the data is very complex and we would need multi-hour meeting to talk through it all. 
+* not sure if length is fork length or a different measure of length - when asking Yuba exerts about this they stated that the data is very complex and we would need multi-hour meeting to talk through it all. 
+* Not sure what position in frame values map to 
+
+## Save cleaned data back to google cloud 
+```{r}
+yuba_upstream_passage <- cleaner_passage_data %>% glimpse()
+```
+
+
+```{r, eval=FALSE}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(yuba_upstream_passage,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/yuba-river/data/yuba_upstream_passage")
+```
+
+
+

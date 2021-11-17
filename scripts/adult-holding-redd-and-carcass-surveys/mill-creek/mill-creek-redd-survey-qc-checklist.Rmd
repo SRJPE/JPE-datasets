@@ -1,0 +1,183 @@
+---
+title: "mill-creek-redd-survey-qc-checklist"
+author: "Inigo Peng"
+date: "10/19/2021"
+output: rmarkdown::github_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+```
+# Mill Creek Redd Survey Data 
+
+**Description of Monitoring Data**
+
+* Redd surveys Buckhorn Gulch to Upper Dam are conducted by air (helicopter).  All other survey sections completed on foot
+
+* McCarthy Place to Savercool Place and Savercool Place to Black Rock reaches combined 1997 to 2006
+
+
+
+**Timeframe:** 
+
+1997 to 2020
+
+**Completeness of Record throughout timeframe:**
+
+* Missing some elevation data
+* Buckhorn Gulch To Upper Dam missing significant count data
+* Savercool Place  To Black Rock and Canyon Camp to Sooner Place missing redd count data
+from 1997 - 2006
+
+**Sampling Location:** 
+
+* Above Hwy 36
+* Hwy 36 to Little Hole-in-Ground
+* Litte Hole-in-Ground to Hole-in-Ground
+* Hole-in-Ground to Ishi Trail Head   
+* Ishi Trail Head to Big Bend   
+* Big Bend to Canyon Camp  
+* Canyon Camp to Sooner Place
+* Sooner Place to McCarthy Place
+* McCarthy Place to Savercool Place
+* Savercool Place  to Black Rock
+* Black Rock to below Ranch House
+* Below Ranch House to above Avery   
+* Above Avery to Pape Place
+* Pape Place to Buckhorn Gulch 
+* Buckhorn Gulch to Upper Dam (aerial survey)
+
+
+**Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/mill-creek/data-raw/Mill Creek SRCS Redd Counts by Section 1997-2020 Reformatted.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "mill_creek_redd_raw.xlsx")
+               # Overwrite = TRUE)
+```
+
+```{r}
+raw_data = readxl::read_excel('mill_creek_redd_raw.xlsx',
+                              sheet = '2007-2020 SR redds') %>% 
+  glimpse()
+```
+## Data Transformations
+
+```{r}
+cleaner_data <- raw_data %>% 
+  rename('starting_elevation_ft' = 'Starting Elevevation',
+          'location' = 'Section') %>%
+  select(-c(4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50)) %>%
+  mutate_at(c(3:26), suppressWarnings(as.numeric)) %>% 
+  filter(row_number() <= n()-2) %>% 
+  pivot_longer(3:26,
+  names_to = "year",
+  values_to = "redd_count") %>%
+  mutate(year = as.numeric(substr(year, 1,4)),
+         starting_elevation_ft = as.numeric(str_replace(starting_elevation_ft, "'$", ""))) %>% 
+  glimpse()
+```
+
+## Explore Categorical Variables
+
+```{r}
+cleaner_data$location = str_to_title(cleaner_data$location)
+cleaner_data <- cleaner_data %>%
+  mutate(location = gsub("-", " ", location),
+         location = if_else(location == "Buckhorn Gulch To Upper Dam (Aerial Survey)", "Buckhorn Gulch To Upper Dam", location ))
+table(cleaner_data$location)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$location))/nrow(cleaner_data), 3)*100` % of values in the `location` column are NA.
+
+## Explore Numeric Variables
+
+### Variable `redd_count`
+```{r fig.height=7, fig.width=10}
+#Find the most distinctive colours for visual
+colourCount = length(unique(cleaner_data$location))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
+cleaner_data %>%
+  mutate(date =lubridate::ymd(year, truncated = 2L), .keep = "unused") %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = year, y = redd_count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_col()+
+  theme_minimal()+
+  labs(title = "Adult Redd Count By Year")+
+  ylim(0, 800)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
+```
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = redd_count, y = location))+
+  geom_boxplot() +
+  theme_minimal()+
+  labs(title = "Redd Count By Reach")
+```
+
+**Numeric Annual Summary of redd_count From 1997 to 2020**
+```{r}
+cleaner_data %>%
+  group_by(year) %>%
+  summarise(count = sum(redd_count, na.rm = T)) %>%
+  pull(count) %>%
+  summary()
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$redd_count))/nrow(cleaner_data), 3)*100` % of values in the `redd_count` column are NA.
+
+### Variable `starting_elevation_ft`
+
+```{r fig.height=7, fig.width=10}
+cleaner_data %>%
+  filter(!is.na(starting_elevation_ft)) %>% 
+  ggplot(aes(y = starting_elevation_ft, x = location))+
+  geom_col() +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90, size = 7))+
+  labs(title = "Starting Elevation By Reach")
+```
+
+**Numeric Summary of starting_elevation_ft From 1997 to 2020**
+```{r}
+cleaner_data %>%
+  summarise(starting_elevation_ft) %>%
+  pull(starting_elevation_ft) %>%
+  summary()
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$starting_elevation_ft))/nrow(cleaner_data), 3)*100` % of values in the `starting_elevation_ft` column are NA.
+
+### Add cleaned data back onto google cloud
+```{r}
+mill_redd_survey <- cleaner_data %>% glimpse()
+```
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(mill_redd_survey,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv")
+```
