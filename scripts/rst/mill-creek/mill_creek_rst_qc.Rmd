@@ -128,7 +128,7 @@ cleaner_rst_data  %>%
   ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Fish Counted each Year by run",
+  labs(title = "Total Fish Counted each Year",
        y = "Total fish raw catch") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
@@ -192,6 +192,7 @@ cleaner_rst_data %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
+0 weight values are likely NA. 
 
 **Numeric Summary of weight over Period of Record**
   
@@ -250,7 +251,8 @@ cleaner_rst_data %>%
   ggplot(aes(x = fake_date, y = flow)) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b") +
   geom_line(size = 0.5) +
-  xlab("Date") +
+  labs(x = "Date", 
+       title = "Daily Flow Values Over Period of Reccord") +
   facet_wrap(~wy, scales = "free_y") + 
   theme_minimal()
 ```
@@ -301,6 +303,7 @@ summary(cleaner_rst_data$time_for_10_revolutions)
 
 ### Variable: `tubs_of_debris`
 
+Do not know how to characterize one tub. Need additional clarity on units here. 
 
 **Plotting Debris**
   
@@ -473,17 +476,6 @@ summary(cleaner_rst_data$turbidity)
 cleaner_rst_data %>% select_if(is.character) %>% colnames()
 ```
 
-
-### Variable: `location`
-```{r}
-table(cleaner_rst_data$location) 
-```
-
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_rst_data$location))/nrow(cleaner_rst_data), 3) * 100` % of values in the `location` column are NA.
-
 ### Variable: `trap_condition_code`
 
 Code describing trap condition.  
@@ -556,6 +548,7 @@ unique(cleaner_rst_data$comments)[1:5]
 
 * Lots of sampling gaps
 * Some funky values in weather and condition code, converted to NA
+* Some 0 weight values we may want to correct to NA
 
 ## Save cleaned data back to google cloud 
 

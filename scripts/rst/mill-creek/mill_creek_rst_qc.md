@@ -165,7 +165,7 @@ cleaner_rst_data  %>%
   ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Fish Counted each Year by run",
+  labs(title = "Total Fish Counted each Year",
        y = "Total fish raw catch") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
@@ -240,6 +240,8 @@ cleaner_rst_data %>%
 
 ![](mill_creek_rst_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
+0 weight values are likely NA.
+
 **Numeric Summary of weight over Period of Record**
 
 ``` r
@@ -307,7 +309,8 @@ cleaner_rst_data %>%
   ggplot(aes(x = fake_date, y = flow)) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b") +
   geom_line(size = 0.5) +
-  xlab("Date") +
+  labs(x = "Date", 
+       title = "Daily Flow Values Over Period of Reccord") +
   facet_wrap(~wy, scales = "free_y") + 
   theme_minimal()
 ```
@@ -366,6 +369,9 @@ summary(cleaner_rst_data$time_for_10_revolutions)
 -   29 % of values in the `time_for_10_revolutions` column are NA.
 
 ### Variable: `tubs_of_debris`
+
+Do not know how to characterize one tub. Need additional clarity on
+units here.
 
 **Plotting Debris**
 
@@ -565,20 +571,6 @@ cleaner_rst_data %>% select_if(is.character) %>% colnames()
     ## [1] "location"            "trap_condition_code" "weather"            
     ## [4] "comments"
 
-### Variable: `location`
-
-``` r
-table(cleaner_rst_data$location) 
-```
-
-    ## 
-    ## Mill Creek RSTR 
-    ##           25529
-
-**NA and Unknown Values**
-
--   0 % of values in the `location` column are NA.
-
 ### Variable: `trap_condition_code`
 
 Code describing trap condition.
@@ -675,6 +667,7 @@ unique(cleaner_rst_data$comments)[1:5]
 
 -   Lots of sampling gaps
 -   Some funky values in weather and condition code, converted to NA
+-   Some 0 weight values we may want to correct to NA
 
 ## Save cleaned data back to google cloud
 
