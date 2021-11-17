@@ -115,11 +115,6 @@ cleaner_data %>%
 ```{r}
 table(cleaner_data$section_cd)
 ```
-**Create  lookup rda for section_cd encoding:**
-
-```{r}
-
-```
 
 **NA and Unknown Values**  
 
@@ -151,8 +146,17 @@ table(cleaner_data$way_pt)
 ```{r}
 table(cleaner_data$ad_fin_clip)
 cleaner_data <- cleaner_data %>% 
-  mutate(ad_fin_clip = set_names(tolower(ad_fin_clip)))
+  mutate(ad_fin_clip = tolower(ad_fin_clip),
+         ad_fin_clip =  case_when(
+           ad_fin_clip == 'yes' ~ TRUE,
+           ad_fin_clip == 'no' ~ FALSE
+         ))
+table(cleaner_data$ad_fin_clip)
 ```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$ad_fin_clip))/nrow(cleaner_data), 3)*100` % of values in the `ad_fin_clip` column are NA.
 
 ## Explore Numerical Variables
 

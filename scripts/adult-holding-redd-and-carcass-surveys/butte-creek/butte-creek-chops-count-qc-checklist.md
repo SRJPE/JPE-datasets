@@ -49,7 +49,7 @@ open_files <- function(year){
   return (data)
 }
 years <- c(2014, 2015, 2016, 2017, 2018, 2019, 2020)
-# year <- 2020
+# years <- 2020
 raw_data <- purrr::map(years, read_from_cloud) %>%
   reduce(bind_rows)
 raw_data <- purrr::map(years, open_files) %>% 
@@ -138,15 +138,10 @@ cleaner_data %>%
 ### Variable:`section_cd`
 
 -   A - Quartz Bowl Pool downstream to Whiskey Flat
-
 -   B - Whiskey Flat downstream to Helltown Bridge
-
 -   C - Helltown Bridge downstream to Quail Run Bridge
-
 -   ‘COV-OKIE’ - Centerville Covered Brdige to Okie Dam
-
 -   D - Quail Run Bridge downstream to Cable Bridge
-
 -   E - Cable Bridge downstream ot Centerville; sdf Cable Bridge
     downstream to Centerville Covered Bridge
 
@@ -157,8 +152,6 @@ table(cleaner_data$section_cd)
     ## 
     ##        A        B        C COV-OKIE        D        E 
     ##      130      176      303       31      166      111
-
-**Create lookup rda for section\_cd encoding:**
 
 **NA and Unknown Values**
 
@@ -232,8 +225,21 @@ table(cleaner_data$ad_fin_clip)
 
 ``` r
 cleaner_data <- cleaner_data %>% 
-  mutate(ad_fin_clip = set_names(tolower(ad_fin_clip)))
+  mutate(ad_fin_clip = tolower(ad_fin_clip),
+         ad_fin_clip =  case_when(
+           ad_fin_clip == 'yes' ~ TRUE,
+           ad_fin_clip == 'no' ~ FALSE
+         ))
+table(cleaner_data$ad_fin_clip)
 ```
+
+    ## 
+    ## FALSE  TRUE 
+    ##   406     1
+
+**NA and Unknown Values**
+
+-   55.6 % of values in the `ad_fin_clip` column are NA.
 
 ## Explore Numerical Variables
 
@@ -267,7 +273,7 @@ cleaner_data %>%
        y = 'Total Chop Count')
 ```
 
-![](butte-creek-chops-count-qc-checklist_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](butte-creek-chops-count-qc-checklist_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$chop_count)
@@ -297,7 +303,7 @@ butte_chops <- cleaner_data %>%
     ## $ section_cd  <chr> "A", "A", "A", "A", "B", "B", "B", "A", "A", "A", "A", "A"~
     ## $ way_pt      <chr> "A2", "A3", "A4", "A1", "B1", "B2", "B7", "A5", "A1", "A2"~
     ## $ chop_count  <dbl> 2, 0, 2, 4, 1, 1, 1, 3, 7, 8, 5, 4, 19, 32, 19, 5, 6, 3, 4~
-    ## $ ad_fin_clip <chr> "unknown", "unknown", "unknown", "unknown", "unknown", "un~
+    ## $ ad_fin_clip <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
 
 ``` r
 f <- function(inputs, output) write_csv(input, file = output)

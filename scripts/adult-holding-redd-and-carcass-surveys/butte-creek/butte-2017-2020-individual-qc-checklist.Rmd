@@ -93,6 +93,7 @@ raw_2019_individuals_data <- read_csv("2019_raw_surveyindividuals.csv") %>% glim
 
 ## Data Transformations
 
+Transformed 2019 data to join it to the 2017-2020 data.
 
 ```{r}
 cleaner_data<- raw_later_individuals_data %>%
@@ -148,6 +149,10 @@ cleaner_data %>%
 table(cleaner_data$section_cd)
 ```
 
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$section_cd))/nrow(cleaner_data), 3)*100` % of values in the `section_cd` column are NA.
+
 ### Variable:`way_pt`
 
 ```{r}
@@ -169,12 +174,12 @@ table(cleaner_data$sex)
 *  `r round(sum(is.na(cleaner_data$sex))/nrow(cleaner_data), 3)*100` % of values in the `sex` column are NA.
 
 ### Variable:`condition`
-TODO: need lookup table
+TODO: need description of the conditions
 ```{r}
 cleaner_data <- cleaner_data %>% 
   mutate(condition = set_names(tolower(condition)),
          condition = case_when(
-           condition == "n/r" ~ 'not recorded',
+           condition == "n/r" ~ NA_character_,
            TRUE ~ as.character(condition)
          ))
 table(cleaner_data$condition)
@@ -186,6 +191,7 @@ table(cleaner_data$condition)
 
 ### Variable:`spawning_status`
 
+TODO: needs description of spawning_status
 ```{r}
 
 cleaner_data <- cleaner_data %>% 
@@ -193,8 +199,8 @@ cleaner_data <- cleaner_data %>%
          spawning_status = 
            case_when(spawning_status == "n" ~ "no",
                      spawning_status == "y" ~ "yes",
-                     spawning_status == "n/r" ~ 'not recorded',
-                     spawning_status == "unk" ~ "unknown",
+                     spawning_status == "n/r" ~ NA_character_,
+                     spawning_status == "unk" ~ NA_character_,
                      TRUE ~ as.character(spawning_status)
   ))
 
@@ -210,6 +216,9 @@ table(cleaner_data$spawning_status)
 ```{r}
 unique(cleaner_data$scale_nu)[1:5]
 ```
+
+There are `r length(unique(cleaner_data$scale_nu))` unique individual scale numbers. 
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$scale_nu))/nrow(cleaner_data), 3)*100` % of values in the `scale_nu` column are NA.
@@ -219,6 +228,9 @@ unique(cleaner_data$scale_nu)[1:5]
 ```{r}
 unique(cleaner_data$tissue_nu)[1:5]
 ```
+
+There are `r length(unique(cleaner_data$tissue_nu))` unique individual tissue numbers. 
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$tissue_nu))/nrow(cleaner_data), 3)*100` % of values in the `tissue_nu` column are NA.
@@ -228,6 +240,9 @@ unique(cleaner_data$tissue_nu)[1:5]
 ```{r}
 unique(cleaner_data$otolith_nu)[1:5]
 ```
+
+There are `r length(unique(cleaner_data$otolith_nu))` unique individual otolith numbers. 
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$otolith_nu))/nrow(cleaner_data), 3)*100` % of values in the `otolith_nu` column are NA.
@@ -242,11 +257,32 @@ unique(cleaner_data$comments)[1:5]
 
 ## Explore Numerical Variables
 
+
 ```{r}
 cleaner_data %>% 
   select_if(is.numeric) %>% colnames()
 ```
+### Variable: `survey`
+
+
+There are `r length(unique(cleaner_data$survey))` unique individual survey numbers.
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$survey))/nrow(cleaner_data), 3)*100` % of values in the `survey` column are NA.
+
 ### Variable:`disc_tag_applied`
+
+```{r}
+cleaner_data %>% 
+  filter(disc_tag_applied < 10000) %>% #filtered out one large value to see the distribution better
+  ggplot(aes(x = disc_tag_applied))+
+  geom_histogram()+
+  labs(title = "Distribution of Disc Tag Applied")+
+  theme_minimal()
+```
+
+
 ```{r}
 summary(cleaner_data$disc_tag_applied)
 ```
@@ -262,7 +298,8 @@ cleaner_data %>%
   filter(fork_length_cm < 200) %>%  #filter out one large value for better view of distribution
   ggplot(aes(x = fork_length_cm))+
   geom_histogram(bin = 10)+
-  labs(title = "Distribution of Fork Length")
+  labs(title = "Distribution of Fork Length")+
+  theme_minimal()
 ```
 
 ```{r}
@@ -275,7 +312,7 @@ summary(cleaner_data$fork_length_cm)
 ## Issues Identified
 
 * Need description and look up table for the majority of the data
-* Incomplete data for most of the columns
+* Some outliers for disc tag applied
 
 ## Add cleaned data back to google cloud
 ```{r}

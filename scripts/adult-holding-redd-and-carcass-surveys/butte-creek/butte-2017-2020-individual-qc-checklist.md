@@ -162,6 +162,8 @@ raw_2019_individuals_data <- read_csv("2019_raw_surveyindividuals.csv") %>% glim
 
 ## Data Transformations
 
+Transformed 2019 data to join it to the 2017-2020 data.
+
 ``` r
 cleaner_data<- raw_later_individuals_data %>%
   janitor::clean_names() %>%
@@ -258,6 +260,10 @@ table(cleaner_data$section_cd)
     ##        A        B        C COV-OKIE        D        E 
     ##       87      180      197        9       75       17
 
+**NA and Unknown Values**
+
+-   47.2 % of values in the `section_cd` column are NA.
+
 ### Variable:`way_pt`
 
 ``` r
@@ -302,13 +308,13 @@ table(cleaner_data$sex)
 
 ### Variable:`condition`
 
-TODO: need lookup table
+TODO: need description of the conditions
 
 ``` r
 cleaner_data <- cleaner_data %>% 
   mutate(condition = set_names(tolower(condition)),
          condition = case_when(
-           condition == "n/r" ~ 'not recorded',
+           condition == "n/r" ~ NA_character_,
            TRUE ~ as.character(condition)
          ))
 table(cleaner_data$condition)
@@ -324,14 +330,16 @@ table(cleaner_data$condition)
 
 ### Variable:`spawning_status`
 
+TODO: needs description of spawning\_status
+
 ``` r
 cleaner_data <- cleaner_data %>% 
   mutate(spawning_status = set_names(tolower(spawning_status)),
          spawning_status = 
            case_when(spawning_status == "n" ~ "no",
                      spawning_status == "y" ~ "yes",
-                     spawning_status == "n/r" ~ 'not recorded',
-                     spawning_status == "unk" ~ "unknown",
+                     spawning_status == "n/r" ~ NA_character_,
+                     spawning_status == "unk" ~ NA_character_,
                      TRUE ~ as.character(spawning_status)
   ))
 
@@ -339,12 +347,12 @@ table(cleaner_data$spawning_status)
 ```
 
     ## 
-    ##           no not recorded            p      unknown          yes 
-    ##           10          246           23            6          280
+    ##  no   p yes 
+    ##  10  23 280
 
 **NA and Unknown Values**
 
--   47.2 % of values in the `spawning_status` column are NA.
+-   70.8 % of values in the `spawning_status` column are NA.
 
 ### Variable: `scale_nu`
 
@@ -353,6 +361,8 @@ unique(cleaner_data$scale_nu)[1:5]
 ```
 
     ## [1] "20607" "20610" "20609" "20703" "20661"
+
+There are 172 unique individual scale numbers.
 
 **NA and Unknown Values**
 
@@ -366,6 +376,8 @@ unique(cleaner_data$tissue_nu)[1:5]
 
     ## [1] NA            "20614"       "20608"       "2092420-C-1" "S092920-C-1"
 
+There are 112 unique individual tissue numbers.
+
 **NA and Unknown Values**
 
 -   89.4 % of values in the `tissue_nu` column are NA.
@@ -377,6 +389,8 @@ unique(cleaner_data$otolith_nu)[1:5]
 ```
 
     ## [1] NA          "S19034-20" "S19035-20" "S19036-20" "S19037-20"
+
+There are 18 unique individual otolith numbers.
 
 **NA and Unknown Values**
 
@@ -404,7 +418,28 @@ cleaner_data %>%
 
     ## [1] "survey"           "disc_tag_applied" "fork_length_cm"   "f_lcm"
 
+### Variable: `survey`
+
+There are 4 unique individual survey numbers.
+
+**NA and Unknown Values**
+
+-   47.2 % of values in the `survey` column are NA.
+
 ### Variable:`disc_tag_applied`
+
+``` r
+cleaner_data %>% 
+  filter(disc_tag_applied < 10000) %>% #filtered out one large value to see the distribution better
+  ggplot(aes(x = disc_tag_applied))+
+  geom_histogram()+
+  labs(title = "Distribution of Disc Tag Applied")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](butte-2017-2020-individual-qc-checklist_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$disc_tag_applied)
@@ -425,12 +460,13 @@ cleaner_data %>%
   filter(fork_length_cm < 200) %>%  #filter out one large value for better view of distribution
   ggplot(aes(x = fork_length_cm))+
   geom_histogram(bin = 10)+
-  labs(title = "Distribution of Fork Length")
+  labs(title = "Distribution of Fork Length")+
+  theme_minimal()
 ```
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](butte-2017-2020-individual-qc-checklist_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](butte-2017-2020-individual-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$fork_length_cm)
@@ -446,7 +482,7 @@ summary(cleaner_data$fork_length_cm)
 ## Issues Identified
 
 -   Need description and look up table for the majority of the data
--   Incomplete data for most of the columns
+-   Some outliers for disc tag applied
 
 ## Add cleaned data back to google cloud
 
@@ -464,7 +500,7 @@ butte_individual_survey_2017_2020 <- cleaner_data %>% glimpse()
     ## $ sex              <chr> "F", "M", "M", "F", "F", "F", "M", "M", "M", "M", "F"~
     ## $ fork_length_cm   <dbl> 90.0, 52.7, 87.8, 57.0, 55.5, 76.0, 96.0, 85.3, 52.8,~
     ## $ condition        <chr> "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"~
-    ## $ spawning_status  <chr> "no", "not recorded", "not recorded", "no", "no", "no~
+    ## $ spawning_status  <chr> "no", NA, NA, "no", "no", "no", NA, NA, NA, NA, "no",~
     ## $ ad_fin_clip_cd   <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"~
     ## $ scale_nu         <chr> "20607", "20610", "20609", "20703", "20661", "20660",~
     ## $ tissue_nu        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "2061~

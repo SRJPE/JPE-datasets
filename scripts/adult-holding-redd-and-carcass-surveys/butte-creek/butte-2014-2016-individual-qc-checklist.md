@@ -201,6 +201,10 @@ table(cleaner_data$section_cd)
     ##        A        B        C COV-OKIE        D        E 
     ##      179      317      415       25      165       52
 
+**NA and Unknown Values**
+
+-   0 % of values in the `section_cd` column are NA.
+
 ### Variable:`way_pt`
 
 ``` r
@@ -261,7 +265,7 @@ table(cleaner_data$sex)
 
 ### Variable:`condition`
 
-TODO: need lookup table
+TODO: need description for condition
 
 ``` r
 cleaner_data <- cleaner_data %>% 
@@ -283,14 +287,16 @@ table(cleaner_data$condition)
 
 ### Variable:`spawning_status`
 
+Categorizing ‘not recorded’ and and ‘unknown’ into NA.
+
 ``` r
 cleaner_data <- cleaner_data %>% 
   mutate(spawning_status = set_names(tolower(spawning_status)),
          spawning_status = 
            case_when(spawning_status == "n" ~ "no",
                      spawning_status == "y" ~ "yes",
-                     spawning_status == "n/r" ~ 'not recorded',
-                     spawning_status == "unk" ~ "unknown",
+                     spawning_status == "n/r" ~ NA_character_,
+                     spawning_status == "unk" ~ NA_character_,
                      TRUE ~ as.character(spawning_status)
   ))
 
@@ -298,12 +304,12 @@ table(cleaner_data$spawning_status)
 ```
 
     ## 
-    ##           no not recorded            p      unknown          yes 
-    ##           28          465           56           63          299
+    ##  no   p yes 
+    ##  28  56 299
 
 **NA and Unknown Values**
 
--   21 % of values in the `spawning_status` column are NA.
+-   66.8 % of values in the `spawning_status` column are NA.
 
 ### Variable: `scale_nu`
 
@@ -312,6 +318,8 @@ unique(cleaner_data$scale_nu)[1:5]
 ```
 
     ## [1] NA      "33737" "33713" "33738" "33794"
+
+There are 126 unique individual scale numbers.
 
 **NA and Unknown Values**
 
@@ -325,6 +333,8 @@ unique(cleaner_data$tissue_nu)[1:5]
 
     ## [1] NA        "S15-039" "S15-040" "S15-041" "S15-042"
 
+There are 32 unique individual tissue numbers.
+
 **NA and Unknown Values**
 
 -   97.3 % of values in the `tissue_nu` column are NA.
@@ -336,6 +346,8 @@ unique(cleaner_data$otolith_nu)[1:5]
 ```
 
     ## [1] NA         "09221501" "09221502" "09221503" "09241501"
+
+There are 14 unique individual otolith numbers.
 
 **NA and Unknown Values**
 
@@ -350,7 +362,27 @@ cleaner_data %>%
 
     ## [1] "survey"           "disc_tag_applied" "fork_length_cm"
 
+### Variable: `survey`
+
+There are 3 unique individual survey numbers.
+
+**NA and Unknown Values**
+
+-   0 % of values in the `survey` column are NA.
+
 ### Variable:`disc_tag_applied`
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = disc_tag_applied))+
+  geom_histogram()+
+  labs(title = "Distribution of Disc Tag Applied")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](butte-2014-2016-individual-qc-checklist_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$disc_tag_applied)
@@ -371,12 +403,13 @@ cleaner_data %>%
   filter(fork_length_cm < 200) %>%  #filter out one large value for better view of distribution
   ggplot(aes(x = fork_length_cm))+
   geom_histogram(bin = 10)+
-  labs(title = "Distribution of Fork Length")
+  labs(title = "Distribution of Fork Length")+
+  theme_minimal()
 ```
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](butte-2014-2016-individual-qc-checklist_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](butte-2014-2016-individual-qc-checklist_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$fork_length_cm)
@@ -392,7 +425,8 @@ summary(cleaner_data$fork_length_cm)
 ## Issues Identified
 
 -   Need description and look up table for the majority of the data
--   Incomplete data for most of the columns
+-   Lot of incomplete data
+-   Are these the most important variables for carcass data?
 
 ## Add cleaned data back to google cloud
 
