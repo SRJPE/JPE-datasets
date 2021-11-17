@@ -62,7 +62,7 @@ raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet 
 ```{r}
 cleaner_data <- raw_redds_data %>% 
   janitor::clean_names() %>%
-  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff',)) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
+  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','bomb_id')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'survey' = 'survey_8',
@@ -314,4 +314,50 @@ table(cleaner_data$why_not_measured)
 
 * `r round(sum(is.na(cleaner_data$why_not_measured))/nrow(cleaner_data), 3) * 100` % of values in the `why_not_measured` column are NA.
 
+### Variable: `comments`
+
+**Description:** 
+```{r}
+unique(cleaner_data$comments)[1:10]
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$comments))/nrow(cleaner_data), 3) * 100` % of values in the `comments` column are NA.
+
+### Variable: `run`
+
+**Description:** run call based on field data
+
+We are interested only in spring run TODO
+
+```{r}
+cleaner_data<-cleaner_data %>% 
+  mutate(run = tolower(run),
+         run = if_else(run == "late-fall", "fall", run))
+table(cleaner_data$run)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$run))/nrow(cleaner_data), 3) * 100` % of values in the `run`` column are NA.
+
+### Variable: `observation_reach`
+
+**Description:** Reach of observation
+
+```{r}
+table(cleaner_data$observation_reach)
+```
+
+## Explore Numerical Data
+
+```{r}
+cleaner_data %>% select_if(is.numeric) %>% colnames()
+```
+### Variable: `longitude`, `latitude`
+
+```{r}
+
+```
 
