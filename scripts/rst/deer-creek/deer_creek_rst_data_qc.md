@@ -368,8 +368,9 @@ cleaner_rst_data %>%
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
 ![](deer_creek_rst_data_qc_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
-A lot of spread in this time. 0 seems like a non functional trap. Very
-high values seem like outliers.
+A lot of spread in this time. 0 seems like a non functional trap or
+could be NA coded as 0 (although there are already NA values). Very high
+values seem like outliers.
 
 **Numeric Summary of time\_for\_10\_revolutions over Period of Record**
 

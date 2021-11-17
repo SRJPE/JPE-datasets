@@ -302,7 +302,7 @@ cleaner_rst_data %>%
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
-A lot of spread in this time. 0 seems like a non functional trap. Very high values seem like outliers. 
+A lot of spread in this time. 0 seems like a non functional trap or could be NA coded as 0 (although there are already NA values). Very high values seem like outliers. 
 
 **Numeric Summary of time_for_10_revolutions over Period of Record**
   
