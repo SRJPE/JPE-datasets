@@ -122,7 +122,7 @@ cleaner_video_data %>% select_if(is.numeric) %>% colnames()
 
 ### Variable: `count`
 
-**Plotting Passage Counts Moving Up over Period of Record**
+**Plotting Passage Counts over Period of Record**
 
 ``` r
 cleaner_video_data %>% 
@@ -156,7 +156,7 @@ cleaner_video_data %>% group_by(date, passage_direction) %>%
   theme_minimal() +
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Count of Upstream Passage Sumarized by Year All Runs") 
+  labs(title = "Daily Passage Count Sumarized by Year All Runs") 
 ```
 
 ![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
@@ -168,20 +168,21 @@ cleaner_video_data  %>%
   group_by(year, passage_direction, run) %>%
   summarise(total_count = sum(count)) %>%
   ggplot(aes(x = year, y = total_count, fill = passage_direction)) + 
-  geom_col() + 
+  geom_col(position = "dodge") + 
   theme_minimal() +
-  labs(title = "Total Yearly Upstream Fish Counts by Run",
+  labs(title = "Total Yearly Fish Counts by Run",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  facet_grid(~run)
+  facet_wrap(~run)
 ```
 
     ## `summarise()` has grouped output by 'year', 'passage_direction'. You can override using the `.groups` argument.
 
 ![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+We mainly have video data describing counts of Spring Run Fish
 
-**Numeric Summary of Passage Counts Moving Up over Period of Record**
+**Numeric Summary of Passage Counts over Period of Record**
 
 ``` r
 # Table with summary statistics
