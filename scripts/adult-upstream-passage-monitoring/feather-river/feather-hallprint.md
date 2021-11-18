@@ -3,16 +3,16 @@ Feather River Hallprint Data QC
 Erin Cain
 9/29/2021
 
-# Feather River hallprint adult broodstock selection and enumeration data
+# Feather River hallprint adult broodstock selection and enumeration data (Tagging Data)
 
 ## Description of Monitoring Data
 
 Hallprint tagging data only describes fish marked, giving hallprint tag
 numbers and dates tagged for each fish. It does not include any other
-sampling of fish like size or genetics. The data that we have does not
-contain any additional information about fish returns. We currently have
-one file describing fish returns. We can likely acquire more but there
-are issues with the return data.
+sampling of fish like size or genetics.This dataset does not contain any
+additional information about fish returns. We currently have one file
+describing fish returns. We can likely acquire more but there are issues
+with the return data.
 
 **Timeframe:** 2004 - 2020
 
@@ -248,9 +248,11 @@ cleaner_hallprint_data %>%
     ## 16  2019                        1               6052    6052 FALSE              
     ## 17  2020                        3               2748    2746 FALSE
 
-**NA and Unknown Values** \* 51.6 % of values in the `second_tag_number`
-column are NA. Byron shared that if the `tag_number` equals the
-`second_tag_number` they leave `second_tag_number` as NA.
+**NA and Unknown Values**
+
+-   51.6 % of values in the `second_tag_number` column are NA. Byron
+    shared that if the `tag_number` equals the `second_tag_number` they
+    leave `second_tag_number` as NA.
 
 ``` r
 # Replace 2nd tag number with first tag number if second tag number is NA

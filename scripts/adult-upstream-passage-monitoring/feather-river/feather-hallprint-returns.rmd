@@ -15,13 +15,15 @@ library(scales)
 library(readxl)
 ```
 
-# Feather River hallprint adult broodstock selection and enumeration data
+# Feather River hallprint adult broodstock selection and enumeration data (Return/Carcass Data)
 
 ## Description of Monitoring Data
 
 We currently only have one file describing fish returns. We can likely acquire more but the return data is currently very messy and not stored in a consistent format across years. 
 
 The excel workbook that we have has 15 sheets. Most sheets are summaries of hallprint tagging data. This markdown is focused on the `Carcass Recoveries` tab of the workbook. 
+
+It looks like there is additional information on Hallprint returns/tag numbers in the feather river carcass suvey.
 
 **Timeframe:** 2018
   

@@ -3,7 +3,7 @@ Feather River Hallprint Data QC
 Erin Cain
 9/29/2021
 
-# Feather River hallprint adult broodstock selection and enumeration data
+# Feather River hallprint adult broodstock selection and enumeration data (Return/Carcass Data)
 
 ## Description of Monitoring Data
 
@@ -14,6 +14,9 @@ in a consistent format across years.
 The excel workbook that we have has 15 sheets. Most sheets are summaries
 of hallprint tagging data. This markdown is focused on the
 `Carcass Recoveries` tab of the workbook.
+
+It looks like there is additional information on Hallprint returns/tag
+numbers in the feather river carcass suvey.
 
 **Timeframe:** 2018
 
