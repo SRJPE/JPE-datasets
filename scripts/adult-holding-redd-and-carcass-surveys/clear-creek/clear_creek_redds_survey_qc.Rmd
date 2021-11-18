@@ -62,7 +62,7 @@ raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet 
 ```{r}
 cleaner_data <- raw_redds_data %>% 
   janitor::clean_names() %>%
-  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','bomb_id')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
+  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'survey' = 'survey_8',
@@ -340,7 +340,7 @@ table(cleaner_data$run)
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$run))/nrow(cleaner_data), 3) * 100` % of values in the `run`` column are NA.
+* `r round(sum(is.na(cleaner_data$run))/nrow(cleaner_data), 3) * 100` % of values in the `run` column are NA.
 
 ### Variable: `observation_reach`
 
@@ -358,6 +358,256 @@ cleaner_data %>% select_if(is.numeric) %>% colnames()
 ### Variable: `longitude`, `latitude`
 
 ```{r}
-
+summary(cleaner_data$longitude)
 ```
 
+```{r}
+summary(cleaner_data$latitude)
+```
+Note longitude has 1 decimal place, and latitude has 2 decimal places - not very exact.
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$longitude))/nrow(cleaner_data), 3) * 100` % of values in the `longitude` column are NA.
+
+* `r round(sum(is.na(cleaner_data$latitude))/nrow(cleaner_data), 3) * 100` % of values in the `latitude` column are NA.
+
+### Variable: `survey`
+
+There are `r length(unique(cleaner_data$survey))` unique survey numbers. 
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$survey))/nrow(cleaner_data), 3) * 100` % of values in the `survey` column are NA.
+
+### Variable: `river_mile`
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = river_mile, y =as.factor(year(date)))) +
+  geom_point(size = 1, alpha = .5, color = "blue") + 
+  labs(x = "River Mile", 
+       y = "Date") +
+  theme_minimal() + 
+  theme(text = element_text(size = 12)) +
+  labs(title = "River Mile Over The Years")
+```
+Seems like more redds were observed in the first 3 miles after 2012
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x=river_mile))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "River Mile Distribution")
+```
+```{r}
+summary(cleaner_data$river_mile)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$river_mile))/nrow(cleaner_data), 3) * 100` % of values in the `river_mile` column are NA.
+
+### Variable: 1000ftbreak?
+
+### Variable: `picket_weir_location`
+
+**Description:** Annual picket weir location
+
+TODO: need description for what locations the numbers represent
+
+There are `r length(unique(cleaner_data$picket_weir_location))` unique picket weir locations.
+
+```{r}
+summary(cleaner_data$picket_weir_location)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$picket_weir_location))/nrow(cleaner_data), 3) * 100` % of values in the `picket_weir_location` column are NA.
+
+### Variable: `age`
+
+```{r}
+table(cleaner_data$age)
+```
+
+**Create lookup rda for age encoding:**
+```{r}
+#View description of domain for viewing condition
+
+cleaner_data_age <- 1:5
+names(cleaner_data_age) <- c(
+  "",
+  "Clearly visible and clean (clearly defined pit and tail-spill and no periphyton or fines)",
+  "Less visible with minor tail-spill flattening (pit and tail-spill still defined, periphyton growth, invertebrate presence)",
+  "Barely visible with shallow pit and flattened tail-spill (periphyton growth, invertebrates)",
+  "Pit and tail-spill indistinguishable from the surrounding substrate"
+)
+
+tibble(age = cleaner_data_age,
+       definitions = names(cleaner_data_age))
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$age))/nrow(cleaner_data), 3) * 100` % of values in the `age` column are NA.
+
+### Variable: `redd_pit_depth`
+
+**Description:** Depth at the deepest part of the pit
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = redd_pit_depth))+
+  geom_histogram()+
+  labs(title = "Redd Pit Depth Distribution")+
+  theme_minimal()
+```
+
+**Numeric Summary of redd_pit_depth**
+
+```{r}
+summary(cleaner_data$redd_pit_depth)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$redd_pit_depth))/nrow(cleaner_data), 3) * 100` % of values in the `redd_pit_depth` column are NA.
+
+### Variable: `redd_tail_depth`
+
+**Description:** Depth at the shallowest part of the tailspill
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = redd_tail_depth))+
+  geom_histogram()+
+  labs(title = "Redd Tail Depth Distribution")+
+  theme_minimal()
+```
+```{r}
+summary(cleaner_data$redd_tail_depth)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$redd_tail_depth)/nrow(cleaner_data), 3) * 100` % of values in the `redd_tail_depth` column are NA.
+
+### Variable: `redd_length_in`
+
+**Description:** Length of the longest part of the disturbed area, measured parallel to streamflow (in inches)
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = redd_length_in))+
+  geom_histogram()+
+  labs(title = "Redd Length Distribution")+
+  theme_minimal()
+```
+
+```{r}
+summary(cleaner_data$redd_length_in)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$redd_length_in)/nrow(cleaner_data), 3) * 100` % of values in the `redd_length_in` column are NA.
+
+### Variable: `redd_width_in`
+
+**Description: **Width of the widest part of the disturbed area, perpandicular to streamflow.
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = redd_width_in))+
+  geom_histogram()+
+  labs(title = "Redd width Distribution")+
+  theme_minimal()
+```
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = redd_width_in, y=redd_length_in))+
+  geom_point(size = 0.8,color = 'red')+
+  labs(title = "Redd Width VS Redd Length")+
+  theme_minimal()
+```
+
+```{r}
+summary(cleaner_data$redd_width_in)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$redd_width_in)/nrow(cleaner_data), 3) * 100` % of values in the `redd_width_in` column are NA.
+
+### Variable: `velocity`
+
+**Description:** Mean water column velocity measured at 60 percent depth from the water surface or the average of the 60% depth and 80/20% depth, if the redd depth is ≥ 30 inches (Allan and Castillo 2007). 
+
+Note: need to check unit.
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = velocity))+
+  geom_histogram()+
+  labs(title = "Velocity Distribution")+
+  theme_minimal()
+```
+```{r}
+summary(cleaner_data$velocity)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$redd_velocity)/nrow(cleaner_data), 3) * 100` % of values in the `velocity` column are NA.
+
+### Variable: `start_60`
+
+**Description:** starting values on the mechanical flow meter at 60% depth
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = start_60))+
+  geom_histogram()+
+  labs(title = "start 60 Distribution")+
+  theme_minimal()
+```
+```{r}
+summary(cleaner_data$start_60)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$start_60)/nrow(cleaner_data), 3) * 100` % of values in the `start_60` column are NA.
+
+### Variable:`end_60`
+
+**Description:** ending values on the mechanical flow meter at 60% depth
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = end_60))+
+  geom_histogram()+
+  labs(title = "End 60 Distribution")+
+  theme_minimal()
+```
+```{r}
+summary(cleaner_data$end_60)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$end_60)/nrow(cleaner_data), 3) * 100` % of values in the `end_60` column are NA.
+
+### Variable: `sec_60`
+
+**Description:** time the meter was in the water
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = sec_60))+
+  geom_histogram()+
+  labs(title = "Sec 60 Distribution")+
+  theme_minimal()
+```
+```{r}
+summary(cleaner_data$sec_60)
+```
+  
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$sec_60)/nrow(cleaner_data), 3) * 100` % of values in the `sec_60` column are NA.
