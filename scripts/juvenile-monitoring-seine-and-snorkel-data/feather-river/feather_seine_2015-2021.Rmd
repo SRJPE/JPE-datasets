@@ -63,7 +63,16 @@ gcs_get_object(object_name =
 Read in data from google cloud, glimpse raw data: 
 ```{r, warning=FALSE}
 # read in data to clean 
-raw_seine_2015 <- read_xlsx("raw_seine_2015-2021.xlsx") %>% glimpse()
+raw_seine_2015 <- read_xlsx("raw_seine_2015-2021.xlsx", col_types = c("numeric", "text", "numeric", "numeric", "numeric",
+                                                                      "numeric", "numeric", "logical", "text", "text", 
+                                                                      "numeric", "date", "date", "numeric", "numeric", "numeric",
+                                                                      "text", "numeric", "numeric", "numeric", "numeric",
+                                                                      "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                                      "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                                      "numeric", "numeric", "numeric", "numeric",
+                                                                      "numeric","text", "text", "text", "text", "text", "text",
+                                                                      "text", "numeric", "numeric", "numeric", "numeric", "text",
+                                                                      "text", "numeric", "numeric", "text")) %>% glimpse()
 ```
 
 ## Data transformations
@@ -138,10 +147,10 @@ cleaner_seine_data %>%
 ```
 
 ```{r}
-cleaner_seine_data %>% group_by(date) %>%
-  mutate(daily_count_upstream = sum(count)) %>%
+cleaner_seine_data %>% 
+  group_by(date) %>%
+  summarise(daily_count_upstream = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
-  ungroup() %>%
   ggplot(aes(x = year, y = daily_count_upstream)) + 
   geom_boxplot() + 
   theme_minimal() +
@@ -383,18 +392,36 @@ summary(cleaner_seine_data$bs_depth_half)
 
 ### Variables: `utm_northing`, `utm_easting` 
 
-These are the location columns. TODO (fix the rest)
+These are the location columns. It looks like most values area actually latitude and longitude but there are a few crazy values in there that are out of the realm of possibilities for the feather river. I changed the names to lat and long and then updated then changed unreasonable values to NA. 
 
 ```{r}
-# Check that they are in consistent format
-# Map
+summary(cleaner_seine_data$utm_easting)
+summary(cleaner_seine_data$utm_northing)
+
+```
+
+```{r}
+cleaner_seine_data <- rename(cleaner_seine_data, longitude = utm_easting)
+cleaner_seine_data$longitude <- ifelse(cleaner_seine_data$longitude < -130 | 
+                                         cleaner_seine_data$longitude > -110, NA, 
+                                       cleaner_seine_data$longitude)
+summary(cleaner_seine_data$longitude)
+```
+
+```{r}
+cleaner_seine_data <- rename(cleaner_seine_data, latitude = utm_northing)
+cleaner_seine_data$latitude <- ifelse(cleaner_seine_data$latitude < 30 |
+                                        cleaner_seine_data$latitude > 50, NA, 
+                                      cleaner_seine_data$latitude)
+summary(cleaner_seine_data$latitude)
 ```
 
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_seine_data$utm_easting))/nrow(cleaner_seine_data), 3) * 100` % of values in the `utm_easting` column are NA. 
-* `r round(sum(is.na(cleaner_seine_data$utm_northing))/nrow(cleaner_seine_data), 3) * 100` % of values in the `utm_northing` column are NA. 
+* `r round(sum(is.na(cleaner_seine_data$longitude))/nrow(cleaner_seine_data), 3) * 100` % of values in the `longitude` column # Check that they are in consistent format
+# Mapare NA. 
+* `r round(sum(is.na(cleaner_seine_data$latitude))/nrow(cleaner_seine_data), 3) * 100` % of values in the `latitude` column are NA. 
 
 
 ## Explore Categorical variables: {.tabset}
@@ -520,6 +547,9 @@ table(cleaner_seine_data$weather)
 * `r round(sum(is.na(cleaner_seine_data$weather))/nrow(cleaner_seine_data), 3) * 100` % of values in the `weather` column are NA.
 
 ### Variable: `substrate_1`, `substrate_2`, `substrate_3`,  `substrate_4`, `substrate_5`
+```{r}
+
+```
 
 | SubstrateCode |	Substrate |
 | -------------- | ---------------------- |
@@ -529,22 +559,31 @@ table(cleaner_seine_data$weather)
 | 4 |	Boulder (>300mm) (>12in.) |
 | 5 |	Pavement (Boat Ramp) |
 
-TODO fix substrate stuff 
+Substrate lookup list for feather seine can be found "data/feather_seine_substrate.rds"
 
 ```{r}
 table(cleaner_seine_data$substrate_1)
 table(cleaner_seine_data$substrate_2)
 table(cleaner_seine_data$substrate_3)
 table(cleaner_seine_data$substrate_4)
-table(cleaner_seine_data$substrate_5)
+table(cleaner_seine_data$substrate_5) #all na values
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+**Create lookup rda for substrate encoding:** 
 
 ```{r}
+feather_seine_substrate <- 1:5
+names(feather_seine_substrate) <- c(
+  "Fine - small gravel (0-50mm) (0-2in.)", 
+  "Small - medium gravel (50-150mm) (2-6in.)", 
+  "Medium - large cobble (150-300mm) (6-12in.)",
+  "Boulder (>300mm) (>12in.)",
+  "Pavement (Boat Ramp)")
+
+#write_rds(feather_seine_substrate, "../../../data/feather_seine_substrate.rds")
 ```
 
-**Create lookup rda for [variable] encoding:** 
 
 **NA and Unknown Values**
 
@@ -558,7 +597,6 @@ No NA values:
 
 ### Variable: `cover_1`, `cover_2`, `cover_3`, `cover_4`, `cover_5`
 
-TODO fix cover stuff 
 
 ```{r}
 table(cleaner_seine_data$cover_1)
@@ -684,8 +722,8 @@ table(cleaner_seine_data$run)
 
 ## Summary of identified issues
 
-* TODO need to figure out what is going on with the substrate and cover columns. (waiting to hear back from Casey)
 * There are not a lot of SR catches, mainly FR. Data may not be that useful. 
+* Figure out the best way to clean up the substrate and cover columns 
 
 ## Save cleaned data back to google cloud 
 

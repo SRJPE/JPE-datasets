@@ -54,7 +54,16 @@ Read in data from google cloud, glimpse raw data:
 
 ``` r
 # read in data to clean 
-raw_seine_2015 <- read_xlsx("raw_seine_2015-2021.xlsx") %>% glimpse()
+raw_seine_2015 <- read_xlsx("raw_seine_2015-2021.xlsx", col_types = c("numeric", "text", "numeric", "numeric", "numeric",
+                                                                      "numeric", "numeric", "logical", "text", "text", 
+                                                                      "numeric", "date", "date", "numeric", "numeric", "numeric",
+                                                                      "text", "numeric", "numeric", "numeric", "numeric",
+                                                                      "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                                      "numeric", "numeric", "numeric", "numeric", "numeric",
+                                                                      "numeric", "numeric", "numeric", "numeric",
+                                                                      "numeric","text", "text", "text", "text", "text", "text",
+                                                                      "text", "numeric", "numeric", "numeric", "numeric", "text",
+                                                                      "text", "numeric", "numeric", "text")) %>% glimpse()
 ```
 
     ## Rows: 19,403
@@ -63,12 +72,12 @@ raw_seine_2015 <- read_xlsx("raw_seine_2015-2021.xlsx") %>% glimpse()
     ## $ Species                  <chr> "CHNF", "CHNF", "CHNF", "CHNF", "CHNF", "CHNF~
     ## $ Count                    <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
     ## $ `Fork Length`            <dbl> 47, 58, 62, 50, 65, 60, 59, 60, 67, 59, 54, 8~
-    ## $ `Total Length`           <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `Total Length`           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ `Salmonid Life Stage`    <dbl> 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, ~
     ## $ id                       <dbl> 6225, 6226, 6227, 6228, 6229, 6230, 6231, 623~
     ## $ Dead                     <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL~
     ## $ `Weight (g)`             <chr> "1.1", "2", "2.3", "1.3", "2.9", "2.4", "2", ~
-    ## $ `Catch TBL_Comments`     <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `Catch TBL_Comments`     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ `Site ID`                <dbl> 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 5~
     ## $ Date                     <dttm> 2015-05-19, 2015-05-19, 2015-05-19, 2015-05-~
     ## $ Time                     <dttm> 1899-12-31 10:30:00, 1899-12-31 10:30:00, 18~
@@ -76,35 +85,35 @@ raw_seine_2015 <- read_xlsx("raw_seine_2015-2021.xlsx") %>% glimpse()
     ## $ ConditionCode            <dbl> 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, ~
     ## $ Temperature              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ WeatherCode              <chr> "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", "CL~
-    ## $ Flow                     <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `EFBS Length`            <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `EFBS Width`             <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `EFBS Depth (Top)`       <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `EFBS Depth (Bottom)`    <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `EFBS Velocity (Top)`    <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `EFBS Velocity (Bottom)` <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ Flow                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `EFBS Length`            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `EFBS Width`             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `EFBS Depth (Top)`       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `EFBS Depth (Bottom)`    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `EFBS Velocity (Top)`    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `EFBS Velocity (Bottom)` <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ `BS Start Length`        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `BS Close Width`         <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `BS Close Width`         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ `BS Distance Out`        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ `BS Depth (1/2)`         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `BS Depth (Full)`        <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `BS Velocity (1/2)`      <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `BS Velocity (Full)`     <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `BS Depth (Full)`        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `BS Velocity (1/2)`      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `BS Velocity (Full)`     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ `Substrate 1`            <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
     ## $ `Substrate 2`            <dbl> 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, ~
     ## $ `Substrate 3`            <dbl> 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, ~
-    ## $ `Substrate 4`            <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `Substrate 5`            <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `Substrate 4`            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `Substrate 5`            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ `Cover 1`                <chr> "B", "B", "B", "B", "B", "B", "B", "B", "B", ~
     ## $ `Cover 2`                <chr> "D", "D", "D", "D", "D", "D", "D", "D", "D", ~
     ## $ `Cover 3`                <chr> "C", "C", "C", "C", "C", "C", "C", "C", "C", ~
     ## $ `Cover 4`                <chr> "E", "E", "E", "E", "E", "E", "E", "E", "E", ~
     ## $ `Cover 5`                <chr> "F", "F", "F", "F", "F", "F", "F", "F", "F", ~
-    ## $ `Cover 6`                <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `Cover 6`                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ RPGRu                    <chr> "GRRU", "GRRU", "GRRU", "GRRU", "GRRU", "GRRU~
-    ## $ GearHeight               <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ `Dissolved Oxygen`       <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ EC                       <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ GearHeight               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ `Dissolved Oxygen`       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ EC                       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ OBJECTID                 <dbl> 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 5~
     ## $ site_name                <chr> "Hatchery Ditch", "Hatchery Ditch", "Hatchery~
     ## $ gear_type                <chr> "SEIN", "SEIN", "SEIN", "SEIN", "SEIN", "SEIN~
@@ -170,15 +179,15 @@ cleaner_seine_data <- raw_seine_2015 %>%
     ## $ condition            <chr> "4", "4", "4", "4", "4", "4", "4", "4", "4", "4",~
     ## $ temperature          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ weather              <chr> "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", ~
-    ## $ flow                 <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ efbs_length          <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ efbs_width           <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ efbs_depth_top       <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ efbs_depth_bottom    <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ efbs_velocity_top    <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ efbs_velocity_bottom <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ flow                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_length          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_width           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_depth_top       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_depth_bottom    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_velocity_top    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_velocity_bottom <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ bs_start_length      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ bs_close_width       <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ bs_close_width       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ bs_distance_out      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ bs_depth_half        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ substrate_1          <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "1",~
@@ -191,7 +200,7 @@ cleaner_seine_data <- raw_seine_2015 %>%
     ## $ cover_3              <chr> "C", "C", "C", "C", "C", "C", "C", "C", "C", "C",~
     ## $ cover_4              <chr> "E", "E", "E", "E", "E", "E", "E", "E", "E", "E",~
     ## $ cover_5              <chr> "F", "F", "F", "F", "F", "F", "F", "F", "F", "F",~
-    ## $ cover_6              <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ cover_6              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ stream_features      <chr> "GRRU", "GRRU", "GRRU", "GRRU", "GRRU", "GRRU", "~
     ## $ site_name            <chr> "Hatchery Ditch", "Hatchery Ditch", "Hatchery Dit~
     ## $ utm_easting          <dbl> -121.5588, -121.5588, -121.5588, -121.5588, -121.~
@@ -207,9 +216,12 @@ cleaner_seine_data <- raw_seine_2015 %>%
 cleaner_seine_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ##  [1] "count"           "fork_length"     "weight_g"        "gear"           
-    ##  [5] "temperature"     "bs_start_length" "bs_distance_out" "bs_depth_half"  
-    ##  [9] "utm_easting"     "utm_northing"
+    ##  [1] "count"                "fork_length"          "weight_g"            
+    ##  [4] "gear"                 "temperature"          "flow"                
+    ##  [7] "efbs_length"          "efbs_width"           "efbs_depth_top"      
+    ## [10] "efbs_depth_bottom"    "efbs_velocity_top"    "efbs_velocity_bottom"
+    ## [13] "bs_start_length"      "bs_close_width"       "bs_distance_out"     
+    ## [16] "bs_depth_half"        "utm_easting"          "utm_northing"
 
 ### Variable: `count`
 
@@ -234,10 +246,10 @@ cleaner_seine_data %>%
 ![](feather_seine_2015-2021_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
-cleaner_seine_data %>% group_by(date) %>%
-  mutate(daily_count_upstream = sum(count)) %>%
+cleaner_seine_data %>% 
+  group_by(date) %>%
+  summarise(daily_count_upstream = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
-  ungroup() %>%
   ggplot(aes(x = year, y = daily_count_upstream)) + 
   geom_boxplot() + 
   theme_minimal() +
@@ -530,17 +542,53 @@ summary(cleaner_seine_data$bs_depth_half)
 
 ### Variables: `utm_northing`, `utm_easting`
 
-These are the location columns. TODO (fix the rest)
+These are the location columns. It looks like most values area actually
+latitude and longitude but there are a few crazy values in there that
+are out of the realm of possibilities for the feather river. I changed
+the names to lat and long and then updated then changed unreasonable
+values to NA.
 
 ``` r
-# Check that they are in consistent format
-# Map
+summary(cleaner_seine_data$utm_easting)
 ```
+
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+    ##  -1221.6   -121.6   -121.6  60671.7   -121.6 620138.0      823
+
+``` r
+summary(cleaner_seine_data$utm_northing)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    -122      39      39  428829      40 4369037     823
+
+``` r
+cleaner_seine_data <- rename(cleaner_seine_data, longitude = utm_easting)
+cleaner_seine_data$longitude <- ifelse(cleaner_seine_data$longitude < -130 | 
+                                         cleaner_seine_data$longitude > -110, NA, 
+                                       cleaner_seine_data$longitude)
+summary(cleaner_seine_data$longitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  -121.6  -121.6  -121.6  -121.6  -121.6  -121.6    2957
+
+``` r
+cleaner_seine_data <- rename(cleaner_seine_data, latitude = utm_northing)
+cleaner_seine_data$latitude <- ifelse(cleaner_seine_data$latitude < 30 |
+                                        cleaner_seine_data$latitude > 50, NA, 
+                                      cleaner_seine_data$latitude)
+summary(cleaner_seine_data$latitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   39.01   39.11   39.35   39.31   39.48   39.52    2418
 
 **NA and Unknown Values**
 
--   8.1 % of values in the `utm_easting` column are NA.
--   8.1 % of values in the `utm_northing` column are NA.
+-   29.3 % of values in the `longitude` column \# Check that they are in
+    consistent format \# Mapare NA.
+-   23.9 % of values in the `latitude` column are NA.
 
 ## Explore Categorical variables:
 
@@ -553,8 +601,8 @@ cleaner_seine_data %>% select_if(is.character) %>% colnames()
     ##  [7] "substrate_2"         "substrate_3"         "substrate_4"        
     ## [10] "substrate_5"         "cover_1"             "cover_2"            
     ## [13] "cover_3"             "cover_4"             "cover_5"            
-    ## [16] "stream_features"     "site_name"           "location_lu_channel"
-    ## [19] "run"
+    ## [16] "cover_6"             "stream_features"     "site_name"          
+    ## [19] "location_lu_channel" "run"
 
 ### Variable: `sample_id`, `id`
 
@@ -724,7 +772,8 @@ table(cleaner_seine_data$weather)
 | 4             | Boulder (&gt;300mm) (&gt;12in.)             |
 | 5             | Pavement (Boat Ramp)                        |
 
-TODO fix substrate stuff
+Substrate lookup list for feather seine can be found
+“data/feather\_seine\_substrate.rds”
 
 ``` r
 table(cleaner_seine_data$substrate_1)
@@ -755,18 +804,28 @@ table(cleaner_seine_data$substrate_4)
 ```
 
     ## 
-    ## TRUE 
-    ##  290
+    ##   4 
+    ## 290
 
 ``` r
-table(cleaner_seine_data$substrate_5)
+table(cleaner_seine_data$substrate_5) #all na values
 ```
 
     ## < table of extent 0 >
 
-Fix inconsistencies with spelling, capitalization, and abbreviations.
+**Create lookup rda for substrate encoding:**
 
-**Create lookup rda for \[variable\] encoding:**
+``` r
+feather_seine_substrate <- 1:5
+names(feather_seine_substrate) <- c(
+  "Fine - small gravel (0-50mm) (0-2in.)", 
+  "Small - medium gravel (50-150mm) (2-6in.)", 
+  "Medium - large cobble (150-300mm) (6-12in.)",
+  "Boulder (>300mm) (>12in.)",
+  "Pavement (Boat Ramp)")
+
+#write_rds(feather_seine_substrate, "../../../data/feather_seine_substrate.rds")
+```
 
 **NA and Unknown Values**
 
@@ -779,8 +838,6 @@ No NA values:
 -   100 % of values in the `substrate_5` column are NA.
 
 ### Variable: `cover_1`, `cover_2`, `cover_3`, `cover_4`, `cover_5`
-
-TODO fix cover stuff
 
 ``` r
 table(cleaner_seine_data$cover_1)
@@ -1033,6 +1090,7 @@ format_site_name <- function(string) {
     str_replace_all("S.C.", "SC") %>%
     str_replace_all("'", "") %>%
     str_replace_all("G-95", "G95") %>% 
+    str_replace_all("Isl", "Island") %>%
     str_replace_all("[^[:alnum:]]", " ") %>% 
     trimws() %>% 
     stringr::str_squish() %>%
@@ -1088,7 +1146,7 @@ table(cleaner_seine_data$site_name)
     ##                                      16                                     113 
     ##                            Gridley Side                          Hatchery Ditch 
     ##                                     165                                     352 
-    ##     Hatchery Fence Island Above Bedrock                 Herringer Downstream Rl 
+    ##  Hatchery Fence Islandand Above Bedrock                 Herringer Downstream Rl 
     ##                                      11                                     133 
     ##                       Herringer Main Rl           Herringer Quarter Mi Below Rr 
     ##                                     361                                       4 
@@ -1098,7 +1156,7 @@ table(cleaner_seine_data$site_name)
     ##                                       5                                     251 
     ##                 Hour Main Rl Downstream                 Hour Main Rr Downstream 
     ##                                      88                                       3 
-    ##           Hour Side Channel Rl Upstream        Island Upstream Yuba City Launch 
+    ##           Hour Side Channel Rl Upstream     Islandand Upstream Yuba City Launch 
     ##                                     100                                      12 
     ##                          Jeffs Basshole                                Junkyard 
     ##                                       7                                       1 
@@ -1136,7 +1194,7 @@ table(cleaner_seine_data$site_name)
     ##                                     127                                     148 
     ##                           Steep Main Rr                      Steep Side Channel 
     ##                                      83                                      52 
-    ##          Sunset Pumps Downstream Island                             Swampy Bend 
+    ##       Sunset Pumps Downstream Islandand                             Swampy Bend 
     ##                                      13                                      52 
     ##                       Trailer Park Main                         Upstream G95 Rl 
     ##                                       4                                       4 
@@ -1204,13 +1262,67 @@ table(cleaner_seine_data$run)
 
 ## Summary of identified issues
 
--   TODO need to figure out what is going on with the substrate and
-    cover columns.
--   There are not a ton of SR catches, mainly FR.
+-   There are not a lot of SR catches, mainly FR. Data may not be that
+    useful.
+-   Figure out the best way to clean up the substrate and cover columns
 
 ## Save cleaned data back to google cloud
 
 ``` r
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+feather_seine_2015_2021 <- cleaner_seine_data %>% glimpse()
+```
+
+    ## Rows: 10,100
+    ## Columns: 42
+    ## $ sample_id            <chr> "372", "372", "372", "372", "372", "372", "372", ~
+    ## $ count                <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    ## $ fork_length          <dbl> 47, 58, 62, 50, 65, 60, 59, 60, 67, 59, 54, 82, 6~
+    ## $ lifestage            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ id                   <chr> "6225", "6226", "6227", "6228", "6229", "6230", "~
+    ## $ dead                 <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ~
+    ## $ weight_g             <dbl> 1.1, 2.0, 2.3, 1.3, 2.9, 2.4, 2.0, 2.5, 3.4, 2.3,~
+    ## $ date                 <date> 2015-05-19, 2015-05-19, 2015-05-19, 2015-05-19, ~
+    ## $ time                 <time> 10:30:00, 10:30:00, 10:30:00, 10:30:00, 10:30:00~
+    ## $ gear                 <chr> "SEIN50", "SEIN50", "SEIN50", "SEIN50", "SEIN50",~
+    ## $ condition            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ temperature          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ weather              <chr> "sunny", "sunny", "sunny", "sunny", "sunny", "sun~
+    ## $ flow                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_length          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_width           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_depth_top       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_depth_bottom    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_velocity_top    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ efbs_velocity_bottom <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ bs_start_length      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ bs_close_width       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ bs_distance_out      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ bs_depth_half        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ substrate_1          <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "1",~
+    ## $ substrate_2          <chr> "2", "2", "2", "2", "2", "2", "2", "2", "2", "2",~
+    ## $ substrate_3          <chr> "3", "3", "3", "3", "3", "3", "3", "3", "3", "3",~
+    ## $ substrate_4          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ substrate_5          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ cover_1              <chr> "B", "B", "B", "B", "B", "B", "B", "B", "B", "B",~
+    ## $ cover_2              <chr> "D", "D", "D", "D", "D", "D", "D", "D", "D", "D",~
+    ## $ cover_3              <chr> "C", "C", "C", "C", "C", "C", "C", "C", "C", "C",~
+    ## $ cover_4              <chr> "E", "E", "E", "E", "E", "E", "E", "E", "E", "E",~
+    ## $ cover_5              <chr> "F", "F", "F", "F", "F", "F", "F", "F", "F", "F",~
+    ## $ cover_6              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ stream_features      <chr> "GRRU", "GRRU", "GRRU", "GRRU", "GRRU", "GRRU", "~
+    ## $ site_name            <chr> "Hatchery Ditch", "Hatchery Ditch", "Hatchery Dit~
+    ## $ longitude            <dbl> -121.5588, -121.5588, -121.5588, -121.5588, -121.~
+    ## $ latitude             <dbl> 39.51619, 39.51619, 39.51619, 39.51619, 39.51619,~
+    ## $ location_lu_channel  <chr> "LFC", "LFC", "LFC", "LFC", "LFC", "LFC", "LFC", ~
+    ## $ run                  <chr> "fall", "fall", "fall", "fall", "fall", "fall", "~
+    ## $ tagged               <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ~
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_list_objects()
+gcs_upload(feather_seine_2015_2021,
+           object_function = f,
+           type = "csv",
+           name = " juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data/feather_seine_2015_2021.csv")
 ```
