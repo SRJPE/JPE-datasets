@@ -45,8 +45,7 @@ gcs_get_object(object_name =
                overwrite = TRUE)
 ```
 
-Read in data from google cloud, glimpse raw data and domain description
-sheet:
+Read in data from google cloud, glimpse raw data sheet:
 
 ``` r
 # read in data to clean 
@@ -95,6 +94,9 @@ raw_seine_1997 <- read_xlsx("raw_seine_1997-2001.xlsx") %>%
     ## $ SampleShape         <dbl> 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,~
 
 ## Data transformations
+
+Rename columns, update column types where needed, filter to look only at
+Chinook Salmon
 
 ``` r
 cleaner_seine_data <- raw_seine_1997 %>%
@@ -172,8 +174,8 @@ cleaner_seine_data %>% select_if(is.numeric) %>% colnames()
 **Plotting water\_temp over Period of Record**
 
 Daily average water temperature measures appear to be lower in Dec -
-March and tehn increase April - September. They appear to typically
-range from 44 - 72.
+March and then increase April - September. They appear to typically
+range from 44 - 72. (Units: F)
 
 ``` r
 cleaner_seine_data %>% 
@@ -221,6 +223,10 @@ summary(cleaner_seine_data$water_temp)
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##    0.00   48.00   53.00   53.51   59.00   74.00     439
+
+**NA and Unknown Values**
+
+-   5.6 % of values in the `water_temp` column are NA.
 
 ### Variable: `sechi`
 
@@ -1300,12 +1306,58 @@ unique(cleaner_seine_data$comments)[1:5]
 ## Summary of identified issues
 
 -   Sampling does not occur that frequently each year
--   Figure out depth measures and sample shape values (TODO contact
-    Casey)
+-   Figure out depth measures and sample shape values (waiting to hear
+    back from Casey)
+-   There are not a lot of SR catches, mainly FR. Data may not be that
+    useful.
 
 ## Save cleaned data back to google cloud
 
 ``` r
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+feather_seine_1997_2001 <- cleaner_seine_data %>% glimpse()
+```
+
+    ## Rows: 7,899
+    ## Columns: 32
+    ## $ seine_id           <chr> "10", "10", "10", "10", "10", "10", "10", "10", "10~
+    ## $ fork_length        <dbl> 45, 63, 43, 47, 45, 44, 47, 53, 47, 52, 44, 51, 58,~
+    ## $ weight             <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ lifestage          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ run                <chr> "fall", "fall", "fall", "fall", "fall", "fall", "fa~
+    ## $ dead               <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FA~
+    ## $ station_code       <chr> "FR042R", "FR042R", "FR042R", "FR042R", "FR042R", "~
+    ## $ date               <dttm> 1997-04-10, 1997-04-10, 1997-04-10, 1997-04-10, 19~
+    ## $ location           <chr> "Live Oak Boat Ramp", "Live Oak Boat Ramp", "Live O~
+    ## $ time               <time> 16:45:00, 16:45:00, 16:45:00, 16:45:00, 16:45:00, ~
+    ## $ gear               <chr> "SEIN39", "SEIN39", "SEIN39", "SEIN39", "SEIN39", "~
+    ## $ condition          <chr> "good", "good", "good", "good", "good", "good", "go~
+    ## $ water_temp         <dbl> 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62, 62,~
+    ## $ weather            <chr> "sunny", "sunny", "sunny", "sunny", "sunny", "sunny~
+    ## $ sechi              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
+    ## $ flow               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ distance_out       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ start_width        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ end_width          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ length             <dbl> 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,~
+    ## $ width              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ depth_1            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ depth_2            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ depth_1_dist       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ depth_2_dist       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ substrate          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ cover              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ HUC_stream_feature <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ comments           <chr> "Seined next to boat ramp", "Seined next to boat ra~
+    ## $ sample_area        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ sample_shape       <dbl> 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, ~
+    ## $ count              <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_list_objects()
+gcs_upload(feather_seine_1997_2001,
+           object_function = f,
+           type = "csv",
+           name = " juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data/feather_seine_1997_2001.csv")
 ```

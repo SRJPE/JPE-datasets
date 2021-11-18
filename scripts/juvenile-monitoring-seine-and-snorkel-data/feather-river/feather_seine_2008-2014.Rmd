@@ -59,7 +59,7 @@ gcs_get_object(object_name =
 
 ```
 
-Read in data from google cloud, glimpse raw data and domain description sheet: 
+Read in data from google cloud, glimpse raw data: 
 ```{r, warning=FALSE}
 # read in data to clean 
 raw_seine_2008 <- read_xlsx("raw_seine_2008-2014.xlsx") %>% glimpse
@@ -156,6 +156,8 @@ cleaner_seine_data  %>%
 ```
 
 Not a lot of spring run fish caught in comparison to fall run fish caught. 
+
+There are a lot of gaps in sampling, sampling does not happen that often each year. 
 
 **Numeric Summary of Count over Period of Record**
 
@@ -322,57 +324,6 @@ summary(cleaner_seine_data$flow)
 
 * `r round(sum(is.na(cleaner_seine_data$flow))/nrow(cleaner_seine_data), 3) * 100` % of values in the `flow` column are NA. 
  
-### Variable: `temperature`
-
-
-**Plotting temperature over Period of Record**
-
-Daily average water temperature measures appear to be lower in Feb - April and then increase May - August. They appear to typically range from 9 - 23 degrees C.
-```{r}
-cleaner_seine_data %>% 
-  group_by(date = as.Date(date)) %>%
-  mutate(avg_temp = mean(temperature)) %>%
-  ungroup() %>%
-  mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
-  geom_point(alpha = .25) + 
-  # facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
-  theme_minimal() + 
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "bottom") + 
-  labs(title = "Daily Water Temperature (colored by year)",
-       y = "Average daily temp", 
-       x = "Date")  
-```
-
-**Plotting Distribution of temperature measures**
-
-```{r}
-cleaner_seine_data %>%  
-  ggplot(aes(x = temperature)) + 
-  geom_histogram() + 
-  scale_x_continuous() +
-  theme_minimal() +
-  labs(title = "Temperature distribution (celcius)") + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-
-**Numeric Summary of temperature over Period of Record**
-
-```{r}
-# Table with summary statistics
-summary(cleaner_seine_data$temperature)
-```
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_seine_data$temperature))/nrow(cleaner_seine_data), 3) * 100` % of values in the `temperature` column are NA. 
-
 
 ### Variable: `efbs_length`
 
@@ -599,25 +550,41 @@ summary(cleaner_seine_data$y_coord)
 ```
 
 ```{r}
-library(sp)
-utm_coords <- na.omit(subset(cleaner_seine_data, select = c("x_coord", "y_coord")))
-utm_coords <- sp::SpatialPoints(utm_coords,proj4string=CRS("+proj=utm +zone=10 +datum=WGS84"))
-long_lat_coords <- spTransform(utm_coords, CRS("+proj=longlat +datum=WGS84"))
-summary(long_lat_coords)
+# select only values without na for coordinates
+valid_seine_data <-  cleaner_seine_data %>% filter(!is.na(x_coord))
 
-# TODO reassign values 
+# Transform to lat and longitude
+utm_coords <- subset(valid_seine_data, select = c("x_coord", "y_coord"))
+utm_coords <- sp::SpatialPoints(utm_coords,proj4string= sp::CRS("+proj=utm +zone=10 +datum=WGS84"))
+long_lat_coords <- sp::spTransform(utm_coords, sp::CRS("+proj=longlat +datum=WGS84"))
+
+# Add latitude and longitude columns onto partial seine dataset 
+valid_seine_data$latitude <- long_lat_coords$y_coord
+valid_seine_data$longitude <- long_lat_coords$x_coord
+
+# take lat an long with sample id to join back onto full seine data
+valid_locations <- valid_seine_data %>% select(sample_id, latitude, longitude)
+
+# Join onto full seine data and remove dates 
+cleaner_seine_data <- cleaner_seine_data %>% 
+  left_join(valid_locations) %>%
+  select(-x_coord, -y_coord)
+```
+```{r}
+summary(cleaner_seine_data$latitude)
+summary(cleaner_seine_data$longitude)
 ```
 
+Longitude values are not actually all the same, just very close so rounded to be the same in summary statement. 
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_seine_data$x_coord))/nrow(cleaner_seine_data), 3) * 100` % of values in the `x_coord` column are NA. 
-* `r round(sum(is.na(cleaner_seine_data$y_coord))/nrow(cleaner_seine_data), 3) * 100` % of values in the `y_coord` column are NA. 
+* `r round(sum(is.na(cleaner_seine_data$latitude))/nrow(cleaner_seine_data), 3) * 100` % of values in the `latitude` column are NA. 
+* `r round(sum(is.na(cleaner_seine_data$longitude))/nrow(cleaner_seine_data), 3) * 100` % of values in the `longitude` column are NA. 
 
 
 ## Explore Categorical variables: {.tabset}
 
-General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
 
 ```{r}
 cleaner_seine_data %>% select_if(is.character) %>% colnames()
@@ -658,8 +625,6 @@ cleaner_seine_data$lifestage <- ifelse(cleaner_seine_data$lifestage == "not prov
 
 table(cleaner_seine_data$lifestage)
 ```
-
-**Create lookup rda for [variable] encoding:** 
 
 **NA and Unknown Values**
 
@@ -756,7 +721,21 @@ table(cleaner_seine_data$substrate_2)
 table(cleaner_seine_data$substrate_3)
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+**Create lookup rda for substrate encoding:**
+```{r}
+# View description of domain for viewing condition 
+feather_seine_substrate <- 1:5
+names(feather_seine_substrate) <- c(
+  "Fine - small gravel (0-50mm) (0-2in.)", 
+  "Small - medium gravel (50-150mm) (2-6in.)", 
+  "Medium - large cobble (150-300mm) (6-12in.)",
+  "Boulder (>300mm) (>12in.)",
+  "Pavement (Boat Ramp)")
+
+#write_rds(feather_seine_substrate, "../../../data/feather_seine_substrate.rds")
+```
+
 
 **NA and Unknown Values**
 
@@ -890,7 +869,7 @@ table(cleaner_seine_data$run)
 
 * Not a lot of days sampled per year
 * Only 10 rows that include spring data.Data may not be very useful for Spring Run JPE purposes. 
-* TODO need to figure out what is going on with the substrate and cover columns. (waiting to hear back from Casey)
+* Figure out the best way to clean up the substrate and cover columns 
 
 ## Save cleaned data back to google cloud 
 

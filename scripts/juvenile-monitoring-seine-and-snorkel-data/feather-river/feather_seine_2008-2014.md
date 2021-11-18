@@ -47,8 +47,7 @@ gcs_get_object(object_name =
                overwrite = TRUE)
 ```
 
-Read in data from google cloud, glimpse raw data and domain description
-sheet:
+Read in data from google cloud, glimpse raw data:
 
 ``` r
 # read in data to clean 
@@ -247,6 +246,9 @@ cleaner_seine_data  %>%
 
 Not a lot of spring run fish caught in comparison to fall run fish
 caught.
+
+There are a lot of gaps in sampling, sampling does not happen that often
+each year.
 
 **Numeric Summary of Count over Period of Record**
 
@@ -447,68 +449,6 @@ summary(cleaner_seine_data$flow)
 
 -   49.2 % of values in the `flow` column are NA.
 
-### Variable: `temperature`
-
-**Plotting temperature over Period of Record**
-
-Daily average water temperature measures appear to be lower in Feb -
-April and then increase May - August. They appear to typically range
-from 9 - 23 degrees C.
-
-``` r
-cleaner_seine_data %>% 
-  group_by(date = as.Date(date)) %>%
-  mutate(avg_temp = mean(temperature)) %>%
-  ungroup() %>%
-  mutate(year = as.factor(year(date)),
-         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
-  geom_point(alpha = .25) + 
-  # facet_wrap(~year(date), scales = "free") + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
-  theme_minimal() + 
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        legend.position = "bottom") + 
-  labs(title = "Daily Water Temperature (colored by year)",
-       y = "Average daily temp", 
-       x = "Date")  
-```
-
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
-
-**Plotting Distribution of temperature measures**
-
-``` r
-cleaner_seine_data %>%  
-  ggplot(aes(x = temperature)) + 
-  geom_histogram() + 
-  scale_x_continuous() +
-  theme_minimal() +
-  labs(title = "Temperature distribution (celcius)") + 
-  theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
-
-**Numeric Summary of temperature over Period of Record**
-
-``` r
-# Table with summary statistics
-summary(cleaner_seine_data$temperature)
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    9.00   11.00   13.00   12.92   14.50   21.50     370
-
-**NA and Unknown Values**
-
--   20.9 % of values in the `temperature` column are NA.
-
 ### Variable: `efbs_length`
 
 **Plotting efbs\_length distribution**
@@ -526,7 +466,7 @@ cleaner_seine_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 **Numeric Summary of efbs\_length over Period of Record**
 
@@ -558,7 +498,7 @@ cleaner_seine_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 **Numeric Summary of efbs\_width over Period of Record**
 
@@ -590,7 +530,7 @@ cleaner_seine_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 **Numeric Summary of efbs\_depth\_top over Period of Record**
 
@@ -622,7 +562,7 @@ cleaner_seine_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 **Numeric Summary of efbs\_depth\_bottom over Period of Record**
 
@@ -654,7 +594,7 @@ cleaner_seine_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 **Numeric Summary of bs\_start\_length over Period of Record**
 
@@ -686,7 +626,7 @@ cleaner_seine_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 **Numeric Summary of bs\_close\_width over Period of Record**
 
@@ -718,7 +658,7 @@ cleaner_seine_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **Numeric Summary of bs\_distance\_out over Period of Record**
 
@@ -750,7 +690,7 @@ cleaner_seine_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 **Numeric Summary of bs\_depth\_half over Period of Record**
 
@@ -782,7 +722,7 @@ cleaner_seine_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+![](feather_seine_2008-2014_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 **Numeric Summary of bs\_depth\_full over Period of Record**
 
@@ -802,19 +742,66 @@ summary(cleaner_seine_data$bs_depth_full)
 These are the location columns. TODO
 
 ``` r
-# Check that they are in consistent format
-# Map
+summary(cleaner_seine_data$x_coord)
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  617192  617720  620147  620705  622946  623767    1045
+
+``` r
+summary(cleaner_seine_data$y_coord)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ## 4356153 4365495 4369101 4370367 4374581 4375014    1045
+
+``` r
+# select only values without na for coordinates
+valid_seine_data <-  cleaner_seine_data %>% filter(!is.na(x_coord))
+
+# Transform to lat and longitude
+utm_coords <- subset(valid_seine_data, select = c("x_coord", "y_coord"))
+utm_coords <- sp::SpatialPoints(utm_coords,proj4string= sp::CRS("+proj=utm +zone=10 +datum=WGS84"))
+long_lat_coords <- sp::spTransform(utm_coords, sp::CRS("+proj=longlat +datum=WGS84"))
+
+# Add latitude and longitude columns onto partial seine dataset 
+valid_seine_data$latitude <- long_lat_coords$y_coord
+valid_seine_data$longitude <- long_lat_coords$x_coord
+
+# take lat an long with sample id to join back onto full seine data
+valid_locations <- valid_seine_data %>% select(sample_id, latitude, longitude)
+
+# Join onto full seine data and remove dates 
+cleaner_seine_data <- cleaner_seine_data %>% 
+  left_join(valid_locations) %>%
+  select(-x_coord, -y_coord)
+```
+
+    ## Joining, by = "sample_id"
+
+``` r
+summary(cleaner_seine_data$latitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   39.35   39.43   39.51   39.48   39.51   39.52    1045
+
+``` r
+summary(cleaner_seine_data$longitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  -121.6  -121.6  -121.6  -121.6  -121.6  -121.6    1045
+
+Longitude values are not actually all the same, just very close so
+rounded to be the same in summary statement.
 
 **NA and Unknown Values**
 
--   58.9 % of values in the `x_coord` column are NA.
--   58.9 % of values in the `y_coord` column are NA.
+-   3.8 % of values in the `latitude` column are NA.
+-   3.8 % of values in the `longitude` column are NA.
 
 ## Explore Categorical variables:
-
-General notes: If there is an opportunity to turn yes no into boolean do
-so, but not if you loose value
 
 ``` r
 cleaner_seine_data %>% select_if(is.character) %>% colnames()
@@ -831,7 +818,7 @@ cleaner_seine_data %>% select_if(is.character) %>% colnames()
 length(unique(cleaner_seine_data$id)) == nrow(cleaner_seine_data)
 ```
 
-    ## [1] TRUE
+    ## [1] FALSE
 
 Each id is unique as anticipated.
 
@@ -856,8 +843,8 @@ table(cleaner_seine_data$lifestage)
 ```
 
     ## 
-    ##   2   3   4   5 
-    ##  31 673 155   4
+    ##     2     3     4     5 
+    ##  1218 15229  2893     4
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -873,13 +860,11 @@ table(cleaner_seine_data$lifestage)
 
     ## 
     ##          fry         parr silvery parr        smolt 
-    ##           31          673          155            4
-
-**Create lookup rda for \[variable\] encoding:**
+    ##         1218        15229         2893            4
 
 **NA and Unknown Values**
 
--   51.3 % of values in the `lifestage` column are NA.
+-   30 % of values in the `lifestage` column are NA.
 
 ### Variable: `gear`
 
@@ -888,8 +873,8 @@ table(cleaner_seine_data$gear)
 ```
 
     ## 
-    ##   1   2   3   5 
-    ## 382 478 861  52
+    ##     1     2     3     5 
+    ##  5568 11132 10789   162
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 Update gear codes with gear names:
@@ -906,11 +891,11 @@ table(cleaner_seine_data$gear)
 
     ## 
     ## SEIN25 SEIN50 
-    ##    382    861
+    ##   5568  10789
 
 **NA and Unknown Values**
 
--   29.9 % of values in the `gear` column are NA.
+-   40.8 % of values in the `gear` column are NA.
 
 ### Variable: `condition`
 
@@ -919,8 +904,8 @@ table(cleaner_seine_data$condition)
 ```
 
     ## 
-    ##    1    2    3 
-    ## 1741    9   23
+    ##     1     2     3 
+    ## 27603    25    23
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -946,8 +931,8 @@ table(cleaner_seine_data$condition)
 ```
 
     ## 
-    ## fair good poor 
-    ##    9 1741   23
+    ##  fair  good  poor 
+    ##    25 27603    23
 
 **NA and Unknown Values**
 
@@ -960,8 +945,8 @@ table(cleaner_seine_data$weather)
 ```
 
     ## 
-    ##  CLD  CLR 
-    ##  199 1574
+    ##   CLD   CLR 
+    ##  4879 22772
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -977,7 +962,7 @@ table(cleaner_seine_data$weather)
 
     ## 
     ## overcast    sunny 
-    ##      199     1574
+    ##     4879    22772
 
 **NA and Unknown Values**
 
@@ -1000,16 +985,16 @@ table(cleaner_seine_data$substrate_1)
 ```
 
     ## 
-    ##   1   2   3 
-    ## 788 765 220
+    ##     1     2     3 
+    ##  8208 11083  8360
 
 ``` r
 table(cleaner_seine_data$substrate_2)
 ```
 
     ## 
-    ##   1   2   3   4   5 
-    ##   1 358 486  94   8
+    ##    1    2    3    4    5 
+    ##    1 7778 7052 3854    8
 
 ``` r
 table(cleaner_seine_data$substrate_3)
@@ -1017,15 +1002,28 @@ table(cleaner_seine_data$substrate_3)
 
     ## 
     ##  3  4 
-    ## 27 61
+    ## 27 91
 
-Fix inconsistencies with spelling, capitalization, and abbreviations.
+**Create lookup rda for substrate encoding:**
+
+``` r
+# View description of domain for viewing condition 
+feather_seine_substrate <- 1:5
+names(feather_seine_substrate) <- c(
+  "Fine - small gravel (0-50mm) (0-2in.)", 
+  "Small - medium gravel (50-150mm) (2-6in.)", 
+  "Medium - large cobble (150-300mm) (6-12in.)",
+  "Boulder (>300mm) (>12in.)",
+  "Pavement (Boat Ramp)")
+
+#write_rds(feather_seine_substrate, "../../../data/feather_seine_substrate.rds")
+```
 
 **NA and Unknown Values**
 
 -   0 % of values in the `substrate_1` column are NA.
--   46.6 % of values in the `substrate_2` column are NA.
--   95 % of values in the `substrate_3` column are NA.
+-   32.4 % of values in the `substrate_2` column are NA.
+-   99.6 % of values in the `substrate_3` column are NA.
 
 ### Variable: `cover_1`, `cover_2`, `cover_3`
 
@@ -1036,8 +1034,8 @@ table(cleaner_seine_data$cover_1)
 ```
 
     ## 
-    ##   A   B   C   D   E   F 
-    ## 782 573   7  29 377   5
+    ##     A     B     C     D     E     F 
+    ## 15664  5349    25    43  6553    17
 
 ``` r
 table(cleaner_seine_data$cover_2)
@@ -1045,15 +1043,15 @@ table(cleaner_seine_data$cover_2)
 
     ## 
     ##  D  E  F 
-    ##  1 71  5
+    ##  1 71 17
 
 ``` r
 table(cleaner_seine_data$cover_3)
 ```
 
     ## 
-    ##   B   C   D   E   F 
-    ##  53  20  31 468 117
+    ##    B    C    D    E    F 
+    ##   53   20   49 8542 2685
 
 **Create lookup rda for cover encoding:**
 
@@ -1089,8 +1087,8 @@ tibble(code = feather_seine_cover,
 **NA and Unknown Values**
 
 -   0 % of values in the `cover_1` column are NA.
--   95.7 % of values in the `cover_2` column are NA.
--   61.1 % of values in the `cover_3` column are NA.
+-   99.7 % of values in the `cover_2` column are NA.
+-   59 % of values in the `cover_3` column are NA.
 
 ### Variable: `stream_features`
 
@@ -1099,8 +1097,8 @@ table(cleaner_seine_data$stream_features)
 ```
 
     ## 
-    ##   G   P   R  RU run 
-    ## 437 588 417 330   1
+    ##     G     P     R    RU   run 
+    ##  4715  9880  2201 10854     1
 
 **Create lookup rda for stream\_features encoding:**
 
@@ -1146,11 +1144,11 @@ table(cleaner_seine_data$site_name)
     ##                 Above G95 SC - RR                  Aleck-lunch spot 
     ##                                 1                                26 
     ##         Auditorium RL -Downstream        Auditorium RR - Downstream 
-    ##                                75                                 1 
+    ##                              2379                                 1 
     ##        Auditoruim RR - Downstream            Bedrock Park Backwater 
-    ##                                19                               256 
+    ##                               153                             12570 
     ##                   Bedrock Park RL Between Steep and Eye (Wier Site) 
-    ##                                 6                               105 
+    ##                                26                               105 
     ##                        Big Riffle    Boyds Bump Boat Launch- Across 
     ##                                 6                                45 
     ## Boyds Pump-  1 mile Downstream RL                               Cox 
@@ -1158,11 +1156,11 @@ table(cleaner_seine_data$site_name)
     ##                       Eye Main RL          Eye Main RR - Downstream 
     ##                                 1                                 1 
     ##            Eye Main RR - Upstream                  Eye side channel 
-    ##                                 1                                 6 
+    ##                                 1                                14 
     ##         Eye side channel - Bottom                 G95 Downstream RL 
-    ##                                28                                 7 
+    ##                               542                                 7 
     ##                        G95 SC  RR                         G95 SC RL 
-    ##                                26                               136 
+    ##                               286                              6100 
     ##                 G95 Upper Main RR                           Gateway 
     ##                                52                                18 
     ##                      Gridley-Side      Gridley Riffle RR Downstream 
@@ -1170,11 +1168,11 @@ table(cleaner_seine_data$site_name)
     ##                    Hatchery Ditch                      Hour Main RL 
     ##                                41                                 1 
     ##         Hour Main RL - Downstream       Hour side channel Backwater 
-    ##                                20                                 8 
+    ##                                20                                64 
     ##   Hour side channel RL - Upstream                 Junkyard Above RR 
-    ##                                33                                 2 
+    ##                              1089                                 2 
     ##                    Junkyard SC RR      Junkyard side channel 1 - RR 
-    ##                                46                                15 
+    ##                                46                               225 
     ##      Junkyard side channel 2 - RL                           Kiester 
     ##                                42                                 3 
     ## Live Oak - Downstream Boat Launch              Live Oak Boat Launch 
@@ -1184,13 +1182,13 @@ table(cleaner_seine_data$site_name)
     ##            McFarland Backwater RR               McFarland Main - RR 
     ##                               231                                 8 
     ##      McFarland Main RR - Upstream                   Steep Backwater 
-    ##                                 1                                39 
+    ##                                 1                              1521 
     ##        Steep Main RR - Downstream          Steep Main RR - Upstream 
-    ##                                 4                                 9 
+    ##                                 6                                21 
     ##                Steep side channel   Steep side channel - Downstream 
-    ##                                 2                                 8 
+    ##                                 2                                26 
     ##     Steep side channel - Upstream                Vance East Main RR 
-    ##                               160                                43
+    ##                               190                              1537
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -1216,11 +1214,11 @@ table(cleaner_seine_data$site_name)
     ##                 Above G95 Sc Rr                Aleck Lunch Spot 
     ##                               1                              26 
     ##        Auditorium Rl Downstream        Auditorium Rr Downstream 
-    ##                              75                               1 
+    ##                            2379                               1 
     ##        Auditoruim Rr Downstream          Bedrock Park Backwater 
-    ##                              19                             256 
+    ##                             153                           12570 
     ##                 Bedrock Park Rl Between Steep And Eye Wier Site 
-    ##                               6                             105 
+    ##                              26                             105 
     ##                      Big Riffle   Boyds Bump Boat Launch Across 
     ##                               6                              45 
     ## Boyds Pump 1 Mile Downstream Rl                             Cox 
@@ -1228,11 +1226,11 @@ table(cleaner_seine_data$site_name)
     ##                     Eye Main Rl          Eye Main Rr Downstream 
     ##                               1                               1 
     ##            Eye Main Rr Upstream                Eye Side Channel 
-    ##                               1                               6 
+    ##                               1                              14 
     ##         Eye Side Channel Bottom               G95 Downstream Rl 
-    ##                              28                               7 
+    ##                             542                               7 
     ##                       G95 Sc Rl                       G95 Sc Rr 
-    ##                             136                              26 
+    ##                            6100                             286 
     ##               G95 Upper Main Rr                         Gateway 
     ##                              52                              18 
     ##    Gridley Riffle Rr Downstream                    Gridley Side 
@@ -1240,11 +1238,11 @@ table(cleaner_seine_data$site_name)
     ##                  Hatchery Ditch                    Hour Main Rl 
     ##                              41                               1 
     ##         Hour Main Rl Downstream     Hour Side Channel Backwater 
-    ##                              20                               8 
+    ##                              20                              64 
     ##   Hour Side Channel Rl Upstream               Junkyard Above Rr 
-    ##                              33                               2 
+    ##                            1089                               2 
     ##                  Junkyard Sc Rr      Junkyard Side Channel 1 Rr 
-    ##                              46                              15 
+    ##                              46                             225 
     ##      Junkyard Side Channel 2 Rl                         Kiester 
     ##                              42                               3 
     ##            Live Oak Boat Launch Live Oak Downstream Boat Launch 
@@ -1254,13 +1252,13 @@ table(cleaner_seine_data$site_name)
     ##          Mcfarland Backwater Rr               Mcfarland Main Rr 
     ##                             231                               8 
     ##      Mcfarland Main Rr Upstream                 Steep Backwater 
-    ##                               1                              39 
+    ##                               1                            1521 
     ##        Steep Main Rr Downstream          Steep Main Rr Upstream 
-    ##                               4                               9 
+    ##                               6                              21 
     ##              Steep Side Channel   Steep Side Channel Downstream 
-    ##                               2                               8 
+    ##                               2                              26 
     ##     Steep Side Channel Upstream              Vance East Main Rr 
-    ##                             160                              43
+    ##                             190                            1537
 
 **NA and Unknown Values**
 
@@ -1279,7 +1277,7 @@ table(cleaner_seine_data$gear_type)
 
     ## 
     ## EF_SE  SEIN 
-    ##    74  1699
+    ##   424 27227
 
 **NA and Unknown Values**
 
@@ -1293,7 +1291,7 @@ table(cleaner_seine_data$run)
 
     ## 
     ##    fall  spring unknown 
-    ##    1034      10     719
+    ##   19926      64    7237
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -1304,23 +1302,70 @@ table(cleaner_seine_data$run)
 
     ## 
     ##   fall spring 
-    ##   1034     10
+    ##  19926     64
 
 **NA and Unknown Values**
 
--   41.1 % of values in the `run` column are NA.
+-   27.7 % of values in the `run` column are NA.
 
 ## Summary of identified issues
 
 -   Not a lot of days sampled per year
 -   Only 10 rows that include spring data.Data may not be very useful
     for Spring Run JPE purposes.
--   TODO need to figure out what is going on with the substrate and
-    cover columns. (waiting to hear back from Casey)
+-   Figure out the best way to clean up the substrate and cover columns
 
 ## Save cleaned data back to google cloud
 
 ``` r
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+feather_seine_2008_2014 <- cleaner_seine_data %>% glimpse()
+```
+
+    ## Rows: 27,651
+    ## Columns: 36
+    ## $ sample_id         <chr> "53", "66", "67", "69", "69", "69", "69", "69", "69"~
+    ## $ count             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    ## $ fork_length       <dbl> 88, NA, NA, 59, 59, 59, 95, 95, 95, 89, 89, 89, 71, ~
+    ## $ lifestage         <chr> "silvery parr", "silvery parr", "parr", "parr", "par~
+    ## $ id                <chr> "74", "350", "379", "385", "385", "385", "386", "386~
+    ## $ dead              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL~
+    ## $ date              <date> 2008-07-01, 2008-06-18, 2008-06-18, 2008-06-17, 200~
+    ## $ time              <time> 13:30:00, 10:00:00, 09:30:00, 13:45:00, 13:45:00, 1~
+    ## $ gear              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "SEI~
+    ## $ condition         <chr> "good", "good", "good", "good", "good", "good", "goo~
+    ## $ temperature       <dbl> 21.28, 17.00, 16.00, 17.83, 17.83, 17.83, 17.83, 17.~
+    ## $ weather           <chr> "sunny", "sunny", "sunny", "sunny", "sunny", "sunny"~
+    ## $ flow              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ efbs_length       <dbl> NA, 38.72, 18.29, 25.00, 25.00, 25.00, 25.00, 25.00,~
+    ## $ efbs_width        <dbl> NA, 3.36, 3.11, 4.57, 4.57, 4.57, 4.57, 4.57, 4.57, ~
+    ## $ efbs_depth_top    <dbl> NA, 0.20, 0.19, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, ~
+    ## $ efbs_depth_bottom <dbl> NA, 0.21, 0.25, 0.26, 0.26, 0.26, 0.26, 0.26, 0.26, ~
+    ## $ bs_start_length   <dbl> 11.90, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 7~
+    ## $ bs_close_width    <dbl> 2, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 0, 1,~
+    ## $ bs_distance_out   <dbl> 10.06, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 8~
+    ## $ bs_depth_half     <dbl> 0.31, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 0.~
+    ## $ bs_depth_full     <dbl> 0.91, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 0.~
+    ## $ substrate_1       <chr> "2", "2", "2", "3", "3", "3", "3", "3", "3", "3", "3~
+    ## $ substrate_2       <chr> NA, "3", "3", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ substrate_3       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ cover_1           <chr> "A", "B", "B", "B", "B", "B", "B", "B", "B", "B", "B~
+    ## $ cover_2           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ cover_3           <chr> NA, NA, "D", "D", "D", "D", "D", "D", "D", "D", "D",~
+    ## $ stream_features   <chr> "RU", "R", "R", "R", "R", "R", "R", "R", "R", "R", "~
+    ## $ ec                <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ site_name         <chr> "Hour Main Rl", "Steep Main Rr Upstream", "Steep Mai~
+    ## $ gear_type         <chr> "SEIN", "EF_SE", "EF_SE", "EF_SE", "EF_SE", "EF_SE",~
+    ## $ run               <chr> "fall", "fall", "fall", "fall", "fall", "fall", "fal~
+    ## $ tagged            <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL~
+    ## $ latitude          <dbl> 39.41714, 39.46294, 39.46224, 39.46298, 39.46298, 39~
+    ## $ longitude         <dbl> -121.6276, -121.6043, -121.6047, -121.6034, -121.603~
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_list_objects()
+gcs_upload(feather_seine_2008_2014,
+           object_function = f,
+           type = "csv",
+           name = " juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data/feather_seine_2008_2014.csv")
 ```

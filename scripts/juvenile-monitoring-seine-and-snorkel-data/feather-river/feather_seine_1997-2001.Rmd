@@ -53,7 +53,7 @@ gcs_get_object(object_name =
 
 ```
 
-Read in data from google cloud, glimpse raw data and domain description sheet: 
+Read in data from google cloud, glimpse raw data sheet: 
 ```{r, warning=FALSE}
 # read in data to clean 
 raw_seine_1997 <- read_xlsx("raw_seine_1997-2001.xlsx") %>% 
@@ -62,6 +62,8 @@ raw_seine_1997 <- read_xlsx("raw_seine_1997-2001.xlsx") %>%
 ```
 
 ## Data transformations
+
+Rename columns, update column types where needed, filter to look only at Chinook Salmon
 
 ```{r}
 cleaner_seine_data <- raw_seine_1997 %>%
@@ -100,7 +102,7 @@ cleaner_seine_data %>% select_if(is.numeric) %>% colnames()
 
 **Plotting water_temp over Period of Record**
 
-Daily average water temperature measures appear to be lower in Dec - March and tehn increase April - September. They appear to typically range from 44 - 72. 
+Daily average water temperature measures appear to be lower in Dec - March and then increase April - September. They appear to typically range from 44 - 72. (Units: F)
 ```{r}
 cleaner_seine_data %>% 
   group_by(date = as.Date(date)) %>%
@@ -122,6 +124,7 @@ cleaner_seine_data %>%
        x = "Date")  
 ```
 
+
 ```{r}
 cleaner_seine_data %>%  
   ggplot(aes(x = water_temp)) + 
@@ -138,6 +141,10 @@ cleaner_seine_data %>%
 ```{r}
 summary(cleaner_seine_data$water_temp)
 ```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_seine_data$water_temp))/nrow(cleaner_seine_data), 3) * 100` % of values in the `water_temp` column are NA. 
 
 ### Variable: `sechi`
 
