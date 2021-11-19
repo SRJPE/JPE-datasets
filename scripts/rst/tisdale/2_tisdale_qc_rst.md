@@ -103,7 +103,7 @@ ggplot(aes(x = fork_length_mm)) +
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](2_tisdale_qc_sampling_effort_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](2_tisdale_qc_rst_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 **Numeric Summary of `fork_length_mm` over Period of Record**
 
@@ -185,7 +185,7 @@ ggplot(aes(x = weight)) +
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](2_tisdale_qc_sampling_effort_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](2_tisdale_qc_rst_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 **Numeric Summary of `weight` over Period of Record**
 
@@ -242,7 +242,7 @@ ggplot(aes(y = count, x = fake_date, color = at_capture_run)) +
 
     ## `summarise()` has grouped output by 'date'. You can override using the `.groups` argument.
 
-![](2_tisdale_qc_sampling_effort_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](2_tisdale_qc_rst_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 **Numeric Summary of `count` over Period of Record**
 
@@ -448,7 +448,7 @@ raw_clean %>%
 
     ## Joining, by = "wy"
 
-![](2_tisdale_qc_sampling_effort_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](2_tisdale_qc_rst_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 **NA and Unknown Values**
 
@@ -516,7 +516,7 @@ raw_clean %>%
 
     ## Joining, by = "wy"
 
-![](2_tisdale_qc_sampling_effort_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](2_tisdale_qc_rst_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 **NA and Unknown Values**
 
@@ -590,7 +590,7 @@ raw_clean %>%
 
     ## Joining, by = "wy"
 
-![](2_tisdale_qc_sampling_effort_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](2_tisdale_qc_rst_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 **NA and Unknown Values**
 
@@ -734,7 +734,7 @@ raw_clean %>%
 
     ## Joining, by = "wy"
 
-![](2_tisdale_qc_sampling_effort_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](2_tisdale_qc_rst_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 **NA and Unknown Values**
 
@@ -829,7 +829,7 @@ raw_clean %>%
 
     ## Joining, by = "wy"
 
-![](2_tisdale_qc_sampling_effort_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](2_tisdale_qc_rst_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 **NA and Unknown Values**
 
@@ -887,7 +887,7 @@ filter(raw_clean, mark_type != "No marks or tags") %>%
 
     ## Joining, by = "wy"
 
-![](2_tisdale_qc_sampling_effort_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](2_tisdale_qc_rst_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **NA and Unknown Values**
 
