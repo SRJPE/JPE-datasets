@@ -1,0 +1,147 @@
+---
+title: "Lower Sacramento (Tisdale) RST data QC - clean all years"
+author: "Ashley Vizek"
+date: "10/28/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(openxlsx)
+# used with clean_names()
+library(janitor)
+# used with japply
+library(taRifx)
+library()
+```
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+07/07/2010 through 05/28/2020
+
+**Completeness of Record throughout timeframe:** 
+
+
+**Sampling Location:**
+
+Tisdale
+
+
+**Data Contact:** 
+
+[Drew Huneycutt](mailto::andrew.huneycutt@wildlife.ca.gov)
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+# git data and save as xlsx
+year = c(20, 19, 18, "16_17","14_15","10_13")
+get_data <- function(year) {
+gcs_get_object(object_name = paste0("rst/lower-sac-river/data-raw/tisdale/tisdale_rst_", year, ".xls"),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = paste0("raw_tisdale_rst_data_", year, ".xls"),
+               overwrite = TRUE)
+}
+
+map(year, get_data)
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+
+```{r}
+# read in data to clean 
+
+read_data <- function(year) {
+  readxl::read_xls(paste0("raw_tisdale_rst_data_", year, ".xls"))
+}
+
+rst_raw <- map(year, read_data) %>%
+  reduce(bind_rows) %>%
+  glimpse()
+```
+
+## Data transformations
+
+- Drew confirmed that the `time` variable is not used. I am removing `time`. 
+- `mort` means if the fish was dead or not
+- `trap_position` has two options: `RL` - river left or `RR` - river right
+- it is unclear what `final_run` is. Drew said he would look into it.
+
+
+```{r}
+# clean variable names
+# remove time because it doesn't mean anything
+rst_raw_clean_names <- select(rst_raw, -Time) %>%
+  janitor::clean_names() %>%
+  rename(species = taxon,
+         fork_length_mm = fl,
+         at_capture_run = at_cap_run,
+         mortality = mort,
+         count = n_fish,
+         location = site_name) %>%
+  glimpse()
+
+```
+
+```{r initial_checks, include = F}
+# checks to make sure variables are formatted correctly
+str(rst_raw_clean_names)
+# any duplicate dates ?
+rst_raw_clean_names %>%
+  group_by(date, trap_position, fish_processed, species, fork_length_mm, weight, life_stage, at_capture_run, final_run, mortality, random, analyses, rearing, release_id, mark_type, mark_position, mark_color, trap_visit_comment, catch_comment, location) %>%
+  tally() %>%
+  filter(n > 1)
+# There are two trap positions RL and RR so there are at least 2 obs per day
+# Fork length is not summarized so multiple obs per day
+# Would assume that when group by date, group_position, fork_length_mm, at_capture_run
+# there would be only one obs, but that is not the case.
+# look at where that happens
+# in this case they are the exact same. i think we should combine in that case
+filter(rst_raw_clean_names, as.Date(date) == "2010-10-28", trap_position == "RL", at_capture_run == "Winter", fork_length_mm == 39)
+
+# I am guessing these duplicates are due to data entry. if they are counting fish individually then they would record before they realize that multiple fish fit the same description
+
+```
+
+**Summary additional changes**
+
+There were instances of duplicate rows. I combined these cases below.
+
+```{r}
+rst_raw_clean <- rst_raw_clean_names %>%
+  group_by(date, trap_position, fish_processed, species, fork_length_mm, weight, life_stage, at_capture_run, final_run, mortality, random, analyses, rearing, release_id, mark_type, mark_position, mark_color, trap_visit_comment, catch_comment, location) %>%
+  summarize(count = sum(count))
+
+# check to make sure that worked
+rst_raw_clean %>%
+  group_by(date, trap_position, fish_processed, species, fork_length_mm, weight, life_stage, at_capture_run, final_run, mortality, random, analyses, rearing, release_id, mark_type, mark_position, mark_color, trap_visit_comment, catch_comment, location) %>%
+  tally() %>%
+  filter(n > 1)
+```
+
+# Save to the google bucket
+
+```{r cleaned_raw_uploads, include = F}
+# f <- function(input, output) write_csv(input, file = output)
+# 
+# gcs_upload(trap_raw_clean,
+#            object_function = f,
+#            type = "csv",
+#            name = "rst/lower-sac-river/data/tisdale/tisdale_trap_raw_clean.csv")
+```
