@@ -14,7 +14,6 @@ access databases:
     contains:
 
 -   **Carcass 2000.mdb** (Identified tables of interest)
-
     -   ChopEnvTBL (ChopEnvID, Week’s Tag Color, Date, Time Start, Time
         Stop, Crew, Recorder, Turbidity, Bottle Number, Weather Code,
         Comments, Week)
@@ -27,9 +26,7 @@ access databases:
         MultRecov)
     -   TagEnvTBL (Date, Recorder’s Initials, Week’s Tag Color,
         TagEnvID, Week)
-
 -   **Carcass 2001.mdb**
-
     -   ChopEnvTBL (ChopEnvID, Date, Time, Crew, Recorder, TagCol, Flow,
         Vis, Weather, Comment, WeekNum)
     -   ChopRecovTBL (Sect, Chan, Minute, Male, Fem, Gril, RecovID,
@@ -37,34 +34,30 @@ access databases:
     -   cwtTBL (cwtID, Date, Sect, FL, Sex, HTNum, EggRet, Comment)
     -   TagEnvTBL (Date, Crew, TagCol, Recorder, Flow, WeekNum,
         TagEnvID)
-
--   “Carcass 2002.mdb”
-
--   “Carcass 2003\_converted.accdb”
-
--   “Carcass 2004.mdb”
-
--   “Carcass 2005.mdb”
-
--   “Carcass 2006.mdb”
-
--   “Carcass 2007.mdb”
-
--   “Carcass 2008.mdb”
-
--   “Carcass 2009.mdb”
-
--   “Carcass 2010.mdb”
-
--   “FINAL Carcass 20011.mdb”
-
--   “FINAL Carcass 20013.mdb”
-
--   “FINAL Carcass 20014.accdb”
-
--   “FINAL Carcass 20015.accdb”
-
--   “FINAL Carcass 20016.accdb”
+-   **Carcass 2002.mdb**
+    -   Even more tables in this one…
+-   **Carcass 2003\_converted.accdb**
+    -   ChopChannelTBL (ChanID, Sect, Chan, Min, Male, Fem, Gril,
+        TagCount, HeaderID)
+    -   ChopHeaderTBL (headerID, TagCol, Date, Crew, Time, Recorder,
+        Weather, Comment, WeekNum)
+    -   ChopRecovTBL (RecovID, RecovColor, RecovCount, ChanID)
+    -   CWTHeaderTBL (headerID, Date, TagCol, Crew, WeekNum)
+    -   CWTTagTBL (TagID, Sect, RelLoc, FL, Sex, Spawn, Clip, SampType,
+        CarcSta,t SampNum, HeadTag, Comment, HeaderID)
+-   **Carcass 2004.mdb**
+    -   
+-   **Carcass 2005.mdb**
+-   **Carcass 2006.mdb**
+-   **Carcass 2007.mdb**
+-   **Carcass 2008.mdb**
+-   **Carcass 2009.mdb**
+-   **Carcass 2010.mdb**
+-   **FINAL Carcass 20011.mdb**
+-   **FINAL Carcass 20013.mdb**
+-   **FINAL Carcass 20014.accdb**
+-   **FINAL Carcass 20015.accdb**
+-   **FINAL Carcass 20016.accdb**
 
 Each databse contains a lot of tables describing carcass surveys on the
 feather including: carcassSurvey, carcassChops, carcassIndividual…ect
