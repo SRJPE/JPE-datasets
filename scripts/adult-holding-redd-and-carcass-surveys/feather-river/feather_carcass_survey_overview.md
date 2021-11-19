@@ -1,0 +1,192 @@
+Feather River Carcass Survey QC
+================
+Erin Cain
+9/29/2021
+
+# Feather River Carcass Survey QC
+
+## Description of Monitoring Data
+
+The feather river carcass survey was provided to us in two sets of
+access databases:
+
+1.  Historical data was provided in a “Escapement DBs FlowWest.zip” that
+    contains:
+
+-   **Carcass 2000.mdb** (Identified tables of interest)
+
+    -   ChopEnvTBL (ChopEnvID, Week’s Tag Color, Date, Time Start, Time
+        Stop, Crew, Recorder, Turbidity, Bottle Number, Weather Code,
+        Comments, Week)
+    -   ChopRecovTBL (Section Unit, \# of Adult Males Chopped, \# of
+        Adult Females Chopped, \# of Grisle Males Chopped,\# of Grilse
+        Females Chopped, Number Spawned, RecovID, Chop Env ID)
+    -   cwtTBL (Auto Fish ID, Date, Section, Unit, FL, Sex, Eggs, Head
+        Tag Number, CWT Code)
+    -   RecovTagTBL (RecovID, Tag Number, RecovTagID, RelStat,
+        MultRecov)
+    -   TagEnvTBL (Date, Recorder’s Initials, Week’s Tag Color,
+        TagEnvID, Week)
+
+-   **Carcass 2001.mdb**
+
+    -   ChopEnvTBL (ChopEnvID, Date, Time, Crew, Recorder, TagCol, Flow,
+        Vis, Weather, Comment, WeekNum)
+    -   ChopRecovTBL (Sect, Chan, Minute, Male, Fem, Gril, RecovID,
+        ChopEnvID)
+    -   cwtTBL (cwtID, Date, Sect, FL, Sex, HTNum, EggRet, Comment)
+    -   TagEnvTBL (Date, Crew, TagCol, Recorder, Flow, WeekNum,
+        TagEnvID)
+
+-   “Carcass 2002.mdb”
+
+-   “Carcass 2003\_converted.accdb”
+
+-   “Carcass 2004.mdb”
+
+-   “Carcass 2005.mdb”
+
+-   “Carcass 2006.mdb”
+
+-   “Carcass 2007.mdb”
+
+-   “Carcass 2008.mdb”
+
+-   “Carcass 2009.mdb”
+
+-   “Carcass 2010.mdb”
+
+-   “FINAL Carcass 20011.mdb”
+
+-   “FINAL Carcass 20013.mdb”
+
+-   “FINAL Carcass 20014.accdb”
+
+-   “FINAL Carcass 20015.accdb”
+
+-   “FINAL Carcass 20016.accdb”
+
+Each databse contains a lot of tables describing carcass surveys on the
+feather including: carcassSurvey, carcassChops, carcassIndividual…ect
+
+2.  Recent data in the CAMP carcass database was sent in a “CAMP DB for
+    FlowWest.zip” that contains:
+
+-   CAMP\_Escapement\_20210412mdb
+-   CAMP\_EscapementEntry.mdb
+-   CAMP\_EscapementEntry\_Backup.mdb
+
+**Timeframe:**
+
+**Video Season:**
+
+**Completeness of Record throughout timeframe:**
+
+**Sampling Location:**
+
+**Data Contact:**
+
+Any additional info?
+
+## Access Cloud Data
+
+``` r
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+```
+
+Read in data from google cloud, glimpse raw data and domain description
+sheet:
+
+``` r
+# read in data to clean 
+```
+
+## Data transformations
+
+``` r
+# For different excel sheets for each year read in and combine years here
+```
+
+``` r
+# Snake case, 
+# Columns are appropriate types
+# Remove redundant columns
+```
+
+## Explore Numeric Variables:
+
+``` r
+# Filter clean data to show only numeric variables 
+```
+
+### Variable: `[name]`
+
+**Plotting \[Variable\] over Period of Record**
+
+``` r
+# Make whatever plot is appropriate 
+# maybe 2+ plots are appropriate
+```
+
+**Numeric Summary of \[Variable\] over Period of Record**
+
+``` r
+# Table with summary statistics
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+## Explore Categorical variables:
+
+General notes: If there is an opportunity to turn yes no into boolean do
+so, but not if you loose value
+
+``` r
+# Filter clean data to show only categorical variables
+```
+
+### Variable: `[name]`
+
+``` r
+#table() 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
+``` r
+# Fix any inconsistencies with categorical variables
+```
+
+**Create lookup rda for \[variable\] encoding:**
+
+``` r
+# Create named lookup vector
+# Name rda [watershed]_[data type]_[variable_name].rda
+# save rda to data/ 
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+## Summary of identified issues
+
+-   List things that are funcky/bothering us but that we don’t feel like
+    should be changed without more investigation
+
+## Save cleaned data back to google cloud
+
+``` r
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+```
