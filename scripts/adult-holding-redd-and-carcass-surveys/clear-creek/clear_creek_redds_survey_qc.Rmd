@@ -77,6 +77,7 @@ cleaner_data <- raw_redds_data %>%
          'redd_tail_depth' = 'tail_in',
          'redd_length_in' = 'length_in',
          'redd_width_in' = 'width_in',
+         'surveyed_reach' = 'reach',
          'observation_reach'= 'reach_2',
          'observation_date' = 'date_2_2',
          'observation_age'= 'age_2_2',
@@ -85,10 +86,16 @@ cleaner_data <- raw_redds_data %>%
          'date_measured' = 'date_mea',
          'measured' = 'measure'
          ) %>% 
-  mutate(date = as.Date(date)) %>% 
+  mutate(date = as.Date(date),
+         observation_date = as.Date(observation_date),
+         survey = as.character(survey),
+         survey_observed = as.character(survey_observed)) %>% 
   glimpse()
 ```
-## Explore date
+Note:
+
+survey_(2-9)_age is described as "Age of redd based on age classification during survey (2-9)". Age(1-9) is also described as "age of redd based on age classification during survey (1-9)", These to variables seem to be redundant so we will drop survey_(2-9)_age for now until further review. The last 4 variables observation_reach, observation_date, observation_age, and survey_observed need further description. 
+## Explore `date`
 
 ```{r}
 summary(cleaner_data$date)
@@ -96,6 +103,16 @@ summary(cleaner_data$date)
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3) * 100` % of values in the `date` column are NA.
+
+## Explore `observation_date`
+
+**Description:** Date of observation
+```{r}
+summary(cleaner_data$observation_date)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$observation_date))/nrow(cleaner_data), 3) * 100` % of values in the `observation_date` column are NA.
 
 ## Explore Categorical Data
 
@@ -113,6 +130,8 @@ table(cleaner_data$method)
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$method))/nrow(cleaner_data), 3) * 100` % of values in the `method` column are NA.
+
+Note: what's pw? do we keep rstr?
 
 ### Variable: `ucc_relate`
 
@@ -138,16 +157,16 @@ table(cleaner_data$picket_weir_relation)
 
 * `r round(sum(is.na(cleaner_data$picket_weir_relation))/nrow(cleaner_data), 3) * 100` % of values in the `picket_weir_relation` column are NA.
 
-### Variable: `reach`
+### Variable: `surveyed_reach`
 
 **Description:** Reach surveyed on each survey day
 ```{r}
-table(cleaner_data$reach)
+table(cleaner_data$surveyed_reach)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$reach))/nrow(cleaner_data), 3) * 100` % of values in the `reach`` column are NA.
+* `r round(sum(is.na(cleaner_data$survyed_reach))/nrow(cleaner_data), 3) * 100` % of values in the `surveyed_reach` column are NA.
 
 ### Variable: `redd_id`
 
@@ -333,23 +352,47 @@ We are interested only in spring run TODO
 
 ```{r}
 cleaner_data<-cleaner_data %>% 
-  mutate(run = tolower(run),
-         run = if_else(run == "late-fall", "fall", run))
+  mutate(run = tolower(run))
 table(cleaner_data$run)
 ```
-
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$run))/nrow(cleaner_data), 3) * 100` % of values in the `run` column are NA.
+
 
 ### Variable: `observation_reach`
 
 **Description:** Reach of observation
 
+Note: is this significantly different from reach? 
+
 ```{r}
 table(cleaner_data$observation_reach)
 ```
 
+### Variable: `survey`
+```{r}
+cleaner_data %>% 
+    filter(survey != is.na(survey)) %>% 
+  ggplot(aes(x = survey))+
+  geom_bar()
+```
+
+
+There are `r length(unique(cleaner_data$survey))` unique survey numbers. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$survey))/nrow(cleaner_data), 3) * 100` % of values in the `survey` column are NA.
+
+### Variable: `survey_observed`
+
+```{r}
+cleaner_data %>% 
+  filter(survey_observed != is.na(survey_observed)) %>% 
+  ggplot(aes(x = survey_observed))+
+  geom_bar()
+```
 ## Explore Numerical Data
 
 ```{r}
@@ -371,14 +414,6 @@ Note longitude has 1 decimal place, and latitude has 2 decimal places - not very
 * `r round(sum(is.na(cleaner_data$longitude))/nrow(cleaner_data), 3) * 100` % of values in the `longitude` column are NA.
 
 * `r round(sum(is.na(cleaner_data$latitude))/nrow(cleaner_data), 3) * 100` % of values in the `latitude` column are NA.
-
-### Variable: `survey`
-
-There are `r length(unique(cleaner_data$survey))` unique survey numbers. 
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_data$survey))/nrow(cleaner_data), 3) * 100` % of values in the `survey` column are NA.
 
 ### Variable: `river_mile`
 
@@ -529,7 +564,7 @@ cleaner_data %>%
 ```{r}
 cleaner_data %>% 
   ggplot(aes(x = redd_width_in, y=redd_length_in))+
-  geom_point(size = 0.8,color = 'red')+
+  geom_point(size = 1.2,color = 'red')+
   labs(title = "Redd Width VS Redd Length")+
   theme_minimal()
 ```
@@ -698,3 +733,28 @@ summary(cleaner_data$bomb_vel80)
 Note: 0 velocity at 60 percent depth is NA? 
 There's significant more measurement of redd measurement <30 inches from water.
 
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$vel60))/nrow(cleaner_data), 3) * 100` % of values in the `vel60` column are NA.
+
+* `r round(sum(is.na(cleaner_data$vel80))/nrow(cleaner_data), 3) * 100` % of values in the `vel80` column are NA.
+
+
+### Variable: `observation_age`
+
+**Description:** Age at observation
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x=observation_age))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "Distribution of Age at Observation")
+```
+```{r}
+summary(cleaner_data$observation_age)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$observation_age))/nrow(cleaner_data), 3) * 100` % of values in the `observation_age` column are NA.

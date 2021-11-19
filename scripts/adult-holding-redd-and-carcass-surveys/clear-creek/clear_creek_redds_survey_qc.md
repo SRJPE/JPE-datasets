@@ -13407,7 +13407,9 @@ not very exact.
 
 ### Variable: `survey`
 
-There are 15 unique survey numbers. **NA and Unknown Values**
+There are 15 unique survey numbers.
+
+**NA and Unknown Values**
 
 -   9.8 % of values in the `survey` column are NA.
 
@@ -13427,6 +13429,7 @@ cleaner_data %>%
     ## Warning: Removed 1 rows containing missing values (geom_point).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+
 Seems like more redds were observed in the first 3 miles after 2012
 
 ``` r
@@ -13681,18 +13684,30 @@ summary(cleaner_data$velocity)
 
 -   0 % of values in the `velocity` column are NA.
 
-### Variable: `start_60`
+### Variable:`start_60`,`end_60`
 
-**Description:** starting values on the mechanical flow meter at 60%
-depth
+**Description:** starting, ending values on the mechanical flow meter at
+60% depth
 
 ``` r
-cleaner_data %>% 
+start <- cleaner_data %>% 
   ggplot(aes(x = start_60))+
   geom_histogram()+
-  labs(title = "start 60 Distribution")+
+  labs(title = "Start 60 Distribution")+
   theme_minimal()
+
+end <- cleaner_data %>% 
+  ggplot(aes(x = end_60))+
+  geom_histogram()+
+  labs(title = "End 60 Distribution")+
+  theme_minimal()
+
+gridExtra::grid.arrange(start, end)
 ```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 967 rows containing non-finite values (stat_bin).
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
@@ -13707,28 +13722,6 @@ summary(cleaner_data$start_60)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##       0  157950  369000  404666  635192  998000     967
 
-**NA and Unknown Values**
-
--   64.7 % of values in the `start_60` column are NA.
-
-### Variable:`end_60`
-
-**Description:** ending values on the mechanical flow meter at 60% depth
-
-``` r
-cleaner_data %>% 
-  ggplot(aes(x = end_60))+
-  geom_histogram()+
-  labs(title = "End 60 Distribution")+
-  theme_minimal()
-```
-
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-
-    ## Warning: Removed 967 rows containing non-finite values (stat_bin).
-
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
-
 ``` r
 summary(cleaner_data$end_60)
 ```
@@ -13737,6 +13730,8 @@ summary(cleaner_data$end_60)
     ##       0  161905  370782  407139  637912 1000157     967
 
 **NA and Unknown Values**
+
+-   64.7 % of values in the `start_60` column are NA.
 
 -   64.7 % of values in the `end_60` column are NA.
 
@@ -13756,7 +13751,7 @@ cleaner_data %>%
 
     ## Warning: Removed 963 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-51-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-50-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$sec_60)
@@ -13768,3 +13763,140 @@ summary(cleaner_data$sec_60)
 **NA and Unknown Values**
 
 -   64.4 % of values in the `sec_60` column are NA.
+
+### Variable: `start_80`, `end_80`
+
+**Description:** Starting, end values on the mechanical flow meter at
+80/20% depth
+
+``` r
+start80 <- cleaner_data %>% 
+  ggplot(aes(x = start_80))+
+  geom_histogram()+
+  labs(title = "Start 80 Distribution")+
+  theme_minimal()
+
+end80 <- cleaner_data %>% 
+  ggplot(aes(x = end_80))+
+  geom_histogram()+
+  labs(title = "End 80 Distribution")+
+  theme_minimal()
+
+
+gridExtra::grid.arrange(start80, end80)
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-52-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$start_80)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##       0       0    4093  203438  348000  890200    1414
+
+``` r
+summary(cleaner_data$end_80)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##       0       0   17919  215119  351688  892365    1414
+
+**NA and Unknown Values**
+
+-   94.6 % of values in the `start_80` column are NA.
+
+-   94.6 % of values in the `end_80` column are NA.
+
+### Variable: `secs_80`
+
+**Description:**Time the meter was in the water at the 80/20% depth.
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = secs_80))+
+  geom_histogram(bin =10)+
+  labs(title = "Sec 80 Distribution")+
+  theme_minimal()
+```
+
+    ## Warning: Ignoring unknown parameters: bin
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-55-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$secs_80)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   100.0   100.0   100.0   100.1   100.0   108.0    1414
+
+**NA and Unknown Values**
+
+-   94.6 % of values in the `secs_80` column are NA.
+
+### Variable: `bomb_vel60`, `bomb_vel80`
+
+**`bomb_vel60` Description:** Mean water column velocity measured at 60
+percent depth from the water surface if the redd depth is ≤ 30 inches
+from the water surface (Allan and Castillo 2007).
+
+**`bomb_vel80` Description:** Mean water column velocity measured at
+80/20% percent depth from the water surface if the redd depth is ≥ 30
+inches from the water surface (Allan and Castillo 2007).
+
+``` r
+v60 <- cleaner_data %>% 
+  ggplot(aes(x = bomb_vel60))+
+  geom_histogram()+
+  labs(title = "Velocity at 60 Percent Depth Distribution")+
+  theme_minimal()
+
+v80 <- cleaner_data %>% 
+  ggplot(aes(x = bomb_vel80))+
+  geom_histogram()+
+  labs(title = "Velocity at 80/20 Percent Depth Distribution")+
+  theme_minimal()
+
+
+gridExtra::grid.arrange(v60, v80)
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 1155 rows containing non-finite values (stat_bin).
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 1471 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-57-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$bomb_vel60)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.000   0.000   0.168   1.221   2.348   5.457    1155
+
+``` r
+summary(cleaner_data$bomb_vel80)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  0.4708  1.6214  2.0064  2.8995  2.9177 20.1574    1471
+
+Note: 0 velocity at 60 percent depth is NA? There’s significant more
+measurement of redd measurement &lt;30 inches from water.
