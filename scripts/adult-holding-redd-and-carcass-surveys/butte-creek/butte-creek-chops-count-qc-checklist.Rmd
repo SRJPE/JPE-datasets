@@ -32,7 +32,7 @@ library (RColorBrewer)
 
 
 **Additional Info:**  
-The carcass data came in 12 documents for each year. We identified the 'SurveyChops' and 'SurveyIndividuals' datasets as the documents with the most complete information and joined them for all of the years.
+The carcass data came in 12 documents for each year. We identified the 'SurveyChops' and 'SurveyIndividuals' datasets as the documents with the most complete information and joined them for all of the years.This markdown runs the surveychops QC. 
 
 ## Access Cloud Data
 
@@ -51,8 +51,8 @@ read_from_cloud <- function(year){
                bucket = gcs_get_global_bucket(),
                saveToDisk = paste0(year,"_raw_surveychops.xlsx"),
                overwrite = TRUE)
-  data <- readxl::read_excel(paste0(year,"_raw_surveychops.xlsx")) %>% 
-    glimpse()
+  data <- readxl::read_excel(paste0(year,"_raw_surveychops.xlsx"))
+  return(data)
 }
 
 open_files <- function(year){
@@ -62,8 +62,6 @@ open_files <- function(year){
 years <- c(2014, 2015, 2016, 2017, 2018, 2019, 2020)
 # years <- 2020
 raw_data <- purrr::map(years, read_from_cloud) %>%
-  reduce(bind_rows)
-raw_data <- purrr::map(years, open_files) %>% 
   reduce(bind_rows)
 write_csv(raw_data, "raw_chops_data.csv")
 ```
@@ -80,8 +78,8 @@ raw_chops_data <- read_csv("raw_chops_data.csv") %>% glimpse
 ```{r}
 cleaner_data<- raw_chops_data %>%
   janitor::clean_names() %>%
-  select(-'week', -'year', -'location_cd', -'disposition', -'condition', -'size_class',
-         -'sex', - 'species_code', - 'survey') %>% #could extract week and year from date;all location is the same (upper_cd); all disposition is chopped', all condition decayed, all size class not recorded, all sex is not recorded or unknown, all species_code is spring run chinook
+  select(-'week', -'year', -'location_cd',  -'size_class',
+         -'sex', - 'species_code', - 'survey') %>% #could extract week and year from date;all location is the same (upper_cd);\all size class not recorded, all sex is not recorded or unknown, all species_code is spring run chinook
   mutate(date = as.Date(date)) %>% 
   glimpse()
 ```
@@ -105,26 +103,36 @@ cleaner_data %>%
 
 ### Variable:`section_cd`
 
-* A - Quartz Bowl Pool downstream to Whiskey Flat
-* B - Whiskey Flat downstream to Helltown Bridge
-* C - Helltown Bridge downstream to Quail Run Bridge
-* 'COV-OKIE' - Centerville Covered Brdige to Okie Dam
-* D - Quail Run Bridge downstream to Cable Bridge
-* E - Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream to Centerville Covered Bridge
-
 ```{r}
-table(cleaner_data$section_cd)
+butte_section_code <- c('A','B','C','COV-OKIE','D', 'E')
+names(butte_section_code) <-c(
+  "Quartz Bowl Pool downstream to Whiskey Flat",
+  "Whiskey Flat downstream to Helltown Bridge",
+  "Helltown Bridge downstream to Quail Run Bridge",
+  "Centerville Covered Brdige to Okie Dam",
+  "Quail Run Bridge downstream to Cable Bridge",
+  "Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream to Centerville Covered Bridge"
+)
+
+tibble(code = butte_section_code,
+       definition = names(butte_section_code))
 ```
 
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$section_cd))/nrow(cleaner_data), 3)*100` % of values in the `section_cd` column are NA.
 
+### Variable: `disposition`
+```{r}
+cleaner_data$disposition <- tolower(cleaner_data$disposition)
+table(cleaner_data$disposition)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$disposition))/nrow(cleaner_data), 3)*100` % of values in the `disposition` column are NA.
+
 ### Variable:`way_pt`
 
-```{r}
-table(cleaner_data$way_pt)
-```
 ```{r}
 cleaner_data <- cleaner_data %>%
   mutate(way_pt = set_names(toupper(way_pt))) %>% 
@@ -141,10 +149,15 @@ table(cleaner_data$way_pt)
 
 *  `r round(sum(is.na(cleaner_data$way_pt))/nrow(cleaner_data), 3)*100` % of values in the `way_pt` column are NA.
 
+### Variable: `condition`
+```{r}
+cleaner_data$condition <- tolower(cleaner_data$condition)
+table(cleaner_data$condition)
+```
+
 ### Variable:`ad_fin_clip`
 
 ```{r}
-table(cleaner_data$ad_fin_clip)
 cleaner_data <- cleaner_data %>% 
   mutate(ad_fin_clip = tolower(ad_fin_clip),
          ad_fin_clip =  case_when(
@@ -185,8 +198,17 @@ cleaner_data %>%
   geom_point()+
   labs(title = "Total Daily Chops Count 2014 - 2021",
        x = 'Date',
-       y = 'Total Chop Count')
+       y = 'Daily Chop Count')
 ```
+```{r}
+cleaner_data %>% 
+  mutate(years = as.factor(year(date))) %>% 
+  ggplot(aes(x=chop_count, y = years))+
+  geom_boxplot()+
+  labs(title = "Chop Count Over the Years")+
+  theme_minimal()
+```
+2019 has a significant carcass collection than other years
 
 ```{r}
 summary(cleaner_data$chop_count)
@@ -205,13 +227,18 @@ summary(cleaner_data$chop_count)
 butte_chops <- cleaner_data %>% 
   glimpse()
 ```
+
+```{r}
+write_csv(butte_chops, "butte_carcass_chops.csv")
+```
+
 ```{r, eval = FALSE}
-f <- function(inputs, output) write_csv(input, file = output)
+f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(butte_chops,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/butte-creek-data/butte_chops.csv")
+           name = "adult-holding-redd-and-carcass-surveys/butte-creek-data/butte_carcass_chops.csv")
 ```
 
 

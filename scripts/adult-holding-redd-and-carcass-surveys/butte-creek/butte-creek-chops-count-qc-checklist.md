@@ -21,7 +21,8 @@ Nichols](mailto::Jessica.Nichols@Wildlife.ca.gov)
 **Additional Info:**  
 The carcass data came in 12 documents for each year. We identified the
 ‘SurveyChops’ and ‘SurveyIndividuals’ datasets as the documents with the
-most complete information and joined them for all of the years.
+most complete information and joined them for all of the years.This
+markdown runs the surveychops QC.
 
 ## Access Cloud Data
 
@@ -40,8 +41,8 @@ read_from_cloud <- function(year){
                bucket = gcs_get_global_bucket(),
                saveToDisk = paste0(year,"_raw_surveychops.xlsx"),
                overwrite = TRUE)
-  data <- readxl::read_excel(paste0(year,"_raw_surveychops.xlsx")) %>% 
-    glimpse()
+  data <- readxl::read_excel(paste0(year,"_raw_surveychops.xlsx"))
+  return(data)
 }
 
 open_files <- function(year){
@@ -51,8 +52,6 @@ open_files <- function(year){
 years <- c(2014, 2015, 2016, 2017, 2018, 2019, 2020)
 # years <- 2020
 raw_data <- purrr::map(years, read_from_cloud) %>%
-  reduce(bind_rows)
-raw_data <- purrr::map(years, open_files) %>% 
   reduce(bind_rows)
 write_csv(raw_data, "raw_chops_data.csv")
 ```
@@ -99,19 +98,21 @@ raw_chops_data <- read_csv("raw_chops_data.csv") %>% glimpse
 ``` r
 cleaner_data<- raw_chops_data %>%
   janitor::clean_names() %>%
-  select(-'week', -'year', -'location_cd', -'disposition', -'condition', -'size_class',
-         -'sex', - 'species_code', - 'survey') %>% #could extract week and year from date;all location is the same (upper_cd); all disposition is chopped', all condition decayed, all size class not recorded, all sex is not recorded or unknown, all species_code is spring run chinook
+  select(-'week', -'year', -'location_cd',  -'size_class',
+         -'sex', - 'species_code', - 'survey') %>% #could extract week and year from date;all location is the same (upper_cd);\all size class not recorded, all sex is not recorded or unknown, all species_code is spring run chinook
   mutate(date = as.Date(date)) %>% 
   glimpse()
 ```
 
     ## Rows: 917
-    ## Columns: 5
+    ## Columns: 7
     ## $ date        <date> 2014-09-23, 2014-09-23, 2014-09-23, 2014-09-23, 2014-09-2~
     ## $ section_cd  <chr> "A", "A", "A", "A", "B", "B", "B", "A", "A", "A", "A", "A"~
     ## $ way_pt      <chr> "A2", "A3", "A4", "A1", "B1", "B2", "B7", "A5", "A1", "A2"~
+    ## $ disposition <chr> "Chopped", "Chopped", "Chopped", "Chopped", "Chopped", "Ch~
     ## $ chop_count  <dbl> 2, 0, 2, 4, 1, 1, 1, 3, 7, 8, 5, 4, 19, 32, 19, 5, 6, 3, 4~
     ## $ ad_fin_clip <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unknown", "Un~
+    ## $ condition   <chr> "Decayed", "Decayed", "Decayed", "Decayed", "Decayed", "De~
 
 ## Explore `date`
 
@@ -133,53 +134,55 @@ cleaner_data %>%
   select_if(is.character) %>% colnames()
 ```
 
-    ## [1] "section_cd"  "way_pt"      "ad_fin_clip"
+    ## [1] "section_cd"  "way_pt"      "disposition" "ad_fin_clip" "condition"
 
 ### Variable:`section_cd`
 
--   A - Quartz Bowl Pool downstream to Whiskey Flat
--   B - Whiskey Flat downstream to Helltown Bridge
--   C - Helltown Bridge downstream to Quail Run Bridge
--   ‘COV-OKIE’ - Centerville Covered Brdige to Okie Dam
--   D - Quail Run Bridge downstream to Cable Bridge
--   E - Cable Bridge downstream ot Centerville; sdf Cable Bridge
-    downstream to Centerville Covered Bridge
-
 ``` r
-table(cleaner_data$section_cd)
+butte_section_code <- c('A','B','C','COV-OKIE','D', 'E')
+names(butte_section_code) <-c(
+  "Quartz Bowl Pool downstream to Whiskey Flat",
+  "Whiskey Flat downstream to Helltown Bridge",
+  "Helltown Bridge downstream to Quail Run Bridge",
+  "Centerville Covered Brdige to Okie Dam",
+  "Quail Run Bridge downstream to Cable Bridge",
+  "Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream to Centerville Covered Bridge"
+)
+
+tibble(code = butte_section_code,
+       definition = names(butte_section_code))
 ```
 
-    ## 
-    ##        A        B        C COV-OKIE        D        E 
-    ##      130      176      303       31      166      111
+    ## # A tibble: 6 x 2
+    ##   code     definition                                                           
+    ##   <chr>    <chr>                                                                
+    ## 1 A        Quartz Bowl Pool downstream to Whiskey Flat                          
+    ## 2 B        Whiskey Flat downstream to Helltown Bridge                           
+    ## 3 C        Helltown Bridge downstream to Quail Run Bridge                       
+    ## 4 COV-OKIE Centerville Covered Brdige to Okie Dam                               
+    ## 5 D        Quail Run Bridge downstream to Cable Bridge                          
+    ## 6 E        Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream ~
 
 **NA and Unknown Values**
 
 -   0 % of values in the `section_cd` column are NA.
 
-### Variable:`way_pt`
+### Variable: `disposition`
 
 ``` r
-table(cleaner_data$way_pt)
+cleaner_data$disposition <- tolower(cleaner_data$disposition)
+table(cleaner_data$disposition)
 ```
 
     ## 
-    ##        A1        A2        A3        A4        A5       B-P        B1        B2 
-    ##        28        29        22        26        21         4        22        21 
-    ##        B3        B4        B5        B6        B7        B8   bck-pwr   Bck-Pwr 
-    ##        18        14        25        26        26        24         1         1 
-    ##   BCK-PWR    BLK-PL       C-B        C1       C10       C11       C12        C2 
-    ##         2         1         4        27        21        25        26        28 
-    ##        C3        C4        C5        C6        c7        C7        C8        C9 
-    ##        23        21        25        28         1        27        25        26 
-    ##       CO1   Cov-Bck   Cov-BCK   COV-BCK   COV-BLK  COV-Okie  COV-OKIE cover-ptr 
-    ##         1         1         1         1         1         1         1         1 
-    ##        D1        D2        D3        D4        D5        D6        D7        D8 
-    ##        20        26        28        26        18        17        17        14 
-    ##        E1        E2        E3        E4        E5        E6        E7       N/A 
-    ##        18        15        18        16        13        16        15         1 
-    ##       N/R       P-O    ph-pwl  pwl-okie  PWL-OKIE   PWR-OKI 
-    ##         1         4         1         1         1         1
+    ## chopped 
+    ##     917
+
+**NA and Unknown Values**
+
+-   0 % of values in the `disposition` column are NA.
+
+### Variable:`way_pt`
 
 ``` r
 cleaner_data <- cleaner_data %>%
@@ -213,15 +216,18 @@ table(cleaner_data$way_pt)
 
 -   0.7 % of values in the `way_pt` column are NA.
 
-### Variable:`ad_fin_clip`
+### Variable: `condition`
 
 ``` r
-table(cleaner_data$ad_fin_clip)
+cleaner_data$condition <- tolower(cleaner_data$condition)
+table(cleaner_data$condition)
 ```
 
     ## 
-    ##      No Unknown     Yes 
-    ##     406     510       1
+    ## decayed 
+    ##     917
+
+### Variable:`ad_fin_clip`
 
 ``` r
 cleaner_data <- cleaner_data %>% 
@@ -270,10 +276,22 @@ cleaner_data %>%
   geom_point()+
   labs(title = "Total Daily Chops Count 2014 - 2021",
        x = 'Date',
-       y = 'Total Chop Count')
+       y = 'Daily Chop Count')
 ```
 
-![](butte-creek-chops-count-qc-checklist_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](butte-creek-chops-count-qc-checklist_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  mutate(years = as.factor(year(date))) %>% 
+  ggplot(aes(x=chop_count, y = years))+
+  geom_boxplot()+
+  labs(title = "Chop Count Over the Years")+
+  theme_minimal()
+```
+
+![](butte-creek-chops-count-qc-checklist_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+2019 has a significant carcass collection than other years
 
 ``` r
 summary(cleaner_data$chop_count)
@@ -298,18 +316,24 @@ butte_chops <- cleaner_data %>%
 ```
 
     ## Rows: 917
-    ## Columns: 5
+    ## Columns: 7
     ## $ date        <date> 2014-09-23, 2014-09-23, 2014-09-23, 2014-09-23, 2014-09-2~
     ## $ section_cd  <chr> "A", "A", "A", "A", "B", "B", "B", "A", "A", "A", "A", "A"~
     ## $ way_pt      <chr> "A2", "A3", "A4", "A1", "B1", "B2", "B7", "A5", "A1", "A2"~
+    ## $ disposition <chr> "chopped", "chopped", "chopped", "chopped", "chopped", "ch~
     ## $ chop_count  <dbl> 2, 0, 2, 4, 1, 1, 1, 3, 7, 8, 5, 4, 19, 32, 19, 5, 6, 3, 4~
     ## $ ad_fin_clip <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ condition   <chr> "decayed", "decayed", "decayed", "decayed", "decayed", "de~
 
 ``` r
-f <- function(inputs, output) write_csv(input, file = output)
+write_csv(butte_chops, "butte_carcass_chops.csv")
+```
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(butte_chops,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/butte-creek-data/butte_chops.csv")
+           name = "adult-holding-redd-and-carcass-surveys/butte-creek-data/butte_carcass_chops.csv")
 ```

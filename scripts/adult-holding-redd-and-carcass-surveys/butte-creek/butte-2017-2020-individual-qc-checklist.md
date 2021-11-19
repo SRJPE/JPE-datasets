@@ -69,8 +69,6 @@ year <- 2019
 read_from_cloud(year)
 raw_2019_data <- readxl::read_excel("2019_raw_surveyindividuals.xlsx")
 write_csv(raw_2019_data, "2019_raw_surveyindividuals.csv")
-# combined_data <- bind_rows(raw_earlier_data, raw_later_data)
-# write_csv(combined_data, "combined_data.csv")
 ```
 
 Read in data from google cloud, glimpse raw data and domain description
@@ -167,24 +165,26 @@ Transformed 2019 data to join it to the 2017-2020 data.
 ``` r
 cleaner_data<- raw_later_individuals_data %>%
   janitor::clean_names() %>%
-  rename('fork_length_cm' = 'f_lcm',
+  rename('fork_length_mm' = 'f_lmm',
          'condition' = 'condition_cd',
          'spawning_status' = 'spawned_cd') %>% 
-  select(-c('week', 'year', 'f_lmm','location_cd', 'species_code','disposition','other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd', 'dn_anu', 'head_nu')) %>% #all location the same,all spring run chinook, all tagged, all no ad fin clip, no data for the rest of the dropped columns
+  select(-c('week', 'year', 'f_lcm','location_cd', 'species_code','other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd', 'dn_anu', 'head_nu')) %>% #all location the same,all spring run chinook,  all no ad fin clip, no data for the rest of the dropped columns
   mutate(date = as.Date(date),
-         scale_nu = as.character(scale_nu)) %>% #scale_nu is identifier
+         scale_nu = as.character(scale_nu),
+         survey = as.character(survey)) %>% #scale_nu is identifier
   glimpse()
 ```
 
     ## Rows: 565
-    ## Columns: 14
-    ## $ survey           <dbl> 110002, 110002, 110002, 110002, 110002, 110002, 11000~
+    ## Columns: 15
+    ## $ survey           <chr> "110002", "110002", "110002", "110002", "110002", "11~
     ## $ date             <date> 2017-09-26, 2017-09-26, 2017-09-26, 2017-10-03, 2017~
     ## $ section_cd       <chr> "A", "A", "A", "A", "A", "A", "A", "B", "B", "C", "C"~
     ## $ way_pt           <chr> "A1", "A5", "A5", "A2", "A2", "A3", "A5", "B3", "B8",~
+    ## $ disposition      <chr> "Tagged", "Tagged", "Tagged", "Tagged", "Tagged", "Ta~
     ## $ disc_tag_applied <dbl> 2980, 2983, 2977, 2731, 2732, 2733, 2734, 2757, 2758,~
     ## $ sex              <chr> "F", "M", "M", "F", "F", "F", "M", "M", "M", "M", "F"~
-    ## $ fork_length_cm   <dbl> 90.0, 52.7, 87.8, 57.0, 55.5, 76.0, 96.0, 85.3, 52.8,~
+    ## $ fork_length_mm   <dbl> 900, 527, 878, 570, 555, 760, 960, 853, 528, 760, 790~
     ## $ condition        <chr> "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F"~
     ## $ spawning_status  <chr> "N", "n/r", "n/r", "N", "N", "N", "Unk", "Unk", "Unk"~
     ## $ ad_fin_clip_cd   <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"~
@@ -196,7 +196,8 @@ cleaner_data<- raw_later_individuals_data %>%
 ``` r
 cleaner_2019_data<- raw_2019_individuals_data %>%
   janitor::clean_names() %>% 
-  select(-c('head_nu','scale_nu','tissue_nu', 'dn_anu', 'otolith_nu','comments', 'other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd')) %>% 
+  mutate(fork_length_mm = f_lcm*10) %>% 
+  select(-c('head_nu','scale_nu','f_lcm','tissue_nu', 'dn_anu', 'otolith_nu','comments', 'other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd')) %>% 
   glimpse()
 ```
 
@@ -205,10 +206,10 @@ cleaner_2019_data<- raw_2019_individuals_data %>%
     ## $ way_pt           <chr> "B4", "B7", "B7", "B8", "B8", "B8", "C1", "C2", "C2",~
     ## $ disc_tag_applied <dbl> 2305, 1345, 1371, 2651, 2316, 2606, 1365, 2422, 2208,~
     ## $ sex              <chr> "F", "F", "F", "M", "F", "F", "F", "F", "F", "F", "F"~
-    ## $ f_lcm            <dbl> 71.3, 75.0, 70.0, 85.0, 64.3, 68.2, 80.0, 73.7, 72.5,~
     ## $ condition_cd     <chr> "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F"~
     ## $ spawned_cd       <chr> "N", "N", "N", "n/r", "N", "P", "P", "P", "N", "N", "~
     ## $ ad_fin_clip_cd   <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"~
+    ## $ fork_length_mm   <dbl> 713, 750, 700, 850, 643, 682, 800, 737, 725, 825, 670~
 
 Bind 2019 data to the whole data frame
 
@@ -238,27 +239,47 @@ cleaner_data %>%
   select_if(is.character) %>% colnames()
 ```
 
-    ##  [1] "section_cd"      "way_pt"          "sex"             "condition"      
-    ##  [5] "spawning_status" "ad_fin_clip_cd"  "scale_nu"        "tissue_nu"      
-    ##  [9] "otolith_nu"      "comments"        "condition_cd"    "spawned_cd"
+    ##  [1] "survey"          "section_cd"      "way_pt"          "disposition"    
+    ##  [5] "sex"             "condition"       "spawning_status" "ad_fin_clip_cd" 
+    ##  [9] "scale_nu"        "tissue_nu"       "otolith_nu"      "comments"       
+    ## [13] "condition_cd"    "spawned_cd"
+
+### Variable: `survey`
+
+There are 4 unique individual survey numbers.
+
+**NA and Unknown Values**
+
+-   47.2 % of values in the `survey` column are NA.
 
 ### Variable:`section_cd`
 
--   A - Quartz Bowl Pool downstream to Whiskey Flat
--   B - Whiskey Flat downstream to Helltown Bridge
--   C - Helltown Bridge downstream to Quail Run Bridge
--   ‘COV-OKIE’ - Centerville Covered Brdige to Okie Dam
--   D - Quail Run Bridge downstream to Cable Bridge
--   E - Cable Bridge downstream ot Centerville; sdf Cable Bridge
-    downstream to Centerville Covered Bridge
+\*\* Create look up rda for section encoding:\*\*
 
 ``` r
-table(cleaner_data$section_cd)
+butte_section_code <- c('A','B','C','COV-OKIE','D', 'E')
+names(butte_section_code) <-c(
+  "Quartz Bowl Pool downstream to Whiskey Flat",
+  "Whiskey Flat downstream to Helltown Bridge",
+  "Helltown Bridge downstream to Quail Run Bridge",
+  "Centerville Covered Brdige to Okie Dam",
+  "Quail Run Bridge downstream to Cable Bridge",
+  "Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream to Centerville Covered Bridge"
+)
+
+tibble(code = butte_section_code,
+       definition = names(butte_section_code))
 ```
 
-    ## 
-    ##        A        B        C COV-OKIE        D        E 
-    ##       87      180      197        9       75       17
+    ## # A tibble: 6 x 2
+    ##   code     definition                                                           
+    ##   <chr>    <chr>                                                                
+    ## 1 A        Quartz Bowl Pool downstream to Whiskey Flat                          
+    ## 2 B        Whiskey Flat downstream to Helltown Bridge                           
+    ## 3 C        Helltown Bridge downstream to Quail Run Bridge                       
+    ## 4 COV-OKIE Centerville Covered Brdige to Okie Dam                               
+    ## 5 D        Quail Run Bridge downstream to Cable Bridge                          
+    ## 6 E        Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream ~
 
 **NA and Unknown Values**
 
@@ -268,39 +289,64 @@ table(cleaner_data$section_cd)
 
 ``` r
 cleaner_data <- cleaner_data %>%
-  mutate(way_pt = set_names(toupper(way_pt)))
+  mutate(way_pt = toupper(way_pt),
+         way_pt = case_when(
+           way_pt == "COVER-OKIE" ~ "COV-OKIE",
+           way_pt == "N/R" ~ NA_character_,
+           way_pt == "NR" ~ NA_character_,
+           TRUE ~ as.character(way_pt)    
+  ))
 table(cleaner_data$way_pt)
 ```
 
     ## 
-    ##         A1         A2         A3         A4         A5         B1         B2 
-    ##         18         22         24         21         16         13          9 
-    ##         B3         B4         B5         B6         B7         B8     BCK-PL 
-    ##          7          8         27         49         81         74         17 
-    ##    BCK-PWR         C1        C10        C11        C12         C2         C3 
-    ##          7         52         10         11         34         45         27 
-    ##         C4         C5         C6         C7         C8         C9    COV-BCK 
-    ##         38         43         45         36         30         23         20 
-    ##   COV-OKIE COVER-OKIE         D1         D2         D3         D4         D5 
-    ##         11          1         24         51         35         19          9 
-    ##         D6         D7         D8         E1         E2         E3         E4 
-    ##         14         14          4         12         13         11          9 
-    ##         E5         E6         E7        N/R         NR 
-    ##          8          8         10         10          1
+    ##       A1       A2       A3       A4       A5       B1       B2       B3 
+    ##       18       22       24       21       16       13        9        7 
+    ##       B4       B5       B6       B7       B8   BCK-PL  BCK-PWR       C1 
+    ##        8       27       49       81       74       17        7       52 
+    ##      C10      C11      C12       C2       C3       C4       C5       C6 
+    ##       10       11       34       45       27       38       43       45 
+    ##       C7       C8       C9  COV-BCK COV-OKIE       D1       D2       D3 
+    ##       36       30       23       20       12       24       51       35 
+    ##       D4       D5       D6       D7       D8       E1       E2       E3 
+    ##       19        9       14       14        4       12       13       11 
+    ##       E4       E5       E6       E7 
+    ##        9        8        8       10
 
 **NA and Unknown Values**
 
--   0 % of values in the `way_pt` column are NA.
+-   1 % of values in the `way_pt` column are NA.
+
+### Variable: `disposition`
+
+``` r
+cleaner_data$disposition <- tolower(cleaner_data$disposition)
+table(cleaner_data$disposition)
+```
+
+    ## 
+    ## tagged 
+    ##    565
+
+**NA and Unknown Values**
+
+-   47.2 % of values in the `disposition` column are NA.
 
 ### Variable:`sex`
 
 ``` r
+cleaner_data<- cleaner_data %>% 
+  mutate(sex = tolower(sex),
+         sex = case_when(
+           sex == "f" ~ "female",
+           sex == "m"~ "male"
+         ))
 table(cleaner_data$sex)
 ```
 
     ## 
-    ##   F   M 
-    ## 630 441
+    ## female   male 
+    ##    630    441
 
 **NA and Unknown Values**
 
@@ -353,6 +399,20 @@ table(cleaner_data$spawning_status)
 **NA and Unknown Values**
 
 -   70.8 % of values in the `spawning_status` column are NA.
+
+### Variable: `ad_fin_clip_cd`
+
+``` r
+cleaner_data <- cleaner_data %>% 
+  mutate(ad_fin_clip_cd = 
+           case_when(ad_fin_clip_cd == "N" ~ FALSE,
+                     ad_fin_clip_cd == "Y" ~ TRUE))
+table(cleaner_data$ad_fin_clip_cd)
+```
+
+    ## 
+    ## FALSE  TRUE 
+    ##  1064     7
 
 ### Variable: `scale_nu`
 
@@ -416,15 +476,7 @@ cleaner_data %>%
   select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "survey"           "disc_tag_applied" "fork_length_cm"   "f_lcm"
-
-### Variable: `survey`
-
-There are 4 unique individual survey numbers.
-
-**NA and Unknown Values**
-
--   47.2 % of values in the `survey` column are NA.
+    ## [1] "disc_tag_applied" "fork_length_mm"
 
 ### Variable:`disc_tag_applied`
 
@@ -439,7 +491,7 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](butte-2017-2020-individual-qc-checklist_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](butte-2017-2020-individual-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$disc_tag_applied)
@@ -452,13 +504,13 @@ summary(cleaner_data$disc_tag_applied)
 
 -   0.1 % of values in the `disc_tag_applied` column are NA.
 
-### Variable:`fork_length_cm`
+### Variable:`fork_length_mm`
 
 ``` r
 cleaner_data %>% 
   # mutate(years = as.factor(year(date))) %>%
-  filter(fork_length_cm < 200) %>%  #filter out one large value for better view of distribution
-  ggplot(aes(x = fork_length_cm))+
+  filter(fork_length_mm < 2000) %>%  #filter out one large value for better view of distribution
+  ggplot(aes(x = fork_length_mm))+
   geom_histogram(bin = 10)+
   labs(title = "Distribution of Fork Length")+
   theme_minimal()
@@ -466,23 +518,24 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](butte-2017-2020-individual-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](butte-2017-2020-individual-qc-checklist_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
-summary(cleaner_data$fork_length_cm)
+summary(cleaner_data$fork_length_mm)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   42.00   67.50   73.00   73.03   79.50  101.00     506
+    ##   260.0   674.0   720.0   722.9   775.0  1010.0       2
 
 **NA and Unknown Values**
 
--   47.2 % of values in the `fork_length_cm` column are NA.
+-   0.2 % of values in the `fork_length_mm` column are NA.
 
 ## Issues Identified
 
 -   Need description and look up table for the majority of the data
 -   Some outliers for disc tag applied
+-   Are these the appropriate variables?
 
 ## Add cleaned data back to google cloud
 
@@ -492,32 +545,32 @@ butte_individual_survey_2017_2020 <- cleaner_data %>% glimpse()
 
     ## Rows: 1,071
     ## Columns: 17
-    ## $ survey           <dbl> 110002, 110002, 110002, 110002, 110002, 110002, 11000~
+    ## $ survey           <chr> "110002", "110002", "110002", "110002", "110002", "11~
     ## $ date             <date> 2017-09-26, 2017-09-26, 2017-09-26, 2017-10-03, 2017~
     ## $ section_cd       <chr> "A", "A", "A", "A", "A", "A", "A", "B", "B", "C", "C"~
     ## $ way_pt           <chr> "A1", "A5", "A5", "A2", "A2", "A3", "A5", "B3", "B8",~
+    ## $ disposition      <chr> "tagged", "tagged", "tagged", "tagged", "tagged", "ta~
     ## $ disc_tag_applied <dbl> 2980, 2983, 2977, 2731, 2732, 2733, 2734, 2757, 2758,~
-    ## $ sex              <chr> "F", "M", "M", "F", "F", "F", "M", "M", "M", "M", "F"~
-    ## $ fork_length_cm   <dbl> 90.0, 52.7, 87.8, 57.0, 55.5, 76.0, 96.0, 85.3, 52.8,~
+    ## $ sex              <chr> "female", "male", "male", "female", "female", "female~
+    ## $ fork_length_mm   <dbl> 900, 527, 878, 570, 555, 760, 960, 853, 528, 760, 790~
     ## $ condition        <chr> "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"~
     ## $ spawning_status  <chr> "no", NA, NA, "no", "no", "no", NA, NA, NA, NA, "no",~
-    ## $ ad_fin_clip_cd   <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"~
+    ## $ ad_fin_clip_cd   <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALS~
     ## $ scale_nu         <chr> "20607", "20610", "20609", "20703", "20661", "20660",~
     ## $ tissue_nu        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "2061~
     ## $ otolith_nu       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ comments         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ f_lcm            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ condition_cd     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ spawned_cd       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
 
 ``` r
-write_csv(butte_individual_survey_2017_2020, "butte-carcass-individual-survey-2017-2020.csv")
+write_csv(butte_individual_survey_2017_2020, "butte_carcass_2017-2020.csv")
 ```
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
-gcs_upload(butte_creek_rst,
+gcs_upload(butte_individual_survey_2017_2020,
            object_function = f,
            type = "csv",
-           name = "rst/butte-creek/data/butte-carcass-individual-survey-2017-2020.csv")
+           name = "adult-holding-redd-and-carcass-survey/butte-creek/data/butte_carcass_2017-2020.csv")
 ```

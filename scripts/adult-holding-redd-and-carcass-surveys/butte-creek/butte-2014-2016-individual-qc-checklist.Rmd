@@ -74,14 +74,7 @@ raw_earlier_data <- purrr::map(earlier_years, open_files) %>%
   reduce(bind_rows) %>% glimpse
 write_csv(raw_earlier_data, "raw_2014_to_2016_individuals_data.csv")
 
-later_years <- c(2017, 2018, 2020)
-purrr::map(later_years, read_from_cloud)
-raw_later_data <- purrr::map(later_years, open_files) %>%
-  reduce(bind_rows)
-write_csv(raw_later_data, "raw_2017_to_2020_individuals_data.csv")
 
-# combined_data <- bind_rows(raw_earlier_data, raw_later_data)
-# write_csv(combined_data, "combined_data.csv")
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet: 
@@ -99,13 +92,14 @@ raw_individuals_data <- read_csv("raw_2014_to_2016_individuals_data.csv")%>% gli
 cleaner_data<- raw_individuals_data %>%
   janitor::clean_names() %>%
   rename('location' = 'location_cd',
-         'fork_length_cm' = 'f_lcm',
+         'fork_length_mm' = 'f_lmm',
          'condition' = 'condition_cd',
          'spawning_status' = 'spawned_cd') %>% 
-  select(-c('week', 'year', 'f_lmm','location', 'species_code','disposition', 'ad_fin_clip_cd',
-         'other_marks', 'comments', 'cwt_status_id', 'cwt_status', 'cw_tcd', 'dn_anu', 'head_nu')) %>% #all location the same,all spring run chinook, all tagged, all no ad fin clip, no data for the rest of the dropped columns
+  select(-c('week', 'year', 'f_lcm','location', 'species_code',
+         'other_marks', 'cwt_status_id', 'cw_tcd', 'dn_anu', 'head_nu')) %>% #all location the same,all spring run chinook, all tagged, all no ad fin clip, no data for the rest of the dropped columns
   mutate(date = as.Date(date),
-         scale_nu = as.character(scale_nu)) %>% #scale_nu is identifier
+         scale_nu = as.character(scale_nu),
+         survey = as.character(survey)) %>% #scale_nu is identifier
   glimpse()
 ```
 
@@ -125,19 +119,33 @@ summary(cleaner_data$date)
 cleaner_data %>% 
   select_if(is.character) %>% colnames()
 ```
+### Variable: `survey`
+
+There are `r length(unique(cleaner_data$survey))` unique individual survey numbers.
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$survey))/nrow(cleaner_data), 3)*100` % of values in the `survey` column are NA.
 
 ### Variable:`section_cd`
 
-* A - Quartz Bowl Pool downstream to Whiskey Flat
-* B - Whiskey Flat downstream to Helltown Bridge
-* C - Helltown Bridge downstream to Quail Run Bridge
-* 'COV-OKIE' - Centerville Covered Brdige to Okie Dam
-* D - Quail Run Bridge downstream to Cable Bridge
-* E - Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream to Centerville Covered Bridge
+** Create look up rda for section encoding:**
 
 ```{r}
-table(cleaner_data$section_cd)
+butte_section_code <- c('A','B','C','COV-OKIE','D', 'E')
+names(butte_section_code) <-c(
+  "Quartz Bowl Pool downstream to Whiskey Flat",
+  "Whiskey Flat downstream to Helltown Bridge",
+  "Helltown Bridge downstream to Quail Run Bridge",
+  "Centerville Covered Brdige to Okie Dam",
+  "Quail Run Bridge downstream to Cable Bridge",
+  "Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream to Centerville Covered Bridge"
+)
+
+tibble(code = butte_section_code,
+       definition = names(butte_section_code))
 ```
+
 
 **NA and Unknown Values**  
 
@@ -148,18 +156,29 @@ table(cleaner_data$section_cd)
 ```{r}
 table(cleaner_data$way_pt)
 ```
-```{r}
-cleaner_data <- cleaner_data %>%
-  mutate(way_pt = set_names(toupper(way_pt)))
-table(cleaner_data$way_pt)
-```
+
 **NA and Unknown Values**  
 
 *  `r round(sum(is.na(cleaner_data$way_pt))/nrow(cleaner_data), 3)*100` % of values in the `way_pt` column are NA.
 
+### Variable: `disposition`
+```{r}
+cleaner_data$disposition <- tolower(cleaner_data$disposition)
+table(cleaner_data$disposition)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$disposition))/nrow(cleaner_data), 3)*100` % of values in the `disposition` column are NA.
 
 ### Variable:`sex`
 ```{r}
+cleaner_data<- cleaner_data %>% 
+  mutate(sex = tolower(sex),
+         sex = case_when(
+           sex == "f" ~ "female",
+           sex == "m"~ "male"
+         ))
 table(cleaner_data$sex)
 ```
 **NA and Unknown Values**  
@@ -205,6 +224,17 @@ table(cleaner_data$spawning_status)
 
 *  `r round(sum(is.na(cleaner_data$spawning_status))/nrow(cleaner_data), 3)*100` % of values in the `spawning_status` column are NA.
 
+### Variable: `ad_fin_clip_cd`
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(ad_fin_clip_cd =
+           case_when(ad_fin_clip_cd == "N" ~ FALSE))
+table(cleaner_data$ad_fin_clip_cd)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$ad_fin_clip_cd))/nrow(cleaner_data), 3)*100` % of values in the `ad_fin_clip_cd` column are NA.
+
 ### Variable: `scale_nu`
 
 ```{r}
@@ -241,19 +271,23 @@ There are `r length(unique(cleaner_data$otolith_nu))` unique individual otolith 
 
 *  `r round(sum(is.na(cleaner_data$otolith_nu))/nrow(cleaner_data), 3)*100` % of values in the `otolith_nu` column are NA.
 
+### Variable:`comments`
+```{r}
+unique(cleaner_data$comments)[1:5]
+```
+No coomments marked in data from 2014 - 2016.
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$comments))/nrow(cleaner_data), 3)*100` % of values in the `comments` column are NA.
+
 ## Explore Numerical Variables
 
 ```{r}
 cleaner_data %>% 
   select_if(is.numeric) %>% colnames()
 ```
-### Variable: `survey`
 
-There are `r length(unique(cleaner_data$survey))` unique individual survey numbers.
-
-**NA and Unknown Values**  
-
-*  `r round(sum(is.na(cleaner_data$survey))/nrow(cleaner_data), 3)*100` % of values in the `survey` column are NA.
 
 ### Variable:`disc_tag_applied`
 
@@ -264,6 +298,7 @@ cleaner_data %>%
   labs(title = "Distribution of Disc Tag Applied")+
   theme_minimal()
 ```
+Disc-tag seems to be separated into 0-1000 and 2000-3000.
 
 ```{r}
 summary(cleaner_data$disc_tag_applied)
@@ -272,24 +307,24 @@ summary(cleaner_data$disc_tag_applied)
 
 *  `r round(sum(is.na(cleaner_data$disc_tag_applied))/nrow(cleaner_data), 3)*100` % of values in the `disc_tag_applied` column are NA.
 
-### Variable:`fork_length_cm`
+### Variable:`fork_length_mm`
 
 ```{r}
 cleaner_data %>% 
   # mutate(years = as.factor(year(date))) %>%
-  filter(fork_length_cm < 200) %>%  #filter out one large value for better view of distribution
-  ggplot(aes(x = fork_length_cm))+
+  filter(fork_length_mm < 2000) %>%  #filter out one large value for better view of distribution
+  ggplot(aes(x = fork_length_mm))+
   geom_histogram(bin = 10)+
   labs(title = "Distribution of Fork Length")+
   theme_minimal()
 ```
 
 ```{r}
-summary(cleaner_data$fork_length_cm)
+summary(cleaner_data$fork_length_mm)
 ```
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$fork_length_cm))/nrow(cleaner_data), 3)*100` % of values in the `fork_length_cm` column are NA.
+*  `r round(sum(is.na(cleaner_data$fork_length_mm))/nrow(cleaner_data), 3)*100` % of values in the `fork_length_mm` column are NA.
 
 ## Issues Identified
 
@@ -303,14 +338,14 @@ butte_individual_survey_2014_2016 <- cleaner_data %>% glimpse()
 ```
 
 ```{r}
-write_csv(butte_individual_survey_2014_2016, "butte-carcass-individual-survey-2014-2016.csv")
+write_csv(butte_individual_survey_2014_2016, "butte_carcass_2014-2016.csv")
 ```
 
 
 ```{r, eval= FALSE}
 f <- function(input, output) write_csv(input, file = output)
-gcs_upload(butte_creek_rst,
+gcs_upload(butte_individual_survey_2014_2016,
            object_function = f,
            type = "csv",
-           name = "rst/butte-creek/data/butte-carcass-individual-survey-2014-2016.csv")
+           name = "adult-holding-redd-and-carcass-survey/butte-creek/data/butte_carcass_2014-2016.csv")
 ```
