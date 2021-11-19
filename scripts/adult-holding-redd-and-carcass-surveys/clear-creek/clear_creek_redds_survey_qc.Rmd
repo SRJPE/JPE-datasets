@@ -242,7 +242,7 @@ table(cleaner_data$redd_substrate_size)
 
 ### Variable: `tail_redd_substrate_size`
 
-**Description:** Dominant substrate size in teh tailspill (excavated material behind the pit)
+**Description:** Dominant substrate size in the tailspill (excavated material behind the pit)
 
 ```{r}
 table(cleaner_data$tail_substrate_size)
@@ -375,6 +375,7 @@ Note longitude has 1 decimal place, and latitude has 2 decimal places - not very
 ### Variable: `survey`
 
 There are `r length(unique(cleaner_data$survey))` unique survey numbers. 
+
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$survey))/nrow(cleaner_data), 3) * 100` % of values in the `survey` column are NA.
@@ -391,7 +392,9 @@ cleaner_data %>%
   theme(text = element_text(size = 12)) +
   labs(title = "River Mile Over The Years")
 ```
+
 Seems like more redds were observed in the first 3 miles after 2012
+
 ```{r}
 cleaner_data %>% 
   ggplot(aes(x=river_mile))+
@@ -490,7 +493,7 @@ summary(cleaner_data$redd_tail_depth)
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$redd_tail_depth)/nrow(cleaner_data), 3) * 100` % of values in the `redd_tail_depth` column are NA.
+* `r round(sum(is.na(cleaner_data$redd_tail_depth))/nrow(cleaner_data), 3) * 100` % of values in the `redd_tail_depth` column are NA.
 
 ### Variable: `redd_length_in`
 
@@ -507,10 +510,9 @@ cleaner_data %>%
 ```{r}
 summary(cleaner_data$redd_length_in)
 ```
-
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$redd_length_in)/nrow(cleaner_data), 3) * 100` % of values in the `redd_length_in` column are NA.
+* `r round(sum(is.na(cleaner_data$redd_length_in))/nrow(cleaner_data), 3) * 100` % of values in the `redd_length_in` column are NA.
 
 ### Variable: `redd_width_in`
 
@@ -535,9 +537,10 @@ cleaner_data %>%
 ```{r}
 summary(cleaner_data$redd_width_in)
 ```
+
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$redd_width_in)/nrow(cleaner_data), 3) * 100` % of values in the `redd_width_in` column are NA.
+* `r round(sum(is.na(cleaner_data$redd_width_in))/nrow(cleaner_data), 3) * 100` % of values in the `redd_width_in` column are NA.
 
 ### Variable: `velocity`
 
@@ -556,43 +559,40 @@ summary(cleaner_data$velocity)
 ```
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$redd_velocity)/nrow(cleaner_data), 3) * 100` % of values in the `velocity` column are NA.
+* `r round(sum(is.na(cleaner_data$redd_velocity))/nrow(cleaner_data), 3) * 100` % of values in the `velocity` column are NA.
 
-### Variable: `start_60`
+### Variable:`start_60`,`end_60`
 
-**Description:** starting values on the mechanical flow meter at 60% depth
+**Description:** starting, ending values on the mechanical flow meter at 60% depth
 
 ```{r}
-cleaner_data %>% 
+start <- cleaner_data %>% 
   ggplot(aes(x = start_60))+
   geom_histogram()+
-  labs(title = "start 60 Distribution")+
+  labs(title = "Start 60 Distribution")+
   theme_minimal()
-```
-```{r}
-summary(cleaner_data$start_60)
-```
-**NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$start_60)/nrow(cleaner_data), 3) * 100` % of values in the `start_60` column are NA.
-
-### Variable:`end_60`
-
-**Description:** ending values on the mechanical flow meter at 60% depth
-
-```{r}
-cleaner_data %>% 
+end <- cleaner_data %>% 
   ggplot(aes(x = end_60))+
   geom_histogram()+
   labs(title = "End 60 Distribution")+
   theme_minimal()
+
+gridExtra::grid.arrange(start, end)
 ```
+
+```{r}
+summary(cleaner_data$start_60)
+```
+
 ```{r}
 summary(cleaner_data$end_60)
 ```
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$end_60)/nrow(cleaner_data), 3) * 100` % of values in the `end_60` column are NA.
+* `r round(sum(is.na(cleaner_data$start_60))/nrow(cleaner_data), 3) * 100` % of values in the `start_60` column are NA.
+
+* `r round(sum(is.na(cleaner_data$end_60))/nrow(cleaner_data), 3) * 100` % of values in the `end_60` column are NA.
 
 ### Variable: `sec_60`
 
@@ -610,4 +610,91 @@ summary(cleaner_data$sec_60)
   
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$sec_60)/nrow(cleaner_data), 3) * 100` % of values in the `sec_60` column are NA.
+* `r round(sum(is.na(cleaner_data$sec_60))/nrow(cleaner_data), 3) * 100` % of values in the `sec_60` column are NA.
+
+### Variable: `start_80`, `end_80`
+
+**Description:** Starting, end values on the mechanical flow meter at 80/20% depth
+
+```{r}
+start80 <- cleaner_data %>% 
+  ggplot(aes(x = start_80))+
+  geom_histogram()+
+  labs(title = "Start 80 Distribution")+
+  theme_minimal()
+
+end80 <- cleaner_data %>% 
+  ggplot(aes(x = end_80))+
+  geom_histogram()+
+  labs(title = "End 80 Distribution")+
+  theme_minimal()
+
+
+gridExtra::grid.arrange(start80, end80)
+```
+
+```{r}
+summary(cleaner_data$start_80)
+```
+
+```{r}
+summary(cleaner_data$end_80)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$start_80))/nrow(cleaner_data), 3) * 100` % of values in the `start_80` column are NA.
+
+* `r round(sum(is.na(cleaner_data$end_80))/nrow(cleaner_data), 3) * 100` % of values in the `end_80` column are NA.
+
+### Variable: `secs_80`
+
+**Description:**Time the meter was in the water at the 80/20% depth.
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = secs_80))+
+  geom_histogram(bin =10)+
+  labs(title = "Sec 80 Distribution")+
+  theme_minimal()
+```
+```{r}
+summary(cleaner_data$secs_80)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$secs_80))/nrow(cleaner_data), 3) * 100` % of values in the `secs_80` column are NA.
+
+### Variable: `bomb_vel60`, `bomb_vel80`
+
+**`bomb_vel60` Description:** Mean water column velocity measured at 60 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007). 
+
+**`bomb_vel80` Description:** Mean water column velocity measured at 80/20% percent depth from the water surface if the redd depth is ≥ 30 inches from the water surface (Allan and Castillo 2007). 
+
+```{r}
+v60 <- cleaner_data %>% 
+  ggplot(aes(x = bomb_vel60))+
+  geom_histogram()+
+  labs(title = "Velocity at 60 Percent Depth Distribution")+
+  theme_minimal()
+
+v80 <- cleaner_data %>% 
+  ggplot(aes(x = bomb_vel80))+
+  geom_histogram()+
+  labs(title = "Velocity at 80/20 Percent Depth Distribution")+
+  theme_minimal()
+
+
+gridExtra::grid.arrange(v60, v80)
+```
+
+```{r}
+summary(cleaner_data$bomb_vel60)
+```
+```{r}
+summary(cleaner_data$bomb_vel80)
+```
+
+Note: 0 velocity at 60 percent depth is NA? 
+There's significant more measurement of redd measurement <30 inches from water.
+

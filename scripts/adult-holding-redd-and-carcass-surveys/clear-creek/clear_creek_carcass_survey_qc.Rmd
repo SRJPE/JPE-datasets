@@ -20,7 +20,7 @@ library (RColorBrewer)
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon redd index data from 2000 to 2019, spring-run Chinook Salmon escapent index surveys from 2008 to 2019, and spring-run Chinook Salmon carcasses retrieved on redd and escapement index surveys from 2008 to 2019 on Clear Creek. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
+These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.This data encompass spring-run Chinook Salmon carcasses retrieved on redd and escapement index surveys from 2008 to 2019 on Clear Creek. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
 
 
 **Timeframe:** 2008 - 2019
@@ -56,3 +56,256 @@ Read in data from google cloud, glimpse raw data sheet:
  
 raw_carcass_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Carcass") %>% glimpse()
 ```
+```{r}
+cleaner_data <- raw_carcass_data %>% 
+  janitor::clean_names() %>% 
+  select(-c('survey','qc_type','qc_date','inspector','year', 'year_id')) %>% 
+  rename('longitude' = 'point_x',
+         'latitude' = 'point_y',
+         'condition' = 'condit',
+         'why_gender_unknown' = 'why_gender',
+         'head_retrieved' = 'head_tak',
+         'spawn_status' = 'spawn_st',
+         'brood_year' = 'by') %>% 
+  mutate(date = as.Date(date),
+         fork_len = as.numeric(fork_len)) %>% 
+  glimpse()
+```
+
+## Explore date
+
+```{r}
+summary(cleaner_data$date)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3) * 100` % of values in the `date` column are NA.
+
+## Explore Categorical Data
+
+```{r}
+cleaner_data %>% select_if(is.character) %>% colnames()
+```
+### Variable: `type`
+
+**Description:** Survey Type (Kayak, Rotary Screw Trap, CCVS, Etc.)
+
+Note: what is psam and ccvs?
+
+```{r}
+cleaner_data$type <- tolower(cleaner_data$type)
+table(cleaner_data$type)
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$survey))/nrow(cleaner_data), 3) * 100` % of values in the `survey` column are NA.
+
+
+### Variable: `reach`
+
+**Description:** Reach surveyed on each survey day
+
+```{r}
+table(cleaner_data$reach)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$reach))/nrow(cleaner_data), 3) * 100` % of values in the `reach`` column are NA.
+
+### Variable: `obs_only`
+```{r}
+
+cleaner_data <- cleaner_data %>%
+  mutate(obs_only = tolower(obs_only),
+         obs_only = case_when(
+           obs_only == "no" ~ FALSE,
+           obs_only == "yes" ~ TRUE
+         ))
+table(cleaner_data$obs_only)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$obs_only))/nrow(cleaner_data), 3) * 100` % of values in the `obs_only` column are NA.
+
+### Variable: `species`
+
+**Description:** Species of carcasses
+
+Filter for chinook only
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(species = tolower(species)) %>% 
+  filter(species == "chinook")
+table(cleaner_data$species)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3) * 100` % of values in the `species` column are NA.
+
+### Variable: `adipose`
+
+**Description:** Indicates the presence or absence of an adipose fin
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(adipose = tolower(adipose),
+         adipose = ifelse(adipose == "unknown", NA_character_, adipose))
+table(cleaner_data$adipose)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$adipose))/nrow(cleaner_data), 3) * 100` % of values in the `adipose` column are NA.
+
+### Variable: `condition`
+
+**Description:** fresh or not fresh
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(condition = tolower(condition),
+         condition = ifelse(condition == "unknown", NA_character_, condition))
+table(cleaner_data$condition)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$condition))/nrow(cleaner_data), 3) * 100` % of values in the `condition` column are NA.
+
+
+### Variable: `tis_eth`
+
+**Description:** Tissue for ethanol storage? Yes or No
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(tis_eth = tolower(tis_eth))
+table(cleaner_data$tis_eth)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$tis_eth))/nrow(cleaner_data), 3) * 100` % of values in the `tis_eth` column are NA.
+
+### Variable: `tis_dry`
+
+**Description:** Dry tissue sample? Yes or No
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(tis_dry = tolower(tis_dry))
+table(cleaner_data$tis_dry)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$tis_dry))/nrow(cleaner_data), 3) * 100` % of values in the `tis_dry` column are NA.
+
+### Variable: `scale`
+
+**Description:** Scales collected? Yes or No
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(scale = tolower(scale),
+         scale = case_when(
+           scale == "no" ~ FALSE,
+           scale == "yes" ~ TRUE
+         ))
+table(cleaner_data$scale)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$scale))/nrow(cleaner_data), 3) * 100` % of values in the `scale` column are NA.
+
+### Variable: `otolith_st`
+
+**Description:** Otoliths collected? Yes or No
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(otolith_st = tolower(otolith_st),
+         otolith_st = case_when(
+           otolith_st == "no" ~ FALSE,
+           otolith_st == "yes" ~ TRUE
+         ))
+table(cleaner_data$otolith_st)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$otolith_st))/nrow(cleaner_data), 3) * 100` % of values in the `otolith_st` column are NA.
+
+### Variable: `gender`
+
+**Description:** sex of carcass
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(gender = tolower(gender),
+         gender = ifelse(gender == "unknown", NA_character_, gender))
+table(cleaner_data$gender)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$gender))/nrow(cleaner_data), 3) * 100` % of values in the `gender` column are NA.
+
+### Variable: `why_gender_unknown`
+
+**Description:** Indicates why sex is unknown
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(why_gender_unknown = tolower(why_gender_unknown))
+table(cleaner_data$why_gender_unknown)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$why_gender_unknown))/nrow(cleaner_data), 3) * 100` % of values in the `why_gender_unknown` column are NA.
+
+### Variable: `spawn_status`
+
+**Description:** Spawning status (spawned, unspawned, unknown)
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(spawn_status = tolower(spawn_status),
+         spawn_status = ifelse(spawn_status == "unknown", NA_character_, spawn_status))
+table(cleaner_data$spawn_status)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$spawn_status))/nrow(cleaner_data), 3) * 100` % of values in the `spawn_status` column are NA.
+
+### Variable: `why_not_sp`
+TODO
+**Description:** If unspawned, why unspawned (Predation, etc)
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(why_not_sp = tolower(why_not_sp),
+         why_not_sp = ifelse(why_not_sp == "unknown", NA_character_, why_not_sp))
+table(cleaner_data$why_not_sp)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$spawn_status))/nrow(cleaner_data), 3) * 100` % of values in the `spawn_status` column are NA.
+
+### Variable: `head_retrieved`
+
+**Description:** Indicates if head was retreived for coded wire tag extraction
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(head_retrieved = tolower(head_retrieved),
+         head_retrieved = case_when(
+           head_retrieved == "no" ~ FALSE,
+           head_retrieved == "yes" ~ TRUE
+         ))
+table(cleaner_data$head_retrieved)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$head_retrieved))/nrow(cleaner_data), 3) * 100` % of values in the `head_retrieved` column are NA.

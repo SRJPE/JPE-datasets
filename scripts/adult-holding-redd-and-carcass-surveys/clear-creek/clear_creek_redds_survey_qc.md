@@ -12850,7 +12850,7 @@ raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet 
 ``` r
 cleaner_data <- raw_redds_data %>% 
   janitor::clean_names() %>%
-  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff',)) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
+  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'survey' = 'survey_8',
@@ -12878,7 +12878,7 @@ cleaner_data <- raw_redds_data %>%
 ```
 
     ## Rows: 1,540
-    ## Columns: 72
+    ## Columns: 70
     ## $ method                  <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel", "S~
     ## $ longitude               <dbl> -122.5404, -122.5404, -122.5381, -122.5338, -1~
     ## $ latitude                <dbl> 40.58156, 40.58160, 40.57883, 40.57394, 40.562~
@@ -12909,8 +12909,6 @@ cleaner_data <- raw_redds_data %>%
     ## $ redd_length_in          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ redd_width_in           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ velocity                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ flow_devic              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ bomb_id                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ start_60                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ end_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ sec_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
@@ -12979,8 +12977,8 @@ cleaner_data %>% select_if(is.character) %>% colnames()
     ## [11] "redd_substrate_size"     "tail_substrate_size"    
     ## [13] "fish_on_redd"            "measured"               
     ## [15] "why_not_measured"        "date_measured"          
-    ## [17] "bomb_id"                 "comments"               
-    ## [19] "run"                     "observation_reach"
+    ## [17] "comments"                "run"                    
+    ## [19] "observation_reach"
 
 ### Variable: `method`
 
@@ -13182,7 +13180,7 @@ table(cleaner_data$redd_substrate_size)
 
 ### Variable: `tail_redd_substrate_size`
 
-**Description:** Dominant substrate size in teh tailspill (excavated
+**Description:** Dominant substrate size in the tailspill (excavated
 material behind the pit)
 
 ``` r
@@ -13310,3 +13308,463 @@ table(cleaner_data$why_not_measured)
 **NA and Unknown Values**
 
 -   97.9 % of values in the `why_not_measured` column are NA.
+
+### Variable: `comments`
+
+**Description:**
+
+``` r
+unique(cleaner_data$comments)[1:10]
+```
+
+    ##  [1] "NEED CAMP 16.2"                      "NEED TEMP LOGGER 15.86"             
+    ##  [3] "BOTTOM OF 2 BOULDER POOL 15.34"      "SWEETHEART POOL14.46"               
+    ##  [5] "SPAWNING RIFFLE AFTER SQUEEZE 14.72" "BETWEEN BRIDGE AND PIPELINE 10.49"  
+    ##  [7] "ABOVE SHOOTING GALLERY"              NA                                   
+    ##  [9] "END OF DINO POOL"                    "WINTER RUN"
+
+**NA and Unknown Values**
+
+-   76.1 % of values in the `comments` column are NA.
+
+### Variable: `run`
+
+**Description:** run call based on field data
+
+We are interested only in spring run TODO
+
+``` r
+cleaner_data<-cleaner_data %>% 
+  mutate(run = tolower(run),
+         run = if_else(run == "late-fall", "fall", run))
+table(cleaner_data$run)
+```
+
+    ## 
+    ##   fall spring 
+    ##      4    145
+
+**NA and Unknown Values**
+
+-   90 % of values in the `run` column are NA.
+
+### Variable: `observation_reach`
+
+**Description:** Reach of observation
+
+``` r
+table(cleaner_data$observation_reach)
+```
+
+    ## 
+    ##  R1  R2  R3  R4  R5 R5A R5B R5C  R6 R6A  R7 
+    ##  73  51  32  74   5  12  20  37  26   1   2
+
+## Explore Numerical Data
+
+``` r
+cleaner_data %>% select_if(is.numeric) %>% colnames()
+```
+
+    ##  [1] "longitude"            "latitude"             "survey"              
+    ##  [4] "river_mile"           "x1000ftbreak"         "picket_weir_location"
+    ##  [7] "age"                  "redd_pit_depth"       "redd_tail_depth"     
+    ## [10] "redd_length_in"       "redd_width_in"        "velocity"            
+    ## [13] "start_60"             "end_60"               "sec_60"              
+    ## [16] "start_80"             "end_80"               "secs_80"             
+    ## [19] "bomb_vel60"           "bomb_vel80"           "survey_2_age"        
+    ## [22] "survey_3_age"         "survey_4_age"         "survey_5_age"        
+    ## [25] "survey_6_age"         "survey_7_age"         "survey_8_age"        
+    ## [28] "survey_9_age"         "age_1"                "age_2"               
+    ## [31] "age_3"                "age_4"                "age_5"               
+    ## [34] "age_6"                "age_7"                "age_8"               
+    ## [37] "age_9"                "observation_age"      "survey_observed"
+
+### Variable: `longitude`, `latitude`
+
+``` r
+summary(cleaner_data$longitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  -122.6  -122.5  -122.5  -122.5  -122.5  -122.4       1
+
+``` r
+summary(cleaner_data$latitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   40.49   40.49   40.51   40.52   40.56   40.60       1
+
+Note longitude has 1 decimal place, and latitude has 2 decimal places -
+not very exact.
+
+**NA and Unknown Values**
+
+-   0.1 % of values in the `longitude` column are NA.
+
+-   0.1 % of values in the `latitude` column are NA.
+
+### Variable: `survey`
+
+There are 15 unique survey numbers. **NA and Unknown Values**
+
+-   9.8 % of values in the `survey` column are NA.
+
+### Variable: `river_mile`
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = river_mile, y =as.factor(year(date)))) +
+  geom_point(size = 1, alpha = .5, color = "blue") + 
+  labs(x = "River Mile", 
+       y = "Date") +
+  theme_minimal() + 
+  theme(text = element_text(size = 12)) +
+  labs(title = "River Mile Over The Years")
+```
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+Seems like more redds were observed in the first 3 miles after 2012
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x=river_mile))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "River Mile Distribution")
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 1 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$river_mile)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  0.1043  7.5349 10.1249 10.8583 14.5715 18.3081       1
+
+**NA and Unknown Values**
+
+-   0.1 % of values in the `river_mile` column are NA.
+
+### Variable: 1000ftbreak?
+
+### Variable: `picket_weir_location`
+
+**Description:** Annual picket weir location
+
+TODO: need description for what locations the numbers represent
+
+There are 2 unique picket weir locations.
+
+``` r
+summary(cleaner_data$picket_weir_location)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   7.400   7.400   8.200   7.957   8.200   8.200
+
+**NA and Unknown Values**
+
+-   0 % of values in the `picket_weir_location` column are NA.
+
+### Variable: `age`
+
+``` r
+table(cleaner_data$age)
+```
+
+    ## 
+    ##   1   2   3   4   5 
+    ##  66 912  52   4   1
+
+**Create lookup rda for age encoding:**
+
+``` r
+#View description of domain for viewing condition
+
+cleaner_data_age <- 1:5
+names(cleaner_data_age) <- c(
+  "",
+  "Clearly visible and clean (clearly defined pit and tail-spill and no periphyton or fines)",
+  "Less visible with minor tail-spill flattening (pit and tail-spill still defined, periphyton growth, invertebrate presence)",
+  "Barely visible with shallow pit and flattened tail-spill (periphyton growth, invertebrates)",
+  "Pit and tail-spill indistinguishable from the surrounding substrate"
+)
+
+tibble(age = cleaner_data_age,
+       definitions = names(cleaner_data_age))
+```
+
+    ## # A tibble: 5 x 2
+    ##     age definitions                                                             
+    ##   <int> <chr>                                                                   
+    ## 1     1 ""                                                                      
+    ## 2     2 "Clearly visible and clean (clearly defined pit and tail-spill and no p~
+    ## 3     3 "Less visible with minor tail-spill flattening (pit and tail-spill stil~
+    ## 4     4 "Barely visible with shallow pit and flattened tail-spill (periphyton g~
+    ## 5     5 "Pit and tail-spill indistinguishable from the surrounding substrate"
+
+**NA and Unknown Values**
+
+-   30.8 % of values in the `age` column are NA.
+
+### Variable: `redd_pit_depth`
+
+**Description:** Depth at the deepest part of the pit
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = redd_pit_depth))+
+  geom_histogram()+
+  labs(title = "Redd Pit Depth Distribution")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 837 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+
+**Numeric Summary of redd\_pit\_depth**
+
+``` r
+summary(cleaner_data$redd_pit_depth)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    6.00   19.00   24.00   27.34   32.00   95.00     837
+
+**NA and Unknown Values**
+
+-   56 % of values in the `redd_pit_depth` column are NA.
+
+### Variable: `redd_tail_depth`
+
+**Description:** Depth at the shallowest part of the tailspill
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = redd_tail_depth))+
+  geom_histogram()+
+  labs(title = "Redd Tail Depth Distribution")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 813 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$redd_tail_depth)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    3.00   10.00   15.00   18.03   22.00   84.00     813
+
+**NA and Unknown Values**
+
+-   54.4 % of values in the `redd_tail_depth` column are NA.
+
+### Variable: `redd_length_in`
+
+**Description:** Length of the longest part of the disturbed area,
+measured parallel to streamflow (in inches)
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = redd_length_in))+
+  geom_histogram()+
+  labs(title = "Redd Length Distribution")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 806 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$redd_length_in)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    25.0   121.0   170.0   173.4   216.0   440.0     806
+
+**NA and Unknown Values**
+
+-   53.9 % of values in the `redd_length_in` column are NA.
+
+### Variable: `redd_width_in`
+
+**Description: **Width of the widest part of the disturbed area,
+perpandicular to streamflow.
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = redd_width_in))+
+  geom_histogram()+
+  labs(title = "Redd width Distribution")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 807 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = redd_width_in, y=redd_length_in))+
+  geom_point(size = 0.8,color = 'red')+
+  labs(title = "Redd Width VS Redd Length")+
+  theme_minimal()
+```
+
+    ## Warning: Removed 808 rows containing missing values (geom_point).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$redd_width_in)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   17.00   67.00   90.00   98.76  116.00  360.00     807
+
+**NA and Unknown Values**
+
+-   54 % of values in the `redd_width_in` column are NA.
+
+### Variable: `velocity`
+
+**Description:** Mean water column velocity measured at 60 percent depth
+from the water surface or the average of the 60% depth and 80/20% depth,
+if the redd depth is ≥ 30 inches (Allan and Castillo 2007).
+
+Note: need to check unit.
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = velocity))+
+  geom_histogram()+
+  labs(title = "Velocity Distribution")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 979 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$velocity)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.252   1.699   2.263   2.320   2.877  11.058     979
+
+**NA and Unknown Values**
+
+-   0 % of values in the `velocity` column are NA.
+
+### Variable: `start_60`
+
+**Description:** starting values on the mechanical flow meter at 60%
+depth
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = start_60))+
+  geom_histogram()+
+  labs(title = "start 60 Distribution")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 967 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$start_60)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##       0  157950  369000  404666  635192  998000     967
+
+**NA and Unknown Values**
+
+-   64.7 % of values in the `start_60` column are NA.
+
+### Variable:`end_60`
+
+**Description:** ending values on the mechanical flow meter at 60% depth
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = end_60))+
+  geom_histogram()+
+  labs(title = "End 60 Distribution")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 967 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$end_60)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##       0  161905  370782  407139  637912 1000157     967
+
+**NA and Unknown Values**
+
+-   64.7 % of values in the `end_60` column are NA.
+
+### Variable: `sec_60`
+
+**Description:** time the meter was in the water
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = sec_60))+
+  geom_histogram()+
+  labs(title = "Sec 60 Distribution")+
+  theme_minimal()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 963 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-51-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$sec_60)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   20.00  100.00  100.00   98.55  100.00  180.00     963
+
+**NA and Unknown Values**
+
+-   64.4 % of values in the `sec_60` column are NA.
