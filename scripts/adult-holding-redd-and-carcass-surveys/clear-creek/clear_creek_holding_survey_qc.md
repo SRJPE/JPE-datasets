@@ -10,14 +10,11 @@ Inigo Peng
 These data were collected by the U.S. Fish and Wildlife Service’s, Red
 Bluff Fish and Wildlife Office’s, Clear Creek Monitoring Program.These
 data encompass spring-run Chinook Salmon redd index data from 2000 to
-2019, spring-run Chinook Salmon escapent index surveys from 2008 to
-2019, and spring-run Chinook Salmon carcasses retrieved on redd and
-escapement index surveys from 2008 to 2019 on Clear Creek. Data were
-collected on lower Clear Creek from Whiskeytown Dam located at river
-mile 18.1, (40.597786N latitude, -122.538791W longitude \[decimal
-degrees\]) to the Clear Creek Video Station located at river mile 0.0
-(40.504836N latitude, -122.369693W longitude \[decimal degrees\]) near
-the confluence with the Sacramento River.
+2019. Data were collected on lower Clear Creek from Whiskeytown Dam
+located at river mile 18.1, (40.597786N latitude, -122.538791W longitude
+\[decimal degrees\]) to the Clear Creek Video Station located at river
+mile 0.0 (40.504836N latitude, -122.369693W longitude \[decimal
+degrees\]) near the confluence with the Sacramento River.
 
 **Timeframe:** 2008 - 2019
 
