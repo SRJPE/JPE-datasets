@@ -95,6 +95,7 @@ cleaner_data <- raw_redds_data %>%
 Note:
 
 survey_(2-9)_age is described as "Age of redd based on age classification during survey (2-9)". Age(1-9) is also described as "age of redd based on age classification during survey (1-9)", These to variables seem to be redundant so we will drop survey_(2-9)_age for now until further review. The last 4 variables observation_reach, observation_date, observation_age, and survey_observed need further description. 
+
 ## Explore `date`
 
 ```{r}

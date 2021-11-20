@@ -63,12 +63,14 @@ cleaner_data <- raw_carcass_data %>%
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'condition' = 'condit',
-         'why_gender_unknown' = 'why_gender',
+         'sex' = 'gender',
+         'why_sex_unknown' = 'why_gender',
          'head_retrieved' = 'head_tak',
          'spawn_status' = 'spawn_st',
          'brood_year' = 'by') %>% 
   mutate(date = as.Date(date),
-         fork_len = as.numeric(fork_len)) %>% 
+         fork_len = as.numeric(fork_len),
+         age = as.numeric(age)) %>% 
   glimpse()
 ```
 
@@ -238,32 +240,32 @@ table(cleaner_data$otolith_st)
 
 * `r round(sum(is.na(cleaner_data$otolith_st))/nrow(cleaner_data), 3) * 100` % of values in the `otolith_st` column are NA.
 
-### Variable: `gender`
+### Variable: `sex`
 
 **Description:** sex of carcass
 ```{r}
 cleaner_data <- cleaner_data %>% 
-  mutate(gender = tolower(gender),
-         gender = ifelse(gender == "unknown", NA_character_, gender))
-table(cleaner_data$gender)
+  mutate(sex = tolower(sex),
+         sex = ifelse(sex == "unknown", NA_character_, sex))
+table(cleaner_data$sex)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$gender))/nrow(cleaner_data), 3) * 100` % of values in the `gender` column are NA.
+* `r round(sum(is.na(cleaner_data$sex))/nrow(cleaner_data), 3) * 100` % of values in the `sex` column are NA.
 
-### Variable: `why_gender_unknown`
+### Variable: `why_sex_unknown`
 
 **Description:** Indicates why sex is unknown
 ```{r}
 cleaner_data <- cleaner_data %>% 
-  mutate(why_gender_unknown = tolower(why_gender_unknown))
-table(cleaner_data$why_gender_unknown)
+  mutate(why_sex_unknown = tolower(why_sex_unknown))
+table(cleaner_data$why_sex_unknown)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$why_gender_unknown))/nrow(cleaner_data), 3) * 100` % of values in the `why_gender_unknown` column are NA.
+* `r round(sum(is.na(cleaner_data$why_sex_unknown))/nrow(cleaner_data), 3) * 100` % of values in the `why_sex_unknown` column are NA.
 
 ### Variable: `spawn_status`
 
@@ -285,7 +287,12 @@ TODO
 ```{r}
 cleaner_data <- cleaner_data %>% 
   mutate(why_not_sp = tolower(why_not_sp),
-         why_not_sp = ifelse(why_not_sp == "unknown", NA_character_, why_not_sp))
+         why_not_sp = case_when(
+           why_not_sp == "decomposition" ~ "decomposed",
+           why_not_sp == "unknown"| why_not_sp == "n/a"| why_not_sp == "na" ~ NA_character_,
+           why_not_sp == "male-always unknown" | why_not_sp == "males-always unk" ~ "male always unknown",
+           TRUE ~ as.character(why_not_sp)
+           ))
 table(cleaner_data$why_not_sp)
 ```
 
@@ -309,3 +316,161 @@ table(cleaner_data$head_retrieved)
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$head_retrieved))/nrow(cleaner_data), 3) * 100` % of values in the `head_retrieved` column are NA.
+
+### Variable: `tag_type`
+
+**Description:** Type of tag, if any present (Floy, external mark)
+
+```{r}
+cleaner_data<- cleaner_data %>% 
+  mutate(tag_type = tolower(tag_type),
+         tag_type = case_when(
+           tag_type == "floy, grey" ~ "floy grey",
+           tag_type == "floy, yellow, 309,310" ~ "floy yellow 309 310",
+           TRUE ~ as.character(tag_type)
+         )
+         )
+table(cleaner_data$tag_type)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$tag_type))/nrow(cleaner_data), 3) * 100` % of values in the `tag_type` column are NA.
+
+### Variable: `photo`
+
+**Description:** Photo taken of the carcass? 
+
+```{r}
+cleaner_data<- cleaner_data %>% 
+  mutate(photo = case_when(
+    photo == "No"| photo == "NO"| photo == "No picture" | photo == "Cant find" | photo == "missing picture" ~ "no",
+    photo == "YES" | photo == "Yes" ~ "yes",
+    TRUE ~ as.character(photo)
+    
+  ))
+table(cleaner_data$photo)
+```
+
+Note: what do the numbers stand for? Number of pictures?
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$photo))/nrow(cleaner_data), 3) * 100` % of values in the `photo` column are NA.
+
+### Variable: `comments`
+```{r}
+unique(cleaner_data$comments[1:5])
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$comments))/nrow(cleaner_data), 3) * 100` % of values in the `comments` column are NA.
+
+### Variable: `cwt_code`
+
+Note: what is "LT", "NTD"
+```{r}
+table(cleaner_data$cwt_code)
+```
+
+There are `r length(unique(cleaner_data$cwt_code))` unique coded wire tags.
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$cwt_code))/nrow(cleaner_data), 3) * 100` % of values in the `cwt_code` column are NA.
+
+### Variable: `run`
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(run = tolower(run),
+         run = case_when(
+           run == 'hybrid (5)' ~ 'hybrid',
+           TRUE ~ as.character(run)
+         ))
+table(cleaner_data$run)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$run))/nrow(cleaner_data), 3) * 100` % of values in the `run` column are NA.
+
+### Variable: `brood_year`
+
+```{r}
+table(cleaner_data$brood_year)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$brood_year))/nrow(cleaner_data), 3) * 100` % of values in the `brood_year` column are NA.
+
+### Variable: `release_location`
+
+**Description:** Where hatchery smolts were released
+
+Note: why is smolts location part of the data for carcass?
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(release_location = str_to_title(release_location),
+         release_location = case_when(
+           release_location == 'Sac R Lake Redding' ~ 'Sac R Lake Redding Park',
+           TRUE ~ as.character(release_location)
+         ))
+table(cleaner_data$release_location)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$release_location))/nrow(cleaner_data), 3) * 100` % of values in the `release_location` column are NA.
+
+### Variable: `hatchery`
+
+**Description:** Hatchery that produced the fish
+
+```{r}
+table(cleaner_data$hatchery)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$hatchery))/nrow(cleaner_data), 3) * 100` % of values in the `hatchery` column are NA.
+
+### Variable: `verification_and_cwt_comments`
+
+**Description:** CWT code and relevant information
+```{r}
+unique(cleaner_data$verification_and_cwt_comments)[1:5]
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$verification_and_cwt_comments))/nrow(cleaner_data), 3) * 100` % of values in the `verification_and_cwt_comments` column are NA.
+
+### Variable: `run_call`
+
+**Description:** Run call based on field data
+
+TODO: how is this different from run?
+
+```{r}
+table(cleaner_data$run_call)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$run_call))/nrow(cleaner_data), 3) * 100` % of values in the `run_call` column are NA.
+
+### Variable: `genetic`
+
+**Description:** Type of genetics taken
+```{r}
+cleaner_data$genetic <- tolower(cleaner_data$genetic)
+table(cleaner_data$genetic)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$genetic))/nrow(cleaner_data), 3) * 100` % of values in the `genetic` column are NA.
