@@ -13,7 +13,10 @@ access databases:
 1.  Historical data was provided in a “Escapement DBs FlowWest.zip” that
     contains:
 
--   **Carcass 2000.mdb** (Identified tables of interest)
+-   **Carcass 2000.mdb**
+
+    (Identified tables of interest)
+
     -   ChopEnvTBL (ChopEnvID, Week’s Tag Color, Date, Time Start, Time
         Stop, Crew, Recorder, Turbidity, Bottle Number, Weather Code,
         Comments, Week)
@@ -26,7 +29,9 @@ access databases:
         MultRecov)
     -   TagEnvTBL (Date, Recorder’s Initials, Week’s Tag Color,
         TagEnvID, Week)
+
 -   **Carcass 2001.mdb**
+
     -   ChopEnvTBL (ChopEnvID, Date, Time, Crew, Recorder, TagCol, Flow,
         Vis, Weather, Comment, WeekNum)
     -   ChopRecovTBL (Sect, Chan, Minute, Male, Fem, Gril, RecovID,
@@ -34,9 +39,14 @@ access databases:
     -   cwtTBL (cwtID, Date, Sect, FL, Sex, HTNum, EggRet, Comment)
     -   TagEnvTBL (Date, Crew, TagCol, Recorder, Flow, WeekNum,
         TagEnvID)
+
 -   **Carcass 2002.mdb**
+
     -   Even more tables in this one…
--   **Carcass 2003\_converted.accdb**
+
+-   **Carcass 2003\_converted.accdb**, **Carcass 2004.mdb** (consistant
+    tables for these two years)
+
     -   ChopChannelTBL (ChanID, Sect, Chan, Min, Male, Fem, Gril,
         TagCount, HeaderID)
     -   ChopHeaderTBL (headerID, TagCol, Date, Crew, Time, Recorder,
@@ -44,19 +54,73 @@ access databases:
     -   ChopRecovTBL (RecovID, RecovColor, RecovCount, ChanID)
     -   CWTHeaderTBL (headerID, Date, TagCol, Crew, WeekNum)
     -   CWTTagTBL (TagID, Sect, RelLoc, FL, Sex, Spawn, Clip, SampType,
-        CarcSta,t SampNum, HeadTag, Comment, HeaderID)
--   **Carcass 2004.mdb**
-    -   
+        CarcStat SampNum, HeadTag, Comment, HeaderID)
+
 -   **Carcass 2005.mdb**
+
+    -   2005 chops (headerID, TagCol, Date, WeekNum, Sect, ChopClip,
+        ChopNClip, ChopUncheck, TagClip, TagNClip, TagUnk)
+    -   2005\_carcass (ID, HallPrint1, HallPrint2, Date, Sex, Spawn,
+        TagID)
+    -   2005\_recaps (ID, Date, Fate, Location, Released, FishID,
+        FishID2, Field7, Field8, Field9, F10)
+    -   ChopChannelTBL1 (ChanID, Sect, Chan, Min, Male, Fem, Gril,
+        TagCount, ChopClip, ChopNClip, ChopUncheck, TagClip, TagNClip,
+        TagUnk, HeaderID)
+    -   ChopHeaderTBL (headerID, TagCol, Date, Crew, Time, Recorder,
+        Weather, Comment, WeekNum)
+    -   ChopRecovTBL (RecovID, RecovColor, RecovCount, ChanID)
+    -   CWTHeaderTBL (headerID, Date, TagCol, Crew, WeekNum)
+    -   CWTTagTBL (TagID, Sect, RelLoc, FL, Sex, Spawn, Clip, SampType,
+        CarcStat SampNum, HeadTag, Comment, HeaderID, HallPrint1,
+        HallPrint2)
+
 -   **Carcass 2006.mdb**
+
+    -   ChopChannelTBL1 (ChanID, Sect, Chan, Min, ChopClip, ChopNClip,
+        ChopUncheck, TagClip, TagNClip, TagUnk, HeaderID)
+    -   ChopHeaderTBL (headerID, TagCol, Date, Crew, Time, Recorder,
+        Weather, Comment, WeekNum)
+    -   ChopRecovTBL (RecovID, RecovColor, RecovCount, ChanID)
+    -   CWTHeaderTBL (headerID, Date, TagCol, Crew, WeekNum)
+    -   CWTTagTBL (TagID, Sect, RelLoc, FL, Sex, Spawn, Clip, SampType,
+        CarcStat SampNum, HeadTag, Comment, HeaderID, HallPrint1,
+        HallPrint2)
+
 -   **Carcass 2007.mdb**
+
+    -   ChopChannelTBL1 (ChanID, Sect, Chan, Min, ChopClip, ChopNClip,
+        ChopUncheck, TagClip, TagNClip, TagUnk, HeaderID)
+    -   ChopHallprintTBL (TagID, Sect, Sex, Spawn, Clip, HeadTag, FL,
+        CarcStat, HeaderID, HallPrint1, HallPrint2, Comment)
+    -   ChopHeaderTBL (headerID, TagCol, Date, Crew, Time, Recorder,
+        Weather, Comment, WeekNum)
+    -   ChopRecovTBL (RecovID, RecovColor, RecovCount, ChanID)
+    -   CWTHeaderTBL (headerID, Date, TagCol, Crew, WeekNum)
+    -   CWTTagTBL (TagID, Sect, RelLoc, FL, Sex, Spawn, Clip, SampType,
+        CarcStat SampNum, HeadTag, Comment, HeaderID, HallPrint1,
+        HallPrint2)
+
 -   **Carcass 2008.mdb**
+
+    -   ChopChannelTBL1 (ChanID, Sect, Chan, Min, HeaderID, Chops, Tags)
+    -   ChopHallprintTBL(TagID, Sect, Sex, Clip, HeadTag, FL, CarcStat,
+        HeaderID, HallPrint1, HallPrint2, Otolith\#, Scale)
+    -   ChopHeaderTBL (headerID, TagCol, Date, Crew, Time, Recorder,
+        Weather, Comment, WeekNum)
+
 -   **Carcass 2009.mdb**
+
 -   **Carcass 2010.mdb**
+
 -   **FINAL Carcass 20011.mdb**
+
 -   **FINAL Carcass 20013.mdb**
+
 -   **FINAL Carcass 20014.accdb**
+
 -   **FINAL Carcass 20015.accdb**
+
 -   **FINAL Carcass 20016.accdb**
 
 Each databse contains a lot of tables describing carcass surveys on the
