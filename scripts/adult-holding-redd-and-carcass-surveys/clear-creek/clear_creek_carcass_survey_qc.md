@@ -104,10 +104,13 @@ cleaner_data <- raw_carcass_data %>%
          'why_sex_unknown' = 'why_gender',
          'head_retrieved' = 'head_tak',
          'spawn_status' = 'spawn_st',
-         'brood_year' = 'by') %>% 
+         'brood_year' = 'by',
+         'fork_length' = 'fork_len') %>% 
   mutate(date = as.Date(date),
-         fork_len = as.numeric(fork_len),
-         age = as.numeric(age)) %>% 
+         fork_length = as.numeric(fork_length),
+         age = as.numeric(age),
+         brood_year = as.numeric(brood_year),
+         sample_id = as.character(sample_id)) %>% 
   glimpse()
 ```
 
@@ -122,10 +125,10 @@ cleaner_data <- raw_carcass_data %>%
     ## $ reach                         <chr> "R3", "R2", "R2", "R2", "R2", "R4", "R4"~
     ## $ river_mile                    <dbl> 10.968258, 15.600476, 14.922846, 15.2230~
     ## $ obs_only                      <chr> "NO", "NO", "NO", "YES", "YES", "NO", "N~
-    ## $ sample_id                     <dbl> 60024, 60008, 60009, 69000, 69001, 60010~
+    ## $ sample_id                     <chr> "60024", "60008", "60009", "69000", "690~
     ## $ species                       <chr> "Chinook", "Chinook", "Chinook", "Chinoo~
     ## $ adipose                       <chr> "PRESENT", "PRESENT", "PRESENT", "PRESEN~
-    ## $ fork_len                      <dbl> NA, 825, 665, NA, NA, 689, 770, 725, 712~
+    ## $ fork_length                   <dbl> NA, 825, 665, NA, NA, 689, 770, 725, 712~
     ## $ condition                     <chr> "UNKNOWN", "NON-FRESH", "NON-FRESH", "NO~
     ## $ tis_eth                       <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO SA~
     ## $ tis_dry                       <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO SA~
@@ -141,7 +144,7 @@ cleaner_data <- raw_carcass_data %>%
     ## $ comments                      <chr> "old placer bridge", NA, "Many undevelop~
     ## $ cwt_code                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ run                           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ brood_year                    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ brood_year                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ release_location              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ hatchery                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ age                           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
@@ -170,16 +173,16 @@ cleaner_data %>% select_if(is.character) %>% colnames()
 ```
 
     ##  [1] "type"                          "reach"                        
-    ##  [3] "obs_only"                      "species"                      
-    ##  [5] "adipose"                       "condition"                    
-    ##  [7] "tis_eth"                       "tis_dry"                      
-    ##  [9] "scale"                         "otolith_st"                   
-    ## [11] "sex"                           "why_sex_unknown"              
-    ## [13] "spawn_status"                  "why_not_sp"                   
-    ## [15] "head_retrieved"                "tag_type"                     
-    ## [17] "photo"                         "comments"                     
-    ## [19] "cwt_code"                      "run"                          
-    ## [21] "brood_year"                    "release_location"             
+    ##  [3] "obs_only"                      "sample_id"                    
+    ##  [5] "species"                       "adipose"                      
+    ##  [7] "condition"                     "tis_eth"                      
+    ##  [9] "tis_dry"                       "scale"                        
+    ## [11] "otolith_st"                    "sex"                          
+    ## [13] "why_sex_unknown"               "spawn_status"                 
+    ## [15] "why_not_sp"                    "head_retrieved"               
+    ## [17] "tag_type"                      "photo"                        
+    ## [19] "comments"                      "cwt_code"                     
+    ## [21] "run"                           "release_location"             
     ## [23] "hatchery"                      "verification_and_cwt_comments"
     ## [25] "run_call"                      "genetic"
 
@@ -590,20 +593,6 @@ table(cleaner_data$run)
 
 -   90 % of values in the `run` column are NA.
 
-### Variable: `brood_year`
-
-``` r
-table(cleaner_data$brood_year)
-```
-
-    ## 
-    ## 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 
-    ##    2    3    1    6    6    9   20    2    5    2
-
-**NA and Unknown Values**
-
--   90 % of values in the `brood_year` column are NA.
-
 ### Variable: `release_location`
 
 **Description:** Where hatchery smolts were released
@@ -677,6 +666,22 @@ unique(cleaner_data$verification_and_cwt_comments)[1:5]
 -   98.8 % of values in the `verification_and_cwt_comments` column are
     NA.
 
+### Variable: `sample_id`
+
+**Description:** Tissue sample identification number
+
+``` r
+unique(cleaner_data$sample_id)[1:5]
+```
+
+    ## [1] "60024" "60008" "60009" "69000" "69001"
+
+There are 260 unique sample IDs.
+
+**NA and Unknown Values**
+
+-   1.2 % of values in the `sample_id` column are NA.
+
 ### Variable: `run_call`
 
 **Description:** Run call based on field data
@@ -684,14 +689,17 @@ unique(cleaner_data$verification_and_cwt_comments)[1:5]
 TODO: how is this different from run?
 
 ``` r
+cleaner_data <- cleaner_data %>% 
+  mutate(run_call = tolower(run_call))
+  
 table(cleaner_data$run_call)
 ```
 
     ## 
-    ##          EITHER            Fall            FALL  Fall or spring Prespawn Spring 
-    ##               7              22              14               6               5 
-    ##          Sprall          spring          Spring          SPRING 
-    ##               7               1             102              16
+    ##          either            fall  fall or spring prespawn spring          sprall 
+    ##               7              36               6               5               7 
+    ##          spring 
+    ##             119
 
 **NA and Unknown Values**
 
@@ -713,3 +721,229 @@ table(cleaner_data$genetic)
 **NA and Unknown Values**
 
 -   88.6 % of values in the `genetic` column are NA.
+
+## Explore Numerical Data
+
+``` r
+cleaner_data %>% select_if(is.numeric) %>% colnames()
+```
+
+    ## [1] "longitude"   "latitude"    "river_mile"  "fork_length" "brood_year" 
+    ## [6] "age"         "mark_rate"
+
+### Variable: `longitude`, `latitude`
+
+``` r
+summary(cleaner_data$longitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  -122.6  -122.5  -122.5  -122.5  -122.5  -121.7       1
+
+``` r
+summary(cleaner_data$latitude)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   40.49   40.49   40.49   40.51   40.50   40.72       1
+
+**NA and Unknown Values**
+
+-   0.2 % of values in the `longitude` column are NA.
+
+-   0.2 % of values in the `latitude` column are NA.
+
+## Variable: `river_mile`
+
+``` r
+cleaner_data %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = river_mile, y = year))+
+  geom_point(alpha = 1.2, color = 'blue')+
+  labs(title = 'River Mile over the Years')+
+  theme_minimal()
+```
+
+    ## Warning: Removed 1 rows containing missing values (geom_point).
+
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$river_mile)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  0.1029  7.4829  8.1360  9.1373  9.4564 17.7193       1
+
+**NA and Unknown Values**
+
+-   0.2 % of values in the `river_mile` column are NA.
+
+### Variable: `brood_year`
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = brood_year))+
+  geom_histogram()+
+  theme_minimal()+
+  scale_x_continuous(breaks = pretty_breaks())+
+  labs(title = "Distribution of Brood Year")
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 505 rows containing non-finite values (stat_bin).
+
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$brood_year)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    2006    2010    2012    2011    2012    2015     505
+
+**NA and Unknown Values**
+
+-   90 % of values in the `brood_year` column are NA.
+
+### Variable: `fork_length`
+
+**Description:** Fork length of recovered carcasses
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x = fork_length))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "Distribution of Fork Length")
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 89 rows containing non-finite values (stat_bin).
+
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+
+**Numeric Summary of fork\_length**
+
+``` r
+summary(cleaner_data$fork_length)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   430.0   623.8   700.0   707.5   790.0  1040.0      89
+
+**NA and Unknown Values**
+
+-   15.9 % of values in the `fork_length` column are NA.
+
+### Variable: `age`
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x= age))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "Distribution of Age")
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 449 rows containing non-finite values (stat_bin).
+
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
+
+**Numeric Summary of Age**
+
+``` r
+summary(cleaner_data$age)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   2.000   2.000   3.000   2.759   3.000   4.000     449
+
+**NA and Unknown Values**
+
+-   80 % of values in the `age` column are NA.
+
+### Variable: `mark_rate`
+
+**Description:** Rate at which Hatchery Fish were marked
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x=mark_rate))+
+  geom_histogram(binwidth = 0.1)+
+  theme_minimal()+
+  labs(title = "Distribution of Mark Rate")
+```
+
+    ## Warning: Removed 549 rows containing non-finite values (stat_bin).
+
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
+
+``` r
+summary(cleaner_data$mark_rate)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##  0.2477  0.2489  0.6571  0.6237  0.9827  0.9967     549
+
+**NA and Unknown Values**
+
+-   97.9 % of values in the `mark_rate` column are NA.
+
+### Summary of Identified Issues
+
+### Save Cleaned data back to google cloud
+
+``` r
+clear_carcass <- cleaner_data %>% glimpse
+```
+
+    ## Rows: 561
+    ## Columns: 34
+    ## $ type                          <chr> "snorkel", "snorkel", "snorkel", "snorke~
+    ## $ date                          <date> 2008-09-10, 2008-09-23, 2008-09-23, 200~
+    ## $ longitude                     <dbl> -122.5247, -122.5339, -121.7493, -122.53~
+    ## $ latitude                      <dbl> 40.51367, 40.57413, 40.71537, 40.56912, ~
+    ## $ reach                         <chr> "R3", "R2", "R2", "R2", "R2", "R4", "R4"~
+    ## $ river_mile                    <dbl> 10.968258, 15.600476, 14.922846, 15.2230~
+    ## $ obs_only                      <lgl> FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, ~
+    ## $ sample_id                     <chr> "60024", "60008", "60009", "69000", "690~
+    ## $ species                       <chr> "chinook", "chinook", "chinook", "chinoo~
+    ## $ adipose                       <chr> "present", "present", "present", "presen~
+    ## $ fork_length                   <dbl> NA, 825, 665, NA, NA, 689, 770, 725, 712~
+    ## $ condition                     <chr> NA, "non-fresh", "non-fresh", "non-fresh~
+    ## $ tis_eth                       <chr> "fin", "fin", "fin", "no sample", "no sa~
+    ## $ tis_dry                       <chr> "fin", "fin", "fin", "no sample", "no sa~
+    ## $ scale                         <lgl> TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TR~
+    ## $ otolith_st                    <lgl> FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, T~
+    ## $ sex                           <chr> NA, "male", "female", NA, NA, "female", ~
+    ## $ why_sex_unknown               <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ spawn_status                  <chr> NA, NA, "partial", NA, NA, "spawned", NA~
+    ## $ why_not_sp                    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ head_retrieved                <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE~
+    ## $ tag_type                      <chr> "none", "none", "none", "none", "none", ~
+    ## $ photo                         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ comments                      <chr> "old placer bridge", NA, "Many undevelop~
+    ## $ cwt_code                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ run                           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ brood_year                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ release_location              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ hatchery                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ age                           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ mark_rate                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ verification_and_cwt_comments <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ run_call                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ genetic                       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+
+``` r
+# gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(clear_carcass,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_carcass.csv")
+```

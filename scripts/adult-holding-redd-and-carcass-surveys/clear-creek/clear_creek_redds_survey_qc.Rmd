@@ -759,3 +759,20 @@ summary(cleaner_data$observation_age)
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$observation_age))/nrow(cleaner_data), 3) * 100` % of values in the `observation_age` column are NA.
+
+### Summary of Identified Issues
+
+### Save Cleaned data back to google cloud
+```{r}
+clear_redd <- cleaner_data %>% glimpse
+```
+```{r, eval=FALSE}
+# gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(clear_redd
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_redd.csv")
+```
+
+

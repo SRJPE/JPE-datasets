@@ -67,10 +67,13 @@ cleaner_data <- raw_carcass_data %>%
          'why_sex_unknown' = 'why_gender',
          'head_retrieved' = 'head_tak',
          'spawn_status' = 'spawn_st',
-         'brood_year' = 'by') %>% 
+         'brood_year' = 'by',
+         'fork_length' = 'fork_len') %>% 
   mutate(date = as.Date(date),
-         fork_len = as.numeric(fork_len),
-         age = as.numeric(age)) %>% 
+         fork_length = as.numeric(fork_length),
+         age = as.numeric(age),
+         brood_year = as.numeric(brood_year),
+         sample_id = as.character(sample_id)) %>% 
   glimpse()
 ```
 
@@ -396,15 +399,6 @@ table(cleaner_data$run)
 
 * `r round(sum(is.na(cleaner_data$run))/nrow(cleaner_data), 3) * 100` % of values in the `run` column are NA.
 
-### Variable: `brood_year`
-
-```{r}
-table(cleaner_data$brood_year)
-```
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_data$brood_year))/nrow(cleaner_data), 3) * 100` % of values in the `brood_year` column are NA.
 
 ### Variable: `release_location`
 
@@ -449,6 +443,21 @@ unique(cleaner_data$verification_and_cwt_comments)[1:5]
 
 * `r round(sum(is.na(cleaner_data$verification_and_cwt_comments))/nrow(cleaner_data), 3) * 100` % of values in the `verification_and_cwt_comments` column are NA.
 
+### Variable: `sample_id`
+
+**Description:** Tissue sample identification number
+
+```{r}
+unique(cleaner_data$sample_id)[1:5]
+```
+
+There are `r length(unique(cleaner_data$sample_id))` unique sample IDs.
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$sample_id))/nrow(cleaner_data), 3) * 100` % of values in the `sample_id` column are NA.
+
+
 ### Variable: `run_call`
 
 **Description:** Run call based on field data
@@ -456,6 +465,9 @@ unique(cleaner_data$verification_and_cwt_comments)[1:5]
 TODO: how is this different from run?
 
 ```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(run_call = tolower(run_call))
+  
 table(cleaner_data$run_call)
 ```
 
@@ -474,3 +486,137 @@ table(cleaner_data$genetic)
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$genetic))/nrow(cleaner_data), 3) * 100` % of values in the `genetic` column are NA.
+
+## Explore Numerical Data
+
+```{r}
+cleaner_data %>% select_if(is.numeric) %>% colnames()
+```
+### Variable: `longitude`, `latitude`
+
+```{r}
+summary(cleaner_data$longitude)
+```
+
+```{r}
+summary(cleaner_data$latitude)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$longitude))/nrow(cleaner_data), 3) * 100` % of values in the `longitude` column are NA.
+
+* `r round(sum(is.na(cleaner_data$latitude))/nrow(cleaner_data), 3) * 100` % of values in the `latitude` column are NA.
+
+## Variable: `river_mile`
+
+```{r}
+cleaner_data %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = river_mile, y = year))+
+  geom_point(alpha = 1.2, color = 'blue')+
+  labs(title = 'River Mile over the Years')+
+  theme_minimal()
+```
+
+
+```{r}
+summary(cleaner_data$river_mile)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$river_mile))/nrow(cleaner_data), 3) * 100` % of values in the `river_mile` column are NA.
+
+### Variable: `brood_year`
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = brood_year))+
+  geom_histogram()+
+  theme_minimal()+
+  scale_x_continuous(breaks = pretty_breaks())+
+  labs(title = "Distribution of Brood Year")
+```
+```{r}
+summary(cleaner_data$brood_year)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$brood_year))/nrow(cleaner_data), 3) * 100` % of values in the `brood_year` column are NA.
+
+### Variable: `fork_length`
+
+**Description:** Fork length of recovered carcasses
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = fork_length))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "Distribution of Fork Length")
+```
+
+**Numeric Summary of fork_length**
+
+```{r}
+summary(cleaner_data$fork_length)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$fork_length))/nrow(cleaner_data), 3) * 100` % of values in the `fork_length` column are NA.
+
+### Variable: `age`
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x= age))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "Distribution of Age")
+```
+
+**Numeric Summary of Age**
+```{r}
+summary(cleaner_data$age)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$age))/nrow(cleaner_data), 3) * 100` % of values in the `age` column are NA.
+
+### Variable: `mark_rate`
+
+**Description:** Rate at which Hatchery Fish were marked
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x=mark_rate))+
+  geom_histogram(binwidth = 0.1)+
+  theme_minimal()+
+  labs(title = "Distribution of Mark Rate")
+```
+
+```{r}
+summary(cleaner_data$mark_rate)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$mark_rate))/nrow(cleaner_data), 3) * 100` % of values in the `mark_rate` column are NA.
+
+### Summary of Identified Issues
+
+### Save Cleaned data back to google cloud
+```{r}
+clear_carcass <- cleaner_data %>% glimpse
+```
+
+```{r, eval=FALSE}
+# gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(clear_carcass,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_carcass.csv")
+```

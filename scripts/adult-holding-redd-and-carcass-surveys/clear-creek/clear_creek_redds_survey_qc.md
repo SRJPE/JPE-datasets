@@ -162,7 +162,9 @@ of redd based on age classification during survey (1-9)”, These to
 variables seem to be redundant so we will drop survey*(2-9)\_age for now
 until further review. The last 4 variables observation\_reach,
 observation\_date, observation\_age, and survey\_observed need further
-description. \#\# Explore `date`
+description.
+
+## Explore `date`
 
 ``` r
 summary(cleaner_data$date)
@@ -1187,3 +1189,93 @@ summary(cleaner_data$observation_age)
 **NA and Unknown Values**
 
 -   77.7 % of values in the `observation_age` column are NA.
+
+### Summary of Identified Issues
+
+### Save Cleaned data back to google cloud
+
+``` r
+clear_redd <- cleaner_data %>% glimpse
+```
+
+    ## Rows: 1,495
+    ## Columns: 70
+    ## $ method                  <chr> "snorkel", "snorkel", "snorkel", "snorkel", "s~
+    ## $ longitude               <dbl> -122.5404, -122.5404, -122.5381, -122.5338, -1~
+    ## $ latitude                <dbl> 40.58156, 40.58160, 40.57883, 40.57394, 40.562~
+    ## $ survey                  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ river_mile              <dbl> 16.38723, 16.38717, 16.12547, 15.58567, 14.701~
+    ## $ x1000ftbreak            <dbl> 87000, 87000, 86000, 83000, 78000, 80000, 5700~
+    ## $ ucc_relate              <chr> "above", "above", "above", "above", "above", "~
+    ## $ picket_weir_location    <dbl> 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8~
+    ## $ picket_weir_relation    <chr> "above", "above", "above", "above", "above", "~
+    ## $ date                    <date> 2000-09-25, 2000-10-13, 2000-09-26, 2000-09-2~
+    ## $ surveyed_reach          <chr> "R1", "R1", "R2", "R2", "R2", "R2", "R4", "R4"~
+    ## $ redd_id                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ species                 <chr> "chinook", "chinook", "chinook", "chinook", "c~
+    ## $ age                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ redd_loc                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ gravel                  <chr> "native", "native", "native", "native", "nativ~
+    ## $ inj_site                <chr> "paige bar", "paige bar", "above need camp", "~
+    ## $ pre_redd_substrate_size <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ redd_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ tail_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ fish_on_redd            <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ measured                <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALS~
+    ## $ why_not_measured        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_measured           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ pre_redd_depth          <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ redd_pit_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ redd_tail_depth         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ redd_length_in          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ redd_width_in           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ velocity                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ start_60                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ end_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ sec_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ start_80                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ end_80                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ secs_80                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ bomb_vel60              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ bomb_vel80              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ comments                <chr> "NEED CAMP 16.2", "NEED CAMP 16.2", "NEED TEMP~
+    ## $ survey_2_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ survey_3_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ survey_4_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ survey_5_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ survey_6_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ survey_7_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ survey_8_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ survey_9_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_1                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ age_1                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_2                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ age_2                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_3                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ age_3                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_4                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ age_4                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_5                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ age_5                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_6                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ age_6                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_7                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ age_7                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_8                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ age_8                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ date_9                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ age_9                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ run                     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ observation_reach       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ observation_date        <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ observation_age         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ survey_observed         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+
+``` r
+# gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(clear_redd
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_redd.csv")
+```
