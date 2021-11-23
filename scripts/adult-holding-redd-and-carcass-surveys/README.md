@@ -6,7 +6,7 @@ This directory contains markdown documents exploring Adult holding, redd, and ca
 ### Data Available
 
 | Tributary | Monitoring Timeframe | Data Contact | Metadata Quality | Data Lag* | Provisional Data Available** | Notes | 
-| :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :----------- | :----------- | :--------------------- | 
+| :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :----------- | :----------- |
 | Battle Creek | 2001 - ongoing | [Natasha Wingerter](mailto:natasha_wingerter@fws.gov)  | Fair | 2 weeks | Unknown | All data stored together |
 | Butte Creek | Unknown | [Jessica Nichols](Jessica.Nichols@Wildlife.ca.gov) | Poor | Holding: 2 weeks Carcass: at the end of sampling season | TRUE | No redd survey
 | Clear Creek | 2013 - ongoing | [Ryan Shaefer](mailto:rayn_a_schaefer@fws.gov)  | Fair | 2 weeks | Unknown | All data stored together | 
@@ -16,6 +16,7 @@ This directory contains markdown documents exploring Adult holding, redd, and ca
 | Yuba River | 2004 - ongoing | [Mike Healey](mailto:Mike.Healey@wildlife.ca.gov) | Unknown | Unknown | FALSE? | Need to contact Army Corps Engineer for Redds Data  |
 
 *Data Lag refers to time from end of monitoring season until data is QA/QC and in a shareable format. 
+
 **Provisional Data Available states if raw data can be shared 1 week or less after date of collection.
  
 
