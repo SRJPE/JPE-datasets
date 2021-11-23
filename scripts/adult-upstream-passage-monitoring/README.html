@@ -167,19 +167,13 @@ pre code {
 </div>
 
 
-<div id="rotary-screw-trap-data-summary" class="section level1">
-<h1>Rotary Screw Trap Data Summary</h1>
-<p>This directory contains markdown documents exploring RST datasets for 8 tributaries.</p>
-<p>There are 3 main datatypes:</p>
-<ul>
-<li>RST Catch - raw catch data describing fish caught in RST</li>
-<li>RST Efficiency data - efficiency measures and environmental data describing RST conditions</li>
-<li>RST Passage Estimates - Calculated passage estimates based on efficiency of rst and raw catch</li>
-</ul>
-<p>For some tributaries these datatables are organized in separate datatables, other combine RST Catch and RST efficiency or environmental data into one datatable.</p>
+<div id="adult-upstream-passage-monitoring-data" class="section level1">
+<h1>Adult Upstream Passage Monitoring Data</h1>
+<p>This directory contains markdown documents exploring Adult Upstream Passage monitoring datasets for 7 tributaries. No upstream passage estimates on the Sacramento River. On the Feather River there is also no video data but there is tagging data that we could use to estimate counts, summer 2022 installing video monitoring system.</p>
+<p>Most datasets are video data, Battle Creek also has trap data. We have passage estimates for Clear Creek (in PDF report), Battle Creek, and the Yuba River (in PDF report).</p>
 <div id="data-available" class="section level3">
 <h3>Data Available</h3>
-<table>
+<table style="width:100%;">
 <colgroup>
 <col width="8%" />
 <col width="11%" />
@@ -188,7 +182,7 @@ pre code {
 <col width="10%" />
 <col width="10%" />
 <col width="10%" />
-<col width="8%" />
+<col width="10%" />
 <col width="18%" />
 </colgroup>
 <thead>
@@ -196,9 +190,9 @@ pre code {
 <th align="left">Tributary</th>
 <th align="left">Monitoring Timeframe</th>
 <th align="left">Data Contact</th>
-<th align="left">RST Count Data</th>
-<th align="left">RST Efficiency Data</th>
-<th align="left">RST Passage Estimates</th>
+<th align="left">Upstream Passage Raw Count Data</th>
+<th align="left">Upstream Passage Efficiency Data</th>
+<th align="left">Upstream Passage Passage Estimates</th>
 <th align="left">Passage Estimate Methodology</th>
 <th align="left">Passage Estimate Resolution</th>
 <th align="left">Notes</th>
@@ -207,102 +201,80 @@ pre code {
 <tbody>
 <tr class="odd">
 <td align="left">Battle Creek</td>
-<td align="left">2003 - 2021</td>
-<td align="left"><a href="mailto:mike_schraml@fws.gov">Mike Schraml</a></td>
+<td align="left">2001 - 2019</td>
+<td align="left"><a href="mailto:natasha_wingerter@fws.gov">Natasha Wingerter</a></td>
 <td align="left">TRUE</td>
 <td align="left">TRUE</td>
 <td align="left">Data Provided</td>
-<td align="left"><a href="https://github.com/FlowWest/JPE-datasets/blob/main/scripts/rst/battle-creek/Daily%20Passage.R">R script</a></td>
-<td align="left">daily</td>
+<td align="left">NA</td>
+<td align="left">weekly</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Butte Creek</td>
-<td align="left">1995 - 2015</td>
+<td align="left">Unknown</td>
 <td align="left"><a href="Jessica.Nichols@Wildlife.ca.gov">Jessica Nichols</a></td>
-<td align="left">TRUE</td>
-<td align="left">TRUE</td>
+<td align="left">FALSE</td>
+<td align="left">FALSE</td>
 <td align="left">FALSE</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
-<td align="left"></td>
+<td align="left">Monitoring occurs, data not yet acquired</td>
 </tr>
 <tr class="odd">
 <td align="left">Clear Creek</td>
-<td align="left">2003 - 2021</td>
-<td align="left"><a href="mailto:mike_schraml@fws.gov">Mike Schraml</a></td>
+<td align="left">2013-2020</td>
+<td align="left"><a href="mailto:samuel_provins@fws.gov">Sam Provins</a></td>
 <td align="left">TRUE</td>
 <td align="left">TRUE</td>
-<td align="left">Data Provided</td>
-<td align="left"><a href="https://github.com/FlowWest/JPE-datasets/blob/main/scripts/rst/battle-creek/Daily%20Passage.R">R script</a></td>
-<td align="left">daily</td>
+<td align="left"><a href="https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf">PDF Report</a></td>
+<td align="left">GAM model</td>
+<td align="left"></td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Deer Creek</td>
-<td align="left">1992 - 2010</td>
+<td align="left">2014 - 2020</td>
 <td align="left"><a href="mailto:Matt.Johnson@wildlife.ca.gov">Matt Johnson</a></td>
-<td align="left">TRUE</td>
-<td align="left">TRUE</td>
 <td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
 <td align="left">NA</td>
-<td align="left">NA</td>
-<td align="left">Not enough information to generate passage estimates</td>
+<td align="left">daily</td>
+<td align="left">Only passage estimates</td>
 </tr>
 <tr class="odd">
 <td align="left">Feather River</td>
-<td align="left">1997 - 2001</td>
-<td align="left"><a href="mailto:KHickey@psmfc.org">Kassie Hickey</a></td>
-<td align="left">TRUE</td>
-<td align="left">TRUE</td>
+<td align="left"></td>
+<td align="left"><a href></a></td>
+<td align="left">FALSE</td>
+<td align="left">FASE</td>
 <td align="left">FALSE</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Sac - Kinghts Landing</td>
-<td align="left">2002 - 2021</td>
-<td align="left"><a href="mailto:Jeanine.Phillips@wildlife.ca.gov">Jeanine Philips</a></td>
-<td align="left">TRUE</td>
-<td align="left">TRUE</td>
-<td align="left">PDF available</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="left"><a href="https://www.calfish.org/ProgramsData/ConservationandManagement/CentralValleyMonitoring/SacramentoValleyTributaryMonitoring/MiddleSacramentoRiverSalmonandSteelheadMonitoring.aspx">Annual Reports</a> with passage estimates, gives 95% CI</td>
-</tr>
-<tr class="odd">
-<td align="left">Sac - Tisdale</td>
-<td align="left">2010 - 2020</td>
-<td align="left"><a href="mailto:andrew.huneycutt@wildlife.ca.gov">Drew Huneycutt</a></td>
-<td align="left">TRUE</td>
-<td align="left">TRUE</td>
-<td align="left">?</td>
-<td align="left">Efficiency Correction</td>
-<td align="left">NA</td>
-<td align="left"></td>
+<td align="left">No video data just tagging data</td>
 </tr>
 <tr class="even">
 <td align="left">Mill Creek</td>
-<td align="left">1995 - 2010</td>
+<td align="left">2012 - 2020</td>
 <td align="left"><a href="mailto:Matt.Johnson@wildlife.ca.gov">Matt Johnson</a></td>
-<td align="left">TRUE</td>
-<td align="left">TRUE</td>
 <td align="left">FALSE</td>
+<td align="left">FALSE</td>
+<td align="left">TRUE</td>
 <td align="left">NA</td>
-<td align="left">NA</td>
-<td align="left">Not enough information to generate passage estimates</td>
+<td align="left">daily</td>
+<td align="left">Only passage estimates</td>
 </tr>
 <tr class="odd">
 <td align="left">Yuba River</td>
-<td align="left">2000 - 2009</td>
-<td align="left"><a href="mailto:Robyn.Bilski@Wildlife.ca.gov">Robyn Bilski</a></td>
+<td align="left">2004 - 2019</td>
+<td align="left"><a href="mailto:Mike.Healey@wildlife.ca.gov">Mike Healey</a></td>
 <td align="left">TRUE</td>
 <td align="left">TRUE</td>
-<td align="left">FALSE</td>
+<td align="left"><a href="https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring/yuba-river/data-raw/2020%20Update%20LYR%20Chinook%20Salmon%20Run%20Differentiation_December%202020.pdf">PDF Report</a></td>
 <td align="left">NA</td>
-<td align="left">NA</td>
-<td align="left"><a href="https://www.yubawater.org/Archive.aspx?AMID=45">Reports</a> describing 2 years of RST operation on the Yuba</td>
+<td align="left">daily?</td>
+<td align="left"></td>
 </tr>
 </tbody>
 </table>
