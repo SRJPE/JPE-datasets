@@ -13,12 +13,12 @@ There are 3 main datatypes associated with RST data:
 ### Data Available
 
 | Tributary | Monitoring Timeframe | Data Contact | Metadata Quality | Data Lag | Provisional Data Available | Notes | 
-| :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :----------- | :----------- | :--------------------- | 
+| :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :--------------------- | 
 | Battle Creek | 2003 - ongoing | [Mike Schraml](mailto:mike_schraml@fws.gov)  | Good | 6 months | TRUE | Provisional data may be available but will not be easy to get | 
 | Butte Creek | 1995 - 2015 | [Jessica Nichols](Jessica.Nichols@Wildlife.ca.gov) | Poor | One week | TRUE | Field crew uploads to CAMP daily, QC on a weekly basis, need to wait until end of season for escapement values |
 | Clear Creek | 2003 - ongoing | [Mike Schraml](mailto:mike_schraml@fws.gov)  | Good | 3 months | TRUE | Provisional data may be available but will not be easy to get |
 | Deer Creek | 1992 - 2010; proposed | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Poor | NA | NA | Currently only historical data; proposed program that will be similar to Clear and Battle |
-| Feather River | 1997 - 2001 | [Kassie Hickey](mailto:KHickey@psmfc.org) | Fair | 3 months | TRUE | |
+| Feather River | 1997 - ongoing | [Kassie Hickey](mailto:KHickey@psmfc.org) | Fair | 3 months | TRUE | |
 | Sac - Kinghts Landing | 2002 - ongoing | [Jeanine Philips](mailto:Jeanine.Phillips@wildlife.ca.gov) | Fair | One week | TRUE | Field crew uploads to CAMP daily, QC on a weekly basis, need to wait until end of season for escapement values |
 | Sac - Tisdale | 2010 - ongoing | [Drew Huneycutt](mailto:andrew.huneycutt@wildlife.ca.gov) | Fair | One week | TRUE | Field crew uploads to CAMP daily, QC on a weekly basis, need to wait until end of season for escapement values |
 | Mill Creek | 1995 - 2010; proposed | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Poor | NA | NA | Currently only historical data; proposed program that will be similar to Clear and Battle |
