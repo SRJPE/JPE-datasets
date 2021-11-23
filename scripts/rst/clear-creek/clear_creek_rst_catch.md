@@ -131,11 +131,11 @@ cleaner_rst_count <- raw_rst_count_data %>%
          "count_2" = count,
          "count" = r_catch,
          "interpolated" = interp,
-         "run" = race) %>%
+         "run" = fws_race) %>%
   mutate(date = as.Date(date)) %>%
   select(-organism_code,
          -brood_year, 
-         -id_week, -fws_race,
+         -id_week, -race,
          -count_2) %>% # raw catch data, I kept interpolated catch (less than 1% of the data is interpolated)
   glimpse()
 ```
@@ -174,6 +174,32 @@ Notes:
         catch, W=winter-run, S=spring-run, F=fall-run, L=late-fall run
         Chinook Salmon, see RunDesignation and RunChart tables
 
+These columns have simmilar run designations.
+
+``` r
+sum(raw_rst_count_data$Race == raw_rst_count_data$FWSRace, na.rm = T)/length(raw_rst_count_data$Race)
+```
+
+    ## [1] 0.8749496
+
+Additional info from Mike describing the race columns: We use the
+FWSRace for our reports, all fish length-designated as fall-run by the
+Sheila Greene length-at-date (LAD) charts we consider spring-run at the
+upper Battle and Clear Creek sites. We consider the barrier weir at
+Coleman National Fish Hatchery to be fish tight up to 800 cfs, flows
+rarely exceed that level during the spring-run and early fall-run
+escapement period. We are fairly confident that no fall-run get above
+the weir. Likewise, we install a separation (picket) weir in Clear Creek
+below the upper trap site that excludes fall-run from spawning with
+spring-run and superimposing redds on top of spring-run redds. At the
+lower Clear Creek (LCC) site we strictly go by the Sheila Green LAD
+chart because there is no way to tell the difference between spring-run
+and fall-run fish in the field. There is overlap in the sizes of
+spring-run and fall-run and we know that the Sheila Greene LAD charts
+don’t capture the overlap. In Clear Creek, some fish that classify as
+fall-run based on length from our LCC trap are actually spring-run and
+vise versa.
+
 ## Explore Numeric Variables:
 
 ``` r
@@ -211,7 +237,7 @@ p2 <- cleaner_rst_count %>% filter(fork_length < 250, fork_length > 0) %>% # fil
 gridExtra::grid.arrange(p1, p2)
 ```
 
-![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 cleaner_rst_count %>% 
@@ -229,7 +255,7 @@ cleaner_rst_count %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 **Numeric Summary of fork\_length over Period of Record**
 
@@ -254,16 +280,16 @@ cleaner_rst_count %>% filter(fork_length == 0 & !is.na(count))
     ## # A tibble: 6,995 x 9
     ##    station_code date       sample_id run   fork_length lifestage count dead 
     ##    <chr>        <date>     <chr>     <chr>       <dbl> <chr>     <dbl> <chr>
-    ##  1 LCC          2003-12-14 348_03    <NA>            0 C1          154 NO   
-    ##  2 LCC          2003-12-14 348_03    <NA>            0 C1           23 YES  
-    ##  3 LCC          2003-12-14 348_03    <NA>            0 C1           58 YES  
-    ##  4 LCC          2003-12-14 348_03    <NA>            0 C1           60 NO   
-    ##  5 LCC          2003-12-15 349_03    <NA>            0 C1          251 NO   
-    ##  6 LCC          2003-12-15 349_03    <NA>            0 C1           49 NO   
-    ##  7 LCC          2003-12-20 354_03    <NA>            0 C1          135 NO   
+    ##  1 LCC          2003-12-14 348_03    F               0 C1          154 NO   
+    ##  2 LCC          2003-12-14 348_03    S               0 C1           23 YES  
+    ##  3 LCC          2003-12-14 348_03    F               0 C1           58 YES  
+    ##  4 LCC          2003-12-14 348_03    S               0 C1           60 NO   
+    ##  5 LCC          2003-12-15 349_03    F               0 C1          251 NO   
+    ##  6 LCC          2003-12-15 349_03    S               0 C1           49 NO   
+    ##  7 LCC          2003-12-20 354_03    F               0 C1          135 NO   
     ##  8 LCC          2003-12-20 354_03    S               0 C1            5 NO   
-    ##  9 LCC          2003-12-24 358_03    <NA>            0 C1          821 YES  
-    ## 10 LCC          2003-12-24 358_03    <NA>            0 C1          736 NO   
+    ##  9 LCC          2003-12-24 358_03    F               0 C1          821 YES  
+    ## 10 LCC          2003-12-24 358_03    F               0 C1          736 NO   
     ## # ... with 6,985 more rows, and 1 more variable: interpolated <chr>
 
 ``` r
@@ -309,7 +335,7 @@ cleaner_rst_count %>%
 
     ## Joining, by = "water_year"
 
-![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 cleaner_rst_count  %>%
@@ -331,7 +357,7 @@ cleaner_rst_count  %>%
 
     ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
-![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](clear_creek_rst_catch_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 **Numeric Summary of counts over Period of Record**
 
@@ -397,8 +423,8 @@ table(cleaner_rst_count$run)
 ```
 
     ## 
-    ##      F      L      S      W 
-    ## 249547  13646  32845    175
+    ##      F      l      L      S      W 
+    ## 223307      1  13808  65368    186
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 “N/P” is changed to NA in the case\_when statement below.
@@ -413,11 +439,11 @@ table(cleaner_rst_count$run)
 
     ## 
     ##      fall late fall    spring    winter 
-    ##    249547     13646     32845       175
+    ##    223307     13808     65368       186
 
 **NA and Unknown Values**
 
--   2.1 % of values in the `run` column are NA.
+-   0 % of values in the `run` column are NA.
 
 ### Variable: `lifestage`
 
