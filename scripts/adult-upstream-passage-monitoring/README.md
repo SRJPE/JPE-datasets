@@ -1,8 +1,10 @@
 # Adult Upstream Passage Monitoring Data
 
-This directory contains markdown documents exploring Adult Upstream Passage monitoring datasets for 7 tributaries. No upstream passage estimates on the Sacramento River. On the Feather River there is also no video data but there is tagging data that we could use to estimate counts, summer 2022 installing video monitoring system. 
+This directory contains markdown documents exploring Adult Upstream Passage monitoring datasets for 7 tributaries. There is no upstream passage data for the Sacramento River. There is no upstream passage video data for the Feather River but there is tagging data that we could use to estimate fish counts, summer 2022 installing video monitoring system. 
 
-Most datasets are video data, Battle Creek also has trap data. We have passage estimates for Clear Creek (in PDF report),  Battle Creek, and the Yuba River (in PDF report). 
+Most upstream passage data is video data, battle creek has additional traping data to inform upstream passage counts.
+
+We currently have passage estimates for Clear Creek (in PDF report),  Battle Creek, and the Yuba River (in PDF report). 
 
 ### Data Available
 
