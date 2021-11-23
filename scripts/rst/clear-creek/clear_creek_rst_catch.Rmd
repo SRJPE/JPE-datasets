@@ -84,11 +84,11 @@ cleaner_rst_count <- raw_rst_count_data %>%
          "count_2" = count,
          "count" = r_catch,
          "interpolated" = interp,
-         "run" = race) %>%
+         "run" = fws_race) %>%
   mutate(date = as.Date(date)) %>%
   select(-organism_code,
          -brood_year, 
-         -id_week, -fws_race,
+         -id_week, -race,
          -count_2) %>% # raw catch data, I kept interpolated catch (less than 1% of the data is interpolated)
   glimpse()
 
@@ -104,7 +104,7 @@ Notes:
   * fWSRace - USFWS run designation base upon location or emergence timing used in reports and for passage indices, W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon					
   * race - Database generated Sheila Greene run designation of catch, W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon, see RunDesignation and RunChart tables							
 
-These columns seem to have very different run designations. 
+These columns have simmilar run designations. 
 ```{r}
 sum(raw_rst_count_data$Race == raw_rst_count_data$FWSRace, na.rm = T)/length(raw_rst_count_data$Race)
 ```
