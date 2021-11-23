@@ -130,7 +130,7 @@ cleaner_data<- raw_individuals_data %>%
          'condition' = 'condition_cd',
          'spawning_status' = 'spawned_cd') %>% 
   select(-c('week', 'year', 'f_lcm','location', 'species_code',
-         'other_marks', 'comments', 'cwt_status_id', 'cw_tcd', 'dn_anu', 'head_nu')) %>% #all location the same,all spring run chinook, all tagged, all no ad fin clip, no data for the rest of the dropped columns
+         'other_marks', 'cwt_status_id', 'cw_tcd', 'dn_anu', 'head_nu')) %>% #all location the same,all spring run chinook, all tagged, all no ad fin clip, no data for the rest of the dropped columns
   mutate(date = as.Date(date),
          scale_nu = as.character(scale_nu),
          survey = as.character(survey)) %>% #scale_nu is identifier
@@ -138,7 +138,7 @@ cleaner_data<- raw_individuals_data %>%
 ```
 
     ## Rows: 1,153
-    ## Columns: 15
+    ## Columns: 16
     ## $ survey           <chr> "110013", "110013", "110013", "110013", "110013", "11~
     ## $ date             <date> 2014-09-23, 2014-09-23, 2014-09-23, 2014-09-23, 2014~
     ## $ section_cd       <chr> "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A"~
@@ -153,6 +153,7 @@ cleaner_data<- raw_individuals_data %>%
     ## $ scale_nu         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ tissue_nu        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ otolith_nu       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ comments         <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ cwt_status       <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
 
 ## Explore `date`
@@ -386,6 +387,20 @@ There are 14 unique individual otolith numbers.
 
 -   98.9 % of values in the `otolith_nu` column are NA.
 
+### Variable:`comments`
+
+``` r
+unique(cleaner_data$comments)[1:5]
+```
+
+    ## [1] NA NA NA NA NA
+
+No coomments marked in data from 2014 - 2016.
+
+**NA and Unknown Values**
+
+-   100 % of values in the `comments` column are NA.
+
 ## Explore Numerical Variables
 
 ``` r
@@ -407,7 +422,7 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](butte-2014-2016-individual-qc-checklist_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](butte-2014-2016-individual-qc-checklist_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 Disc-tag seems to be separated into 0-1000 and 2000-3000.
 
 ``` r
@@ -435,7 +450,7 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](butte-2014-2016-individual-qc-checklist_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](butte-2014-2016-individual-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$fork_length_mm)
@@ -461,7 +476,7 @@ butte_individual_survey_2014_2016 <- cleaner_data %>% glimpse()
 ```
 
     ## Rows: 1,153
-    ## Columns: 15
+    ## Columns: 16
     ## $ survey           <chr> "110013", "110013", "110013", "110013", "110013", "11~
     ## $ date             <date> 2014-09-23, 2014-09-23, 2014-09-23, 2014-09-23, 2014~
     ## $ section_cd       <chr> "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "A"~
@@ -476,10 +491,11 @@ butte_individual_survey_2014_2016 <- cleaner_data %>% glimpse()
     ## $ scale_nu         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ tissue_nu        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ otolith_nu       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ comments         <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ cwt_status       <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
 
 ``` r
-write_csv(butte_individual_survey_2014_2016, "butte-carcass-individual-survey-2014-2016.csv")
+write_csv(butte_individual_survey_2014_2016, "butte_carcass_2014-2016.csv")
 ```
 
 ``` r
@@ -487,5 +503,5 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(butte_individual_survey_2014_2016,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-survey/butte-creek/data/butte_carcass_2014-2016.csv")
+           name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_carcass_2014-2016.csv")
 ```
