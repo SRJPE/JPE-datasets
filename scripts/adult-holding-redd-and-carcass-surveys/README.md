@@ -6,7 +6,7 @@ This directory contains markdown documents exploring Adult holding, redd, and ca
 ### Data Available
 
 | Tributary | Monitoring Timeframe | Data Contact | Metadata Quality | Data Lag* | Provisional Data Available** | Notes | 
-| :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :----------- | :----------- |
+| :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :----------- | 
 | Battle Creek | 2001 - ongoing | [Natasha Wingerter](mailto:natasha_wingerter@fws.gov)  | Fair | 2 weeks | Unknown | All data stored together |
 | Butte Creek | Unknown | [Jessica Nichols](Jessica.Nichols@Wildlife.ca.gov) | Poor | Holding: 2 weeks Carcass: at the end of sampling season | TRUE | No redd survey
 | Clear Creek | 2013 - ongoing | [Ryan Shaefer](mailto:rayn_a_schaefer@fws.gov)  | Fair | 2 weeks | Unknown | All data stored together | 
