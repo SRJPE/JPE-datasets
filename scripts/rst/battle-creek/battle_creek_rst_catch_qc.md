@@ -95,10 +95,10 @@ cleaner_rst_count <- raw_rst_count_data %>%
          "count_2" = count,
          "count" = r_catch,
          "interpolated" = interp,
-         "run" = race) %>%
+         "run" = fws_race) %>%
   mutate(date = as.Date(date)) %>%
   select(-organism_code, -station_code, -brood_year, 
-         -id_week, -fws_race,
+         -id_week, -race,
          -count_2) %>% # raw catch data, I kept interpolated catch (only 1% of the data is interpolated)
   glimpse()
 ```
@@ -136,6 +136,32 @@ Notes:
         catch, W=winter-run, S=spring-run, F=fall-run, L=late-fall run
         Chinook Salmon, see RunDesignation and RunChart tables
 
+These columns seem to have very different run designations.
+
+``` r
+sum(raw_rst_count_data$Race == raw_rst_count_data$FWSRace, na.rm = T)/length(raw_rst_count_data$Race)
+```
+
+    ## [1] 0.1749332
+
+Additional info from Mike describing the race columns: We use the
+FWSRace for our reports, all fish length-designated as fall-run by the
+Sheila Greene length-at-date (LAD) charts we consider spring-run at the
+upper Battle and Clear Creek sites. We consider the barrier weir at
+Coleman National Fish Hatchery to be fish tight up to 800 cfs, flows
+rarely exceed that level during the spring-run and early fall-run
+escapement period. We are fairly confident that no fall-run get above
+the weir. Likewise, we install a separation (picket) weir in Clear Creek
+below the upper trap site that excludes fall-run from spawning with
+spring-run and superimposing redds on top of spring-run redds. At the
+lower Clear Creek (LCC) site we strictly go by the Sheila Green LAD
+chart because there is no way to tell the difference between spring-run
+and fall-run fish in the field. There is overlap in the sizes of
+spring-run and fall-run and we know that the Sheila Greene LAD charts
+don’t capture the overlap. In Clear Creek, some fish that classify as
+fall-run based on length from our LCC trap are actually spring-run and
+vise versa.
+
 ## Explore Numeric Variables:
 
 ``` r
@@ -161,7 +187,7 @@ cleaner_rst_count %>% filter(fork_length < 250) %>% # filter out 13 points so we
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 cleaner_rst_count %>% 
@@ -174,7 +200,7 @@ cleaner_rst_count %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 **Numeric Summary of fork\_length over Period of Record**
 
@@ -254,7 +280,7 @@ cleaner_rst_count %>%
 
     ## Joining, by = "water_year"
 
-![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 cleaner_rst_count  %>%
@@ -276,7 +302,7 @@ cleaner_rst_count  %>%
 
     ## `summarise()` has grouped output by 'year'. You can override using the `.groups` argument.
 
-![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 **Numeric Summary of counts over Period of Record**
 
@@ -327,8 +353,8 @@ table(cleaner_rst_count$run)
 ```
 
     ## 
-    ##     F     L   N/P     S     W 
-    ## 27601   472    50  3371   283
+    ##     F     L     S     W 
+    ##  1443   635 29396   361
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 “N/P” is changed to NA in the case\_when statement below.
@@ -343,11 +369,11 @@ table(cleaner_rst_count$run)
 
     ## 
     ##      fall late fall    spring    winter 
-    ##     27601       472      3371       283
+    ##      1443       635     29396       361
 
 **NA and Unknown Values**
 
--   0.3 % of values in the `run` column are NA.
+-   0 % of values in the `run` column are NA.
 
 ### Variable: `lifestage`
 
