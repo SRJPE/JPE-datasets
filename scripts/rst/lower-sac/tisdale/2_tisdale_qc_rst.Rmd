@@ -12,6 +12,7 @@ library(lubridate)
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
+library(knitr)
 ```
 
 ## Description of Monitoring Data
@@ -45,9 +46,9 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 gcs_list_objects()
 
-gcs_get_object(object_name = "rst/lower-sac-river/data/tisdale/tisdale_raw_clean.csv",
+gcs_get_object(object_name = "rst/lower-sac-river/data/tisdale/tisdale_rst_raw_clean.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "tisdale_raw_clean.csv",
+               saveToDisk = "tisdale_rst_raw_clean.csv",
                overwrite = TRUE)
 ```
 
@@ -55,8 +56,46 @@ Read in data from google cloud, glimpse raw data and domain description sheet.
 
 ```{r}
 # read in data to clean 
-raw_clean <- read.csv("tisdale_rst_raw_clean.csv")
+raw_clean <- read_csv("tisdale_rst_raw_clean.csv", show_col_types = F)
 glimpse(raw_clean)
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- raw_clean %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(raw_clean),
+                          description = c("Date of sampling",
+                                          "Position of trap. Options are river left (RL) or river right (RR).",
+                                          "Describes if fish were caught and processed",
+                                          "Species of fish caught. This data only includes Chinook.",
+                                          "Fork length of sampled fish in mm.",
+                                          "Weight of sampled fish in grams",
+                                          "Lifestage of sampled fish. Options include parr, silvery parr, fry, button-up fry, yolk sac fry, smolt, juvenile",
+                                          "Run determined when fish was captured.",
+                                          "Adjusted run.",
+                                          "Describes if fish was dead when collected.",
+                                          "Describes if sample was random.",
+                                          "Describes if analyses was conducted on the data. All cases are Yes.",
+                                          "Rearing origin of fish. Options are Natural or Hatchery.",
+                                          "Identifier for the location fish were released. All are the same.",
+                                          "Type of mark observed. Options are None, Pigment, Elastomer.",
+                                          "Position of mark observed. Options are Adipose fin, Whole body, Nose, Pelvic fin right, Pelvic fin left.",
+                                          "Color of mark observed. Options are Blue, Red, Brown, Yellow, Green, White, Orange.",
+                                          "Qualitative comments about sampling.",
+                                          "Qualitative comments about the fish caught.",
+                                          "Site name. All are Tisdale Weir RST.",
+                                          "Count of fish caught."
+),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
 ```
 
 ## Data transformations

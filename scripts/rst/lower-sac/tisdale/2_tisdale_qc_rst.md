@@ -34,9 +34,9 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 gcs_list_objects()
 
-gcs_get_object(object_name = "rst/lower-sac-river/data/tisdale/tisdale_raw_clean.csv",
+gcs_get_object(object_name = "rst/lower-sac-river/data/tisdale/tisdale_rst_raw_clean.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "tisdale_raw_clean.csv",
+               saveToDisk = "tisdale_rst_raw_clean.csv",
                overwrite = TRUE)
 ```
 
@@ -45,17 +45,17 @@ sheet.
 
 ``` r
 # read in data to clean 
-raw_clean <- read.csv("tisdale_rst_raw_clean.csv")
+raw_clean <- read_csv("tisdale_rst_raw_clean.csv", show_col_types = F)
 glimpse(raw_clean)
 ```
 
     ## Rows: 21,427
     ## Columns: 21
-    ## $ date               <chr> "2010-07-07T00:00:00Z", "2010-07-07T00:00:00Z", "20…
+    ## $ date               <dttm> 2010-07-07, 2010-07-07, 2010-07-09, 2010-07-09, 20…
     ## $ trap_position      <chr> "RL", "RR", "RL", "RR", "RL", "RR", "RL", "RR", "RL…
     ## $ fish_processed     <chr> "No fish were caught", "No fish were caught", "No f…
     ## $ species            <chr> "Chinook salmon", "Chinook salmon", "Chinook salmon…
-    ## $ fork_length_mm     <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ fork_length_mm     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ weight             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ life_stage         <chr> "Not recorded", "Not recorded", "Not recorded", "No…
     ## $ at_capture_run     <chr> "Not recorded", "Not recorded", "Not recorded", "No…
@@ -64,14 +64,77 @@ glimpse(raw_clean)
     ## $ random             <chr> "No", "No", "No", "No", "No", "No", "No", "No", "No…
     ## $ analyses           <chr> "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Y…
     ## $ rearing            <chr> "Natural", "Natural", "Natural", "Natural", "Natura…
-    ## $ release_id         <int> 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 2…
+    ## $ release_id         <dbl> 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 2…
     ## $ mark_type          <chr> "No marks or tags", "No marks or tags", "No marks o…
     ## $ mark_position      <chr> "Not applicable (n/a)", "Not applicable (n/a)", "No…
     ## $ mark_color         <chr> "Not applicable (n/a)", "Not applicable (n/a)", "No…
     ## $ trap_visit_comment <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ catch_comment      <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ location           <chr> "Tisdale Weir RST", "Tisdale Weir RST", "Tisdale We…
-    ## $ count              <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+    ## $ count              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- raw_clean %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(raw_clean),
+                          description = c("Date of sampling",
+                                          "Position of trap. Options are river left (RL) or river right (RR).",
+                                          "Describes if fish were caught and processed",
+                                          "Species of fish caught. This data only includes Chinook.",
+                                          "Fork length of sampled fish in mm.",
+                                          "Weight of sampled fish in grams",
+                                          "Lifestage of sampled fish. Options include parr, silvery parr, fry, button-up fry, yolk sac fry, smolt, juvenile",
+                                          "Run determined when fish was captured.",
+                                          "Adjusted run.",
+                                          "Describes if fish was dead when collected.",
+                                          "Describes if sample was random.",
+                                          "Describes if analyses was conducted on the data. All cases are Yes.",
+                                          "Rearing origin of fish. Options are Natural or Hatchery.",
+                                          "Identifier for the location fish were released. All are the same.",
+                                          "Type of mark observed. Options are None, Pigment, Elastomer.",
+                                          "Position of mark observed. Options are Adipose fin, Whole body, Nose, Pelvic fin right, Pelvic fin left.",
+                                          "Color of mark observed. Options are Blue, Red, Brown, Yellow, Green, White, Orange.",
+                                          "Qualitative comments about sampling.",
+                                          "Qualitative comments about the fish caught.",
+                                          "Site name. All are Tisdale Weir RST.",
+                                          "Count of fish caught."
+),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables            | description                                                                                                      | percent\_na |
+|:---------------------|:-----------------------------------------------------------------------------------------------------------------|------------:|
+| date                 | Date of sampling                                                                                                 |           0 |
+| trap\_position       | Position of trap. Options are river left (RL) or river right (RR).                                               |           0 |
+| fish\_processed      | Describes if fish were caught and processed                                                                      |           0 |
+| species              | Species of fish caught. This data only includes Chinook.                                                         |           0 |
+| fork\_length\_mm     | Fork length of sampled fish in mm.                                                                               |          23 |
+| weight               | Weight of sampled fish in grams                                                                                  |          64 |
+| life\_stage          | Lifestage of sampled fish. Options include parr, silvery parr, fry, button-up fry, yolk sac fry, smolt, juvenile |           0 |
+| at\_capture\_run     | Run determined when fish was captured.                                                                           |           0 |
+| final\_run           | Adjusted run.                                                                                                    |          39 |
+| mortality            | Describes if fish was dead when collected.                                                                       |           0 |
+| random               | Describes if sample was random.                                                                                  |           0 |
+| analyses             | Describes if analyses was conducted on the data. All cases are Yes.                                              |           0 |
+| rearing              | Rearing origin of fish. Options are Natural or Hatchery.                                                         |           0 |
+| release\_id          | Identifier for the location fish were released. All are the same.                                                |           0 |
+| mark\_type           | Type of mark observed. Options are None, Pigment, Elastomer.                                                     |           0 |
+| mark\_position       | Position of mark observed. Options are Adipose fin, Whole body, Nose, Pelvic fin right, Pelvic fin left.         |           0 |
+| mark\_color          | Color of mark observed. Options are Blue, Red, Brown, Yellow, Green, White, Orange.                              |           0 |
+| trap\_visit\_comment | Qualitative comments about sampling.                                                                             |          90 |
+| catch\_comment       | Qualitative comments about the fish caught.                                                                      |         100 |
+| location             | Site name. All are Tisdale Weir RST.                                                                             |           0 |
+| count                | Count of fish caught.                                                                                            |           0 |
 
 ## Data transformations
 
@@ -119,7 +182,7 @@ raw_clean %>%
 
     ## # A tibble: 11 × 6
     ##    `year(date)`  mean median   min   max    na
-    ##           <dbl> <dbl>  <dbl> <int> <int> <int>
+    ##           <dbl> <dbl>  <dbl> <dbl> <dbl> <int>
     ##  1         2010  61.6   56.5     0   160   186
     ##  2         2011  64.1   71      27   154   270
     ##  3         2012  62.0   57      30   191   176
@@ -138,14 +201,15 @@ Looks like the outlier should be 40 rather than 4038.
 filter(raw_clean, fork_length_mm > 300)
 ```
 
-    ##                   date trap_position fish_processed        species
-    ## 1 2020-01-27T00:00:00Z            RL Processed fish Chinook salmon
-    ##   fork_length_mm weight life_stage at_capture_run final_run mortality random
-    ## 1           4038     NA       Parr           Fall      <NA>        No    Yes
-    ##   analyses rearing release_id        mark_type        mark_position
-    ## 1      Yes Natural        255 No marks or tags Not applicable (n/a)
-    ##             mark_color trap_visit_comment catch_comment         location count
-    ## 1 Not applicable (n/a)               <NA>            NA Tisdale Weir RST     1
+    ## # A tibble: 1 × 21
+    ##   date                trap_position fish_processed species fork_length_mm weight
+    ##   <dttm>              <chr>         <chr>          <chr>            <dbl>  <dbl>
+    ## 1 2020-01-27 00:00:00 RL            Processed fish Chinoo…           4038     NA
+    ## # … with 15 more variables: life_stage <chr>, at_capture_run <chr>,
+    ## #   final_run <chr>, mortality <chr>, random <chr>, analyses <chr>,
+    ## #   rearing <chr>, release_id <dbl>, mark_type <chr>, mark_position <chr>,
+    ## #   mark_color <chr>, trap_visit_comment <chr>, catch_comment <lgl>,
+    ## #   location <chr>, count <dbl>
 
 ``` r
 raw_clean %>%
@@ -304,12 +368,11 @@ raw_clean %>%
   colnames()
 ```
 
-    ##  [1] "date"               "trap_position"      "fish_processed"    
-    ##  [4] "species"            "life_stage"         "at_capture_run"    
-    ##  [7] "final_run"          "mortality"          "random"            
-    ## [10] "analyses"           "rearing"            "mark_type"         
-    ## [13] "mark_position"      "mark_color"         "trap_visit_comment"
-    ## [16] "location"
+    ##  [1] "trap_position"      "fish_processed"     "species"           
+    ##  [4] "life_stage"         "at_capture_run"     "final_run"         
+    ##  [7] "mortality"          "random"             "analyses"          
+    ## [10] "rearing"            "mark_type"          "mark_position"     
+    ## [13] "mark_color"         "trap_visit_comment" "location"
 
 ### Variable: `trap_position`
 
@@ -325,14 +388,15 @@ unique(raw_clean$trap_position)
 filter(raw_clean, trap_position == "N/A")
 ```
 
-    ##                   date trap_position fish_processed        species
-    ## 1 2019-11-29T00:00:00Z           N/A Processed fish Chinook salmon
-    ##   fork_length_mm weight   life_stage at_capture_run final_run mortality random
-    ## 1             NA     NA Not recorded   Not recorded      <NA>        No     No
-    ##   analyses rearing release_id        mark_type        mark_position
-    ## 1      Yes Natural        255 No marks or tags Not applicable (n/a)
-    ##             mark_color trap_visit_comment catch_comment         location count
-    ## 1 Not applicable (n/a)               <NA>            NA Tisdale Weir RST     0
+    ## # A tibble: 1 × 21
+    ##   date                trap_position fish_processed species fork_length_mm weight
+    ##   <dttm>              <chr>         <chr>          <chr>            <dbl>  <dbl>
+    ## 1 2019-11-29 00:00:00 N/A           Processed fish Chinoo…             NA     NA
+    ## # … with 15 more variables: life_stage <chr>, at_capture_run <chr>,
+    ## #   final_run <chr>, mortality <chr>, random <chr>, analyses <chr>,
+    ## #   rearing <chr>, release_id <dbl>, mark_type <chr>, mark_position <chr>,
+    ## #   mark_color <chr>, trap_visit_comment <chr>, catch_comment <lgl>,
+    ## #   location <chr>, count <dbl>
 
 ``` r
 group_by(raw_clean, date) %>%
@@ -341,18 +405,18 @@ group_by(raw_clean, date) %>%
 ```
 
     ## # A tibble: 1,107 × 2
-    ##    date                     n
-    ##    <chr>                <int>
-    ##  1 2010-10-28T00:00:00Z    58
-    ##  2 2010-10-29T00:00:00Z    17
-    ##  3 2010-10-30T00:00:00Z     5
-    ##  4 2010-10-31T00:00:00Z     4
-    ##  5 2010-11-02T00:00:00Z     3
-    ##  6 2010-11-13T00:00:00Z     5
-    ##  7 2010-11-15T00:00:00Z     3
-    ##  8 2010-11-24T00:00:00Z     3
-    ##  9 2010-11-26T00:00:00Z     3
-    ## 10 2010-11-27T00:00:00Z     3
+    ##    date                    n
+    ##    <dttm>              <int>
+    ##  1 2010-10-28 00:00:00    58
+    ##  2 2010-10-29 00:00:00    17
+    ##  3 2010-10-30 00:00:00     5
+    ##  4 2010-10-31 00:00:00     4
+    ##  5 2010-11-02 00:00:00     3
+    ##  6 2010-11-13 00:00:00     5
+    ##  7 2010-11-15 00:00:00     3
+    ##  8 2010-11-24 00:00:00     3
+    ##  9 2010-11-26 00:00:00     3
+    ## 10 2010-11-27 00:00:00     3
     ## # … with 1,097 more rows
 
 Some years do not have `trap_location` variable filled in but it is
@@ -380,23 +444,23 @@ filter(raw_clean, fish_processed == "No fish were caught", count > 0) %>%
   select(date, fish_processed, fork_length_mm, at_capture_run, count)
 ```
 
-    ##                   date      fish_processed fork_length_mm at_capture_run count
-    ## 1 2019-04-25T00:00:00Z No fish were caught             74           Fall     1
-    ## 2 2020-03-10T00:00:00Z No fish were caught             55           Fall     1
+    ## # A tibble: 2 × 5
+    ##   date                fish_processed      fork_length_mm at_capture_run count
+    ##   <dttm>              <chr>                        <dbl> <chr>          <dbl>
+    ## 1 2019-04-25 00:00:00 No fish were caught             74 Fall               1
+    ## 2 2020-03-10 00:00:00 No fish were caught             55 Fall               1
 
 ``` r
 filter(raw_clean, fish_processed == "N/A; not a sampling visit") %>%
   select(date, fish_processed, fork_length_mm, at_capture_run, count)
 ```
 
-    ##                   date            fish_processed fork_length_mm at_capture_run
-    ## 1 2019-01-19T00:00:00Z N/A; not a sampling visit             NA   Not recorded
-    ## 2 2019-03-30T00:00:00Z N/A; not a sampling visit             NA   Not recorded
-    ## 3 2019-03-31T00:00:00Z N/A; not a sampling visit             NA   Not recorded
-    ##   count
-    ## 1     0
-    ## 2     0
-    ## 3     0
+    ## # A tibble: 3 × 5
+    ##   date                fish_processed         fork_length_mm at_capture_run count
+    ##   <dttm>              <chr>                           <dbl> <chr>          <dbl>
+    ## 1 2019-01-19 00:00:00 N/A; not a sampling v…             NA Not recorded       0
+    ## 2 2019-03-30 00:00:00 N/A; not a sampling v…             NA Not recorded       0
+    ## 3 2019-03-31 00:00:00 N/A; not a sampling v…             NA Not recorded       0
 
 **NA and Unknown Values**
 
@@ -473,28 +537,19 @@ filter(raw_clean, at_capture_run == "Not applicable (n/a)") %>%
   select(date, fish_processed, fork_length_mm, at_capture_run, count)
 ```
 
-    ##                    date fish_processed fork_length_mm       at_capture_run
-    ## 1  2019-12-20T00:00:00Z Processed fish            158 Not applicable (n/a)
-    ## 2  2020-01-10T00:00:00Z Processed fish            139 Not applicable (n/a)
-    ## 3  2020-01-10T00:00:00Z Processed fish             NA Not applicable (n/a)
-    ## 4  2020-01-20T00:00:00Z Processed fish            100 Not applicable (n/a)
-    ## 5  2020-02-06T00:00:00Z Processed fish             35 Not applicable (n/a)
-    ## 6  2020-02-06T00:00:00Z Processed fish             38 Not applicable (n/a)
-    ## 7  2020-02-06T00:00:00Z Processed fish             39 Not applicable (n/a)
-    ## 8  2020-02-06T00:00:00Z Processed fish             40 Not applicable (n/a)
-    ## 9  2020-02-06T00:00:00Z Processed fish             45 Not applicable (n/a)
-    ## 10 2020-02-06T00:00:00Z Processed fish             46 Not applicable (n/a)
-    ##    count
-    ## 1      1
-    ## 2      1
-    ## 3      0
-    ## 4      1
-    ## 5      1
-    ## 6      1
-    ## 7      3
-    ## 8      3
-    ## 9      1
-    ## 10     1
+    ## # A tibble: 10 × 5
+    ##    date                fish_processed fork_length_mm at_capture_run       count
+    ##    <dttm>              <chr>                   <dbl> <chr>                <dbl>
+    ##  1 2019-12-20 00:00:00 Processed fish            158 Not applicable (n/a)     1
+    ##  2 2020-01-10 00:00:00 Processed fish            139 Not applicable (n/a)     1
+    ##  3 2020-01-10 00:00:00 Processed fish             NA Not applicable (n/a)     0
+    ##  4 2020-01-20 00:00:00 Processed fish            100 Not applicable (n/a)     1
+    ##  5 2020-02-06 00:00:00 Processed fish             35 Not applicable (n/a)     1
+    ##  6 2020-02-06 00:00:00 Processed fish             38 Not applicable (n/a)     1
+    ##  7 2020-02-06 00:00:00 Processed fish             39 Not applicable (n/a)     3
+    ##  8 2020-02-06 00:00:00 Processed fish             40 Not applicable (n/a)     3
+    ##  9 2020-02-06 00:00:00 Processed fish             45 Not applicable (n/a)     1
+    ## 10 2020-02-06 00:00:00 Processed fish             46 Not applicable (n/a)     1
 
 ``` r
 total <- raw_clean %>%
@@ -541,20 +596,22 @@ filter(raw_clean, !is.na(final_run), final_run != at_capture_run, final_run != "
   select(date, fish_processed, fork_length_mm, at_capture_run, count)
 ```
 
-    ##                    date fish_processed fork_length_mm at_capture_run count
-    ## 1  2012-12-07T00:00:00Z Processed fish             35         Spring     3
-    ## 2  2012-12-07T00:00:00Z Processed fish             36         Spring     6
-    ## 3  2012-12-07T00:00:00Z Processed fish             40         Spring     1
-    ## 4  2012-12-07T00:00:00Z Processed fish             42         Spring     1
-    ## 5  2012-12-07T00:00:00Z Processed fish             45         Spring     2
-    ## 6  2012-12-07T00:00:00Z Processed fish             46         Spring     1
-    ## 7  2014-01-06T00:00:00Z Processed fish              0   Not recorded     0
-    ## 8  2014-01-09T00:00:00Z Processed fish              0   Not recorded     0
-    ## 9  2014-04-08T00:00:00Z Processed fish             80           Fall     1
-    ## 10 2014-04-18T00:00:00Z Processed fish             82           Fall     1
-    ## 11 2015-12-28T00:00:00Z Processed fish             40         Winter     1
-    ## 12 2020-01-02T00:00:00Z Processed fish             83         Winter     1
-    ## 13 2020-01-04T00:00:00Z Processed fish             41         Spring     1
+    ## # A tibble: 13 × 5
+    ##    date                fish_processed fork_length_mm at_capture_run count
+    ##    <dttm>              <chr>                   <dbl> <chr>          <dbl>
+    ##  1 2012-12-07 00:00:00 Processed fish             35 Spring             3
+    ##  2 2012-12-07 00:00:00 Processed fish             36 Spring             6
+    ##  3 2012-12-07 00:00:00 Processed fish             40 Spring             1
+    ##  4 2012-12-07 00:00:00 Processed fish             42 Spring             1
+    ##  5 2012-12-07 00:00:00 Processed fish             45 Spring             2
+    ##  6 2012-12-07 00:00:00 Processed fish             46 Spring             1
+    ##  7 2014-01-06 00:00:00 Processed fish              0 Not recorded       0
+    ##  8 2014-01-09 00:00:00 Processed fish              0 Not recorded       0
+    ##  9 2014-04-08 00:00:00 Processed fish             80 Fall               1
+    ## 10 2014-04-18 00:00:00 Processed fish             82 Fall               1
+    ## 11 2015-12-28 00:00:00 Processed fish             40 Winter             1
+    ## 12 2020-01-02 00:00:00 Processed fish             83 Winter             1
+    ## 13 2020-01-04 00:00:00 Processed fish             41 Spring             1
 
 **NA and Unknown Values**
 
@@ -615,12 +672,11 @@ filter(raw_clean, random == "Not recorded") %>%
   select(date, fish_processed, fork_length_mm, at_capture_run, count, random)
 ```
 
-    ##                   date fish_processed fork_length_mm at_capture_run count
-    ## 1 2018-04-01T00:00:00Z Processed fish             NA   Not recorded     0
-    ## 2 2019-01-10T00:00:00Z Processed fish             NA   Not recorded     0
-    ##         random
-    ## 1 Not recorded
-    ## 2 Not recorded
+    ## # A tibble: 2 × 6
+    ##   date                fish_processed fork_length_mm at_capture_run count random 
+    ##   <dttm>              <chr>                   <dbl> <chr>          <dbl> <chr>  
+    ## 1 2018-04-01 00:00:00 Processed fish             NA Not recorded       0 Not re…
+    ## 2 2019-01-10 00:00:00 Processed fish             NA Not recorded       0 Not re…
 
 ``` r
 total <- raw_clean %>%
@@ -642,7 +698,7 @@ raw_clean %>%
     ## # A tibble: 24 × 5
     ## # Groups:   wy [11]
     ##    wy    random count total proportion_total
-    ##    <fct> <chr>  <int> <int>            <dbl>
+    ##    <fct> <chr>  <dbl> <dbl>            <dbl>
     ##  1 2010  No         0     0       NaN       
     ##  2 2010  Yes        0     0       NaN       
     ##  3 2011  No         6  9896         0.000606
@@ -690,29 +746,20 @@ filter(raw_clean, rearing == "Natural", mark_type != "No marks or tags") %>%
   select(date, fork_length_mm, at_capture_run, count, rearing)
 ```
 
-    ##                    date fork_length_mm at_capture_run count rearing
-    ## 1  2011-01-20T00:00:00Z             35           Fall     1 Natural
-    ## 2  2011-01-20T00:00:00Z             39           Fall     1 Natural
-    ## 3  2011-01-20T00:00:00Z             41           Fall     1 Natural
-    ## 4  2011-01-20T00:00:00Z             43           Fall     1 Natural
-    ## 5  2011-04-28T00:00:00Z             78           Fall     1 Natural
-    ## 6  2011-05-01T00:00:00Z             81           Fall     1 Natural
-    ## 7  2011-05-01T00:00:00Z             86           Fall     1 Natural
-    ## 8  2011-05-02T00:00:00Z             61           Fall     1 Natural
-    ## 9  2013-05-10T00:00:00Z             90           Fall     1 Natural
-    ## 10 2013-05-10T00:00:00Z             91           Fall     1 Natural
-    ## 11 2016-01-17T00:00:00Z             37           Fall     1 Natural
-    ## 12 2016-01-18T00:00:00Z             37           Fall     1 Natural
-    ## 13 2016-01-18T00:00:00Z             37           Fall     1 Natural
-    ## 14 2016-01-19T00:00:00Z             38           Fall     1 Natural
-    ## 15 2016-01-21T00:00:00Z             32           Fall     1 Natural
-    ## 16 2016-01-21T00:00:00Z             39           Fall     1 Natural
-    ## 17 2016-01-23T00:00:00Z             40           Fall     1 Natural
-    ## 18 2016-04-16T00:00:00Z             90         Spring     1 Natural
-    ## 19 2017-04-04T00:00:00Z             73           Fall     1 Natural
-    ## 20 2018-11-01T00:00:00Z            135           Fall     1 Natural
-    ## 21 2018-11-01T00:00:00Z            137           Fall     1 Natural
-    ## 22 2019-01-17T00:00:00Z             34           Fall     1 Natural
+    ## # A tibble: 22 × 5
+    ##    date                fork_length_mm at_capture_run count rearing
+    ##    <dttm>                       <dbl> <chr>          <dbl> <chr>  
+    ##  1 2011-01-20 00:00:00             35 Fall               1 Natural
+    ##  2 2011-01-20 00:00:00             39 Fall               1 Natural
+    ##  3 2011-01-20 00:00:00             41 Fall               1 Natural
+    ##  4 2011-01-20 00:00:00             43 Fall               1 Natural
+    ##  5 2011-04-28 00:00:00             78 Fall               1 Natural
+    ##  6 2011-05-01 00:00:00             81 Fall               1 Natural
+    ##  7 2011-05-01 00:00:00             86 Fall               1 Natural
+    ##  8 2011-05-02 00:00:00             61 Fall               1 Natural
+    ##  9 2013-05-10 00:00:00             90 Fall               1 Natural
+    ## 10 2013-05-10 00:00:00             91 Fall               1 Natural
+    ## # … with 12 more rows
 
 ``` r
 total <- raw_clean %>%
@@ -762,52 +809,20 @@ filter(raw_clean, rearing == "Natural", mark_type != "No marks or tags") %>%
   select(date, fork_length_mm, at_capture_run, count, rearing, mark_type)
 ```
 
-    ##                    date fork_length_mm at_capture_run count rearing
-    ## 1  2011-01-20T00:00:00Z             35           Fall     1 Natural
-    ## 2  2011-01-20T00:00:00Z             39           Fall     1 Natural
-    ## 3  2011-01-20T00:00:00Z             41           Fall     1 Natural
-    ## 4  2011-01-20T00:00:00Z             43           Fall     1 Natural
-    ## 5  2011-04-28T00:00:00Z             78           Fall     1 Natural
-    ## 6  2011-05-01T00:00:00Z             81           Fall     1 Natural
-    ## 7  2011-05-01T00:00:00Z             86           Fall     1 Natural
-    ## 8  2011-05-02T00:00:00Z             61           Fall     1 Natural
-    ## 9  2013-05-10T00:00:00Z             90           Fall     1 Natural
-    ## 10 2013-05-10T00:00:00Z             91           Fall     1 Natural
-    ## 11 2016-01-17T00:00:00Z             37           Fall     1 Natural
-    ## 12 2016-01-18T00:00:00Z             37           Fall     1 Natural
-    ## 13 2016-01-18T00:00:00Z             37           Fall     1 Natural
-    ## 14 2016-01-19T00:00:00Z             38           Fall     1 Natural
-    ## 15 2016-01-21T00:00:00Z             32           Fall     1 Natural
-    ## 16 2016-01-21T00:00:00Z             39           Fall     1 Natural
-    ## 17 2016-01-23T00:00:00Z             40           Fall     1 Natural
-    ## 18 2016-04-16T00:00:00Z             90         Spring     1 Natural
-    ## 19 2017-04-04T00:00:00Z             73           Fall     1 Natural
-    ## 20 2018-11-01T00:00:00Z            135           Fall     1 Natural
-    ## 21 2018-11-01T00:00:00Z            137           Fall     1 Natural
-    ## 22 2019-01-17T00:00:00Z             34           Fall     1 Natural
-    ##        mark_type
-    ## 1  Pigment / dye
-    ## 2  Pigment / dye
-    ## 3  Pigment / dye
-    ## 4  Pigment / dye
-    ## 5  Pigment / dye
-    ## 6  Pigment / dye
-    ## 7  Pigment / dye
-    ## 8  Pigment / dye
-    ## 9       Fin clip
-    ## 10      Fin clip
-    ## 11 Pigment / dye
-    ## 12 Pigment / dye
-    ## 13 Pigment / dye
-    ## 14 Pigment / dye
-    ## 15 Pigment / dye
-    ## 16 Pigment / dye
-    ## 17 Pigment / dye
-    ## 18 Pigment / dye
-    ## 19 Pigment / dye
-    ## 20      Fin clip
-    ## 21     Elastomer
-    ## 22 Pigment / dye
+    ## # A tibble: 22 × 6
+    ##    date                fork_length_mm at_capture_run count rearing mark_type    
+    ##    <dttm>                       <dbl> <chr>          <dbl> <chr>   <chr>        
+    ##  1 2011-01-20 00:00:00             35 Fall               1 Natural Pigment / dye
+    ##  2 2011-01-20 00:00:00             39 Fall               1 Natural Pigment / dye
+    ##  3 2011-01-20 00:00:00             41 Fall               1 Natural Pigment / dye
+    ##  4 2011-01-20 00:00:00             43 Fall               1 Natural Pigment / dye
+    ##  5 2011-04-28 00:00:00             78 Fall               1 Natural Pigment / dye
+    ##  6 2011-05-01 00:00:00             81 Fall               1 Natural Pigment / dye
+    ##  7 2011-05-01 00:00:00             86 Fall               1 Natural Pigment / dye
+    ##  8 2011-05-02 00:00:00             61 Fall               1 Natural Pigment / dye
+    ##  9 2013-05-10 00:00:00             90 Fall               1 Natural Fin clip     
+    ## 10 2013-05-10 00:00:00             91 Fall               1 Natural Fin clip     
+    ## # … with 12 more rows
 
 ``` r
 total <- raw_clean %>%
@@ -859,13 +874,13 @@ unique(raw_clean$mark_position)
 filter(raw_clean, mark_type == "No marks or tags", mark_position != "Not applicable (n/a)")
 ```
 
-    ##  [1] date               trap_position      fish_processed     species           
-    ##  [5] fork_length_mm     weight             life_stage         at_capture_run    
-    ##  [9] final_run          mortality          random             analyses          
-    ## [13] rearing            release_id         mark_type          mark_position     
-    ## [17] mark_color         trap_visit_comment catch_comment      location          
-    ## [21] count             
-    ## <0 rows> (or 0-length row.names)
+    ## # A tibble: 0 × 21
+    ## # … with 21 variables: date <dttm>, trap_position <chr>, fish_processed <chr>,
+    ## #   species <chr>, fork_length_mm <dbl>, weight <dbl>, life_stage <chr>,
+    ## #   at_capture_run <chr>, final_run <chr>, mortality <chr>, random <chr>,
+    ## #   analyses <chr>, rearing <chr>, release_id <dbl>, mark_type <chr>,
+    ## #   mark_position <chr>, mark_color <chr>, trap_visit_comment <chr>,
+    ## #   catch_comment <lgl>, location <chr>, count <dbl>
 
 ``` r
 total <- raw_clean %>%
@@ -920,91 +935,33 @@ unique(raw_clean$mark_color)
 filter(raw_clean, mark_type == "No marks or tags", mark_color != "Not applicable (n/a)")
 ```
 
-    ##  [1] date               trap_position      fish_processed     species           
-    ##  [5] fork_length_mm     weight             life_stage         at_capture_run    
-    ##  [9] final_run          mortality          random             analyses          
-    ## [13] rearing            release_id         mark_type          mark_position     
-    ## [17] mark_color         trap_visit_comment catch_comment      location          
-    ## [21] count             
-    ## <0 rows> (or 0-length row.names)
+    ## # A tibble: 0 × 21
+    ## # … with 21 variables: date <dttm>, trap_position <chr>, fish_processed <chr>,
+    ## #   species <chr>, fork_length_mm <dbl>, weight <dbl>, life_stage <chr>,
+    ## #   at_capture_run <chr>, final_run <chr>, mortality <chr>, random <chr>,
+    ## #   analyses <chr>, rearing <chr>, release_id <dbl>, mark_type <chr>,
+    ## #   mark_position <chr>, mark_color <chr>, trap_visit_comment <chr>,
+    ## #   catch_comment <lgl>, location <chr>, count <dbl>
 
 ``` r
 filter(raw_clean, mark_color != "Not applicable (n/a)") %>%
   select(date, fork_length_mm, at_capture_run, count, rearing, mark_type, mark_color)
 ```
 
-    ##                    date fork_length_mm at_capture_run count  rearing
-    ## 1  2011-01-20T00:00:00Z             35           Fall     1  Natural
-    ## 2  2011-01-20T00:00:00Z             39           Fall     1  Natural
-    ## 3  2011-01-20T00:00:00Z             41           Fall     1  Natural
-    ## 4  2011-01-20T00:00:00Z             43           Fall     1  Natural
-    ## 5  2011-04-28T00:00:00Z             78           Fall     1  Natural
-    ## 6  2011-05-01T00:00:00Z             81           Fall     1  Natural
-    ## 7  2011-05-01T00:00:00Z             86           Fall     1  Natural
-    ## 8  2011-05-02T00:00:00Z             61           Fall     1  Natural
-    ## 9  2016-01-17T00:00:00Z             37           Fall     1  Natural
-    ## 10 2016-01-18T00:00:00Z             37           Fall     1  Natural
-    ## 11 2016-01-18T00:00:00Z             37           Fall     1  Natural
-    ## 12 2016-01-19T00:00:00Z             38           Fall     1  Natural
-    ## 13 2016-01-21T00:00:00Z             32           Fall     1  Natural
-    ## 14 2016-01-21T00:00:00Z             39           Fall     1  Natural
-    ## 15 2016-01-23T00:00:00Z             40           Fall     1  Natural
-    ## 16 2016-02-10T00:00:00Z             36           Fall     1 Hatchery
-    ## 17 2016-02-19T00:00:00Z             54           Fall     1 Hatchery
-    ## 18 2016-04-07T00:00:00Z             52           Fall     1 Hatchery
-    ## 19 2016-04-14T00:00:00Z             54           Fall     1 Hatchery
-    ## 20 2016-04-14T00:00:00Z             54           Fall     1 Hatchery
-    ## 21 2016-04-16T00:00:00Z             90         Spring     1  Natural
-    ## 22 2016-04-16T00:00:00Z             61           Fall     1 Hatchery
-    ## 23 2016-04-28T00:00:00Z             66           Fall     1 Hatchery
-    ## 24 2016-09-30T00:00:00Z            125           Fall     1 Hatchery
-    ## 25 2016-10-21T00:00:00Z            145           Fall     1 Hatchery
-    ## 26 2016-11-17T00:00:00Z             98      Late fall     1 Hatchery
-    ## 27 2016-11-17T00:00:00Z            178           Fall     1 Hatchery
-    ## 28 2016-11-17T00:00:00Z            109      Late fall     1 Hatchery
-    ## 29 2016-11-17T00:00:00Z            173           Fall     1 Hatchery
-    ## 30 2017-02-25T00:00:00Z             48           Fall     1 Hatchery
-    ## 31 2017-02-25T00:00:00Z             52           Fall     1 Hatchery
-    ## 32 2017-04-04T00:00:00Z             73           Fall     1  Natural
-    ## 33 2018-11-01T00:00:00Z            137           Fall     1  Natural
-    ## 34 2019-01-17T00:00:00Z             34           Fall     1  Natural
-    ## 35 2019-03-09T00:00:00Z             58           Fall     1 Hatchery
-    ##        mark_type mark_color
-    ## 1  Pigment / dye       Blue
-    ## 2  Pigment / dye        Red
-    ## 3  Pigment / dye       Blue
-    ## 4  Pigment / dye       Blue
-    ## 5  Pigment / dye        Red
-    ## 6  Pigment / dye        Red
-    ## 7  Pigment / dye        Red
-    ## 8  Pigment / dye        Red
-    ## 9  Pigment / dye      Brown
-    ## 10 Pigment / dye      Brown
-    ## 11 Pigment / dye      Brown
-    ## 12 Pigment / dye      Brown
-    ## 13 Pigment / dye      Brown
-    ## 14 Pigment / dye      Brown
-    ## 15 Pigment / dye      Brown
-    ## 16     Elastomer     Yellow
-    ## 17     Elastomer      Green
-    ## 18     Elastomer      Green
-    ## 19     Elastomer      White
-    ## 20     Elastomer      White
-    ## 21 Pigment / dye      Brown
-    ## 22     Elastomer      White
-    ## 23     Elastomer      Green
-    ## 24     Elastomer     Yellow
-    ## 25     Elastomer      White
-    ## 26     Elastomer     Orange
-    ## 27     Elastomer     Orange
-    ## 28     Elastomer     Orange
-    ## 29     Elastomer     Orange
-    ## 30     Elastomer     Orange
-    ## 31     Elastomer     Orange
-    ## 32 Pigment / dye      Brown
-    ## 33     Elastomer     Yellow
-    ## 34 Pigment / dye      Brown
-    ## 35     Elastomer     Orange
+    ## # A tibble: 35 × 7
+    ##    date                fork_length_mm at_capture_run count rearing mark_type    
+    ##    <dttm>                       <dbl> <chr>          <dbl> <chr>   <chr>        
+    ##  1 2011-01-20 00:00:00             35 Fall               1 Natural Pigment / dye
+    ##  2 2011-01-20 00:00:00             39 Fall               1 Natural Pigment / dye
+    ##  3 2011-01-20 00:00:00             41 Fall               1 Natural Pigment / dye
+    ##  4 2011-01-20 00:00:00             43 Fall               1 Natural Pigment / dye
+    ##  5 2011-04-28 00:00:00             78 Fall               1 Natural Pigment / dye
+    ##  6 2011-05-01 00:00:00             81 Fall               1 Natural Pigment / dye
+    ##  7 2011-05-01 00:00:00             86 Fall               1 Natural Pigment / dye
+    ##  8 2011-05-02 00:00:00             61 Fall               1 Natural Pigment / dye
+    ##  9 2016-01-17 00:00:00             37 Fall               1 Natural Pigment / dye
+    ## 10 2016-01-18 00:00:00             37 Fall               1 Natural Pigment / dye
+    ## # … with 25 more rows, and 1 more variable: mark_color <chr>
 
 **NA and Unknown Values**
 
@@ -1080,13 +1037,13 @@ unique(raw_clean$location)
 filter(raw_clean, is.na(location))
 ```
 
-    ##  [1] date               trap_position      fish_processed     species           
-    ##  [5] fork_length_mm     weight             life_stage         at_capture_run    
-    ##  [9] final_run          mortality          random             analyses          
-    ## [13] rearing            release_id         mark_type          mark_position     
-    ## [17] mark_color         trap_visit_comment catch_comment      location          
-    ## [21] count             
-    ## <0 rows> (or 0-length row.names)
+    ## # A tibble: 0 × 21
+    ## # … with 21 variables: date <dttm>, trap_position <chr>, fish_processed <chr>,
+    ## #   species <chr>, fork_length_mm <dbl>, weight <dbl>, life_stage <chr>,
+    ## #   at_capture_run <chr>, final_run <chr>, mortality <chr>, random <chr>,
+    ## #   analyses <chr>, rearing <chr>, release_id <dbl>, mark_type <chr>,
+    ## #   mark_position <chr>, mark_color <chr>, trap_visit_comment <chr>,
+    ## #   catch_comment <lgl>, location <chr>, count <dbl>
 
 **NA and Unknown Values**
 
