@@ -12,6 +12,7 @@ library(lubridate)
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
+library(knitr)
 ```
 
 # Lower Sacramento (Knight's Landing) Rotary Screw Trap Data
@@ -64,7 +65,7 @@ Read in data from google cloud, glimpse raw data and domain description sheet. A
 
 ```{r}
 # read in data to clean 
-knl_effort <- read_csv("knl_combine_sampling_effort.csv")
+knl_effort <- read_csv("knl_combine_sampling_effort.csv", show_col_types = F)
 glimpse(knl_effort)
 ```
 
@@ -100,6 +101,7 @@ data_dictionary <- tibble(variables = colnames(knl_effort),
                           percent_na = round(percent_na$value*100)
                           
 )
+kable(data_dictionary)
 ```
 
 

@@ -12,6 +12,7 @@ library(lubridate)
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
+library(knitr)
 ```
 
 ## Description of Monitoring Data
@@ -62,8 +63,37 @@ in changes section at end.
 
 ```{r}
 # read in data to clean 
-knl_rst <- read.csv("knl_combine_rst.csv")
+knl_rst <- read_csv("knl_combine_rst.csv", show_col_types = F)
 glimpse(knl_rst)
+```
+
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. Most of the NAs are due to no fish being caught. The percent_na is calculated only when count is greater than 0 and species is Chinook.
+
+```{r data_dictionary}
+percent_na <- filter(knl_rst, count > 0, species == "Chinook") %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(knl_rst),
+                          description = c("Date of sampling. In more recent years, start and stop date are collected in which case date is the stop date.",
+                                          "Date and time when sampling started. This was not collected in earlier sampling years.",
+                                          "Date and time when sampling stopped. This was not collected in earlier sampling years.",
+                                          "Site name/code for the RST trap. All are KL.",
+                                          "Maximum fork length of sample in mm.",
+                                          "Minimum fork length of sample in mm.",
+                                          "Species of fish. Options are Chinook or Steelhead.",
+                                          "Count of fish in sample.",
+                                          "Run of fish determined at capture. Options are Spring, Fall, Late fall, Winter.",
+                                          "Lifestage only includes Older juvenile.",
+                                          "Indicates if fish was marked (TRUE/FALSE).",
+                                          "Catch per unit effort is calculated as the number of fish caught divided by the total hours fished."),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
 ```
 
 ## Data transformations
