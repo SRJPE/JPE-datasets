@@ -64,15 +64,19 @@ Read in data from google cloud, glimpse raw data and domain description sheet. A
 
 ```{r}
 # read in data to clean 
-knl_effort <- read.csv("knl_combine_sampling_effort.csv")
+knl_effort <- read_csv("knl_combine_sampling_effort.csv")
 glimpse(knl_effort)
 ```
 
 ## Data Dictionary
 
-The following table describes the variables included in this dataset.
+The following table describes the variables included in this dataset and the percent that do not include data.
 
 ```{r data_dictionary}
+percent_na <- knl_effort %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
 data_dictionary <- tibble(variables = colnames(knl_effort),
                           description = c("Date of sampling. In more recent years, start and stop date are collected in which case date is the stop date.",
                                           "Date and time when sampling started. This was not collected in earlier sampling years.",
@@ -93,6 +97,7 @@ data_dictionary <- tibble(variables = colnames(knl_effort),
                                           "Identification number of cone/trap.",
                                           "Revolutions per minute. These may differ by cone_id.",
                                           "Total cone revolutions. These may differ by cone_id."),
+                          percent_na = round(percent_na$value*100)
                           
 )
 ```
