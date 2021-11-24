@@ -15,7 +15,7 @@ There are 3 main datatypes associated with RST data:
 | Tributary | Monitoring Timeframe | Data Contact | Metadata Quality | Data Lag | Provisional Data Available | Notes | 
 | :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :--------------------- | 
 | Battle Creek | 2003 - ongoing | [Mike Schraml](mailto:mike_schraml@fws.gov)  | Good | 6 months | TRUE | Provisional data may be available but will not be easy to get | 
-| Butte Creek | 1995 - 2015 | [Jessica Nichols](Jessica.Nichols@Wildlife.ca.gov) | Poor | One week | TRUE | Field crew uploads to CAMP daily, QC on a weekly basis, need to wait until end of season for escapement values |
+| Butte Creek | 1995 - ongoing | [Jessica Nichols](Jessica.Nichols@Wildlife.ca.gov) | Poor | One week | TRUE | Field crew uploads to CAMP daily, QC on a weekly basis, need to wait until end of season for escapement values |
 | Clear Creek | 2003 - ongoing | [Mike Schraml](mailto:mike_schraml@fws.gov)  | Good | 3 months | TRUE | Provisional data may be available but will not be easy to get |
 | Deer Creek | 1992 - 2010; proposed | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Poor | NA | NA | Currently only historical data; proposed program that will be similar to Clear and Battle |
 | Feather River | 1997 - ongoing | [Kassie Hickey](mailto:KHickey@psmfc.org) | Fair | 3 months | TRUE | |
@@ -34,11 +34,11 @@ Metadata Quality = poor, fair, good
 | Battle Creek | Tabular Data | [Modeled](https://github.com/FlowWest/JPE-datasets/blob/main/scripts/rst/battle-creek/Daily%20Passage.R) | Daily | Unknown | |
 | Butte Creek | Unknown | Unknown | Unknown | Unknown | |
 | Clear Creek | Tabular data | [Modeled](https://github.com/FlowWest/JPE-datasets/blob/main/scripts/rst/battle-creek/Daily%20Passage.R) | Daily | Unknown | |
-| Deer Creek | Unknown | Unknown | Unknown | Unknown | |
+| Deer Creek | Not Available | NA | NA | NA | |
 | Feather River | Unknown | Unknown | Unknown | Unknown | |
 | Sac - Kinghts Landing | [PDF Report](https://www.calfish.org/ProgramsData/ConservationandManagement/CentralValleyMonitoring/SacramentoValleyTributaryMonitoring/MiddleSacramentoRiverSalmonandSteelheadMonitoring.aspx) | Efficiency Correction | Annual | 95% CI | | 
 | Sac - Tisdale | Available | Efficiency Correction | Annual | Unknown | |
-| Mill Creek | Unknown | Unknown | Unknown | Unknown | |
+| Mill Creek | Not Available | NA | NA | NA | |
 | Yuba River | [PDF Report](https://www.yubawater.org/Archive.aspx?AMID=45) | Modeled | Annual | Unknown | Daily estimates are calculated using the GAM model but are not reported
 
 Upstream Passage Estimates = Tabular Data, PDF Report (linked), Available, Not Available, Unknown 
