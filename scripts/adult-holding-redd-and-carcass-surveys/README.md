@@ -1,6 +1,6 @@
 # Adult Holding, Spawners Redd, and Carcass Monitoring Data
 
-This directory contains markdown documents exploring Adult holding, redd, and carcass monitoring datasets for 7 tributaries. There is no holding  data for Feather River (Feather River has prespawn carcass survey instead), Mill Creek and Yuba River. There is no redd data for Deer Creek and Butte Creek, and there is no Carcass Data for Deer Creek and Mill Creek (Mill creek sample any encountered carcasses instead of true carcass survey). 
+This directory contains markdown documents exploring Adult holding, redd, and carcass monitoring datasets for 7 tributaries. There is no holding  data for Feather River (Feather River has prespawn carcass survey instead), Mill Creek and Yuba River. There is no redd data for Deer Creek and Butte Creek, and there is no Carcass Data for Deer Creek, Mill Creek, and the Yuba River (Mill creek sample any encountered carcasses instead of true carcass survey). 
 
 
 ### Data Available
@@ -13,7 +13,7 @@ This directory contains markdown documents exploring Adult holding, redd, and ca
 | Deer Creek | 2014 - ongoing | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Good | Near Immediate  | Unknown | Holding data only 
 | Feather River | 2000 - ongoing | Redd: [Chris Cook](mailto:Chris.Cook@water.ca.gov) Carcass:[Casey Campos](mailto:Casey.Campos@water.ca.gov) | Poor | Semi Real Time | Unknown | Have prespawn carcass survey instead of holding survey |
 | Mill Creek | 2012 - ongoing | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Good | Near Immediate | Unknown | Redd data only; sample encountered carcasses |
-| Yuba River | 2004 - ongoing | [Mike Healey](mailto:Mike.Healey@wildlife.ca.gov) | Unknown | Unknown | FALSE? | Need to contact Army Corps Engineer for Redds Data  |
+| Yuba River | 2004 - ongoing | [Mike Healey](mailto:Mike.Healey@wildlife.ca.gov) | Unknown | Unknown | FALSE? | Need to contact Army Corps Engineer for Redds Data, proposed expansion of redd survey area and addition of carcass surveys |
 
 *Data Lag refers to time from end of monitoring season until data is QA/QC and in a shareable format. 
 
