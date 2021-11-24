@@ -10,7 +10,7 @@ Inigo Peng
 These data were collected by the U.S. Fish and Wildlife Service’s, Red
 Bluff Fish and Wildlife Office’s, Clear Creek Monitoring Program.These
 data encompass spring-run Chinook Salmon escapent index surveys from
-2008 to 2019. Data were collected on lower Clear Creek from Whiskeytown
+2008 to 2019. Data were collected on Lower Clear Creek from Whiskeytown
 Dam located at river mile 18.1, (40.597786N latitude, -122.538791W
 longitude \[decimal degrees\]) to the Clear Creek Video Station located
 at river mile 0.0 (40.504836N latitude, -122.369693W longitude \[decimal
@@ -18,7 +18,7 @@ degrees\]) near the confluence with the Sacramento River.
 
 **Timeframe:** 2000 - 2019
 
-**Completeness of Record throughout timeframe:**
+**Completeness of Record throughout timeframe:** Sampled each year
 
 **Sampling Location:** Clear Creek
 
@@ -47,10 +47,20 @@ Read in data from google cloud, glimpse raw data sheet:
 
 ## Data Transformation
 
+Note:
+
+survey\_(2-9)*age is described as “Age of redd based on age
+classification during survey (2-9)”. Age(1-9) is also described as “age
+of redd based on age classification during survey (1-9)”, These to
+variables seem to be redundant. TODO: Should we drop drop
+survey*(2-9)\_age for now until further review? The last 4 variables
+observation\_reach, observation\_date, observation\_age, and
+survey\_observed need further description.
+
 ``` r
 cleaner_data <- raw_redds_data %>% 
   janitor::clean_names() %>%
-  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
+  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id', )) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'survey' = 'survey_8',
@@ -78,6 +88,7 @@ cleaner_data <- raw_redds_data %>%
          observation_date = as.Date(observation_date),
          survey = as.character(survey),
          survey_observed = as.character(survey_observed)) %>% 
+  # filter(run == "spring") %>%
   glimpse()
 ```
 
@@ -154,16 +165,6 @@ cleaner_data <- raw_redds_data %>%
     ## $ observation_age         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ survey_observed         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
 
-Note:
-
-survey\_(2-9)*age is described as “Age of redd based on age
-classification during survey (2-9)”. Age(1-9) is also described as “age
-of redd based on age classification during survey (1-9)”, These to
-variables seem to be redundant so we will drop survey*(2-9)\_age for now
-until further review. The last 4 variables observation\_reach,
-observation\_date, observation\_age, and survey\_observed need further
-description.
-
 ## Explore `date`
 
 ``` r
@@ -180,6 +181,8 @@ summary(cleaner_data$date)
 ## Explore `observation_date`
 
 **Description:** Date of observation
+
+TODO: need to ask Ryan what the observation date is for
 
 ``` r
 summary(cleaner_data$observation_date)
@@ -234,6 +237,8 @@ Note: what’s pw? do we keep rstr?
 ### Variable: `ucc_relate`
 
 **Description:** Above or below Upper Clear Creek Rotary Screw Trap
+
+Note: column probably change the column name to something else
 
 ``` r
 cleaner_data$ucc_relate <- tolower(cleaner_data$ucc_relate)
@@ -294,6 +299,8 @@ unique(cleaner_data$redd_id)[1:10]
     ##  [5] "09-23-02R1#3"    "09-23-02R1#5"    "10-08-02R1#5"    "09-16-02R1#6-10"
     ##  [9] "09-16-02R1#11"   "09-23-02R1#6"
 
+There are 656 unique redd ID numbers.
+
 **NA and Unknown Values**
 
 -   10.6 % of values in the `redd_id` column are NA.
@@ -319,20 +326,29 @@ table(cleaner_data$species)
 
 **Description:** Latitudinal location of the redd in the creek.
 
-RL: river left RR: river right RC: river center
+RL: river left
+
+RR: river right
+
+RC: river center
 
 ``` r
 cleaner_data<- cleaner_data %>% 
   mutate(redd_loc = case_when(
   redd_loc == "N/A" ~ NA_character_,
-  TRUE ~ as.character(redd_loc)
+  redd_loc == "RC" ~ "river center",
+  redd_loc == "RR" ~ "river right",
+  redd_loc == "RL" ~ "river left",
+  redd_loc == "RC to RR" ~ "river center to river right"
 ))
 table(cleaner_data$redd_loc)
 ```
 
     ## 
-    ##       RC RC to RR       RL       RR 
-    ##      299        1      340      279
+    ##                river center river center to river right 
+    ##                         299                           1 
+    ##                  river left                 river right 
+    ##                         340                         279
 
 **NA and Unknown Values**
 
@@ -491,6 +507,8 @@ table(cleaner_data$measured)
 
 **Description:** Indicates why a redd wasn’t measured
 
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
 ``` r
 table(cleaner_data$why_not_measured)
 ```
@@ -585,7 +603,7 @@ table(cleaner_data$run)
 
 **Description:** Reach of observation
 
-Note: is this significantly different from reach?
+Note: is this significantly different from `reach`?
 
 ``` r
 table(cleaner_data$observation_reach)
@@ -622,7 +640,12 @@ cleaner_data %>%
 ```
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
-\#\# Explore Numerical Data
+
+**NA and Unknown Values**
+
+-   77.7 % of values in the `survey_observed` column are NA.
+
+## Explore Numerical Data
 
 ``` r
 cleaner_data %>% select_if(is.numeric) %>% colnames()
@@ -658,8 +681,7 @@ summary(cleaner_data$latitude)
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
     ##   40.49   40.49   40.51   40.52   40.56   40.60       1
 
-Note longitude has 1 decimal place, and latitude has 2 decimal places -
-not very exact.
+Note longitude has 1 decimal place - not very exact.
 
 **NA and Unknown Values**
 
@@ -700,6 +722,8 @@ cleaner_data %>%
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
+Numeric Summary of river\_mile Over Period of Record
+
 ``` r
 summary(cleaner_data$river_mile)
 ```
@@ -711,15 +735,46 @@ summary(cleaner_data$river_mile)
 
 -   0.1 % of values in the `river_mile` column are NA.
 
-### Variable: 1000ftbreak?
+### Variable: `x1000ftbreak`
+
+No metadata description
+
+``` r
+cleaner_data %>% 
+  ggplot(aes(x= x1000ftbreak))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "Distribution of x1000ftbreak")
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+    ## Warning: Removed 214 rows containing non-finite values (stat_bin).
+
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+
+**Numeric Summary of x1000ftbreak Over Period of Time**
+
+``` r
+summary(cleaner_data$x1000ftbreak)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   39000   44000   57000   62085   80000   97000     214
+
+**NA and Unknown Values**
+
+-   14.3 % of values in the `x1000ftbreak` column are NA.
 
 ### Variable: `picket_weir_location`
 
 **Description:** Annual picket weir location
 
-TODO: need description for what locations the numbers represent
+Need description for what locations the numbers represent
 
 There are 2 unique picket weir locations.
+
+**Numeric Summary of picket\_weir\_location Over Period of Record**
 
 ``` r
 summary(cleaner_data$picket_weir_location)
@@ -789,7 +844,7 @@ cleaner_data %>%
 
     ## Warning: Removed 837 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
 
 **Numeric Summary of redd\_pit\_depth**
 
@@ -820,7 +875,7 @@ cleaner_data %>%
 
     ## Warning: Removed 813 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$redd_tail_depth)
@@ -850,7 +905,9 @@ cleaner_data %>%
 
     ## Warning: Removed 806 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
+
+**Numeric Summary of redd\_length\_in over Period of Time**
 
 ``` r
 summary(cleaner_data$redd_length_in)
@@ -880,7 +937,7 @@ cleaner_data %>%
 
     ## Warning: Removed 807 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -892,7 +949,9 @@ cleaner_data %>%
 
     ## Warning: Removed 808 rows containing missing values (geom_point).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+
+**Numeric Summary of redd\_width\_in over Period of Time**
 
 ``` r
 summary(cleaner_data$redd_width_in)
@@ -925,7 +984,9 @@ cleaner_data %>%
 
     ## Warning: Removed 979 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-50-1.png)<!-- -->
+
+**Numeric Summary of velocity over Period of Time**
 
 ``` r
 summary(cleaner_data$velocity)
@@ -936,7 +997,7 @@ summary(cleaner_data$velocity)
 
 **NA and Unknown Values**
 
--   0 % of values in the `velocity` column are NA.
+-   65.5 % of values in the `velocity` column are NA.
 
 ### Variable:`start_60`,`end_60`
 
@@ -944,19 +1005,12 @@ summary(cleaner_data$velocity)
 60% depth
 
 ``` r
-start <- cleaner_data %>% 
-  ggplot(aes(x = start_60))+
-  geom_histogram()+
-  labs(title = "Start 60 Distribution")+
+cleaner_data %>% 
+  ggplot()+
+  geom_histogram(aes(x = start_60), fill = "red", alpha = .5)+
+  geom_histogram(aes(x = end_60), fill = "blue", alpha = .5)+
+  labs(title = "Start 60 and End 60 Distribution", x = "Start 60 and End 60")+
   theme_minimal()
-
-end <- cleaner_data %>% 
-  ggplot(aes(x = end_60))+
-  geom_histogram()+
-  labs(title = "End 60 Distribution")+
-  theme_minimal()
-
-gridExtra::grid.arrange(start, end)
 ```
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
@@ -967,7 +1021,9 @@ gridExtra::grid.arrange(start, end)
 
     ## Warning: Removed 967 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-50-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-52-1.png)<!-- -->
+
+**Numeric Summary of start\_60 and end\_60 over Period of Time**
 
 ``` r
 summary(cleaner_data$start_60)
@@ -1005,7 +1061,9 @@ cleaner_data %>%
 
     ## Warning: Removed 963 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-53-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-55-1.png)<!-- -->
+
+**Numeric Summary of sec\_60 over Period of Time**
 
 ``` r
 summary(cleaner_data$sec_60)
@@ -1024,20 +1082,12 @@ summary(cleaner_data$sec_60)
 80/20% depth
 
 ``` r
-start80 <- cleaner_data %>% 
-  ggplot(aes(x = start_80))+
-  geom_histogram()+
-  labs(title = "Start 80 Distribution")+
+cleaner_data %>% 
+  ggplot()+
+  geom_histogram(aes(x = start_80), fill = "red", alpha = .5)+
+  geom_histogram(aes(x = end_80), fill = "blue", alpha = .5)+
+  labs(title = "Start 80 and End 80 Distribution", x = "Start 80 and End 80")+
   theme_minimal()
-
-end80 <- cleaner_data %>% 
-  ggplot(aes(x = end_80))+
-  geom_histogram()+
-  labs(title = "End 80 Distribution")+
-  theme_minimal()
-
-
-gridExtra::grid.arrange(start80, end80)
 ```
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
@@ -1048,7 +1098,9 @@ gridExtra::grid.arrange(start80, end80)
 
     ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-55-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-57-1.png)<!-- -->
+
+**Numeric Summary of start\_80 and end\_80 over Period of Time**
 
 ``` r
 summary(cleaner_data$start_80)
@@ -1072,7 +1124,7 @@ summary(cleaner_data$end_80)
 
 ### Variable: `secs_80`
 
-**Description:**Time the meter was in the water at the 80/20% depth.
+**Description:** Time the meter was in the water at the 80/20% depth.
 
 ``` r
 cleaner_data %>% 
@@ -1088,7 +1140,9 @@ cleaner_data %>%
 
     ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-58-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-60-1.png)<!-- -->
+
+**Numeric Summary of secs\_80 over Period of Time**
 
 ``` r
 summary(cleaner_data$secs_80)
@@ -1136,7 +1190,9 @@ gridExtra::grid.arrange(v60, v80)
 
     ## Warning: Removed 1471 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-60-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-62-1.png)<!-- -->
+
+**Numeric Summary of bomb\_vel60 and bomb\_vel80 over Period of Time**
 
 ``` r
 summary(cleaner_data$bomb_vel60)
@@ -1177,7 +1233,9 @@ cleaner_data %>%
 
     ## Warning: Removed 1162 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-63-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-65-1.png)<!-- -->
+
+**Numeric Summary of observation\_age over Period of Time**
 
 ``` r
 summary(cleaner_data$observation_age)
@@ -1191,6 +1249,11 @@ summary(cleaner_data$observation_age)
 -   77.7 % of values in the `observation_age` column are NA.
 
 ### Summary of Identified Issues
+
+-   There are some metadata needed
+
+-   Need to email Ryan to ask what survey\_age is; decide if the columns
+    are important and decide if these columns should be dropped
 
 ### Save Cleaned data back to google cloud
 

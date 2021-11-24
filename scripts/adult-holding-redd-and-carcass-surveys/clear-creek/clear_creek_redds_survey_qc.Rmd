@@ -20,12 +20,12 @@ library (RColorBrewer)
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon escapent index surveys from 2008 to 2019. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
+These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon escapent index surveys from 2008 to 2019. Data were collected on Lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
 
 
 **Timeframe:** 2000 - 2019
 
-**Completeness of Record throughout timeframe:** 
+**Completeness of Record throughout timeframe:** Sampled each year
 
 **Sampling Location:** Clear Creek 
 
@@ -59,10 +59,14 @@ raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet 
 
 ## Data Transformation
 
+Note:
+
+survey_(2-9)_age is described as "Age of redd based on age classification during survey (2-9)". Age(1-9) is also described as "age of redd based on age classification during survey (1-9)", These to variables seem to be redundant. TODO: Should we drop  drop survey_(2-9)_age for now until further review? The last 4 variables observation_reach, observation_date, observation_age, and survey_observed need further description.
+
 ```{r}
 cleaner_data <- raw_redds_data %>% 
   janitor::clean_names() %>%
-  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
+  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id', )) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'survey' = 'survey_8',
@@ -90,11 +94,10 @@ cleaner_data <- raw_redds_data %>%
          observation_date = as.Date(observation_date),
          survey = as.character(survey),
          survey_observed = as.character(survey_observed)) %>% 
+  # filter(run == "spring") %>%
   glimpse()
 ```
-Note:
-
-survey_(2-9)_age is described as "Age of redd based on age classification during survey (2-9)". Age(1-9) is also described as "age of redd based on age classification during survey (1-9)", These to variables seem to be redundant so we will drop survey_(2-9)_age for now until further review. The last 4 variables observation_reach, observation_date, observation_age, and survey_observed need further description. 
+ 
 
 ## Explore `date`
 
@@ -108,6 +111,8 @@ summary(cleaner_data$date)
 ## Explore `observation_date`
 
 **Description:** Date of observation
+
+TODO: need to ask Ryan what the observation date is for 
 ```{r}
 summary(cleaner_data$observation_date)
 ```
@@ -137,6 +142,8 @@ Note: what's pw? do we keep rstr?
 ### Variable: `ucc_relate`
 
 **Description:** Above or below Upper Clear Creek Rotary Screw Trap
+
+Note: column probably change the column name to something else
 
 ```{r}
 cleaner_data$ucc_relate <- tolower(cleaner_data$ucc_relate)
@@ -176,6 +183,8 @@ table(cleaner_data$surveyed_reach)
 ```{r}
 unique(cleaner_data$redd_id)[1:10]
 ```
+There are `r length(unique(cleaner_data$redd_id))` unique redd ID numbers.
+
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$redd_id))/nrow(cleaner_data), 3) * 100` % of values in the `redd_id` column are NA.
@@ -196,14 +205,19 @@ table(cleaner_data$species)
 **Description:** Latitudinal location of the redd in the creek.
 
 RL: river left
+
 RR: river right
+
 RC: river center
 
 ```{r}
 cleaner_data<- cleaner_data %>% 
   mutate(redd_loc = case_when(
   redd_loc == "N/A" ~ NA_character_,
-  TRUE ~ as.character(redd_loc)
+  redd_loc == "RC" ~ "river center",
+  redd_loc == "RR" ~ "river right",
+  redd_loc == "RL" ~ "river left",
+  redd_loc == "RC to RR" ~ "river center to river right"
 ))
 table(cleaner_data$redd_loc)
 ```
@@ -320,6 +334,8 @@ table(cleaner_data$measured)
 
 **Description:** Indicates why a redd wasn't measured
 
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
 ```{r}
 table(cleaner_data$why_not_measured)
 ```
@@ -365,7 +381,7 @@ table(cleaner_data$run)
 
 **Description:** Reach of observation
 
-Note: is this significantly different from reach? 
+Note: is this significantly different from `reach`? 
 
 ```{r}
 table(cleaner_data$observation_reach)
@@ -394,6 +410,11 @@ cleaner_data %>%
   ggplot(aes(x = survey_observed))+
   geom_bar()
 ```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$survey_observed))/nrow(cleaner_data), 3) * 100` % of values in the `survey_observed` column are NA.
+
 ## Explore Numerical Data
 
 ```{r}
@@ -408,7 +429,7 @@ summary(cleaner_data$longitude)
 ```{r}
 summary(cleaner_data$latitude)
 ```
-Note longitude has 1 decimal place, and latitude has 2 decimal places - not very exact.
+Note longitude has 1 decimal place - not very exact.
 
 **NA and Unknown Values**
 
@@ -438,6 +459,9 @@ cleaner_data %>%
   theme_minimal()+
   labs(title = "River Mile Distribution")
 ```
+
+Numeric Summary of river_mile Over Period of Record
+
 ```{r}
 summary(cleaner_data$river_mile)
 ```
@@ -445,15 +469,37 @@ summary(cleaner_data$river_mile)
 
 * `r round(sum(is.na(cleaner_data$river_mile))/nrow(cleaner_data), 3) * 100` % of values in the `river_mile` column are NA.
 
-### Variable: 1000ftbreak?
+### Variable: `x1000ftbreak`
+
+No metadata description
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x= x1000ftbreak))+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "Distribution of x1000ftbreak")
+```
+
+**Numeric Summary of x1000ftbreak Over Period of Time**
+
+```{r}
+summary(cleaner_data$x1000ftbreak)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$x1000ftbreak))/nrow(cleaner_data), 3) * 100` % of values in the `x1000ftbreak` column are NA.
 
 ### Variable: `picket_weir_location`
 
 **Description:** Annual picket weir location
 
-TODO: need description for what locations the numbers represent
+Need description for what locations the numbers represent
 
 There are `r length(unique(cleaner_data$picket_weir_location))` unique picket weir locations.
+
+
+**Numeric Summary of picket_weir_location Over Period of Record**
 
 ```{r}
 summary(cleaner_data$picket_weir_location)
@@ -543,6 +589,8 @@ cleaner_data %>%
   theme_minimal()
 ```
 
+**Numeric Summary of redd_length_in over Period of Time**
+
 ```{r}
 summary(cleaner_data$redd_length_in)
 ```
@@ -570,6 +618,8 @@ cleaner_data %>%
   theme_minimal()
 ```
 
+**Numeric Summary of redd_width_in over Period of Time**
+
 ```{r}
 summary(cleaner_data$redd_width_in)
 ```
@@ -590,32 +640,30 @@ cleaner_data %>%
   labs(title = "Velocity Distribution")+
   theme_minimal()
 ```
+
+**Numeric Summary of velocity  over Period of Time**
 ```{r}
 summary(cleaner_data$velocity)
 ```
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$redd_velocity))/nrow(cleaner_data), 3) * 100` % of values in the `velocity` column are NA.
+* `r round(sum(is.na(cleaner_data$velocity))/nrow(cleaner_data), 3) * 100` % of values in the `velocity` column are NA.
 
 ### Variable:`start_60`,`end_60`
 
 **Description:** starting, ending values on the mechanical flow meter at 60% depth
 
 ```{r}
-start <- cleaner_data %>% 
-  ggplot(aes(x = start_60))+
-  geom_histogram()+
-  labs(title = "Start 60 Distribution")+
+cleaner_data %>% 
+  ggplot()+
+  geom_histogram(aes(x = start_60), fill = "red", alpha = .5)+
+  geom_histogram(aes(x = end_60), fill = "blue", alpha = .5)+
+  labs(title = "Start 60 and End 60 Distribution", x = "Start 60 and End 60")+
   theme_minimal()
 
-end <- cleaner_data %>% 
-  ggplot(aes(x = end_60))+
-  geom_histogram()+
-  labs(title = "End 60 Distribution")+
-  theme_minimal()
-
-gridExtra::grid.arrange(start, end)
 ```
+
+**Numeric Summary of start_60 and end_60 over Period of Time**
 
 ```{r}
 summary(cleaner_data$start_60)
@@ -640,6 +688,8 @@ cleaner_data %>%
   labs(title = "Sec 60 Distribution")+
   theme_minimal()
 ```
+
+**Numeric Summary of sec_60 over Period of Time**
 ```{r}
 summary(cleaner_data$sec_60)
 ```
@@ -653,22 +703,16 @@ summary(cleaner_data$sec_60)
 **Description:** Starting, end values on the mechanical flow meter at 80/20% depth
 
 ```{r}
-start80 <- cleaner_data %>% 
-  ggplot(aes(x = start_80))+
-  geom_histogram()+
-  labs(title = "Start 80 Distribution")+
+cleaner_data %>% 
+  ggplot()+
+  geom_histogram(aes(x = start_80), fill = "red", alpha = .5)+
+  geom_histogram(aes(x = end_80), fill = "blue", alpha = .5)+
+  labs(title = "Start 80 and End 80 Distribution", x = "Start 80 and End 80")+
   theme_minimal()
 
-end80 <- cleaner_data %>% 
-  ggplot(aes(x = end_80))+
-  geom_histogram()+
-  labs(title = "End 80 Distribution")+
-  theme_minimal()
-
-
-gridExtra::grid.arrange(start80, end80)
 ```
 
+**Numeric Summary of start_80 and end_80 over Period of Time**
 ```{r}
 summary(cleaner_data$start_80)
 ```
@@ -684,7 +728,7 @@ summary(cleaner_data$end_80)
 
 ### Variable: `secs_80`
 
-**Description:**Time the meter was in the water at the 80/20% depth.
+**Description:** Time the meter was in the water at the 80/20% depth.
 
 ```{r}
 cleaner_data %>% 
@@ -693,6 +737,9 @@ cleaner_data %>%
   labs(title = "Sec 80 Distribution")+
   theme_minimal()
 ```
+
+**Numeric Summary of secs_80 over Period of Time**
+
 ```{r}
 summary(cleaner_data$secs_80)
 ```
@@ -724,6 +771,8 @@ v80 <- cleaner_data %>%
 gridExtra::grid.arrange(v60, v80)
 ```
 
+**Numeric Summary of bomb_vel60 and bomb_vel80 over Period of Time**
+
 ```{r}
 summary(cleaner_data$bomb_vel60)
 ```
@@ -752,6 +801,9 @@ cleaner_data %>%
   theme_minimal()+
   labs(title = "Distribution of Age at Observation")
 ```
+
+**Numeric Summary of observation_age over Period of Time**
+
 ```{r}
 summary(cleaner_data$observation_age)
 ```
@@ -761,6 +813,10 @@ summary(cleaner_data$observation_age)
 * `r round(sum(is.na(cleaner_data$observation_age))/nrow(cleaner_data), 3) * 100` % of values in the `observation_age` column are NA.
 
 ### Summary of Identified Issues
+
+* There are some metadata needed
+
+* Need to email Ryan to ask what survey_age is; decide if the columns are important and decide if these columns should be dropped
 
 ### Save Cleaned data back to google cloud
 ```{r}

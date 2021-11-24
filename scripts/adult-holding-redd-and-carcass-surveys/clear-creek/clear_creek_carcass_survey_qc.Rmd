@@ -184,7 +184,7 @@ table(cleaner_data$condition)
 
 ### Variable: `tis_eth`
 
-**Description:** Tissue for ethanol storage? Yes or No
+**Description:** Tissue for ethanol storage? 
 ```{r}
 cleaner_data <- cleaner_data %>% 
   mutate(tis_eth = tolower(tis_eth))
@@ -211,6 +211,7 @@ table(cleaner_data$tis_dry)
 ### Variable: `scale`
 
 **Description:** Scales collected? Yes or No
+
 ```{r}
 cleaner_data <- cleaner_data %>% 
   mutate(scale = tolower(scale),
@@ -285,8 +286,11 @@ table(cleaner_data$spawn_status)
 * `r round(sum(is.na(cleaner_data$spawn_status))/nrow(cleaner_data), 3) * 100` % of values in the `spawn_status` column are NA.
 
 ### Variable: `why_not_sp`
-TODO
+
 **Description:** If unspawned, why unspawned (Predation, etc)
+
+TODO what is male always unknown?
+
 ```{r}
 cleaner_data <- cleaner_data %>% 
   mutate(why_not_sp = tolower(why_not_sp),
@@ -425,6 +429,14 @@ table(cleaner_data$release_location)
 **Description:** Hatchery that produced the fish
 
 ```{r}
+# table(cleaner_data$hatchery)
+cleaner_data <- cleaner_data %>% 
+  mutate(hatchery = tolower(hatchery),
+         hatchery = case_when(
+           hatchery == "feather r hatchery" | hatchery == "feather river" | hatchery == "frh" ~ "feather river hatchery",
+           hatchery == "cnfh" ~ "coleman nfh", 
+           TRUE ~ as.character(hatchery)
+           ))
 table(cleaner_data$hatchery)
 ```
 
@@ -483,6 +495,8 @@ cleaner_data$genetic <- tolower(cleaner_data$genetic)
 table(cleaner_data$genetic)
 ```
 
+Need descriptions on these variables
+
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$genetic))/nrow(cleaner_data), 3) * 100` % of values in the `genetic` column are NA.
@@ -520,6 +534,8 @@ cleaner_data %>%
 ```
 
 
+**Numeric Summary of river_mile over Period of Time**
+
 ```{r}
 summary(cleaner_data$river_mile)
 ```
@@ -537,6 +553,8 @@ cleaner_data %>%
   scale_x_continuous(breaks = pretty_breaks())+
   labs(title = "Distribution of Brood Year")
 ```
+
+**Numeric Summary of brood_year over Period of Time**
 ```{r}
 summary(cleaner_data$brood_year)
 ```
@@ -557,7 +575,7 @@ cleaner_data %>%
   labs(title = "Distribution of Fork Length")
 ```
 
-**Numeric Summary of fork_length**
+**Numeric Summary of fork_length over Period of Time**
 
 ```{r}
 summary(cleaner_data$fork_length)
@@ -577,7 +595,7 @@ cleaner_data %>%
   labs(title = "Distribution of Age")
 ```
 
-**Numeric Summary of Age**
+**Numeric Summary of Age Over Period of Time**
 ```{r}
 summary(cleaner_data$age)
 ```
@@ -606,6 +624,9 @@ summary(cleaner_data$mark_rate)
 * `r round(sum(is.na(cleaner_data$mark_rate))/nrow(cleaner_data), 3) * 100` % of values in the `mark_rate` column are NA.
 
 ### Summary of Identified Issues
+
+* Some columns need better metadata description
+* Some columns such as 'run' and 'run_call' seem to overlap - need to email Ryan 
 
 ### Save Cleaned data back to google cloud
 ```{r}

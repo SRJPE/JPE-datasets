@@ -302,7 +302,7 @@ table(cleaner_data$condition)
 
 ### Variable: `tis_eth`
 
-**Description:** Tissue for ethanol storage? Yes or No
+**Description:** Tissue for ethanol storage?
 
 ``` r
 cleaner_data <- cleaner_data %>% 
@@ -438,7 +438,9 @@ table(cleaner_data$spawn_status)
 
 ### Variable: `why_not_sp`
 
-TODO **Description:** If unspawned, why unspawned (Predation, etc)
+**Description:** If unspawned, why unspawned (Predation, etc)
+
+TODO what is male always unknown?
 
 ``` r
 cleaner_data <- cleaner_data %>% 
@@ -632,16 +634,20 @@ table(cleaner_data$release_location)
 **Description:** Hatchery that produced the fish
 
 ``` r
+# table(cleaner_data$hatchery)
+cleaner_data <- cleaner_data %>% 
+  mutate(hatchery = tolower(hatchery),
+         hatchery = case_when(
+           hatchery == "feather r hatchery" | hatchery == "feather river" | hatchery == "frh" ~ "feather river hatchery",
+           hatchery == "cnfh" ~ "coleman nfh", 
+           TRUE ~ as.character(hatchery)
+           ))
 table(cleaner_data$hatchery)
 ```
 
     ## 
-    ##                   CNFH            Coleman NFH            COLEMAN NFH 
-    ##                      4                      1                      1 
-    ##     FEATHER R HATCHERY          Feather River          FEATHER RIVER 
-    ##                     22                      4                      1 
-    ## Feather River Hatchery                    FRH                  LSNFH 
-    ##                     10                      6                      7
+    ##            coleman nfh feather river hatchery                  lsnfh 
+    ##                      6                     43                      7
 
 **NA and Unknown Values**
 
@@ -718,6 +724,8 @@ table(cleaner_data$genetic)
     ##   1 x no call fcs snps only     never run           scs 
     ##            25             2             1            36
 
+Need descriptions on these variables
+
 **NA and Unknown Values**
 
 -   88.6 % of values in the `genetic` column are NA.
@@ -768,6 +776,8 @@ cleaner_data %>%
 
 ![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
+**Numeric Summary of river\_mile over Period of Time**
+
 ``` r
 summary(cleaner_data$river_mile)
 ```
@@ -795,6 +805,8 @@ cleaner_data %>%
     ## Warning: Removed 505 rows containing non-finite values (stat_bin).
 
 ![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+
+**Numeric Summary of brood\_year over Period of Time**
 
 ``` r
 summary(cleaner_data$brood_year)
@@ -825,7 +837,7 @@ cleaner_data %>%
 
 ![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
 
-**Numeric Summary of fork\_length**
+**Numeric Summary of fork\_length over Period of Time**
 
 ``` r
 summary(cleaner_data$fork_length)
@@ -854,7 +866,7 @@ cleaner_data %>%
 
 ![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
 
-**Numeric Summary of Age**
+**Numeric Summary of Age Over Period of Time**
 
 ``` r
 summary(cleaner_data$age)
@@ -895,6 +907,10 @@ summary(cleaner_data$mark_rate)
 -   97.9 % of values in the `mark_rate` column are NA.
 
 ### Summary of Identified Issues
+
+-   Some columns need better metadata description
+-   Some columns such as ‘run’ and ‘run\_call’ seem to overlap - need to
+    email Ryan
 
 ### Save Cleaned data back to google cloud
 
