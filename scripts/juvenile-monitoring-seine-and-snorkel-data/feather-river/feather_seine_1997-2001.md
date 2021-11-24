@@ -7,7 +7,7 @@ Erin Cain
 
 ## Description of Monitoring Data
 
-Feather River Seine data 1997 - 2021. This dataset contains less
+Feather River Seine data 1997 - 2001. This dataset contains less
 attributes than the more recent data and sampling occurs relatively
 infrequently.
 
@@ -119,7 +119,8 @@ cleaner_seine_data <- raw_seine_1997 %>%
          seine_id = as.character(seine_id), 
          substrate = as.character(substrate),
          count = 1) %>% # each row is a individual fish catch
-  select(-species_code, -individ_auto_id, -mark, -recorder, -gear_type, -crew) %>% 
+  select(-species_code, # all species Chinook
+         -individ_auto_id, -mark, -recorder, -gear_type, -crew) %>% 
   glimpse()
 ```
 
@@ -206,7 +207,7 @@ cleaner_seine_data %>%
   geom_histogram() + 
   scale_x_continuous() +
   theme_minimal() +
-  labs(title = "Temperature distribution (farenheit)") +  
+  labs(title = "Temperature distribution (fahrenheit)") +  
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
@@ -403,10 +404,10 @@ cleaner_seine_data %>%
 
 ``` r
 cleaner_seine_data %>% group_by(date) %>%
-  mutate(daily_count_upstream = sum(count)) %>%
+  mutate(daily_count = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
-  ggplot(aes(x = year, y = daily_count_upstream)) + 
+  ggplot(aes(x = year, y = daily_count)) + 
   geom_boxplot() + 
   theme_minimal() +
   theme(text = element_text(size = 23)) + 
@@ -447,7 +448,7 @@ cleaner_seine_data %>%
   geom_histogram(aes(x = end_width), fill = "blue", alpha = .5) +
   scale_x_continuous() +
   theme_minimal() +
-  labs(title = "Distance Seine Out",
+  labs(title = "Width",
        x = "Start (gray) and end (blue) width") +  
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
@@ -556,7 +557,7 @@ cleaner_seine_data %>%
   geom_histogram(aes(x = depth_2), fill = "blue", alpha = .5) +
   scale_x_continuous() +
   theme_minimal() +
-  labs(title = "Distance Seine Out") +  
+  labs(title = "Depth") +  
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
@@ -711,6 +712,8 @@ cleaner_seine_data %>% select_if(is.character) %>% colnames()
     ## [10] "cover"              "HUC_stream_feature" "comments"
 
 ### Variable: `seine_id`
+
+There are 279 unique Seine IDs
 
 **NA and Unknown Values**
 
@@ -1244,7 +1247,7 @@ tibble(code = feather_seine_cover,
 
 -   30.9 % of values in the `cover` column are NA.
 
-### Variable: `HUC_strean_feature`
+### Variable: `HUC_stream_feature`
 
 | UnitCode | Unit               |
 |----------|--------------------|
