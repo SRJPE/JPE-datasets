@@ -38,12 +38,6 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = 
-                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/all_fields_seine_2008-2014.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_seine_2008-2014.xlsx",
-               overwrite = TRUE)
-
-gcs_get_object(object_name = 
                  "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/all_fields_seine_2014-2021.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "raw_seine_2015-2021.xlsx",
@@ -229,6 +223,7 @@ cleaner_seine_data %>% select_if(is.numeric) %>% colnames()
 
 ``` r
 cleaner_seine_data %>% 
+  filter(run == "spring") %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
@@ -239,7 +234,7 @@ cleaner_seine_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 20),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Seine Count All Runs", 
+  labs(title = "Daily Seine Count Spring", 
        x = "Date")  
 ```
 
@@ -248,9 +243,9 @@ cleaner_seine_data %>%
 ``` r
 cleaner_seine_data %>% 
   group_by(date) %>%
-  summarise(daily_count_upstream = sum(count)) %>%
+  summarise(daily_count = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
-  ggplot(aes(x = year, y = daily_count_upstream)) + 
+  ggplot(aes(x = year, y = daily_count)) + 
   geom_boxplot() + 
   theme_minimal() +
   theme(text = element_text(size = 23)) + 
@@ -263,19 +258,22 @@ cleaner_seine_data %>%
 cleaner_seine_data  %>%
   mutate(year = as.factor(year(date))) %>%
   filter(run %in% c("fall", "spring", "winter")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
-  ggplot(aes(x = year, y = count)) + 
+  ggplot(aes(x = year, y = count, fill = run)) + 
   geom_col() + 
   theme_minimal() +
   labs(title = "Total Yearly Fish Counts by Run",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  facet_grid(~run)
+  facet_wrap(~run)
 ```
 
 ![](feather_seine_2015-2021_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
 Not a lot of spring run fish caught in comparison to fall run fish
-caught. **Numeric Summary of Count over Period of Record**
+caught.
+
+**Numeric Summary of Count over Period of Record**
 
 ``` r
 # daily numeric summary 
@@ -418,7 +416,7 @@ cleaner_seine_data %>%
   geom_histogram() + 
   scale_x_continuous() +
   theme_minimal() +
-  labs(title = "Temperature distribution (celcius)") + 
+  labs(title = "Temperature distribution (celsius)") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
@@ -548,6 +546,8 @@ are out of the realm of possibilities for the feather river. I changed
 the names to lat and long and then updated then changed unreasonable
 values to NA.
 
+TODO see if this is actually a mix of units or
+
 ``` r
 summary(cleaner_seine_data$utm_easting)
 ```
@@ -586,8 +586,8 @@ summary(cleaner_seine_data$latitude)
 
 **NA and Unknown Values**
 
--   29.3 % of values in the `longitude` column \# Check that they are in
-    consistent format \# Mapare NA.
+-   29.3 % of values in the `longitude` column
+
 -   23.9 % of values in the `latitude` column are NA.
 
 ## Explore Categorical variables:
@@ -612,7 +612,7 @@ length(unique(cleaner_seine_data$id)) == nrow(cleaner_seine_data)
 
     ## [1] TRUE
 
-Each id is unique as anticipated.
+Each id is unique as anticipated. There are 10100 unique ids.
 
 Each `sample_id` is not unique because multiple catches can occur in the
 same beach seine sample.
@@ -654,8 +654,6 @@ table(cleaner_seine_data$lifestage)
     ##          fry         parr silvery parr        smolt yolk-sac fry 
     ##          284         7095         1614          103            3
 
-**Create lookup rda for \[variable\] encoding:**
-
 **NA and Unknown Values**
 
 -   9.9 % of values in the `lifestage` column are NA.
@@ -674,7 +672,7 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 Update gear codes with gear names:
 
 -   SEIN25 - Gear description 25 foot beach seine with bag
--   SEIN50 - Gear description 25 foot beach seine with bag
+-   SEIN50 - Gear description 50 foot beach seine with bag
 
 ``` r
 cleaner_seine_data$gear <- case_when(cleaner_seine_data$gear == "1" ~ "SEIN25",
@@ -828,8 +826,6 @@ names(feather_seine_substrate) <- c(
 ```
 
 **NA and Unknown Values**
-
-No NA values:
 
 -   0 % of values in the `substrate_1` column are NA.
 -   48.4 % of values in the `substrate_2` column are NA.

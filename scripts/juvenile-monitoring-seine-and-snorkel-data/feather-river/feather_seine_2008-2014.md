@@ -216,10 +216,10 @@ cleaner_seine_data %>%
 
 ``` r
 cleaner_seine_data %>% group_by(date) %>%
-  mutate(daily_count_upstream = sum(count)) %>%
+  mutate(daily_count = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
-  ggplot(aes(x = year, y = daily_count_upstream)) + 
+  ggplot(aes(x = year, y = daily_count)) + 
   geom_boxplot() + 
   theme_minimal() +
   theme(text = element_text(size = 23)) + 
@@ -367,7 +367,7 @@ cleaner_seine_data %>%
   geom_histogram() + 
   scale_x_continuous() +
   theme_minimal() +
-  labs(title = "Temperature distribution (celcius)") + 
+  labs(title = "Temperature distribution (celsius)") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
@@ -403,8 +403,8 @@ cleaner_seine_data %>%
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
   ggplot(aes(x = fake_date, y = avg_flow, color = year)) + 
-  geom_point(alpha = .75) + 
-  geom_line(alpha = .25) + 
+  geom_point(size = 2, alpha = .75) + 
+  geom_line(alpha = .5) + 
   # facet_wrap(~year(date), scales = "free") + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
   theme_minimal() + 
@@ -535,11 +535,11 @@ cleaner_seine_data %>%
 **Numeric Summary of efbs\_depth\_top over Period of Record**
 
 ``` r
-summary(cleaner_seine_data$flow)
+summary(cleaner_seine_data$efbs_depth_top)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##     600     600     800    1387    2500    3000     873
+    ##  0.1200  0.1975  0.2250  0.2592  0.3000  0.5200    1721
 
 **NA and Unknown Values**
 
