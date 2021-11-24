@@ -23,8 +23,7 @@ We currently have passage estimates for Clear Creek (in PDF report),  Battle Cre
 **Provisional Data Available states if raw data can be shared 1 week or less after date of collection.
 
 
-
-### Passage Estimate Avalibility 
+#### Summary of passage estimate data
 
 | Tributary | Upstream Passage Estimates | Passage Estimate Methodology | Passage Estimate Resolution | Passage Estimate Uncertainty  | Notes | 
 | :--------- | :------------ | :------------ | :----------- | :----------- | :--------------------- | 

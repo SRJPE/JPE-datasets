@@ -84,11 +84,11 @@ cleaner_rst_count <- raw_rst_count_data %>%
          "count_2" = count,
          "count" = r_catch,
          "interpolated" = interp,
-         "run" = race) %>%
+         "run" = fws_race) %>%
   mutate(date = as.Date(date)) %>%
   select(-organism_code,
          -brood_year, 
-         -id_week, -fws_race,
+         -id_week, -race,
          -count_2) %>% # raw catch data, I kept interpolated catch (less than 1% of the data is interpolated)
   glimpse()
 
@@ -104,6 +104,14 @@ Notes:
   * fWSRace - USFWS run designation base upon location or emergence timing used in reports and for passage indices, W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon					
   * race - Database generated Sheila Greene run designation of catch, W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon, see RunDesignation and RunChart tables							
 
+These columns have simmilar run designations. 
+```{r}
+sum(raw_rst_count_data$Race == raw_rst_count_data$FWSRace, na.rm = T)/length(raw_rst_count_data$Race)
+```
+
+  
+Additional info from Mike describing the race columns: 
+We use the FWSRace for our reports, all fish length-designated as fall-run by the Sheila Greene length-at-date (LAD) charts we consider spring-run at the upper Battle and Clear Creek sites.  We consider the barrier weir at Coleman National Fish Hatchery to be fish tight up to 800 cfs, flows rarely exceed that level during the spring-run and early fall-run escapement period. We are fairly confident that no fall-run get above the weir. Likewise, we install a separation (picket) weir in Clear Creek below the upper trap site that excludes fall-run from spawning with spring-run and superimposing redds on top of spring-run redds. At the lower Clear Creek (LCC) site we strictly go by the Sheila Green LAD chart because there is no way to tell the difference between spring-run and fall-run fish in the field.  There is overlap in the sizes of spring-run and fall-run and we know that the Sheila Greene LAD charts don't capture the overlap. In Clear Creek, some fish that classify as fall-run based on length from our LCC trap are actually spring-run and vise versa.
  
 ## Explore Numeric Variables: {.tabset}
 

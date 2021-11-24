@@ -572,5 +572,5 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(butte_individual_survey_2017_2020,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-survey/butte-creek/data/butte_carcass_2017-2020.csv")
+           name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_carcass_2017-2020.csv")
 ```
