@@ -8,14 +8,15 @@ Erin Cain
 ## Description of Monitoring Data
 
 Feather River Snorkel Data from 2004 - 2020. This data was provided to
-flowwest in an access database "Snorkel\_Revided.mdb. We queried it to
-have all year and important variables.
+flowwest in an access database Snorkel\_Revided.mdb. We queried it to
+have all year and important variables. Snorkel data from 1999 - 2003 is
+available in a separate access database FR S and S Oroville.mdb
 
 **Timeframe:** 2004 - 2020
 
-**Seine Season:**
-
 **Completeness of Record throughout timeframe:**
+
+Only SR collected are in 2011 and 2012
 
 No environmental data collected pre 2010.
 
@@ -90,30 +91,39 @@ raw_snorkel <- read_xlsx("raw_snorkel.xlsx") %>% glimpse
 
 ## Data transformations
 
+Update column names and column types. Remove sid because it is a
+duplicate of survey\_id column. Filter to only show chinook salmon.
+
 ``` r
 cleaner_snorkel_data <- raw_snorkel %>% 
   janitor::clean_names() %>%
   rename(start_time = snorkel_start_ttime, 
          end_time = snorkel_end_time, 
-         lwd_number = lwd
+         lwd_number = lwd,
+         observation_id = obs_id
         ) %>%
   mutate(date = as.Date(date), 
          start_time = hms::as_hms(start_time), 
          end_time = hms::as_hms(end_time),
          time_of_temperature = hms::as_hms(time_of_temperature),
          survey_id = as.character(survey_id), 
-         obs_id = as.character(obs_id),
+         observation_id = as.character(observation_id),
          substrate = as.character(substrate), 
          overhead_cover = as.character(overhead_cover),
          lwd_number = as.character(lwd_number)) %>% # I think this is some sort of tag number so I am changing to character
-  select(-observer, -sid) %>% # remove sid because it is the same as survey_id 
   filter(!is.na(date), # survey ID 1 and 106 do not specify date 
          species %in% c("CHN", "NONE", "CHNU", "CHNT", "CHNC", "CHNF", "CHNS")) %>% # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
+  mutate(run = case_when(species  == "CHNF" ~ "fall",
+                         species == "CHNS" ~ "spring",
+                         species %in% c("CHN", "CHNT", "NONE", "CHNU", "CHNC") ~ "unknown"),
+         tagged = if_else(grepl('T$', species), TRUE, FALSE),
+         clipped = if_else(species == "CHNC", TRUE, FALSE)) %>%
+  select(-observer, -sid, -species) %>% # remove sid because it is the same as survey_id 
   glimpse()
 ```
 
     ## Rows: 2,753
-    ## Columns: 25
+    ## Columns: 27
     ## $ survey_id            <chr> "2", "2", "2", "2", "3", "3", "3", "3", "3", "3",~
     ## $ date                 <date> 2007-06-27, 2007-06-27, 2007-06-27, 2007-06-27, ~
     ## $ flow                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
@@ -126,9 +136,8 @@ cleaner_snorkel_data <- raw_snorkel %>%
     ## $ section_name         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ units_covered        <chr> NA, NA, NA, NA, "26,33,30,31,31a,32,32a", "26,33,~
     ## $ survey_comments      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ obs_id               <chr> "79", "81", "84", "86", "96", "98", "99", "100", ~
+    ## $ observation_id       <chr> "79", "81", "84", "86", "96", "98", "99", "100", ~
     ## $ unit                 <chr> "169", "173", "185", "215B", "26", "33", "33", "3~
-    ## $ species              <chr> "CHN", "CHN", "CHN", "CHN", "NONE", "CHN", "CHN",~
     ## $ count                <dbl> 50, 4, 15, 7, 0, 3, 30, 1, NA, 15, NA, 70, 14, 24~
     ## $ size_class           <chr> "III", "I", "III", "III", NA, "II", "III", NA, NA~
     ## $ est_size             <dbl> NA, NA, NA, NA, NA, 50, 75, 100, NA, 100, NA, 75,~
@@ -139,6 +148,9 @@ cleaner_snorkel_data <- raw_snorkel %>%
     ## $ water_depth_m        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ lwd_number           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ observation_comments <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ run                  <chr> "unknown", "unknown", "unknown", "unknown", "unkn~
+    ## $ tagged               <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ~
+    ## $ clipped              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ~
 
 ## Explore Numeric Variables:
 
@@ -213,7 +225,8 @@ We only have non zero turbidity values for 2011, 2012, 2017, 2018, and
 ``` r
 cleaner_snorkel_data %>%
   ggplot(aes(x = turbidity)) + 
-  geom_histogram()
+  geom_histogram() + 
+  theme_minimal()
 ```
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
@@ -236,6 +249,8 @@ summary(cleaner_snorkel_data$turbidity)
 -   19.9 % of values in the `turbidity` column are NA.
 
 ### Variable: `temperature`
+
+TODO: Check that they are in both F and C and then divide appropriately
 
 **Plotting temperature over Period of Record**
 
@@ -286,6 +301,7 @@ summary(cleaner_snorkel_data$temperature)
 
 ``` r
 cleaner_snorkel_data %>% 
+  filter(run == "spring") %>%
   group_by(date) %>%
   summarise(total_daily_catch = sum(count, na.rm = T)) %>%
   # filter(year(date) > 2014, year(date) < 2021) %>%
@@ -312,8 +328,7 @@ cleaner_snorkel_data %>%
 
 ![](feather_snorkel_qc_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
-It looks like snorkel surveys do not happen very often but when they do
-happen a lot of fish can be caught in a day.
+Very few SR fish, only caught SR in 2011 and 2012.
 
 ``` r
 cleaner_snorkel_data  %>%
@@ -413,10 +428,10 @@ cleaner_snorkel_data %>% select_if(is.character) %>% colnames()
 ```
 
     ##  [1] "survey_id"            "weather_code"         "section_name"        
-    ##  [4] "units_covered"        "survey_comments"      "obs_id"              
-    ##  [7] "unit"                 "species"              "size_class"          
-    ## [10] "substrate"            "instream_cover"       "overhead_cover"      
-    ## [13] "hydrology_code"       "lwd_number"           "observation_comments"
+    ##  [4] "units_covered"        "survey_comments"      "observation_id"      
+    ##  [7] "unit"                 "size_class"           "substrate"           
+    ## [10] "instream_cover"       "overhead_cover"       "hydrology_code"      
+    ## [13] "lwd_number"           "observation_comments" "run"
 
 ### Variable: `survey_id`
 
@@ -498,185 +513,85 @@ now.
 
 ### Variable: `section_name`
 
-A lot of differnt section names. TODO clean these up
+Cleaned up section names, TODO need more information to decide if we can
+combine some of these section names.
 
 ``` r
-table(cleaner_snorkel_data$section_name) 
+format_site_name <- function(string) {
+  clean <- 
+    str_replace_all(string, "'", "") %>%
+    str_replace_all("G-95", "G95") %>% 
+    str_replace_all("[^[:alnum:]]", " ") %>% 
+    trimws() %>% 
+    stringr::str_squish() %>%
+    stringr::str_to_title()
+}
+
+cleaner_snorkel_data$section_name <- format_site_name(cleaner_snorkel_data$section_name)
+table(cleaner_snorkel_data$section_name)
 ```
 
     ## 
-    ##                                       Aleck 
-    ##                                          38 
-    ##                                       ALECK 
-    ##                                           6 
-    ##                                Aleck Riffle 
-    ##                                          16 
-    ##                                  Auditorium 
-    ##                                          16 
-    ##                                  AUDITORIUM 
-    ##                                           4 
-    ##                           Auditorium Riffle 
-    ##                                          39 
-    ##                             Bed Rock Riffle 
-    ##                                           3 
-    ##                                     Bedrock 
-    ##                                          22 
-    ##                                     BEDROCK 
-    ##                                          15 
-    ##                                Bedrock Park 
-    ##                                          21 
-    ##                              Bedrock Riffle 
-    ##                                          38 
-    ##                                  Big Riffle 
-    ##                                          17 
-    ##                                  BIG RIFFLE 
-    ##                                           5 
-    ##                                         Eye 
-    ##                                          35 
-    ##                                         EYE 
-    ##                                          38 
-    ##                                  Eye Riffle 
-    ##                                          63 
-    ##                                  EYE RIFFLE 
-    ##                                           1 
-    ##                           G-95 Side Channel 
-    ##                                           1 
-    ##                              G-95 Side West 
-    ##                                          11 
-    ##                                         G95 
-    ##                                          17 
-    ##                                    G95 SIDE 
-    ##                                           5 
-    ##                            G95 Side Channel 
-    ##                                           5 
-    ##                       G95 West side channel 
-    ##                                           7 
-    ##                                     Gateway 
-    ##                                          77 
-    ##                                     GATEWAY 
-    ##                                           2 
-    ##                              Gateway Riffle 
-    ##                                          28 
-    ##                                       GOOSE 
-    ##                                           1 
-    ##                                Goose Riffle 
-    ##                                          15 
-    ##                              Gridley Riffle 
-    ##                                          14 
-    ##                        GRIDLEY SIDE CHANNEL 
-    ##                                           5 
-    ##            Hatchery and Moe's Side Channels 
-    ##                                          26 
-    ##                              Hatchery Ditch 
-    ##                                         106 
-    ##                              HATCHERY DITCH 
-    ##                                          20 
-    ## Hatchery Ditch (lower), Moe's Ditch (upper) 
-    ##                                           1 
-    ##                    Hatchery Ditch and Moe's 
-    ##                                          37 
-    ##              Hatchery Ditch and Moe's Ditch 
-    ##                                           9 
-    ##                  Hatchery Ditch Moe's Ditch 
-    ##                                           8 
-    ##                        Hatchery Ditch, Moes 
-    ##                                           1 
-    ##                        Hatchery Ditch/Moe's 
-    ##                                          29 
-    ##                         Hatchery Ditch/Moes 
-    ##                                           1 
-    ##                             Hatchery Riffle 
-    ##                                          77 
-    ##                             HATCHERY RIFFLE 
-    ##                                           7 
-    ##           HATCHERY SIDE CH. / MOES SIDE CH. 
-    ##                                          26 
-    ##                       Hatchery Side Channel 
-    ##                                          80 
-    ##             Hatchery Side Channel and Moe's 
-    ##                                           3 
-    ##        Hatchery Side Channel and Moes Ditch 
-    ##                                          12 
-    ##           Hatchery Side Channel/Moe's Ditch 
-    ##                                           3 
-    ##                         Hatchery side/ditch 
-    ##                                          45 
-    ##                                    Junkyard 
-    ##                                          14 
-    ##                             Junkyard Riffle 
-    ##                                           6 
-    ##                                     Keister 
-    ##                                           7 
-    ##                                     KEISTER 
-    ##                                           2 
-    ##                              Keister Riffle 
-    ##                                           5 
-    ##                             Lower Mcfarland 
-    ##                                           2 
-    ##                             Lower McFarland 
-    ##                                           6 
-    ##                             LOWER MCFARLAND 
-    ##                                           3 
-    ##                              Lower Robinson 
-    ##                                           4 
-    ##                                     Mathews 
-    ##                                           4 
-    ##                                     MATHEWS 
-    ##                                           2 
-    ##                              Mathews Riffle 
-    ##                                           1 
-    ##                                    Matthews 
-    ##                                          20 
-    ##                             Matthews Riffle 
-    ##                                          37 
-    ##                                 Moe's Ditch 
-    ##                                           1 
-    ##                                        MOES 
-    ##                                           9 
-    ##                                    Robinson 
-    ##                                          37 
-    ##                                    ROBINSON 
-    ##                                          22 
-    ##                             Robinson Riffle 
-    ##                                          74 
-    ##                                       Steep 
-    ##                                          39 
-    ##                                       STEEP 
-    ##                                          21 
-    ##                                Steep Riffle 
-    ##                                          98 
-    ##                                STEEP RIFFLE 
-    ##                                          15 
-    ##                                Trailer Park 
-    ##                                          53 
-    ##                                TRAILER PARK 
-    ##                                           4 
-    ##                         Trailer Park Riffle 
-    ##                                          11 
-    ##                             Upper McFarland 
-    ##                                           1 
-    ##                                  Vance East 
-    ##                                          11 
-    ##                             Vance W. Riffle 
-    ##                                           4 
-    ##                                  Vance West 
-    ##                                          24 
-    ##                           Vance West Riffle 
-    ##                                           2
-
-Fix inconsistencies with spelling, capitalization, and abbreviations.
-
-``` r
-# Fix any inconsistencies with categorical variables
-```
-
-**Create lookup rda for \[variable\] encoding:**
-
-``` r
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
+    ##                                 Aleck                          Aleck Riffle 
+    ##                                    44                                    16 
+    ##                            Auditorium                     Auditorium Riffle 
+    ##                                    20                                    39 
+    ##                       Bed Rock Riffle                               Bedrock 
+    ##                                     3                                    37 
+    ##                          Bedrock Park                        Bedrock Riffle 
+    ##                                    21                                    38 
+    ##                            Big Riffle                                   Eye 
+    ##                                    22                                    73 
+    ##                            Eye Riffle                                   G95 
+    ##                                    64                                    17 
+    ##                              G95 Side                      G95 Side Channel 
+    ##                                     5                                     6 
+    ##                         G95 Side West                 G95 West Side Channel 
+    ##                                    11                                     7 
+    ##                               Gateway                        Gateway Riffle 
+    ##                                    79                                    28 
+    ##                                 Goose                          Goose Riffle 
+    ##                                     1                                    15 
+    ##                        Gridley Riffle                  Gridley Side Channel 
+    ##                                    14                                     5 
+    ##       Hatchery And Moes Side Channels                        Hatchery Ditch 
+    ##                                    26                                   126 
+    ##               Hatchery Ditch And Moes         Hatchery Ditch And Moes Ditch 
+    ##                                    37                                     9 
+    ## Hatchery Ditch Lower Moes Ditch Upper                   Hatchery Ditch Moes 
+    ##                                     1                                    31 
+    ##             Hatchery Ditch Moes Ditch                       Hatchery Riffle 
+    ##                                     8                                    84 
+    ##         Hatchery Side Ch Moes Side Ch                 Hatchery Side Channel 
+    ##                                    26                                    80 
+    ##        Hatchery Side Channel And Moes  Hatchery Side Channel And Moes Ditch 
+    ##                                     3                                    12 
+    ##      Hatchery Side Channel Moes Ditch                   Hatchery Side Ditch 
+    ##                                     3                                    45 
+    ##                              Junkyard                       Junkyard Riffle 
+    ##                                    14                                     6 
+    ##                               Keister                        Keister Riffle 
+    ##                                     9                                     5 
+    ##                       Lower Mcfarland                        Lower Robinson 
+    ##                                    11                                     4 
+    ##                               Mathews                        Mathews Riffle 
+    ##                                     6                                     1 
+    ##                              Matthews                       Matthews Riffle 
+    ##                                    20                                    37 
+    ##                                  Moes                            Moes Ditch 
+    ##                                     9                                     1 
+    ##                              Robinson                       Robinson Riffle 
+    ##                                    59                                    74 
+    ##                                 Steep                          Steep Riffle 
+    ##                                    60                                   113 
+    ##                          Trailer Park                   Trailer Park Riffle 
+    ##                                    57                                    11 
+    ##                       Upper Mcfarland                            Vance East 
+    ##                                     1                                    11 
+    ##                        Vance W Riffle                            Vance West 
+    ##                                     4                                    24 
+    ##                     Vance West Riffle 
+    ##                                     2
 
 **NA and Unknown Values**
 
@@ -684,147 +599,19 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ### Variable: `units_covered`
 
-A lot of units described here. TODO clean up
+A lot of units described here. If multiple units are covered they are
+listed.
 
 ``` r
-table(cleaner_snorkel_data$units_covered) 
+unique(cleaner_snorkel_data$units_covered)[1:10]
 ```
 
-    ## 
-    ##                      103-105                    103 - 105 
-    ##                            2                            9 
-    ##                  103 104 105                103, 104, 105 
-    ##                           44                            2 
-    ##                  103,104,105                  105 104 103 
-    ##                            6                            1 
-    ##                          119                      119 120 
-    ##                           14                           25 
-    ##                     119, 120                      119,120 
-    ##                            8                            9 
-    ##                      120 119                      169-175 
-    ##                            4                           25 
-    ##      169 170 171 173 174 175      169 170 171 173 175 175 
-    ##                           37                            3 
-    ##          169 170 173 174 175 169, 170, 171, 173, 174, 175 
-    ##                            1                            2 
-    ##      169,170,171,173,174,175      171 170 169 174 175 173 
-    ##                           20                           14 
-    ##              171,173,174,175              173 169 170 175 
-    ##                            1                            4 
-    ##      173 174 175 170 169 171       173 174 175 171 170169 
-    ##                           16                            5 
-    ##              175 171 170 174                      185 189 
-    ##                            5                           43 
-    ##                     185, 189                      185,189 
-    ##                            2                            4 
-    ##                          189                      189 185 
-    ##                            3                          118 
-    ##                     189, 185                      189,185 
-    ##                            2                            1 
-    ##                     19 23-25                  19 23 24 25 
-    ##                            3                           57 
-    ##                    19, 23-25                     19,23-25 
-    ##                           10                            1 
-    ##                  19,23,24,25        210 215A 215B 216 217 
-    ##                            6                           21 
-    ##               210 215A/B 216               210 216 215A/B 
-    ##                           28                            7 
-    ##          210, 217, 215A, 216           210,215,217,215A/B 
-    ##                            6                            1 
-    ##        210,215A,215B,216,217        210,217,216,215A,215B 
-    ##                            3                            1 
-    ##        215 215A 215B 210 217          215 A,B 216 210 217 
-    ##                            3                            1 
-    ##            215A 215B 216 210        215A 215B 216 210 217 
-    ##                            2                            8 
-    ##        215A 215B 216 217 210        215A 215B 217 216 210 
-    ##                           28                           14 
-    ##               215A/B 216 210                  216 217 210 
-    ##                            4                           10 
-    ##          221 225 226 228 229          221 225 229 226 228 
-    ##                           33                            2 
-    ##          221 226 225 228 229              221 226 228 229 
-    ##                            2                           10 
-    ##              221 226 229 228      221, 225, 225, 228, 229 
-    ##                           31                            6 
-    ##      221, 225, 226, 228, 229          221,225,226,228,229 
-    ##                            1                            4 
-    ##              225 228 221 229             225,2228,229,221 
-    ##                            2                            1 
-    ##              226 228 229 221      226, 228, 229, 221, 225 
-    ##                            1                           14 
-    ##                        23 24                     23 24 25 
-    ##                            1                            1 
-    ##                        23,24                     23,24,25 
-    ##                            1                            1 
-    ##                     26 28 33                        26 33 
-    ##                            6                          117 
-    ##                     26 33 28                     26,33,28 
-    ##                            9                            3 
-    ##       26,33,30,31,31a,32,32a                      266 268 
-    ##                           13                           25 
-    ##                     266, 268                          268 
-    ##                            1                           14 
-    ##                           28                        29-31 
-    ##                           10                           10 
-    ##                        29-32                  29 30 31 32 
-    ##                            7                           21 
-    ##                  29,30,31,32                     29,31,32 
-    ##                            5                            7 
-    ##                  29,31,32,30                  30 31 32 29 
-    ##                            2                            6 
-    ##                     30,31,29                    323A 323B 
-    ##                            1                           21 
-    ##                   323A, 323B                       323A/B 
-    ##                            1                           13 
-    ##                         323B                    323B 323A 
-    ##                            4                            7 
-    ##                           33                        33 26 
-    ##                            4                          125 
-    ##                     33 26 28                        33 28 
-    ##                           81                            1 
-    ##                   33, 26, 28                     33,26,28 
-    ##                           26                           35 
-    ##                  402 397 403                  402 403 397 
-    ##                            2                            6 
-    ##                          403                  403 397 402 
-    ##                            1                            5 
-    ##                          408                          424 
-    ##                           16                            6 
-    ##                      424 426                      426 424 
-    ##                           11                            5 
-    ##                      441 445                          450 
-    ##                            1                           11 
-    ##                      486 487                      487 486 
-    ##                            7                           12 
-    ##                          499                      499 502 
-    ##                            2                            7 
-    ##                      499,502                      502 499 
-    ##                            1                           10 
-    ##                        55 56                       55, 56 
-    ##                           67                           12 
-    ##                        55,56                        96-98 
-    ##                           20                            2 
-    ##                     96 97 98                     96,97,98 
-    ##                           47                           11 
-    ##                        97 98                     97 98 96 
-    ##                            1                            6 
-    ##                        98,97 
-    ##                            1
+    ##  [1] NA                       "26,33,30,31,31a,32,32a" "33 26"                 
+    ##  [4] "323A 323B"              "19 23 24 25"            "28"                    
+    ##  [7] "55 56"                  "96 97 98"               "119 120"               
+    ## [10] "189 185"
 
-Fix inconsistencies with spelling, capitalization, and abbreviations.
-
-``` r
-# Fix any inconsistencies with categorical variables
-```
-
-**Create lookup rda for \[variable\] encoding:**
-
-``` r
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
+There are 120 unique groups units covered.
 
 **NA and Unknown Values**
 
@@ -858,23 +645,21 @@ unique(cleaner_snorkel_data$observation_comments)[1:5]
 
 -   96.5 % of values in the `observation_comments` column are NA.
 
-### Variable: `obs_id`
+### Variable: `observation_id`
 
 Each row does not correspond to a unique observation.
 
 ``` r
-length(unique(cleaner_snorkel_data$obs_id)) == length(cleaner_snorkel_data)
+length(unique(cleaner_snorkel_data$observation_id)) == length(cleaner_snorkel_data)
 ```
 
     ## [1] FALSE
 
 There are 2753 unique observation ids
 
--   0 % of values in the `obs_id` column are NA.
+-   0 % of values in the `observation_id` column are NA.
 
 ### Variable: `unit`
-
-TODO figure out what unit is refering to
 
 ``` r
 table(cleaner_snorkel_data$unit) 
@@ -906,59 +691,11 @@ table(cleaner_snorkel_data$unit)
     ##  499    5   50  502   52   54   55   56   59    6    7    8    9   96   97   98 
     ##    6    1    1   14    2   15   40   89    1    1    1    1    1   66   13   30
 
-Fix inconsistencies with spelling, capitalization, and abbreviations.
-
-``` r
-# Fix any inconsistencies with categorical variables
-```
-
-**Create lookup rda for \[variable\] encoding:**
-
-``` r
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
+There are 192 unique units covered.
 
 **NA and Unknown Values**
 
 -   0 % of values in the `unit` column are NA.
-
-### Variable: `species`
-
-Species lookup table:
-
-| SpeciesCode | Species                  |
-|-------------|--------------------------|
-| CHN         | Chinook salmon           |
-| CHNC        | Chinook Salmon - Clipped |
-| CHNT        | Chinook salmon - Tagged  |
-| CHNU        | Chinook salmon - Unknown |
-| NONE        | Z. nada                  |
-
-Species lookup table does not give a definition for CHNF, CHNS. My guess
-is that these refer to Chinook salmon Spring and Chinook salmon fall but
-I would want to confirm this.
-
-``` r
-table(cleaner_snorkel_data$species) 
-```
-
-    ## 
-    ##  CHN CHNC CHNF CHNS CHNT CHNU NONE 
-    ## 2186   22    2   13    6   60  464
-
-TODO create clipped/adipose column from this column
-
-TODO create a run column from this column
-
-``` r
-# Fix any inconsistencies with categorical variables
-```
-
-**NA and Unknown Values**
-
--   0 % of values in the `species` column are NA.
 
 ### Variable: `size_class`
 
@@ -1124,6 +861,57 @@ table(cleaner_snorkel_data$lwd_number)
 
 -   21.8 % of values in the `lwd_number` column are NA.
 
+### Variable: `run`
+
+Chinook Run
+
+``` r
+table(cleaner_snorkel_data$run) 
+```
+
+    ## 
+    ##    fall  spring unknown 
+    ##       2      13    2738
+
+**NA and Unknown Values**
+
+-   0 % of values in the `run` column are NA.
+
+Only 13 identified SR fish. This data may not be very helpful for us in
+the JPE
+
+### Variable: `tagged`
+
+If the fish is tagged or not
+
+``` r
+table(cleaner_snorkel_data$tagged) 
+```
+
+    ## 
+    ## FALSE  TRUE 
+    ##  2747     6
+
+**NA and Unknown Values**
+
+-   0 % of values in the `tagged` column are NA.
+
+### Variable: `clipped`
+
+If the fish has a clipped fin or not
+
+``` r
+table(cleaner_snorkel_data$clipped) 
+```
+
+    ## 
+    ## FALSE  TRUE 
+    ##  2731    22
+
+**NA and Unknown Values**
+
+-   0 % of values in the `clipped` column are NA.
+
 ## Summary of identified issues
 
 -   Snorkel surveys are not done every year in the timeframe
@@ -1131,6 +919,9 @@ table(cleaner_snorkel_data$lwd_number)
 -   Still a few unknown columns that we need to define and understand
 -   Figure out the best way to display and standardize substrate and
     cover information
+-   Very few Spring Run Chinook (13)
+-   Detailed information on location split up into units and sections,
+    TODO need to improve organization in these settings
 
 ## Save cleaned data back to google cloud
 

@@ -19,13 +19,14 @@ library(readxl)
 
 ## Description of Monitoring Data
 
-Feather River Snorkel Data from 2004 - 2020. This data was provided to flowwest in an access database  "Snorkel_Revided.mdb. We queried it to have all year and important variables. 
+Feather River Snorkel Data from 2004 - 2020. This data was provided to flowwest in an access database  Snorkel_Revided.mdb. We queried it to have all year and important variables. Snorkel data from 1999 - 2003 is available in a separate access database FR S and S Oroville.mdb
 
 **Timeframe:** 2004 - 2020 
 
-**Seine Season:** 
 
 **Completeness of Record throughout timeframe:** 
+
+Only SR collected are in 2011 and 2012
 
 No environmental data collected pre 2010.
 
@@ -72,27 +73,33 @@ raw_snorkel <- read_xlsx("raw_snorkel.xlsx") %>% glimpse
 
 ## Data transformations
 
-
+Update column names and column types. Remove sid because it is a duplicate of survey_id column. Filter to only show chinook salmon. 
 
 ```{r}
 cleaner_snorkel_data <- raw_snorkel %>% 
   janitor::clean_names() %>%
   rename(start_time = snorkel_start_ttime, 
          end_time = snorkel_end_time, 
-         lwd_number = lwd
+         lwd_number = lwd,
+         observation_id = obs_id
         ) %>%
   mutate(date = as.Date(date), 
          start_time = hms::as_hms(start_time), 
          end_time = hms::as_hms(end_time),
          time_of_temperature = hms::as_hms(time_of_temperature),
          survey_id = as.character(survey_id), 
-         obs_id = as.character(obs_id),
+         observation_id = as.character(observation_id),
          substrate = as.character(substrate), 
          overhead_cover = as.character(overhead_cover),
          lwd_number = as.character(lwd_number)) %>% # I think this is some sort of tag number so I am changing to character
-  select(-observer, -sid) %>% # remove sid because it is the same as survey_id 
   filter(!is.na(date), # survey ID 1 and 106 do not specify date 
          species %in% c("CHN", "NONE", "CHNU", "CHNT", "CHNC", "CHNF", "CHNS")) %>% # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
+  mutate(run = case_when(species  == "CHNF" ~ "fall",
+                         species == "CHNS" ~ "spring",
+                         species %in% c("CHN", "CHNT", "NONE", "CHNU", "CHNC") ~ "unknown"),
+         tagged = if_else(grepl('T$', species), TRUE, FALSE),
+         clipped = if_else(species == "CHNC", TRUE, FALSE)) %>%
+  select(-observer, -sid, -species) %>% # remove sid because it is the same as survey_id 
   glimpse()
 
 ```
@@ -156,7 +163,8 @@ We only have non zero turbidity values for 2011, 2012, 2017, 2018, and 2019
 ```{r}
 cleaner_snorkel_data %>%
   ggplot(aes(x = turbidity)) + 
-  geom_histogram()
+  geom_histogram() + 
+  theme_minimal()
 ```
 
 Most turbidity measures are 0. All fall between 0 and 4.5. 
@@ -172,6 +180,8 @@ summary(cleaner_snorkel_data$turbidity)
 * `r round(sum(is.na(cleaner_snorkel_data$turbidity))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `turbidity` column are NA.
 
 ### Variable: `temperature`
+
+TODO: Check that they are in both F and C and then divide appropriately  
 
 **Plotting temperature over Period of Record**
 
@@ -219,6 +229,7 @@ sac_indices <- waterYearType::water_year_indices %>%
 
 ```{r}
 cleaner_snorkel_data %>% 
+  filter(run == "spring") %>%
   group_by(date) %>%
   summarise(total_daily_catch = sum(count, na.rm = T)) %>%
   # filter(year(date) > 2014, year(date) < 2021) %>%
@@ -242,7 +253,7 @@ cleaner_snorkel_data %>%
 ```
 
 
-It looks like snorkel surveys do not happen very often but when they do happen a lot of fish can be caught in a day. 
+Very few SR fish, only caught SR in 2011 and 2012.  
 ```{r}
 cleaner_snorkel_data  %>%
   mutate(year = as.factor(year(date))) %>%
@@ -378,23 +389,24 @@ I would still like to simplify these down more but this is better for now.
 
 ### Variable: `section_name`
 
-A lot of differnt section names. TODO clean these up 
+Cleaned up section names, TODO need more information to decide if we can combine some of these section names. 
 
 ```{r}
-table(cleaner_snorkel_data$section_name) 
-```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
+format_site_name <- function(string) {
+  clean <- 
+    str_replace_all(string, "'", "") %>%
+    str_replace_all("G-95", "G95") %>% 
+    str_replace_all("[^[:alnum:]]", " ") %>% 
+    trimws() %>% 
+    stringr::str_squish() %>%
+    stringr::str_to_title()
+}
 
-```{r}
-# Fix any inconsistencies with categorical variables
-```
+cleaner_snorkel_data$section_name <- format_site_name(cleaner_snorkel_data$section_name)
+table(cleaner_snorkel_data$section_name)
 
-**Create lookup rda for [variable] encoding:** 
-```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
+
 ```
 
 **NA and Unknown Values**
@@ -403,24 +415,13 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ### Variable: `units_covered`
 
-A lot of units described here. TODO clean up
+A lot of units described here. If multiple units are covered they are listed. 
 
 ```{r}
-table(cleaner_snorkel_data$units_covered) 
+unique(cleaner_snorkel_data$units_covered)[1:10]
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-# Fix any inconsistencies with categorical variables
-```
-
-**Create lookup rda for [variable] encoding:** 
-```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
+There are `r length(unique(cleaner_snorkel_data$units_covered))` unique groups units covered. 
 
 **NA and Unknown Values**
 
@@ -441,70 +442,28 @@ unique(cleaner_snorkel_data$observation_comments)[1:5]
 
 * `r round(sum(is.na(cleaner_snorkel_data$observation_comments))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `observation_comments` column are NA.
 
-### Variable: `obs_id`
+### Variable: `observation_id`
 
 Each row does not correspond to a unique observation.  
 ```{r}
-length(unique(cleaner_snorkel_data$obs_id)) == length(cleaner_snorkel_data)
+length(unique(cleaner_snorkel_data$observation_id)) == length(cleaner_snorkel_data)
 ```
 
-There are `r length(unique(cleaner_snorkel_data$obs_id))` unique observation ids
+There are `r length(unique(cleaner_snorkel_data$observation_id))` unique observation ids
 
-* `r round(sum(is.na(cleaner_snorkel_data$obs_id))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `obs_id` column are NA.
+* `r round(sum(is.na(cleaner_snorkel_data$observation_id))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `observation_id` column are NA.
 
 ### Variable: `unit`
 
-TODO figure out what unit is refering to
 ```{r}
 table(cleaner_snorkel_data$unit) 
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-# Fix any inconsistencies with categorical variables
-```
-
-**Create lookup rda for [variable] encoding:** 
-```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
+There are `r length(unique(cleaner_snorkel_data$unit))` unique units covered. 
 
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_snorkel_data$unit))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `unit` column are NA.
-
-### Variable: `species`
-
-Species lookup table:
-
-| SpeciesCode	| Species | 
-| -------- | ------------- |
-| CHN |	Chinook salmon |
-| CHNC |	Chinook Salmon - Clipped |
-| CHNT |	Chinook salmon - Tagged |
-| CHNU |	Chinook salmon - Unknown |
-| NONE | Z. nada | 
-
-Species lookup table does not give a definition for CHNF, CHNS. My guess is that these refer to Chinook salmon Spring and Chinook salmon fall but I would want to confirm this. 
-
-```{r}
-table(cleaner_snorkel_data$species) 
-```
-
-TODO create clipped/adipose column from this column
-
-TODO create a run column from this column 
-
-```{r}
-# Fix any inconsistencies with categorical variables
-```
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_snorkel_data$species))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `species` column are NA.
 
 ### Variable: `size_class`
 
@@ -629,6 +588,46 @@ table(cleaner_snorkel_data$lwd_number)
 
 * `r round(sum(is.na(cleaner_snorkel_data$lwd_number))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `lwd_number` column are NA.
 
+### Variable: `run`
+
+Chinook Run 
+
+```{r}
+table(cleaner_snorkel_data$run) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_snorkel_data$run))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `run` column are NA.
+
+
+Only 13 identified SR fish. This data may not be very helpful for us in the JPE
+
+
+### Variable: `tagged`
+
+If the fish is tagged or not
+
+```{r}
+table(cleaner_snorkel_data$tagged) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_snorkel_data$tagged))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `tagged` column are NA.
+
+### Variable: `clipped`
+
+If the fish has a clipped fin or not
+
+```{r}
+table(cleaner_snorkel_data$clipped) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_snorkel_data$clipped))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `clipped` column are NA.
+
 
 ## Summary of identified issues
 
@@ -636,6 +635,8 @@ table(cleaner_snorkel_data$lwd_number)
 * Environmental data very sparse, especially in early years
 * Still a few unknown columns that we need to define and understand 
 * Figure out the best way to display and standardize substrate and cover information
+* Very few Spring Run Chinook (13)
+* Detailed information on location split up into units and sections, TODO need to improve organization in these settings
 
 ## Save cleaned data back to google cloud 
 
