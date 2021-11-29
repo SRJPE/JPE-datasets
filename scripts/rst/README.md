@@ -12,7 +12,7 @@ There are 3 main datatypes associated with RST data:
 
 ### Data Available
 
-| Tributary | Monitoring Timeframe | Data Contact | Metadata Quality | Data Lag | Provisional Data Available | Notes | 
+| Tributary | Monitoring Timeframe | Data Contact | Metadata Quality | *Data Lag | **Provisional Data Available | Notes | 
 | :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :--------------------- | 
 | Battle Creek | 2003 - ongoing | [Mike Schraml](mailto:mike_schraml@fws.gov)  | Good | 6 months | TRUE | Provisional data may be available but will not be easy to get | 
 | Butte Creek | 1995 - ongoing | [Jessica Nichols](Jessica.Nichols@Wildlife.ca.gov) | Poor | One week | TRUE | Field crew uploads to CAMP daily, QC on a weekly basis, need to wait until end of season for escapement values |
@@ -24,7 +24,9 @@ There are 3 main datatypes associated with RST data:
 | Mill Creek | 1995 - 2010; proposed | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Poor | NA | NA | Currently only historical data; proposed program that will be similar to Clear and Battle |
 | Yuba River | 2000 - 2009 | [Robyn Bilski](mailto:Robyn.Bilski@Wildlife.ca.gov) | Good | NA | NA | Only historical data |
 
+*Data Lag refers to time from end of monitoring season until data is QA/QC and in a shareable format. 
 
+**Provisional Data Available states if raw data can be shared 1 week or less after date of collection.
 
 #### Summary of passage estimate data
 
