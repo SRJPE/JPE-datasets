@@ -1,4 +1,4 @@
-clear\_redds\_survey\_qc
+Clear Redds Survey QC
 ================
 Inigo Peng
 11/4/2021
@@ -52,15 +52,17 @@ Note:
 survey\_(2-9)*age is described as “Age of redd based on age
 classification during survey (2-9)”. Age(1-9) is also described as “age
 of redd based on age classification during survey (1-9)”, These to
-variables seem to be redundant. TODO: Should we drop drop
-survey*(2-9)\_age for now until further review? The last 4 variables
-observation\_reach, observation\_date, observation\_age, and
-survey\_observed need further description.
+variables seem to be redundant. Dropping survey*(2-9)\_age for now until
+further review
+
+TODO: The last 4 variables observation\_reach, observation\_date,
+observation\_age, and survey\_observed need further description.
 
 ``` r
 cleaner_data <- raw_redds_data %>% 
   janitor::clean_names() %>%
-  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id', )) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
+  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile
+  select(-(survey_2_age:age_9)) %>% 
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'survey' = 'survey_8',
@@ -86,14 +88,16 @@ cleaner_data <- raw_redds_data %>%
          ) %>% 
   mutate(date = as.Date(date),
          observation_date = as.Date(observation_date),
+         date_measured = as.Date(date_measured),
          survey = as.character(survey),
          survey_observed = as.character(survey_observed)) %>% 
   # filter(run == "spring") %>%
+  # raw_redds_data[, -c(40,54)] %>% 
   glimpse()
 ```
 
     ## Rows: 1,540
-    ## Columns: 70
+    ## Columns: 44
     ## $ method                  <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel", "S~
     ## $ longitude               <dbl> -122.5404, -122.5404, -122.5381, -122.5338, -1~
     ## $ latitude                <dbl> 40.58156, 40.58160, 40.57883, 40.57394, 40.562~
@@ -117,8 +121,8 @@ cleaner_data <- raw_redds_data %>%
     ## $ fish_on_redd            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ measured                <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO"~
     ## $ why_not_measured        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_measured           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ pre_redd_depth          <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ date_measured           <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ pre_redd_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ redd_pit_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ redd_tail_depth         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ redd_length_in          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
@@ -133,32 +137,6 @@ cleaner_data <- raw_redds_data %>%
     ## $ bomb_vel60              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ bomb_vel80              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ comments                <chr> "NEED CAMP 16.2", "NEED CAMP 16.2", "NEED TEMP~
-    ## $ survey_2_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_3_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_4_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_5_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_6_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_7_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_8_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_9_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_1                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_1                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_2                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_2                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_3                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_3                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_4                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_4                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_5                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_5                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_6                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_6                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_7                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_7                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_8                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_8                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_9                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_9                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ run                     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ observation_reach       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ observation_date        <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
@@ -197,6 +175,24 @@ summary(cleaner_data$observation_date)
 
 -   76.2 % of values in the `observation_date` column are NA.
 
+## Explore `date_measured`
+
+``` r
+summary(cleaner_data$date_measured)
+```
+
+    ##         Min.      1st Qu.       Median         Mean      3rd Qu.         Max. 
+    ## "2005-05-02" "2007-09-24" "2012-09-20" "2011-08-16" "2014-10-03" "2019-10-10" 
+    ##         NA's 
+    ##        "843"
+
+**NA and Unknown Values**
+
+-   54.7 % of values in the `date_measured` column are NA.
+
+Note: observation date and date measured have different levels of
+completeness.
+
 ## Explore Categorical Data
 
 ``` r
@@ -211,11 +207,12 @@ cleaner_data %>% select_if(is.character) %>% colnames()
     ## [11] "pre_redd_substrate_size" "redd_substrate_size"    
     ## [13] "tail_substrate_size"     "fish_on_redd"           
     ## [15] "measured"                "why_not_measured"       
-    ## [17] "date_measured"           "comments"               
-    ## [19] "run"                     "observation_reach"      
-    ## [21] "survey_observed"
+    ## [17] "comments"                "run"                    
+    ## [19] "observation_reach"       "survey_observed"
 
 ### Variable: `method`
+
+TODO: what’s pw? do we keep rstr?
 
 ``` r
 cleaner_data <- cleaner_data %>% 
@@ -232,13 +229,9 @@ table(cleaner_data$method)
 
 -   0 % of values in the `method` column are NA.
 
-Note: what’s pw? do we keep rstr?
-
 ### Variable: `ucc_relate`
 
 **Description:** Above or below Upper Clear Creek Rotary Screw Trap
-
-Note: column probably change the column name to something else
 
 ``` r
 cleaner_data$ucc_relate <- tolower(cleaner_data$ucc_relate)
@@ -307,20 +300,13 @@ There are 656 unique redd ID numbers.
 
 ### Variable: `species`
 
+**Description:** Filtering all data to Chinooks.
+
 ``` r
 cleaner_data <- cleaner_data %>% 
   mutate(species = tolower(cleaner_data$species)) %>% 
   filter(species== 'chinook')
-table(cleaner_data$species)
 ```
-
-    ## 
-    ## chinook 
-    ##    1495
-
-**NA and Unknown Values**
-
--   0 % of values in the `species` column are NA.
 
 ### Variable: `redd_loc`
 
@@ -398,7 +384,9 @@ table(cleaner_data$inj_site)
 ### Variable: `pre_redd_substrate_size`
 
 **Description:** dominant substrate size in the pre-redd (area just of
-stream of the disturbance) TODO
+stream of the disturbance)
+
+TODO: ask for complete description
 
 ``` r
 table(cleaner_data$pre_redd_substrate_size)
@@ -622,7 +610,7 @@ cleaner_data %>%
   geom_bar()
 ```
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 There are 15 unique survey numbers.
 
@@ -639,7 +627,7 @@ cleaner_data %>%
   geom_bar()
 ```
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 **NA and Unknown Values**
 
@@ -653,17 +641,11 @@ cleaner_data %>% select_if(is.numeric) %>% colnames()
 
     ##  [1] "longitude"            "latitude"             "river_mile"          
     ##  [4] "x1000ftbreak"         "picket_weir_location" "age"                 
-    ##  [7] "redd_pit_depth"       "redd_tail_depth"      "redd_length_in"      
-    ## [10] "redd_width_in"        "velocity"             "start_60"            
-    ## [13] "end_60"               "sec_60"               "start_80"            
-    ## [16] "end_80"               "secs_80"              "bomb_vel60"          
-    ## [19] "bomb_vel80"           "survey_2_age"         "survey_3_age"        
-    ## [22] "survey_4_age"         "survey_5_age"         "survey_6_age"        
-    ## [25] "survey_7_age"         "survey_8_age"         "survey_9_age"        
-    ## [28] "age_1"                "age_2"                "age_3"               
-    ## [31] "age_4"                "age_5"                "age_6"               
-    ## [34] "age_7"                "age_8"                "age_9"               
-    ## [37] "observation_age"
+    ##  [7] "pre_redd_depth"       "redd_pit_depth"       "redd_tail_depth"     
+    ## [10] "redd_length_in"       "redd_width_in"        "velocity"            
+    ## [13] "start_60"             "end_60"               "sec_60"              
+    ## [16] "start_80"             "end_80"               "secs_80"             
+    ## [19] "bomb_vel60"           "bomb_vel80"           "observation_age"
 
 ### Variable: `longitude`, `latitude`
 
@@ -704,7 +686,7 @@ cleaner_data %>%
 
     ## Warning: Removed 1 rows containing missing values (geom_point).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 Seems like more redds were observed in the first 3 miles after 2012
 
@@ -720,9 +702,9 @@ cleaner_data %>%
 
     ## Warning: Removed 1 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
-Numeric Summary of river\_mile Over Period of Record
+**Numeric Summary of river\_mile Over Period of Record**
 
 ``` r
 summary(cleaner_data$river_mile)
@@ -737,7 +719,7 @@ summary(cleaner_data$river_mile)
 
 ### Variable: `x1000ftbreak`
 
-No metadata description
+TODO: No metadata description
 
 ``` r
 cleaner_data %>% 
@@ -751,7 +733,7 @@ cleaner_data %>%
 
     ## Warning: Removed 214 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 
 **Numeric Summary of x1000ftbreak Over Period of Time**
 
@@ -802,8 +784,8 @@ table(cleaner_data$age)
 ``` r
 #View description of domain for viewing condition
 
-cleaner_data_age <- 1:5
-names(cleaner_data_age) <- c(
+clear_creek_redd_age <- 1:5
+names(clear_creek_redd_age) <- c(
   "",
   "Clearly visible and clean (clearly defined pit and tail-spill and no periphyton or fines)",
   "Less visible with minor tail-spill flattening (pit and tail-spill still defined, periphyton growth, invertebrate presence)",
@@ -811,8 +793,9 @@ names(cleaner_data_age) <- c(
   "Pit and tail-spill indistinguishable from the surrounding substrate"
 )
 
-tibble(age = cleaner_data_age,
-       definitions = names(cleaner_data_age))
+write_rds(clear_creek_redd_age, "../../../data/clear_creek_redd_age.rds")
+tibble(age = clear_creek_redd_age,
+       definitions = names(clear_creek_redd_age))
 ```
 
     ## # A tibble: 5 x 2
@@ -844,7 +827,7 @@ cleaner_data %>%
 
     ## Warning: Removed 837 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
 
 **Numeric Summary of redd\_pit\_depth**
 
@@ -875,7 +858,7 @@ cleaner_data %>%
 
     ## Warning: Removed 813 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$redd_tail_depth)
@@ -905,7 +888,7 @@ cleaner_data %>%
 
     ## Warning: Removed 806 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
 
 **Numeric Summary of redd\_length\_in over Period of Time**
 
@@ -922,7 +905,7 @@ summary(cleaner_data$redd_length_in)
 
 ### Variable: `redd_width_in`
 
-**Description: **Width of the widest part of the disturbed area,
+**Description:** Width of the widest part of the disturbed area,
 perpandicular to streamflow.
 
 ``` r
@@ -937,7 +920,7 @@ cleaner_data %>%
 
     ## Warning: Removed 807 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -949,7 +932,7 @@ cleaner_data %>%
 
     ## Warning: Removed 808 rows containing missing values (geom_point).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
 
 **Numeric Summary of redd\_width\_in over Period of Time**
 
@@ -984,7 +967,7 @@ cleaner_data %>%
 
     ## Warning: Removed 979 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-50-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-51-1.png)<!-- -->
 
 **Numeric Summary of velocity over Period of Time**
 
@@ -1021,7 +1004,7 @@ cleaner_data %>%
 
     ## Warning: Removed 967 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-52-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-53-1.png)<!-- -->
 
 **Numeric Summary of start\_60 and end\_60 over Period of Time**
 
@@ -1061,7 +1044,7 @@ cleaner_data %>%
 
     ## Warning: Removed 963 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-55-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-56-1.png)<!-- -->
 
 **Numeric Summary of sec\_60 over Period of Time**
 
@@ -1098,7 +1081,7 @@ cleaner_data %>%
 
     ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-57-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-58-1.png)<!-- -->
 
 **Numeric Summary of start\_80 and end\_80 over Period of Time**
 
@@ -1140,7 +1123,7 @@ cleaner_data %>%
 
     ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-60-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-61-1.png)<!-- -->
 
 **Numeric Summary of secs\_80 over Period of Time**
 
@@ -1190,7 +1173,7 @@ gridExtra::grid.arrange(v60, v80)
 
     ## Warning: Removed 1471 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-62-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-63-1.png)<!-- -->
 
 **Numeric Summary of bomb\_vel60 and bomb\_vel80 over Period of Time**
 
@@ -1233,7 +1216,7 @@ cleaner_data %>%
 
     ## Warning: Removed 1162 rows containing non-finite values (stat_bin).
 
-![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-65-1.png)<!-- -->
+![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-66-1.png)<!-- -->
 
 **Numeric Summary of observation\_age over Period of Time**
 
@@ -1250,10 +1233,14 @@ summary(cleaner_data$observation_age)
 
 ### Summary of Identified Issues
 
--   There are some metadata needed
+-   There are multiple metadata that needs more descriptions
+    (x1000ftbreak, method)
 
--   Need to email Ryan to ask what survey\_age is; decide if the columns
-    are important and decide if these columns should be dropped
+-   There are multiple columns that seem redundant. For example: run vs
+    run\_observed, survey vs survey observed, age vs observation age
+
+-   Need to email Ryan to ask what survey\_age is. The survey\_age was
+    dropped for now.
 
 ### Save Cleaned data back to google cloud
 
@@ -1262,7 +1249,7 @@ clear_redd <- cleaner_data %>% glimpse
 ```
 
     ## Rows: 1,495
-    ## Columns: 70
+    ## Columns: 44
     ## $ method                  <chr> "snorkel", "snorkel", "snorkel", "snorkel", "s~
     ## $ longitude               <dbl> -122.5404, -122.5404, -122.5381, -122.5338, -1~
     ## $ latitude                <dbl> 40.58156, 40.58160, 40.57883, 40.57394, 40.562~
@@ -1286,8 +1273,8 @@ clear_redd <- cleaner_data %>% glimpse
     ## $ fish_on_redd            <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ measured                <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALS~
     ## $ why_not_measured        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_measured           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ pre_redd_depth          <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ date_measured           <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ pre_redd_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ redd_pit_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ redd_tail_depth         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ redd_length_in          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
@@ -1302,32 +1289,6 @@ clear_redd <- cleaner_data %>% glimpse
     ## $ bomb_vel60              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ bomb_vel80              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ comments                <chr> "NEED CAMP 16.2", "NEED CAMP 16.2", "NEED TEMP~
-    ## $ survey_2_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_3_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_4_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_5_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_6_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_7_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_8_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_9_age            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_1                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_1                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_2                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_2                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_3                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_3                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_4                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_4                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_5                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_5                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_6                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_6                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_7                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_7                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_8                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_8                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_9                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ age_9                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ run                     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ observation_reach       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ observation_date        <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
@@ -1336,8 +1297,9 @@ clear_redd <- cleaner_data %>% glimpse
 
 ``` r
 # gcs_list_objects()
+
 f <- function(input, output) write_csv(input, file = output)
-gcs_upload(clear_redd
+gcs_upload(clear_redd,
            object_function = f,
            type = "csv",
            name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_redd.csv")

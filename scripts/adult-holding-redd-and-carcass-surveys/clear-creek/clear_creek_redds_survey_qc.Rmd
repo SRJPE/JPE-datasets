@@ -1,5 +1,5 @@
 ---
-title: "clear_redds_survey_qc"
+title: "Clear Redds Survey QC"
 author: "Inigo Peng"
 date: "11/4/2021"
 output: rmarkdown::github_document
@@ -54,19 +54,22 @@ Read in data from google cloud, glimpse raw data sheet:
 
 ```{r include=FALSE}
  
-raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Redds", col_types = c("date", "text", "text", "numeric","text","numeric", "numeric", "numeric","numeric", "numeric", "numeric", "numeric", "text","numeric", "text", "date","text","text","text","numeric","text","text","text","text","text","text","text","text","text","text","date","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric", "date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric", "text","text","date","numeric","numeric")) %>% glimpse()
+raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Redds", col_types = c("date", "text", "text", "numeric","text","numeric", "numeric", "numeric","numeric", "numeric", "numeric", "numeric", "text","numeric", "text", "date","text","text","text","numeric","text","text","text","text","text","text","text","text","text","date","numeric","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric", "date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric", "text","text","date","numeric","numeric")) %>% glimpse()
 ```
 
 ## Data Transformation
 
 Note:
 
-survey_(2-9)_age is described as "Age of redd based on age classification during survey (2-9)". Age(1-9) is also described as "age of redd based on age classification during survey (1-9)", These to variables seem to be redundant. TODO: Should we drop  drop survey_(2-9)_age for now until further review? The last 4 variables observation_reach, observation_date, observation_age, and survey_observed need further description.
+survey_(2-9)_age is described as "Age of redd based on age classification during survey (2-9)". Age(1-9) is also described as "age of redd based on age classification during survey (1-9)", These to variables seem to be redundant. Dropping survey_(2-9)_age for now until further review 
+
+TODO: The last 4 variables observation_reach, observation_date, observation_age, and survey_observed need further description.
 
 ```{r}
 cleaner_data <- raw_redds_data %>% 
   janitor::clean_names() %>%
-  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id', )) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile,
+  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile
+  select(-(survey_2_age:age_9)) %>% 
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'survey' = 'survey_8',
@@ -92,9 +95,11 @@ cleaner_data <- raw_redds_data %>%
          ) %>% 
   mutate(date = as.Date(date),
          observation_date = as.Date(observation_date),
+         date_measured = as.Date(date_measured),
          survey = as.character(survey),
          survey_observed = as.character(survey_observed)) %>% 
   # filter(run == "spring") %>%
+  # raw_redds_data[, -c(40,54)] %>% 
   glimpse()
 ```
  
@@ -120,12 +125,25 @@ summary(cleaner_data$observation_date)
 
 * `r round(sum(is.na(cleaner_data$observation_date))/nrow(cleaner_data), 3) * 100` % of values in the `observation_date` column are NA.
 
+## Explore `date_measured`
+
+```{r}
+summary(cleaner_data$date_measured)
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_data$date_measured))/nrow(cleaner_data), 3) * 100` % of values in the `date_measured` column are NA.
+
+Note: observation date and date measured have different levels of completeness. 
+
 ## Explore Categorical Data
 
 ```{r}
 cleaner_data %>% select_if(is.character) %>% colnames()
 ```
 ### Variable: `method`
+
+TODO: what's pw? do we keep rstr?
 
 ```{r}
 cleaner_data <- cleaner_data %>% 
@@ -137,13 +155,10 @@ table(cleaner_data$method)
 
 * `r round(sum(is.na(cleaner_data$method))/nrow(cleaner_data), 3) * 100` % of values in the `method` column are NA.
 
-Note: what's pw? do we keep rstr?
 
 ### Variable: `ucc_relate`
 
 **Description:** Above or below Upper Clear Creek Rotary Screw Trap
-
-Note: column probably change the column name to something else
 
 ```{r}
 cleaner_data$ucc_relate <- tolower(cleaner_data$ucc_relate)
@@ -190,15 +205,14 @@ There are `r length(unique(cleaner_data$redd_id))` unique redd ID numbers.
 * `r round(sum(is.na(cleaner_data$redd_id))/nrow(cleaner_data), 3) * 100` % of values in the `redd_id` column are NA.
 
 ### Variable: `species`
+
+**Description:** Filtering all data to Chinooks.
 ```{r}
 cleaner_data <- cleaner_data %>% 
   mutate(species = tolower(cleaner_data$species)) %>% 
   filter(species== 'chinook')
-table(cleaner_data$species)
 ```
-**NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3) * 100` % of values in the `species` column are NA.
 
 ### Variable: `redd_loc`
 
@@ -252,7 +266,10 @@ table(cleaner_data$inj_site)
 
 ### Variable: `pre_redd_substrate_size`
 
-**Description:** dominant substrate size in the pre-redd (area just of stream of the disturbance) TODO
+**Description:** dominant substrate size in the pre-redd (area just of stream of the disturbance) 
+
+TODO: ask for complete description
+
 ```{r}
 table(cleaner_data$pre_redd_substrate_size)
 ```
@@ -460,7 +477,7 @@ cleaner_data %>%
   labs(title = "River Mile Distribution")
 ```
 
-Numeric Summary of river_mile Over Period of Record
+**Numeric Summary of river_mile Over Period of Record**
 
 ```{r}
 summary(cleaner_data$river_mile)
@@ -471,7 +488,7 @@ summary(cleaner_data$river_mile)
 
 ### Variable: `x1000ftbreak`
 
-No metadata description
+TODO: No metadata description
 
 ```{r}
 cleaner_data %>% 
@@ -519,8 +536,8 @@ table(cleaner_data$age)
 ```{r}
 #View description of domain for viewing condition
 
-cleaner_data_age <- 1:5
-names(cleaner_data_age) <- c(
+clear_creek_redd_age <- 1:5
+names(clear_creek_redd_age) <- c(
   "",
   "Clearly visible and clean (clearly defined pit and tail-spill and no periphyton or fines)",
   "Less visible with minor tail-spill flattening (pit and tail-spill still defined, periphyton growth, invertebrate presence)",
@@ -528,8 +545,9 @@ names(cleaner_data_age) <- c(
   "Pit and tail-spill indistinguishable from the surrounding substrate"
 )
 
-tibble(age = cleaner_data_age,
-       definitions = names(cleaner_data_age))
+write_rds(clear_creek_redd_age, "../../../data/clear_creek_redd_age.rds")
+tibble(age = clear_creek_redd_age,
+       definitions = names(clear_creek_redd_age))
 ```
 
 **NA and Unknown Values**
@@ -600,7 +618,7 @@ summary(cleaner_data$redd_length_in)
 
 ### Variable: `redd_width_in`
 
-**Description: **Width of the widest part of the disturbed area, perpandicular to streamflow.
+**Description:** Width of the widest part of the disturbed area, perpandicular to streamflow.
 
 ```{r}
 cleaner_data %>% 
@@ -609,6 +627,7 @@ cleaner_data %>%
   labs(title = "Redd width Distribution")+
   theme_minimal()
 ```
+
 
 ```{r}
 cleaner_data %>% 
@@ -814,9 +833,11 @@ summary(cleaner_data$observation_age)
 
 ### Summary of Identified Issues
 
-* There are some metadata needed
+* There are multiple metadata that needs more descriptions (x1000ftbreak, method)
 
-* Need to email Ryan to ask what survey_age is; decide if the columns are important and decide if these columns should be dropped
+* There are multiple columns that seem redundant. For example: run vs run_observed, survey vs survey observed, age vs observation age
+
+* Need to email Ryan to ask what survey_age is. The survey_age was dropped for now.
 
 ### Save Cleaned data back to google cloud
 ```{r}
@@ -824,8 +845,9 @@ clear_redd <- cleaner_data %>% glimpse
 ```
 ```{r, eval=FALSE}
 # gcs_list_objects()
+
 f <- function(input, output) write_csv(input, file = output)
-gcs_upload(clear_redd
+gcs_upload(clear_redd,
            object_function = f,
            type = "csv",
            name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_redd.csv")

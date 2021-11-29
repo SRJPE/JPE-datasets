@@ -1,4 +1,4 @@
-clear\_holding\_survey\_qc
+Clear Holding Survey QC
 ================
 Inigo Peng
 11/4/2021
@@ -19,6 +19,8 @@ degrees\]) near the confluence with the Sacramento River.
 **Timeframe:** 2008 - 2019
 
 **Completeness of Record throughout timeframe:**
+
+Data available for all years and QCed
 
 **Sampling Location:** Clear Creek
 
@@ -54,25 +56,27 @@ cleaner_data <- raw_holding_data %>%
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'count' = 'total_fish',
-         'jack_count' = 'num_of_jacks') %>% 
+         'jack_count' = 'num_of_jacks',
+         'picket_weir_location_rm' = 'pw_location_rm',
+         'picket_weir_relate' = 'pw_relate') %>% 
   mutate(date = as.Date(date)) %>% 
   glimpse()
 ```
 
     ## Rows: 1,435
     ## Columns: 12
-    ## $ river_mile     <dbl> 17.641632, 16.697440, 15.571744, 15.473638, 14.886228, ~
-    ## $ longitude      <dbl> -122.5459, -122.5452, -122.5336, -122.5327, -122.5300, ~
-    ## $ latitude       <dbl> 40.59089, 40.58410, 40.57378, 40.57257, 40.56494, 40.56~
-    ## $ date           <date> 2008-06-02, 2008-06-02, 2008-06-02, 2008-06-02, 2008-0~
-    ## $ reach          <chr> "R1", "R1", "R2", "R2", "R2", "R2", "R2", "R3", "R3", "~
-    ## $ count          <dbl> 1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3, 1, 2, 1, 1, 1, 1, 4~
-    ## $ jack_count     <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0~
-    ## $ comments       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ species        <chr> "CHINOOK", "CHINOOK", "CHINOOK", "CHINOOK", "CHINOOK", ~
-    ## $ survey_intent  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ pw_location_rm <dbl> 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, ~
-    ## $ pw_relate      <chr> "Above", "Above", "Above", "Above", "Above", "Above", "~
+    ## $ river_mile              <dbl> 17.641632, 16.697440, 15.571744, 15.473638, 14~
+    ## $ longitude               <dbl> -122.5459, -122.5452, -122.5336, -122.5327, -1~
+    ## $ latitude                <dbl> 40.59089, 40.58410, 40.57378, 40.57257, 40.564~
+    ## $ date                    <date> 2008-06-02, 2008-06-02, 2008-06-02, 2008-06-0~
+    ## $ reach                   <chr> "R1", "R1", "R2", "R2", "R2", "R2", "R2", "R3"~
+    ## $ count                   <dbl> 1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3, 1, 2, 1, 1~
+    ## $ jack_count              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0~
+    ## $ comments                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ species                 <chr> "CHINOOK", "CHINOOK", "CHINOOK", "CHINOOK", "C~
+    ## $ survey_intent           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ picket_weir_location_rm <dbl> 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7~
+    ## $ picket_weir_relate      <chr> "Above", "Above", "Above", "Above", "Above", "~
 
 ## Explore Date
 
@@ -94,8 +98,8 @@ cleaner_data %>%
   select_if(is.character) %>% colnames()
 ```
 
-    ## [1] "reach"         "comments"      "species"       "survey_intent"
-    ## [5] "pw_relate"
+    ## [1] "reach"              "comments"           "species"           
+    ## [4] "survey_intent"      "picket_weir_relate"
 
 ### Variable: `reach`
 
@@ -167,14 +171,14 @@ table(cleaner_data$survey_intent)
 
 -   9.4 % of values in the `survey_intent` column are NA.
 
-### Variable: `pw_relate`
+### Variable: `picket_weir_relate`
 
 **Description:** Fish above or below Picket Weir
 
 ``` r
 cleaner_data <- cleaner_data %>% 
-  mutate(pw_relate = tolower(pw_relate))
-table(cleaner_data$pw_relate)
+  mutate(picket_weir_relate = tolower(picket_weir_relate))
+table(cleaner_data$picket_weir_relate)
 ```
 
     ## 
@@ -188,8 +192,9 @@ cleaner_data %>%
   select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "river_mile"     "longitude"      "latitude"       "count"         
-    ## [5] "jack_count"     "pw_location_rm"
+    ## [1] "river_mile"              "longitude"              
+    ## [3] "latitude"                "count"                  
+    ## [5] "jack_count"              "picket_weir_location_rm"
 
 ### Variable: `river_mile`
 
@@ -211,7 +216,7 @@ cleaner_data %>%
   ggplot(aes(x= river_mile, y = count, color = year))+
   geom_point()+
   theme_minimal()+
-  labs(title = "Total Fish Count Per River Mile")
+  labs(title = "Fish Count Per River Mile Per Year")
 ```
 
 ![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
@@ -280,14 +285,14 @@ cleaner_data %>%
 ``` r
 cleaner_data %>% 
   group_by(date) %>%
-  summarise(daily_count = sum(count)) %>%
-  mutate(year = as.factor(year(date))) %>% 
-  ggplot(aes(x = year, y = daily_count)) + 
-  geom_boxplot() + 
+  summarise(daily_count = sum(count)) %>% 
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = year, y = daily_count)) +
+  geom_boxplot() +
   theme_minimal() +
-  labs(title = "Daily Count Summarized by Year") + 
+  labs(title = "Daily Count Summarized by Year") +
   theme(text = element_text(size = 13),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))   + 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))   +
   scale_y_continuous(limits = c(0, 101))
 ```
 
@@ -298,9 +303,8 @@ cleaner_data %>%
 ``` r
 cleaner_data  %>%
   mutate(year = as.factor(year(date))) %>%
-  group_by(year(date)) %>%
-  mutate(total_catch = sum(count)) %>%
-  ungroup() %>%
+  group_by(year) %>% 
+  summarise(total_catch = sum(count)) %>%
   ggplot(aes(x = year, y = total_catch)) + 
   geom_col() + 
   theme_minimal() +
@@ -353,25 +357,25 @@ summary(cleaner_data$jack_count)
 
 -   0 % of values in the `jack_count` column are NA.
 
-## Variable: `pw_location_rm`
+## Variable: `picket_weir_location_rm`
 
 **Description:** location of the Picket Weir
 
 ``` r
 cleaner_data %>% 
-  ggplot(aes(x = pw_location_rm)) +
+  ggplot(aes(x = picket_weir_location_rm)) +
   geom_histogram(bins = 4) +
   theme_minimal() + 
   theme(text = element_text(size = 15))+
-  labs(title = "Distribution of pw_location_rm")
+  labs(title = "Distribution of picket_weir_location_rm")
 ```
 
 ![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
-**Numeric Summary of pw\_location\_rm over Period of Record**
+**Numeric Summary of picket\_weir\_location\_rm over Period of Record**
 
 ``` r
-summary(cleaner_data$pw_location_rm)
+summary(cleaner_data$picket_weir_location_rm)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
@@ -381,7 +385,7 @@ Seems like there are two locations
 
 **NA and Unknown Values**
 
--   0 % of values in the `pw_location_rm` column are NA.
+-   0 % of values in the `picket_weir_location_rm` column are NA.
 
 ## Save cleaned data back to google cloud
 

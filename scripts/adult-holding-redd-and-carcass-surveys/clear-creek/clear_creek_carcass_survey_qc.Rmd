@@ -1,5 +1,5 @@
 ---
-title: "clear_carcass_survey_qc"
+title: "Clear Carcass Survey QC"
 author: "Inigo Peng"
 date: "11/4/2021"
 output: rmarkdown::github_document
@@ -26,6 +26,8 @@ These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fis
 **Timeframe:** 2008 - 2019
 
 **Completeness of Record throughout timeframe:** 
+
+Data available for all years.
 
 **Sampling Location:** Clear Creek 
 
@@ -95,7 +97,7 @@ cleaner_data %>% select_if(is.character) %>% colnames()
 
 **Description:** Survey Type (Kayak, Rotary Screw Trap, CCVS, Etc.)
 
-Note: what is psam and ccvs?
+TODO: metadata question: what is psam and ccvs? 
 
 ```{r}
 cleaner_data$type <- tolower(cleaner_data$type)
@@ -118,7 +120,7 @@ table(cleaner_data$reach)
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_data$reach))/nrow(cleaner_data), 3) * 100` % of values in the `reach`` column are NA.
+* `r round(sum(is.na(cleaner_data$reach))/nrow(cleaner_data), 3) * 100` % of values in the `reach` column are NA.
 
 ### Variable: `obs_only`
 ```{r}
@@ -346,6 +348,8 @@ table(cleaner_data$tag_type)
 
 ### Variable: `photo`
 
+
+
 **Description:** Photo taken of the carcass? 
 
 ```{r}
@@ -359,7 +363,7 @@ cleaner_data<- cleaner_data %>%
 table(cleaner_data$photo)
 ```
 
-Note: what do the numbers stand for? Number of pictures?
+TODO: metadata issue - what do the numbers stand for? Number of pictures?
 
 **NA and Unknown Values**
 
@@ -376,7 +380,8 @@ unique(cleaner_data$comments[1:5])
 
 ### Variable: `cwt_code`
 
-Note: what is "LT", "NTD"
+TODO: metadata - what is "LT", "NTD"
+
 ```{r}
 table(cleaner_data$cwt_code)
 ```
@@ -495,7 +500,7 @@ cleaner_data$genetic <- tolower(cleaner_data$genetic)
 table(cleaner_data$genetic)
 ```
 
-Need descriptions on these variables
+TODO: metadata need descriptions on these variables
 
 **NA and Unknown Values**
 
@@ -544,6 +549,8 @@ summary(cleaner_data$river_mile)
 * `r round(sum(is.na(cleaner_data$river_mile))/nrow(cleaner_data), 3) * 100` % of values in the `river_mile` column are NA.
 
 ### Variable: `brood_year`
+
+TODO: Ask for clarification/description for brood_year(is this a description for the carcasses?) 
 
 ```{r}
 cleaner_data %>% 

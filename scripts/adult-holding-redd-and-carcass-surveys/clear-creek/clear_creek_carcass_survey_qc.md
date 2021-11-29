@@ -1,4 +1,4 @@
-clear\_carcass\_survey\_qc
+Clear Carcass Survey QC
 ================
 Inigo Peng
 11/4/2021
@@ -20,6 +20,8 @@ the confluence with the Sacramento River.
 **Timeframe:** 2008 - 2019
 
 **Completeness of Record throughout timeframe:**
+
+Data available for all years.
 
 **Sampling Location:** Clear Creek
 
@@ -190,7 +192,7 @@ cleaner_data %>% select_if(is.character) %>% colnames()
 
 **Description:** Survey Type (Kayak, Rotary Screw Trap, CCVS, Etc.)
 
-Note: what is psam and ccvs?
+TODO: metadata question: what is psam and ccvs?
 
 ``` r
 cleaner_data$type <- tolower(cleaner_data$type)
@@ -219,7 +221,7 @@ table(cleaner_data$reach)
 
 **NA and Unknown Values**
 
--   0 % of values in the \`reach\`\` column are NA.
+-   0 % of values in the `reach` column are NA.
 
 ### Variable: `obs_only`
 
@@ -530,7 +532,8 @@ table(cleaner_data$photo)
     ##   1   2   3   4   5   6  no yes 
     ##  25  13   8   4   3   2  31 187
 
-Note: what do the numbers stand for? Number of pictures?
+TODO: metadata issue - what do the numbers stand for? Number of
+pictures?
 
 **NA and Unknown Values**
 
@@ -551,7 +554,7 @@ unique(cleaner_data$comments[1:5])
 
 ### Variable: `cwt_code`
 
-Note: what is “LT”, “NTD”
+TODO: metadata - what is “LT”, “NTD”
 
 ``` r
 table(cleaner_data$cwt_code)
@@ -724,7 +727,7 @@ table(cleaner_data$genetic)
     ##   1 x no call fcs snps only     never run           scs 
     ##            25             2             1            36
 
-Need descriptions on these variables
+TODO: metadata need descriptions on these variables
 
 **NA and Unknown Values**
 
@@ -790,6 +793,9 @@ summary(cleaner_data$river_mile)
 -   0.2 % of values in the `river_mile` column are NA.
 
 ### Variable: `brood_year`
+
+TODO: Ask for clarification/description for brood\_year(is this a
+description for the carcasses?)
 
 ``` r
 cleaner_data %>% 
