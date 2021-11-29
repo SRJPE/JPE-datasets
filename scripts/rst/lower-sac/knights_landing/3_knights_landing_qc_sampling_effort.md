@@ -13,12 +13,13 @@ Ashley Vizek
 
 **Completeness of Record throughout timeframe:**
 
--   The 2013 sampling period is not complete (Oct 2012 through Dec 2012)
+-   The 2013 sampling period is not complete (includes Oct 2012 through
+    Dec 2012)
 -   We are missing data for 2017 and 2018.
 
 **Sampling Location:**
 
-Knight’s Landing
+Lower Sacramento - Knight’s Landing
 
 **Data Contact:**
 
@@ -48,26 +49,26 @@ get_data("sampling_effort")
 ```
 
 Read in data from google cloud, glimpse raw data and domain description
-sheet. Need to change data, start\_date, stop\_date into appropriate
-format. Make changes in changes section at end.
+sheet. All transformations are implemented at the end of this document.
+- Need to change date, start\_date, stop\_date into appropriate format.
 
 ``` r
 # read in data to clean 
-knl_effort <- read.csv("knl_combine_sampling_effort.csv")
+knl_effort <- read_csv("knl_combine_sampling_effort.csv", show_col_types = F)
 glimpse(knl_effort)
 ```
 
     ## Rows: 6,744
     ## Columns: 19
-    ## $ date                 <chr> "2002-10-04", "2002-10-04", "2002-10-11", "2002-1…
-    ## $ start_date           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
-    ## $ stop_date            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ date                 <date> 2002-10-04, 2002-10-04, 2002-10-11, 2002-10-11, …
+    ## $ start_date           <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ stop_date            <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ location             <chr> "KL", "KL", "KL", "KL", "KL", "KL", "KL", "KL", "…
     ## $ gear                 <chr> "RST", "RST", "RST", "RST", "RST", "RST", "RST", …
-    ## $ number_traps         <int> 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2…
+    ## $ number_traps         <dbl> 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2…
     ## $ hrs_fished           <dbl> 110.50, 110.50, 335.00, 335.00, 196.50, 196.50, 9…
     ## $ sampling_period_hrs  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
-    ## $ flow_cfs             <int> 6031, 6031, 4819, 4819, 5249, 5249, 5186, 5186, 5…
+    ## $ flow_cfs             <dbl> 6031, 6031, 4819, 4819, 5249, 5249, 5186, 5186, 5…
     ## $ secchi_ft            <dbl> NA, NA, NA, NA, 3.0, 3.0, 4.6, 4.6, 3.3, 3.3, 3.5…
     ## $ water_t_f            <dbl> 59, 59, 64, 64, 60, 60, 58, 58, 60, 60, 60, 60, 5…
     ## $ klci                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
@@ -77,15 +78,74 @@ glimpse(knl_effort)
     ## $ turbidity_units      <chr> "NTU", "NTU", "NTU", "NTU", "NTU", "NTU", "NTU", …
     ## $ cone_id              <dbl> 8.3, 8.4, 8.3, 8.4, 8.3, 8.4, 8.3, 8.4, 8.3, 8.4,…
     ## $ cone_rpm             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
-    ## $ total_cone_rev       <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ total_cone_rev       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- knl_effort %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(knl_effort),
+                          description = c("Date of sampling. In more recent years, start and stop date are collected in which case date is the stop date.",
+                                          "Date and time when sampling started. This was not collected in earlier sampling years.",
+                                          "Date and time when sampling stopped. This was not collected in earlier sampling years.",
+                                          "Site name/code for the RST trap. All are KL.",
+                                          "Type of gear used. The options used are RST or 2 x 8 cone.",
+                                          "The number of traps used. Consistently 2 except in a few cases.",
+                                          "Calculated as the (total cone revolutions/RPMs)/60 and combined for both traps.",
+                                          "Number of hours since trap was last checked.",
+                                          "River flow (cfs) at Wilkins gage.",
+                                          "Measurement of water transparency (ft).",
+                                          "Water temperature (F)",
+                                          "FILL IN DETAILS FOR KLCI",
+                                          "Percent of cones functioning. Very little data here.",
+                                          "Qualitative comments about data collection and equipment.",
+                                          "Measurement of turbidity.",
+                                          "Units used for turbidity. In all years except 2014 NTU is used. FTU is used in 2014.",
+                                          "Identification number of cone/trap.",
+                                          "Revolutions per minute. These may differ by cone_id.",
+                                          "Total cone revolutions. These may differ by cone_id."),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables              | description                                                                                                    | percent\_na |
+|:-----------------------|:---------------------------------------------------------------------------------------------------------------|------------:|
+| date                   | Date of sampling. In more recent years, start and stop date are collected in which case date is the stop date. |           0 |
+| start\_date            | Date and time when sampling started. This was not collected in earlier sampling years.                         |          51 |
+| stop\_date             | Date and time when sampling stopped. This was not collected in earlier sampling years.                         |          51 |
+| location               | Site name/code for the RST trap. All are KL.                                                                   |          44 |
+| gear                   | Type of gear used. The options used are RST or 2 x 8 cone.                                                     |          44 |
+| number\_traps          | The number of traps used. Consistently 2 except in a few cases.                                                |          55 |
+| hrs\_fished            | Calculated as the (total cone revolutions/RPMs)/60 and combined for both traps.                                |           0 |
+| sampling\_period\_hrs  | Number of hours since trap was last checked.                                                                   |          45 |
+| flow\_cfs              | River flow (cfs) at Wilkins gage.                                                                              |           1 |
+| secchi\_ft             | Measurement of water transparency (ft).                                                                        |          40 |
+| water\_t\_f            | Water temperature (F)                                                                                          |           0 |
+| klci                   | FILL IN DETAILS FOR KLCI                                                                                       |          93 |
+| cone\_sampling\_effort | Percent of cones functioning. Very little data here.                                                           |          77 |
+| comments               | Qualitative comments about data collection and equipment.                                                      |          86 |
+| turbidity              | Measurement of turbidity.                                                                                      |           4 |
+| turbidity\_units       | Units used for turbidity. In all years except 2014 NTU is used. FTU is used in 2014.                           |           0 |
+| cone\_id               | Identification number of cone/trap.                                                                            |           0 |
+| cone\_rpm              | Revolutions per minute. These may differ by cone\_id.                                                          |          45 |
+| total\_cone\_rev       | Total cone revolutions. These may differ by cone\_id.                                                          |          45 |
 
 ## Data transformations
 
-This work was done in other rmd
-(1\_knights\_landing\_initial\_clean.Rmd,
-2\_knights\_landing\_combined\_data.Rmd)
+This work was primarily done in
+[1\_knights\_landing\_initial\_clean.Rmd](https://github.com/FlowWest/JPE-datasets/blob/main/scripts/rst/lower-sac/knights_landing/1_knights_landing_initial_clean.Rmd)
+and
+[2\_knights\_landing\_combined\_data.Rmd](https://github.com/FlowWest/JPE-datasets/blob/main/scripts/rst/lower-sac/knights_landing/2_knights_landing_combined_data.Rmd)
 
-## Explore Numeric Variables:
+## Explore Numeric Variables
 
 ``` r
 # Filter clean data to show only numeric variables (this way we know we do not miss any)
@@ -107,10 +167,13 @@ This variable exists for years 2002-2011 and is consistently 2; except
 in a few cases.
 
 ``` r
-ggplot(knl_effort, aes(y = number_traps)) +
-  geom_boxplot() +
+filter(knl_effort, year(date) <= 2011) %>%
+ggplot(aes(y = number_traps)) +
+  geom_histogram() +
   facet_wrap(~year(date))
 ```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
 ![](3_knights_landing_qc_sampling_effort_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
@@ -351,7 +414,7 @@ ggplot(filter(knl_effort, year(date) <= 2014), aes(y = secchi_ft)) +
 ![](3_knights_landing_qc_sampling_effort_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
-knl_effort %>%
+filter(knl_effort, year(date) <= 2014) %>%
   mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date))),
          fake_year = 2000,
          fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
@@ -472,83 +535,48 @@ Made that change to knl\_effort\_changes in change section below.
 filter(knl_effort, year(date) == 2009, water_t_f == 0)
 ```
 
-    ##         date start_date stop_date location gear number_traps hrs_fished
-    ## 1 2009-06-17       <NA>      <NA>       KL  RST            2         96
-    ## 2 2009-06-17       <NA>      <NA>       KL  RST            2         96
-    ##   sampling_period_hrs flow_cfs secchi_ft water_t_f klci cone_sampling_effort
-    ## 1                  NA     5380       1.5         0   NA                 <NA>
-    ## 2                  NA     5380       1.5         0   NA                 <NA>
-    ##   comments turbidity turbidity_units cone_id cone_rpm total_cone_rev
-    ## 1     <NA>        19             NTU     8.3       NA             NA
-    ## 2     <NA>        19             NTU     8.4       NA             NA
+    ## # A tibble: 2 × 19
+    ##   date       start_date stop_date location gear  number_traps
+    ##   <date>     <dttm>     <dttm>    <chr>    <chr>        <dbl>
+    ## 1 2009-06-17 NA         NA        KL       RST              2
+    ## 2 2009-06-17 NA         NA        KL       RST              2
+    ## # … with 13 more variables: hrs_fished <dbl>, sampling_period_hrs <dbl>,
+    ## #   flow_cfs <dbl>, secchi_ft <dbl>, water_t_f <dbl>, klci <dbl>,
+    ## #   cone_sampling_effort <chr>, comments <chr>, turbidity <dbl>,
+    ## #   turbidity_units <chr>, cone_id <dbl>, cone_rpm <dbl>, total_cone_rev <dbl>
 
 ``` r
 filter(knl_effort, year(date) == 2009, month(date) == 6)
 ```
 
-    ##          date start_date stop_date location gear number_traps hrs_fished
-    ## 1  2009-06-01       <NA>      <NA>       KL  RST            2     150.50
-    ## 2  2009-06-01       <NA>      <NA>       KL  RST            2     150.50
-    ## 3  2009-06-03       <NA>      <NA>       KL  RST            2      91.00
-    ## 4  2009-06-03       <NA>      <NA>       KL  RST            2      91.00
-    ## 5  2009-06-05       <NA>      <NA>       KL  RST            2     100.00
-    ## 6  2009-06-05       <NA>      <NA>       KL  RST            2     100.00
-    ## 7  2009-06-09       <NA>      <NA>       KL  RST            2     189.50
-    ## 8  2009-06-09       <NA>      <NA>       KL  RST            2     189.50
-    ## 9  2009-06-12       <NA>      <NA>       KL  RST            2     145.00
-    ## 10 2009-06-12       <NA>      <NA>       KL  RST            2     145.00
-    ## 11 2009-06-15       <NA>      <NA>       KL  RST            2     143.00
-    ## 12 2009-06-15       <NA>      <NA>       KL  RST            2     143.00
-    ## 13 2009-06-17       <NA>      <NA>       KL  RST            2      96.00
-    ## 14 2009-06-17       <NA>      <NA>       KL  RST            2      96.00
-    ## 15 2009-06-19       <NA>      <NA>       KL  RST            2      95.25
-    ## 16 2009-06-19       <NA>      <NA>       KL  RST            2      95.25
-    ## 17 2009-06-22       <NA>      <NA>       KL  RST            2     144.25
-    ## 18 2009-06-22       <NA>      <NA>       KL  RST            2     144.25
-    ## 19 2009-06-25       <NA>      <NA>       KL  RST            2     143.25
-    ## 20 2009-06-25       <NA>      <NA>       KL  RST            2     143.25
-    ##    sampling_period_hrs flow_cfs secchi_ft water_t_f klci cone_sampling_effort
-    ## 1                   NA     4784       2.2        73   NA                 <NA>
-    ## 2                   NA     4784       2.2        73   NA                 <NA>
-    ## 3                   NA     4985       2.9        74   NA                 <NA>
-    ## 4                   NA     4985       2.9        74   NA                 <NA>
-    ## 5                   NA     6791       2.3        71   NA                 <NA>
-    ## 6                   NA     6791       2.3        71   NA                 <NA>
-    ## 7                   NA     6798       1.6        70   NA                 <NA>
-    ## 8                   NA     6798       1.6        70   NA                 <NA>
-    ## 9                   NA     6186       2.3        69   NA                 <NA>
-    ## 10                  NA     6186       2.3        69   NA                 <NA>
-    ## 11                  NA     6011       0.5        68   NA                 <NA>
-    ## 12                  NA     6011       0.5        68   NA                 <NA>
-    ## 13                  NA     5380       1.5         0   NA                 <NA>
-    ## 14                  NA     5380       1.5         0   NA                 <NA>
-    ## 15                  NA     5127       2.2        74   NA                 <NA>
-    ## 16                  NA     5127       2.2        74   NA                 <NA>
-    ## 17                  NA     5205       2.6        72   NA                 <NA>
-    ## 18                  NA     5205       2.6        72   NA                 <NA>
-    ## 19                  NA       NA       2.7        73   NA                 <NA>
-    ## 20                  NA       NA       2.7        73   NA                 <NA>
-    ##    comments turbidity turbidity_units cone_id cone_rpm total_cone_rev
-    ## 1      <NA>      9.82             NTU     8.3       NA             NA
-    ## 2      <NA>      9.82             NTU     8.4       NA             NA
-    ## 3      <NA>     10.00             NTU     8.3       NA             NA
-    ## 4      <NA>     10.00             NTU     8.4       NA             NA
-    ## 5      <NA>     10.10             NTU     8.3       NA             NA
-    ## 6      <NA>     10.10             NTU     8.4       NA             NA
-    ## 7      <NA>     15.50             NTU     8.3       NA             NA
-    ## 8      <NA>     15.50             NTU     8.4       NA             NA
-    ## 9      <NA>     12.10             NTU     8.3       NA             NA
-    ## 10     <NA>     12.10             NTU     8.4       NA             NA
-    ## 11     <NA>    102.90             NTU     8.3       NA             NA
-    ## 12     <NA>    102.90             NTU     8.4       NA             NA
-    ## 13     <NA>     19.00             NTU     8.3       NA             NA
-    ## 14     <NA>     19.00             NTU     8.4       NA             NA
-    ## 15     <NA>     12.50             NTU     8.3       NA             NA
-    ## 16     <NA>     12.50             NTU     8.4       NA             NA
-    ## 17     <NA>     10.30             NTU     8.3       NA             NA
-    ## 18     <NA>     10.30             NTU     8.4       NA             NA
-    ## 19     <NA>      8.50             NTU     8.3       NA             NA
-    ## 20     <NA>      8.50             NTU     8.4       NA             NA
+    ## # A tibble: 20 × 19
+    ##    date       start_date stop_date location gear 
+    ##    <date>     <dttm>     <dttm>    <chr>    <chr>
+    ##  1 2009-06-01 NA         NA        KL       RST  
+    ##  2 2009-06-01 NA         NA        KL       RST  
+    ##  3 2009-06-03 NA         NA        KL       RST  
+    ##  4 2009-06-03 NA         NA        KL       RST  
+    ##  5 2009-06-05 NA         NA        KL       RST  
+    ##  6 2009-06-05 NA         NA        KL       RST  
+    ##  7 2009-06-09 NA         NA        KL       RST  
+    ##  8 2009-06-09 NA         NA        KL       RST  
+    ##  9 2009-06-12 NA         NA        KL       RST  
+    ## 10 2009-06-12 NA         NA        KL       RST  
+    ## 11 2009-06-15 NA         NA        KL       RST  
+    ## 12 2009-06-15 NA         NA        KL       RST  
+    ## 13 2009-06-17 NA         NA        KL       RST  
+    ## 14 2009-06-17 NA         NA        KL       RST  
+    ## 15 2009-06-19 NA         NA        KL       RST  
+    ## 16 2009-06-19 NA         NA        KL       RST  
+    ## 17 2009-06-22 NA         NA        KL       RST  
+    ## 18 2009-06-22 NA         NA        KL       RST  
+    ## 19 2009-06-25 NA         NA        KL       RST  
+    ## 20 2009-06-25 NA         NA        KL       RST  
+    ## # … with 14 more variables: number_traps <dbl>, hrs_fished <dbl>,
+    ## #   sampling_period_hrs <dbl>, flow_cfs <dbl>, secchi_ft <dbl>,
+    ## #   water_t_f <dbl>, klci <dbl>, cone_sampling_effort <chr>, comments <chr>,
+    ## #   turbidity <dbl>, turbidity_units <chr>, cone_id <dbl>, cone_rpm <dbl>,
+    ## #   total_cone_rev <dbl>
 
 **NA and Unknown Values**
 
@@ -684,7 +712,7 @@ Percent of NA:
 **Plotting `cone_id` over Period of Record**
 
 Data exists for all years. This variable should be re-categorized as a
-character.
+character. Changes are made in the make\_changes section below.
 
 ``` r
 # knl_effort %>%
@@ -849,50 +877,37 @@ information to be sure. Will leave as is.
 filter(knl_effort, total_cone_rev > 20000)
 ```
 
-    ##         date start_date stop_date location       gear number_traps hrs_fished
-    ## 1 2011-10-21       <NA>      <NA>       KL 2X 8' Cone           NA   225.2722
-    ##   sampling_period_hrs flow_cfs secchi_ft water_t_f klci cone_sampling_effort
-    ## 1               95.25     6485       3.8        64   NA                 <NA>
-    ##   comments turbidity turbidity_units cone_id cone_rpm total_cone_rev
-    ## 1     <NA>      6.76             NTU     8.3      2.5          20495
+    ## # A tibble: 1 × 19
+    ##   date       start_date stop_date location gear       number_traps
+    ##   <date>     <dttm>     <dttm>    <chr>    <chr>             <dbl>
+    ## 1 2011-10-21 NA         NA        KL       2X 8' Cone           NA
+    ## # … with 13 more variables: hrs_fished <dbl>, sampling_period_hrs <dbl>,
+    ## #   flow_cfs <dbl>, secchi_ft <dbl>, water_t_f <dbl>, klci <dbl>,
+    ## #   cone_sampling_effort <chr>, comments <chr>, turbidity <dbl>,
+    ## #   turbidity_units <chr>, cone_id <dbl>, cone_rpm <dbl>, total_cone_rev <dbl>
 
 ``` r
 filter(knl_effort, total_cone_rev > 12000)
 ```
 
-    ##          date start_date stop_date location       gear number_traps hrs_fished
-    ## 1  2011-10-10       <NA>      <NA>       KL 2X 8' Cone           NA    98.1250
-    ## 2  2011-10-13       <NA>      <NA>       KL 2X 8' Cone           NA   163.1346
-    ## 3  2011-10-17       <NA>      <NA>       KL 2X 8' Cone           NA   100.0261
-    ## 4  2011-10-21       <NA>      <NA>       KL 2X 8' Cone           NA   225.2722
-    ## 5  2011-10-21       <NA>      <NA>       KL 2X 8' Cone           NA   225.2722
-    ## 6  2011-11-07       <NA>      <NA>       KL 2X 8' Cone           NA   176.6269
-    ## 7  2011-12-05       <NA>      <NA>       KL 2X 8' Cone           NA   163.5294
-    ## 8  2012-10-16       <NA>      <NA>       KL 2X 8' Cone           NA   218.7302
-    ## 9  2012-10-16       <NA>      <NA>       KL 2X 8' Cone           NA   218.7302
-    ## 10 2012-11-05       <NA>      <NA>       KL 2X 8' Cone           NA   121.2869
-    ##    sampling_period_hrs flow_cfs secchi_ft water_t_f klci cone_sampling_effort
-    ## 1                95.75     9144       4.1        60   NA                 <NA>
-    ## 2                73.00     9454       3.4        63   NA                 <NA>
-    ## 3                96.75     8440       3.8        63   NA                 <NA>
-    ## 4                95.25     6485       3.8        64   NA                 <NA>
-    ## 5                95.25     6485       3.8        64   NA                 <NA>
-    ## 6                95.50     5580       2.7        54   NA                 <NA>
-    ## 7                72.25     5893       2.8        49   NA                 <NA>
-    ## 8                96.00     5130       4.5        65   NA                 <NA>
-    ## 9                96.00     5130       4.5        65   NA                 <NA>
-    ## 10               73.00     4976       2.8        61   NA                 <NA>
-    ##    comments turbidity turbidity_units cone_id cone_rpm total_cone_rev
-    ## 1      <NA>      7.33             NTU     8.4      2.4          14130
-    ## 2      <NA>      6.13             NTU     8.3      2.6          14098
-    ## 3      <NA>      9.39             NTU     8.4      2.7          15874
-    ## 4      <NA>      6.76             NTU     8.3      2.5          20495
-    ## 5      <NA>      6.76             NTU     8.4      2.4          12764
-    ## 6      <NA>      8.23             NTU     8.3      2.2          13533
-    ## 7      <NA>      9.80             NTU     8.3      2.5          13919
-    ## 8      <NA>      7.20             NTU     8.3      2.1          14645
-    ## 9      <NA>      7.20             NTU     8.4      2.0          12300
-    ## 10     <NA>      7.95             NTU     8.3      2.7          13054
+    ## # A tibble: 10 × 19
+    ##    date       start_date stop_date location gear      
+    ##    <date>     <dttm>     <dttm>    <chr>    <chr>     
+    ##  1 2011-10-10 NA         NA        KL       2X 8' Cone
+    ##  2 2011-10-13 NA         NA        KL       2X 8' Cone
+    ##  3 2011-10-17 NA         NA        KL       2X 8' Cone
+    ##  4 2011-10-21 NA         NA        KL       2X 8' Cone
+    ##  5 2011-10-21 NA         NA        KL       2X 8' Cone
+    ##  6 2011-11-07 NA         NA        KL       2X 8' Cone
+    ##  7 2011-12-05 NA         NA        KL       2X 8' Cone
+    ##  8 2012-10-16 NA         NA        KL       2X 8' Cone
+    ##  9 2012-10-16 NA         NA        KL       2X 8' Cone
+    ## 10 2012-11-05 NA         NA        KL       2X 8' Cone
+    ## # … with 14 more variables: number_traps <dbl>, hrs_fished <dbl>,
+    ## #   sampling_period_hrs <dbl>, flow_cfs <dbl>, secchi_ft <dbl>,
+    ## #   water_t_f <dbl>, klci <dbl>, cone_sampling_effort <chr>, comments <chr>,
+    ## #   turbidity <dbl>, turbidity_units <chr>, cone_id <dbl>, cone_rpm <dbl>,
+    ## #   total_cone_rev <dbl>
 
 **NA and Unknown Values**
 
@@ -913,9 +928,8 @@ knl_effort %>%
   colnames()
 ```
 
-    ## [1] "date"                 "start_date"           "stop_date"           
-    ## [4] "location"             "gear"                 "cone_sampling_effort"
-    ## [7] "comments"             "turbidity_units"
+    ## [1] "location"             "gear"                 "cone_sampling_effort"
+    ## [4] "comments"             "turbidity_units"
 
 ### Variable: `location`
 
@@ -927,8 +941,8 @@ table(knl_effort$location)
     ##   KL 
     ## 3778
 
-Some years do not have location variable filled in. Fill in for these
-years.
+Some years do not have location variable filled in. Fill in with `KL`
+for these years.
 
 ``` r
 filter(knl_effort, is.na(location)) %>%
@@ -1122,4 +1136,40 @@ knl_effort_changes <- knl_effort %>%
 ``` r
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+upload_data <- function(data, name) {
+gcs_upload(data,
+           object_function = f,
+           type = "csv",
+           name = paste0("rst/lower-sac-river/data/knights-landing/knl_combine_", name, ".csv"))
+}
+
+upload_data(knl_effort_changes, "sampling_effort_clean")
 ```
+
+    ## ℹ 2021-11-24 08:38:47 > File size detected as  689.4 Kb
+
+    ## ℹ 2021-11-24 08:38:47 > Request Status Code:  400
+
+    ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
+
+    ## ℹ 2021-11-24 08:38:47 > File size detected as  689.4 Kb
+
+    ## ==Google Cloud Storage Object==
+    ## Name:                rst/lower-sac-river/data/knights-landing/knl_combine_sampling_effort_clean.csv 
+    ## Type:                csv 
+    ## Size:                689.4 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Flower-sac-river%2Fdata%2Fknights-landing%2Fknl_combine_sampling_effort_clean.csv?generation=1637771928149960&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/rst%2Flower-sac-river%2Fdata%2Fknights-landing%2Fknl_combine_sampling_effort_clean.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/rst%2Flower-sac-river%2Fdata%2Fknights-landing%2Fknl_combine_sampling_effort_clean.csv 
+    ## Bucket:              jpe-dev-bucket 
+    ## ID:                  jpe-dev-bucket/rst/lower-sac-river/data/knights-landing/knl_combine_sampling_effort_clean.csv/1637771928149960 
+    ## MD5 Hash:            jyRHq/0ubWnBLSg7uuEEQg== 
+    ## Class:               STANDARD 
+    ## Created:             2021-11-24 16:38:48 
+    ## Updated:             2021-11-24 16:38:48 
+    ## Generation:          1637771928149960 
+    ## Meta Generation:     1 
+    ## eTag:                CMi/gPC3sfQCEAE= 
+    ## crc32c:              QDriew==

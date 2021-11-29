@@ -12,6 +12,7 @@ library(lubridate)
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
+library(knitr)
 ```
 
 # Lower Sacramento (Knight's Landing) Rotary Screw Trap Data
@@ -24,12 +25,12 @@ library(scales)
 
 **Completeness of Record throughout timeframe:** 
 
-- The 2013 sampling period is not complete (Oct 2012 through Dec 2012)
+- The 2013 sampling period is not complete (includes Oct 2012 through Dec 2012)
 - We are missing data for 2017 and 2018. 
 
 **Sampling Location:**
 
-Knight's Landing
+Lower Sacramento - Knight's Landing
 
 
 **Data Contact:** 
@@ -59,21 +60,56 @@ gcs_get_object(object_name = paste0("rst/lower-sac-river/data/knights-landing/kn
 get_data("sampling_effort")
 ```
 
-Read in data from google cloud, glimpse raw data and domain description sheet.
-Need to change date, start_date, stop_date into appropriate format. Make changes
-in changes section at end.
+Read in data from google cloud, glimpse raw data and domain description sheet. All transformations are implemented at the end of this document.
+- Need to change date, start_date, stop_date into appropriate format. 
 
 ```{r}
 # read in data to clean 
-knl_effort <- read.csv("knl_combine_sampling_effort.csv")
+knl_effort <- read_csv("knl_combine_sampling_effort.csv", show_col_types = F)
 glimpse(knl_effort)
 ```
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- knl_effort %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(knl_effort),
+                          description = c("Date of sampling. In more recent years, start and stop date are collected in which case date is the stop date.",
+                                          "Date and time when sampling started. This was not collected in earlier sampling years.",
+                                          "Date and time when sampling stopped. This was not collected in earlier sampling years.",
+                                          "Site name/code for the RST trap. All are KL.",
+                                          "Type of gear used. The options used are RST or 2 x 8 cone.",
+                                          "The number of traps used. Consistently 2 except in a few cases.",
+                                          "Calculated as the (total cone revolutions/RPMs)/60 and combined for both traps.",
+                                          "Number of hours since trap was last checked.",
+                                          "River flow (cfs) at Wilkins gage.",
+                                          "Measurement of water transparency (ft).",
+                                          "Water temperature (F)",
+                                          "FILL IN DETAILS FOR KLCI",
+                                          "Percent of cones functioning. Very little data here.",
+                                          "Qualitative comments about data collection and equipment.",
+                                          "Measurement of turbidity.",
+                                          "Units used for turbidity. In all years except 2014 NTU is used. FTU is used in 2014.",
+                                          "Identification number of cone/trap.",
+                                          "Revolutions per minute. These may differ by cone_id.",
+                                          "Total cone revolutions. These may differ by cone_id."),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+
 ## Data transformations
 
-This work was done in other rmd (1_knights_landing_initial_clean.Rmd, 2_knights_landing_combined_data.Rmd)
+This work was primarily done in [1_knights_landing_initial_clean.Rmd](https://github.com/FlowWest/JPE-datasets/blob/main/scripts/rst/lower-sac/knights_landing/1_knights_landing_initial_clean.Rmd) and [2_knights_landing_combined_data.Rmd](https://github.com/FlowWest/JPE-datasets/blob/main/scripts/rst/lower-sac/knights_landing/2_knights_landing_combined_data.Rmd)
 
-## Explore Numeric Variables: {.tabset}
+## Explore Numeric Variables
 
 ```{r}
 # Filter clean data to show only numeric variables (this way we know we do not miss any)

@@ -46,29 +46,75 @@ get_data("rst")
 ```
 
 Read in data from google cloud, glimpse raw data and domain description
-sheet. Need to change data, start\_date, stop\_date into appropriate
+sheet. Need to change date, start\_date, stop\_date into appropriate
 format. Make changes in changes section at end.
 
 ``` r
 # read in data to clean 
-knl_rst <- read.csv("knl_combine_rst.csv")
+knl_rst <- read_csv("knl_combine_rst.csv", show_col_types = F)
 glimpse(knl_rst)
 ```
 
     ## Rows: 40,464
     ## Columns: 12
-    ## $ date               <chr> "2002-10-04", "2002-10-04", "2002-10-04", "2002-10-…
-    ## $ start_date         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ stop_date          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ date               <date> 2002-10-04, 2002-10-04, 2002-10-04, 2002-10-04, 20…
+    ## $ start_date         <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ stop_date          <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
     ## $ location           <chr> "KL", "KL", "KL", "KL", "KL", "KL", "KL", "KL", "KL…
-    ## $ fork_length_max_mm <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ fork_length_min_mm <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ fork_length_max_mm <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ fork_length_min_mm <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ species            <chr> "Chinook", "Steelhead", "Chinook", "Chinook", "Chin…
-    ## $ count              <int> 0, 0, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, 0, 0, 0, 0…
+    ## $ count              <dbl> 0, 0, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, 0, 0, 0, 0…
     ## $ at_capture_run     <chr> NA, NA, "Fall", "Late fall", "Spring", NA, "Winter"…
     ## $ lifestage          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "older …
     ## $ marked             <lgl> TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE…
     ## $ cpue               <dbl> NA, NA, 0.0000000, 0.0000000, 0.0000000, NA, 0.0000…
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data. Most of the NAs are due to no fish
+being caught. The percent\_na is calculated only when count is greater
+than 0 and species is Chinook.
+
+``` r
+percent_na <- filter(knl_rst, count > 0, species == "Chinook") %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(knl_rst),
+                          description = c("Date of sampling. In more recent years, start and stop date are collected in which case date is the stop date.",
+                                          "Date and time when sampling started. This was not collected in earlier sampling years.",
+                                          "Date and time when sampling stopped. This was not collected in earlier sampling years.",
+                                          "Site name/code for the RST trap. All are KL.",
+                                          "Maximum fork length of sample in mm.",
+                                          "Minimum fork length of sample in mm.",
+                                          "Species of fish. Options are Chinook or Steelhead.",
+                                          "Count of fish in sample.",
+                                          "Run of fish determined at capture. Options are Spring, Fall, Late fall, Winter.",
+                                          "Lifestage only includes Older juvenile.",
+                                          "Indicates if fish was marked (TRUE/FALSE).",
+                                          "Catch per unit effort is calculated as the number of fish caught divided by the total hours fished."),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables             | description                                                                                                    | percent\_na |
+|:----------------------|:---------------------------------------------------------------------------------------------------------------|------------:|
+| date                  | Date of sampling. In more recent years, start and stop date are collected in which case date is the stop date. |           0 |
+| start\_date           | Date and time when sampling started. This was not collected in earlier sampling years.                         |          66 |
+| stop\_date            | Date and time when sampling stopped. This was not collected in earlier sampling years.                         |          66 |
+| location              | Site name/code for the RST trap. All are KL.                                                                   |          37 |
+| fork\_length\_max\_mm | Maximum fork length of sample in mm.                                                                           |          20 |
+| fork\_length\_min\_mm | Minimum fork length of sample in mm.                                                                           |          22 |
+| species               | Species of fish. Options are Chinook or Steelhead.                                                             |           0 |
+| count                 | Count of fish in sample.                                                                                       |           0 |
+| at\_capture\_run      | Run of fish determined at capture. Options are Spring, Fall, Late fall, Winter.                                |          16 |
+| lifestage             | Lifestage only includes Older juvenile.                                                                        |          97 |
+| marked                | Indicates if fish was marked (TRUE/FALSE).                                                                     |           3 |
+| cpue                  | Catch per unit effort is calculated as the number of fish caught divided by the total hours fished.            |          27 |
 
 ## Data transformations
 
@@ -120,7 +166,7 @@ knl_rst %>%
 
     ## # A tibble: 19 × 6
     ##    `year(date)`   mean median   min   max    na
-    ##           <dbl>  <dbl>  <dbl> <int> <int> <int>
+    ##           <dbl>  <dbl>  <dbl> <dbl> <dbl> <int>
     ##  1         2002 104     113      37   159   540
     ##  2         2003  88.3    91       0   215  1340
     ##  3         2004  89.7    91      42   142  1496
@@ -149,16 +195,16 @@ recorded on this day rather than being a real 0.
 filter(knl_rst, fork_length_max_mm == 0 & count > 0)
 ```
 
-    ##         date start_date stop_date location fork_length_max_mm
-    ## 1 2003-12-15       <NA>      <NA>       KL                  0
-    ## 2 2003-12-15       <NA>      <NA>       KL                  0
-    ## 3 2003-12-15       <NA>      <NA>       KL                  0
-    ## 4 2003-12-15       <NA>      <NA>       KL                  0
-    ##   fork_length_min_mm species count at_capture_run lifestage marked     cpue
-    ## 1                  0 Chinook    22           Fall      <NA>  FALSE 16.18476
-    ## 2                  0 Chinook     2      Late fall      <NA>  FALSE 28.15704
-    ## 3                  0 Chinook    51         Spring      <NA>  FALSE 16.18476
-    ## 4                  0 Chinook   125         Winter      <NA>  FALSE 28.15704
+    ## # A tibble: 4 × 12
+    ##   date       start_date stop_date location fork_length_max_mm
+    ##   <date>     <dttm>     <dttm>    <chr>                 <dbl>
+    ## 1 2003-12-15 NA         NA        KL                        0
+    ## 2 2003-12-15 NA         NA        KL                        0
+    ## 3 2003-12-15 NA         NA        KL                        0
+    ## 4 2003-12-15 NA         NA        KL                        0
+    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
+    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
+    ## #   cpue <dbl>
 
 **NA and Unknown Values**
 
@@ -220,16 +266,16 @@ recorded on this day rather than being a real 0.
 filter(knl_rst, fork_length_min_mm == 0 & count > 0)
 ```
 
-    ##         date start_date stop_date location fork_length_max_mm
-    ## 1 2003-12-15       <NA>      <NA>       KL                  0
-    ## 2 2003-12-15       <NA>      <NA>       KL                  0
-    ## 3 2003-12-15       <NA>      <NA>       KL                  0
-    ## 4 2003-12-15       <NA>      <NA>       KL                  0
-    ##   fork_length_min_mm species count at_capture_run lifestage marked     cpue
-    ## 1                  0 Chinook    22           Fall      <NA>  FALSE 16.18476
-    ## 2                  0 Chinook     2      Late fall      <NA>  FALSE 28.15704
-    ## 3                  0 Chinook    51         Spring      <NA>  FALSE 16.18476
-    ## 4                  0 Chinook   125         Winter      <NA>  FALSE 28.15704
+    ## # A tibble: 4 × 12
+    ##   date       start_date stop_date location fork_length_max_mm
+    ##   <date>     <dttm>     <dttm>    <chr>                 <dbl>
+    ## 1 2003-12-15 NA         NA        KL                        0
+    ## 2 2003-12-15 NA         NA        KL                        0
+    ## 3 2003-12-15 NA         NA        KL                        0
+    ## 4 2003-12-15 NA         NA        KL                        0
+    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
+    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
+    ## #   cpue <dbl>
 
 **NA and Unknown Values**
 
@@ -257,7 +303,8 @@ ggplot(aes(y = count, x = fake_date, color = at_capture_run)) +
   scale_x_date(date_breaks = "3 month", date_labels = "%b") +
   geom_line() +
   facet_wrap(~wy, scales = "free_y") +
-  xlab("")
+  xlab("") +
+  theme(legend.position="bottom")
 ```
 
 ![](4_knights_landing_qc_rst_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
@@ -327,124 +374,145 @@ ggplot(aes(y = count, x = fake_date)) +
 
 Only providing summary for natural Chinook.
 
+Summary by water year
+
 ``` r
-knl_rst %>%
+knitr::kable(knl_rst %>%
   filter(species == "Chinook", marked == F) %>%
-  group_by(year(date), at_capture_run, species, marked, lifestage) %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date)))) %>%
+  group_by(wy) %>%
   summarize(mean = round(mean(count, na.rm = T),2),
             median = round(median(count, na.rm = T),2),
             min = round(min(count, na.rm = T),2),
             max = round(max(count, na.rm = T),2),
-            na = length(which(is.na(count))))
+            na = length(which(is.na(count)))))
 ```
 
-    ## `summarise()` has grouped output by 'year(date)', 'at_capture_run', 'species', 'marked'. You can override using the `.groups` argument.
+| wy   |   mean | median | min |   max |  na |
+|:-----|-------:|-------:|----:|------:|----:|
+| 2003 |  87.62 |      0 |   0 |  6417 |  12 |
+| 2004 | 151.11 |      0 |   0 | 15759 |   0 |
+| 2005 |  64.94 |      0 |   0 |  5792 |   0 |
+| 2006 |  45.19 |      1 |   0 |  1834 |   0 |
+| 2007 |  28.66 |      0 |   0 |  5704 |   0 |
+| 2008 |  62.49 |      0 |   0 |  3500 |   0 |
+| 2009 |  38.16 |      0 |   0 |  6790 |   0 |
+| 2010 |  34.99 |      0 |   0 |  3208 |   0 |
+| 2011 |  10.71 |      0 |   0 |   472 |   0 |
+| 2012 |  22.55 |      0 |   0 |  2670 |   0 |
+| 2013 |   8.01 |      0 |   0 |   190 |   0 |
+| 2014 |  74.53 |      0 |   0 | 28948 |   0 |
+| 2015 |   8.34 |      0 |   0 |  2063 |   0 |
+| 2016 |  16.80 |      0 |   0 |  1594 |   0 |
+| 2018 |   0.03 |      0 |   0 |     2 |   0 |
+| 2019 |   5.45 |      0 |   0 |   343 |   0 |
+| 2020 |   4.63 |      0 |   0 |   722 |   0 |
+| 2021 |   2.79 |      0 |   0 |   237 |  16 |
 
-    ## # A tibble: 76 × 10
-    ## # Groups:   year(date), at_capture_run, species, marked [76]
-    ##    `year(date)` at_capture_run species marked lifestage   mean median   min
-    ##           <dbl> <chr>          <chr>   <lgl>  <chr>      <dbl>  <dbl> <dbl>
-    ##  1         2002 Fall           Chinook FALSE  <NA>      163.       0      0
-    ##  2         2002 Late fall      Chinook FALSE  <NA>        0.69     0      0
-    ##  3         2002 Spring         Chinook FALSE  <NA>       22.1      0      0
-    ##  4         2002 Winter         Chinook FALSE  <NA>       10.8      0      0
-    ##  5         2003 Fall           Chinook FALSE  <NA>      315.      33      0
-    ##  6         2003 Late fall      Chinook FALSE  <NA>        1.1      0      0
-    ##  7         2003 Spring         Chinook FALSE  <NA>       17.0      3      0
-    ##  8         2003 Winter         Chinook FALSE  <NA>       13.0      0      0
-    ##  9         2004 Fall           Chinook FALSE  <NA>      610.     110.     0
-    ## 10         2004 Late fall      Chinook FALSE  <NA>        0.19     0      0
-    ## # … with 66 more rows, and 2 more variables: max <dbl>, na <int>
+Total counts by year and run
+
+``` r
+knitr::kable(knl_rst %>%
+  filter(species == "Chinook", marked == F) %>%
+  mutate(wy = factor(ifelse(month(date) %in% 10:12, year(date) + 1, year(date)))) %>%
+  group_by(wy, at_capture_run) %>%
+  summarize(cumulative = sum(count, na.rm = T)) %>%
+  pivot_wider(names_from = at_capture_run, values_from = cumulative))
+```
+
+    ## `summarise()` has grouped output by 'wy'. You can override using the `.groups` argument.
+
+| wy   |   Fall | Late fall | Spring | Winter |
+|:-----|-------:|----------:|-------:|-------:|
+| 2003 |  55154 |       176 |   2364 |    838 |
+| 2004 | 109055 |        33 |   2499 |   2051 |
+| 2005 |  45450 |       292 |   1721 |    853 |
+| 2006 |  33827 |       294 |   1399 |   1714 |
+| 2007 |  18592 |        13 |    330 |    666 |
+| 2008 |  37469 |        13 |    326 |    434 |
+| 2009 |  20258 |        10 |    511 |    130 |
+| 2010 |  17976 |        86 |   1220 |    170 |
+| 2011 |   6145 |        11 |    466 |    361 |
+| 2012 |  12790 |         6 |    723 |    103 |
+| 2013 |     92 |        30 |    284 |   1004 |
+| 2014 | 107758 |         0 |   1513 |    146 |
+| 2015 |   7786 |        21 |    435 |    195 |
+| 2016 |  16038 |         0 |    908 |     52 |
+| 2018 |      0 |         0 |      0 |      3 |
+| 2019 |   4013 |        24 |   1570 |    321 |
+| 2020 |   2745 |        15 |   1459 |    409 |
+| 2021 |   1873 |         1 |    722 |     27 |
 
 Some of the max counts are in the tens of thousands. Either there was an
 error in some data transformations or perhaps some of these are passage
 estimates and not raw counts. Check raw data to see if these large
 counts exist. If not, may need to reach back out to data contact. These
-values exist in the data. Keep track of these questions to ask.
+values exist in the data. Contacted Jeanine and she said they seem right
+to her.
 
 ``` r
 filter(knl_rst, count > 5000)
 ```
 
-    ##          date           start_date            stop_date location
-    ## 1  2003-01-14                 <NA>                 <NA>       KL
-    ## 2  2004-01-31                 <NA>                 <NA>       KL
-    ## 3  2004-02-01                 <NA>                 <NA>       KL
-    ## 4  2004-02-06                 <NA>                 <NA>       KL
-    ## 5  2004-02-07                 <NA>                 <NA>       KL
-    ## 6  2005-01-30                 <NA>                 <NA>     <NA>
-    ## 7  2005-01-31                 <NA>                 <NA>     <NA>
-    ## 8  2007-02-13                 <NA>                 <NA>       KL
-    ## 9  2009-02-27                 <NA>                 <NA>       KL
-    ## 10 2014-02-14 2014-02-14T16:15:00Z 2014-02-14T23:30:00Z       KL
-    ## 11 2014-03-02 2014-03-02T17:15:00Z 2014-03-03T03:00:00Z       KL
-    ## 12 2014-03-03 2014-03-03T15:45:00Z 2014-03-04T02:30:00Z       KL
-    ## 13 2014-03-04 2014-03-04T16:00:00Z 2014-03-05T01:30:00Z       KL
-    ## 14 2014-03-07 2014-03-07T20:30:00Z 2014-03-08T02:30:00Z       KL
-    ##    fork_length_max_mm fork_length_min_mm species count at_capture_run lifestage
-    ## 1                 215                 32 Chinook  6417           Fall      <NA>
-    ## 2                  81                 33 Chinook  5959           Fall      <NA>
-    ## 3                  85                 33 Chinook  6362           Fall      <NA>
-    ## 4                 121                 34 Chinook 15759           Fall      <NA>
-    ## 5                 114                 33 Chinook  5364           Fall      <NA>
-    ## 6                 101                 31 Chinook  5792           Fall      <NA>
-    ## 7                 107                 32 Chinook  5523           Fall      <NA>
-    ## 8                 134                 34 Chinook  5704           Fall      <NA>
-    ## 9                 120                 34 Chinook  6790           Fall      <NA>
-    ## 10                113                 35 Chinook  9260           Fall      <NA>
-    ## 11                127                 34 Chinook  5041           Fall      <NA>
-    ## 12                146                 30 Chinook 28948           Fall      <NA>
-    ## 13                 92                 36 Chinook 12560           Fall      <NA>
-    ## 14                135                 37 Chinook  8804           Fall      <NA>
-    ##    marked      cpue
-    ## 1   FALSE 3551.4483
-    ## 2   FALSE 3077.6774
-    ## 3   FALSE 3116.0816
-    ## 4   FALSE 8367.9116
-    ## 5   FALSE 2640.7385
-    ## 6   FALSE        NA
-    ## 7   FALSE        NA
-    ## 8   FALSE 2880.5026
-    ## 9   FALSE 3392.3316
-    ## 10  FALSE  607.7352
-    ## 11  FALSE  413.0019
-    ## 12  FALSE 2098.4246
-    ## 13  FALSE  709.3822
-    ## 14  FALSE 1242.7743
+    ## # A tibble: 14 × 12
+    ##    date       start_date          stop_date           location fork_length_max_…
+    ##    <date>     <dttm>              <dttm>              <chr>                <dbl>
+    ##  1 2003-01-14 NA                  NA                  KL                     215
+    ##  2 2004-01-31 NA                  NA                  KL                      81
+    ##  3 2004-02-01 NA                  NA                  KL                      85
+    ##  4 2004-02-06 NA                  NA                  KL                     121
+    ##  5 2004-02-07 NA                  NA                  KL                     114
+    ##  6 2005-01-30 NA                  NA                  <NA>                   101
+    ##  7 2005-01-31 NA                  NA                  <NA>                   107
+    ##  8 2007-02-13 NA                  NA                  KL                     134
+    ##  9 2009-02-27 NA                  NA                  KL                     120
+    ## 10 2014-02-14 2014-02-14 16:15:00 2014-02-14 23:30:00 KL                     113
+    ## 11 2014-03-02 2014-03-02 17:15:00 2014-03-03 03:00:00 KL                     127
+    ## 12 2014-03-03 2014-03-03 15:45:00 2014-03-04 02:30:00 KL                     146
+    ## 13 2014-03-04 2014-03-04 16:00:00 2014-03-05 01:30:00 KL                      92
+    ## 14 2014-03-07 2014-03-07 20:30:00 2014-03-08 02:30:00 KL                     135
+    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
+    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
+    ## #   cpue <dbl>
 
 ``` r
 # 2004-02-06
 filter(knl_rst, count == 15759)
 ```
 
-    ##         date start_date stop_date location fork_length_max_mm
-    ## 1 2004-02-06       <NA>      <NA>       KL                121
-    ##   fork_length_min_mm species count at_capture_run lifestage marked     cpue
-    ## 1                 34 Chinook 15759           Fall      <NA>  FALSE 8367.912
+    ## # A tibble: 1 × 12
+    ##   date       start_date stop_date location fork_length_max_mm
+    ##   <date>     <dttm>     <dttm>    <chr>                 <dbl>
+    ## 1 2004-02-06 NA         NA        KL                      121
+    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
+    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
+    ## #   cpue <dbl>
 
 ``` r
 # 2014-03-03
 filter(knl_rst, count == 28948)
 ```
 
-    ##         date           start_date            stop_date location
-    ## 1 2014-03-03 2014-03-03T15:45:00Z 2014-03-04T02:30:00Z       KL
-    ##   fork_length_max_mm fork_length_min_mm species count at_capture_run lifestage
-    ## 1                146                 30 Chinook 28948           Fall      <NA>
-    ##   marked     cpue
-    ## 1  FALSE 2098.425
+    ## # A tibble: 1 × 12
+    ##   date       start_date          stop_date           location fork_length_max_mm
+    ##   <date>     <dttm>              <dttm>              <chr>                 <dbl>
+    ## 1 2014-03-03 2014-03-03 15:45:00 2014-03-04 02:30:00 KL                      146
+    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
+    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
+    ## #   cpue <dbl>
 
 ``` r
 # 2014-03-04
 filter(knl_rst, count == 12560)
 ```
 
-    ##         date           start_date            stop_date location
-    ## 1 2014-03-04 2014-03-04T16:00:00Z 2014-03-05T01:30:00Z       KL
-    ##   fork_length_max_mm fork_length_min_mm species count at_capture_run lifestage
-    ## 1                 92                 36 Chinook 12560           Fall      <NA>
-    ##   marked     cpue
-    ## 1  FALSE 709.3822
+    ## # A tibble: 1 × 12
+    ##   date       start_date          stop_date           location fork_length_max_mm
+    ##   <date>     <dttm>              <dttm>              <chr>                 <dbl>
+    ## 1 2014-03-04 2014-03-04 16:00:00 2014-03-05 01:30:00 KL                       92
+    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
+    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
+    ## #   cpue <dbl>
 
 **NA and Unknown Values**
 
@@ -481,7 +549,7 @@ ggplot(aes(y = cpue, x = fake_date, color = at_capture_run)) +
   xlab("")
 ```
 
-![](4_knights_landing_qc_rst_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](4_knights_landing_qc_rst_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 *Natural Steelhead*
 
@@ -499,7 +567,7 @@ ggplot(aes(y = cpue, x = fake_date)) +
   xlab("")
 ```
 
-![](4_knights_landing_qc_rst_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](4_knights_landing_qc_rst_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 **Numeric Summary of `cpue` over Period of Record**
 
@@ -561,8 +629,7 @@ knl_rst %>%
   colnames()
 ```
 
-    ## [1] "date"           "start_date"     "stop_date"      "location"      
-    ## [5] "species"        "at_capture_run" "lifestage"
+    ## [1] "location"       "species"        "at_capture_run" "lifestage"
 
 ### Variable: `location`
 
@@ -731,7 +798,8 @@ knl_rst_changes <- knl_rst %>%
          fork_length_max_mm = case_when(fork_length_max_mm == 0 ~ NA_real_,
                                         T ~ as.numeric(fork_length_max_mm)),
          fork_length_min_mm = case_when(fork_length_min_mm == 0 ~ NA_real_,
-                                        T ~ as.numeric(fork_length_min_mm)))
+                                        T ~ as.numeric(fork_length_min_mm))) %>%
+  rename(catch_per_unit_effort = cpue)
 ```
 
 ## Questions for follow up
