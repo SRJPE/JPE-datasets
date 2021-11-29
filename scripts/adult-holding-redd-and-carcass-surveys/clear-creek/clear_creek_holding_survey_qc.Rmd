@@ -1,0 +1,335 @@
+---
+title: "Clear Holding Survey QC"
+author: "Inigo Peng"
+date: "11/4/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+```
+
+
+# Clear Creek Adult Holding Survey 
+
+## Description of Monitoring Data
+
+These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon redd index data from 2000 to 2019. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
+
+
+**Timeframe:** 2008 - 2019
+
+**Completeness of Record throughout timeframe:** 
+
+Data available for all years and QCed
+
+**Sampling Location:** Clear Creek 
+
+**Data Contact:** [Ryan Schaefer](mailto:ryan_a_schaefer@fws.gov)
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# git data and save as xlsx
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data-raw/FlowWest SCS JPE Data Request_Clear Creek.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_redd_holding_carcass_data.xlsx")
+               # Overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data sheet: 
+
+```{r include=FALSE}
+ 
+raw_holding_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Live") %>% glimpse()
+```
+## Data Transformation
+
+```{r}
+cleaner_data <- raw_holding_data %>% 
+  janitor::clean_names() %>% 
+  select(-c('survey','method','qc_type','qc_date','inspector','year')) %>% #all method is snorkel, year could be extracted from date, 
+  rename('longitude' = 'point_x',
+         'latitude' = 'point_y',
+         'count' = 'total_fish',
+         'jack_count' = 'num_of_jacks',
+         'picket_weir_location_rm' = 'pw_location_rm',
+         'picket_weir_relate' = 'pw_relate') %>% 
+  mutate(date = as.Date(date)) %>% 
+  glimpse()
+```
+
+## Explore Date
+```{r}
+summary(cleaner_data$date)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+
+## Explore Categorical Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.character) %>% colnames()
+```
+
+### Variable: `reach`
+
+**Description:** reach surveyed on each survey day
+
+```{r}
+table(cleaner_data$reach)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$reach))/nrow(cleaner_data), 3)*100` % of values in the `reach` column are NA.
+
+### Variable: `comments`
+
+```{r}
+unique(cleaner_data$comments)[1:5]
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$comments))/nrow(cleaner_data), 3)*100` % of values in the `comments` column are NA.
+
+### Variable: `species`
+
+Change to lower-case capitalization; we are only interested in chinook data.
+
+```{r}
+
+cleaner_data <- cleaner_data %>% 
+  mutate(species = tolower(species)) %>% 
+  filter(species == 'chinook') 
+
+table(cleaner_data$species)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3)*100` % of values in the `species` column are NA.
+
+### Variable: `survey_intent`
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(survey_intent = tolower(survey_intent))
+
+table(cleaner_data$survey_intent)
+
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$survey_intent))/nrow(cleaner_data), 3)*100` % of values in the `survey_intent` column are NA.
+
+### Variable: `picket_weir_relate`
+
+**Description:** Fish above or below Picket Weir
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(picket_weir_relate = tolower(picket_weir_relate))
+table(cleaner_data$picket_weir_relate)
+```
+
+## Explore Numerical Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.numeric) %>% colnames()
+```
+
+
+### Variable: `river_mile`
+
+Plotting river mile over Period of Record
+
+```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x = river_mile, y = year)) +
+  geom_point(alpha = .5, size = 1.5, color = "blue") +
+  labs(x = "River Mile", y = "Year", title = "River Mile Over the Years")
+```
+
+```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x= river_mile, y = count, color = year))+
+  geom_point()+
+  theme_minimal()+
+  labs(title = "Fish Count Per River Mile Per Year")
+```
+
+**Numeric Summary of river_mile Over the Years**
+
+```{r}
+summary(cleaner_data$river_mile)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$river_mile))/nrow(cleaner_data), 3)*100` % of values in the `river_mile` column are NA.
+
+
+## Variable: `longitude` and `latitude`
+
+**Numeric Summary of longitude over Period of Record**
+```{r}
+summary(cleaner_data$longitude)
+```
+
+**Numeric Summary of latitude over Period of Record**
+
+```{r}
+summary(cleaner_data$latitude)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$longitude))/nrow(cleaner_data), 3)*100` % of values in the `longitude` column are NA.
+
+*  `r round(sum(is.na(cleaner_data$latitude))/nrow(cleaner_data), 3)*100` % of values in the `latitude` column are NA.
+
+
+## Variable: `count`
+
+**Description:** total number of Adult Chinook Salmon encountered including the number of 2-year olds (Jacks/Jills) 
+
+```{r}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date)),
+         fake_date = as.Date(paste0("1990", "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = count)) + 
+  geom_col() + 
+  facet_wrap(~year(date), scales = "free_y") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 13),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Holding Count", 
+       x = "Date")  
+```
+```{r}
+cleaner_data %>% 
+  group_by(date) %>%
+  summarise(daily_count = sum(count)) %>% 
+  mutate(year = as.factor(year(date))) %>%
+  ggplot(aes(x = year, y = daily_count)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Daily Count Summarized by Year") +
+  theme(text = element_text(size = 13),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))   +
+  scale_y_continuous(limits = c(0, 101))
+```
+
+```{r}
+cleaner_data  %>%
+  mutate(year = as.factor(year(date))) %>%
+  group_by(year) %>% 
+  summarise(total_catch = sum(count)) %>%
+  ggplot(aes(x = year, y = total_catch)) + 
+  geom_col() + 
+  theme_minimal() +
+  labs(title = "Total Yearly Fish Count",
+       y = "Total fish count") + 
+  theme(text = element_text(size = 13),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of count over Period of Record**
+```{r}
+summary(cleaner_data$count)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 3)*100` % of values in the `count` column are NA.
+
+
+## Variable: `jack_count`
+
+**Description:** total number of 2-year old Chinook Salmon (Jacks/Jills) encountered
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = jack_count)) +
+  geom_histogram(bins = 4) +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Numeric Summary of jack count over Period of Record**
+```{r}
+summary(cleaner_data$jack_count)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$jack_count))/nrow(cleaner_data), 3)*100` % of values in the `jack_count` column are NA.
+
+
+## Variable: `picket_weir_location_rm`
+
+**Description:** location of the Picket Weir
+
+```{r}
+cleaner_data %>% 
+  ggplot(aes(x = picket_weir_location_rm)) +
+  geom_histogram(bins = 4) +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))+
+  labs(title = "Distribution of picket_weir_location_rm")
+```
+
+
+
+**Numeric Summary of picket_weir_location_rm over Period of Record**
+```{r}
+
+summary(cleaner_data$picket_weir_location_rm)
+
+```
+
+Seems like there are two locations
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$picket_weir_location_rm))/nrow(cleaner_data), 3)*100` % of values in the `picket_weir_location_rm` column are NA.
+
+
+## Save cleaned data back to google cloud
+
+```{r}
+clear_holding <- cleaner_data  
+```
+
+```{r, eval=FALSE}
+gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(clear_holding,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_holding.csv")
+```
