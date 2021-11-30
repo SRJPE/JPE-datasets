@@ -153,7 +153,7 @@ cleaner_passage_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Count of Upstream Passage All Runs", 
+  labs(title = "Daily Count of Upstream Passage", 
        x = "Date")  
 ```
 
@@ -171,7 +171,7 @@ cleaner_passage_data %>% group_by(date) %>%
   geom_boxplot() + 
   theme_minimal() +
   theme(text = element_text(size = 23)) + 
-  labs(title = "Daily Count of Upstream Passage Sumarized by Year All Runs") 
+  labs(title = "Daily Count of Upstream Passage Summarized by Year") 
 ```
 
 ![](battle_passage_trap_and_spawning_building_data_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
@@ -182,7 +182,7 @@ cleaner_passage_data  %>%
   ggplot(aes(x = year, y = count)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
+  labs(title = "Total Yearly Fish Counts",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 

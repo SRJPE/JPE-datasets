@@ -21,9 +21,8 @@ timeframe
 
 **Sampling Location:** Battle Creek
 
-**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov)
-
-Any additional info?
+**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov);
+[RJ Bottaro](mailto:rj_bottaro@fws.gov)
 
 ## Access Cloud Data
 
@@ -65,24 +64,24 @@ raw_carcass_data <- read_excel("raw_adult_spawn_hold_carcass.xlsx",
 
     ## Rows: 1,625
     ## Columns: 18
-    ## $ LONGITUDE           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ LATITUDE            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ RIVERMILE           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ SPAWN_YEAR          <dbl> 1996, 1996, 1996, 1997, 1997, 1997, 1997, 1997, 19~
-    ## $ DATE                <chr> "35339", "35339", "35347", "35500", "35500", "3550~
-    ## $ METHOD              <chr> "Snorkel Survey", "Snorkel Survey", "Snorkel Surve~
-    ## $ LOCATION            <chr> NA, NA, NA, "CNFH", "CNFH", "CNFH", "CNFH", "CNFH"~
-    ## $ SPECIES             <chr> "Chinook", "Chinook", "Chinook", "Chinook", "Chino~
-    ## $ SEX                 <chr> "Unknown", "Male", "Unknown", "Female", "Female", ~
-    ## $ OBSERVED_ONLY       <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", ~
-    ## $ FORK_LENGTH         <dbl> NA, NA, NA, 716, 843, 865, 510, 730, 642, 810, 814~
-    ## $ ADIPOSE             <chr> "Present", "Present", "Present", "Absent", "Absent~
-    ## $ CARCASS_LIVE_STATUS <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unkno~
-    ## $ SPAWN_CONDITION     <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unkno~
-    ## $ FWS_RUN_CALL        <chr> "SCS", "SCS", "SCS", "Unknown", "Unknown", "Unknow~
-    ## $ CWT_CODE            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ OTHER_TAG           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ Comments            <chr> NA, NA, NA, "Couldn't locate samples 6/2014", "Cou~
+    ## $ LONGITUDE           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ LATITUDE            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ RIVERMILE           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ SPAWN_YEAR          <dbl> 1996, 1996, 1996, 1997, 1997, 1997, 1997, 1997, 19…
+    ## $ DATE                <chr> "10/1/1996", "10/1/1996", "10/9/1996", "35500", "3…
+    ## $ METHOD              <chr> "Snorkel Survey", "Snorkel Survey", "Snorkel Surve…
+    ## $ LOCATION            <chr> NA, NA, NA, "CNFH", "CNFH", "CNFH", "CNFH", "CNFH"…
+    ## $ SPECIES             <chr> "Chinook", "Chinook", "Chinook", "Chinook", "Chino…
+    ## $ SEX                 <chr> "Unknown", "Male", "Unknown", "Female", "Female", …
+    ## $ OBSERVED_ONLY       <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", …
+    ## $ FORK_LENGTH         <dbl> NA, NA, NA, 716, 843, 865, 510, 730, 642, 810, 814…
+    ## $ ADIPOSE             <chr> "Present", "Present", "Present", "Absent", "Absent…
+    ## $ CARCASS_LIVE_STATUS <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unkno…
+    ## $ SPAWN_CONDITION     <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unkno…
+    ## $ FWS_RUN_CALL        <chr> "SCS", "SCS", "SCS", "Unknown", "Unknown", "Unknow…
+    ## $ CWT_CODE            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ OTHER_TAG           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ Comments            <chr> NA, NA, NA, "Couldn't locate samples 6/2014", "Cou…
 
 ## Data transformations
 
@@ -100,22 +99,74 @@ cleaner_carcass_data <- raw_carcass_data %>%
 
     ## Rows: 1,625
     ## Columns: 16
-    ## $ longitude           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ latitude            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ river_mile          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date                <date> 1996-10-01, 1996-10-01, 1996-10-09, 1997-03-11, 1~
-    ## $ method              <chr> "Snorkel Survey", "Snorkel Survey", "Snorkel Surve~
-    ## $ location            <chr> NA, NA, NA, "CNFH", "CNFH", "CNFH", "CNFH", "CNFH"~
-    ## $ sex                 <chr> "Unknown", "Male", "Unknown", "Female", "Female", ~
-    ## $ observed_only       <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", ~
-    ## $ fork_length         <dbl> NA, NA, NA, 716, 843, 865, 510, 730, 642, 810, 814~
-    ## $ adipose             <chr> "Present", "Present", "Present", "Absent", "Absent~
-    ## $ carcass_live_status <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unkno~
-    ## $ spawn_condition     <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unkno~
-    ## $ run                 <chr> "SCS", "SCS", "SCS", "Unknown", "Unknown", "Unknow~
-    ## $ cwt_code            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ other_tag           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ comments            <chr> NA, NA, NA, "Couldn't locate samples 6/2014", "Cou~
+    ## $ longitude           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ latitude            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ river_mile          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ date                <date> 1996-10-01, 1996-10-01, 1996-10-09, 1997-03-11, 1…
+    ## $ method              <chr> "Snorkel Survey", "Snorkel Survey", "Snorkel Surve…
+    ## $ location            <chr> NA, NA, NA, "CNFH", "CNFH", "CNFH", "CNFH", "CNFH"…
+    ## $ sex                 <chr> "Unknown", "Male", "Unknown", "Female", "Female", …
+    ## $ observed_only       <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", …
+    ## $ fork_length         <dbl> NA, NA, NA, 716, 843, 865, 510, 730, 642, 810, 814…
+    ## $ adipose             <chr> "Present", "Present", "Present", "Absent", "Absent…
+    ## $ carcass_live_status <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unkno…
+    ## $ spawn_condition     <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unkno…
+    ## $ run                 <chr> "SCS", "SCS", "SCS", "Unknown", "Unknown", "Unknow…
+    ## $ cwt_code            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ other_tag           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ comments            <chr> NA, NA, NA, "Couldn't locate samples 6/2014", "Cou…
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_carcass_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_carcass_data),
+                          description = c("GPS X point",
+                                          "GPS Y point",
+                                          "River mile number",
+                                          "Sample date",
+                                          "Survey method (barrier weir trap, fish rescue, kayak survey, snorkel survey, other)",
+                                          "Reach number (1-7); other location",
+                                          "Male, female, unknown",
+                                          "True if the fish was observed and not sampled (T/F)",
+                                          "Fork length of fish in mm",
+                                          "Adipose status (absent, present, unknown)",
+                                          "Carcass status (bright, fresh, non-fresh, unknown)",
+                                          "Spawning status (green, ripe, spawned, unknown, unspawned)",
+                                          "Run of Chinook (spring, unknown)",
+                                          "Coded wire tag number",
+                                          "Any other tag or recapture marking",
+                                          "General comments from survey crew"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables             | description                                                                         | percent\_na |
+|:----------------------|:------------------------------------------------------------------------------------|------------:|
+| longitude             | GPS X point                                                                         |          81 |
+| latitude              | GPS Y point                                                                         |          81 |
+| river\_mile           | River mile number                                                                   |          81 |
+| date                  | Sample date                                                                         |           0 |
+| method                | Survey method (barrier weir trap, fish rescue, kayak survey, snorkel survey, other) |           0 |
+| location              | Reach number (1-7); other location                                                  |           9 |
+| sex                   | Male, female, unknown                                                               |           0 |
+| observed\_only        | True if the fish was observed and not sampled (T/F)                                 |           0 |
+| fork\_length          | Fork length of fish in mm                                                           |          15 |
+| adipose               | Adipose status (absent, present, unknown)                                           |           0 |
+| carcass\_live\_status | Carcass status (bright, fresh, non-fresh, unknown)                                  |           0 |
+| spawn\_condition      | Spawning status (green, ripe, spawned, unknown, unspawned)                          |           0 |
+| run                   | Run of Chinook (spring, unknown)                                                    |           0 |
+| cwt\_code             | Coded wire tag number                                                               |          96 |
+| other\_tag            | Any other tag or recapture marking                                                  |          98 |
+| comments              | General comments from survey crew                                                   |          69 |
 
 ## Explore Numeric Variables:
 
@@ -150,10 +201,12 @@ All values look within an expected range
 
 ### Variable: `river_mile`
 
+Data are filtered for spring run.
+
 **Plotting river mile over Period of Record**
 
 ``` r
-cleaner_carcass_data %>% 
+filter(cleaner_carcass_data, run == "SCS") %>% 
   ggplot(aes(x = river_mile, y = year(date))) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "River Mile", 
@@ -168,7 +221,7 @@ It looks like river miles 0 - 5 and 15 - 17 most commonly have
 carcasses. Very little data on river mile pre 2010.
 
 ``` r
-cleaner_carcass_data %>% 
+filter(cleaner_carcass_data, run == "SCS") %>% 
   ggplot(aes(x = river_mile)) +
   geom_histogram(alpha = .75) + 
   labs(x = "River Mile") +
@@ -195,10 +248,12 @@ summary(cleaner_carcass_data$river_mile)
 
 ### Variable: `fork_length`
 
+Fork length in mm. Data are filtered for spring run.
+
 **Plotting distribution of fork length**
 
 ``` r
-cleaner_carcass_data %>% 
+filter(cleaner_carcass_data, run == "SCS") %>% 
   ggplot(aes(x = fork_length)) +
   geom_histogram(alpha = .75) + 
   labs(x = "Fork Length") +
@@ -211,7 +266,7 @@ cleaner_carcass_data %>%
 ![](battle_carcass_data_qc_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
-cleaner_carcass_data %>% 
+filter(cleaner_carcass_data, run == "SCS") %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = fork_length, y = year)) + 
   geom_boxplot() + 
@@ -222,6 +277,23 @@ cleaner_carcass_data %>%
 ```
 
 ![](battle_carcass_data_qc_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+There is one observation where year is NA. This record should be removed
+from the dataset because it does not contain any data.
+
+``` r
+cleaner_carcass_data %>% 
+  mutate(year = as.factor(year(date))) %>%
+  filter(is.na(year))
+```
+
+    ## # A tibble: 1 × 17
+    ##   longitude latitude river_mile date   method         location sex     observed_only
+    ##       <dbl>    <dbl>      <dbl> <date> <chr>          <chr>    <chr>   <chr>        
+    ## 1        NA       NA         NA NA     Snorkel Survey <NA>     Unknown N            
+    ## # … with 9 more variables: fork_length <dbl>, adipose <chr>,
+    ## #   carcass_live_status <chr>, spawn_condition <chr>, run <chr>,
+    ## #   cwt_code <chr>, other_tag <chr>, comments <chr>, year <fct>
 
 **Numeric Summary of fork length over Period of Record**
 
@@ -370,22 +442,26 @@ table(cleaner_carcass_data$adipose)
     ##  Absent Present PRESENT Unknown UNKNOWN 
     ##     358    1122       8     134       3
 
-Fix inconsistencies with spelling, capitalization, and abbreviations.
+-   Fix inconsistencies with spelling, capitalization, and
+    abbreviations.
+-   Converted to boolean variable.
 
 ``` r
-cleaner_carcass_data$adipose <- tolower(cleaner_carcass_data$adipose)
-
+cleaner_carcass_data$adipose <- tolower(cleaner_carcass_data$adipose) 
+cleaner_carcass_data$adipose <- case_when(cleaner_carcass_data$adipose == "absent" ~ FALSE,
+                                          cleaner_carcass_data$adipose == "present" ~ TRUE,
+                                          T ~ NA)
 table(cleaner_carcass_data$adipose) 
 ```
 
     ## 
-    ##  absent present unknown 
-    ##     358    1130     137
+    ## FALSE  TRUE 
+    ##   358  1130
 
 **NA and Unknown Values**
 
--   0 % of values in the `adipose` column are NA.
--   8.4 % of values in the `adipose` column are `Unknown`.
+-   8.4 % of values in the `adipose` column are NA.
+-   NA % of values in the `adipose` column are `Unknown`.
 
 ### Variable: `carcass_live_status`
 
@@ -552,35 +628,47 @@ unique(cleaner_carcass_data$comments)[1:5]
 ## Summary of identified issues
 
 -   Looks like mostly samples after 2010
--   Other tag column we should probably drop (only one AFTC tag
-    identified)
 -   Clarify what NTD means in CWT code and location info that is not
-    reach length (Ask Natasha)
+    reach length
+-   Other tag column was dropped because it has only one entry other
+    than “none”
+
+## Next steps
+
+### Columns to remove
+
+-   Suggest removing the `location` item or transforming to `longitude`,
+    `latitude` or `river_mile`.
+-   Decided to remove `other_tag` because no data except for one data
+    point is included.
+-   `comments` and `observed_only` may not be needed.
 
 ## Save cleaned data back to google cloud
 
 ``` r
-battle_carcass <- cleaner_carcass_data %>% glimpse()
+battle_carcass <- cleaner_carcass_data %>% 
+  select(-other_tag) %>%
+  filter(!is.na(date)) %>%
+  glimpse()
 ```
 
-    ## Rows: 1,625
-    ## Columns: 16
-    ## $ longitude           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ latitude            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ river_mile          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date                <date> 1996-10-01, 1996-10-01, 1996-10-09, 1997-03-11, 1~
-    ## $ method              <chr> "snorkel survey", "snorkel survey", "snorkel surve~
-    ## $ location            <chr> NA, NA, NA, "CNFH", "CNFH", "CNFH", "CNFH", "CNFH"~
-    ## $ sex                 <chr> "unknown", "male", "unknown", "female", "female", ~
-    ## $ observed_only       <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F~
-    ## $ fork_length         <dbl> NA, NA, NA, 716, 843, 865, 510, 730, 642, 810, 814~
-    ## $ adipose             <chr> "present", "present", "present", "absent", "absent~
-    ## $ carcass_live_status <chr> "unknown", "unknown", "unknown", "unknown", "unkno~
-    ## $ spawn_condition     <chr> "unknown", "unknown", "unknown", "unknown", "unkno~
-    ## $ run                 <chr> "spring", "spring", "spring", "unknown", "unknown"~
-    ## $ cwt_code            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ other_tag           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ comments            <chr> NA, NA, NA, "Couldn't locate samples 6/2014", "Cou~
+    ## Rows: 1,624
+    ## Columns: 15
+    ## $ longitude           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ latitude            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ river_mile          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ date                <date> 1996-10-01, 1996-10-01, 1996-10-09, 1997-03-11, 1…
+    ## $ method              <chr> "snorkel survey", "snorkel survey", "snorkel surve…
+    ## $ location            <chr> NA, NA, NA, "CNFH", "CNFH", "CNFH", "CNFH", "CNFH"…
+    ## $ sex                 <chr> "unknown", "male", "unknown", "female", "female", …
+    ## $ observed_only       <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F…
+    ## $ fork_length         <dbl> NA, NA, NA, 716, 843, 865, 510, 730, 642, 810, 814…
+    ## $ adipose             <lgl> TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALS…
+    ## $ carcass_live_status <chr> "unknown", "unknown", "unknown", "unknown", "unkno…
+    ## $ spawn_condition     <chr> "unknown", "unknown", "unknown", "unknown", "unkno…
+    ## $ run                 <chr> "spring", "spring", "spring", "unknown", "unknown"…
+    ## $ cwt_code            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ comments            <chr> NA, NA, NA, "Couldn't locate samples 6/2014", "Cou…
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
