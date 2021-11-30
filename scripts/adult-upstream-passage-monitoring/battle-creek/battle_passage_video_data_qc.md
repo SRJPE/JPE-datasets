@@ -126,6 +126,7 @@ cleaner_video_data %>% select_if(is.numeric) %>% colnames()
 
 ``` r
 cleaner_video_data %>% 
+  filter(run == "SR") %>% 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
@@ -136,7 +137,7 @@ cleaner_video_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Count of Passage All Runs", 
+  labs(title = "Daily Count of Passage Spring Runs", 
        x = "Date")  
 ```
 
@@ -148,6 +149,7 @@ September.
 ``` r
 # Boxplots of daily counts by year
 cleaner_video_data %>% group_by(date, passage_direction) %>%
+  filter(run == "SR") %>% 
   mutate(daily_count_upstream = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
@@ -156,13 +158,14 @@ cleaner_video_data %>% group_by(date, passage_direction) %>%
   theme_minimal() +
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Passage Count Sumarized by Year All Runs") 
+  labs(title = "Daily Passage Count Sumarized by Year Spring Runs") 
 ```
 
 ![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 cleaner_video_data  %>%
+  filter(run == "SR") %>% 
   mutate(year = as.factor(year(date))) %>%
   filter(run %in% c("FR", "LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
   group_by(year, passage_direction, run) %>%
@@ -170,7 +173,7 @@ cleaner_video_data  %>%
   ggplot(aes(x = year, y = total_count, fill = passage_direction)) + 
   geom_col(position = "dodge") + 
   theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
+  labs(title = "Total Yearly Fish Counts by Spring Run",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
