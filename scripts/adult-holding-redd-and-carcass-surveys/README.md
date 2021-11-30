@@ -3,7 +3,7 @@
 This directory contains markdown documents exploring Adult holding, redd, and carcass monitoring datasets for 7 tributaries. There is no holding  data for Feather River (Feather River has prespawn carcass survey instead), Mill Creek and Yuba River. There is no redd data for Deer Creek and Butte Creek, and there is no Carcass Data for Deer Creek and Mill Creek (Mill creek sample any encountered carcasses instead of true carcass survey). 
 
 
-### Data Available Monitoring Timeframe
+## Data Availability
 
 | Tributary | Holding | Redd | Carcass
 | :-------- | :------ | :--- | :---- |
@@ -15,7 +15,9 @@ This directory contains markdown documents exploring Adult holding, redd, and ca
 | Mill Creek | Not Available | 1997 - ongoing | Not Available |
 | Yuba River | Not Available | Available* | Not Available|
 
-*Data available but have not received data or timelframe
+*Data available but have not received data and do not know monitoring timeframe
+
+## Summary of metadata
 
 | Tributary | Data Contact | Metadata Quality | Data Lag* | Provisional Data Available** | Notes | 
 | :--------- | :------------ | :----------- | :-----------| :----------- | :----------- | 
@@ -27,7 +29,7 @@ This directory contains markdown documents exploring Adult holding, redd, and ca
 | Mill Creek | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Good | Near Immediate | Unknown | Redd data only; sample encountered carcasses |
 | Yuba River | [Mike Healey](mailto:Mike.Healey@wildlife.ca.gov) | Unknown | Unknown | FALSE? | Need to contact Army Corps Engineer for Redds Data  |
 
-*Data Lag refers to time from end of monitoring season until data is QA/QC and in a shareable format. 
+*time from end of monitoring season until data is QA/QC and in a shareable format 
 
-**Provisional Data Available states if raw data can be shared 1 week or less after date of collection.
+**raw data can be shared 1 week or less after date of collection
  

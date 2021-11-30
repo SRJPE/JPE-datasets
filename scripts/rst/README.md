@@ -1,16 +1,16 @@
 
 # Rotary Screw Trap Data Summary 
 
-This directory contains markdown documents exploring RST datasets for 8 tributaries. 
+This directory contains markdown documents exploring RST datasets for 8 locations. 
 
 There are 3 main datatypes associated with RST data:
 
 * RST Raw Catch - raw catch data describing fish caught in RST 
-* RST Sampling Effort - describes sampling effort and trap conditions
+* RST Sampling Effort and Environment - describes sampling effort, trap conditions, and environmental variables
 * RST Passage Estimates - calculated passage estimates based on raw catch and seasonal efficiency corrections
 
 
-### Data Available
+## Data Availability
 
 | Tributary | Monitoring Timeframe | Data Contact | Metadata Quality | *Data Lag | **Provisional Data Available | Notes | 
 | :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :--------------------- | 
@@ -24,11 +24,11 @@ There are 3 main datatypes associated with RST data:
 | Mill Creek | 1995 - 2010; proposed | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Poor | NA | NA | Currently only historical data; proposed program that will be similar to Clear and Battle |
 | Yuba River | 2000 - 2009 | [Robyn Bilski](mailto:Robyn.Bilski@Wildlife.ca.gov) | Good | NA | NA | Only historical data |
 
-*Data Lag refers to time from end of monitoring season until data is QA/QC and in a shareable format. 
+*time from end of monitoring season until data is QA/QC and in a shareable format 
 
-**Provisional Data Available states if raw data can be shared 1 week or less after date of collection.
+**raw data can be shared 1 week or less after date of collection
 
-#### Summary of passage estimate data
+## Summary of passage estimate data
 
 | Tributary | RST Passage Estimates | Passage Estimate Methodology | Passage Estimate Resolution | Passage Estimate Uncertainty | Notes |
 | :--------- | :------------ | :------------ | :----------- | :-----------| :----------- |

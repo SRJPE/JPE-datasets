@@ -6,7 +6,7 @@ Most upstream passage data is video data, battle creek has additional trapping d
 
 We currently have passage estimates for Clear Creek (in PDF report),  Battle Creek, and the Yuba River (in PDF report). 
 
-### Data Available
+## Data Availability
 
 | Tributary | Monitoring Timeframe | Data Contact | Metadata Quality | Data Lag* | Provisional Data Available** | Notes | 
 | :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :----------- | 
@@ -18,12 +18,12 @@ We currently have passage estimates for Clear Creek (in PDF report),  Battle Cre
 | Mill Creek | 2012 - ongoing | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Poor | 1 month | TRUE | |
 | Yuba River | 2004 - ongoing | [Mike Healey](mailto:Mike.Healey@wildlife.ca.gov) | Poor | Unknown | Unknown | | 
 
-*Data Lag refers to time from end of monitoring season until data is QA/QC and in a shareable format. 
+*time from end of monitoring season until data is QA/QC and in a shareable format 
 
-**Provisional Data Available states if raw data can be shared 1 week or less after date of collection.
+**raw data can be shared 1 week or less after date of collection
 
 
-#### Summary of passage estimate data
+## Summary of passage estimate data
 
 | Tributary | Upstream Passage Estimates | Passage Estimate Methodology | Passage Estimate Resolution | Passage Estimate Uncertainty  | Notes | 
 | :--------- | :------------ | :------------ | :----------- | :----------- | :--------------------- | 
