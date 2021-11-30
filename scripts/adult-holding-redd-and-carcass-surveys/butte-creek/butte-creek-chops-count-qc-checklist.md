@@ -9,16 +9,24 @@ Inigo Peng
 
 ## Description of Monitoring Data
 
+Carcass data provided to us by Jessica Nichols. This carcass data was
+provided to us in a zipped folder that contained a folder for each year
+of carcass data. This markdown document is focused on 2014 - 2020
+carcass chops data.
+
 **Timeframe:** 2014-2020
 
 **Completeness of Record throughout timeframe:**
 
-**Sampling Location:** Various sampling locations on Butte Creek.
+Carcass chops data for every year from 2014 - 2020
+
+**Sampling Location:** Upper Butte Creek.
 
 **Data Contact:** [Jessica
 Nichols](mailto::Jessica.Nichols@Wildlife.ca.gov)
 
-**Additional Info:**  
+**Additional Info:**
+
 The carcass data came in 12 documents for each year. We identified the
 ‘SurveyChops’ and ‘SurveyIndividuals’ datasets as the documents with the
 most complete information and joined them for all of the years.This
@@ -64,17 +72,24 @@ sheet:
 raw_chops_data <- read_csv("raw_chops_data.csv") %>% glimpse
 ```
 
-    ## Rows: 917 Columns: 14
-
-    ## -- Column specification --------------------------------------------------------
-    ## Delimiter: ","
-    ## chr  (9): LocationCD, SectionCD, WayPt, SpeciesCode, Disposition, AdFinClip,...
-    ## dbl  (4): Survey, Year, Week, ChopCount
-    ## dttm (1): Date
-
     ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## -- Column specification --------------------------------------------------------
+    ## cols(
+    ##   Survey = col_double(),
+    ##   LocationCD = col_character(),
+    ##   Year = col_double(),
+    ##   Week = col_double(),
+    ##   Date = col_datetime(format = ""),
+    ##   SectionCD = col_character(),
+    ##   WayPt = col_character(),
+    ##   SpeciesCode = col_character(),
+    ##   Disposition = col_character(),
+    ##   ChopCount = col_double(),
+    ##   AdFinClip = col_character(),
+    ##   Condition = col_character(),
+    ##   Sex = col_character(),
+    ##   SizeClass = col_character()
+    ## )
 
     ## Rows: 917
     ## Columns: 14
@@ -113,6 +128,40 @@ cleaner_data<- raw_chops_data %>%
     ## $ chop_count  <dbl> 2, 0, 2, 4, 1, 1, 1, 3, 7, 8, 5, 4, 19, 32, 19, 5, 6, 3, 4~
     ## $ ad_fin_clip <chr> "Unknown", "Unknown", "Unknown", "Unknown", "Unknown", "Un~
     ## $ condition   <chr> "Decayed", "Decayed", "Decayed", "Decayed", "Decayed", "De~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Date of sampling",
+                                          "Section code describing area surveyed. View `butte_section_code.rds` for code definitions.",
+                                          "Way Point, TODO get better description of these locations ?",
+                                          "Fish disposition, describes if fish is tagged or not",
+                                          "Total count of chop, TODO get better description of this",
+                                          "Indicates if adipose fin was clipped (TRUE/FALSE).",
+                                          "Condition of fish, TODO get code definitions"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables     | description                                                                                | percent\_na |
+|:--------------|:-------------------------------------------------------------------------------------------|------------:|
+| date          | Date of sampling                                                                           |           0 |
+| section\_cd   | Section code describing area surveyed. View `butte_section_code.rds` for code definitions. |           0 |
+| way\_pt       | Way Point, TODO get better description of these locations ?                                |           0 |
+| disposition   | Fish disposition, describes if fish is tagged or not                                       |           0 |
+| chop\_count   | Total count of chop, TODO get better description of this                                   |           0 |
+| ad\_fin\_clip | Indicates if adipose fin was clipped (TRUE/FALSE).                                         |           0 |
+| condition     | Condition of fish, TODO get code definitions                                               |           0 |
 
 ## Explore `date`
 
@@ -283,15 +332,18 @@ cleaner_data %>%
 
 ``` r
 cleaner_data %>% 
+  group_by(date) %>%
+  summarise(daily_count = sum(chop_count, na.rm = T)) %>%
   mutate(years = as.factor(year(date))) %>% 
-  ggplot(aes(x=chop_count, y = years))+
+  ggplot(aes(x=daily_count, y = years))+
   geom_boxplot()+
-  labs(title = "Chop Count Over the Years")+
+  labs(title = "Daily Chop Count Over the Years")+
   theme_minimal()
 ```
 
 ![](butte-creek-chops-count-qc-checklist_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
-2019 has a significant carcass collection than other years
+2019 has significantly higher daily carcass counts collected in
+comparison to other years sampled.
 
 ``` r
 summary(cleaner_data$chop_count)
@@ -307,6 +359,15 @@ summary(cleaner_data$chop_count)
 **Issues and Notes:**
 
 -   No look up table information for way\_pt
+
+## Next steps
+
+-   Work on data modeling to identify important variables needed for
+    carcass datasets. If we are missing any we can look at the other
+    files provided by Jessica and see if there is additional information
+    we want there.
+-   Work to understand how the carcass chop data varies from the
+    surveyed individuals data.
 
 ## Saved clean data back to google cloud
 
