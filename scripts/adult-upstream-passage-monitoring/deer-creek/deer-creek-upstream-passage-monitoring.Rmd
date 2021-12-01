@@ -1,5 +1,5 @@
 ---
-title: "deer-creek-upstream-monitoring-qc-checklist"
+title: "Deer Creek Adult Upstream Passage Estimate QC"
 author: "Inigo Peng"
 date: "10/19/2021"
 output: rmarkdown::github_document

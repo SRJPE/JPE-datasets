@@ -1,4 +1,4 @@
-mill-creek-upstream-passage-estimation-qc-checklist
+Mill Creek Adult Upstream Passage Estimate QC
 ================
 Inigo Peng
 10/19/2021
@@ -7,8 +7,8 @@ Inigo Peng
 
 **Description of Monitoring Data**
 
-Adult spring run daily passage estimate is recorded at Ward Dam via
-video monitoring.
+Adult spring run daily passage estimate is based on data recorded at
+Ward Dam via video monitoring.
 
 **Timeframe:**
 
@@ -16,7 +16,7 @@ video monitoring.
 
 **Completeness of Record throughout timeframe:**
 
--   Few missing value passage\_estimate for passage\_estimate
+-   Few missing values for passage\_estimate
 -   10 - 15 % missing values for physical variables
 
 **Sampling Location:**
@@ -47,25 +47,6 @@ Data for each year is in a separate sheet
 sheets <- readxl::excel_sheets('mill_creek_passage_estimate_raw.xlsx')
 list_all <- lapply(sheets, function(x) readxl::read_excel(path = "mill_creek_passage_estimate_raw.xlsx", sheet = x, col_types = c("text", "numeric", "numeric", "numeric", "text")))
 ```
-
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
 
 Bind the sheets into one file
 
@@ -106,6 +87,35 @@ cleaner_data <- raw_data %>%
     ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,~
     ## $ flow             <dbl> 112.0938, 110.0208, 109.9479, 113.1042, 112.8021, 114~
     ## $ temperature      <dbl> 45.60833, 46.89688, 50.28125, 49.93229, 49.24583, 48.~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Date of sampling",
+                                          "Passage estimate of Spring Run Chinook, TODO get methodlogy for generating passage estimates",
+                                          "Flow in CFS",
+                                          "Temperature (F) we convert to C"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables         | description                                                                                  | percent\_na |
+|:------------------|:---------------------------------------------------------------------------------------------|------------:|
+| date              | Date of sampling                                                                             |           0 |
+| passage\_estimate | Passage estimate of Spring Run Chinook, TODO get methodlogy for generating passage estimates |           3 |
+| flow              | Flow in CFS                                                                                  |          17 |
+| temperature       | Temperature (F) we convert to C                                                              |          12 |
 
 ## Explore `date`
 
@@ -178,6 +188,8 @@ that
 
 ### Variable:`flow`
 
+Flow in cfs
+
 ``` r
 cleaner_data %>% 
   filter(date != is.na(date)) %>%
@@ -230,6 +242,8 @@ summary(cleaner_data$flow)
 
 ### Variable:`temperature`
 
+Temperature in F, convert to C below
+
 ``` r
 cleaner_data %>% 
   filter(date != is.na(date)) %>%
@@ -279,11 +293,20 @@ summary(cleaner_data$temperature)
 
 -   11.9 % of values in the `temperature` column are NA.
 
-### Notes and Issues:
+### Notes and Issues
 
 -   passage\_estimate drops significantly after 2014
--   Water temperature in F
--   Also need to check the units for flow
+-   Only have passage estimates may want to purse raw data
+-   Temperature in F, convert to C below
+
+``` r
+cleaner_data <- cleaner_data %>%
+  mutate(temperature = (temperature - 32) * (5/9))
+```
+
+## Next steps
+
+-   See if we need raw data from this video monitoring
 
 ### Add cleaned data back onto google cloud
 
@@ -296,7 +319,7 @@ mill_upstream_estimate <- cleaner_data %>% glimpse()
     ## $ date             <date> 2012-02-20, 2012-02-21, 2012-02-22, 2012-02-23, 2012~
     ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,~
     ## $ flow             <dbl> 112.0938, 110.0208, 109.9479, 113.1042, 112.8021, 114~
-    ## $ temperature      <dbl> 45.60833, 46.89688, 50.28125, 49.93229, 49.24583, 48.~
+    ## $ temperature      <dbl> 7.560185, 8.276042, 10.156250, 9.962384, 9.581019, 9.~
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
@@ -306,28 +329,28 @@ gcs_upload(mill_upstream_estimate,
            name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv")
 ```
 
-    ## i 2021-11-10 12:29:45 > File size detected as  48.6 Kb
+    ## i 2021-12-01 15:18:11 > File size detected as  50.1 Kb
 
-    ## i 2021-11-10 12:29:46 > Request Status Code:  400
+    ## i 2021-12-01 15:18:12 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-10 12:29:46 > File size detected as  48.6 Kb
+    ## i 2021-12-01 15:18:12 > File size detected as  50.1 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv 
     ## Type:                csv 
-    ## Size:                48.6 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv?generation=1636576185188571&alt=media 
+    ## Size:                50.1 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv?generation=1638400692629230&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_passage_estimate.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv/1636576185188571 
-    ## MD5 Hash:            dlaBSTRDmM3oyQSlNqDS4w== 
+    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv/1638400692629230 
+    ## MD5 Hash:            5dKqRsD/O+9dz96+mb0yrw== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-10 20:29:45 
-    ## Updated:             2021-11-10 20:29:45 
-    ## Generation:          1636576185188571 
+    ## Created:             2021-12-01 23:18:12 
+    ## Updated:             2021-12-01 23:18:12 
+    ## Generation:          1638400692629230 
     ## Meta Generation:     1 
-    ## eTag:                CNuBqrHRjvQCEAE= 
-    ## crc32c:              35Ok/w==
+    ## eTag:                CO7doprew/QCEAE= 
+    ## crc32c:              RhjdyQ==
