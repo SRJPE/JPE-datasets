@@ -23,7 +23,7 @@ Carcass data provided to us by Jessica Nichols. This carcass data was provided t
 
 **Completeness of Record throughout timeframe:**  
 
-* No sampling in 2019 
+* No dates for 2019 data 
 * More carcasses sampled in 2018 than in 2017 or 2020
 
 
@@ -108,6 +108,8 @@ cleaner_data<- raw_later_individuals_data %>%
          survey = as.character(survey)) %>% #scale_nu is identifier
   glimpse()
 ```
+No dates for 2019, not sure how helpful this data is without dates. 
+
 ```{r}
 cleaner_2019_data<- raw_2019_individuals_data %>%
   janitor::clean_names() %>% 
@@ -389,6 +391,7 @@ summary(cleaner_data$fork_length_mm)
 * Need description and look up table for the majority of the data
 * Some outliers for disc tag applied
 * Are these the appropriate variables?
+* no dates for 2019 data
 
 ## Next steps
 

@@ -17,7 +17,7 @@ of carcass data. This markdown document is focused on 2017 - 2020 data.
 
 **Completeness of Record throughout timeframe:**
 
--   No sampling in 2019
+-   No dates for 2019 data
 -   More carcasses sampled in 2018 than in 2017 or 2020
 
 **Sampling Location:** Various sampling locations on Butte Creek.
@@ -217,6 +217,8 @@ cleaner_data<- raw_later_individuals_data %>%
     ## $ tissue_nu        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "2061~
     ## $ otolith_nu       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ comments         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+
+No dates for 2019, not sure how helpful this data is without dates.
 
 ``` r
 cleaner_2019_data<- raw_2019_individuals_data %>%
@@ -630,6 +632,7 @@ summary(cleaner_data$fork_length_mm)
 -   Need description and look up table for the majority of the data
 -   Some outliers for disc tag applied
 -   Are these the appropriate variables?
+-   no dates for 2019 data
 
 ## Next steps
 
