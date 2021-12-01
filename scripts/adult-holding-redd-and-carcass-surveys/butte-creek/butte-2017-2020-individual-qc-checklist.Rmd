@@ -15,14 +15,16 @@ library(scales)
 library (RColorBrewer)
 ```
 # Butte Creek Individual Survey Data  
+Carcass data provided to us by Jessica Nichols. This carcass data was provided to us in a zipped folder that contained a folder for each year of carcass data. This markdown document is focused on 2017 - 2020 data. 
 
 ## Description of Monitoring Data
 
 **Timeframe:** 2017-2020
 
-
 **Completeness of Record throughout timeframe:**  
 
+* No dates for 2019 data 
+* More carcasses sampled in 2018 than in 2017 or 2020
 
 
 **Sampling Location:** Various sampling locations on Butte Creek.
@@ -106,9 +108,13 @@ cleaner_data<- raw_later_individuals_data %>%
          survey = as.character(survey)) %>% #scale_nu is identifier
   glimpse()
 ```
+No dates for 2019, not sure how helpful this data is without dates. 
+
 ```{r}
 cleaner_2019_data<- raw_2019_individuals_data %>%
   janitor::clean_names() %>% 
+  rename(condition = condition_cd, 
+         spawning_status = spawned_cd) %>%
   mutate(fork_length_mm = f_lcm*10) %>% 
   select(-c('head_nu','scale_nu','f_lcm','tissue_nu', 'dn_anu', 'otolith_nu','comments', 'other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd')) %>% 
   glimpse()
@@ -116,7 +122,38 @@ cleaner_2019_data<- raw_2019_individuals_data %>%
 
 Bind 2019 data to the whole data frame
 ```{r}
-cleaner_data <- bind_rows(cleaner_data, cleaner_2019_data)
+cleaner_data <- bind_rows(cleaner_data, cleaner_2019_data) %>% glimpse()
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Unique survey ID number", 
+                                          "Date of sampling",
+                                          "Section code describing area surveyed. View `butte_section_code.rds` for code definitions.",
+                                          "Way Point, TODO get better description of these locations ?",
+                                          "Fish disposition, describes if fish is tagged or not",
+                                          "Unique tag number if tag is applied to fish",
+                                          "Sex of fish",
+                                          "Fork lenght of fish measured in mm",
+                                          "Condition of fish, TODO get code definitions",
+                                          "Spawning status describes if the fish spawned before dying",
+                                          "Indicates if adipose fin was clipped (TRUE/FALSE).",
+                                          "Unique number for scale sampled collected",
+                                          "Unique number for tissue sample collected",
+                                          "Unique number for otolith sample collected",
+                                          "Any comments associated with a specific fish"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
 ```
 
 
@@ -354,6 +391,15 @@ summary(cleaner_data$fork_length_mm)
 * Need description and look up table for the majority of the data
 * Some outliers for disc tag applied
 * Are these the appropriate variables?
+* no dates for 2019 data
+
+## Next steps
+
+### Columns to remove
+
+* Work on data modeling to identify important variables needed for carcass datasets. If we are missing any we can look at the other files provided by Jessica and see if there is additional information we want there. 
+* Suggest removing the `section_cd` column if we get additional information on `way_pt`. `way_pt` seems to describe section in the first character and then give additional locations info in the second character. 
+* Suggest removing `scale_nu`, `tissue_nu`, `otolith_nu` and `comments` because there are so few data points. However, if genetic data is really important we should keep these to track the genetic samples. 
 
 ## Add cleaned data back to google cloud
 ```{r}
