@@ -11,20 +11,20 @@ Inigo Peng
 
 **Completeness of Record throughout timeframe:**
 
--   Longitude and latitude data are not available for 2009, 2010, 2011,
-    2012, 2019, 2020. NA values will be filled in for these data sets in
-    final cleaned data set.
+-   Longitude and latitude data are not available for 2009-2012,
+    2019-2020. NA values will be filled in for these data sets in final
+    cleaned data set.
 
 **Sampling Location:** Various sampling locations on Feather River.
 
 **Data Contact:** [Chris Cook](mailto::Chris.Cook@water.ca.gov)
 
 Additional Info:  
-1. Latitude and longitude are in NAD 1983 UTM Zone 10N  
-2. The substrate is observed visually and an estimate of the percentage
-of 5 size classes:
+1. Latitude and longitude are in NAD 1983 UTM Zone 10N 2. The substrate
+is observed visually and an estimate of the percentage of 5 size classes
+is recorded:
 
--   fines &lt;1cm  
+-   fine &lt;1cm  
 -   small 1-5cm  
 -   medium 6-15cm  
 -   large 16-30cm  
@@ -41,101 +41,6 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 gcs_list_objects()
 ```
 
-``` r
-# git data and save as xlsx
-
-read_from_cloud <- function(year){
-  gcs_get_object(object_name = paste0("adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd_", year, ".csv"),
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = paste0("feather_redd_", year, ".csv"),
-               overwrite = TRUE)
-  data <- read.csv(paste0("feather_redd_", year, ".csv"))  
-    # glimpse()
-}
-
-#Read in data from google cloud, glimpse raw data: 
-  
-years <- c(2009, 2010, 2011, 2012, 2013, 2014,2015,2016, 2017, 2018, 2019, 2020)
-combined_data <- purrr::map(years, read_from_cloud) %>%  
-  reduce(bind_rows) 
-```
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-    ## i Downloading adult-holding-redd-and-carcass-surveys/feather-river/data/feath...
-
-    ## v Saved adult-holding-redd-and-carcass-surveys/feather-river/data/feather_red...
-
-    ## 
-
-``` r
-write_csv(combined_data, "combined_feather_redd.csv")
-```
-
 ## Data transformations
 
 ``` r
@@ -143,28 +48,84 @@ clean_data <- combined_data %>%
   mutate('date' = as.Date(date),
          'latitude' = as.numeric(latitude),
          'longitude'= as.numeric(longitude)) %>%
+  rename(velocity = velocity_m_per_s) %>%
   glimpse()
 ```
 
     ## Rows: 28,296
     ## Columns: 17
-    ## $ date                     <date> 2009-09-29, 2009-09-29, 2009-09-29, 2009-09-~
-    ## $ location                 <chr> "Table Mountain", "Table Mountain", "Table Mo~
-    ## $ type                     <chr> "Area", "Point", "Area", "Area", "Area", "Are~
-    ## $ redd_count               <int> 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, ~
-    ## $ salmon_count             <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
-    ## $ depth_m                  <dbl> 0.78, 0.56, 0.64, 0.50, 0.40, 0.52, 0.58, 0.3~
-    ## $ pot_depth_m              <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0~
-    ## $ velocity_m_per_s         <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0~
-    ## $ percent_fine_substrate   <dbl> 10, 5, 15, 30, 25, 5, 5, 20, NA, NA, NA, NA, ~
-    ## $ percent_small_substrate  <dbl> 20, 20, 30, 50, 15, 15, 20, 20, NA, NA, NA, N~
-    ## $ percent_medium_substrate <dbl> 40, 30, 20, 20, 60, 30, 20, 60, NA, NA, NA, N~
-    ## $ percent_large_substrate  <int> 30, 40, 30, 0, 0, 50, 45, 0, NA, NA, NA, NA, ~
-    ## $ percent_boulder          <int> 0, 5, 5, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, N~
-    ## $ redd_width_m             <dbl> NA, 0.91, 0.91, 0.91, 1.22, 0.91, 0.91, 3.66,~
-    ## $ redd_length_m            <dbl> NA, 1.22, 1.52, 1.22, 1.83, 0.91, 0.91, 1.22,~
-    ## $ latitude                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ longitude                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ date                     <date> 2009-09-29, 2009-09-29, 2009-09-29, 2009-09-…
+    ## $ location                 <chr> "Table Mountain", "Table Mountain", "Table Mo…
+    ## $ type                     <chr> "Area", "Point", "Area", "Area", "Area", "Are…
+    ## $ redd_count               <int> 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, …
+    ## $ salmon_count             <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+    ## $ depth_m                  <dbl> 0.78, 0.56, 0.64, 0.50, 0.40, 0.52, 0.58, 0.3…
+    ## $ pot_depth_m              <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0…
+    ## $ velocity                 <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0…
+    ## $ percent_fine_substrate   <dbl> 10, 5, 15, 30, 25, 5, 5, 20, NA, NA, NA, NA, …
+    ## $ percent_small_substrate  <dbl> 20, 20, 30, 50, 15, 15, 20, 20, NA, NA, NA, N…
+    ## $ percent_medium_substrate <dbl> 40, 30, 20, 20, 60, 30, 20, 60, NA, NA, NA, N…
+    ## $ percent_large_substrate  <int> 30, 40, 30, 0, 0, 50, 45, 0, NA, NA, NA, NA, …
+    ## $ percent_boulder          <int> 0, 5, 5, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, N…
+    ## $ redd_width_m             <dbl> NA, 0.91, 0.91, 0.91, 1.22, 0.91, 0.91, 3.66,…
+    ## $ redd_length_m            <dbl> NA, 1.22, 1.52, 1.22, 1.83, 0.91, 0.91, 1.22,…
+    ## $ latitude                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ longitude                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- clean_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(clean_data),
+                          description = c("Sample date",
+                                          "Nominal description of location",
+                                          "Type of observation. A = polygon/area, P = point, Q = questionnable redd",
+                                          "Number of redds observed",
+                                          "Number of salmon observed",
+                                          "Depth of water at observation location in meters",
+                                          "Depth of the pot in meters",
+                                          "Velocity of water at observation location in m/s but standardized to ft/s",
+                                          "Percent of fine substrate (fine <1cm)",
+                                          "Percent of small substrate (small 1-5cm)",
+                                          "Percent of medium substrate (medium 6-15cm)",
+                                          "Percent of large substrate (large 16-30cm)",
+                                          "Percent boulder (boulder >30cm)",
+                                          "Width of redd in meters",
+                                          "Length of redd in meters",
+                                          "GPS X point",
+                                          "GPX Y point"
+                                          ),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables                  | description                                                               | percent\_na |
+|:---------------------------|:--------------------------------------------------------------------------|------------:|
+| date                       | Sample date                                                               |           0 |
+| location                   | Nominal description of location                                           |           0 |
+| type                       | Type of observation. A = polygon/area, P = point, Q = questionnable redd  |           0 |
+| redd\_count                | Number of redds observed                                                  |           0 |
+| salmon\_count              | Number of salmon observed                                                 |           0 |
+| depth\_m                   | Depth of water at observation location in meters                          |          85 |
+| pot\_depth\_m              | Depth of the pot in meters                                                |          86 |
+| velocity                   | Velocity of water at observation location in m/s but standardized to ft/s |          88 |
+| percent\_fine\_substrate   | Percent of fine substrate (fine &lt;1cm)                                  |          86 |
+| percent\_small\_substrate  | Percent of small substrate (small 1-5cm)                                  |          86 |
+| percent\_medium\_substrate | Percent of medium substrate (medium 6-15cm)                               |          86 |
+| percent\_large\_substrate  | Percent of large substrate (large 16-30cm)                                |          86 |
+| percent\_boulder           | Percent boulder (boulder &gt;30cm)                                        |          86 |
+| redd\_width\_m             | Width of redd in meters                                                   |          85 |
+| redd\_length\_m            | Length of redd in meters                                                  |          86 |
+| latitude                   | GPS X point                                                               |          67 |
+| longitude                  | GPX Y point                                                               |          67 |
 
 ## Explore `date`
 
@@ -351,7 +312,7 @@ clean_data %>%
 
     ##  [1] "redd_count"               "salmon_count"            
     ##  [3] "depth_m"                  "pot_depth_m"             
-    ##  [5] "velocity_m_per_s"         "percent_fine_substrate"  
+    ##  [5] "velocity"                 "percent_fine_substrate"  
     ##  [7] "percent_small_substrate"  "percent_medium_substrate"
     ##  [9] "percent_large_substrate"  "percent_boulder"         
     ## [11] "redd_width_m"             "redd_length_m"           
@@ -721,29 +682,35 @@ summary(clean_data$pot_depth_m)
 
 -   85.9 % of values in the `pot_depth_m` column are NA.
 
-### Variable: `velocity_m_per_s`
+### Variable: `velocity`
+
+Standardize by converting to ft/s
+
+``` r
+clean_data$velocity <- clean_data$velocity*3.28084
+```
 
 ``` r
 clean_data %>%
-  ggplot(aes(x = velocity_m_per_s)) +
+  ggplot(aes(x = velocity)) +
   geom_histogram(binwidth = 0.2, position = 'stack', color = "black") +
   labs(title = "Velocity Distribution")
 ```
 
-![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 **Numeric Summary of velocity\_m\_per\_s from 2009 to 2020**
 
 ``` r
-summary(clean_data$`velocity_m_per_s`)
+summary(clean_data$velocity)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  -0.040   0.340   0.480   0.518   0.650   3.510   25035
+    ##  -0.131   1.115   1.575   1.698   2.133  11.516   25035
 
 **NA and Unknown Values**
 
--   88.5 % of values in the `velocity_m_per_s` column are NA.
+-   88.5 % of values in the `velocity` column are NA.
 
 ### Variable: `latitude and longitude`
 
@@ -771,6 +738,11 @@ summary(clean_data$longitude)
 -   2012,2013,2015 latitude and longitude shows inconsistencies and
     large variations (refer to specific year Markdown for more info)
 
+## Next steps
+
+-   Most important variables for the JPE are `date`, `latitude`,
+    `longitude`, `type`, `redd_count`, `salmon_count`
+
 ### Add cleaned data back onto google cloud
 
 ``` r
@@ -779,23 +751,23 @@ feather_redd_survey <- clean_data %>% glimpse()
 
     ## Rows: 28,296
     ## Columns: 17
-    ## $ date                     <date> 2009-09-29, 2009-09-29, 2009-09-29, 2009-09-~
-    ## $ location                 <chr> "Table Mountain", "Table Mountain", "Table Mo~
-    ## $ type                     <chr> "Area", "Point", "Area", "Area", "Area", "Are~
-    ## $ redd_count               <int> 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, ~
-    ## $ salmon_count             <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
-    ## $ depth_m                  <dbl> 0.78, 0.56, 0.64, 0.50, 0.40, 0.52, 0.58, 0.3~
-    ## $ pot_depth_m              <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0~
-    ## $ velocity_m_per_s         <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0~
-    ## $ percent_fine_substrate   <dbl> 10, 5, 15, 30, 25, 5, 5, 20, NA, NA, NA, NA, ~
-    ## $ percent_small_substrate  <dbl> 20, 20, 30, 50, 15, 15, 20, 20, NA, NA, NA, N~
-    ## $ percent_medium_substrate <dbl> 40, 30, 20, 20, 60, 30, 20, 60, NA, NA, NA, N~
-    ## $ percent_large_substrate  <int> 30, 40, 30, 0, 0, 50, 45, 0, NA, NA, NA, NA, ~
-    ## $ percent_boulder          <int> 0, 5, 5, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, N~
-    ## $ redd_width_m             <dbl> NA, 0.91, 0.91, 0.91, 1.22, 0.91, 0.91, 3.66,~
-    ## $ redd_length_m            <dbl> NA, 1.22, 1.52, 1.22, 1.83, 0.91, 0.91, 1.22,~
-    ## $ latitude                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ longitude                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ date                     <date> 2009-09-29, 2009-09-29, 2009-09-29, 2009-09-…
+    ## $ location                 <chr> "Table Mountain", "Table Mountain", "Table Mo…
+    ## $ type                     <chr> "Area", "Point", "Area", "Area", "Area", "Are…
+    ## $ redd_count               <int> 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, …
+    ## $ salmon_count             <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+    ## $ depth_m                  <dbl> 0.78, 0.56, 0.64, 0.50, 0.40, 0.52, 0.58, 0.3…
+    ## $ pot_depth_m              <dbl> 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0…
+    ## $ velocity                 <dbl> 0.000000, 0.000000, 0.000000, 0.000000, 0.000…
+    ## $ percent_fine_substrate   <dbl> 10, 5, 15, 30, 25, 5, 5, 20, NA, NA, NA, NA, …
+    ## $ percent_small_substrate  <dbl> 20, 20, 30, 50, 15, 15, 20, 20, NA, NA, NA, N…
+    ## $ percent_medium_substrate <dbl> 40, 30, 20, 20, 60, 30, 20, 60, NA, NA, NA, N…
+    ## $ percent_large_substrate  <int> 30, 40, 30, 0, 0, 50, 45, 0, NA, NA, NA, NA, …
+    ## $ percent_boulder          <int> 0, 5, 5, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, N…
+    ## $ redd_width_m             <dbl> NA, 0.91, 0.91, 0.91, 1.22, 0.91, 0.91, 3.66,…
+    ## $ redd_length_m            <dbl> NA, 1.22, 1.52, 1.22, 1.83, 0.91, 0.91, 1.22,…
+    ## $ latitude                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ longitude                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)

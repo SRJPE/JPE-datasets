@@ -12,7 +12,9 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library (RColorBrewer)
+library(knitr)
 ```
+
 # Deer Creek Adult Holding Survey Data 1997 to 2020 
 
 **Description of Monitoring Data**
@@ -78,6 +80,25 @@ cleaner_data <- raw_data %>%
   glimpse()
 ```
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Sample year",
+                                          "Description of location sampled",
+                                          "Number of fish observed"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
 
 ## Explore Categorical Variables
 
@@ -132,7 +153,11 @@ cleaner_data %>%
 
 * `r round(sum(is.na(cleaner_data$count))/nrow(cleaner_data), 5)*100` % of values in the `count` column are NA. 
 
-### Add cleaned data back onto google cloud
+## Next steps
+
+- Recommend adding numerical location variable such as latitude, longitude; or maybe four variables (starting latitude, starting longitude, ending latitude, ending longitude)
+
+## Add cleaned data back onto google cloud
 ```{r}
 deer_adult_holding_survey_1997_to_2020 <- cleaner_data %>% glimpse()
 ```

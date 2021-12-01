@@ -12,12 +12,14 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library (RColorBrewer)
+library(knitr)
 ```
+
 # Deer Creek Adult Holding Survey Data 1986 to 1996 
 
 **Description of Monitoring Data**
 
-The adult holding survey data is in two separate files: first one is from 1986 to 1996, second one is 1997 to 2020. The data is collected via snorkel counts.The data has been qced and summed up.
+The adult holding survey data is in two separate files: first one is from 1986 to 1996, second one is 1997 to 2020. The data is collected via snorkel counts.The data has been QCed and summarized.
 
 The data from 1986 to 1996 has been reformatted for better access. Both original file and reformatted file could be found on google cloud.
 
@@ -50,7 +52,7 @@ The data from 1986 to 1996 has been reformatted for better access. Both original
 
 **Other Notes:**
 
-In 1989 the section from Hwy 32 to Lower Falls was omitted from the indicator reach.  From 1992 to 1996, an average of 2% of the total salmon observed were in the omitted section: hwy 32 to lower falls.  This leaves 29%  of the salmon  holding  in the reduced indicator reach.
+In 1989 the section from Hwy 32 to Lower Falls was omitted from the indicator reach.  From 1992 to 1996, an average of 2% of the total salmon observed were in the omitted section: Hwy 32 to lower falls.  This leaves 29%  of the salmon  holding  in the reduced indicator reach.
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 
@@ -70,16 +72,38 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/deer-creek/
                saveToDisk = "deer_creek_holding_raw.xlsx")
                # Overwrite = TRUE)
 ```
+
 ```{r}
 raw_data = readxl::read_excel('deer_creek_holding_raw.xlsx')
 glimpse(raw_data)
 ```
+
 ## Data Transformations
 ```{r}
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>% 
   glimpse()
 ```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Sample year",
+                                          "Description of location sampled",
+                                          "Number of fish observed"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+
 ## Explore Categorical Variables
 
 ### Variable `location`
@@ -131,7 +155,11 @@ cleaner_data %>%
   pull(count) %>%
   summary()
 ```
-### Add cleaned data back onto google cloud
+## Next steps
+
+- Recommend adding numerical location variable such as latitude, longitude; or maybe four variables (starting latitude, starting longitude, ending latitude, ending longitude)
+
+## Add cleaned data back onto google cloud
 ```{r}
 deer_adult_holding_survey_1986_to_1996 <- cleaner_data %>% glimpse()
 ```

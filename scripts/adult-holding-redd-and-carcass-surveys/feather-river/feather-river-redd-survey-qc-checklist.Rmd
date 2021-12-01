@@ -13,6 +13,7 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library(leaflet)
+library(knitr)
 ```
 # Feather River Redd Survey Data  
 
@@ -23,7 +24,7 @@ library(leaflet)
 
 **Completeness of Record throughout timeframe:**  
 
-* Longitude and latitude data are not available for 2009, 2010, 2011, 2012, 2019, 2020. NA values will be filled in for these data sets in final cleaned data set.
+* Longitude and latitude data are not available for 2009-2012, 2019-2020. NA values will be filled in for these data sets in final cleaned data set.
 
 
 **Sampling Location:** Various sampling locations on Feather River.
@@ -33,10 +34,10 @@ library(leaflet)
 
 
 Additional Info:  
-1. Latitude and longitude are in NAD 1983 UTM Zone 10N\
-2. The substrate is observed visually and an estimate of the percentage of 5 size classes:   
+1. Latitude and longitude are in NAD 1983 UTM Zone 10N
+2. The substrate is observed visually and an estimate of the percentage of 5 size classes is recorded:   
 
-* fines <1cm  
+* fine <1cm  
 * small 1-5cm  
 * medium 6-15cm  
 * large 16-30cm  
@@ -52,7 +53,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 gcs_list_objects()
 ```
-```{r}
+```{r, include = F}
 # git data and save as xlsx
 
 read_from_cloud <- function(year){
@@ -79,7 +80,42 @@ clean_data <- combined_data %>%
   mutate('date' = as.Date(date),
          'latitude' = as.numeric(latitude),
          'longitude'= as.numeric(longitude)) %>%
+  rename(velocity = velocity_m_per_s) %>%
   glimpse()
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- clean_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(clean_data),
+                          description = c("Sample date",
+                                          "Nominal description of location",
+                                          "Type of observation. A = polygon/area, P = point, Q = questionnable redd",
+                                          "Number of redds observed",
+                                          "Number of salmon observed",
+                                          "Depth of water at observation location in meters",
+                                          "Depth of the pot in meters",
+                                          "Velocity of water at observation location in m/s but standardized to ft/s",
+                                          "Percent of fine substrate (fine <1cm)",
+                                          "Percent of small substrate (small 1-5cm)",
+                                          "Percent of medium substrate (medium 6-15cm)",
+                                          "Percent of large substrate (large 16-30cm)",
+                                          "Percent boulder (boulder >30cm)",
+                                          "Width of redd in meters",
+                                          "Length of redd in meters",
+                                          "GPS X point",
+                                          "GPX Y point"
+                                          ),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
 ```
 
 
@@ -413,22 +449,29 @@ summary(clean_data$pot_depth_m)
 
 * `r round(sum(is.na(clean_data$'pot_depth_m'))/nrow(clean_data), 3)*100` % of values in the `pot_depth_m` column are NA.
 
-### Variable: `velocity_m_per_s`
+### Variable: `velocity`
+
+Standardize by converting to ft/s
+
+```{r}
+clean_data$velocity <- clean_data$velocity*3.28084
+```
+
 ```{r}
 clean_data %>%
-  ggplot(aes(x = velocity_m_per_s)) +
+  ggplot(aes(x = velocity)) +
   geom_histogram(binwidth = 0.2, position = 'stack', color = "black") +
   labs(title = "Velocity Distribution")
 ```
 
 **Numeric Summary of velocity_m_per_s from 2009 to 2020**
 ```{r}
-summary(clean_data$`velocity_m_per_s`)
+summary(clean_data$velocity)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(clean_data$'velocity_m_per_s'))/nrow(clean_data), 3)*100` % of values in the `velocity_m_per_s` column are NA.
+* `r round(sum(is.na(clean_data$'velocity'))/nrow(clean_data), 3)*100` % of values in the `velocity` column are NA.
 
 ### Variable: `latitude and longitude`
 
@@ -448,6 +491,10 @@ summary(clean_data$longitude)
 
 * latitude and longitude were not converted to WGS84
 * 2012,2013,2015 latitude and longitude shows inconsistencies and large variations (refer to specific year Markdown for more info)
+
+## Next steps
+
+- Most important variables for the JPE are `date`, `latitude`, `longitude`, `type`, `redd_count`, `salmon_count`
 
 ### Add cleaned data back onto google cloud
 ```{r}
