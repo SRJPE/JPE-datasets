@@ -53,7 +53,7 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-
 ```
 
 Data for each year is in a separate sheet 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 sheets <- readxl::excel_sheets('deer_creek_passage_estimate_raw.xlsx')
 list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_passage_estimate_raw.xlsx", 
                                                           sheet = x, 

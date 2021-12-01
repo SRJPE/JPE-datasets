@@ -51,21 +51,6 @@ list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_pas
                                                           col_types = c("text", "numeric", "numeric", "numeric", "text")))
 ```
 
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-
 Bind the sheets into one file
 
 ``` r
