@@ -20,8 +20,9 @@ library (RColorBrewer)
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon escapent index surveys from 2008 to 2019. Data were collected on Lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
+These Redd data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon escapent index surveys from 2008 to 2019. Data were collected on Lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude ) near the confluence with the Sacramento River.						
 
+The Redds worksheet contains all redd data collected, including geospatial coordinates, substrate information, and redd measurements from 2000-2020 surveys.									
 
 **Timeframe:** 2000 - 2019
 
@@ -31,7 +32,7 @@ These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fis
 
 **Data Contact:** [Ryan Schaefer](mailto:ryan_a_schaefer@fws.gov)
 
-Any additional info?
+This [report](https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf) gives additional information on Adult Chinook monitoring and redd surveys. 
 
 ## Access Cloud Data
 
@@ -54,22 +55,22 @@ Read in data from google cloud, glimpse raw data sheet:
 
 ```{r include=FALSE}
  
-raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Redds", col_types = c("date", "text", "text", "numeric","text","numeric", "numeric", "numeric","numeric", "numeric", "numeric", "numeric", "text","numeric", "text", "date","text","text","text","numeric","text","text","text","text","text","text","text","text","text","date","numeric","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric", "date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric", "text","text","date","numeric","numeric")) %>% glimpse()
+raw_redds_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", 
+                                    sheet = "Redds", 
+                                    col_types = c("date", "text", "text", "numeric","text","numeric", "numeric", "numeric","numeric", "numeric", "numeric", "numeric", "text","numeric", "text", "date","text","text","text","numeric","text","text","text","text","text","text","text","text","text","date","numeric","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric","text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric", "date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric","date","numeric", "text","text","date","numeric","numeric")) %>% glimpse()
 ```
 
 ## Data Transformation
 
 Note:
 
-survey_(2-9)_age is described as "Age of redd based on age classification during survey (2-9)". Age(1-9) is also described as "age of redd based on age classification during survey (1-9)", These to variables seem to be redundant. Dropping survey_(2-9)_age for now until further review 
+survey_[2-9]_age is described as "Age of redd based on age classification during survey (2-9)". Age[1-9] is also described as "age of redd based on age classification during survey (1-9)", Dropping survey_[2-9]_age and age[1-9] for now until further review. Will likely want to pick one age to keep. 
 
 TODO: The last 4 variables observation_reach, observation_date, observation_age, and survey_observed need further description.
 
 ```{r}
 cleaner_data <- raw_redds_data %>% 
   janitor::clean_names() %>%
-  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile
-  select(-(survey_2_age:age_9)) %>% 
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'survey' = 'survey_8',
@@ -98,17 +99,79 @@ cleaner_data <- raw_redds_data %>%
          date_measured = as.Date(date_measured),
          survey = as.character(survey),
          survey_observed = as.character(survey_observed)) %>% 
-  # filter(run == "spring") %>%
-  # raw_redds_data[, -c(40,54)] %>% 
+  filter(species %in% c('CHINOOK', 'Chinook')) %>%
+  select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id', 'species')) %>% #all method is snorkel, year could be extracted from date, river_latlong same as rivermile
+  select(-(survey_2_age:age_9)) %>% 
   glimpse()
 ```
  
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Survey method", 
+                                          "GPS X point",
+                                          "GPS Y point",
+                                          "Survey Number, TODO figure out what this number means", 
+                                          "River mile Number",  
+                                          "?TODO", 
+                                          "Above or below Upper Clear Creek Rotary Screw Trap", 
+                                          "Picket weir location", 
+                                          "Above or below picket weir", 
+                                          "Date survey occured", 
+                                          "Reach number", 
+                                          "Unique ID number for a Redd", 
+                                          "Age of Redd", 
+                                          "Latitudinal location of the redd in the creek (RL: river left, RR: river right, RC: river center)", 
+                                          "predominant type of gravel used in redd construction: injection, native, or combo (native and injection)", 
+                                          "source of the injection gravel (site on Clear Creek)", 
+                                          "Dominant substrate size in the pre-redd (area just of stream of the disturbance)", 
+                                          "Dominant substrate size on the sides of the redd", 
+                                          "Dominant substrate size in the tailspill (excavated material behind the pit)", 
+                                          "TRUE if fish is seen on Redd (TRUE/FALSE)", 
+                                          "TRUE if redd is measured (TRUE/FALSE)", 
+                                          "Description of why the reddd was not measured if applicable", 
+                                          "Date the redd was measured", 
+                                          "Depth in the pre-redd (area just of stream of the disturbance)", 
+                                          "Depth at the deepest part of the pit", 
+                                          "Depth at the shallowest part of the tailspill", 
+                                          "Length of the longest part of the disturbed area, measured parallel to streamflow (in inches)", 
+                                          "Width of the widest part of the disturbed area, perpendicular to streamflow.", 
+                                          "Mean water column velocity measured at 60 percent depth from the water surface or the average of the 60% depth and 80/20% depth, if the redd depth is ≥ 30 inches (Allan and Castillo 2007).", 
+                                          "starting values on the mechanical flow meter at 60% depth", 
+                                          "ending values on the mechanical flow meter at 60% depth", 
+                                          "time the meter was in the water", 
+                                          "Starting values on the mechanical flow meter at 80/20% depth", 
+                                          "End values on the mechanical flow meter at 80/20% depth", 
+                                          "time the meter was in the water", 
+                                          "Mean water column velocity measured at 60 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007). ", 
+                                          "Mean water column velocity measured at 80 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007). ", 
+                                          "Comments from survey crew", 
+                                          "Run call based on field data", 
+                                          "Reach of observation", 
+                                          "Date of observation", 
+                                          "Age at observation", 
+                                          "?TODO"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
 
 ## Explore `date`
 
 ```{r}
 summary(cleaner_data$date)
 ```
+
 **NA and Unknown Values**
 
 * `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3) * 100` % of values in the `date` column are NA.
@@ -143,7 +206,7 @@ cleaner_data %>% select_if(is.character) %>% colnames()
 ```
 ### Variable: `method`
 
-TODO: what's pw? do we keep rstr?
+TODO: what's pw? 
 
 ```{r}
 cleaner_data <- cleaner_data %>% 
@@ -204,16 +267,6 @@ There are `r length(unique(cleaner_data$redd_id))` unique redd ID numbers.
 
 * `r round(sum(is.na(cleaner_data$redd_id))/nrow(cleaner_data), 3) * 100` % of values in the `redd_id` column are NA.
 
-### Variable: `species`
-
-**Description:** Filtering all data to Chinooks.
-```{r}
-cleaner_data <- cleaner_data %>% 
-  mutate(species = tolower(cleaner_data$species)) %>% 
-  filter(species== 'chinook')
-```
-
-
 ### Variable: `redd_loc`
 
 **Description:** Latitudinal location of the redd in the creek.
@@ -268,7 +321,6 @@ table(cleaner_data$inj_site)
 
 **Description:** dominant substrate size in the pre-redd (area just of stream of the disturbance) 
 
-TODO: ask for complete description
 
 ```{r}
 table(cleaner_data$pre_redd_substrate_size)
@@ -281,7 +333,7 @@ table(cleaner_data$pre_redd_substrate_size)
 
 ### Variable: `redd_substrate_size`
 
-**Description:** Dominant substrate size on the sides of the redd
+**Description:** 
 
 ```{r}
 table(cleaner_data$redd_substrate_size)
@@ -293,7 +345,9 @@ table(cleaner_data$redd_substrate_size)
 
 ### Variable: `tail_redd_substrate_size`
 
-**Description:** Dominant substrate size in the tailspill (excavated material behind the pit)
+**Description:** 
+
+Dominant substrate size in the tailspill (excavated material behind the pit)
 
 ```{r}
 table(cleaner_data$tail_substrate_size)
@@ -305,7 +359,9 @@ table(cleaner_data$tail_substrate_size)
 
 ### Variable: `fish_on_redd`
 
-**Description:** Indicates why a redd wasn't measured
+**Description:** 
+
+Indicates why a redd wasn't measured
 
 ```{r}
 table(cleaner_data$fish_on_redd)
@@ -382,7 +438,6 @@ unique(cleaner_data$comments)[1:10]
 
 **Description:** run call based on field data
 
-We are interested only in spring run TODO
 
 ```{r}
 cleaner_data<-cleaner_data %>% 
@@ -405,6 +460,10 @@ table(cleaner_data$observation_reach)
 ```
 
 ### Variable: `survey`
+
+TODO: what does this number mean?
+
+
 ```{r}
 cleaner_data %>% 
     filter(survey != is.na(survey)) %>% 
@@ -618,7 +677,7 @@ summary(cleaner_data$redd_length_in)
 
 ### Variable: `redd_width_in`
 
-**Description:** Width of the widest part of the disturbed area, perpandicular to streamflow.
+**Description:** Width of the widest part of the disturbed area, perpendicular to streamflow.
 
 ```{r}
 cleaner_data %>% 
@@ -833,16 +892,44 @@ summary(cleaner_data$observation_age)
 
 ### Summary of Identified Issues
 
-* There are multiple metadata that needs more descriptions (x1000ftbreak, method)
+* There are multiple metadata that needs more descriptions (x1000ftbreak, method, survey_observed, )
 
-* There are multiple columns that seem redundant. For example: run vs run_observed, survey vs survey observed, age vs observation age
+* There are multiple columns that seem redundant. For example: survey vs survey observed, age vs observation age, three different date columns
 
-* Need to email Ryan to ask what survey_age is. The survey_age was dropped for now.
+* Need to email Ryan to ask what how all the age columns work. 
+
+* Non standard units (in) change to m below 
+
+```{r}
+
+# Convert all measures in inches to meters and rename accordingly 
+cleaner_data <- cleaner_data %>%
+  mutate(pre_redd_depth = pre_redd_depth / 39.37, 
+         redd_pit_depth = redd_pit_depth / 39.37, 
+         redd_tail_depth = redd_tail_depth / 39.37, 
+         redd_length = redd_length_in / 39.37,
+         redd_width = redd_width_in / 39.37) %>% 
+  select(-redd_width_in, -redd_length_in)
+```
+
+
+## Next steps
+
+* Work on data modeling to identify important variables needed for redd datasets.
+
+### Columns to remove
+
+* Suggest removing some of the location variables we currently have: `longitude`, `latitude`, `reach`, `river_mile`, `ucc_relate`, `picket_weir_relation` `surveyed_reach`, and `observed_reach`. We can probably use a subset of these. 
+* Suggest removing flow meter metadata: `start_60`, `end_60`, `sec_60`, `start_80`, `end_80`, `secs_80`. And only keeping 1 velocity measure out of the three taken: `velocity`, `bomb_vel60`, `bomb_vel80`. 
+* Unless we want to do any sort of habitat suitability analysis we probably do not need the substrate, depth, and gravel columns. 
+
+
 
 ### Save Cleaned data back to google cloud
 ```{r}
 clear_redd <- cleaner_data %>% glimpse
 ```
+
 ```{r, eval=FALSE}
 # gcs_list_objects()
 
