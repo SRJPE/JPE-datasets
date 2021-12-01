@@ -33,7 +33,7 @@ Data available for all years.
 
 **Data Contact:** [Ryan Schaefer](mailto:ryan_a_schaefer@fws.gov)
 
-This [report](https://www.fws.gov/redbluff/CC%20BC/Battle%20Creek%20Monitoring%20Final%20Reports/2019%20Battle%20Creek%20Adult%20Monitoring%20Report.pdf) gives additional information on Adult Chinook monitoring and carcass collection. 
+This [report](https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf) gives additional information on Adult Chinook monitoring and carcass collection. 
 
 ## Access Cloud Data
 

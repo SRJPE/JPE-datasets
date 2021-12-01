@@ -9,24 +9,31 @@ Inigo Peng
 
 These data were collected by the U.S. Fish and Wildlife Service’s, Red
 Bluff Fish and Wildlife Office’s, Clear Creek Monitoring Program.These
-data encompass spring-run Chinook Salmon redd index data from 2000 to
-2019. Data were collected on lower Clear Creek from Whiskeytown Dam
-located at river mile 18.1, (40.597786N latitude, -122.538791W longitude
-\[decimal degrees\]) to the Clear Creek Video Station located at river
-mile 0.0 (40.504836N latitude, -122.369693W longitude \[decimal
-degrees\]) near the confluence with the Sacramento River.
+data encompass spring-run Chinook Salmon counts and location data from
+2008-2020 surveys. Data were collected on lower Clear Creek from
+Whiskeytown Dam located at river mile 18.1, (40.597786N latitude,
+-122.538791W longitude) to the Clear Creek Video Station located at
+river mile 0.0 (40.504836N latitude, -122.369693W longitude) near the
+confluence with the Sacramento River.
+
+All data is gathered from snorkel surveys and data is filtered to only
+include Chinook salmon. All data is focused on Spring Run fish.
 
 **Timeframe:** 2008 - 2019
 
-**Completeness of Record throughout timeframe:**
+**QC?/Raw data or passage estimates** QC raw holding counts
 
-Data available for all years and QCed
+**Completeness of Record throughout timeframe:** Data available for all
+years
 
 **Sampling Location:** Clear Creek
 
 **Data Contact:** [Ryan Schaefer](mailto:ryan_a_schaefer@fws.gov)
 
-Any additional info?
+This
+[report](https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf)
+gives additional information on Adult Chinook monitoring and may have
+additional metadata for chinook holding
 
 ## Access Cloud Data
 
@@ -49,10 +56,12 @@ Read in data from google cloud, glimpse raw data sheet:
 
 ## Data Transformation
 
+Columns renamed to be clearer, data filtered to just Chinook salmon, and
+columns that are all redundant were removed.
+
 ``` r
 cleaner_data <- raw_holding_data %>% 
   janitor::clean_names() %>% 
-  select(-c('survey','method','qc_type','qc_date','inspector','year')) %>% #all method is snorkel, year could be extracted from date, 
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'count' = 'total_fish',
@@ -60,11 +69,13 @@ cleaner_data <- raw_holding_data %>%
          'picket_weir_location_rm' = 'pw_location_rm',
          'picket_weir_relate' = 'pw_relate') %>% 
   mutate(date = as.Date(date)) %>% 
+  filter(species %in% c("Chinook", "CHINOOK")) %>%
+  select(-c('survey','method','qc_type','qc_date','inspector','year', 'species')) %>% #all method is snorkel, year could be extracted from date, 
   glimpse()
 ```
 
-    ## Rows: 1,435
-    ## Columns: 12
+    ## Rows: 1,430
+    ## Columns: 11
     ## $ river_mile              <dbl> 17.641632, 16.697440, 15.571744, 15.473638, 14~
     ## $ longitude               <dbl> -122.5459, -122.5452, -122.5336, -122.5327, -1~
     ## $ latitude                <dbl> 40.59089, 40.58410, 40.57378, 40.57257, 40.564~
@@ -73,10 +84,52 @@ cleaner_data <- raw_holding_data %>%
     ## $ count                   <dbl> 1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3, 1, 2, 1, 1~
     ## $ jack_count              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0~
     ## $ comments                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ species                 <chr> "CHINOOK", "CHINOOK", "CHINOOK", "CHINOOK", "C~
     ## $ survey_intent           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ picket_weir_location_rm <dbl> 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7~
     ## $ picket_weir_relate      <chr> "Above", "Above", "Above", "Above", "Above", "~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("River mile number",
+                                          "GPS X point",
+                                          "GPS Y point",
+                                          "Date of sampling",
+                                          "Reach number (1-7); other location",
+                                          "Fish Count",
+                                          "Total number of 2-year old Chinook Salmon (Jacks/Jills) encountered",
+                                          "General comments from survey crew",
+                                          "Survey Intent, august index or spawning survey",
+                                          "Location of the Picket Weir",
+                                          "Fish above or below Picket Weir"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables                  | description                                                         | percent\_na |
+|:---------------------------|:--------------------------------------------------------------------|------------:|
+| river\_mile                | River mile number                                                   |           0 |
+| longitude                  | GPS X point                                                         |           0 |
+| latitude                   | GPS Y point                                                         |           0 |
+| date                       | Date of sampling                                                    |           0 |
+| reach                      | Reach number (1-7); other location                                  |           0 |
+| count                      | Fish Count                                                          |           0 |
+| jack\_count                | Total number of 2-year old Chinook Salmon (Jacks/Jills) encountered |           0 |
+| comments                   | General comments from survey crew                                   |          88 |
+| survey\_intent             | Survey Intent, august index or spawning survey                      |           9 |
+| picket\_weir\_location\_rm | Location of the Picket Weir                                         |           0 |
+| picket\_weir\_relate       | Fish above or below Picket Weir                                     |           0 |
 
 ## Explore Date
 
@@ -98,12 +151,14 @@ cleaner_data %>%
   select_if(is.character) %>% colnames()
 ```
 
-    ## [1] "reach"              "comments"           "species"           
-    ## [4] "survey_intent"      "picket_weir_relate"
+    ## [1] "reach"              "comments"           "survey_intent"     
+    ## [4] "picket_weir_relate"
 
 ### Variable: `reach`
 
-**Description:** reach surveyed on each survey day
+**Description:**
+
+Reach surveyed on each survey day
 
 ``` r
 table(cleaner_data$reach)
@@ -111,7 +166,7 @@ table(cleaner_data$reach)
 
     ## 
     ##  R1  R2  R3  R4  R5 R5A R5B R5C  R6 R6A  R7 
-    ## 153 274 183 280   9  68  98  95 258   2  15
+    ## 150 274 183 280   9  68  98  95 256   2  15
 
 **NA and Unknown Values**
 
@@ -129,28 +184,7 @@ unique(cleaner_data$comments)[1:5]
 
 **NA and Unknown Values**
 
--   88.1 % of values in the `comments` column are NA.
-
-### Variable: `species`
-
-Change to lower-case capitalization; we are only interested in chinook
-data.
-
-``` r
-cleaner_data <- cleaner_data %>% 
-  mutate(species = tolower(species)) %>% 
-  filter(species == 'chinook') 
-
-table(cleaner_data$species)
-```
-
-    ## 
-    ## chinook 
-    ##    1430
-
-**NA and Unknown Values**
-
--   0 % of values in the `species` column are NA.
+-   88.2 % of values in the `comments` column are NA.
 
 ### Variable: `survey_intent`
 
@@ -173,7 +207,9 @@ table(cleaner_data$survey_intent)
 
 ### Variable: `picket_weir_relate`
 
-**Description:** Fish above or below Picket Weir
+**Description:**
+
+Fish above or below Picket Weir
 
 ``` r
 cleaner_data <- cleaner_data %>% 
@@ -208,7 +244,7 @@ cleaner_data %>%
   labs(x = "River Mile", y = "Year", title = "River Mile Over the Years")
 ```
 
-![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -219,7 +255,7 @@ cleaner_data %>%
   labs(title = "Fish Count Per River Mile Per Year")
 ```
 
-![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 **Numeric Summary of river\_mile Over the Years**
 
@@ -262,8 +298,10 @@ summary(cleaner_data$latitude)
 
 ## Variable: `count`
 
-**Description:** total number of Adult Chinook Salmon encountered
-including the number of 2-year olds (Jacks/Jills)
+**Description:**
+
+Total number of Adult Chinook Salmon encountered including the number of
+2-year olds (Jacks/Jills)
 
 ``` r
 cleaner_data %>% 
@@ -280,7 +318,7 @@ cleaner_data %>%
        x = "Date")  
 ```
 
-![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 cleaner_data %>% 
@@ -298,7 +336,7 @@ cleaner_data %>%
 
     ## Warning: Removed 15 rows containing non-finite values (stat_boxplot).
 
-![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 ``` r
 cleaner_data  %>%
@@ -314,7 +352,7 @@ cleaner_data  %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 **Numeric Summary of count over Period of Record**
 
@@ -342,7 +380,7 @@ cleaner_data %>%
   theme(text = element_text(size = 15)) 
 ```
 
-![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 **Numeric Summary of jack count over Period of Record**
 
@@ -370,7 +408,7 @@ cleaner_data %>%
   labs(title = "Distribution of picket_weir_location_rm")
 ```
 
-![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](clear_creek_holding_survey_qc_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 **Numeric Summary of picket\_weir\_location\_rm over Period of Record**
 
@@ -387,11 +425,33 @@ Seems like there are two locations
 
 -   0 % of values in the `picket_weir_location_rm` column are NA.
 
+## Next steps
+
+### Columns to remove
+
+-   Suggest removing `comments` because there are so few data points.
+-   Figure out if picket weir information is important, if not remove
+    `picket_weir_location_rm` and `picket_weir_relate`
+
 ## Save cleaned data back to google cloud
 
 ``` r
-clear_holding <- cleaner_data  
+clear_holding <- cleaner_data  %>% glimpse()
 ```
+
+    ## Rows: 1,430
+    ## Columns: 11
+    ## $ river_mile              <dbl> 17.641632, 16.697440, 15.571744, 15.473638, 14~
+    ## $ longitude               <dbl> -122.5459, -122.5452, -122.5336, -122.5327, -1~
+    ## $ latitude                <dbl> 40.59089, 40.58410, 40.57378, 40.57257, 40.564~
+    ## $ date                    <date> 2008-06-02, 2008-06-02, 2008-06-02, 2008-06-0~
+    ## $ reach                   <chr> "R1", "R1", "R2", "R2", "R2", "R2", "R2", "R3"~
+    ## $ count                   <dbl> 1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3, 1, 2, 1, 1~
+    ## $ jack_count              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0~
+    ## $ comments                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ survey_intent           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ picket_weir_location_rm <dbl> 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7.4, 7~
+    ## $ picket_weir_relate      <chr> "above", "above", "above", "above", "above", "~
 
 ``` r
 gcs_list_objects()
