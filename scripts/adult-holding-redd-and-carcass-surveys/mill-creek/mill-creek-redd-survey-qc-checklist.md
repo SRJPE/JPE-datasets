@@ -10,9 +10,6 @@ Inigo Peng
 -   Redd surveys Buckhorn Gulch to Upper Dam are conducted by air
     (helicopter). All other survey sections completed on foot
 
--   McCarthy Place to Savercool Place and Savercool Place to Black Rock
-    reaches combined 1997 to 2006
-
 **Timeframe:**
 
 1997 to 2020
@@ -21,8 +18,9 @@ Inigo Peng
 
 -   Missing some elevation data
 -   Buckhorn Gulch To Upper Dam missing significant count data
--   Savercool Place To Black Rock and Canyon Camp to Sooner Place
-    missing redd count data from 1997 - 2006
+-   Canyon Camp to Sooner Place missing redd count data from 1997 - 2006
+-   McCarthy Place to Savercool Place and Savercool Place to Black Rock
+    reaches combined 1997 to 2006
 
 **Sampling Location:**
 
@@ -69,56 +67,56 @@ raw_data = readxl::read_excel('mill_creek_redd_raw.xlsx',
 
     ## Rows: 17
     ## Columns: 50
-    ## $ Section                <chr> "Above Hwy 36", "Hwy 36 to Little Hole-in-Groun~
-    ## $ `Starting Elevevation` <chr> "5200'", "4800'", NA, "4200'", NA, "3800'", NA,~
-    ## $ `1997 redd count`      <chr> "0", "1", "7", "1", "7", "53", "n/s", "19", "1"~
-    ## $ `1997 % by reach`      <chr> "0", "0.99009900990099009", "6.9306930693069315~
-    ## $ `1998 redd count`      <chr> "n/s", "1", "2", "1", "1", "11", "n/s", "21", "~
-    ## $ `1998 % by reach`      <chr> "*", "0.47169811320754718", "0.9433962264150943~
-    ## $ `1999 redd count`      <chr> "n/s", "0", "1", "3", "11", "6", "n/s", "22", "~
-    ## $ `1999 % by reach`      <chr> "*", "0", "0.35714285714285715", "1.07142857142~
-    ## $ `2000 redd count`      <chr> "n/s", "0", "0", "4", "6", "12", "n/s", "59", "~
-    ## $ `2000 % by reach`      <chr> "*", "0", "0", "1.4705882352941175", "2.2058823~
-    ## $ `2001 redd count`      <chr> "n/s", "3", "19", "13", "14", "92", "n/s", "129~
-    ## $ `2001 % by reach`      <chr> "*", "0.54545454545454553", "3.4545454545454546~
-    ## $ `2002 redd count`      <chr> "12", "13", "23", "38", "8", "103", "n/s", "172~
-    ## $ `2002 % by reach`      <chr> "1.5056461731493098", "1.6311166875784191", "2.~
-    ## $ `2003 redd count`      <chr> "0", "6", "14", "44", "24", "121", "n/s", "133"~
-    ## $ `2003 % by reach`      <chr> "0", "0.84151472650771386", "1.9635343618513323~
-    ## $ `2004 redd count`      <chr> "0", "1", "23", "5", "9", "49", "n/s", "97", "9~
-    ## $ `2004 % by reach`      <chr> "0", "0.20040080160320639", "4.6092184368737472~
-    ## $ `2005 redd count`      <chr> "7", "10", "49", "47", "19", "51", "n/s", "70",~
-    ## $ `2005 % by reach`      <chr> "1.2173913043478262", "1.7391304347826086", "8.~
-    ## $ `2006 redd count`      <chr> "19", "28", "18", "28", "21", "21", "n/s", "72"~
-    ## $ `2006 % by reach`      <chr> "3.7924151696606789", "5.5888223552894214", "3.~
-    ## $ `2007 redd count`      <chr> "3", "17", "14", "18", "11", "29", "70", "78", ~
-    ## $ `2007 % by reach`      <chr> "0.65217391304347827", "3.6956521739130435", "3~
-    ## $ `2008 redd count`      <chr> "1", "0", "5", "4", "3", "18", "32", "46", "15"~
-    ## $ `2008 % by reach`      <chr> "0.55248618784530379", "0", "2.7624309392265194~
-    ## $ `2009 redd count`      <chr> "0", "0", "5", "5", "2", "12", "12", "13", "6",~
-    ## $ `2009 % by reach`      <chr> "0", "0", "4.5454545454545459", "4.545454545454~
-    ## $ `2010 redd count`      <dbl> 17, 6, 4, 17, 10, 27, 26, 24, 17, 4, 28, 33, 19~
-    ## $ `2010 % by reach`      <dbl> 7.053942, 2.489627, 1.659751, 7.053942, 4.14937~
-    ## $ `2011 redd count`      <chr> "3", "3", "10", "17", "11", "19", "17", "31", "~
-    ## $ `2011 % by reach`      <chr> "1.639344262295082", "1.639344262295082", "5.46~
-    ## $ `2012 redd count`      <chr> "0", "8", "10", "16", "16", "33", "47", "34", "~
-    ## $ `2012 % by reach`      <chr> "0", "2.9520295202952029", "3.6900369003690034"~
-    ## $ `2013 redd count`      <chr> "0", "3", "16", "27", "13", "59", "109", "78", ~
-    ## $ `2013 % by reach`      <chr> "0", "0.5", "2.666666666666667", "4.5", "2.1666~
-    ## $ `2014 redd count`      <chr> "n/s", "0", "2", "3", "0", "16", "40", "41", "2~
-    ## $ `2014 % by reach`      <chr> "*", "0", "0.90909090909090906", "1.36363636363~
-    ## $ `2015 redd count`      <chr> "0", "0", "0", "3", "2", "16", "11", "11", "7",~
-    ## $ `2015 % by reach`      <chr> "0", "0", "0", "5.1724137931034484", "3.4482758~
-    ## $ `2016 redd count`      <chr> "n/s", "0", "1", "2", "0", "4", "5", "24", "2",~
-    ## $ `2016 % by reach`      <chr> "*", "0", "2.1276595744680851", "4.255319148936~
-    ## $ `2017 redd count`      <chr> "0", "3", "3", "12", "0", "28", "35", "18", "12~
-    ## $ `2017 % by reach`      <chr> "0", "0", "6.3829787234042552", "25.53191489361~
-    ## $ `2018 redd count`      <dbl> 0, 1, 15, 12, 1, 0, 13, 11, 8, 1, 9, 4, 0, 0, 1~
-    ## $ `2018 % by reach`      <dbl> 0.000000, 2.127660, 31.914894, 25.531915, 2.127~
-    ## $ `2019 redd count`      <chr> "n/s", "0", "6", "5", "2", "3", "15", "9", "1",~
-    ## $ `2019 % by reach`      <chr> "*", "0", "12.76595744680851", "10.638297872340~
-    ## $ `2020 redd count`      <chr> "n/s", "0", "0", "1", "0", "0", "10", "7", "0",~
-    ## $ `2020 % by reach`      <chr> "*", "0", "0", "2.1276595744680851", "0", "0", ~
+    ## $ Section                <chr> "Above Hwy 36", "Hwy 36 to Little Hole-in-Groun…
+    ## $ `Starting Elevevation` <chr> "5200'", "4800'", NA, "4200'", NA, "3800'", NA,…
+    ## $ `1997 redd count`      <chr> "0", "1", "7", "1", "7", "53", "n/s", "19", "1"…
+    ## $ `1997 % by reach`      <chr> "0", "0.99009900990099009", "6.9306930693069315…
+    ## $ `1998 redd count`      <chr> "n/s", "1", "2", "1", "1", "11", "n/s", "21", "…
+    ## $ `1998 % by reach`      <chr> "*", "0.47169811320754718", "0.9433962264150943…
+    ## $ `1999 redd count`      <chr> "n/s", "0", "1", "3", "11", "6", "n/s", "22", "…
+    ## $ `1999 % by reach`      <chr> "*", "0", "0.35714285714285715", "1.07142857142…
+    ## $ `2000 redd count`      <chr> "n/s", "0", "0", "4", "6", "12", "n/s", "59", "…
+    ## $ `2000 % by reach`      <chr> "*", "0", "0", "1.4705882352941175", "2.2058823…
+    ## $ `2001 redd count`      <chr> "n/s", "3", "19", "13", "14", "92", "n/s", "129…
+    ## $ `2001 % by reach`      <chr> "*", "0.54545454545454553", "3.4545454545454546…
+    ## $ `2002 redd count`      <chr> "12", "13", "23", "38", "8", "103", "n/s", "172…
+    ## $ `2002 % by reach`      <chr> "1.5056461731493098", "1.6311166875784191", "2.…
+    ## $ `2003 redd count`      <chr> "0", "6", "14", "44", "24", "121", "n/s", "133"…
+    ## $ `2003 % by reach`      <chr> "0", "0.84151472650771386", "1.9635343618513323…
+    ## $ `2004 redd count`      <chr> "0", "1", "23", "5", "9", "49", "n/s", "97", "9…
+    ## $ `2004 % by reach`      <chr> "0", "0.20040080160320639", "4.6092184368737472…
+    ## $ `2005 redd count`      <chr> "7", "10", "49", "47", "19", "51", "n/s", "70",…
+    ## $ `2005 % by reach`      <chr> "1.2173913043478262", "1.7391304347826086", "8.…
+    ## $ `2006 redd count`      <chr> "19", "28", "18", "28", "21", "21", "n/s", "72"…
+    ## $ `2006 % by reach`      <chr> "3.7924151696606789", "5.5888223552894214", "3.…
+    ## $ `2007 redd count`      <chr> "3", "17", "14", "18", "11", "29", "70", "78", …
+    ## $ `2007 % by reach`      <chr> "0.65217391304347827", "3.6956521739130435", "3…
+    ## $ `2008 redd count`      <chr> "1", "0", "5", "4", "3", "18", "32", "46", "15"…
+    ## $ `2008 % by reach`      <chr> "0.55248618784530379", "0", "2.7624309392265194…
+    ## $ `2009 redd count`      <chr> "0", "0", "5", "5", "2", "12", "12", "13", "6",…
+    ## $ `2009 % by reach`      <chr> "0", "0", "4.5454545454545459", "4.545454545454…
+    ## $ `2010 redd count`      <dbl> 17, 6, 4, 17, 10, 27, 26, 24, 17, 4, 28, 33, 19…
+    ## $ `2010 % by reach`      <dbl> 7.053942, 2.489627, 1.659751, 7.053942, 4.14937…
+    ## $ `2011 redd count`      <chr> "3", "3", "10", "17", "11", "19", "17", "31", "…
+    ## $ `2011 % by reach`      <chr> "1.639344262295082", "1.639344262295082", "5.46…
+    ## $ `2012 redd count`      <chr> "0", "8", "10", "16", "16", "33", "47", "34", "…
+    ## $ `2012 % by reach`      <chr> "0", "2.9520295202952029", "3.6900369003690034"…
+    ## $ `2013 redd count`      <chr> "0", "3", "16", "27", "13", "59", "109", "78", …
+    ## $ `2013 % by reach`      <chr> "0", "0.5", "2.666666666666667", "4.5", "2.1666…
+    ## $ `2014 redd count`      <chr> "n/s", "0", "2", "3", "0", "16", "40", "41", "2…
+    ## $ `2014 % by reach`      <chr> "*", "0", "0.90909090909090906", "1.36363636363…
+    ## $ `2015 redd count`      <chr> "0", "0", "0", "3", "2", "16", "11", "11", "7",…
+    ## $ `2015 % by reach`      <chr> "0", "0", "0", "5.1724137931034484", "3.4482758…
+    ## $ `2016 redd count`      <chr> "n/s", "0", "1", "2", "0", "4", "5", "24", "2",…
+    ## $ `2016 % by reach`      <chr> "*", "0", "2.1276595744680851", "4.255319148936…
+    ## $ `2017 redd count`      <chr> "0", "3", "3", "12", "0", "28", "35", "18", "12…
+    ## $ `2017 % by reach`      <chr> "0", "0", "6.3829787234042552", "25.53191489361…
+    ## $ `2018 redd count`      <dbl> 0, 1, 15, 12, 1, 0, 13, 11, 8, 1, 9, 4, 0, 0, 1…
+    ## $ `2018 % by reach`      <dbl> 0.000000, 2.127660, 31.914894, 25.531915, 2.127…
+    ## $ `2019 redd count`      <chr> "n/s", "0", "6", "5", "2", "3", "15", "9", "1",…
+    ## $ `2019 % by reach`      <chr> "*", "0", "12.76595744680851", "10.638297872340…
+    ## $ `2020 redd count`      <chr> "n/s", "0", "0", "1", "0", "0", "10", "7", "0",…
+    ## $ `2020 % by reach`      <chr> "*", "0", "0", "2.1276595744680851", "0", "0", …
 
 ## Data Transformations
 
@@ -139,10 +137,38 @@ cleaner_data <- raw_data %>%
 
     ## Rows: 360
     ## Columns: 4
-    ## $ location              <chr> "Above Hwy 36", "Above Hwy 36", "Above Hwy 36", ~
-    ## $ starting_elevation_ft <dbl> 5200, 5200, 5200, 5200, 5200, 5200, 5200, 5200, ~
-    ## $ year                  <dbl> 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, ~
-    ## $ redd_count            <dbl> 0, NA, NA, NA, NA, 12, 0, 0, 7, 19, 3, 1, 0, 17,~
+    ## $ location              <chr> "Above Hwy 36", "Above Hwy 36", "Above Hwy 36", …
+    ## $ starting_elevation_ft <dbl> 5200, 5200, 5200, 5200, 5200, 5200, 5200, 5200, …
+    ## $ year                  <dbl> 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, …
+    ## $ redd_count            <dbl> 0, NA, NA, NA, NA, 12, 0, 0, 7, 19, 3, 1, 0, 17,…
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Nominal description of sampling location",
+                                          "Elevation at sample start point",
+                                          "Survey year",
+                                          "Number of redds observed"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables               | description                              | percent\_na |
+|:------------------------|:-----------------------------------------|------------:|
+| location                | Nominal description of sampling location |           0 |
+| starting\_elevation\_ft | Elevation at sample start point          |          53 |
+| year                    | Survey year                              |           0 |
+| redd\_count             | Number of redds observed                 |          11 |
 
 ## Explore Categorical Variables
 
@@ -255,6 +281,11 @@ cleaner_data %>%
 
 -   53.3 % of values in the `starting_elevation_ft` column are NA.
 
+## Next steps
+
+-   Suggest transforming the nominal location variable into `latitude`
+    and `longitude`
+
 ### Add cleaned data back onto google cloud
 
 ``` r
@@ -263,41 +294,7 @@ mill_redd_survey <- cleaner_data %>% glimpse()
 
     ## Rows: 360
     ## Columns: 4
-    ## $ location              <chr> "Above Hwy 36", "Above Hwy 36", "Above Hwy 36", ~
-    ## $ starting_elevation_ft <dbl> 5200, 5200, 5200, 5200, 5200, 5200, 5200, 5200, ~
-    ## $ year                  <dbl> 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, ~
-    ## $ redd_count            <dbl> 0, NA, NA, NA, NA, 12, 0, 0, 7, 19, 3, 1, 0, 17,~
-
-``` r
-f <- function(input, output) write_csv(input, file = output)
-gcs_upload(mill_redd_survey,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv")
-```
-
-    ## i 2021-11-16 13:24:30 > File size detected as  14.5 Kb
-
-    ## i 2021-11-16 13:24:30 > Request Status Code:  400
-
-    ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
-
-    ## i 2021-11-16 13:24:30 > File size detected as  14.5 Kb
-
-    ## ==Google Cloud Storage Object==
-    ## Name:                adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv 
-    ## Type:                csv 
-    ## Size:                14.5 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv?generation=1637097870604467&alt=media 
-    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv 
-    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fmill-creek%2Fdata%2Fmill_redd_survey.csv 
-    ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv/1637097870604467 
-    ## MD5 Hash:            nGmPSVEMp9ar2Ex5/c8lhg== 
-    ## Class:               STANDARD 
-    ## Created:             2021-11-16 21:24:30 
-    ## Updated:             2021-11-16 21:24:30 
-    ## Generation:          1637097870604467 
-    ## Meta Generation:     1 
-    ## eTag:                CLPxqOjonfQCEAE= 
-    ## crc32c:              buod9A==
+    ## $ location              <chr> "Above Hwy 36", "Above Hwy 36", "Above Hwy 36", …
+    ## $ starting_elevation_ft <dbl> 5200, 5200, 5200, 5200, 5200, 5200, 5200, 5200, …
+    ## $ year                  <dbl> 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, …
+    ## $ redd_count            <dbl> 0, NA, NA, NA, NA, 12, 0, 0, 7, 19, 3, 1, 0, 17,…
