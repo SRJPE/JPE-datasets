@@ -60,7 +60,7 @@ glimpse(raw_data)
 
     ## Rows: 10
     ## Columns: 25
-    ## $ `Survey Reach` <chr> "Upper Falls to Potato Patch", "Potato Patch to Lower F~
+    ## $ `Survey Reach` <chr> "Upper Falls to Potato Patch", "Potato Patch to Lower F…
     ## $ `1997`         <dbl> 102, 28, 153, 22, 26, 59, 74, 2, NA, 466
     ## $ `1998`         <dbl> 14, 15, 93, 98, 182, 270, 615, 476, 116, 1879
     ## $ `1999`         <dbl> 114, 119, 241, 167, 158, 247, 355, 106, 50, 1591
@@ -98,9 +98,35 @@ cleaner_data <- raw_data %>%
 
     ## Rows: 216
     ## Columns: 3
-    ## $ location <chr> "Upper Falls to Potato Patch", "Upper Falls to Potato Patch",~
-    ## $ year     <chr> "1997", "1998", "1999", "2000", "2001", "2002", "2003", "2004~
-    ## $ count    <dbl> 102, 14, 114, 34, 204, 311, 283, 114, 204, 62, 7, 4, 4, 41, 7~
+    ## $ location <chr> "Upper Falls to Potato Patch", "Upper Falls to Potato Patch",…
+    ## $ year     <chr> "1997", "1998", "1999", "2000", "2001", "2002", "2003", "2004…
+    ## $ count    <dbl> 102, 14, 114, 34, 204, 311, 283, 114, 204, 62, 7, 4, 4, 41, 7…
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Sample year",
+                                          "Description of location sampled",
+                                          "Number of fish observed"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables | description                     | percent\_na |
+|:----------|:--------------------------------|------------:|
+| location  | Sample year                     |           0 |
+| year      | Description of location sampled |           0 |
+| count     | Number of fish observed         |           6 |
 
 ## Explore Categorical Variables
 
@@ -178,7 +204,13 @@ cleaner_data %>%
 
 -   6.481 % of values in the `count` column are NA.
 
-### Add cleaned data back onto google cloud
+## Next steps
+
+-   Recommend adding numerical location variable such as latitude,
+    longitude; or maybe four variables (starting latitude, starting
+    longitude, ending latitude, ending longitude)
+
+## Add cleaned data back onto google cloud
 
 ``` r
 deer_adult_holding_survey_1997_to_2020 <- cleaner_data %>% glimpse()
@@ -186,9 +218,9 @@ deer_adult_holding_survey_1997_to_2020 <- cleaner_data %>% glimpse()
 
     ## Rows: 216
     ## Columns: 3
-    ## $ location <chr> "Upper Falls To Potato Patch", "Upper Falls To Potato Patch",~
-    ## $ year     <chr> "1997", "1998", "1999", "2000", "2001", "2002", "2003", "2004~
-    ## $ count    <dbl> 102, 14, 114, 34, 204, 311, 283, 114, 204, 62, 7, 4, 4, 41, 7~
+    ## $ location <chr> "Upper Falls To Potato Patch", "Upper Falls To Potato Patch",…
+    ## $ year     <chr> "1997", "1998", "1999", "2000", "2001", "2002", "2003", "2004…
+    ## $ count    <dbl> 102, 14, 114, 34, 204, 311, 283, 114, 204, 62, 7, 4, 4, 41, 7…
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
@@ -198,28 +230,28 @@ gcs_upload(deer_adult_holding_survey_1997_to_2020,
            name = "adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv")
 ```
 
-    ## i 2021-11-03 16:42:54 > File size detected as  7.4 Kb
+    ## ℹ 2021-12-01 11:01:55 > File size detected as  7.4 Kb
 
-    ## i 2021-11-03 16:42:54 > Request Status Code:  400
+    ## ℹ 2021-12-01 11:01:56 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-03 16:42:54 > File size detected as  7.4 Kb
+    ## ℹ 2021-12-01 11:01:56 > File size detected as  7.4 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv 
     ## Type:                csv 
     ## Size:                7.4 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv?generation=1635982973880096&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv?generation=1638385316244899&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv/1635982973880096 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv/1638385316244899 
     ## MD5 Hash:            9mBfuDEVfDhkNSB4znZocQ== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-03 23:42:53 
-    ## Updated:             2021-11-03 23:42:53 
-    ## Generation:          1635982973880096 
+    ## Created:             2021-12-01 19:01:56 
+    ## Updated:             2021-12-01 19:01:56 
+    ## Generation:          1638385316244899 
     ## Meta Generation:     1 
-    ## eTag:                CKCOkcCv/fMCEAE= 
+    ## eTag:                CKPbnvakw/QCEAE= 
     ## crc32c:              ZEZzyw==

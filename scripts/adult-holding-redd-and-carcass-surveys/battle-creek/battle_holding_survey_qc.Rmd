@@ -13,13 +13,14 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library(readxl)
+library(knitr)
 ```
 
 # Battle Creek Adult Holding Survey 
 
 ## Description of Monitoring Data
 
-These data were aquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019 and describe the locations of live adult Chinook Salmon seen in Battle Creek. Generally, spring-run Chinook Salmon are in holding position prior to August 15 and in spawning position after August 15.  						
+These data were acquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019 and describe the locations of live adult Chinook Salmon seen in Battle Creek. Generally, spring-run Chinook Salmon are in holding position prior to August 15 and in spawning position after August 15.  						
 
 
 **Timeframe:** 2001 - 2019
@@ -30,9 +31,7 @@ These data were aquired via snorkel and kayak surveys on Battle Creek from 2001 
 
 **Sampling Location:** Battle Creek 
 
-**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov)
-
-Any additional info?
+**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov); [RJ Bottaro](mailto:rj_bottaro@fws.gov)
 
 ## Access Cloud Data
 
@@ -69,6 +68,31 @@ cleaner_holding_data <- raw_holding_data %>%
          jacks = as.numeric(jacks)) %>%
   select(-project, -year) %>% # All projects = snorkel, year can be pulled from date
   glimpse
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_holding_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_holding_data),
+                          description = c("GPS X point",
+                                          "GPS Y point",
+                                          "Date of sample",
+                                          "Reach number (1-7)",
+                                          "River mile number",
+                                          "Total number of salmon observed",
+                                          "Number of jacks seen",
+                                          "General comments from survey crew"
+                                          ),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -238,6 +262,7 @@ table(cleaner_holding_data$reach)
 * `r round(sum(is.na(cleaner_holding_data$reach))/nrow(cleaner_holding_data), 3) * 100` % of values in the `reach` column are NA. 
 
 ### Variable: `notes`
+
 ```{r}
 unique(cleaner_holding_data$notes)[1:5]
 ```
@@ -248,7 +273,14 @@ unique(cleaner_holding_data$notes)[1:5]
 
 ## Summary of identified issues
 
-* Looks like not a lot of surveys done every year
+* Looks like a few surveys done every year
+
+## Next steps
+
+### Columns to remove
+
+- `notes` may not be needed.
+- if `latitude` and `longitude` are filled in then may not need `reach` or `river_mile`
 
 ## Save cleaned data back to google cloud 
 

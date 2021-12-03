@@ -7,7 +7,7 @@ Erin Cain
 
 ## Description of Monitoring Data
 
-These data were aquired via snorkel and kayak surveys on Battle Creek
+These data were acquired via snorkel and kayak surveys on Battle Creek
 from 2001 to 2019 and describe the locations of live adult Chinook
 Salmon seen in Battle Creek. Generally, spring-run Chinook Salmon are in
 holding position prior to August 15 and in spawning position after
@@ -22,9 +22,8 @@ timeframe, for some years there are only a few sample dates.
 
 **Sampling Location:** Battle Creek
 
-**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov)
-
-Any additional info?
+**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov);
+[RJ Bottaro](mailto:rj_bottaro@fws.gov)
 
 ## Access Cloud Data
 
@@ -56,16 +55,16 @@ raw_holding_data <-read_excel("raw_adult_spawn_hold_carcass.xlsx", sheet = "Live
 
     ## Rows: 1,339
     ## Columns: 10
-    ## $ Project    <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel", "Snorkel", "Sno~
-    ## $ Longitude  <dbl> -121.9902, -121.9793, -121.9754, -121.9743, -121.9687, -122~
-    ## $ Latitude   <dbl> 40.41491, 40.40429, 40.40363, 40.40277, 40.40204, 40.42620,~
-    ## $ Year_      <dbl> 2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001,~
-    ## $ SampleDate <dttm> 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19~
-    ## $ Reach      <chr> "R3", "R3", "R3", "R3", "R3", "R4", "R4", "R5", "R3", "R3",~
-    ## $ Rivermile  <dbl> 0.764266, 1.825265, 2.049952, 2.137590, 2.492432, 15.943712~
-    ## $ Quantity   <dbl> 4, 1, 3, 4, 5, 2, 1, 1, 3, 1, 5, 3, 4, 1, 3, 6, 3, 5, 7, 3,~
-    ## $ Jacks      <chr> "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA",~
-    ## $ Notes      <chr> "WP203", "WP204", "WP205", "WP206", "WP207", "WP33", "WP34"~
+    ## $ Project    <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel", "Snorkel", "Sno…
+    ## $ Longitude  <dbl> -121.9902, -121.9793, -121.9754, -121.9743, -121.9687, -122…
+    ## $ Latitude   <dbl> 40.41491, 40.40429, 40.40363, 40.40277, 40.40204, 40.42620,…
+    ## $ Year_      <dbl> 2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001,…
+    ## $ SampleDate <dttm> 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19…
+    ## $ Reach      <chr> "R3", "R3", "R3", "R3", "R3", "R4", "R4", "R5", "R3", "R3",…
+    ## $ Rivermile  <dbl> 0.764266, 1.825265, 2.049952, 2.137590, 2.492432, 15.943712…
+    ## $ Quantity   <dbl> 4, 1, 3, 4, 5, 2, 1, 1, 3, 1, 5, 3, 4, 1, 3, 6, 3, 5, 7, 3,…
+    ## $ Jacks      <chr> "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA",…
+    ## $ Notes      <chr> "WP203", "WP204", "WP205", "WP206", "WP207", "WP33", "WP34"…
 
 ## Data transformations
 
@@ -83,14 +82,51 @@ cleaner_holding_data <- raw_holding_data %>%
 
     ## Rows: 1,339
     ## Columns: 8
-    ## $ longitude  <dbl> -121.9902, -121.9793, -121.9754, -121.9743, -121.9687, -122~
-    ## $ latitude   <dbl> 40.41491, 40.40429, 40.40363, 40.40277, 40.40204, 40.42620,~
-    ## $ date       <date> 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19~
-    ## $ reach      <chr> "R3", "R3", "R3", "R3", "R3", "R4", "R4", "R5", "R3", "R3",~
-    ## $ river_mile <dbl> 0.764266, 1.825265, 2.049952, 2.137590, 2.492432, 15.943712~
-    ## $ count      <dbl> 4, 1, 3, 4, 5, 2, 1, 1, 3, 1, 5, 3, 4, 1, 3, 6, 3, 5, 7, 3,~
-    ## $ jacks      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ notes      <chr> "WP203", "WP204", "WP205", "WP206", "WP207", "WP33", "WP34"~
+    ## $ longitude  <dbl> -121.9902, -121.9793, -121.9754, -121.9743, -121.9687, -122…
+    ## $ latitude   <dbl> 40.41491, 40.40429, 40.40363, 40.40277, 40.40204, 40.42620,…
+    ## $ date       <date> 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19…
+    ## $ reach      <chr> "R3", "R3", "R3", "R3", "R3", "R4", "R4", "R5", "R3", "R3",…
+    ## $ river_mile <dbl> 0.764266, 1.825265, 2.049952, 2.137590, 2.492432, 15.943712…
+    ## $ count      <dbl> 4, 1, 3, 4, 5, 2, 1, 1, 3, 1, 5, 3, 4, 1, 3, 6, 3, 5, 7, 3,…
+    ## $ jacks      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ notes      <chr> "WP203", "WP204", "WP205", "WP206", "WP207", "WP33", "WP34"…
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_holding_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_holding_data),
+                          description = c("GPS X point",
+                                          "GPS Y point",
+                                          "Date of sample",
+                                          "Reach number (1-7)",
+                                          "River mile number",
+                                          "Total number of salmon observed",
+                                          "Number of jacks seen",
+                                          "General comments from survey crew"
+                                          ),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables   | description                       | percent\_na |
+|:------------|:----------------------------------|------------:|
+| longitude   | GPS X point                       |           0 |
+| latitude    | GPS Y point                       |           0 |
+| date        | Date of sample                    |           0 |
+| reach       | Reach number (1-7)                |           0 |
+| river\_mile | River mile number                 |           0 |
+| count       | Total number of salmon observed   |           0 |
+| jacks       | Number of jacks seen              |          65 |
+| notes       | General comments from survey crew |          40 |
 
 ## Explore Numeric Variables:
 
@@ -316,7 +352,15 @@ unique(cleaner_holding_data$notes)[1:5]
 
 ## Summary of identified issues
 
--   Looks like not a lot of surveys done every year
+-   Looks like a few surveys done every year
+
+## Next steps
+
+### Columns to remove
+
+-   `notes` may not be needed.
+-   if `latitude` and `longitude` are filled in then may not need
+    `reach` or `river_mile`
 
 ## Save cleaned data back to google cloud
 
@@ -326,14 +370,14 @@ battle_holding <- cleaner_holding_data %>% select(date, reach, river_mile, count
 
     ## Rows: 1,339
     ## Columns: 8
-    ## $ date       <date> 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19~
-    ## $ reach      <chr> "R3", "R3", "R3", "R3", "R3", "R4", "R4", "R5", "R3", "R3",~
-    ## $ river_mile <dbl> 0.764266, 1.825265, 2.049952, 2.137590, 2.492432, 15.943712~
-    ## $ count      <dbl> 4, 1, 3, 4, 5, 2, 1, 1, 3, 1, 5, 3, 4, 1, 3, 6, 3, 5, 7, 3,~
-    ## $ jacks      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ latitude   <dbl> 40.41491, 40.40429, 40.40363, 40.40277, 40.40204, 40.42620,~
-    ## $ longitude  <dbl> -121.9902, -121.9793, -121.9754, -121.9743, -121.9687, -122~
-    ## $ notes      <chr> "WP203", "WP204", "WP205", "WP206", "WP207", "WP33", "WP34"~
+    ## $ date       <date> 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19, 2001-07-19…
+    ## $ reach      <chr> "R3", "R3", "R3", "R3", "R3", "R4", "R4", "R5", "R3", "R3",…
+    ## $ river_mile <dbl> 0.764266, 1.825265, 2.049952, 2.137590, 2.492432, 15.943712…
+    ## $ count      <dbl> 4, 1, 3, 4, 5, 2, 1, 1, 3, 1, 5, 3, 4, 1, 3, 6, 3, 5, 7, 3,…
+    ## $ jacks      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ latitude   <dbl> 40.41491, 40.40429, 40.40363, 40.40277, 40.40204, 40.42620,…
+    ## $ longitude  <dbl> -121.9902, -121.9793, -121.9754, -121.9743, -121.9687, -122…
+    ## $ notes      <chr> "WP203", "WP204", "WP205", "WP206", "WP207", "WP33", "WP34"…
 
 ``` r
 gcs_list_objects()
