@@ -130,6 +130,48 @@ cleaner_video_data <- raw_video_data %>%
     ## $ passage_direction  <chr> "up", "down", "up", "down", "up", "down", "up", "do~
     ## $ count              <dbl> 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, ~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_video_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_video_data),
+                          description = c("Date",
+                                          "Time block",
+                                          "Viewing condition",
+                                          "Time passed",
+                                          "Adipose present or not",
+                                          "Sex of the fish",
+                                          "Describes fish condition as it relates to spawning",
+                                          "Whether or not the total width of Jack plate is 22 inch",
+                                          "Run of the fish",
+                                          "Whether fish is moving upstream or downstream",
+                                          "Passage count"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables           | description                                             | percent\_na |
+|:--------------------|:--------------------------------------------------------|------------:|
+| date                | Date                                                    |           0 |
+| time\_block         | Time block                                              |           0 |
+| viewing\_condition  | Viewing condition                                       |           0 |
+| time\_passed        | Time passed                                             |           0 |
+| adipose             | Adipose present or not                                  |           0 |
+| sex                 | Sex of the fish                                         |           0 |
+| spawning\_condition | Describes fish condition as it relates to spawning      |          22 |
+| jack\_size          | Whether or not the total width of Jack plate is 22 inch |           1 |
+| run                 | Run of the fish                                         |          21 |
+| passage\_direction  | Whether fish is moving upstream or downstream           |           0 |
+| count               | Passage count                                           |           0 |
+
 ## Explore Numeric Variables:
 
 ``` r
@@ -182,6 +224,7 @@ August.
 ``` r
 # Boxplots of daily counts by year
 cleaner_video_data %>% group_by(date, passage_direction) %>%
+  filter(run == "SR") %>% 
   mutate(daily_count = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
@@ -189,7 +232,7 @@ cleaner_video_data %>% group_by(date, passage_direction) %>%
   geom_boxplot() + 
   theme_minimal() +
   theme(text = element_text(size = 23)) + 
-  labs(title = "Daily Count of Upstream Passage Sumarized by Year All Runs") 
+  labs(title = "Daily Count of Upstream Passage Sumarized by Year Spring Run") 
 ```
 
 ![](clear-creek-qc-checklist_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
@@ -197,13 +240,13 @@ cleaner_video_data %>% group_by(date, passage_direction) %>%
 ``` r
 cleaner_video_data  %>%
   mutate(year = as.factor(year(date))) %>%
-  filter(run %in% c("LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
+  filter(run == "SR") %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
   group_by(year = year(date), passage_direction, run) %>%
   summarise(total_catch = sum(count)) %>%
   ggplot(aes(x = year, y = total_catch, fill = passage_direction)) + 
   geom_col(position = "dodge") + 
   theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
+  labs(title = "Spring Run Total Yearly Fish Counts",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 

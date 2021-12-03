@@ -112,6 +112,40 @@ cleaner_video_data <- raw_video_data %>%
     ## $ passage_direction <chr> "up", "down", "up", "down", "up", "down", "up", "dow~
     ## $ count             <dbl> 1, 0, 1, 0, 5, 0, 1, 0, 2, 0, 2, 0, 2, 0, 1, 0, 2, 0~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_video_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_video_data),
+                          description = c("Date",
+                                          "Time",
+                                          "Adipose fin present or not",
+                                          "Comments",
+                                          "Run of the fish",
+                                          "Whether fish is moving upstream or downstream",
+                                          "Passage Counts"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables          | description                                   | percent\_na |
+|:-------------------|:----------------------------------------------|------------:|
+| date               | Date                                          |           0 |
+| time               | Time                                          |           4 |
+| adipose            | Adipose fin present or not                    |           0 |
+| comments           | Comments                                      |          88 |
+| run                | Run of the fish                               |           0 |
+| passage\_direction | Whether fish is moving upstream or downstream |           0 |
+| count              | Passage Counts                                |           0 |
+
 ## Explore Numeric Variables:
 
 ``` r

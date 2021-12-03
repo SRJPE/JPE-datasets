@@ -88,6 +88,32 @@ cleaner_video_data <- raw_video_data %>%
   glimpse() 
   
 ```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_video_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_video_data),
+                          description = c("Date",
+                                          "Time block",
+                                          "Viewing condition",
+                                          "Time passed",
+                                          "Adipose present or not",
+                                          "Sex of the fish",
+                                          "Describes fish condition as it relates to spawning",
+                                          "Whether or not the total width of Jack plate is 22 inch",
+                                          "Run of the fish",
+                                          "Whether fish is moving upstream or downstream",
+                                          "Passage count"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
 
 ## Explore Numeric Variables: {.tabset}
 
@@ -133,6 +159,7 @@ Spring Run Chinook appear to be seen moving upstream April through August.
 ```{r}
 # Boxplots of daily counts by year
 cleaner_video_data %>% group_by(date, passage_direction) %>%
+  filter(run == "SR") %>% 
   mutate(daily_count = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
@@ -140,19 +167,19 @@ cleaner_video_data %>% group_by(date, passage_direction) %>%
   geom_boxplot() + 
   theme_minimal() +
   theme(text = element_text(size = 23)) + 
-  labs(title = "Daily Count of Upstream Passage Sumarized by Year All Runs") 
+  labs(title = "Daily Count of Upstream Passage Sumarized by Year Spring Run") 
 ```
 
 ```{r}
 cleaner_video_data  %>%
   mutate(year = as.factor(year(date))) %>%
-  filter(run %in% c("LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
+  filter(run == "SR") %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
   group_by(year = year(date), passage_direction, run) %>%
   summarise(total_catch = sum(count)) %>%
   ggplot(aes(x = year, y = total_catch, fill = passage_direction)) + 
   geom_col(position = "dodge") + 
   theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
+  labs(title = "Spring Run Total Yearly Fish Counts",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 

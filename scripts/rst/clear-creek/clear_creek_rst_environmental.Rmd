@@ -77,6 +77,10 @@ raw_environmental_lower_2 <- read_excel("raw_lower_clear_rst_data.xlsx",
 ## Data transformations
 
 ```{r}
+raw_environmental_upper_2 <- raw_environmental_upper_2 %>% 
+  mutate(FlowEndMeter = as.numeric((FlowEndMeter)),
+         FlowSetTime = as.numeric((FlowSetTime)))
+
 raw_rst_environmental <- bind_rows(raw_environmental_upper_1, raw_environmental_upper_2,
                                    raw_environmental_lower_1, raw_environmental_lower_2) 
 
@@ -94,7 +98,58 @@ cleaner_rst_environmental <- raw_rst_environmental %>%
 
 ```
 
+## Data Dictionary
 
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_rst_environmental %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_environmental),
+                          description = c("The station code, two stations Lower Clear Creek (LCC) and Upper Clear Creek (UCC)",
+                                          "The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)",
+                                          "Trap start date",
+                                          "Trap start time",
+                                          "Sample date",
+                                          "Sample time",
+                                          "Number on the cone revolution counter at SampleDate and SampleTime",
+                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity test",
+                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity test",
+                                          "How long the General Oceanics mechanical flow meter was in the water taking a reading, used to calculate water velocity in front of the cone",
+                                          "Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875",
+                                          "Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime",
+                                          "Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting",
+                                          "A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table",
+                                          "Stage of the Moon on the SampleDate and SampleTime",
+                                          "River depth (ft) from inside of the river left (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "River depth (ft) from directly in the center of cone off crossbeam #2 (cone crossbeam)",
+                                          "River depth (ft) from inside of the river right (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "The type of sample regime",
+                                          "The type of flow habitat the trap fished in",
+                                          "Was trap fishing in the thalweg at SampleDate and SampleTime",
+                                          "The time of day relative to the sun",
+                                          "The depth of the bottom of the cone (measured in Inches) Depth in relation to the cone (not to the surface of the water)",
+                                          "The type of debris found in the live-box",
+                                          "The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically)",
+                                          "The average time per cone rotation (average of three rotations) - units are seconds",
+                                          "Was there a problem with the trap at SampleDate and SampleTime",
+                                          "If sample week has more than one efficiency, which part of week is sample from",
+                                          "Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage",
+                                          "Number fish released",
+                                          "Trap comments",
+                                          "A code for the condition of the trap on the SampleDate and SampleTime",
+                                          "Beginning cone revolution counter number, usually zero",
+                                          "Trap fished or not",
+                                          "Partial sample"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
 
 ## Explore Numeric Variables: {.tabset}
 
@@ -202,7 +257,7 @@ summary(cleaner_rst_environmental$flow_set_time)
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_rst_environmental$counter))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `counter` column are NA. 
+* `r round(sum(is.na(cleaner_rst_environmental$flow_set_time))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `flow_set_time` column are NA. 
 
 
 ### Variable: `velocity`
@@ -511,7 +566,7 @@ summary(cleaner_rst_environmental$avg_time_per_rev)
 Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage							
 						
 
-**Plotting distribution of counter**
+**Plotting distribution of baileys_eff**
 
 ```{r}
 cleaner_rst_environmental %>% 
@@ -571,7 +626,7 @@ cleaner_rst_environmental %>%
 
 
 
-**Numeric Summary of counter over Period of Record**
+**Numeric Summary of num_released over Period of Record**
 
 ```{r}
 summary(cleaner_rst_environmental$num_released)
@@ -589,7 +644,7 @@ Beginning cone revolution counter number, usually zero.
 
 All values either 0 or NA. 
 
-**Numeric Summary of counter over Period of Record**
+**Numeric Summary of start_counter over Period of Record**
 
 ```{r}
 summary(cleaner_rst_environmental$start_counter)

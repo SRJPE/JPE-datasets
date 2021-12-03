@@ -145,6 +145,60 @@ cleaner_carcass_data <- raw_carcass_data %>%
     ## $ otolith_number       <dbl> 72, 57, NA, 91, 79, 71, 68, 67, 59, 52, 38, 32, 1~
     ## $ comments             <chr> "SPRING GREEN", "SPRING GREEN", "SPRING GREEN", "~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_carcass_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_carcass_data),
+                          description = c("Week",
+                                          "Date",
+                                          "Each section number describes a different portion of the river",
+                                          "Each survey ID is a unique ID for each survey day",
+                                          "Each Individual ID describes a tagged fish",
+                                          "All values are spring run",
+                                          "Is the fish chopped or tagged",
+                                          "A number describing the distinct tag applied to fish",
+                                          "Sex of the fish",
+                                          "Spawn status of the fish",
+                                          "Fork length of the fish",
+                                          "TODO: figure out what condition means",
+                                          "Adipose fin clip",
+                                          "Number corresponding to head tags",
+                                          "Number corresponding to scale tags",
+                                          "Number corresponding to otolith",
+                                          "Comment describing if a fish is spring green or not"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables              | description                                                    | percent\_na |
+|:-----------------------|:---------------------------------------------------------------|------------:|
+| week                   | Week                                                           |           0 |
+| date                   | Date                                                           |           0 |
+| section                | Each section number describes a different portion of the river |           0 |
+| survey\_id             | Each survey ID is a unique ID for each survey day              |           0 |
+| individual\_id         | Each Individual ID describes a tagged fish                     |           0 |
+| run                    | All values are spring run                                      |           0 |
+| disposition            | Is the fish chopped or tagged                                  |           0 |
+| distinct\_tag\_applied | A number describing the distinct tag applied to fish           |          73 |
+| sex                    | Sex of the fish                                                |           0 |
+| spawn\_status          | Spawn status of the fish                                       |           5 |
+| fork\_length           | Fork length of the fish                                        |          72 |
+| condition              | TODO: figure out what condition means                          |           0 |
+| adipose\_fin\_clip     | Adipose fin clip                                               |           0 |
+| head\_number           | Number corresponding to head tags                              |          78 |
+| scale\_number          | Number corresponding to scale tags                             |          78 |
+| otolith\_number        | Number corresponding to otolith                                |          78 |
+| comments               | Comment describing if a fish is spring green or not            |           0 |
+
 ## Explore Numeric Variables:
 
 ``` r
@@ -284,7 +338,7 @@ There are 102 unique individual ids.
 
 ### Variable: `individual_id`
 
-Each section number describes a different portion of the river
+Each Individual ID is an ID for the tagged fish
 
 There are 208 unique individual ids.
 
@@ -442,7 +496,7 @@ There are 47 unique head numbers corresponding to head tags.
 
 ### Variable: `scale_number`
 
-There are 46 unique head numbers corresponding to head tags.
+There are 46 unique scale numbers corresponding to scale tags.
 
 **NA and Unknown Values**
 

@@ -91,6 +91,38 @@ cleaner_carcass_data <- raw_carcass_data %>%
   glimpse()
 ```
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_carcass_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_carcass_data),
+                          description = c("Week",
+                                          "Date",
+                                          "Each section number describes a different portion of the river",
+                                          "Each survey ID is a unique ID for each survey day",
+                                          "Each Individual ID describes a tagged fish",
+                                          "All values are spring run",
+                                          "Is the fish chopped or tagged",
+                                          "A number describing the distinct tag applied to fish",
+                                          "Sex of the fish",
+                                          "Spawn status of the fish",
+                                          "Fork length of the fish",
+                                          "TODO: figure out what condition means",
+                                          "Adipose fin clip",
+                                          "Number corresponding to head tags",
+                                          "Number corresponding to scale tags",
+                                          "Number corresponding to otolith",
+                                          "Comment describing if a fish is spring green or not"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
 
 ## Explore Numeric Variables: {.tabset}
 
@@ -206,7 +238,7 @@ There are `r length(unique(cleaner_carcass_data$survey_id))` unique individual i
 
 ### Variable: `individual_id`
 
-Each section number describes a different portion of the river
+Each Individual ID is an ID for the tagged fish
 
 There are `r length(unique(cleaner_carcass_data$individual_id))` unique individual ids. 
 
@@ -334,7 +366,7 @@ There are `r length(unique(cleaner_carcass_data$head_number))` unique head numbe
 
 ### Variable: `scale_number`
 
-There are `r length(unique(cleaner_carcass_data$scale_number))` unique head numbers corresponding to head tags. 
+There are `r length(unique(cleaner_carcass_data$scale_number))` unique scale numbers corresponding to scale tags. 
 
 **NA and Unknown Values**
 

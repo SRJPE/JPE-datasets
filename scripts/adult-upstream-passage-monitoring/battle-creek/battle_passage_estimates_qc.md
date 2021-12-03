@@ -168,6 +168,44 @@ cleaner_passage_estimates <- cleaner_passage_estimates %>%
     ## $ raw_count              <dbl> 3, 3, 0, 4, 0, 0, 3, 1, 0, 1, 2, 0, 0, 1, 0, 1,~
     ## $ passage_estimate       <dbl> 0, 3, NA, 0, 0, NA, 0, 1, NA, 0, 2, NA, 0, 1, N~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_passage_estimates %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_estimates),
+                          description = c("Weeks",
+                                          "Method of observation",
+                                          "Hours of passage",
+                                          "Hours of taped passage",
+                                          "Start Date",
+                                          "End Date",
+                                          "Adipose fin clipped or not",
+                                          "Raw count",
+                                          "Passage estimate"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables                 | description                | percent\_na |
+|:--------------------------|:---------------------------|------------:|
+| week                      | Weeks                      |           0 |
+| method                    | Method of observation      |           0 |
+| hours\_of\_passage        | Hours of passage           |          41 |
+| hours\_of\_taped\_passage | Hours of taped passage     |          41 |
+| start\_date               | Start Date                 |           0 |
+| end\_date                 | End Date                   |           0 |
+| adipose                   | Adipose fin clipped or not |           0 |
+| raw\_count                | Raw count                  |           0 |
+| passage\_estimate         | Passage estimate           |          34 |
+
 ## Explore Numeric Variables:
 
 ``` r

@@ -10,7 +10,7 @@ Erin Cain
 Yuba river upstream passage data provided by Mike Healey in a xlsx doc.
 No associated description or metadata. We were warned by yuba river
 experts that this data has a lot of inconsistencies and they do not
-think the raw data here accuratly reflects the system. They recomend
+think the raw data here accuratly reflects the system. They recommend
 using values calculated in [this
 report.](https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring/yuba-river/data-raw/2020%20Update%20LYR%20Chinook%20Salmon%20Run%20Differentiation_December%202020.pdf)
 
@@ -96,8 +96,9 @@ cleaner_passage_data <- raw_passage_data %>%
          passage_direction = direction_of_passage) %>%
   mutate(count = 1, 
          date = as.Date(date), 
-         time = hms::as_hms(time)) %>%
-  select(-percent) %>% # remove because just hours/24
+         time = hms::as_hms(time),
+         depth_m = depth_mm/1000) %>%
+  select(-percent, -depth_mm) %>% # remove because just hours/24, converted mm to m
   glimpse()
 ```
 
@@ -105,7 +106,6 @@ cleaner_passage_data <- raw_passage_data %>%
     ## Columns: 11
     ## $ date              <date> 2004-01-01, 2004-01-01, 2004-01-01, 2004-01-01, 200~
     ## $ time              <time> 05:34:00, 10:20:00, 10:53:00, 11:20:00, 11:33:00, 1~
-    ## $ depth_mm          <dbl> 146, 131, 75, 130, 163, 92, 140, 143, 62, 153, 115, ~
     ## $ length_cm         <dbl> 87, 78, 45, 57, 71, 40, 61, 62, 37, 67, 50, 71, 104,~
     ## $ catagory          <chr> "Other / unidentifiab", "Other / unidentifiab", "Oth~
     ## $ passage_direction <chr> "Up", "Down", "Up", "Up", "Up", "Up", "Up", "Up", "U~
@@ -114,6 +114,50 @@ cleaner_passage_data <- raw_passage_data %>%
     ## $ position_in_frame <dbl> 12, 15, 14, 13, 14, 14, 17, 14, 10, 10, 6, 7, 12, 10~
     ## $ hours             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ count             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    ## $ depth_m           <dbl> 0.146, 0.131, 0.075, 0.130, 0.163, 0.092, 0.140, 0.1~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_passage_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_data),
+                          description = c("Date of sampling",
+                                          "Time of sampling",
+                                          "Length of fish in CM",
+                                          "Category",
+                                          "State if the fish is moving upstream (Up) or downstream (Down)",
+                                          "Refers to which fish ladder observation occured on",
+                                          "Speed of fish in meter per second",
+                                          "Fish position in video frame.",
+                                          "Number of hours in day that were monitored",
+                                          "Passage counts",
+                                          "Depth in m"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables           | description                                                    | percent\_na |
+|:--------------------|:---------------------------------------------------------------|------------:|
+| date                | Date of sampling                                               |           0 |
+| time                | Time of sampling                                               |           0 |
+| length\_cm          | Length of fish in CM                                           |           0 |
+| catagory            | Category                                                       |           0 |
+| passage\_direction  | State if the fish is moving upstream (Up) or downstream (Down) |           0 |
+| ladder              | Refers to which fish ladder observation occured on             |           0 |
+| speed\_m\_per\_s    | Speed of fish in meter per second                              |          24 |
+| position\_in\_frame | Fish position in video frame.                                  |          24 |
+| hours               | Number of hours in day that were monitored                     |          17 |
+| count               | Passage counts                                                 |           0 |
+| depth\_m            | Depth in m                                                     |           0 |
 
 ## Explore Numeric Variables:
 
@@ -121,8 +165,8 @@ cleaner_passage_data <- raw_passage_data %>%
 cleaner_passage_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "depth_mm"          "length_cm"         "speed_m_per_s"    
-    ## [4] "position_in_frame" "hours"             "count"
+    ## [1] "length_cm"         "speed_m_per_s"     "position_in_frame"
+    ## [4] "hours"             "count"             "depth_m"
 
 ### Variable: `count`
 
@@ -151,8 +195,9 @@ cleaner_passage_data %>% filter(year(date) > 2010) %>% # show only last 10 years
 
 ![](yuba_adult_passage_data_qc_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-Spring Run Chinook appear to be seen moving upstream April through
-September.
+``` r
+#Spring Run Chinook appear to be seen moving upstream April through September.
+```
 
 ``` r
 # Boxplots of daily counts by year
@@ -206,35 +251,37 @@ cleaner_passage_data %>% group_by(date) %>%
 -   0 % of values in the `count` column are NA. Expected given I created
     the column assuming each row is one fish.
 
-### Variable: `depth_mm`
+### Variable: `depth_m`
 
-**Plotting depth\_mm over Period of Record**
+**Plotting depth\_m over Period of Record**
 
 ``` r
 cleaner_passage_data %>%
-  ggplot(aes(x = depth_mm)) + 
-  geom_histogram(breaks=seq(25, 275, by=2)) + 
-  scale_x_continuous(breaks=seq(25, 275, by=25)) +
+  ggplot(aes(x = depth_m)) + 
+  geom_histogram() + 
+  scale_x_continuous(breaks=seq(0.025, 0.275, by=0.025)) +
   theme_minimal() +
   labs(title = "depth distribution") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
 ![](yuba_adult_passage_data_qc_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
-**Numeric Summary of depth\_mm over Period of Record**
+**Numeric Summary of depth\_m over Period of Record**
 
 ``` r
-summary(cleaner_passage_data$depth_mm)
+summary(cleaner_passage_data$depth_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##     1.0    57.0    77.0   105.4   157.0   255.0     747
+    ##  0.0010  0.0570  0.0770  0.1054  0.1570  0.2550     747
 
 **NA and Unknown Values**
 
--   0.3 % of values in the `depth_mm` column are NA.
+-   0.3 % of values in the `depth_m` column are NA.
 
 ### Variable: `length_cm`
 
@@ -585,7 +632,6 @@ yuba_upstream_passage <- cleaner_passage_data %>% glimpse()
     ## Columns: 12
     ## $ date              <date> 2004-01-01, 2004-01-01, 2004-01-01, 2004-01-01, 200~
     ## $ time              <time> 11:20:00, 11:35:00, 12:20:00, 12:38:00, 14:14:00, 1~
-    ## $ depth_mm          <dbl> 130, 92, 143, 153, 190, 186, 167, 123, 135, 120, 101~
     ## $ length_cm         <dbl> 57, 40, 62, 67, 83, 81, 73, 53, 59, 52, 44, 76, 55, ~
     ## $ catagory          <chr> "chn ac -p/+s", "chn -p/+s", "chn -p/+s", "chn -p/+s~
     ## $ passage_direction <chr> "up", "up", "up", "up", "up", "up", "up", "up", "up"~
@@ -594,6 +640,7 @@ yuba_upstream_passage <- cleaner_passage_data %>% glimpse()
     ## $ position_in_frame <dbl> 13, 14, 14, 10, 10, 11, 11, 13, 11, 8, 16, 12, 19, 1~
     ## $ hours             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ count             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    ## $ depth_m           <dbl> 0.130, 0.092, 0.143, 0.153, 0.190, 0.186, 0.167, 0.1~
     ## $ adipose           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 
 ``` r

@@ -110,6 +110,30 @@ cleaner_passage_estimates <- cleaner_passage_estimates %>%
   rename("raw_count" = actual_number) %>%
   glimpse()
 ```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_passage_estimates %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_estimates),
+                          description = c("Weeks",
+                                          "Method of observation",
+                                          "Hours of passage",
+                                          "Hours of taped passage",
+                                          "Start Date",
+                                          "End Date",
+                                          "Adipose fin clipped or not",
+                                          "Raw count",
+                                          "Passage estimate"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
 
 ## Explore Numeric Variables: {.tabset}
 

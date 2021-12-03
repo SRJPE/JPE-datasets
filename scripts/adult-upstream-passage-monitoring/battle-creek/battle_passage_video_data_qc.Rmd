@@ -83,6 +83,29 @@ cleaner_video_data <- raw_video_data %>%
                values_to = "count") %>%
   glimpse()
 ```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_video_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_video_data),
+                          description = c("Date",
+                                          "Time",
+                                          "Adipose fin present or not",
+                                          "Comments",
+                                          "Run of the fish",
+                                          "Whether fish is moving upstream or downstream",
+                                          "Passage Counts"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
 
 ## Explore Numeric Variables: {.tabset}
 
