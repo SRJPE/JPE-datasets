@@ -1,4 +1,4 @@
-butte-creek-rst-qc-checklist
+Butte Creek RST QC
 ================
 Inigo Peng
 10/19/2021
@@ -41,7 +41,7 @@ gcs_list_objects()
 gcs_get_object(object_name = "rst/butte-creek/data-raw/CDFW_Butte_Creek_RST_Captures.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "butte_creek_rst_raw.xlsx",
-               Overwrite = TRUE)
+               overwrite = TRUE)
 ```
 
 ``` r
@@ -134,6 +134,74 @@ cleaner_data <- raw_data %>%
     ## $ rpms_start       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ rpms_end         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ comments         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Date of sampling",
+                                          "RST Station, BCOKIE-1, BCADAMS, BCOKIE-2",
+                                          "Status of RST (Check - trap was checked normally continued fishing, Pull - trap was pulled after trap check, Set - trap was set upon arrival",
+                                          "TRUE if fish is dead in RST",
+                                          "Fish Count",
+                                          "Measure of fork length of fish in mm",
+                                          "Weight of fish in grams",
+                                          "?TODO, adipose or none",
+                                          "Lifestage, originally coded but we replaced code with lifestge name (1 - Fry with visible yolk sac, 2 - Fry with no visible yolk sac, 3 - Parr, 4 - Fingerling, 5 - Smolt, AD - Adult, n/p - not provided , UNK - unknown)",
+                                          "Time trap sampled",
+                                          "Unique ID for each trap",
+                                          "Weather, originally coded but we replaced code with weather type (CLD – Cloudy, CLR – Clear, FOG – Foggy, RAN – Rainy)",
+                                          "Water Temperature in C",
+                                          "Water turbidity in NTU",
+                                          "Secchi Depth, originally recorded in feet and standardized to meter",
+                                          "Velocity measured in feet/second",
+                                          "FALSE if north screen not working (not clearning debris)",
+                                          "FALSE if south screen not working (not clearning debris)",
+                                          "Number of revolutions the RST cone had made since last being checked",
+                                          "Visual assesment of debris in trap (very heavy, heavy, light, medium, none)",
+                                          "Rotations per minute of RST cone at start of trapping window",
+                                          "Rotations per minute of RST cone at end of trapping window",
+                                          "Comment from survey crew"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables         | description                                                                                                                                                                                                                | percent\_na |
+|:------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------:|
+| date              | Date of sampling                                                                                                                                                                                                           |           0 |
+| station           | RST Station, BCOKIE-1, BCADAMS, BCOKIE-2                                                                                                                                                                                   |           0 |
+| trap\_status      | Status of RST (Check - trap was checked normally continued fishing, Pull - trap was pulled after trap check, Set - trap was set upon arrival                                                                               |           0 |
+| dead              | TRUE if fish is dead in RST                                                                                                                                                                                                |           0 |
+| count             | Fish Count                                                                                                                                                                                                                 |           0 |
+| fork\_length      | Measure of fork length of fish in mm                                                                                                                                                                                       |           5 |
+| weight            | Weight of fish in grams                                                                                                                                                                                                    |          40 |
+| mark\_code        | ?TODO, adipose or none                                                                                                                                                                                                     |           0 |
+| lifestage         | Lifestage, originally coded but we replaced code with lifestge name (1 - Fry with visible yolk sac, 2 - Fry with no visible yolk sac, 3 - Parr, 4 - Fingerling, 5 - Smolt, AD - Adult, n/p - not provided , UNK - unknown) |           0 |
+| time              | Time trap sampled                                                                                                                                                                                                          |           0 |
+| gear\_id          | Unique ID for each trap                                                                                                                                                                                                    |           8 |
+| weather           | Weather, originally coded but we replaced code with weather type (CLD – Cloudy, CLR – Clear, FOG – Foggy, RAN – Rainy)                                                                                                     |           4 |
+| temperature       | Water Temperature in C                                                                                                                                                                                                     |           6 |
+| turbidity         | Water turbidity in NTU                                                                                                                                                                                                     |          33 |
+| secchi            | Secchi Depth, originally recorded in feet and standardized to meter                                                                                                                                                        |          98 |
+| velocity          | Velocity measured in feet/second                                                                                                                                                                                           |          61 |
+| north\_brush      | FALSE if north screen not working (not clearning debris)                                                                                                                                                                   |           0 |
+| south\_brush      | FALSE if south screen not working (not clearning debris)                                                                                                                                                                   |           0 |
+| trap\_revolutions | Number of revolutions the RST cone had made since last being checked                                                                                                                                                       |          65 |
+| debris            | Visual assesment of debris in trap (very heavy, heavy, light, medium, none)                                                                                                                                                |           1 |
+| rpms\_start       | Rotations per minute of RST cone at start of trapping window                                                                                                                                                               |          55 |
+| rpms\_end         | Rotations per minute of RST cone at end of trapping window                                                                                                                                                                 |          59 |
+| comments          | Comment from survey crew                                                                                                                                                                                                   |          91 |
 
 ## Explore `date`
 
@@ -262,7 +330,7 @@ table(cleaner_data$mark_code)
 
 **NA and Unknown Values**
 
--   0 % of values in the `markcode` column are NA.
+-   76.2 % of values in the `markcode` column are NA.
 
 ### Variable `lifestage`
 
@@ -445,13 +513,12 @@ cleaner_data %>% select_if(is.numeric) %>% colnames()
 
 ``` r
 cleaner_data %>% 
+  group_by(date) %>% 
+  summarise(total_daily_catch = sum(count)) %>% 
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
-  group_by(date) %>% 
-  mutate(total_daily_catch = sum(count)) %>% 
-  ungroup() %>% 
   ggplot(aes(x = fake_date, y = total_daily_catch)) +
   geom_col()+
   # scale_x_date(labels = date_format("%b"), limits = c(as.Date("1995-10-01"), as.Date("2016-06-01")), date_breaks = "1 month")+
@@ -656,8 +723,7 @@ cleaner_data %>%
 cleaner_data %>% 
   filter(temperature < 100) %>%  #filter out 36 points with water temperature > 100 degrees (entry error?)
   group_by(date) %>% 
-  mutate(daily_avg_temp = mean(temperature)) %>% 
-  ungroup() %>% 
+  summarise(daily_avg_temp = mean(temperature)) %>% 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900,1901),
          fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
@@ -711,8 +777,7 @@ Note: max 805 is very high. Likely an error.
 ``` r
 cleaner_data %>% 
   group_by(date) %>% 
-  mutate(daily_avg_turb = mean(turbidity)) %>% 
-  ungroup() %>% 
+  summarise(daily_avg_turb = mean(turbidity)) %>% 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900,1901),
          fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
@@ -786,8 +851,7 @@ cleaner_data %>%
 cleaner_data %>% 
   filter(velocity < 5) %>% #filtered out one point to show a more clear graph
   group_by(date) %>% 
-  mutate(daily_avg_velocity = mean(velocity)) %>% 
-  ungroup() %>% 
+  summarise(daily_avg_velocity = mean(velocity)) %>% 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900,1901),
          fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
@@ -959,7 +1023,7 @@ summary(cleaner_data$rpms_end)
 
 ### Variable `secchi`
 
-**Description:** Secchi depth in feet
+**Description:** Secchi depth in feet, convert to meters below
 
 ``` r
 cleaner_data %>% 
@@ -988,11 +1052,26 @@ summary(cleaner_data$secchi)
 
 **Issues Identified**
 
--   50 points in water temperature reaches over 50 degrees celsius
+-   50 points in water temperature reaches over 50 degrees celsius (TODO
+    investigate and potentially convert)
 
 -   Turbidity data lacks in some years
 
--   Fish count number is extremely high (up to 220,000 fish in one day)?
+-   Secchi Depth in Feet, convert to Meters below
+
+``` r
+cleaner_data <- cleaner_data %>%
+  mutate(secchi = secchi / 3.281)
+```
+
+## Next steps
+
+-   Come up with a plan for generating passage estimates.
+
+### Columns to remove
+
+-   Might be able to remove some columns describing environmental
+    variables.
 
 ### Add cleaned data back into google cloud
 
