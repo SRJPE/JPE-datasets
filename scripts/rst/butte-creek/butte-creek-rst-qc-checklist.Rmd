@@ -34,6 +34,13 @@ This dataset contains data for all Chinook salmon that were captured in the Butt
 
 **Data Contact:** [Jessica Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
+**Additional Notes:**
+
+* QA/QC on weekly basis (bi-weekly minimum) - aslo upload report on calfish
+* End of season escapement values are calculated after
+* Data stored in CAMP (TODO get copy of CAMP database)
+
+
 
 ## Access Cloud Data
 
@@ -192,14 +199,6 @@ table(cleaner_data$trap_status)
 
 *  `r round(sum(is.na(cleaner_data$trap_status))/nrow(cleaner_data), 3)*100` % of values in the `trap_status` column are NA.
 
-
-### Variable `species`
-
-Species contain Chinooks Only
-
-**NA and Unknown Values**  
-
-*  `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3)*100` % of values in the `species` column are NA.
 
 ### Variable `dead`
 

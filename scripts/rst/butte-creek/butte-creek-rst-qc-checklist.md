@@ -27,6 +27,13 @@ from the 1995-96 to the 2014-15 trapping seasons.
 **Data Contact:** [Jessica
 Nichols](mailto:Jessica.Nichols@Wildlife.ca.gov)
 
+**Additional Notes:**
+
+-   QA/QC on weekly basis (bi-weekly minimum) - aslo upload report on
+    calfish
+-   End of season escapement values are calculated after
+-   Data stored in CAMP (TODO get copy of CAMP database)
+
 ## Access Cloud Data
 
 ``` r
@@ -280,14 +287,6 @@ table(cleaner_data$trap_status)
 **NA and Unknown Values**
 
 -   0.2 % of values in the `trap_status` column are NA.
-
-### Variable `species`
-
-Species contain Chinooks Only
-
-**NA and Unknown Values**
-
--   0 % of values in the `species` column are NA.
 
 ### Variable `dead`
 
