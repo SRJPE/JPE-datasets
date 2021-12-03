@@ -84,6 +84,37 @@ cleaner_passage_data <- raw_passage_data %>%
   glimpse()
 
 ```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_passage_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_data),
+                          description = c("Date",
+                                          "Date trapping started",
+                                          "Date trapping ended",
+                                          "Time",
+                                          "Passage count",
+                                          "Sex of the fish",
+                                          "Confidence level in sex of the fish",
+                                          "Fork length of the fish",
+                                          "Adipose fin present or not",
+                                          "Describes fish coloration",
+                                          "Fish sexual maturity",
+                                          "Location of fish",
+                                          "Was the fish a recapture",
+                                          "What type of recapture",
+                                          "Floy tag number",
+                                          "Comments"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
 
 ## Explore Numeric Variables: {.tabset}
 

@@ -127,6 +127,58 @@ cleaner_passage_data <- raw_passage_data %>%
     ## $ tag_number        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ comments          <chr> NA, NA, "LE changed gender to unknown 2/2015", "LE c~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_passage_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_data),
+                          description = c("Date",
+                                          "Date trapping started",
+                                          "Date trapping ended",
+                                          "Time",
+                                          "Passage count",
+                                          "Sex of the fish",
+                                          "Confidence level in sex of the fish",
+                                          "Fork length of the fish",
+                                          "Adipose fin present or not",
+                                          "Describes fish coloration",
+                                          "Fish sexual maturity",
+                                          "Location of fish",
+                                          "Was the fish a recapture",
+                                          "What type of recapture",
+                                          "Floy tag number",
+                                          "Comments"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables           | description                         | percent\_na |
+|:--------------------|:------------------------------------|------------:|
+| date                | Date                                |           0 |
+| trap\_beg           | Date trapping started               |           0 |
+| trap\_end           | Date trapping ended                 |           7 |
+| time                | Time                                |          11 |
+| count               | Passage count                       |           0 |
+| sex                 | Sex of the fish                     |           0 |
+| confidence\_in\_sex | Confidence level in sex of the fish |          53 |
+| fork\_length        | Fork length of the fish             |           1 |
+| adipose             | Adipose fin present or not          |           0 |
+| condition           | Describes fish coloration           |           1 |
+| mature              | Fish sexual maturity                |           2 |
+| status              | Location of fish                    |           0 |
+| recapture           | Was the fish a recapture            |           0 |
+| recapture\_type     | What type of recapture              |          13 |
+| tag\_number         | Floy tag number                     |          91 |
+| comments            | Comments                            |          70 |
+
 ## Explore Numeric Variables:
 
 ``` r

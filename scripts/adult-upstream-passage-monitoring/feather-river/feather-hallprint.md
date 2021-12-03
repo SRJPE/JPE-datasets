@@ -89,6 +89,40 @@ cleaner_hallprint_data <- raw_hallprint_data %>%
     ## $ acoustic          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ acoustic_location <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_hallprint_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_hallprint_data),
+                          description = c("IDs",
+                                          "Tag date",
+                                          "Tag number",
+                                          "Second tag number",
+                                          "color of the tag",
+                                          "Acoustic",
+                                          "Fish were marked with Hallprint tags and acoustic tags"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables           | description                                            | percent\_na |
+|:--------------------|:-------------------------------------------------------|------------:|
+| ID                  | IDs                                                    |           0 |
+| date                | Tag date                                               |           0 |
+| tag\_number         | Tag number                                             |           0 |
+| second\_tag\_number | Second tag number                                      |          52 |
+| color               | color of the tag                                       |           0 |
+| acoustic            | Acoustic                                               |         100 |
+| acoustic\_location  | Fish were marked with Hallprint tags and acoustic tags |         100 |
+
 ## Explore Numeric Variables:
 
 No numeric variables.
