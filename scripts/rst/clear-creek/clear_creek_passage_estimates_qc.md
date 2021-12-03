@@ -115,6 +115,39 @@ cleaner_passage_estimate <- combined_passage_estimates %>%
     ## $ trap_fished      <chr> "Fished", "Fished", "Fished", "Fished", "Fished", "Fi~
     ## $ location         <chr> "UCC", "UCC", "UCC", "UCC", "UCC", "UCC", "UCC", "UCC~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_passage_estimate %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_estimate),
+                          description = c("Date",
+                                          "Raw catch of spring run",
+                                          "Trap efficiency",
+                                          "Passage estimate fish count",
+                                          "Trap fished or not fished",
+                                          "Describes if the count is from LCC or UCC"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables         | description                               | percent\_na |
+|:------------------|:------------------------------------------|------------:|
+| date              | Date                                      |           0 |
+| catch             | Raw catch of spring run                   |          39 |
+| trap\_efficiency  | Trap efficiency                           |          76 |
+| passage\_estimate | Passage estimate fish count               |          39 |
+| trap\_fished      | Trap fished or not fished                 |           0 |
+| location          | Describes if the count is from LCC or UCC |           0 |
+
 ## Explore Numeric Variables:
 
 ``` r

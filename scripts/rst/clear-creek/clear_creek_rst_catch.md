@@ -77,7 +77,7 @@ raw_lower_rst_count_data <- read_excel("raw_lower_clear_rst_data.xlsx", sheet = 
     ## $ StationCode  <chr> "LCC", "LCC", "LCC", "LCC", "LCC", "LCC", "LCC", "LCC", "~
     ## $ SampleDate   <dttm> 2003-10-01, 2003-10-05, 2003-10-06, 2003-10-06, 2003-10-~
     ## $ SampleID     <chr> "274_03", "278_03", "279_03", "279_03", "279_03", "280_03~
-    ## $ IDWeek       <dbl> 40, 40, 40, 40, 40, 40, 41, 42, 42, 42, 42, 43, 43, 44, 4~
+    ## $ IDWeek       <dttm> 1900-02-09, 1900-02-09, 1900-02-09, 1900-02-09, 1900-02-~
     ## $ FWSRace      <chr> "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L~
     ## $ Race         <chr> "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L~
     ## $ ForkLength   <dbl> 90, 92, 98, 93, 71, 86, 69, 96, 84, 84, 84, 89, 74, 92, 8~
@@ -121,6 +121,8 @@ raw_upper_rst_count_data <- read_excel("raw_upper_clear_rst_data.xlsx", sheet = 
 ## Data transformations
 
 ``` r
+raw_lower_rst_count_data <- raw_lower_rst_count_data %>% 
+  mutate(IDWeek = as.numeric(IDWeek))
 raw_rst_count_data <- bind_rows(raw_lower_rst_count_data, raw_upper_rst_count_data)
 
 cleaner_rst_count <- raw_rst_count_data %>%
@@ -174,7 +176,7 @@ Notes:
         catch, W=winter-run, S=spring-run, F=fall-run, L=late-fall run
         Chinook Salmon, see RunDesignation and RunChart tables
 
-These columns have simmilar run designations.
+These columns have similar run designations.
 
 ``` r
 sum(raw_rst_count_data$Race == raw_rst_count_data$FWSRace, na.rm = T)/length(raw_rst_count_data$Race)
@@ -199,6 +201,45 @@ spring-run and fall-run and we know that the Sheila Greene LAD charts
 don’t capture the overlap. In Clear Creek, some fish that classify as
 fall-run based on length from our LCC trap are actually spring-run and
 vise versa.
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_rst_count %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_count),
+                          description = c("The station code, two stations Lower Clear Creek (LCC) and Upper Clear Creek (UCC)",
+                                          "Date",
+                                          "The calender year Julian date and year code for that ~24 h sample period (ddd_yy)",
+                                          "Run",
+                                          "Fork length of the fish captured",
+                                          "Life stage of the catch",
+                                          "Catch umber used to generate passage indices for the reports",
+                                          "Indicates if the fish was a mortality",
+                                          "Is count value an interpolated catch for the times the trap did not fish"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables     | description                                                                         | percent\_na |
+|:--------------|:------------------------------------------------------------------------------------|------------:|
+| station\_code | The station code, two stations Lower Clear Creek (LCC) and Upper Clear Creek (UCC)  |           0 |
+| date          | Date                                                                                |           0 |
+| sample\_id    | The calender year Julian date and year code for that \~24 h sample period (ddd\_yy) |           0 |
+| run           | Run                                                                                 |           0 |
+| fork\_length  | Fork length of the fish captured                                                    |           0 |
+| lifestage     | Life stage of the catch                                                             |           0 |
+| count         | Catch umber used to generate passage indices for the reports                        |           0 |
+| dead          | Indicates if the fish was a mortality                                               |           0 |
+| interpolated  | Is count value an interpolated catch for the times the trap did not fish            |           0 |
 
 ## Explore Numeric Variables:
 

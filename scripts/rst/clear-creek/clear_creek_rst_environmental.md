@@ -116,8 +116,8 @@ raw_environmental_upper_2 <- read_excel("raw_upper_clear_rst_data.xlsx",
     ## $ DepthAdjust       <dbl> 28, 27, 29, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, ~
     ## $ AvgTimePerRev     <dbl> 21, 24, 22, 22, 23, 22, 21, 21, 20, 24, 23, 22, 20, ~
     ## $ FlowStartMeter    <dbl> NA, 167000, 191000, 237000, 282000, 323000, 363000, ~
-    ## $ FlowEndMeter      <dbl> NA, 180527, 215035, 269497, 307944, 335804, 380661, ~
-    ## $ FlowSetTime       <dbl> NA, 300, 585, 778, 600, 315, 420, 300, 365, 480, 425~
+    ## $ FlowEndMeter      <dttm> NA, 2394-04-06, 2488-09-27, 2637-11-08, 2743-02-13,~
+    ## $ FlowSetTime       <dttm> NA, 1900-10-26, 1901-08-07, 1902-02-16, 1901-08-22,~
     ## $ RiverLeftDepth    <dbl> 3.8, 3.7, 3.6, 3.7, 3.7, 3.6, 3.4, 3.6, 3.7, 3.6, 3.~
     ## $ RiverCenterDepth  <dbl> 4.0, 3.9, 3.8, 3.9, 3.8, 4.0, 3.0, 3.9, 4.0, 3.8, 3.~
     ## $ RiverRightDepth   <dbl> 4.0, 3.6, 3.9, 3.4, 3.4, 3.4, 3.9, 3.9, 3.5, 3.8, 3.~
@@ -241,6 +241,10 @@ raw_environmental_lower_2 <- read_excel("raw_lower_clear_rst_data.xlsx",
 ## Data transformations
 
 ``` r
+raw_environmental_upper_2 <- raw_environmental_upper_2 %>% 
+  mutate(FlowEndMeter = as.numeric((FlowEndMeter)),
+         FlowSetTime = as.numeric((FlowSetTime)))
+
 raw_rst_environmental <- bind_rows(raw_environmental_upper_1, raw_environmental_upper_2,
                                    raw_environmental_lower_1, raw_environmental_lower_2) 
 
@@ -294,6 +298,98 @@ cleaner_rst_environmental <- raw_rst_environmental %>%
     ## $ start_counter       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ trap_fishing        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ partial_sample      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_rst_environmental %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_environmental),
+                          description = c("The station code, two stations Lower Clear Creek (LCC) and Upper Clear Creek (UCC)",
+                                          "The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)",
+                                          "Trap start date",
+                                          "Trap start time",
+                                          "Sample date",
+                                          "Sample time",
+                                          "Number on the cone revolution counter at SampleDate and SampleTime",
+                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity test",
+                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity test",
+                                          "How long the General Oceanics mechanical flow meter was in the water taking a reading, used to calculate water velocity in front of the cone",
+                                          "Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875",
+                                          "Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime",
+                                          "Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting",
+                                          "A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table",
+                                          "Stage of the Moon on the SampleDate and SampleTime",
+                                          "River depth (ft) from inside of the river left (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "River depth (ft) from directly in the center of cone off crossbeam #2 (cone crossbeam)",
+                                          "River depth (ft) from inside of the river right (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "The type of sample regime",
+                                          "The type of flow habitat the trap fished in",
+                                          "Was trap fishing in the thalweg at SampleDate and SampleTime",
+                                          "The time of day relative to the sun",
+                                          "The depth of the bottom of the cone (measured in Inches) Depth in relation to the cone (not to the surface of the water)",
+                                          "The type of debris found in the live-box",
+                                          "The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically)",
+                                          "The average time per cone rotation (average of three rotations) - units are seconds",
+                                          "Was there a problem with the trap at SampleDate and SampleTime",
+                                          "If sample week has more than one efficiency, which part of week is sample from",
+                                          "Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage",
+                                          "Number fish released",
+                                          "Trap comments",
+                                          "A code for the condition of the trap on the SampleDate and SampleTime",
+                                          "Beginning cone revolution counter number, usually zero",
+                                          "Trap fished or not",
+                                          "Partial sample"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables             | description                                                                                                                                                                         | percent\_na |
+|:----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------:|
+| station\_code         | The station code, two stations Lower Clear Creek (LCC) and Upper Clear Creek (UCC)                                                                                                  |           0 |
+| sample\_id            | The calendar year Julian date and year code for that \~24-h sample period (ddd\_yy)                                                                                                 |           0 |
+| trap\_start\_date     | Trap start date                                                                                                                                                                     |           2 |
+| trap\_start\_time     | Trap start time                                                                                                                                                                     |           2 |
+| sample\_date          | Sample date                                                                                                                                                                         |           0 |
+| sample\_time          | Sample time                                                                                                                                                                         |           0 |
+| counter               | Number on the cone revolution counter at SampleDate and SampleTime                                                                                                                  |           4 |
+| flow\_start\_meter    | The read out number on the mechanical counter of the flow meter at the start and end of the velocity test                                                                           |           4 |
+| flow\_end\_meter      | The read out number on the mechanical counter of the flow meter at the start and end of the velocity test                                                                           |           4 |
+| flow\_set\_time       | How long the General Oceanics mechanical flow meter was in the water taking a reading, used to calculate water velocity in front of the cone                                        |           4 |
+| velocity              | Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)\*.0875 |           4 |
+| turbidity             | Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime                                                                                              |           3 |
+| cone                  | Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting                                                                                                              |           2 |
+| weather\_code         | A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table                                                                                   |           2 |
+| lunar\_phase          | Stage of the Moon on the SampleDate and SampleTime                                                                                                                                  |           2 |
+| river\_left\_depth    | River depth (ft) from inside of the river left (facing down stream) pontoon off crossbeam \#2 (cone crossbeam)                                                                      |          36 |
+| river\_center\_depth  | River depth (ft) from directly in the center of cone off crossbeam \#2 (cone crossbeam)                                                                                             |          36 |
+| river\_right\_depth   | River depth (ft) from inside of the river right (facing down stream) pontoon off crossbeam \#2 (cone crossbeam)                                                                     |          36 |
+| trap\_sample\_type    | The type of sample regime                                                                                                                                                           |           2 |
+| habitat               | The type of flow habitat the trap fished in                                                                                                                                         |           2 |
+| thalweg               | Was trap fishing in the thalweg at SampleDate and SampleTime                                                                                                                        |           2 |
+| diel                  | The time of day relative to the sun                                                                                                                                                 |          95 |
+| depth\_adjust         | The depth of the bottom of the cone (measured in Inches) Depth in relation to the cone (not to the surface of the water)                                                            |           4 |
+| debris\_type          | The type of debris found in the live-box                                                                                                                                            |           2 |
+| debris\_tubs          | The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically)                                                                                   |           2 |
+| avg\_time\_per\_rev   | The average time per cone rotation (average of three rotations) - units are seconds                                                                                                 |           3 |
+| fish\_properly        | Was there a problem with the trap at SampleDate and SampleTime                                                                                                                      |           6 |
+| sub\_week             | If sample week has more than one efficiency, which part of week is sample from                                                                                                      |           0 |
+| baileys\_eff          | Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage                                                                                                      |           0 |
+| num\_released         | Number fish released                                                                                                                                                                |           2 |
+| trap\_comments        | Trap comments                                                                                                                                                                       |          78 |
+| gear\_condition\_code | A code for the condition of the trap on the SampleDate and SampleTime                                                                                                               |          95 |
+| start\_counter        | Beginning cone revolution counter number, usually zero                                                                                                                              |          94 |
+| trap\_fishing         | Trap fished or not                                                                                                                                                                  |          94 |
+| partial\_sample       | Partial sample                                                                                                                                                                      |          94 |
 
 ## Explore Numeric Variables:
 
@@ -391,8 +487,8 @@ summary(cleaner_rst_environmental$flow_start_meter)
 summary(cleaner_rst_environmental$flow_end_meter)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##      89  246845  508306  500231  749578 1090650     268
+    ##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max.       NA's 
+    ## -1.050e+09  2.522e+05  5.187e+05  9.682e+08  7.656e+05  8.292e+10        268
 
 **NA and Unknown Values**
 
@@ -431,12 +527,12 @@ almost 4500.
 summary(cleaner_rst_environmental$flow_set_time)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   180.0   300.0   302.0   373.9   365.0  4394.0     270
+    ##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max.       NA's 
+    ## -2.183e+09  3.000e+02  3.000e+02 -5.114e+07  3.600e+02  4.394e+03        270
 
 **NA and Unknown Values**
 
--   3.5 % of values in the `counter` column are NA.
+-   3.6 % of values in the `flow_set_time` column are NA.
 
 ### Variable: `velocity`
 
@@ -828,7 +924,7 @@ summary(cleaner_rst_environmental$avg_time_per_rev)
 Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily
 passage
 
-**Plotting distribution of counter**
+**Plotting distribution of baileys\_eff**
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -901,7 +997,7 @@ cleaner_rst_environmental %>%
 
 ![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
-**Numeric Summary of counter over Period of Record**
+**Numeric Summary of num\_released over Period of Record**
 
 ``` r
 summary(cleaner_rst_environmental$num_released)
@@ -920,7 +1016,7 @@ Beginning cone revolution counter number, usually zero.
 
 All values either 0 or NA.
 
-**Numeric Summary of counter over Period of Record**
+**Numeric Summary of start\_counter over Period of Record**
 
 ``` r
 summary(cleaner_rst_environmental$start_counter)
