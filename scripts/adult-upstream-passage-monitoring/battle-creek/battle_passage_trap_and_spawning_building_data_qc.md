@@ -642,6 +642,14 @@ unique(cleaner_passage_data$comments)[1:10]
 -   they have information on recaptures but there are more unique floy
     tag numbers than total fish recaptured.
 
+## Next Steps
+
+-   Decide which columns we should keep
+
+-   `mature`, `status`, `recapture`, `recapture_type`, and
+    `confidence_in_sex` are columns that do not seem to be consistent
+    with other upstream passage estimate datasets
+
 ## Save cleaned data back to google cloud
 
 ``` r

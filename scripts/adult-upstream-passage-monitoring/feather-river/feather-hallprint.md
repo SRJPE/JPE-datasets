@@ -405,6 +405,13 @@ write_rds(feather_hallprint_acoustic_location, "../../../data/feather_hallprint_
 -   Each tag is a unique fish, this data may be more helpful as some
     estimate of fish count, add in a count column?
 
+### Next Steps
+
+-   Figure out how to use this dataset for adult upstream passage
+    estimate. The hallprint data is quite different from other upstream
+    passage data - need to figure out which excel sheet and which column
+    is the most useful.
+
 ### Save cleaned data back to google cloud
 
 ``` r

@@ -530,6 +530,14 @@ cleaner_carcass_data$spring_green <- ifelse(cleaner_carcass_data$comments == "SP
     excel table. I choose to look at this sheet because it seemed the
     most useful but I am not sure it is the best information.
 
+### Next Steps
+
+-   Hallprint returns data has similar columns as some of the carcass
+    data so it might be more fitting to put it under there. Or hallprint
+    returns data and hallprint data could be its own entity due to how
+    different the data are. Also need to figure out which one of the
+    many excel data sheet under hallprint data is the most useful.
+
 ### Save cleaned data back to google cloud
 
 ``` r

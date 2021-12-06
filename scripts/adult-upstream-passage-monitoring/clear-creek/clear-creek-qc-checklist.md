@@ -502,6 +502,10 @@ table(cleaner_video_data$passage_direction)
 
 -   0 % of values in the `passage_direction` column are NA.
 
+## Next Steps:
+
+-   Identify if these columns fit with upstream passage data schema
+
 ``` r
 clear_passage <- cleaner_video_data %>% 
   glimpse()

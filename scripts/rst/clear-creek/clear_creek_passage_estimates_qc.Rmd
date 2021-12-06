@@ -311,6 +311,10 @@ table(cleaner_passage_estimate$location)
 * Passage estimates look good based on preliminary look, I do want to review R script used to generate the passage estimates
 * Additionally need to add other runs in if desired
 
+## Next Steps
+
+* Compare passage estimate method (Provided in R file) with other RST passage estimate methods
+
 ## Save cleaned data back to google cloud 
 
 ```{r}
