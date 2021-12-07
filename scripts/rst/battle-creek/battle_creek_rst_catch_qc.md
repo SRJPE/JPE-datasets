@@ -30,8 +30,6 @@ high flow events.
 
 **Data Contact:** [Mike Schraml](mailto:mike_schraml@fws.gov)
 
-Any additional info?
-
 ## Access Cloud Data
 
 ``` r
@@ -69,20 +67,20 @@ raw_rst_count_data <- read_excel("raw_battle_rst_data.xlsx", sheet = "UBC Catch 
 
     ## Rows: 31,835
     ## Columns: 14
-    ## $ OrganismCode <chr> "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "~
-    ## $ StationCode  <chr> "UBC", "UBC", "UBC", "UBC", "UBC", "UBC", "UBC", "UBC", "~
-    ## $ SampleDate   <dttm> 2003-11-04, 2003-11-25, 2003-11-27, 2003-11-29, 2003-11-~
-    ## $ SampleID     <chr> "308_03", "329_03", "331_03", "333_03", "334_03", "334_03~
-    ## $ IDWeek       <dbl> 44, 47, 48, 48, 48, 48, 48, 48, 48, 48, 49, 49, 49, 49, 4~
-    ## $ FWSRace      <chr> "L", "S", "S", "S", "S", "S", "F", "S", "S", "S", "F", "S~
-    ## $ Race         <chr> "L", "S", "S", "S", "S", "S", "F", "S", "S", "S", "F", "S~
-    ## $ ForkLength   <dbl> 114, 33, 34, 36, 34, 35, 33, 34, 34, 34, 34, 35, 34, 35, ~
-    ## $ LifeStage    <chr> "C4", "C1", "C0", "C1", "C1", "C1", "C1", "C1", "C1", "C0~
-    ## $ RCatch       <dbl> 1, 1, 1, 1, 3, 1, 2, 1, 2, 1, 1, 1, 1, 1, 13, 1, 11, 1, 5~
-    ## $ Count        <dbl> 1, 1, 1, 1, 3, 1, 2, 1, 2, 1, 1, 1, 1, 1, 13, 1, 11, 1, 5~
-    ## $ BroodYear    <dbl> 2003, 2003, 2003, 2003, 2003, 2003, 2003, 2003, 2003, 200~
-    ## $ Dead         <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO~
-    ## $ Interp       <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO~
+    ## $ OrganismCode <chr> "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "CHN", "…
+    ## $ StationCode  <chr> "UBC", "UBC", "UBC", "UBC", "UBC", "UBC", "UBC", "UBC", "…
+    ## $ SampleDate   <dttm> 2003-11-04, 2003-11-25, 2003-11-27, 2003-11-29, 2003-11-…
+    ## $ SampleID     <chr> "308_03", "329_03", "331_03", "333_03", "334_03", "334_03…
+    ## $ IDWeek       <dbl> 44, 47, 48, 48, 48, 48, 48, 48, 48, 48, 49, 49, 49, 49, 4…
+    ## $ FWSRace      <chr> "L", "S", "S", "S", "S", "S", "F", "S", "S", "S", "F", "S…
+    ## $ Race         <chr> "L", "S", "S", "S", "S", "S", "F", "S", "S", "S", "F", "S…
+    ## $ ForkLength   <dbl> 114, 33, 34, 36, 34, 35, 33, 34, 34, 34, 34, 35, 34, 35, …
+    ## $ LifeStage    <chr> "C4", "C1", "C0", "C1", "C1", "C1", "C1", "C1", "C1", "C0…
+    ## $ RCatch       <dbl> 1, 1, 1, 1, 3, 1, 2, 1, 2, 1, 1, 1, 1, 1, 13, 1, 11, 1, 5…
+    ## $ Count        <dbl> 1, 1, 1, 1, 3, 1, 2, 1, 2, 1, 1, 1, 1, 1, 13, 1, 11, 1, 5…
+    ## $ BroodYear    <dbl> 2003, 2003, 2003, 2003, 2003, 2003, 2003, 2003, 2003, 200…
+    ## $ Dead         <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO…
+    ## $ Interp       <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO…
 
 ## Data transformations
 
@@ -105,14 +103,14 @@ cleaner_rst_count <- raw_rst_count_data %>%
 
     ## Rows: 31,835
     ## Columns: 8
-    ## $ date         <date> 2003-11-04, 2003-11-25, 2003-11-27, 2003-11-29, 2003-11-~
-    ## $ sample_id    <chr> "308_03", "329_03", "331_03", "333_03", "334_03", "334_03~
-    ## $ run          <chr> "L", "S", "S", "S", "S", "S", "F", "S", "S", "S", "F", "S~
-    ## $ fork_length  <dbl> 114, 33, 34, 36, 34, 35, 33, 34, 34, 34, 34, 35, 34, 35, ~
-    ## $ lifestage    <chr> "C4", "C1", "C0", "C1", "C1", "C1", "C1", "C1", "C1", "C0~
-    ## $ count        <dbl> 1, 1, 1, 1, 3, 1, 2, 1, 2, 1, 1, 1, 1, 1, 13, 1, 11, 1, 5~
-    ## $ dead         <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO~
-    ## $ interpolated <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO~
+    ## $ date         <date> 2003-11-04, 2003-11-25, 2003-11-27, 2003-11-29, 2003-11-…
+    ## $ sample_id    <chr> "308_03", "329_03", "331_03", "333_03", "334_03", "334_03…
+    ## $ run          <chr> "L", "S", "S", "S", "S", "S", "F", "S", "S", "S", "F", "S…
+    ## $ fork_length  <dbl> 114, 33, 34, 36, 34, 35, 33, 34, 34, 34, 34, 35, 34, 35, …
+    ## $ lifestage    <chr> "C4", "C1", "C0", "C1", "C1", "C1", "C1", "C1", "C1", "C0…
+    ## $ count        <dbl> 1, 1, 1, 1, 3, 1, 2, 1, 2, 1, 1, 1, 1, 1, 13, 1, 11, 1, 5…
+    ## $ dead         <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO…
+    ## $ interpolated <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO…
 
 ``` r
 sum(cleaner_rst_count$interpolated == "YES")/nrow(cleaner_rst_count) * 100 # % of the catch data is interpolated
@@ -154,13 +152,53 @@ escapement period. We are fairly confident that no fall-run get above
 the weir. Likewise, we install a separation (picket) weir in Clear Creek
 below the upper trap site that excludes fall-run from spawning with
 spring-run and superimposing redds on top of spring-run redds. At the
-lower Clear Creek (LCC) site we strictly go by the Sheila Green LAD
+lower Clear Creek (LCC) site we strictly go by the Sheila Greene LAD
 chart because there is no way to tell the difference between spring-run
 and fall-run fish in the field. There is overlap in the sizes of
 spring-run and fall-run and we know that the Sheila Greene LAD charts
 don’t capture the overlap. In Clear Creek, some fish that classify as
 fall-run based on length from our LCC trap are actually spring-run and
 vise versa.
+
+FWSRace incorporates all the fine-scale decisions about when to use the
+Sheila Greene LAD chart. We use FWSRace to determine run, especially
+because this is used to determine passage estimates.
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_rst_count %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_count),
+                          description = c("Sample date - end date of approximately 24 hour sampling period",
+                                          "The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)",
+                                          "Run designation using the FWSRace variable",
+                                          "Fork length in millimeters",
+                                          "Life stage of the catch (yolk-sac fry, fry, parr, silvery parr, smolt)",
+                                          "Number of fish caught in trap",
+                                          "Indicates mortality (T/F)",
+                                          "Indicates interpolated catch for times the trap did not fish (T/F)"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables    | description                                                                         | percent\_na |
+|:-------------|:------------------------------------------------------------------------------------|------------:|
+| date         | Sample date - end date of approximately 24 hour sampling period                     |           0 |
+| sample\_id   | The calendar year Julian date and year code for that \~24-h sample period (ddd\_yy) |           0 |
+| run          | Run designation using the FWSRace variable                                          |           0 |
+| fork\_length | Fork length in millimeters                                                          |           0 |
+| lifestage    | Life stage of the catch (yolk-sac fry, fry, parr, silvery parr, smolt)              |           0 |
+| count        | Number of fish caught in trap                                                       |           0 |
+| dead         | Indicates mortality (T/F)                                                           |           0 |
+| interpolated | Indicates interpolated catch for times the trap did not fish (T/F)                  |           0 |
 
 ## Explore Numeric Variables:
 
@@ -222,7 +260,7 @@ summary(cleaner_rst_count$fork_length)
 cleaner_rst_count %>% filter(fork_length == 0 & !is.na(count))
 ```
 
-    ## # A tibble: 750 x 8
+    ## # A tibble: 750 × 8
     ##    date       sample_id run   fork_length lifestage count dead  interpolated
     ##    <date>     <chr>     <chr>       <dbl> <chr>     <dbl> <chr> <chr>       
     ##  1 2003-12-13 347_03    S               0 N/P           1 NO    NO          
@@ -235,7 +273,7 @@ cleaner_rst_count %>% filter(fork_length == 0 & !is.na(count))
     ##  8 2004-01-01 001_04    F               0 N/P          62 NO    YES         
     ##  9 2004-01-02 002_04    F               0 N/P          62 NO    YES         
     ## 10 2004-01-10 010_04    F               0 C0           30 YES   NO          
-    ## # ... with 740 more rows
+    ## # … with 740 more rows
 
 ``` r
 cleaner_rst_count$fork_length <- ifelse(cleaner_rst_count$fork_length == 0, NA, cleaner_rst_count$fork_length)
@@ -253,8 +291,10 @@ are split into races, zero fork lengths have been assigned
 
 **Plotting fish counts over period of record**
 
+Total daily passage for spring run
+
 ``` r
-cleaner_rst_count %>% 
+filter(cleaner_rst_count, run == "S") %>% 
   group_by(date) %>%
   summarise(total_daily_catch = sum(count)) %>%
   filter(year(date) > 2014, year(date) < 2021) %>%
@@ -271,7 +311,7 @@ cleaner_rst_count %>%
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "bottom") + 
-  labs(title = "Total Daily Raw Passage 2015 - 2020",
+  labs(title = "Total Spring Run Daily Raw Passage 2015 - 2020",
        y = "Total daily raw catch",
        x = "Date")+ 
   facet_wrap(~water_year, scales = "free") +
@@ -282,10 +322,12 @@ cleaner_rst_count %>%
 
 ![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
+Total catch by year for spring run
+
 ``` r
 cleaner_rst_count  %>%
   filter(year(date) < 2021, 
-         run %in% c("F", "L", "S", "W")
+         run == "S"
          ) %>% 
   mutate(year = as.factor(year(date))) %>%
   group_by(year, run) %>%
@@ -293,7 +335,7 @@ cleaner_rst_count  %>%
   ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Fish Counted each Year by run",
+  labs(title = "Total fish counted each year for spring run",
        y = "Total fish raw catch") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
@@ -305,6 +347,8 @@ cleaner_rst_count  %>%
 ![](battle_creek_rst_catch_qc_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 **Numeric Summary of counts over Period of Record**
+
+Numerical summary includes all runs
 
 ``` r
 # Table with summary statistics
@@ -470,12 +514,16 @@ table(cleaner_rst_count$interpolated)
 
 -   Count values are interpolated on days where the traps were not
     fished, to see if interpolated or not refer to `interpolated`
-    column - not exactly clear how interpolation is calculated
--   Need to decide what Race (run) measure to keep (`fws_race` or
-    `race`)
+    column. Recommend providing more information about how interpolation
+    is calculated.
 -   Investigate what it means for: zero fork lengths have been
-    assigned - 0 `fork_length` values mean fish was not measured. TODO
-    Ask Mike
+    assigned - 0 `fork_length` values mean fish was not measured.
+
+## Next steps
+
+### Columns to remove
+
+-   `sample_id` may not be needed.
 
 ## Save cleaned data back to google cloud
 
@@ -485,14 +533,14 @@ battle_rst_catch <- cleaner_rst_count %>% glimpse()
 
     ## Rows: 31,835
     ## Columns: 8
-    ## $ date         <date> 2003-11-04, 2003-11-25, 2003-11-27, 2003-11-29, 2003-11-~
-    ## $ sample_id    <chr> "308_03", "329_03", "331_03", "333_03", "334_03", "334_03~
-    ## $ run          <chr> "late fall", "spring", "spring", "spring", "spring", "spr~
-    ## $ fork_length  <dbl> 114, 33, 34, 36, 34, 35, 33, 34, 34, 34, 34, 35, 34, 35, ~
-    ## $ lifestage    <chr> "smolt", "fry", "yolk-sac fry", "fry", "fry", "fry", "fry~
-    ## $ count        <dbl> 1, 1, 1, 1, 3, 1, 2, 1, 2, 1, 1, 1, 1, 1, 13, 1, 11, 1, 5~
-    ## $ dead         <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F~
-    ## $ interpolated <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F~
+    ## $ date         <date> 2003-11-04, 2003-11-25, 2003-11-27, 2003-11-29, 2003-11-…
+    ## $ sample_id    <chr> "308_03", "329_03", "331_03", "333_03", "334_03", "334_03…
+    ## $ run          <chr> "late fall", "spring", "spring", "spring", "spring", "spr…
+    ## $ fork_length  <dbl> 114, 33, 34, 36, 34, 35, 33, 34, 34, 34, 34, 35, 34, 35, …
+    ## $ lifestage    <chr> "smolt", "fry", "yolk-sac fry", "fry", "fry", "fry", "fry…
+    ## $ count        <dbl> 1, 1, 1, 1, 3, 1, 2, 1, 2, 1, 1, 1, 1, 1, 13, 1, 11, 1, 5…
+    ## $ dead         <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F…
+    ## $ interpolated <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F…
 
 ``` r
 # Write to google cloud 

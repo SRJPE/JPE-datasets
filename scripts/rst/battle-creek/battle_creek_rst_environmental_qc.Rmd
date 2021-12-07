@@ -13,6 +13,7 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library(readxl)
+library(knitr)
 palette <- wesanderson::wes_palette(name = "Moonrise2")
 ```
 
@@ -31,8 +32,6 @@ These data were collected by the U.S. Fish and Wildlife Service, Red Bluff Fish 
 **Sampling Location:** Upper Battle Creek (UBC)
 
 **Data Contact:** [Mike Schraml](mailto:mike_schraml@fws.gov)
-
-Any additional info?
 
 ## Access Cloud Data
 
@@ -80,6 +79,57 @@ cleaner_rst_environmental <- raw_rst_environmental %>%
          -sample_weight) %>% # remove sample weight because it is defined to be the same as cone
   glimpse
 
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_rst_environmental %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_environmental),
+                          description = c("The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)",
+                                          "The date the trap started sampling (the beginning of the sample period)",
+                                          "The time the trap was started on the TrapStartDate (the beginning of the sample period)",
+                                          "The date the trap was sampled, the end date of the approximately 24-h sampling period",
+                                          "The time the trap was sampled, the end time of the approximately 24-h sampling period",
+                                          "Number on the cone revolution counter at SampleDate and SampleTime",
+                                          "The read out number on the mechanical counter of the flow meter at the start of the velocity test",
+                                          "The read out number on the mechanical counter of the flow meter at the end of the velocity test",
+                                          "How long the General Oceanics mechanical flow meter (Oceanic ® Model 2030)was in the water taking a reading, used to calculate water velocity in front of the cone",
+                                          "Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875. In feet per second",
+                                          "Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime. Measured in NTU",
+                                          "Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting",
+                                          "A code for the weather conditions on the SampleDate and SampleTime (cloudy, clear, fog, partially cloudy, precipitation, windy, clear, windy and clear)",
+                                          "Stage of the Moon on the SampleDate and SampleTime, from: http://aa.usno.navy.mil/data/docs/MoonFraction.php (full, half, new)",
+                                          "River depth from inside of the river left (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "River depth from directly in the center of cone off crossbeam #2 (cone crossbeam)",
+                                          "River depth from inside of the river right (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "The type of sample regime (non-intensive, intensive, sunrise-sunset, random)",
+                                          "The type of flow habitat the trap fished in (plunge pool,run, glide, backwater pool, lateral flood)",
+                                          "Was trap fishing in the thalweg at SampleDate and SampleTime (T/F)",
+                                          "The time of day relative to the sun (pre-sunrise, post-sunrise, pre-sunset, post-sunset, day, night)",
+                                          "The depth of the bottom of the cone. Measured in inches",
+                                          "The type of debris found in the live-box (aquatic vegetation, large woody debris, sticks, veg + wood, veg + sticks, wood + sticks, veg + wood + sticks)",
+                                          "The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically). Measured in 10 gallons",
+                                          "The average time per cone rotation (average of three rotations). Units in seconds",
+                                          "Was there a problem with the trap at SampleDate and SampleTime (T/F)",
+                                          "If sample week has more than one efficiency, which part of week is sample from",
+                                          "Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage",
+                                          "Number of fish released",
+                                          "Qualitative comments about trap",
+                                          "A code for the condition of the trap on the SampleDate and SampleTime (normal, partial block, total block, not rotating)",
+                                          "Beginning cone revolution counter number, usually zero",
+                                          "Did the trap fish on the sample date",
+                                          "Did the trap fish for the entire sample day (T/F)",
+                                          "The Bailey's efficiency used in old reports. Bailey's efficiency has been standardized to only four significant digits"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -315,7 +365,7 @@ cleaner_rst_environmental %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-All sample weights and cone measures are either .5 o 1. 
+All sample weights and cone measures are either .5 or 1. 
 
 **Numeric Summary of cone over Period of Record**
   
@@ -420,6 +470,7 @@ summary(cleaner_rst_environmental$depth_adjust)
 ### Variable: `debris_tubs`
 
 The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically)							
+
 **Plotting distribution of debris_tubs**
 
 ```{r}
@@ -983,19 +1034,33 @@ table(cleaner_rst_environmental$partial_sample)
 
 ## Summary of identified issues
 
-* Need to figure out what sub_week column values stand for. Answer from Mike: The sub weeks do not describe specific days of the week, they indicate when a stratum (usually one week) is split into substrata based upon the trap efficiency used for the strata or substrata. If a stratum is not split all days in the stratum will be an A. If it is split the days in the first substratum are A's, the second are B's, etc.  
 * Outliers in some of the numeric variables: 
   * Velocity (seems like anything greater than 7 needs to be addressed)
   * Turbidity (everything greater than 100 needs to be addressed)
   * Counter (one value way larger than the others)
-* There are a few variables that I am unsure of how they would be used (ex `depth_adjust`). Asking Mike and these may not be relevant to us and can be filtered out. 
+
+## Next steps
+
+- consider transforming `debris_tubs` to a more transparent volumetric unit.
+
+### Columns to remove
+
+- `report_baileys_eff` may not be needed. This is `baileys_eff` rounded.
 
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-battle_rst_environmental <- cleaner_rst_environmental %>% glimpse()
+# Standardize units #
+battle_rst_environmental <- cleaner_rst_environmental %>% 
+  mutate(river_left_depth = river_left_depth*0.3048,
+         river_center_depth = river_center_depth*0.3048,
+         river_right_depth = river_right_depth*0.3048,
+         depth_adjust = depth_adjust*0.0254) %>%
+  glimpse()
 ```
+
+
 ```{r, eval=FALSE}
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
