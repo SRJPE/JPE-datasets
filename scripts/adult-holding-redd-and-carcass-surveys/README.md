@@ -10,7 +10,7 @@ This directory contains markdown documents exploring Adult holding, redd, and ca
 | Battle Creek | 2001 - ongoing | 2001 - ongoing | 1996 - ongoing |
 | Butte Creek | Available* | Not Available | 2014 - ongoing |
 | Clear Creek | 2000 - ongoing | 2000 - ongoing | 2008 - ongoing |
-| Deer Creek | 1986 | Not Available | Not Available|
+| Deer Creek | 1986 - ongoing | Not Available | Not Available|
 | Feather River | Prespawn Carcass Survey | 2009 - ongoing | 2000 - ongoing |
 | Mill Creek | Not Available | 1997 - ongoing | Not Available |
 | Yuba River | Not Available | Available* | Not Available|
