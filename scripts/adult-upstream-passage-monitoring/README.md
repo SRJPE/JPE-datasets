@@ -10,7 +10,7 @@ We currently have passage estimates for Clear Creek (in PDF report),  Battle Cre
 
 | Tributary | Monitoring Timeframe | Data Contact | Metadata Quality | Data Lag* | Provisional Data Available** | Notes | 
 | :--------- | :------------ | :------------ | :----------- | :-----------| :----------- | :----------- | 
-| Battle Creek | 2001 - ongoing | [Natasha Wingerter](mailto:natasha_wingerter@fws.gov) | Fair | 1 year | FALSE? | Large data lag because of time needed to watch video footage|
+| Battle Creek | 1998 - ongoing | [Natasha Wingerter](mailto:natasha_wingerter@fws.gov) | Fair | 1 year | FALSE? | Large data lag because of time needed to watch video footage|
 | Butte Creek | 2014 - ongoing | [Jessica Nichols](Jessica.Nichols@Wildlife.ca.gov) | Unknown |  < 1 month | TRUE | Monitoring occurs, data not yet acquired |
 | Clear Creek | 2013 - ongoing | [Sam Provins](mailto:samuel_provins@fws.gov) | Fair | 3 months | TRUE | Additional metadata available in [report](https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf) |
 | Deer Creek | 2014 - ongoing | [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov) | Poor | 1 month | TRUE | |
