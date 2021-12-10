@@ -98,6 +98,29 @@ cleaner_effort_data <- raw_effort %>%
 
 ```
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_catch_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_catch_data),
+                          description = c("Date",
+                                          "Site",
+                                          "Run of the fish",
+                                          "Lifestage of the fish",
+                                          "Fork length of the fish caught",
+                                          "Count"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
