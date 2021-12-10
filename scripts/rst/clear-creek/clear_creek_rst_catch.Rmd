@@ -407,6 +407,11 @@ table(cleaner_rst_count$interpolated)
 * Need to decide what Race (run) measure to keep (`fws_race` or `race`)
 * Investigate what it means for: zero fork lengths have been assigned - 0 `fork_length` values mean fish was not measured. TODO Ask Mike 
 
+## Next steps
+
+* Once we decide which Race (run) measure to keep, we could visualize the data based on Spring run.
+
+
 ## Save cleaned data back to google cloud 
 
 ```{r}

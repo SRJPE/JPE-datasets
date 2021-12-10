@@ -304,6 +304,7 @@ tibble(code = clear_passage_spawning_condition,
 * `r round(sum(cleaner_video_data$spawning_condition == "5", na.rm = T)/nrow(cleaner_video_data), 3) * 100` % of values in the `spawning_condition` column are considered Unknown.
 
 ### Variable: `jack_size`
+
 Whether or not the total width of Jack plate is 22".
 ```{r}
 table(cleaner_video_data$jack_size) 
@@ -350,7 +351,9 @@ table(cleaner_video_data$passage_direction)
   
 * `r round(sum(is.na(cleaner_video_data$passage_direction))/nrow(cleaner_video_data), 3) * 100` % of values in the `passage_direction` column are NA.
 
+## Next Steps:
 
+* Identify if these columns fit with upstream passage data schema
 
 ```{r}
 clear_passage <- cleaner_video_data %>% 

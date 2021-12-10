@@ -548,6 +548,11 @@ table(cleaner_passage_estimates$adipose)
     these ones. The typical origin date is not mapping to the year given
     in the year column.
 
+## Next Steps
+
+-   Is it possible to get estimates of just spring run instead of all
+    runs
+
 ## Save cleaned data back to google cloud
 
 ``` r

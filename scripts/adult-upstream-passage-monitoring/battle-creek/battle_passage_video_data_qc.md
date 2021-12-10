@@ -350,6 +350,10 @@ table(cleaner_video_data$passage_direction)
 
 -   No info on viewing condition/outages/gaps in sampling
 
+## Next Steps
+
+-   Understand how this data fit in with passage monitoring data schema
+
 ## Save cleaned data back to google cloud
 
 ``` r

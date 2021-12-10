@@ -145,6 +145,40 @@ cleaner_catch_data %>% glimpse()
     ## $ fork_length <dbl> NA, 30, 32, 33, 34, 35, 38, 29, 37, 36, 31, 34, 33, 31, 35~
     ## $ count       <dbl> 65, 2, 6, 8, 16, 10, 1, 1, 2, 2, 2, 19, 10, 2, 9, 7, 1, 1,~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_catch_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_catch_data),
+                          description = c("Date",
+                                          "Site",
+                                          "Run of the fish",
+                                          "Lifestage of the fish",
+                                          "Fork length of the fish caught",
+                                          "Count"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables    | description                    | percent\_na |
+|:-------------|:-------------------------------|------------:|
+| date         | Date                           |           0 |
+| site\_name   | Site                           |           0 |
+| run          | Run of the fish                |           0 |
+| lifestage    | Lifestage of the fish          |           0 |
+| fork\_length | Fork length of the fish caught |           5 |
+| count        | Count                          |           0 |
+
 ## Explore Numeric Variables:
 
 ``` r
@@ -217,6 +251,7 @@ summary(cleaner_catch_data$fork_length)
 
 ``` r
 cleaner_catch_data %>% 
+  filter(run == "Spring") %>% 
   group_by(date) %>%
   summarise(total_daily_catch = sum(count)) %>%
   filter(year(date) > 2014, year(date) < 2021) %>%
@@ -233,7 +268,7 @@ cleaner_catch_data %>%
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "bottom") + 
-  labs(title = "Total Daily Raw Passage 2015 - 2020",
+  labs(title = "Total Spring Run Daily Raw Passage 2015 - 2020",
        y = "Total daily catch",
        x = "Date")+ 
   facet_wrap(~water_year, scales = "free") + 
@@ -247,18 +282,22 @@ cleaner_catch_data %>%
 ``` r
 cleaner_catch_data  %>%
   filter(year(date) < 2021) %>% 
+  filter(run == "Spring") %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = year, y = count)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Fish Counted each Year by run",
+  labs(title = "Total Spring Run Fish Counted each Year",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  facet_wrap(~run, scales = "free_y")
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
 ![](feather-rst_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
+  # facet_wrap(~run, scales = "free_y")
+```
 
 The majority of “Not recorded” run values occur in 2015. 28.3502636 % of
 the values in 2005 are “Not recorded”.
@@ -317,7 +356,7 @@ table(cleaner_catch_data$site_name)
 
 -   0 % of values in the `site_name` column are NA.
 
-### Variable: \`run\`\`
+### Variable: `run`
 
 ``` r
 table(cleaner_catch_data$run) 
@@ -371,6 +410,10 @@ feather_rst <- cleaner_catch_data %>% glimpse()
     ## $ lifestage   <chr> NA, "parr", "parr", "parr", "parr", "parr", "parr", "parr"~
     ## $ fork_length <dbl> NA, 30, 32, 33, 34, 35, 38, 29, 37, 36, 31, 34, 33, 31, 35~
     ## $ count       <dbl> 65, 2, 6, 8, 16, 10, 1, 1, 2, 2, 2, 19, 10, 2, 9, 7, 1, 1,~
+
+### Next Step
+
+-   Find ways to generate passage estimates
 
 ### Save cleaned data back to google cloud
 

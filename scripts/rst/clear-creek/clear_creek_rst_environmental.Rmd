@@ -87,13 +87,14 @@ raw_rst_environmental <- bind_rows(raw_environmental_upper_1, raw_environmental_
 cleaner_rst_environmental <- raw_rst_environmental %>%
   janitor::clean_names() %>%
   rename() %>%
-  mutate(trap_start_date = as.Date(trap_start_date),
+  mutate(velocity_ft_per_s = velocity *3.281,
+         trap_start_date = as.Date(trap_start_date),
          trap_start_time = hms::as_hms(trap_start_time),
          sample_date = as.Date(sample_date),
          sample_time = hms::as_hms(sample_time)) %>%
   select(-user_name, -user_name2,
           -sample_weight, # remove sample weight because it is defined to be the same as cone) %>%
-         -report_baileys_eff) %>% # remove report baileys eff all NA
+         -report_baileys_eff, -velocity) %>% # remove report baileys eff all NA
   glimpse
 
 ```
@@ -115,10 +116,9 @@ data_dictionary <- tibble(variables = colnames(cleaner_rst_environmental),
                                           "Sample date",
                                           "Sample time",
                                           "Number on the cone revolution counter at SampleDate and SampleTime",
-                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity test",
-                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity test",
+                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity",
+                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity",
                                           "How long the General Oceanics mechanical flow meter was in the water taking a reading, used to calculate water velocity in front of the cone",
-                                          "Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875",
                                           "Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime",
                                           "Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting",
                                           "A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table",
@@ -142,7 +142,8 @@ data_dictionary <- tibble(variables = colnames(cleaner_rst_environmental),
                                           "A code for the condition of the trap on the SampleDate and SampleTime",
                                           "Beginning cone revolution counter number, usually zero",
                                           "Trap fished or not",
-                                          "Partial sample"
+                                          "Partial sample",
+                                          "Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875 (multiplied by 3.281 to convert from m/s to ft/s)"
                                           ),
                           
                           percent_na = round(percent_na$value*100)
@@ -197,7 +198,7 @@ summary(cleaner_rst_environmental$counter)
 
 ### Variables: `flow_start_meter`, `flow_end_meter`
 
-The read out number on the mechanical counter of the flow meter at the start and end of the velocity test							
+The read out number on the mechanical counter of the flow meter at the start and end of the velocity							
 
 
 **Plotting distribution of flow start meter and flow end meter**
@@ -260,17 +261,17 @@ summary(cleaner_rst_environmental$flow_set_time)
 * `r round(sum(is.na(cleaner_rst_environmental$flow_set_time))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `flow_set_time` column are NA. 
 
 
-### Variable: `velocity`
+### Variable: `velocity_ft_per_s`
 
-Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875							
+Calculated water velocity_ft_per_s in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875							
 
-**Plotting distribution of velocity**
+**Plotting distribution of velocity_ft_per_s**
 
 ```{r}
 cleaner_rst_environmental %>% 
-  filter(velocity < 25) %>% # filter out values greater than 25
+  filter(velocity_ft_per_s < 25) %>% # filter out values greater than 25
   ggplot() +
-  geom_histogram(aes(x = velocity), fill = "blue", alpha = .5) +
+  geom_histogram(aes(x = velocity_ft_per_s), fill = "blue", alpha = .5) +
   theme_minimal() + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
@@ -282,7 +283,7 @@ cleaner_rst_environmental %>%
          fake_year = 2000,
          fake_year = ifelse(month(sample_date) %in% 10:12, fake_year - 1, fake_year),
          fake_date = ymd(paste(fake_year, month(sample_date), day(sample_date)))) %>%
-  ggplot(aes(x = fake_date, y = velocity)) +
+  ggplot(aes(x = fake_date, y = velocity_ft_per_s)) +
   scale_x_date(date_breaks = "3 month", date_labels = "%b") +
   geom_line(size = 0.5) +
   xlab("") +
@@ -290,19 +291,19 @@ cleaner_rst_environmental %>%
   theme_minimal()
 ```
 
-A lot of outliers are shown. These are clear because they create a large spike and make the other velocity measurements difficult to see. 
+A lot of outliers are shown. These are clear because they create a large spike and make the other velocity_ft_per_s measurements difficult to see. 
 
-**Numeric Summary of velocity**
+**Numeric Summary of velocity_ft_per_s**
 
 ```{r}
-summary(cleaner_rst_environmental$velocity)
+summary(cleaner_rst_environmental$velocity_ft_per_s)
 ```
 
-A velocity of 280 seems out of the range of possibilities. It seems like every velocity greater than 7 is probably a mistake that should be scaled down or filtered out. 
+A velocity_ft_per_s of 750 seems out of the range of possibilities. It seems like every velocity_ft_per_s greater than 7 is probably a mistake that should be scaled down or filtered out. 
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_rst_environmental$velocity))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `velocity` column are NA.
+* `r round(sum(is.na(cleaner_rst_environmental$velocity_ft_per_s))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `velocity_ft_per_s` column are NA.
 
 ### Variable: `turbidity`
 
@@ -1038,11 +1039,14 @@ table(cleaner_rst_environmental$partial_sample)
 
 * Need to figure out what sub_week column values stand for. Answer from Mike: The sub weeks do not describe specific days of the week, they indicate when a stratum (usually one week) is split into substrata based upon the trap efficiency used for the strata or substrata. If a stratum is not split all days in the stratum will be an A. If it is split the days in the first substratum are A's, the second are B's, etc.  
 * Outliers in some of the numeric variables: 
-  * Velocity (some outliers that need to be addressed)
+  * velocity_ft_per_s (some outliers that need to be addressed)
   * Turbidity (some outliers that need to be addressed)
   * Counter (some outliers that need to be addressed)
 * There are a few variables that I am unsure of how they would be used (ex `depth_adjust`). Asking Mike and these may not be relevant to us and can be filtered out. 
 
+## Next steps
+
+* Need to figure out what RST data variables could be used. So far RST environmental variables have been varied.Some variables such as `diel` is only available for a this datasets and could be removed. Other variable such as`avg_time_per_rev`, `baileys_eff`, `flow_start_meter`, `flow_end_meter` needs to be standardized with other RST environmental cone related variables.
 
 ## Save cleaned data back to google cloud 
 

@@ -588,6 +588,11 @@ table(cleaner_rst_count$interpolated)
     assigned - 0 `fork_length` values mean fish was not measured. TODO
     Ask Mike
 
+## Next steps
+
+-   Once we decide which Race (run) measure to keep, we could visualize
+    the data based on Spring run.
+
 ## Save cleaned data back to google cloud
 
 ``` r
