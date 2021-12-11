@@ -65,8 +65,7 @@ Read in data from google cloud, glimpse raw data and domain description sheet. A
 
 ```{r}
 # read in data to clean 
-knl_effort <- read_csv("knl_combine_sampling_effort.csv", show_col_types = F)
-glimpse(knl_effort)
+knl_effort <- read_csv("knl_combine_sampling_effort.csv") %>% glimpse()
 ```
 
 ## Data Dictionary
@@ -191,8 +190,8 @@ Percent of NA:
 Data for this variable was collected beginning in 2011 (sampling year 2012).
 
 ```{r}
-ggplot(filter(knl_effort, year(date) >= 2011), aes(sampling_period_hrs)) +
-  geom_histogram() +
+ggplot(filter(knl_effort, year(date) >= 2011)) +
+  geom_histogram(aes(sampling_period_hrs), stat = "count") +
   facet_wrap(~year(date))
 ```
 
@@ -361,7 +360,7 @@ because there is so little information.
 
 ```{r}
 ggplot(knl_effort, aes(y = klci)) +
-  geom_histogram()
+  geom_histogram(stat = "count")
 ```
 
 **Numeric Summary of `klci` over Period of Record**
@@ -460,7 +459,7 @@ Data collected beginning in 2011 (sampling year 2012).
 
 ```{r}
 ggplot(filter(knl_effort, year(date) >= 2011), aes(y = cone_rpm)) +
-  geom_histogram() +
+  geom_histogram(stat = "count") +
   facet_wrap(~year(date))
 ```
 
@@ -490,7 +489,7 @@ Data for this variable was collected beginning in 2011 (sampling year 2012).
 
 ```{r}
 ggplot(filter(knl_effort, year(date) >= 2011), aes(y = total_cone_rev)) +
-  geom_histogram() +
+  geom_histogram(stat = "count") +
   facet_wrap(~year(date))
 ```
 
@@ -639,6 +638,12 @@ knl_effort_changes <- knl_effort %>%
   # very little data, only for sampling year 2021 so remove.
   select(-klci)
 ```
+
+### Next Steps
+
+#### Columns to remove
+* Can likely delete percent of cones functioning column, there are a lot of NAs here
+* Suggest removing the comments column or editing to clean up 
 
 ### Save cleaned data back to google cloud 
 
