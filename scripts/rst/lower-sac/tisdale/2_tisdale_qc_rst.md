@@ -45,33 +45,45 @@ sheet.
 
 ``` r
 # read in data to clean 
-raw_clean <- read_csv("tisdale_rst_raw_clean.csv", show_col_types = F)
-glimpse(raw_clean)
+raw_clean <- read_csv("tisdale_rst_raw_clean.csv") %>% glimpse
 ```
+
+    ## 
+    ## -- Column specification --------------------------------------------------------
+    ## cols(
+    ##   .default = col_character(),
+    ##   date = col_datetime(format = ""),
+    ##   fork_length_mm = col_double(),
+    ##   weight = col_double(),
+    ##   release_id = col_double(),
+    ##   catch_comment = col_logical(),
+    ##   count = col_double()
+    ## )
+    ## i Use `spec()` for the full column specifications.
 
     ## Rows: 21,427
     ## Columns: 21
-    ## $ date               <dttm> 2010-07-07, 2010-07-07, 2010-07-09, 2010-07-09, 20…
-    ## $ trap_position      <chr> "RL", "RR", "RL", "RR", "RL", "RR", "RL", "RR", "RL…
-    ## $ fish_processed     <chr> "No fish were caught", "No fish were caught", "No f…
-    ## $ species            <chr> "Chinook salmon", "Chinook salmon", "Chinook salmon…
-    ## $ fork_length_mm     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ weight             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ life_stage         <chr> "Not recorded", "Not recorded", "Not recorded", "No…
-    ## $ at_capture_run     <chr> "Not recorded", "Not recorded", "Not recorded", "No…
-    ## $ final_run          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ mortality          <chr> "No", "No", "No", "No", "No", "No", "No", "No", "No…
-    ## $ random             <chr> "No", "No", "No", "No", "No", "No", "No", "No", "No…
-    ## $ analyses           <chr> "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Y…
-    ## $ rearing            <chr> "Natural", "Natural", "Natural", "Natural", "Natura…
-    ## $ release_id         <dbl> 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 2…
-    ## $ mark_type          <chr> "No marks or tags", "No marks or tags", "No marks o…
-    ## $ mark_position      <chr> "Not applicable (n/a)", "Not applicable (n/a)", "No…
-    ## $ mark_color         <chr> "Not applicable (n/a)", "Not applicable (n/a)", "No…
-    ## $ trap_visit_comment <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ catch_comment      <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ location           <chr> "Tisdale Weir RST", "Tisdale Weir RST", "Tisdale We…
-    ## $ count              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+    ## $ date               <dttm> 2010-07-07, 2010-07-07, 2010-07-09, 2010-07-09, 20~
+    ## $ trap_position      <chr> "RL", "RR", "RL", "RR", "RL", "RR", "RL", "RR", "RL~
+    ## $ fish_processed     <chr> "No fish were caught", "No fish were caught", "No f~
+    ## $ species            <chr> "Chinook salmon", "Chinook salmon", "Chinook salmon~
+    ## $ fork_length_mm     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ weight             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ life_stage         <chr> "Not recorded", "Not recorded", "Not recorded", "No~
+    ## $ at_capture_run     <chr> "Not recorded", "Not recorded", "Not recorded", "No~
+    ## $ final_run          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ mortality          <chr> "No", "No", "No", "No", "No", "No", "No", "No", "No~
+    ## $ random             <chr> "No", "No", "No", "No", "No", "No", "No", "No", "No~
+    ## $ analyses           <chr> "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Y~
+    ## $ rearing            <chr> "Natural", "Natural", "Natural", "Natural", "Natura~
+    ## $ release_id         <dbl> 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 2~
+    ## $ mark_type          <chr> "No marks or tags", "No marks or tags", "No marks o~
+    ## $ mark_position      <chr> "Not applicable (n/a)", "Not applicable (n/a)", "No~
+    ## $ mark_color         <chr> "Not applicable (n/a)", "Not applicable (n/a)", "No~
+    ## $ trap_visit_comment <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ catch_comment      <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ location           <chr> "Tisdale Weir RST", "Tisdale Weir RST", "Tisdale We~
+    ## $ count              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
 
 ## Data Dictionary
 
@@ -180,7 +192,7 @@ raw_clean %>%
             na = length(which(is.na(fork_length_mm))))
 ```
 
-    ## # A tibble: 11 × 6
+    ## # A tibble: 11 x 6
     ##    `year(date)`  mean median   min   max    na
     ##           <dbl> <dbl>  <dbl> <dbl> <dbl> <int>
     ##  1         2010  61.6   56.5     0   160   186
@@ -201,11 +213,11 @@ Looks like the outlier should be 40 rather than 4038.
 filter(raw_clean, fork_length_mm > 300)
 ```
 
-    ## # A tibble: 1 × 21
+    ## # A tibble: 1 x 21
     ##   date                trap_position fish_processed species fork_length_mm weight
     ##   <dttm>              <chr>         <chr>          <chr>            <dbl>  <dbl>
-    ## 1 2020-01-27 00:00:00 RL            Processed fish Chinoo…           4038     NA
-    ## # … with 15 more variables: life_stage <chr>, at_capture_run <chr>,
+    ## 1 2020-01-27 00:00:00 RL            Processed fish Chinoo~           4038     NA
+    ## # ... with 15 more variables: life_stage <chr>, at_capture_run <chr>,
     ## #   final_run <chr>, mortality <chr>, random <chr>, analyses <chr>,
     ## #   rearing <chr>, release_id <dbl>, mark_type <chr>, mark_position <chr>,
     ## #   mark_color <chr>, trap_visit_comment <chr>, catch_comment <lgl>,
@@ -218,7 +230,7 @@ raw_clean %>%
             median = median(fork_length_mm, na.rm = T))
 ```
 
-    ## # A tibble: 8 × 3
+    ## # A tibble: 8 x 3
     ##   life_stage             mean median
     ##   <chr>                 <dbl>  <dbl>
     ## 1 Button-up fry          36.3   35  
@@ -263,7 +275,7 @@ raw_clean %>%
             na = length(which(is.na(weight))))
 ```
 
-    ## # A tibble: 11 × 6
+    ## # A tibble: 11 x 6
     ##    `year(date)`  mean median   min   max    na
     ##           <dbl> <dbl>  <dbl> <dbl> <dbl> <int>
     ##  1         2010  5.37    2.5  0     59     285
@@ -388,11 +400,11 @@ unique(raw_clean$trap_position)
 filter(raw_clean, trap_position == "N/A")
 ```
 
-    ## # A tibble: 1 × 21
+    ## # A tibble: 1 x 21
     ##   date                trap_position fish_processed species fork_length_mm weight
     ##   <dttm>              <chr>         <chr>          <chr>            <dbl>  <dbl>
-    ## 1 2019-11-29 00:00:00 N/A           Processed fish Chinoo…             NA     NA
-    ## # … with 15 more variables: life_stage <chr>, at_capture_run <chr>,
+    ## 1 2019-11-29 00:00:00 N/A           Processed fish Chinoo~             NA     NA
+    ## # ... with 15 more variables: life_stage <chr>, at_capture_run <chr>,
     ## #   final_run <chr>, mortality <chr>, random <chr>, analyses <chr>,
     ## #   rearing <chr>, release_id <dbl>, mark_type <chr>, mark_position <chr>,
     ## #   mark_color <chr>, trap_visit_comment <chr>, catch_comment <lgl>,
@@ -404,7 +416,7 @@ group_by(raw_clean, date) %>%
   filter(n > 2)
 ```
 
-    ## # A tibble: 1,107 × 2
+    ## # A tibble: 1,107 x 2
     ##    date                    n
     ##    <dttm>              <int>
     ##  1 2010-10-28 00:00:00    58
@@ -417,7 +429,7 @@ group_by(raw_clean, date) %>%
     ##  8 2010-11-24 00:00:00     3
     ##  9 2010-11-26 00:00:00     3
     ## 10 2010-11-27 00:00:00     3
-    ## # … with 1,097 more rows
+    ## # ... with 1,097 more rows
 
 Some years do not have `trap_location` variable filled in but it is
 labeled as “N / A” so change that to NA.
@@ -444,7 +456,7 @@ filter(raw_clean, fish_processed == "No fish were caught", count > 0) %>%
   select(date, fish_processed, fork_length_mm, at_capture_run, count)
 ```
 
-    ## # A tibble: 2 × 5
+    ## # A tibble: 2 x 5
     ##   date                fish_processed      fork_length_mm at_capture_run count
     ##   <dttm>              <chr>                        <dbl> <chr>          <dbl>
     ## 1 2019-04-25 00:00:00 No fish were caught             74 Fall               1
@@ -455,12 +467,12 @@ filter(raw_clean, fish_processed == "N/A; not a sampling visit") %>%
   select(date, fish_processed, fork_length_mm, at_capture_run, count)
 ```
 
-    ## # A tibble: 3 × 5
+    ## # A tibble: 3 x 5
     ##   date                fish_processed         fork_length_mm at_capture_run count
     ##   <dttm>              <chr>                           <dbl> <chr>          <dbl>
-    ## 1 2019-01-19 00:00:00 N/A; not a sampling v…             NA Not recorded       0
-    ## 2 2019-03-30 00:00:00 N/A; not a sampling v…             NA Not recorded       0
-    ## 3 2019-03-31 00:00:00 N/A; not a sampling v…             NA Not recorded       0
+    ## 1 2019-01-19 00:00:00 N/A; not a sampling v~             NA Not recorded       0
+    ## 2 2019-03-30 00:00:00 N/A; not a sampling v~             NA Not recorded       0
+    ## 3 2019-03-31 00:00:00 N/A; not a sampling v~             NA Not recorded       0
 
 **NA and Unknown Values**
 
@@ -537,7 +549,7 @@ filter(raw_clean, at_capture_run == "Not applicable (n/a)") %>%
   select(date, fish_processed, fork_length_mm, at_capture_run, count)
 ```
 
-    ## # A tibble: 10 × 5
+    ## # A tibble: 10 x 5
     ##    date                fish_processed fork_length_mm at_capture_run       count
     ##    <dttm>              <chr>                   <dbl> <chr>                <dbl>
     ##  1 2019-12-20 00:00:00 Processed fish            158 Not applicable (n/a)     1
@@ -596,7 +608,7 @@ filter(raw_clean, !is.na(final_run), final_run != at_capture_run, final_run != "
   select(date, fish_processed, fork_length_mm, at_capture_run, count)
 ```
 
-    ## # A tibble: 13 × 5
+    ## # A tibble: 13 x 5
     ##    date                fish_processed fork_length_mm at_capture_run count
     ##    <dttm>              <chr>                   <dbl> <chr>          <dbl>
     ##  1 2012-12-07 00:00:00 Processed fish             35 Spring             3
@@ -672,11 +684,11 @@ filter(raw_clean, random == "Not recorded") %>%
   select(date, fish_processed, fork_length_mm, at_capture_run, count, random)
 ```
 
-    ## # A tibble: 2 × 6
+    ## # A tibble: 2 x 6
     ##   date                fish_processed fork_length_mm at_capture_run count random 
     ##   <dttm>              <chr>                   <dbl> <chr>          <dbl> <chr>  
-    ## 1 2018-04-01 00:00:00 Processed fish             NA Not recorded       0 Not re…
-    ## 2 2019-01-10 00:00:00 Processed fish             NA Not recorded       0 Not re…
+    ## 1 2018-04-01 00:00:00 Processed fish             NA Not recorded       0 Not re~
+    ## 2 2019-01-10 00:00:00 Processed fish             NA Not recorded       0 Not re~
 
 ``` r
 total <- raw_clean %>%
@@ -695,7 +707,7 @@ raw_clean %>%
 
     ## Joining, by = "wy"
 
-    ## # A tibble: 24 × 5
+    ## # A tibble: 24 x 5
     ## # Groups:   wy [11]
     ##    wy    random count total proportion_total
     ##    <fct> <chr>  <dbl> <dbl>            <dbl>
@@ -709,7 +721,7 @@ raw_clean %>%
     ##  8 2013  Yes     2211  2217         0.997   
     ##  9 2014  No         9 55765         0.000161
     ## 10 2014  Yes    55756 55765         1.00    
-    ## # … with 14 more rows
+    ## # ... with 14 more rows
 
 **NA and Unknown Values**
 
@@ -746,7 +758,7 @@ filter(raw_clean, rearing == "Natural", mark_type != "No marks or tags") %>%
   select(date, fork_length_mm, at_capture_run, count, rearing)
 ```
 
-    ## # A tibble: 22 × 5
+    ## # A tibble: 22 x 5
     ##    date                fork_length_mm at_capture_run count rearing
     ##    <dttm>                       <dbl> <chr>          <dbl> <chr>  
     ##  1 2011-01-20 00:00:00             35 Fall               1 Natural
@@ -759,7 +771,7 @@ filter(raw_clean, rearing == "Natural", mark_type != "No marks or tags") %>%
     ##  8 2011-05-02 00:00:00             61 Fall               1 Natural
     ##  9 2013-05-10 00:00:00             90 Fall               1 Natural
     ## 10 2013-05-10 00:00:00             91 Fall               1 Natural
-    ## # … with 12 more rows
+    ## # ... with 12 more rows
 
 ``` r
 total <- raw_clean %>%
@@ -809,7 +821,7 @@ filter(raw_clean, rearing == "Natural", mark_type != "No marks or tags") %>%
   select(date, fork_length_mm, at_capture_run, count, rearing, mark_type)
 ```
 
-    ## # A tibble: 22 × 6
+    ## # A tibble: 22 x 6
     ##    date                fork_length_mm at_capture_run count rearing mark_type    
     ##    <dttm>                       <dbl> <chr>          <dbl> <chr>   <chr>        
     ##  1 2011-01-20 00:00:00             35 Fall               1 Natural Pigment / dye
@@ -822,7 +834,7 @@ filter(raw_clean, rearing == "Natural", mark_type != "No marks or tags") %>%
     ##  8 2011-05-02 00:00:00             61 Fall               1 Natural Pigment / dye
     ##  9 2013-05-10 00:00:00             90 Fall               1 Natural Fin clip     
     ## 10 2013-05-10 00:00:00             91 Fall               1 Natural Fin clip     
-    ## # … with 12 more rows
+    ## # ... with 12 more rows
 
 ``` r
 total <- raw_clean %>%
@@ -874,13 +886,13 @@ unique(raw_clean$mark_position)
 filter(raw_clean, mark_type == "No marks or tags", mark_position != "Not applicable (n/a)")
 ```
 
-    ## # A tibble: 0 × 21
-    ## # … with 21 variables: date <dttm>, trap_position <chr>, fish_processed <chr>,
-    ## #   species <chr>, fork_length_mm <dbl>, weight <dbl>, life_stage <chr>,
-    ## #   at_capture_run <chr>, final_run <chr>, mortality <chr>, random <chr>,
-    ## #   analyses <chr>, rearing <chr>, release_id <dbl>, mark_type <chr>,
-    ## #   mark_position <chr>, mark_color <chr>, trap_visit_comment <chr>,
-    ## #   catch_comment <lgl>, location <chr>, count <dbl>
+    ## # A tibble: 0 x 21
+    ## # ... with 21 variables: date <dttm>, trap_position <chr>,
+    ## #   fish_processed <chr>, species <chr>, fork_length_mm <dbl>, weight <dbl>,
+    ## #   life_stage <chr>, at_capture_run <chr>, final_run <chr>, mortality <chr>,
+    ## #   random <chr>, analyses <chr>, rearing <chr>, release_id <dbl>,
+    ## #   mark_type <chr>, mark_position <chr>, mark_color <chr>,
+    ## #   trap_visit_comment <chr>, catch_comment <lgl>, location <chr>, count <dbl>
 
 ``` r
 total <- raw_clean %>%
@@ -935,20 +947,20 @@ unique(raw_clean$mark_color)
 filter(raw_clean, mark_type == "No marks or tags", mark_color != "Not applicable (n/a)")
 ```
 
-    ## # A tibble: 0 × 21
-    ## # … with 21 variables: date <dttm>, trap_position <chr>, fish_processed <chr>,
-    ## #   species <chr>, fork_length_mm <dbl>, weight <dbl>, life_stage <chr>,
-    ## #   at_capture_run <chr>, final_run <chr>, mortality <chr>, random <chr>,
-    ## #   analyses <chr>, rearing <chr>, release_id <dbl>, mark_type <chr>,
-    ## #   mark_position <chr>, mark_color <chr>, trap_visit_comment <chr>,
-    ## #   catch_comment <lgl>, location <chr>, count <dbl>
+    ## # A tibble: 0 x 21
+    ## # ... with 21 variables: date <dttm>, trap_position <chr>,
+    ## #   fish_processed <chr>, species <chr>, fork_length_mm <dbl>, weight <dbl>,
+    ## #   life_stage <chr>, at_capture_run <chr>, final_run <chr>, mortality <chr>,
+    ## #   random <chr>, analyses <chr>, rearing <chr>, release_id <dbl>,
+    ## #   mark_type <chr>, mark_position <chr>, mark_color <chr>,
+    ## #   trap_visit_comment <chr>, catch_comment <lgl>, location <chr>, count <dbl>
 
 ``` r
 filter(raw_clean, mark_color != "Not applicable (n/a)") %>%
   select(date, fork_length_mm, at_capture_run, count, rearing, mark_type, mark_color)
 ```
 
-    ## # A tibble: 35 × 7
+    ## # A tibble: 35 x 7
     ##    date                fork_length_mm at_capture_run count rearing mark_type    
     ##    <dttm>                       <dbl> <chr>          <dbl> <chr>   <chr>        
     ##  1 2011-01-20 00:00:00             35 Fall               1 Natural Pigment / dye
@@ -961,7 +973,7 @@ filter(raw_clean, mark_color != "Not applicable (n/a)") %>%
     ##  8 2011-05-02 00:00:00             61 Fall               1 Natural Pigment / dye
     ##  9 2016-01-17 00:00:00             37 Fall               1 Natural Pigment / dye
     ## 10 2016-01-18 00:00:00             37 Fall               1 Natural Pigment / dye
-    ## # … with 25 more rows, and 1 more variable: mark_color <chr>
+    ## # ... with 25 more rows, and 1 more variable: mark_color <chr>
 
 **NA and Unknown Values**
 
@@ -978,7 +990,7 @@ filter(raw_clean, !is.na(trap_visit_comment)) %>%
   tally()
 ```
 
-    ## # A tibble: 10 × 2
+    ## # A tibble: 10 x 2
     ##    `year(date)`     n
     ##           <dbl> <int>
     ##  1         2010    21
@@ -1000,7 +1012,7 @@ filter(raw_clean, !is.na(trap_visit_comment)) %>%
 
     ## Rows: 2,111
     ## Columns: 1
-    ## $ trap_visit_comment <chr> "Lost data sheet, entry for today made with environ…
+    ## $ trap_visit_comment <chr> "Lost data sheet, entry for today made with environ~
 
 **NA and Unknown Values**
 
@@ -1016,8 +1028,8 @@ filter(raw_clean, !is.na(catch_comment)) %>%
   tally()
 ```
 
-    ## # A tibble: 0 × 2
-    ## # … with 2 variables: year(date) <dbl>, n <int>
+    ## # A tibble: 0 x 2
+    ## # ... with 2 variables: year(date) <dbl>, n <int>
 
 **NA and Unknown Values**
 
@@ -1037,13 +1049,13 @@ unique(raw_clean$location)
 filter(raw_clean, is.na(location))
 ```
 
-    ## # A tibble: 0 × 21
-    ## # … with 21 variables: date <dttm>, trap_position <chr>, fish_processed <chr>,
-    ## #   species <chr>, fork_length_mm <dbl>, weight <dbl>, life_stage <chr>,
-    ## #   at_capture_run <chr>, final_run <chr>, mortality <chr>, random <chr>,
-    ## #   analyses <chr>, rearing <chr>, release_id <dbl>, mark_type <chr>,
-    ## #   mark_position <chr>, mark_color <chr>, trap_visit_comment <chr>,
-    ## #   catch_comment <lgl>, location <chr>, count <dbl>
+    ## # A tibble: 0 x 21
+    ## # ... with 21 variables: date <dttm>, trap_position <chr>,
+    ## #   fish_processed <chr>, species <chr>, fork_length_mm <dbl>, weight <dbl>,
+    ## #   life_stage <chr>, at_capture_run <chr>, final_run <chr>, mortality <chr>,
+    ## #   random <chr>, analyses <chr>, rearing <chr>, release_id <dbl>,
+    ## #   mark_type <chr>, mark_position <chr>, mark_color <chr>,
+    ## #   trap_visit_comment <chr>, catch_comment <lgl>, location <chr>, count <dbl>
 
 **NA and Unknown Values**
 
@@ -1073,6 +1085,16 @@ rst_changes <- raw_clean %>%
                                T ~ mark_type),
          mark_position = ifelse(mark_position == "Not applicable (n/a)", NA_character_, mark_position))
 ```
+
+### Next Steps
+
+#### Columns to Remove
+
+-   Comments columns may not be needed
+-   We will likely want to pick one of the run columns to use, and
+    understand methodology used to determine `final_run`  
+-   We should try and better understand what the analysis column refers
+    to, and delete if not needed
 
 ### Save cleaned data back to google cloud
 

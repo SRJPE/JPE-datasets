@@ -119,7 +119,6 @@ data_dictionary <- tibble(variables = colnames(cleaner_rst_environmental),
                                           "The read out number on the mechanical counter of the flow meter at the start and end of the velocity",
                                           "The read out number on the mechanical counter of the flow meter at the start and end of the velocity",
                                           "How long the General Oceanics mechanical flow meter was in the water taking a reading, used to calculate water velocity in front of the cone",
-                                          "Calculated water velocityin front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875 (multiplied by 3.281 to convert from m/s to ft/s)",
                                           "Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime",
                                           "Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting",
                                           "A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table",
@@ -143,7 +142,8 @@ data_dictionary <- tibble(variables = colnames(cleaner_rst_environmental),
                                           "A code for the condition of the trap on the SampleDate and SampleTime",
                                           "Beginning cone revolution counter number, usually zero",
                                           "Trap fished or not",
-                                          "Partial sample"
+                                          "Partial sample",
+                                          "Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875 (multiplied by 3.281 to convert from m/s to ft/s)"
                                           ),
                           
                           percent_na = round(percent_na$value*100)
