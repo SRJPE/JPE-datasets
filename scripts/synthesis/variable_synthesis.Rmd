@@ -1,0 +1,98 @@
+---
+title: "Explore Variables"
+author: "Erin Cain"
+date: "12/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+```
+
+## Adult Upstream Passage 
+
+
+```{r}
+# VIDEO DATA 
+# Battle Creek 
+battle_video <- readRDS("../../data/battle_adult_video_passage_data_dictionary.rds") %>% 
+  mutate(location = "Battle Creek") %>% glimpse
+
+# Clear Creek 
+clear_video <- readRDS("../../data/clear_adult_passage_data_dictionary.rds")%>% 
+  mutate(location = "Clear Creek") %>% glimpse
+
+# Deer Creek 
+deer_video <- readRDS("../../data/deer_adult_passage_data_dictionary.rds")%>% 
+  mutate(location = "Deer Creek") %>% glimpse
+
+# Yuba River 
+yuba_video <- readRDS("../../data/yuba_adult_passage_data_dictionary.rds") %>% 
+  mutate(location = "Yuba River") %>% glimpse
+
+adult_upstream_video_variables <- 
+  bind_rows(battle_video, clear_video, deer_video, yuba_video) %>% 
+  group_by(variables) %>%
+  tally() %>%
+  glimpse()
+
+View(adult_upstream_video_variables)
+```
+
+
+```{r}
+# Passage Estimates 
+# Battle Creek 
+battle_passage_estimates <- readRDS("../../data/battle_adult_passage_estimates_data_dictionary.rds") %>% 
+  mutate(location = "Battle Creek") %>% glimpse
+
+# Deer Creek 
+deer_passage_estimates <- readRDS("../../data/deer_adult_passage_data_dictionary.rds")%>% 
+  mutate(location = "Deer Creek") %>% glimpse
+
+# Mill Creek
+mill_passage_estimates <- readRDS("../../data/mill_adult_passage_data_dictionary.rds") %>% 
+  mutate(location = "Mill Creek") %>% glimpse
+
+adult_upstream_passage_estimate_variables <- 
+  bind_rows(battle_passage_estimates, deer_passage_estimates, mill_passage_estimates) %>% 
+  group_by(variables) %>%
+  tally() %>%
+  glimpse()
+
+View(adult_upstream_passage_estimate_variables)
+```
+
+
+```{r}
+
+
+battle_trap <- readRDS("../../data/battle_adult_trap_data_dictionary.rds") %>% 
+  mutate(location = "Battle Creek") %>% glimpse
+```
+
+
+## Carcass Surveys 
+
+```{r}
+battle_carcass <- readRDS("../../data/battle_carcass_data_dictionary.rds") %>% 
+  mutate(location = "Battle Creek") %>% glimpse
+
+butte_carcass <- readRDS("../../data/butte_carcass_individuals_2_data_dictionary.rds") %>% 
+  mutate(location = "Butte Creek") %>% glimpse
+
+clear_carcass <- readRDS("../../data/clear_carcass_data_dictionary.rds") %>% 
+  mutate(location = "Clear Creek") %>% glimpse
+
+carcass_survey_variables <- bind_rows(battle_carcass, butte_carcass, clear_carcass) %>%
+  group_by(variables) %>% 
+  tally()
+
+# Seems to be more simplified, TODO better understand difference between CHOPS and Survey Individuals
+butte_chops <- readRDS("../../data/butte_carcass_chops_data_dictionary.rds") %>% 
+  mutate(location = "Butte Creek") %>% glimpse
+```
+
+
