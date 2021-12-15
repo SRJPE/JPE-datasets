@@ -13,6 +13,7 @@ library(ggplot2)
 library(scales)
 library(leaflet)
 library(gridExtra)
+library(knitr)
 ```
 # Yuba River RST Data  
 
@@ -70,7 +71,7 @@ cleaner_data <- raw_data %>%
   rename('date'= SampleDate,
          'time' = SampleTime,
          'method' = MethodCode,
-         'temperature' = WaterTemperature,
+         'water_temperature' = WaterTemperature,
          'turbidity' = Turbidity,
          'velocity' = WaterVelocity,
          'trap_status' = TrapStatus,
@@ -88,6 +89,40 @@ cleaner_data <- raw_data %>%
 cleaner_data <- cleaner_data %>% 
   set_names(tolower(colnames(cleaner_data))) %>% 
   glimpse()
+```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Date of sample",
+                                          "Time of sample",
+                                          "Method of sampling. Categories: fish screen diversion trap, rotary screw trap",
+                                          "Water temperature measured with an ACME Industries infrared Cramomatic 444 automatic sensor. Units: degrees Celsius",
+                                          "Turbidity of water. Units NTUs",
+                                          "Water velocity measured with ACME Industries' heavy duty Torpedo 3000 velorecroder. Unit: feet per second",
+                                          "Describes whether trap was checked or set/pulled. Categories: check, set, breached, set/pull, pull",
+                                          "Number of trap revolutions corresponding to a particular catch",
+                                          "Number of trap revolutions corresponding to a particular catch, results from second counter",
+                                          "Description of the amount of debris. Categories: light, medium, heavy",
+                                          "Revolutions per minute before the trap was sampled",
+                                          "Revolutions per minute after the trap was sampled",
+                                          "Comments about sampling or trap",
+                                          "The alphanumeric code for a species of fish or other organism present in the catch. Filtered for Chinook only",
+                                          "Fork length of fish caught. Units milimeters",
+                                          "Weight of fish caught. Units in grams",
+                                          "Describes the life stage of an organism. It is a combination of 'run' and 'lifestage' data. New column called run is created to separate lifestage and run",
+                                          "Number of fish caught",
+                                          "Location of rotary screw traps. Categories: 5 foot RST at Hallwood, RST 2 at Hallwood, RST 1 at Hallwood on Yuba River, Yuba River"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
 ```
 
 ## Explore Categorical Variables
@@ -233,9 +268,9 @@ cleaner_data %>%
 **Description: water temperature measured with an ACME Industries infrared Cramomatic 444 automatic sensor. Units: degrees Celsius.** 
 
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   group_by(date) %>%
-  mutate(avg_temp = mean(temperature, na.rm = T)) %>%
+  mutate(avg_temp = mean(water_temperature, na.rm = T)) %>%
   ungroup() %>% 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
@@ -255,9 +290,9 @@ cleaner_data %>%
 There are a series of temperature points that is above 50 degrees celsius. It is unlikely that the water reached such high temperature.
 
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   mutate(year = as.factor(year(date))) %>%
-  ggplot(aes(x = temperature, y = year)) + 
+  ggplot(aes(x = water_temperature, y = year)) + 
   geom_boxplot() + 
   theme_minimal() +
   labs(title = "Water Temperature summarized by year",
@@ -269,7 +304,7 @@ cleaner_data %>%
 **Numeric Summary of temperature From 1999 to 2009**
 
 ```{r}
-summary(cleaner_data$temperature)
+summary(cleaner_data$water_temperature)
 ```
 
 **NA and Unknown Values**  
@@ -277,17 +312,12 @@ summary(cleaner_data$temperature)
 * `r round(sum(is.na(cleaner_data$'temperature'))/nrow(cleaner_data), 3)*100` % of values in the `temperature` column are NA.
 
 
-```{r}
-summary(cleaner_data$temperature)
-```
-
-
 ### Variable:`turbidity`
 
 **Description: water turbidity measured with an ACME Industries Turbido2000 meter. Units: NTU.**
 
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   group_by(location) %>% 
   summarise(mean_turbidity = mean(turbidity, na.rm = TRUE)) %>% 
   ggplot(aes(y = location,
@@ -299,7 +329,7 @@ cleaner_data %>%
 ```
 
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   group_by(date) %>%
   mutate(avg_turb = mean(turbidity, na.rm = T)) %>%
   ungroup() %>% 
@@ -318,7 +348,7 @@ cleaner_data %>%
        x = "Date")  
 ```
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = turbidity, y = year)) + 
   geom_boxplot() + 
@@ -341,13 +371,10 @@ summary(cleaner_data$turbidity)
 
 ### Variable:`velocity`
 
-**Description: Water velocity measured with ACME Industries' heavy duty Torpedo 3000 velorecroder. Unit: feet per second. The following operations convert the data to m per second for standardization with the rest of the JPE data.** 
+**Description: Water velocity measured with ACME Industries' heavy duty Torpedo 3000 velorecroder. Unit: feet per second.** 
 
 ```{r}
-cleaner_data <- cleaner_data %>% 
-  mutate(velocity = velocity/3.281)
-
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   group_by(location) %>% 
   summarise(mean_velocity = mean(velocity, na.rm = TRUE)) %>% 
   ggplot(aes(y = location,
@@ -358,7 +385,7 @@ cleaner_data %>%
 ```
 
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   group_by(date) %>%
   mutate(avg_velocity = mean(velocity, na.rm = T)) %>%
   ungroup() %>% 
@@ -377,7 +404,7 @@ cleaner_data %>%
        x = "Date")  
 ```
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = velocity, y = year)) + 
   geom_boxplot() + 
@@ -433,6 +460,16 @@ The trap_revolutions have a 277 points at revolution between 112178 rpm and 8907
 summary(cleaner_data$trap_revolutions)
 ```
 
+**Filtered for spring run only**
+```{r}
+#Filter out significant high outliers (revolution > 10,000 )
+filter(cleaner_data, run == "spring") %>% 
+  ggplot(aes(x=trap_revolutions))+
+  geom_histogram(binwidth = 1000)+
+  theme_minimal()+
+  labs(title = "Trap Revolutions Distribution Without Filtering")+
+  theme(plot.title = element_text(size = 10))
+```
 **NA and Unknown Values**  
 
 * `r round(sum(is.na(cleaner_data$'trap_revolutions'))/nrow(cleaner_data), 3)*100` % of values in the `trap_revolutions` column are NA.
@@ -470,6 +507,16 @@ The trap_revolutions have a 220 points at revolution between 112178 rpm and 8907
 summary(cleaner_data$trap_revolutions2)
 ```
 
+**Filtered for spring run only**
+```{r}
+filter(cleaner_data, run == "spring") %>% 
+  ggplot(aes(x=trap_revolutions2))+
+  geom_histogram(binwidth = 1000)+
+  theme_minimal()+
+  labs(title = "Trap Revolutions2 Distribution Before Filtering")+
+  theme(plot.title = element_text(size = 10))
+```
+
 **NA and Unknown Values**  
 
 * `r round(sum(is.na(cleaner_data$'trap_revolutions2'))/nrow(cleaner_data), 3)*100` % of values in the `trap_revolutions2` column are NA.
@@ -479,7 +526,7 @@ summary(cleaner_data$trap_revolutions2)
 **Description: Revolutions per minute before the trap was sampled.**
 
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   filter(!is.na(location)) %>% 
   ggplot(aes(x = rpms_before, y = location)) + 
   geom_boxplot() + 
@@ -506,7 +553,7 @@ summary(cleaner_data$rpms_before)
 
 
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   filter(!is.na(location)) %>% 
   filter(rpms_after < 50) %>% #filter out 149 points that had significantly higher value-66 points at 50 rpm, 83 points at 1877 rpm 
   ggplot(aes(x = rpms_after, y = location)) + 
@@ -538,7 +585,7 @@ cleaner_data$fork_length[cleaner_data$fork_length == 0] <- NA
 ```
 
 ```{r}
-cleaner_data %>%
+filter(cleaner_data, run == "spring") %>% 
   filter(fork_length < 200) %>%  #filter out outlier bigger than 110 for more clear distribution graph
   ggplot(aes(x=fork_length))+
   geom_histogram(breaks = seq(0,110, by =2))+
@@ -546,7 +593,7 @@ cleaner_data %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1 ))
 ```
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   filter(fork_length < 200) %>% #filtered one outlier (>600) from 2001
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = fork_length, y = year)) + 
@@ -582,7 +629,7 @@ summary(cleaner_data$fork_length)
 
 ```{r}
 #Filter out 216 points with weight bigger than 12 for a more clear distribution graph
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   filter(weight<12) %>% 
   ggplot(aes(x=weight))+
   geom_histogram(breaks = seq(0,11, by =0.2))+
@@ -612,7 +659,7 @@ summary(cleaner_data$weight)
 ### Variable:`count`
 
 ```{r}
-cleaner_data %>% 
+filter(cleaner_data, run == "spring") %>% 
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
@@ -678,9 +725,15 @@ summary(cleaner_data$count)
 
 * Depending on the importance of trap revolution and rpms data, we might need more metadata to describe the variable.
 
-* A few outliers for both weight and forklength measured. 
+* A few outliers for both weight and fork length measured. 
 
-* 2005 had the highest fish count followed by 2009 and 2008.However some of these values are extremely big such as max count of 85000/day.
+* 2005 had the highest fish count followed by 2009 and 2008. However some of these values are extremely big such as max count of 85000/day.
+
+### Next Steps
+
+* Decisions on QC issues
+* Filtering decisions - 1) Should fish screen diversion trap be included? 2) Should data where trap is not checked be included or separated?
+* Confirm the determination of run and that another method is not being used
 
 ### Add cleaned data back to google cloud 
 

@@ -13,6 +13,7 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library(readxl)
+library(knitr)
 ```
 
 # Battle Creek RST Daily Passage Estimates
@@ -64,14 +65,35 @@ raw_passage_estimates <- read_excel("SR_passage_estimates.xlsx", sheet = "UBC Pa
 
 ## Data transformations
 
-
 ```{r}
 cleaner_passage_estimate <- raw_passage_estimates %>% 
   janitor::clean_names() %>% 
   rename(catch = daily_catch,
-         passage_estimate = passage) %>%
+         passage_estimate = passage,
+         baileys_eff = trap_efficiency) %>%
   mutate(date = as.Date(date, "%m/%d/%Y")) %>% glimpse()
   
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_passage_estimate %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_estimate),
+                          description = c("Date of passage",
+                                         "Raw catch of spring run",
+                                         "Estimated trap efficiency using Bailey's efficiency. Trap Efficiency = (Recaptured+1)/(Released+1)",
+                                         "Passage estimate calculated from raw count and trap efficiency",
+                                         "If trap fished (T/F)"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -144,14 +166,14 @@ summary(cleaner_passage_estimate$catch)
   
 * `r round(sum(is.na(cleaner_passage_estimate$catch))/nrow(cleaner_passage_estimate), 3) * 100` % of values in the `catch` column are NA.
 
-### Variable: `trap_efficiency`
+### Variable: `baileys_eff`
 
 
-**Plotting trap_efficiency**
+**Plotting baileys_eff**
   
 ```{r}
 cleaner_passage_estimate %>% 
-  ggplot(aes(x = trap_efficiency)) + 
+  ggplot(aes(x = baileys_eff)) + 
   geom_histogram() + 
   # scale_x_continuous(breaks=seq(0, 200, by=25)) +
   theme_minimal() +
@@ -163,16 +185,16 @@ cleaner_passage_estimate %>%
 
 Trap efficiency is fairly low (between 0 and .17)
 
-**Numeric Summary of trap_efficiency over Period of Record**
+**Numeric Summary of baileys_eff over Period of Record**
   
 ```{r}
 # Table with summary statistics
-summary(cleaner_passage_estimate$trap_efficiency)
+summary(cleaner_passage_estimate$baileys_eff)
 ```
 
 **NA and Unknown Values**
   
-* `r round(sum(is.na(cleaner_passage_estimate$trap_efficiency))/nrow(cleaner_passage_estimate), 3) * 100` % of values in the `trap_efficiency` column are NA. 
+* `r round(sum(is.na(cleaner_passage_estimate$baileys_eff))/nrow(cleaner_passage_estimate), 3) * 100` % of values in the `baileys_eff` column are NA. 
 
 These NA values seem to mainly correspond with days where no fish were caught. 
 
@@ -269,8 +291,7 @@ table(cleaner_passage_estimate$trap_fished)
 
 ## Summary of identified issues
 
-* Passage estimates look good based on preliminary look, I do want to review R script used to generate the passage estimates
-* Additionally need to add other runs in if desired
+* This is only for spring run. Need to add other runs in if desired.
 
 ## Save cleaned data back to google cloud 
 

@@ -58,20 +58,20 @@ raw_rst_data <- read_excel("raw_rst_deer_and_mill.xlsx", col_types =c("date", "t
 
     ## Rows: 96,528
     ## Columns: 14
-    ## $ Date                      <dttm> 1992-10-14, 1992-10-14, 1992-10-14, 1992-10~
-    ## $ Location                  <chr> "Deer Creek Canyon Mouth", "Deer Creek Canyo~
-    ## $ Count                     <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
-    ## $ Species                   <chr> "CHISAL", "CHISAL", "CHISAL", "CHISAL", "CHI~
-    ## $ Length                    <dbl> 93, 98, 94, 115, 79, 87, 110, 93, 87, 79, 76~
-    ## $ Weight                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ Flow                      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Time for 10 Revolutions` <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Tubs of Debris`          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Trap Condition Code`     <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
-    ## $ `Water Temperature`       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ Turbidity                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ Weather                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ Comments                  <chr> "Data sheet does not show sampling method - ~
+    ## $ Date                      <dttm> 1992-10-14, 1992-10-14, 1992-10-14, 1992-10…
+    ## $ Location                  <chr> "Deer Creek Canyon Mouth", "Deer Creek Canyo…
+    ## $ Count                     <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
+    ## $ Species                   <chr> "CHISAL", "CHISAL", "CHISAL", "CHISAL", "CHI…
+    ## $ Length                    <dbl> 93, 98, 94, 115, 79, 87, 110, 93, 87, 79, 76…
+    ## $ Weight                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ Flow                      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Time for 10 Revolutions` <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Tubs of Debris`          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Trap Condition Code`     <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
+    ## $ `Water Temperature`       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ Turbidity                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ Weather                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ Comments                  <chr> "Data sheet does not show sampling method - …
 
 ``` r
 unique(raw_rst_data$Location) # View unique locations so I can filter for only Mill 
@@ -98,19 +98,65 @@ cleaner_rst_data <- raw_rst_data%>%
 
     ## Rows: 25,529
     ## Columns: 13
-    ## $ date                    <date> 1995-12-09, 1995-12-13, 1995-12-13, 1995-12-1~
-    ## $ location                <chr> "Mill Creek RSTR", "Mill Creek RSTR", "Mill Cr~
-    ## $ count                   <dbl> 1, 2, 1, 1, 3, 8, 8, 1, 5, 16, 5, 1, 17, 2, 2,~
-    ## $ fork_length             <dbl> 32, 34, 35, 35, 36, NA, 36, 38, 37, 35, 33, 31~
-    ## $ weight                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ flow                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ time_for_10_revolutions <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ tubs_of_debris          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ trap_condition_code     <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "~
-    ## $ water_temperature       <dbl> 50, 49, 49, 47, 47, 47, 47, 47, 47, 47, 47, 47~
-    ## $ turbidity               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ weather                 <chr> NA, NA, NA, "4", "4", "4", "4", "4", "4", "4",~
-    ## $ comments                <chr> "1995 BY-CHISAL said to weigh 1mg.", "Fished c~
+    ## $ date                    <date> 1995-12-09, 1995-12-13, 1995-12-13, 1995-12-1…
+    ## $ location                <chr> "Mill Creek RSTR", "Mill Creek RSTR", "Mill Cr…
+    ## $ count                   <dbl> 1, 2, 1, 1, 3, 8, 8, 1, 5, 16, 5, 1, 17, 2, 2,…
+    ## $ fork_length             <dbl> 32, 34, 35, 35, 36, NA, 36, 38, 37, 35, 33, 31…
+    ## $ weight                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ flow                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ time_for_10_revolutions <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ tubs_of_debris          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ trap_condition_code     <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "…
+    ## $ water_temperature       <dbl> 50, 49, 49, 47, 47, 47, 47, 47, 47, 47, 47, 47…
+    ## $ turbidity               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ weather                 <chr> NA, NA, NA, "4", "4", "4", "4", "4", "4", "4",…
+    ## $ comments                <chr> "1995 BY-CHISAL said to weigh 1mg.", "Fished c…
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_rst_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_data),
+                          description = c("Date of sample",
+                                          "Location of sample",
+                                          "Number of fish caught",
+                                          "Fork length of fish. Units in milimeters",
+                                          "Weight of fish. Units in grams",
+                                          "Stream flow. Units in cubic feet per second",
+                                          "Time it takes for 10 cone revolutions. Units in minutes",
+                                          "Tubs of debris collected at trap. Units in 10 gallon tubs",
+                                          "Description of the condition of trap. Categories: normal, partial blockage, total blockage, cone stopped",
+                                          "Temperature of water. Units originally in degrees F; converted to degrees C for standardization",
+                                          "Turbidity of water. Units in NTUs",
+                                          "Weather description. Categories: sunny, partly cloudy, cloudy, rain, snow, fog",
+                                          "Comments about sampling or trap"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables                  | description                                                                                              | percent\_na |
+|:---------------------------|:---------------------------------------------------------------------------------------------------------|------------:|
+| date                       | Date of sample                                                                                           |           0 |
+| location                   | Location of sample                                                                                       |           0 |
+| count                      | Number of fish caught                                                                                    |           0 |
+| fork\_length               | Fork length of fish. Units in milimeters                                                                 |           2 |
+| weight                     | Weight of fish. Units in grams                                                                           |          67 |
+| flow                       | Stream flow. Units in cubic feet per second                                                              |          24 |
+| time\_for\_10\_revolutions | Time it takes for 10 cone revolutions. Units in minutes                                                  |          29 |
+| tubs\_of\_debris           | Tubs of debris collected at trap. Units in 10 gallon tubs                                                |          32 |
+| trap\_condition\_code      | Description of the condition of trap. Categories: normal, partial blockage, total blockage, cone stopped |          23 |
+| water\_temperature         | Temperature of water. Units originally in degrees F; converted to degrees C for standardization          |          24 |
+| turbidity                  | Turbidity of water. Units in NTUs                                                                        |          48 |
+| weather                    | Weather description. Categories: sunny, partly cloudy, cloudy, rain, snow, fog                           |           9 |
+| comments                   | Comments about sampling or trap                                                                          |          63 |
 
 ## Explore Numeric Variables:
 
@@ -666,30 +712,40 @@ unique(cleaner_rst_data$comments)[1:5]
 ## Summary of identified issues
 
 -   Lots of sampling gaps
--   Some funky values in weather and condition code, converted to NA
+-   Some inconsistent values in weather and condition code, converted to
+    NA
+
+### Next Steps
+
 -   Some 0 weight values we may want to correct to NA
+-   Suggest converting tubs to a standard volumetric unit
+-   Determine if flow measurements are taken on site or at a gage
 
 ## Save cleaned data back to google cloud
 
 ``` r
-mill_rst <- cleaner_rst_data %>% glimpse()
+# Make any changes identified
+mill_rst <- cleaner_rst_data %>% 
+  # convert to degrees C for standardization
+  mutate(water_temperature = (water_temperature - 32) * 5/9) %>%
+  glimpse()
 ```
 
     ## Rows: 25,529
     ## Columns: 13
-    ## $ date                    <date> 1995-12-09, 1995-12-13, 1995-12-13, 1995-12-1~
-    ## $ location                <chr> "Mill Creek RSTR", "Mill Creek RSTR", "Mill Cr~
-    ## $ count                   <dbl> 1, 2, 1, 1, 3, 8, 8, 1, 5, 16, 5, 1, 17, 2, 2,~
-    ## $ fork_length             <dbl> 32, 34, 35, 35, 36, NA, 36, 38, 37, 35, 33, 31~
-    ## $ weight                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ flow                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ time_for_10_revolutions <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ tubs_of_debris          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ trap_condition_code     <chr> "normal", "normal", "normal", "normal", "norma~
-    ## $ water_temperature       <dbl> 50, 49, 49, 47, 47, 47, 47, 47, 47, 47, 47, 47~
-    ## $ turbidity               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ weather                 <chr> NA, NA, NA, "rain", "rain", "rain", "rain", "r~
-    ## $ comments                <chr> "1995 BY-CHISAL said to weigh 1mg.", "Fished c~
+    ## $ date                    <date> 1995-12-09, 1995-12-13, 1995-12-13, 1995-12-1…
+    ## $ location                <chr> "Mill Creek RSTR", "Mill Creek RSTR", "Mill Cr…
+    ## $ count                   <dbl> 1, 2, 1, 1, 3, 8, 8, 1, 5, 16, 5, 1, 17, 2, 2,…
+    ## $ fork_length             <dbl> 32, 34, 35, 35, 36, NA, 36, 38, 37, 35, 33, 31…
+    ## $ weight                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ flow                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ time_for_10_revolutions <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ tubs_of_debris          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ trap_condition_code     <chr> "normal", "normal", "normal", "normal", "norma…
+    ## $ water_temperature       <dbl> 10.000000, 9.444444, 9.444444, 8.333333, 8.333…
+    ## $ turbidity               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ weather                 <chr> NA, NA, NA, "rain", "rain", "rain", "rain", "r…
+    ## $ comments                <chr> "1995 BY-CHISAL said to weigh 1mg.", "Fished c…
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
