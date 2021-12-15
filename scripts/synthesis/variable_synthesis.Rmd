@@ -2,7 +2,8 @@
 title: "Explore Variables"
 author: "Erin Cain"
 date: "12/14/2021"
-output: html_document
+output: rmarkdown::github_document
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
@@ -67,9 +68,12 @@ adult_upstream_passage_estimate_variables <-
   tally() %>%
   glimpse()
 
-View(adult_upstream_passage_estimate_variables)
+# View(adult_upstream_passage_estimate_variables)
 ```
-
+```{r}
+set.seed(2)
+wordcloud2(adult_upstream_passage_estimate_variables, size = .75)
+```
 
 ```{r}
 
@@ -98,7 +102,13 @@ carcass_survey_variables <- bind_rows(battle_carcass, butte_carcass, clear_carca
 # Seems to be more simplified, TODO better understand difference between CHOPS and Survey Individuals
 butte_chops <- readRDS("../../data/butte_carcass_chops_data_dictionary.rds") %>% 
   mutate(location = "Butte Creek") %>% glimpse
+
+View(carcass_survey_variables)
 ```
 
-Overlapping Variables: 
-Date, 
+```{r}
+set.seed(3746)
+wordcloud2(carcass_survey_variables, size = .45)
+```
+
+
