@@ -95,4 +95,5 @@ butte_chops <- readRDS("../../data/butte_carcass_chops_data_dictionary.rds") %>%
   mutate(location = "Butte Creek") %>% glimpse
 ```
 
-
+Overlapping Variables: 
+Date, 
