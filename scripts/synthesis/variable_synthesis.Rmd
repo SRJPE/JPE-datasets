@@ -111,4 +111,97 @@ set.seed(3746)
 wordcloud2(carcass_survey_variables, size = .45)
 ```
 
+## Redd Survey 
 
+```{r}
+battle_redd <- readRDS("../../data/battle_redd_data_dictionary.rds") %>% 
+  mutate(location = "Battle Creek") %>% glimpse
+
+clear_redd <- readRDS("../../data/clear_redd_data_dictionary.rds") %>% 
+  mutate(location = "Clear Creek") %>% glimpse
+
+feather_redd <- readRDS("../../data/feather_redd_data_dictionary.rds") %>% 
+  mutate(location = "Feather River") %>% glimpse
+
+mill_redd <- readRDS("../../data/mill_redd_data_dictionary.rds") %>% 
+  mutate(location = "Mill Creek") %>% glimpse
+
+redd_survey_variables <- bind_rows(battle_redd, clear_redd, feather_redd, mill_redd) %>%
+  group_by(variables) %>% 
+  tally() %>% 
+  glimpse()
+
+View(redd_survey_variables)
+```
+
+```{r}
+set.seed(3746)
+wordcloud2(redd_survey_variables, size = .45)
+```
+
+## Holding Survey
+
+```{r}
+battle_holding <- readRDS("../../data/battle_holding_data_dictionary.rds") %>% 
+  mutate(location = "Battle Creek") %>% glimpse
+
+clear_holding <- readRDS("../../data/clear_holding_data_dictionary.rds") %>% 
+  mutate(location = "Clear Creek") %>% glimpse
+
+deer_holding <- readRDS("../../data/deer_holding_data_dictionary.rds") %>% 
+  mutate(location = "Deer River") %>% glimpse
+
+holding_survey_variables <- bind_rows(battle_holding, clear_holding, deer_holding) %>%
+  group_by(variables) %>% 
+  tally() %>% 
+  glimpse()
+```
+
+```{r}
+set.seed(3746)
+wordcloud2(holding_survey_variables, size = .45)
+```
+
+
+## RST Variables
+
+```{r}
+battle_rst <- readRDS("../../data/battle_rst_data_dictionary.rds") %>%
+  mutate(location = "Battle Creek") %>% glimpse
+
+butte_rst <- readRDS("../../data/butte_rst_data_dictionary.rds") %>% 
+  mutate(location = "Butte Creek") %>% glimpse
+
+clear_rst <- readRDS("../../data/clear_rst_data_dictionary.rds") %>% 
+  mutate(location = "Clear Creek") %>% glimpse
+
+deer_rst <- readRDS("../../data/deer_rst_data_dictionary.rds") %>% 
+  mutate(location = "Deer Creek") %>% glimpse
+
+#TODO feather river RST
+
+mill_rst <- readRDS("../../data/mill_rst_data_dictionary.rds") %>% 
+  mutate(location = "Mill Creek") %>% glimpse
+
+yuba_rst <- readRDS("../../data/yuba_rst_data_dictionary.rds") %>% 
+  mutate(location = "Yuba River") %>% glimpse
+
+knights_rst <- readRDS("../../data/lower_sac_knights_rst_data_dictionary.rds") %>% 
+  mutate(location = "Sac River - Knights") %>% glimpse
+
+tisdale_rst <- readRDS("../../data/lower_sac_tisdale_rst_data_dictionary.rds") %>% 
+  mutate(location = "Sac River - Tisdale") %>% glimpse
+
+
+rst_survey_variables <- bind_rows(battle_rst, butte_rst, clear_rst, deer_rst, mill_rst, yuba_rst, knights_rst, tisdale_rst) %>%
+  group_by(variables) %>% 
+  tally() %>% 
+  glimpse()
+
+View(rst_survey_variables)
+```
+
+```{r}
+set.seed(3746)
+wordcloud2(rst_survey_variables, size = .6)
+```
