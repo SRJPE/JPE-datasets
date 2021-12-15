@@ -70,7 +70,7 @@ cleaner_passage_data <- raw_passage_data %>%
   left_join(raw_passage_operations, c("Date", "Ladder")) %>% # Join passage data, no data on hours monitored in first 2 months
   janitor::clean_names() %>% 
   rename(speed_m_per_s = speed_m_s,
-         catagory = categorie,
+         category = categorie,
          passage_direction = direction_of_passage) %>%
   mutate(count = 1, 
          date = as.Date(date), 
@@ -329,34 +329,34 @@ cleaner_passage_data %>% select_if(is.character) %>% colnames()
 ```
 
 
-### Variable: `catagory`
+### Variable: `category`
 ```{r}
-table(cleaner_passage_data$catagory)
+table(cleaner_passage_data$category)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-catagories_to_keep <- str_detect(cleaner_passage_data$catagory, c("chinook", "chn")) 
-cleaner_passage_data <- filter(cleaner_passage_data, str_detect(tolower(cleaner_passage_data$catagory), c("chinook", "chn")))
-cleaner_passage_data$catagory <- tolower(cleaner_passage_data$catagory)
+categories_to_keep <- str_detect(cleaner_passage_data$category, c("chinook", "chn")) 
+cleaner_passage_data <- filter(cleaner_passage_data, str_detect(tolower(cleaner_passage_data$category), c("chinook", "chn")))
+cleaner_passage_data$category <- tolower(cleaner_passage_data$category)
 
 # Create a column for adipose 
-cleaner_passage_data$adipose <- case_when(cleaner_passage_data$catagory %in% 
+cleaner_passage_data$adipose <- case_when(cleaner_passage_data$category %in% 
                                             c("chinook ad-unidentified", "chinook ad undetermined", "chinook ad-undetermi", 
                                                "chinook ad-undetermined", "chinook ad clip unde", "chinook ad underterm", 
                                                "chinook ad undetermi") ~ "unknown", 
-                                          cleaner_passage_data$catagory %in% 
+                                          cleaner_passage_data$category %in% 
                                             c("chinook ad-clip", "chinook ad clip", "chinook salmon ad cl", 
                                                "chinook salmon ad c", "chinook salomon ad c") ~ "clipped")
-table(cleaner_passage_data$catagory)
+table(cleaner_passage_data$category)
 # TODO figure out what the whole -p/+s and +p/+s means 
 ```
 
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_passage_data$catagory))/nrow(cleaner_passage_data), 3) * 100` % of values in the `category` column are NA. 
+* `r round(sum(is.na(cleaner_passage_data$category))/nrow(cleaner_passage_data), 3) * 100` % of values in the `category` column are NA. 
 
 ### Variable: `passage_direction`
 

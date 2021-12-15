@@ -68,11 +68,11 @@ raw_passage_estimates <- read_excel("SR_passage_estimates.xlsx", sheet = "UBC Pa
 
     ## Rows: 6,510
     ## Columns: 5
-    ## $ Date              <chr> "10/01/2003", "10/02/2003", "10/03/2003", "10/04/200~
-    ## $ `Daily catch`     <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
-    ## $ `Trap efficiency` <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ Passage           <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
-    ## $ `Trap fished`     <chr> "Fished", "Fished", "Fished", "Fished", "Fished", "F~
+    ## $ Date              <chr> "10/01/2003", "10/02/2003", "10/03/2003", "10/04/200…
+    ## $ `Daily catch`     <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+    ## $ `Trap efficiency` <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ Passage           <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+    ## $ `Trap fished`     <chr> "Fished", "Fished", "Fished", "Fished", "Fished", "F…
 
 ## Data transformations
 
@@ -80,17 +80,48 @@ raw_passage_estimates <- read_excel("SR_passage_estimates.xlsx", sheet = "UBC Pa
 cleaner_passage_estimate <- raw_passage_estimates %>% 
   janitor::clean_names() %>% 
   rename(catch = daily_catch,
-         passage_estimate = passage) %>%
+         passage_estimate = passage,
+         baileys_eff = trap_efficiency) %>%
   mutate(date = as.Date(date, "%m/%d/%Y")) %>% glimpse()
 ```
 
     ## Rows: 6,510
     ## Columns: 5
-    ## $ date             <date> 2003-10-01, 2003-10-02, 2003-10-03, 2003-10-04, 2003~
-    ## $ catch            <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,~
-    ## $ trap_efficiency  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,~
-    ## $ trap_fished      <chr> "Fished", "Fished", "Fished", "Fished", "Fished", "Fi~
+    ## $ date             <date> 2003-10-01, 2003-10-02, 2003-10-03, 2003-10-04, 2003…
+    ## $ catch            <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+    ## $ baileys_eff      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+    ## $ trap_fished      <chr> "Fished", "Fished", "Fished", "Fished", "Fished", "Fi…
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_passage_estimate %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_estimate),
+                          description = c("Date of passage",
+                                         "Raw catch of spring run",
+                                         "Estimated trap efficiency using Bailey's efficiency. Trap Efficiency = (Recaptured+1)/(Released+1)",
+                                         "Passage estimate calculated from raw count and trap efficiency",
+                                         "If trap fished (T/F)"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables         | description                                                                                        | percent\_na |
+|:------------------|:---------------------------------------------------------------------------------------------------|------------:|
+| date              | Date of passage                                                                                    |           0 |
+| catch             | Raw catch of spring run                                                                            |          35 |
+| baileys\_eff      | Estimated trap efficiency using Bailey’s efficiency. Trap Efficiency = (Recaptured+1)/(Released+1) |          70 |
+| passage\_estimate | Passage estimate calculated from raw count and trap efficiency                                     |          35 |
+| trap\_fished      | If trap fished (T/F)                                                                               |           0 |
 
 ## Explore Numeric Variables:
 
@@ -98,7 +129,7 @@ cleaner_passage_estimate <- raw_passage_estimates %>%
 cleaner_passage_estimate %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "catch"            "trap_efficiency"  "passage_estimate"
+    ## [1] "catch"            "baileys_eff"      "passage_estimate"
 
 ### Variable: `catch`
 
@@ -167,13 +198,13 @@ summary(cleaner_passage_estimate$catch)
 
 -   35.2 % of values in the `catch` column are NA.
 
-### Variable: `trap_efficiency`
+### Variable: `baileys_eff`
 
-**Plotting trap\_efficiency**
+**Plotting baileys\_eff**
 
 ``` r
 cleaner_passage_estimate %>% 
-  ggplot(aes(x = trap_efficiency)) + 
+  ggplot(aes(x = baileys_eff)) + 
   geom_histogram() + 
   # scale_x_continuous(breaks=seq(0, 200, by=25)) +
   theme_minimal() +
@@ -188,11 +219,11 @@ cleaner_passage_estimate %>%
 
 Trap efficiency is fairly low (between 0 and .17)
 
-**Numeric Summary of trap\_efficiency over Period of Record**
+**Numeric Summary of baileys\_eff over Period of Record**
 
 ``` r
 # Table with summary statistics
-summary(cleaner_passage_estimate$trap_efficiency)
+summary(cleaner_passage_estimate$baileys_eff)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
@@ -200,7 +231,7 @@ summary(cleaner_passage_estimate$trap_efficiency)
 
 **NA and Unknown Values**
 
--   70.2 % of values in the `trap_efficiency` column are NA.
+-   70.2 % of values in the `baileys_eff` column are NA.
 
 These NA values seem to mainly correspond with days where no fish were
 caught.
@@ -308,9 +339,7 @@ table(cleaner_passage_estimate$trap_fished)
 
 ## Summary of identified issues
 
--   Passage estimates look good based on preliminary look, I do want to
-    review R script used to generate the passage estimates
--   Additionally need to add other runs in if desired
+-   This is only for spring run. Need to add other runs in if desired.
 
 ## Save cleaned data back to google cloud
 
@@ -320,11 +349,11 @@ battle_rst_passage_estimates <- cleaner_passage_estimate %>% glimpse()
 
     ## Rows: 6,510
     ## Columns: 5
-    ## $ date             <date> 2003-10-01, 2003-10-02, 2003-10-03, 2003-10-04, 2003~
-    ## $ catch            <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,~
-    ## $ trap_efficiency  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,~
-    ## $ trap_fished      <lgl> TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,~
+    ## $ date             <date> 2003-10-01, 2003-10-02, 2003-10-03, 2003-10-04, 2003…
+    ## $ catch            <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+    ## $ baileys_eff      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+    ## $ trap_fished      <lgl> TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,…
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)

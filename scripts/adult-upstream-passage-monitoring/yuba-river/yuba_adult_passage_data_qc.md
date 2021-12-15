@@ -92,7 +92,7 @@ cleaner_passage_data <- raw_passage_data %>%
   left_join(raw_passage_operations, c("Date", "Ladder")) %>% # Join passage data, no data on hours monitored in first 2 months
   janitor::clean_names() %>% 
   rename(speed_m_per_s = speed_m_s,
-         catagory = categorie,
+         category = categorie,
          passage_direction = direction_of_passage) %>%
   mutate(count = 1, 
          date = as.Date(date), 
@@ -107,7 +107,7 @@ cleaner_passage_data <- raw_passage_data %>%
     ## $ date              <date> 2004-01-01, 2004-01-01, 2004-01-01, 2004-01-01, 200~
     ## $ time              <time> 05:34:00, 10:20:00, 10:53:00, 11:20:00, 11:33:00, 1~
     ## $ length_cm         <dbl> 87, 78, 45, 57, 71, 40, 61, 62, 37, 67, 50, 71, 104,~
-    ## $ catagory          <chr> "Other / unidentifiab", "Other / unidentifiab", "Oth~
+    ## $ category          <chr> "Other / unidentifiab", "Other / unidentifiab", "Oth~
     ## $ passage_direction <chr> "Up", "Down", "Up", "Up", "Up", "Up", "Up", "Up", "U~
     ## $ ladder            <chr> "South", "South", "South", "South", "South", "South"~
     ## $ speed_m_per_s     <dbl> 0.34, 1.83, 0.79, 0.59, 0.69, 1.04, 0.88, 0.45, 1.19~
@@ -150,7 +150,7 @@ knitr::kable(data_dictionary)
 | date                | Date of sampling                                               |           0 |
 | time                | Time of sampling                                               |           0 |
 | length\_cm          | Length of fish in CM                                           |           0 |
-| catagory            | Category                                                       |           0 |
+| category            | Category                                                       |           0 |
 | passage\_direction  | State if the fish is moving upstream (Up) or downstream (Down) |           0 |
 | ladder              | Refers to which fish ladder observation occured on             |           0 |
 | speed\_m\_per\_s    | Speed of fish in meter per second                              |          24 |
@@ -423,12 +423,12 @@ Often monitored all 24 hours. Some days where hours are 0.
 cleaner_passage_data %>% select_if(is.character) %>% colnames()
 ```
 
-    ## [1] "catagory"          "passage_direction" "ladder"
+    ## [1] "category"          "passage_direction" "ladder"
 
-### Variable: `catagory`
+### Variable: `category`
 
 ``` r
-table(cleaner_passage_data$catagory)
+table(cleaner_passage_data$category)
 ```
 
     ## 
@@ -530,19 +530,19 @@ table(cleaner_passage_data$catagory)
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-catagories_to_keep <- str_detect(cleaner_passage_data$catagory, c("chinook", "chn")) 
-cleaner_passage_data <- filter(cleaner_passage_data, str_detect(tolower(cleaner_passage_data$catagory), c("chinook", "chn")))
-cleaner_passage_data$catagory <- tolower(cleaner_passage_data$catagory)
+categories_to_keep <- str_detect(cleaner_passage_data$category, c("chinook", "chn")) 
+cleaner_passage_data <- filter(cleaner_passage_data, str_detect(tolower(cleaner_passage_data$category), c("chinook", "chn")))
+cleaner_passage_data$category <- tolower(cleaner_passage_data$category)
 
 # Create a column for adipose 
-cleaner_passage_data$adipose <- case_when(cleaner_passage_data$catagory %in% 
+cleaner_passage_data$adipose <- case_when(cleaner_passage_data$category %in% 
                                             c("chinook ad-unidentified", "chinook ad undetermined", "chinook ad-undetermi", 
                                                "chinook ad-undetermined", "chinook ad clip unde", "chinook ad underterm", 
                                                "chinook ad undetermi") ~ "unknown", 
-                                          cleaner_passage_data$catagory %in% 
+                                          cleaner_passage_data$category %in% 
                                             c("chinook ad-clip", "chinook ad clip", "chinook salmon ad cl", 
                                                "chinook salmon ad c", "chinook salomon ad c") ~ "clipped")
-table(cleaner_passage_data$catagory)
+table(cleaner_passage_data$category)
 ```
 
     ## 
@@ -633,7 +633,7 @@ yuba_upstream_passage <- cleaner_passage_data %>% glimpse()
     ## $ date              <date> 2004-01-01, 2004-01-01, 2004-01-01, 2004-01-01, 200~
     ## $ time              <time> 11:20:00, 11:35:00, 12:20:00, 12:38:00, 14:14:00, 1~
     ## $ length_cm         <dbl> 57, 40, 62, 67, 83, 81, 73, 53, 59, 52, 44, 76, 55, ~
-    ## $ catagory          <chr> "chn ac -p/+s", "chn -p/+s", "chn -p/+s", "chn -p/+s~
+    ## $ category          <chr> "chn ac -p/+s", "chn -p/+s", "chn -p/+s", "chn -p/+s~
     ## $ passage_direction <chr> "up", "up", "up", "up", "up", "up", "up", "up", "up"~
     ## $ ladder            <chr> "south", "south", "south", "south", "south", "south"~
     ## $ speed_m_per_s     <dbl> 0.59, 1.04, 0.45, 0.52, 0.97, 0.71, 0.64, 0.52, 0.66~
