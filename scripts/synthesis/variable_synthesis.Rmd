@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(dplyr)
+library(wordcloud2)
 ```
 
 ## Adult Upstream Passage 
@@ -38,7 +39,11 @@ adult_upstream_video_variables <-
   tally() %>%
   glimpse()
 
-View(adult_upstream_video_variables)
+# View(adult_upstream_video_variables)
+```
+```{r}
+set.seed(2)
+wordcloud2(adult_upstream_video_variables)
 ```
 
 
