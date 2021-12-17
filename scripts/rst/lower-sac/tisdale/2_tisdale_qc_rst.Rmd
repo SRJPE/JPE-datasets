@@ -56,8 +56,7 @@ Read in data from google cloud, glimpse raw data and domain description sheet.
 
 ```{r}
 # read in data to clean 
-raw_clean <- read_csv("tisdale_rst_raw_clean.csv", show_col_types = F)
-glimpse(raw_clean)
+raw_clean <- read_csv("tisdale_rst_raw_clean.csv") %>% glimpse
 ```
 
 ## Data Dictionary
@@ -643,6 +642,14 @@ rst_changes <- raw_clean %>%
                                T ~ mark_type),
          mark_position = ifelse(mark_position == "Not applicable (n/a)", NA_character_, mark_position))
 ```
+
+### Next Steps
+
+#### Columns to Remove
+
+* Comments columns may not be needed 
+* We will likely want to pick one of the run columns to use, and understand methodology used to determine `final_run`  
+* We should try and better understand what the analysis column refers to, and delete if not needed
 
 ### Save cleaned data back to google cloud 
 
