@@ -195,51 +195,60 @@ tisdale_rst <- readRDS("../../data/lower_sac_tisdale_rst_data_dictionary.rds") %
   mutate(location = "Sac River - Tisdale") %>% glimpse
 
 
-rst_survey_variables <- bind_rows(battle_rst, butte_rst, clear_rst, deer_rst, feather_rst, mill_rst, yuba_rst, knights_rst, tisdale_rst) %>%
+rst_catch_variables <- bind_rows(battle_rst, butte_rst, clear_rst, deer_rst, feather_rst, mill_rst, yuba_rst, knights_rst, tisdale_rst) %>%
   group_by(variables) %>% 
   tally() %>% 
   glimpse()
 
-View(rst_survey_variables)
+View(rst_catch_variables)
 ```
 
 ```{r}
 set.seed(3746)
-wordcloud2(rst_survey_variables, size = .6)
+wordcloud2(rst_catch_variables, size = .6)
 ```
 
 
 
 ##### RST effort & efficency
 ```{r}
-battle_rst <- readRDS("../../data/battle_rst_environmental_data_dictionary.rds") %>%
+battle_rst_operations <- readRDS("../../data/battle_rst_environmental_data_dictionary.rds") %>%
   mutate(location = "Battle Creek") %>% glimpse
 
 # Butte all in one table 
 
-clear_rst <- readRDS("../../data/clear_rst_environmental_data_dictionary.rds") %>% 
+clear_rst_operations <- readRDS("../../data/clear_rst_environmental_data_dictionary.rds") %>% 
   mutate(location = "Clear Creek") %>% glimpse
 
 # Deer all in one table 
 
-feather_rst <- readRDS("../../data/feather_rst_effort_data_dictionary.rds") %>% 
+feather_rst_operations <- readRDS("../../data/feather_rst_effort_data_dictionary.rds") %>% 
   mutate(location = "Feather River") %>% glimpse()
 
 # Mill all in one table
 
 # Yuba all in one table 
 
-knights_rst <- readRDS("../../data/lower_sac_knights_rst_effort_data_dictionary.rds") %>% 
+knights_rst_operations <- readRDS("../../data/lower_sac_knights_rst_effort_data_dictionary.rds") %>% 
   mutate(location = "Sac River - Knights") %>% glimpse
 
 # Tisdale all in one table 
 
-rst_survey_variables <- bind_rows(battle_rst, butte_rst, clear_rst, deer_rst, feather_rst, mill_rst, yuba_rst, knights_rst, tisdale_rst) %>%
+rst_operations_variables <- bind_rows(battle_rst_operations, clear_rst_operations, knights_rst_operations) %>%
   group_by(variables) %>% 
   tally() %>% 
   glimpse()
 
-View(rst_survey_variables)
+View(rst_operations_variables)
 ```
+```{r}
+set.seed(3746)
+wordcloud2(rst_operations_variables, size = .25)
+
+```
+
+
+
+
 
 
