@@ -114,16 +114,16 @@ wordcloud2(carcass_survey_variables, size = .45)
 ## Redd Survey 
 
 ```{r}
-battle_redd <- readRDS("../../data/battle_redd_data_dictionary.rds") %>% 
+battle_redd <- readRDS("data/battle_redd_data_dictionary.rds") %>% 
   mutate(location = "Battle Creek") %>% glimpse
 
-clear_redd <- readRDS("../../data/clear_redd_data_dictionary.rds") %>% 
+clear_redd <- readRDS("data/clear_redd_data_dictionary.rds") %>% 
   mutate(location = "Clear Creek") %>% glimpse
 
-feather_redd <- readRDS("../../data/feather_redd_data_dictionary.rds") %>% 
+feather_redd <- readRDS("data/feather_redd_data_dictionary.rds") %>% 
   mutate(location = "Feather River") %>% glimpse
 
-mill_redd <- readRDS("../../data/mill_redd_data_dictionary.rds") %>% 
+mill_redd <- readRDS("data/mill_redd_data_dictionary.rds") %>% 
   mutate(location = "Mill Creek") %>% glimpse
 
 redd_survey_variables <- bind_rows(battle_redd, clear_redd, feather_redd, mill_redd) %>%
@@ -132,6 +132,33 @@ redd_survey_variables <- bind_rows(battle_redd, clear_redd, feather_redd, mill_r
   glimpse()
 
 View(redd_survey_variables)
+
+redd_survey_variable_descriptions <- bind_rows(battle_redd, clear_redd, feather_redd, mill_redd) %>%
+  mutate(keep = case_when(variables %in% c("comments", "latitude", "longitude") ~ "Battle Creek",
+                          variables %in% c("location", "redd_count") ~ "Mill Creek",
+                          variables %in%  c("date", "pre_redd_depth", "pre_redd_substrate_size",
+                                            "redd_pit_depth", "redd_substrate_size",
+                                            "redd_tail_depth", "tail_substrate_size") ~ "Clear Creek",
+                          T ~ location)) %>%
+  filter(location == keep) %>%
+  select(-c(location, keep, percent_na)) 
+
+# correcting variable names that are the same 
+redd_survey_variables_names <- redd_survey_variables %>%
+  mutate(standard_name = case_when(
+                                   #variables == "date_measured" ~ "date",
+                                   variables == "fish_on_redd" ~ "fish_guarding",
+                                   variables %in% c("redd_length_in", "redd_length_m") ~ "redd_length",
+                                   variables %in% c("redd_width_in", "redd_width_m") ~ "redd_width",
+                                   variables == "surveyed_reach" ~ "reach",
+                                   variables == "measured" ~ "redd_measured",
+                                   T ~ variables)) %>%
+  distinct(standard_name)
+
+redd_full_data_dictionary <- left_join(redd_survey_variables_names %>%
+                                         rename(variables = standard_name), 
+                                       redd_survey_variable_descriptions) %>%
+  distinct(variables, .keep_all= T)
 ```
 
 ```{r}
