@@ -13,6 +13,7 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library(readxl)
+library(knitr)
 ```
 
 # Mill Creek RST Data
@@ -75,6 +76,34 @@ cleaner_rst_data <- raw_rst_data%>%
          weather = as.character(weather)) %>%
   select(-species) %>%
   glimpse()
+```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_rst_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_data),
+                          description = c("Date of sample",
+                                          "Location of sample",
+                                          "Number of fish caught",
+                                          "Fork length of fish. Units in milimeters",
+                                          "Weight of fish. Units in grams",
+                                          "Stream flow. Units in cubic feet per second",
+                                          "Time it takes for 10 cone revolutions. Units in minutes",
+                                          "Tubs of debris collected at trap. Units in 10 gallon tubs",
+                                          "Description of the condition of trap. Categories: normal, partial blockage, total blockage, cone stopped",
+                                          "Temperature of water. Units originally in degrees F; converted to degrees C for standardization",
+                                          "Turbidity of water. Units in NTUs",
+                                          "Weather description. Categories: sunny, partly cloudy, cloudy, rain, snow, fog",
+                                          "Comments about sampling or trap"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -545,15 +574,23 @@ unique(cleaner_rst_data$comments)[1:5]
 
 ## Summary of identified issues
 
-
 * Lots of sampling gaps
-* Some funky values in weather and condition code, converted to NA
+* Some inconsistent values in weather and condition code, converted to NA
+
+### Next Steps
+
 * Some 0 weight values we may want to correct to NA
+* Suggest converting tubs to a standard volumetric unit
+* Determine if flow measurements are taken on site or at a gage
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-mill_rst <- cleaner_rst_data %>% glimpse()
+# Make any changes identified
+mill_rst <- cleaner_rst_data %>% 
+  # convert to degrees C for standardization
+  mutate(water_temperature = (water_temperature - 32) * 5/9) %>%
+  glimpse()
 ```
 
 ```{r, eval = FALSE}

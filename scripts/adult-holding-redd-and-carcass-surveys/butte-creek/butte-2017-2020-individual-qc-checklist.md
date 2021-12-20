@@ -7,11 +7,18 @@ Inigo Peng
 
 # Butte Creek Individual Survey Data
 
+Carcass data provided to us by Jessica Nichols. This carcass data was
+provided to us in a zipped folder that contained a folder for each year
+of carcass data. This markdown document is focused on 2017 - 2020 data.
+
 ## Description of Monitoring Data
 
 **Timeframe:** 2017-2020
 
 **Completeness of Record throughout timeframe:**
+
+-   No dates for 2019 data
+-   More carcasses sampled in 2018 than in 2017 or 2020
 
 **Sampling Location:** Various sampling locations on Butte Creek.
 
@@ -80,18 +87,26 @@ sheet:
 raw_later_individuals_data <- read_csv("raw_2017_to_2020_individuals_data.csv")%>% glimpse()
 ```
 
-    ## Rows: 565 Columns: 26
-
-    ## -- Column specification --------------------------------------------------------
-    ## Delimiter: ","
-    ## chr  (12): LocationCD, SectionCD, WayPt, SpeciesCode, Disposition, Sex, Cond...
-    ## dbl   (7): Survey, Year, Week, DiscTagApplied, FLmm, FLcm, ScaleNu
-    ## lgl   (6): HeadNu, DNAnu, OtherMarks, CWTStatusID, CWTStatus, CWTcd
-    ## dttm  (1): Date
-
     ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## -- Column specification --------------------------------------------------------
+    ## cols(
+    ##   .default = col_character(),
+    ##   Survey = col_double(),
+    ##   Year = col_double(),
+    ##   Week = col_double(),
+    ##   Date = col_datetime(format = ""),
+    ##   DiscTagApplied = col_double(),
+    ##   FLmm = col_double(),
+    ##   FLcm = col_double(),
+    ##   HeadNu = col_logical(),
+    ##   ScaleNu = col_double(),
+    ##   DNAnu = col_logical(),
+    ##   OtherMarks = col_logical(),
+    ##   CWTStatusID = col_logical(),
+    ##   CWTStatus = col_logical(),
+    ##   CWTcd = col_logical()
+    ## )
+    ## i Use `spec()` for the full column specifications.
 
     ## Rows: 565
     ## Columns: 26
@@ -126,17 +141,27 @@ raw_later_individuals_data <- read_csv("raw_2017_to_2020_individuals_data.csv")%
 raw_2019_individuals_data <- read_csv("2019_raw_surveyindividuals.csv") %>% glimpse()
 ```
 
-    ## Rows: 506 Columns: 17
-
-    ## -- Column specification --------------------------------------------------------
-    ## Delimiter: ","
-    ## chr (10): WayPt, Sex, ConditionCD, SpawnedCD, AdFinClipCD, HeadNu, ScaleNu, ...
-    ## dbl  (2): DiscTagApplied, FLcm
-    ## lgl  (5): DNAnu, OtherMarks, CWTStatusID, CWTStatus, CWTcd
-
     ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## -- Column specification --------------------------------------------------------
+    ## cols(
+    ##   WayPt = col_character(),
+    ##   DiscTagApplied = col_double(),
+    ##   Sex = col_character(),
+    ##   FLcm = col_double(),
+    ##   ConditionCD = col_character(),
+    ##   SpawnedCD = col_character(),
+    ##   AdFinClipCD = col_character(),
+    ##   HeadNu = col_character(),
+    ##   ScaleNu = col_character(),
+    ##   TissueNu = col_character(),
+    ##   OtolithNu = col_character(),
+    ##   DNAnu = col_logical(),
+    ##   Comments = col_character(),
+    ##   OtherMarks = col_logical(),
+    ##   CWTStatusID = col_logical(),
+    ##   CWTStatus = col_logical(),
+    ##   CWTcd = col_logical()
+    ## )
 
     ## Rows: 506
     ## Columns: 17
@@ -193,9 +218,13 @@ cleaner_data<- raw_later_individuals_data %>%
     ## $ otolith_nu       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ comments         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
 
+No dates for 2019, not sure how helpful this data is without dates.
+
 ``` r
 cleaner_2019_data<- raw_2019_individuals_data %>%
   janitor::clean_names() %>% 
+  rename(condition = condition_cd, 
+         spawning_status = spawned_cd) %>%
   mutate(fork_length_mm = f_lcm*10) %>% 
   select(-c('head_nu','scale_nu','f_lcm','tissue_nu', 'dn_anu', 'otolith_nu','comments', 'other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd')) %>% 
   glimpse()
@@ -206,16 +235,84 @@ cleaner_2019_data<- raw_2019_individuals_data %>%
     ## $ way_pt           <chr> "B4", "B7", "B7", "B8", "B8", "B8", "C1", "C2", "C2",~
     ## $ disc_tag_applied <dbl> 2305, 1345, 1371, 2651, 2316, 2606, 1365, 2422, 2208,~
     ## $ sex              <chr> "F", "F", "F", "M", "F", "F", "F", "F", "F", "F", "F"~
-    ## $ condition_cd     <chr> "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F"~
-    ## $ spawned_cd       <chr> "N", "N", "N", "n/r", "N", "P", "P", "P", "N", "N", "~
+    ## $ condition        <chr> "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F"~
+    ## $ spawning_status  <chr> "N", "N", "N", "n/r", "N", "P", "P", "P", "N", "N", "~
     ## $ ad_fin_clip_cd   <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"~
     ## $ fork_length_mm   <dbl> 713, 750, 700, 850, 643, 682, 800, 737, 725, 825, 670~
 
 Bind 2019 data to the whole data frame
 
 ``` r
-cleaner_data <- bind_rows(cleaner_data, cleaner_2019_data)
+cleaner_data <- bind_rows(cleaner_data, cleaner_2019_data) %>% glimpse()
 ```
+
+    ## Rows: 1,071
+    ## Columns: 15
+    ## $ survey           <chr> "110002", "110002", "110002", "110002", "110002", "11~
+    ## $ date             <date> 2017-09-26, 2017-09-26, 2017-09-26, 2017-10-03, 2017~
+    ## $ section_cd       <chr> "A", "A", "A", "A", "A", "A", "A", "B", "B", "C", "C"~
+    ## $ way_pt           <chr> "A1", "A5", "A5", "A2", "A2", "A3", "A5", "B3", "B8",~
+    ## $ disposition      <chr> "Tagged", "Tagged", "Tagged", "Tagged", "Tagged", "Ta~
+    ## $ disc_tag_applied <dbl> 2980, 2983, 2977, 2731, 2732, 2733, 2734, 2757, 2758,~
+    ## $ sex              <chr> "F", "M", "M", "F", "F", "F", "M", "M", "M", "M", "F"~
+    ## $ fork_length_mm   <dbl> 900, 527, 878, 570, 555, 760, 960, 853, 528, 760, 790~
+    ## $ condition        <chr> "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F"~
+    ## $ spawning_status  <chr> "N", "n/r", "n/r", "N", "N", "N", "Unk", "Unk", "Unk"~
+    ## $ ad_fin_clip_cd   <chr> "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"~
+    ## $ scale_nu         <chr> "20607", "20610", "20609", "20703", "20661", "20660",~
+    ## $ tissue_nu        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "2061~
+    ## $ otolith_nu       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ comments         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Unique survey ID number", 
+                                          "Date of sampling",
+                                          "Section code describing area surveyed. View `butte_section_code.rds` for code definitions.",
+                                          "Way Point, TODO get better description of these locations ?",
+                                          "Fish disposition, describes if fish is tagged or not",
+                                          "Unique tag number if tag is applied to fish",
+                                          "Sex of fish",
+                                          "Fork lenght of fish measured in mm",
+                                          "Condition of fish, TODO get code definitions",
+                                          "Spawning status describes if the fish spawned before dying",
+                                          "Indicates if adipose fin was clipped (TRUE/FALSE).",
+                                          "Unique number for scale sampled collected",
+                                          "Unique number for tissue sample collected",
+                                          "Unique number for otolith sample collected",
+                                          "Any comments associated with a specific fish"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables          | description                                                                                | percent\_na |
+|:-------------------|:-------------------------------------------------------------------------------------------|------------:|
+| survey             | Unique survey ID number                                                                    |          47 |
+| date               | Date of sampling                                                                           |          47 |
+| section\_cd        | Section code describing area surveyed. View `butte_section_code.rds` for code definitions. |          47 |
+| way\_pt            | Way Point, TODO get better description of these locations ?                                |           0 |
+| disposition        | Fish disposition, describes if fish is tagged or not                                       |          47 |
+| disc\_tag\_applied | Unique tag number if tag is applied to fish                                                |           0 |
+| sex                | Sex of fish                                                                                |           0 |
+| fork\_length\_mm   | Fork lenght of fish measured in mm                                                         |           0 |
+| condition          | Condition of fish, TODO get code definitions                                               |           0 |
+| spawning\_status   | Spawning status describes if the fish spawned before dying                                 |           0 |
+| ad\_fin\_clip\_cd  | Indicates if adipose fin was clipped (TRUE/FALSE).                                         |           0 |
+| scale\_nu          | Unique number for scale sampled collected                                                  |          84 |
+| tissue\_nu         | Unique number for tissue sample collected                                                  |          89 |
+| otolith\_nu        | Unique number for otolith sample collected                                                 |          98 |
+| comments           | Any comments associated with a specific fish                                               |          95 |
 
 ## Explore `date`
 
@@ -241,8 +338,7 @@ cleaner_data %>%
 
     ##  [1] "survey"          "section_cd"      "way_pt"          "disposition"    
     ##  [5] "sex"             "condition"       "spawning_status" "ad_fin_clip_cd" 
-    ##  [9] "scale_nu"        "tissue_nu"       "otolith_nu"      "comments"       
-    ## [13] "condition_cd"    "spawned_cd"
+    ##  [9] "scale_nu"        "tissue_nu"       "otolith_nu"      "comments"
 
 ### Variable: `survey`
 
@@ -368,11 +464,11 @@ table(cleaner_data$condition)
 
     ## 
     ##   d   f 
-    ##  66 499
+    ##  78 992
 
 **NA and Unknown Values**
 
--   47.2 % of values in the `condition` column are NA.
+-   0.1 % of values in the `condition` column are NA.
 
 ### Variable:`spawning_status`
 
@@ -394,11 +490,11 @@ table(cleaner_data$spawning_status)
 
     ## 
     ##  no   p yes 
-    ##  10  23 280
+    ##  25  48 529
 
 **NA and Unknown Values**
 
--   70.8 % of values in the `spawning_status` column are NA.
+-   43.8 % of values in the `spawning_status` column are NA.
 
 ### Variable: `ad_fin_clip_cd`
 
@@ -536,6 +632,24 @@ summary(cleaner_data$fork_length_mm)
 -   Need description and look up table for the majority of the data
 -   Some outliers for disc tag applied
 -   Are these the appropriate variables?
+-   no dates for 2019 data
+
+## Next steps
+
+### Columns to remove
+
+-   Work on data modeling to identify important variables needed for
+    carcass datasets. If we are missing any we can look at the other
+    files provided by Jessica and see if there is additional information
+    we want there.
+-   Suggest removing the `section_cd` column if we get additional
+    information on `way_pt`. `way_pt` seems to describe section in the
+    first character and then give additional locations info in the
+    second character.
+-   Suggest removing `scale_nu`, `tissue_nu`, `otolith_nu` and
+    `comments` because there are so few data points. However, if genetic
+    data is really important we should keep these to track the genetic
+    samples.
 
 ## Add cleaned data back to google cloud
 
@@ -544,7 +658,7 @@ butte_individual_survey_2017_2020 <- cleaner_data %>% glimpse()
 ```
 
     ## Rows: 1,071
-    ## Columns: 17
+    ## Columns: 15
     ## $ survey           <chr> "110002", "110002", "110002", "110002", "110002", "11~
     ## $ date             <date> 2017-09-26, 2017-09-26, 2017-09-26, 2017-10-03, 2017~
     ## $ section_cd       <chr> "A", "A", "A", "A", "A", "A", "A", "B", "B", "C", "C"~
@@ -560,8 +674,6 @@ butte_individual_survey_2017_2020 <- cleaner_data %>% glimpse()
     ## $ tissue_nu        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "2061~
     ## $ otolith_nu       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
     ## $ comments         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ condition_cd     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ spawned_cd       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
 
 ``` r
 write_csv(butte_individual_survey_2017_2020, "butte_carcass_2017-2020.csv")

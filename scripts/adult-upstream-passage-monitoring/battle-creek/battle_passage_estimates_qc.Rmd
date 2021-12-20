@@ -110,6 +110,30 @@ cleaner_passage_estimates <- cleaner_passage_estimates %>%
   rename("raw_count" = actual_number) %>%
   glimpse()
 ```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_passage_estimates %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_estimates),
+                          description = c("Weeks",
+                                          "Method of observation",
+                                          "Hours of passage",
+                                          "Hours of taped passage",
+                                          "Start Date",
+                                          "End Date",
+                                          "Adipose fin clipped or not",
+                                          "Raw count",
+                                          "Passage estimate"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
 
 ## Explore Numeric Variables: {.tabset}
 
@@ -351,6 +375,10 @@ table(cleaner_passage_estimates$adipose)
 * Negative value for passage count with clipped adipose in 2012 - take abs value (below)
 * Total hours of passage varies quite a but over the years, different/shorter sampling seasons pre 2010 contribute to this
 * Date values started off in a very weird format, I tried to convert them all to a start date and an end date for a week. If a dates column stated May 30 - June 6 and the year column was 2019 I converted start_date = "2019-05-30" and end_date = "2019-06-06". However there were also some values in the date column that were 5 digit numbers ex: 44364. I still need to figure out origin years for these ones. The typical origin date is not mapping to the year given in the year column. 
+
+## Next Steps
+
+* Is it possible to get estimates of just spring run instead of all runs
 
 ## Save cleaned data back to google cloud 
 

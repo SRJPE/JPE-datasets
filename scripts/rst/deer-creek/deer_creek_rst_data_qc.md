@@ -98,26 +98,75 @@ cleaner_rst_data <- raw_rst_data%>%
   rename(fork_length = length) %>% # confirmed with matt that this is fork length
   mutate(date = as.Date(date),
          trap_condition_code = as.character(trap_condition_code), 
-         weather = as.character(weather)) %>%
-  select(-species) %>%
+         weather = as.character(weather),
+         water_temperature_celsius = (water_temperature-32)*(5/9)) %>% #converted f to celsius
+  select(-species, - water_temperature) %>%
   glimpse()
 ```
 
     ## Rows: 25,245
     ## Columns: 13
-    ## $ date                    <date> 1992-10-14, 1992-10-14, 1992-10-14, 1992-10-1~
-    ## $ location                <chr> "Deer Creek Canyon Mouth", "Deer Creek Canyon ~
-    ## $ count                   <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
-    ## $ fork_length             <dbl> 93, 98, 94, 115, 79, 87, 110, 93, 87, 79, 76, ~
-    ## $ weight                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ flow                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ time_for_10_revolutions <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ tubs_of_debris          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ trap_condition_code     <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1", "~
-    ## $ water_temperature       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ turbidity               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ weather                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ comments                <chr> "Data sheet does not show sampling method - di~
+    ## $ date                      <date> 1992-10-14, 1992-10-14, 1992-10-14, 1992-10~
+    ## $ location                  <chr> "Deer Creek Canyon Mouth", "Deer Creek Canyo~
+    ## $ count                     <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
+    ## $ fork_length               <dbl> 93, 98, 94, 115, 79, 87, 110, 93, 87, 79, 76~
+    ## $ weight                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ flow                      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ time_for_10_revolutions   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ tubs_of_debris            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ trap_condition_code       <chr> "1", "1", "1", "1", "1", "1", "1", "1", "1",~
+    ## $ turbidity                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ weather                   <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ comments                  <chr> "Data sheet does not show sampling method - ~
+    ## $ water_temperature_celsius <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_rst_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_data),
+                          description = c("Date",
+                                          "Sampling location",
+                                          "Count",
+                                          "Forklength of the fish captured",
+                                          "Weight of the fish captured (g)",
+                                          "Flow (cfs)",
+                                          "Time it takes RST to do 10 revolutions",
+                                          "Debris measured in tubs TODO: how much is a tub",
+                                          "Code describing trap condition",
+                                          "Turbidity (NTU's)",
+                                          "Code describing weather condition",
+                                          "Comments",
+                                          "Water temperature (celsius)"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables                   | description                                     | percent\_na |
+|:----------------------------|:------------------------------------------------|------------:|
+| date                        | Date                                            |           0 |
+| location                    | Sampling location                               |           0 |
+| count                       | Count                                           |           0 |
+| fork\_length                | Forklength of the fish captured                 |           2 |
+| weight                      | Weight of the fish captured (g)                 |          65 |
+| flow                        | Flow (cfs)                                      |          28 |
+| time\_for\_10\_revolutions  | Time it takes RST to do 10 revolutions          |          27 |
+| tubs\_of\_debris            | Debris measured in tubs TODO: how much is a tub |          28 |
+| trap\_condition\_code       | Code describing trap condition                  |          18 |
+| turbidity                   | Turbidity (NTU’s)                               |          36 |
+| weather                     | Code describing weather condition               |          12 |
+| comments                    | Comments                                        |          54 |
+| water\_temperature\_celsius | Water temperature (celsius)                     |          12 |
 
 ## Explore Numeric Variables:
 
@@ -125,10 +174,10 @@ cleaner_rst_data <- raw_rst_data%>%
 cleaner_rst_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "count"                   "fork_length"            
-    ## [3] "weight"                  "flow"                   
-    ## [5] "time_for_10_revolutions" "tubs_of_debris"         
-    ## [7] "water_temperature"       "turbidity"
+    ## [1] "count"                     "fork_length"              
+    ## [3] "weight"                    "flow"                     
+    ## [5] "time_for_10_revolutions"   "tubs_of_debris"           
+    ## [7] "turbidity"                 "water_temperature_celsius"
 
 ### Variable: `count`
 
@@ -173,7 +222,7 @@ cleaner_rst_data  %>%
   ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Fish Counted each Year by run",
+  labs(title = "Total Fish Counted each Year",
        y = "Total fish raw catch") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
@@ -207,7 +256,7 @@ summary(daily_count$daily_count)
 
 fork\_length of the fish captured. Units: mm
 
-**Plotting fork fork\_length**
+**Plotting fork\_length**
 
 ``` r
 cleaner_rst_data %>% 
@@ -418,18 +467,18 @@ summary(cleaner_rst_data$tubs_of_debris)
 
 -   28.3 % of values in the `tubs_of_debris` column are NA.
 
-### Variable: `water_temperature`
+### Variable: `water_temperature_celsius`
 
-Water Tempearture in degrees F
+Water Tempearture in degrees C
 
-**Plotting water\_temperature over Period of Record**
+**Plotting water\_temperature\_celsius over Period of Record**
 
 ``` r
 # Make whatever plot is appropriate 
 # maybe 2 plots is appropriate
 cleaner_rst_data %>% 
   group_by(date) %>%
-  mutate(avg_temp = mean(water_temperature)) %>%
+  mutate(avg_temp = mean(water_temperature_celsius)) %>%
   ungroup() %>%
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
@@ -442,7 +491,7 @@ cleaner_rst_data %>%
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "none") + 
-  labs(title = "Daily Temp Measures F (colored by year)",
+  labs(title = "Daily Temp Measures C (colored by year)",
        x = "Date", 
        y = "Average Daily Temp")  
 ```
@@ -451,7 +500,7 @@ cleaner_rst_data %>%
 
 ``` r
 cleaner_rst_data %>% 
-  ggplot(aes(x = water_temperature)) + 
+  ggplot(aes(x = water_temperature_celsius)) + 
   geom_histogram() + 
   theme_minimal() +
   labs(title = "Temperature distribution") + 
@@ -469,7 +518,7 @@ cleaner_rst_data %>%
          fake_year = 2000,
          fake_year = ifelse(month(date) %in% 10:12, fake_year - 1, fake_year),
          fake_date = ymd(paste(fake_year, month(date), day(date)))) %>%
-  ggplot(aes(x = fake_date, y = water_temperature)) +
+  ggplot(aes(x = fake_date, y = water_temperature_celsius)) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b") +
   geom_line(size = 0.5) +
   xlab("Date") +
@@ -481,19 +530,19 @@ cleaner_rst_data %>%
 
 Gaps in temperature measurements.
 
-**Numeric Summary of water\_temperature over Period of Record**
+**Numeric Summary of water\_temperature\_celsius over Period of Record**
 
 ``` r
 # Table with summary statistics
-summary(cleaner_rst_data$water_temperature)
+summary(cleaner_rst_data$water_temperature_celsius)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   34.00   47.00   50.00   51.33   55.00   75.00    3116
+    ##   1.111   8.333  10.000  10.741  12.778  23.889    3116
 
 **NA and Unknown Values**
 
--   12.3 % of values in the `water_temperature` column are NA.
+-   12.3 % of values in the `water_temperature_celsius` column are NA.
 
 ### Variable: `turbidity`
 
@@ -697,6 +746,12 @@ unique(cleaner_rst_data$comments)[1:5]
 -   Lots of environmental variables are not collected before 1997
 -   Lots of sampling gaps
 
+## Next Steps
+
+-   Understand how this data fit in with RST data schema
+-   Come up with plan to generate passage estimate
+-   Might be able to delete some environmental data columns
+
 ## Save cleaned data back to google cloud
 
 ``` r
@@ -705,19 +760,19 @@ deer_rst <- cleaner_rst_data %>% glimpse()
 
     ## Rows: 25,245
     ## Columns: 13
-    ## $ date                    <date> 1992-10-14, 1992-10-14, 1992-10-14, 1992-10-1~
-    ## $ location                <chr> "Deer Creek Canyon Mouth", "Deer Creek Canyon ~
-    ## $ count                   <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
-    ## $ fork_length             <dbl> 93, 98, 94, 115, 79, 87, 110, 93, 87, 79, 76, ~
-    ## $ weight                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ flow                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ time_for_10_revolutions <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ tubs_of_debris          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ trap_condition_code     <chr> "normal", "normal", "normal", "normal", "norma~
-    ## $ water_temperature       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ turbidity               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ weather                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ comments                <chr> "Data sheet does not show sampling method - di~
+    ## $ date                      <date> 1992-10-14, 1992-10-14, 1992-10-14, 1992-10~
+    ## $ location                  <chr> "Deer Creek Canyon Mouth", "Deer Creek Canyo~
+    ## $ count                     <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
+    ## $ fork_length               <dbl> 93, 98, 94, 115, 79, 87, 110, 93, 87, 79, 76~
+    ## $ weight                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ flow                      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ time_for_10_revolutions   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ tubs_of_debris            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ trap_condition_code       <chr> "normal", "normal", "normal", "normal", "nor~
+    ## $ turbidity                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ weather                   <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ comments                  <chr> "Data sheet does not show sampling method - ~
+    ## $ water_temperature_celsius <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)

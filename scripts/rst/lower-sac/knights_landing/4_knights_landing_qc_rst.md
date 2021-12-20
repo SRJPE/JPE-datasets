@@ -51,24 +51,40 @@ format. Make changes in changes section at end.
 
 ``` r
 # read in data to clean 
-knl_rst <- read_csv("knl_combine_rst.csv", show_col_types = F)
-glimpse(knl_rst)
+knl_rst <- read_csv("knl_combine_rst.csv") %>% glimpse()
 ```
+
+    ## 
+    ## -- Column specification --------------------------------------------------------
+    ## cols(
+    ##   date = col_date(format = ""),
+    ##   start_date = col_logical(),
+    ##   stop_date = col_logical(),
+    ##   location = col_character(),
+    ##   fork_length_max_mm = col_double(),
+    ##   fork_length_min_mm = col_double(),
+    ##   species = col_character(),
+    ##   count = col_double(),
+    ##   at_capture_run = col_character(),
+    ##   lifestage = col_character(),
+    ##   marked = col_logical(),
+    ##   cpue = col_double()
+    ## )
 
     ## Rows: 40,464
     ## Columns: 12
-    ## $ date               <date> 2002-10-04, 2002-10-04, 2002-10-04, 2002-10-04, 20…
-    ## $ start_date         <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ stop_date          <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ location           <chr> "KL", "KL", "KL", "KL", "KL", "KL", "KL", "KL", "KL…
-    ## $ fork_length_max_mm <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ fork_length_min_mm <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ species            <chr> "Chinook", "Steelhead", "Chinook", "Chinook", "Chin…
-    ## $ count              <dbl> 0, 0, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, 0, 0, 0, 0…
-    ## $ at_capture_run     <chr> NA, NA, "Fall", "Late fall", "Spring", NA, "Winter"…
-    ## $ lifestage          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "older …
-    ## $ marked             <lgl> TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE…
-    ## $ cpue               <dbl> NA, NA, 0.0000000, 0.0000000, 0.0000000, NA, 0.0000…
+    ## $ date               <date> 2002-10-04, 2002-10-04, 2002-10-04, 2002-10-04, 20~
+    ## $ start_date         <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ stop_date          <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ location           <chr> "KL", "KL", "KL", "KL", "KL", "KL", "KL", "KL", "KL~
+    ## $ fork_length_max_mm <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ fork_length_min_mm <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
+    ## $ species            <chr> "Chinook", "Steelhead", "Chinook", "Chinook", "Chin~
+    ## $ count              <dbl> 0, 0, 0, 0, 0, 0, 0, NA, NA, NA, NA, NA, 0, 0, 0, 0~
+    ## $ at_capture_run     <chr> NA, NA, "Fall", "Late fall", "Spring", NA, "Winter"~
+    ## $ lifestage          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "older ~
+    ## $ marked             <lgl> TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE~
+    ## $ cpue               <dbl> NA, NA, 0.0000000, 0.0000000, 0.0000000, NA, 0.0000~
 
 ## Data Dictionary
 
@@ -104,8 +120,8 @@ kable(data_dictionary)
 | variables             | description                                                                                                    | percent\_na |
 |:----------------------|:---------------------------------------------------------------------------------------------------------------|------------:|
 | date                  | Date of sampling. In more recent years, start and stop date are collected in which case date is the stop date. |           0 |
-| start\_date           | Date and time when sampling started. This was not collected in earlier sampling years.                         |          66 |
-| stop\_date            | Date and time when sampling stopped. This was not collected in earlier sampling years.                         |          66 |
+| start\_date           | Date and time when sampling started. This was not collected in earlier sampling years.                         |         100 |
+| stop\_date            | Date and time when sampling stopped. This was not collected in earlier sampling years.                         |         100 |
 | location              | Site name/code for the RST trap. All are KL.                                                                   |          37 |
 | fork\_length\_max\_mm | Maximum fork length of sample in mm.                                                                           |          20 |
 | fork\_length\_min\_mm | Minimum fork length of sample in mm.                                                                           |          22 |
@@ -164,7 +180,7 @@ knl_rst %>%
             na = length(which(is.na(fork_length_max_mm))))
 ```
 
-    ## # A tibble: 19 × 6
+    ## # A tibble: 19 x 6
     ##    `year(date)`   mean median   min   max    na
     ##           <dbl>  <dbl>  <dbl> <dbl> <dbl> <int>
     ##  1         2002 104     113      37   159   540
@@ -195,16 +211,15 @@ recorded on this day rather than being a real 0.
 filter(knl_rst, fork_length_max_mm == 0 & count > 0)
 ```
 
-    ## # A tibble: 4 × 12
-    ##   date       start_date stop_date location fork_length_max_mm
-    ##   <date>     <dttm>     <dttm>    <chr>                 <dbl>
-    ## 1 2003-12-15 NA         NA        KL                        0
-    ## 2 2003-12-15 NA         NA        KL                        0
-    ## 3 2003-12-15 NA         NA        KL                        0
-    ## 4 2003-12-15 NA         NA        KL                        0
-    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
-    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
-    ## #   cpue <dbl>
+    ## # A tibble: 4 x 12
+    ##   date       start_date stop_date location fork_length_max_mm fork_length_min_mm
+    ##   <date>     <lgl>      <lgl>     <chr>                 <dbl>              <dbl>
+    ## 1 2003-12-15 NA         NA        KL                        0                  0
+    ## 2 2003-12-15 NA         NA        KL                        0                  0
+    ## 3 2003-12-15 NA         NA        KL                        0                  0
+    ## 4 2003-12-15 NA         NA        KL                        0                  0
+    ## # ... with 6 more variables: species <chr>, count <dbl>, at_capture_run <chr>,
+    ## #   lifestage <chr>, marked <lgl>, cpue <dbl>
 
 **NA and Unknown Values**
 
@@ -235,7 +250,7 @@ knl_rst %>%
             na = length(which(is.na(fork_length_min_mm))))
 ```
 
-    ## # A tibble: 19 × 6
+    ## # A tibble: 19 x 6
     ##    `year(date)`  mean median   min   max    na
     ##           <dbl> <dbl>  <dbl> <dbl> <dbl> <int>
     ##  1         2002 50.6    32      29   136   540
@@ -266,16 +281,15 @@ recorded on this day rather than being a real 0.
 filter(knl_rst, fork_length_min_mm == 0 & count > 0)
 ```
 
-    ## # A tibble: 4 × 12
-    ##   date       start_date stop_date location fork_length_max_mm
-    ##   <date>     <dttm>     <dttm>    <chr>                 <dbl>
-    ## 1 2003-12-15 NA         NA        KL                        0
-    ## 2 2003-12-15 NA         NA        KL                        0
-    ## 3 2003-12-15 NA         NA        KL                        0
-    ## 4 2003-12-15 NA         NA        KL                        0
-    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
-    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
-    ## #   cpue <dbl>
+    ## # A tibble: 4 x 12
+    ##   date       start_date stop_date location fork_length_max_mm fork_length_min_mm
+    ##   <date>     <lgl>      <lgl>     <chr>                 <dbl>              <dbl>
+    ## 1 2003-12-15 NA         NA        KL                        0                  0
+    ## 2 2003-12-15 NA         NA        KL                        0                  0
+    ## 3 2003-12-15 NA         NA        KL                        0                  0
+    ## 4 2003-12-15 NA         NA        KL                        0                  0
+    ## # ... with 6 more variables: species <chr>, count <dbl>, at_capture_run <chr>,
+    ## #   lifestage <chr>, marked <lgl>, cpue <dbl>
 
 **NA and Unknown Values**
 
@@ -454,65 +468,61 @@ to her.
 filter(knl_rst, count > 5000)
 ```
 
-    ## # A tibble: 14 × 12
-    ##    date       start_date          stop_date           location fork_length_max_…
-    ##    <date>     <dttm>              <dttm>              <chr>                <dbl>
-    ##  1 2003-01-14 NA                  NA                  KL                     215
-    ##  2 2004-01-31 NA                  NA                  KL                      81
-    ##  3 2004-02-01 NA                  NA                  KL                      85
-    ##  4 2004-02-06 NA                  NA                  KL                     121
-    ##  5 2004-02-07 NA                  NA                  KL                     114
-    ##  6 2005-01-30 NA                  NA                  <NA>                   101
-    ##  7 2005-01-31 NA                  NA                  <NA>                   107
-    ##  8 2007-02-13 NA                  NA                  KL                     134
-    ##  9 2009-02-27 NA                  NA                  KL                     120
-    ## 10 2014-02-14 2014-02-14 16:15:00 2014-02-14 23:30:00 KL                     113
-    ## 11 2014-03-02 2014-03-02 17:15:00 2014-03-03 03:00:00 KL                     127
-    ## 12 2014-03-03 2014-03-03 15:45:00 2014-03-04 02:30:00 KL                     146
-    ## 13 2014-03-04 2014-03-04 16:00:00 2014-03-05 01:30:00 KL                      92
-    ## 14 2014-03-07 2014-03-07 20:30:00 2014-03-08 02:30:00 KL                     135
-    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
-    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
-    ## #   cpue <dbl>
+    ## # A tibble: 14 x 12
+    ##    date       start_date stop_date location fork_length_max_mm fork_length_min_~
+    ##    <date>     <lgl>      <lgl>     <chr>                 <dbl>             <dbl>
+    ##  1 2003-01-14 NA         NA        KL                      215                32
+    ##  2 2004-01-31 NA         NA        KL                       81                33
+    ##  3 2004-02-01 NA         NA        KL                       85                33
+    ##  4 2004-02-06 NA         NA        KL                      121                34
+    ##  5 2004-02-07 NA         NA        KL                      114                33
+    ##  6 2005-01-30 NA         NA        <NA>                    101                31
+    ##  7 2005-01-31 NA         NA        <NA>                    107                32
+    ##  8 2007-02-13 NA         NA        KL                      134                34
+    ##  9 2009-02-27 NA         NA        KL                      120                34
+    ## 10 2014-02-14 NA         NA        KL                      113                35
+    ## 11 2014-03-02 NA         NA        KL                      127                34
+    ## 12 2014-03-03 NA         NA        KL                      146                30
+    ## 13 2014-03-04 NA         NA        KL                       92                36
+    ## 14 2014-03-07 NA         NA        KL                      135                37
+    ## # ... with 6 more variables: species <chr>, count <dbl>, at_capture_run <chr>,
+    ## #   lifestage <chr>, marked <lgl>, cpue <dbl>
 
 ``` r
 # 2004-02-06
 filter(knl_rst, count == 15759)
 ```
 
-    ## # A tibble: 1 × 12
-    ##   date       start_date stop_date location fork_length_max_mm
-    ##   <date>     <dttm>     <dttm>    <chr>                 <dbl>
-    ## 1 2004-02-06 NA         NA        KL                      121
-    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
-    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
-    ## #   cpue <dbl>
+    ## # A tibble: 1 x 12
+    ##   date       start_date stop_date location fork_length_max_mm fork_length_min_mm
+    ##   <date>     <lgl>      <lgl>     <chr>                 <dbl>              <dbl>
+    ## 1 2004-02-06 NA         NA        KL                      121                 34
+    ## # ... with 6 more variables: species <chr>, count <dbl>, at_capture_run <chr>,
+    ## #   lifestage <chr>, marked <lgl>, cpue <dbl>
 
 ``` r
 # 2014-03-03
 filter(knl_rst, count == 28948)
 ```
 
-    ## # A tibble: 1 × 12
-    ##   date       start_date          stop_date           location fork_length_max_mm
-    ##   <date>     <dttm>              <dttm>              <chr>                 <dbl>
-    ## 1 2014-03-03 2014-03-03 15:45:00 2014-03-04 02:30:00 KL                      146
-    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
-    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
-    ## #   cpue <dbl>
+    ## # A tibble: 1 x 12
+    ##   date       start_date stop_date location fork_length_max_mm fork_length_min_mm
+    ##   <date>     <lgl>      <lgl>     <chr>                 <dbl>              <dbl>
+    ## 1 2014-03-03 NA         NA        KL                      146                 30
+    ## # ... with 6 more variables: species <chr>, count <dbl>, at_capture_run <chr>,
+    ## #   lifestage <chr>, marked <lgl>, cpue <dbl>
 
 ``` r
 # 2014-03-04
 filter(knl_rst, count == 12560)
 ```
 
-    ## # A tibble: 1 × 12
-    ##   date       start_date          stop_date           location fork_length_max_mm
-    ##   <date>     <dttm>              <dttm>              <chr>                 <dbl>
-    ## 1 2014-03-04 2014-03-04 16:00:00 2014-03-05 01:30:00 KL                       92
-    ## # … with 7 more variables: fork_length_min_mm <dbl>, species <chr>,
-    ## #   count <dbl>, at_capture_run <chr>, lifestage <chr>, marked <lgl>,
-    ## #   cpue <dbl>
+    ## # A tibble: 1 x 12
+    ##   date       start_date stop_date location fork_length_max_mm fork_length_min_mm
+    ##   <date>     <lgl>      <lgl>     <chr>                 <dbl>              <dbl>
+    ## 1 2014-03-04 NA         NA        KL                       92                 36
+    ## # ... with 6 more variables: species <chr>, count <dbl>, at_capture_run <chr>,
+    ## #   lifestage <chr>, marked <lgl>, cpue <dbl>
 
 **NA and Unknown Values**
 
@@ -585,7 +595,7 @@ knl_rst %>%
             na = length(which(is.na(cpue))))
 ```
 
-    ## # A tibble: 19 × 6
+    ## # A tibble: 19 x 6
     ##    `year(date)`   mean median   min     max    na
     ##           <dbl>  <dbl>  <dbl> <dbl>   <dbl> <int>
     ##  1         2002  59.5    0        0 1053.       8
@@ -650,7 +660,7 @@ filter(knl_rst, is.na(location)) %>%
   tally()
 ```
 
-    ## # A tibble: 9 × 2
+    ## # A tibble: 9 x 2
     ##   `year(date)`     n
     ##          <dbl> <int>
     ## 1         2004   372
@@ -683,8 +693,8 @@ filter(knl_rst, is.na(species)) %>%
   tally()
 ```
 
-    ## # A tibble: 0 × 2
-    ## # … with 2 variables: year(date) <dbl>, n <int>
+    ## # A tibble: 0 x 2
+    ## # ... with 2 variables: year(date) <dbl>, n <int>
 
 **NA and Unknown Values**
 
@@ -709,7 +719,7 @@ filter(knl_rst, is.na(at_capture_run)) %>%
   tally()
 ```
 
-    ## # A tibble: 19 × 2
+    ## # A tibble: 19 x 2
     ##    `year(date)`     n
     ##           <dbl> <int>
     ##  1         2002   212
@@ -755,7 +765,7 @@ filter(knl_rst, is.na(lifestage)) %>%
   tally()
 ```
 
-    ## # A tibble: 19 × 2
+    ## # A tibble: 19 x 2
     ##    `year(date)`     n
     ##           <dbl> <int>
     ##  1         2002   583
@@ -802,7 +812,9 @@ knl_rst_changes <- knl_rst %>%
   rename(catch_per_unit_effort = cpue)
 ```
 
-## Questions for follow up
+### Next Steps
+
+#### Questions for follow up
 
 Very large counts on 2014-03-03, 2014-03-04, and 2004-02-06. These exist
 in the raw data. Follow up with contact to double check that these are

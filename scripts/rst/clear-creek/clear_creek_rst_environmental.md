@@ -116,8 +116,8 @@ raw_environmental_upper_2 <- read_excel("raw_upper_clear_rst_data.xlsx",
     ## $ DepthAdjust       <dbl> 28, 27, 29, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, ~
     ## $ AvgTimePerRev     <dbl> 21, 24, 22, 22, 23, 22, 21, 21, 20, 24, 23, 22, 20, ~
     ## $ FlowStartMeter    <dbl> NA, 167000, 191000, 237000, 282000, 323000, 363000, ~
-    ## $ FlowEndMeter      <dbl> NA, 180527, 215035, 269497, 307944, 335804, 380661, ~
-    ## $ FlowSetTime       <dbl> NA, 300, 585, 778, 600, 315, 420, 300, 365, 480, 425~
+    ## $ FlowEndMeter      <dttm> NA, 2394-04-06, 2488-09-27, 2637-11-08, 2743-02-13,~
+    ## $ FlowSetTime       <dttm> NA, 1900-10-26, 1901-08-07, 1902-02-16, 1901-08-22,~
     ## $ RiverLeftDepth    <dbl> 3.8, 3.7, 3.6, 3.7, 3.7, 3.6, 3.4, 3.6, 3.7, 3.6, 3.~
     ## $ RiverCenterDepth  <dbl> 4.0, 3.9, 3.8, 3.9, 3.8, 4.0, 3.0, 3.9, 4.0, 3.8, 3.~
     ## $ RiverRightDepth   <dbl> 4.0, 3.6, 3.9, 3.4, 3.4, 3.4, 3.9, 3.9, 3.5, 3.8, 3.~
@@ -241,19 +241,24 @@ raw_environmental_lower_2 <- read_excel("raw_lower_clear_rst_data.xlsx",
 ## Data transformations
 
 ``` r
+raw_environmental_upper_2 <- raw_environmental_upper_2 %>% 
+  mutate(FlowEndMeter = as.numeric((FlowEndMeter)),
+         FlowSetTime = as.numeric((FlowSetTime)))
+
 raw_rst_environmental <- bind_rows(raw_environmental_upper_1, raw_environmental_upper_2,
                                    raw_environmental_lower_1, raw_environmental_lower_2) 
 
 cleaner_rst_environmental <- raw_rst_environmental %>%
   janitor::clean_names() %>%
   rename() %>%
-  mutate(trap_start_date = as.Date(trap_start_date),
+  mutate(velocity_ft_per_s = velocity *3.281,
+         trap_start_date = as.Date(trap_start_date),
          trap_start_time = hms::as_hms(trap_start_time),
          sample_date = as.Date(sample_date),
          sample_time = hms::as_hms(sample_time)) %>%
   select(-user_name, -user_name2,
           -sample_weight, # remove sample weight because it is defined to be the same as cone) %>%
-         -report_baileys_eff) %>% # remove report baileys eff all NA
+         -report_baileys_eff, -velocity) %>% # remove report baileys eff all NA
   glimpse
 ```
 
@@ -269,7 +274,6 @@ cleaner_rst_environmental <- raw_rst_environmental %>%
     ## $ flow_start_meter    <dbl> 258000, 275000, 294000, 864000, 904000, 947400, 98~
     ## $ flow_end_meter      <dbl> 269659, 286594, 305055, 895943, 928917, 979885, 28~
     ## $ flow_set_time       <dbl> 303, 300, 302, 798, 720, 1080, 385, 300, 300, 540,~
-    ## $ velocity            <dbl> 3.37, 3.38, 3.20, 3.50, 3.03, 2.63, 3.37, 3.32, 3.~
     ## $ turbidity           <dbl> 1.5, 0.8, 0.8, 1.1, 0.7, 0.9, 0.6, 0.9, 1.0, 0.7, ~
     ## $ cone                <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
     ## $ weather_code        <chr> "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", "CLR", "~
@@ -294,6 +298,99 @@ cleaner_rst_environmental <- raw_rst_environmental %>%
     ## $ start_counter       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ trap_fishing        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ partial_sample      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ velocity_ft_per_s   <dbl> 11.05697, 11.08978, 10.49920, 11.48350, 9.94143, 8~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_rst_environmental %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_environmental),
+                          description = c("The station code, two stations Lower Clear Creek (LCC) and Upper Clear Creek (UCC)",
+                                          "The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)",
+                                          "Trap start date",
+                                          "Trap start time",
+                                          "Sample date",
+                                          "Sample time",
+                                          "Number on the cone revolution counter at SampleDate and SampleTime",
+                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity",
+                                          "The read out number on the mechanical counter of the flow meter at the start and end of the velocity",
+                                          "How long the General Oceanics mechanical flow meter was in the water taking a reading, used to calculate water velocity in front of the cone",
+                                          "Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime",
+                                          "Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting",
+                                          "A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table",
+                                          "Stage of the Moon on the SampleDate and SampleTime",
+                                          "River depth (ft) from inside of the river left (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "River depth (ft) from directly in the center of cone off crossbeam #2 (cone crossbeam)",
+                                          "River depth (ft) from inside of the river right (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "The type of sample regime",
+                                          "The type of flow habitat the trap fished in",
+                                          "Was trap fishing in the thalweg at SampleDate and SampleTime",
+                                          "The time of day relative to the sun",
+                                          "The depth of the bottom of the cone (measured in Inches) Depth in relation to the cone (not to the surface of the water)",
+                                          "The type of debris found in the live-box",
+                                          "The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically)",
+                                          "The average time per cone rotation (average of three rotations) - units are seconds",
+                                          "Was there a problem with the trap at SampleDate and SampleTime",
+                                          "If sample week has more than one efficiency, which part of week is sample from",
+                                          "Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage",
+                                          "Number fish released",
+                                          "Trap comments",
+                                          "A code for the condition of the trap on the SampleDate and SampleTime",
+                                          "Beginning cone revolution counter number, usually zero",
+                                          "Trap fished or not",
+                                          "Partial sample",
+                                          "Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875 (multiplied by 3.281 to convert from m/s to ft/s)"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables             | description                                                                                                                                                                                                                           | percent\_na |
+|:----------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------:|
+| station\_code         | The station code, two stations Lower Clear Creek (LCC) and Upper Clear Creek (UCC)                                                                                                                                                    |           0 |
+| sample\_id            | The calendar year Julian date and year code for that \~24-h sample period (ddd\_yy)                                                                                                                                                   |           0 |
+| trap\_start\_date     | Trap start date                                                                                                                                                                                                                       |           2 |
+| trap\_start\_time     | Trap start time                                                                                                                                                                                                                       |           2 |
+| sample\_date          | Sample date                                                                                                                                                                                                                           |           0 |
+| sample\_time          | Sample time                                                                                                                                                                                                                           |           0 |
+| counter               | Number on the cone revolution counter at SampleDate and SampleTime                                                                                                                                                                    |           4 |
+| flow\_start\_meter    | The read out number on the mechanical counter of the flow meter at the start and end of the velocity                                                                                                                                  |           4 |
+| flow\_end\_meter      | The read out number on the mechanical counter of the flow meter at the start and end of the velocity                                                                                                                                  |           4 |
+| flow\_set\_time       | How long the General Oceanics mechanical flow meter was in the water taking a reading, used to calculate water velocity in front of the cone                                                                                          |           4 |
+| turbidity             | Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime                                                                                                                                                |           3 |
+| cone                  | Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting                                                                                                                                                                |           2 |
+| weather\_code         | A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table                                                                                                                                     |           2 |
+| lunar\_phase          | Stage of the Moon on the SampleDate and SampleTime                                                                                                                                                                                    |           2 |
+| river\_left\_depth    | River depth (ft) from inside of the river left (facing down stream) pontoon off crossbeam \#2 (cone crossbeam)                                                                                                                        |          36 |
+| river\_center\_depth  | River depth (ft) from directly in the center of cone off crossbeam \#2 (cone crossbeam)                                                                                                                                               |          36 |
+| river\_right\_depth   | River depth (ft) from inside of the river right (facing down stream) pontoon off crossbeam \#2 (cone crossbeam)                                                                                                                       |          36 |
+| trap\_sample\_type    | The type of sample regime                                                                                                                                                                                                             |           2 |
+| habitat               | The type of flow habitat the trap fished in                                                                                                                                                                                           |           2 |
+| thalweg               | Was trap fishing in the thalweg at SampleDate and SampleTime                                                                                                                                                                          |           2 |
+| diel                  | The time of day relative to the sun                                                                                                                                                                                                   |          95 |
+| depth\_adjust         | The depth of the bottom of the cone (measured in Inches) Depth in relation to the cone (not to the surface of the water)                                                                                                              |           4 |
+| debris\_type          | The type of debris found in the live-box                                                                                                                                                                                              |           2 |
+| debris\_tubs          | The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically)                                                                                                                                     |           2 |
+| avg\_time\_per\_rev   | The average time per cone rotation (average of three rotations) - units are seconds                                                                                                                                                   |           3 |
+| fish\_properly        | Was there a problem with the trap at SampleDate and SampleTime                                                                                                                                                                        |           6 |
+| sub\_week             | If sample week has more than one efficiency, which part of week is sample from                                                                                                                                                        |           0 |
+| baileys\_eff          | Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage                                                                                                                                                        |           0 |
+| num\_released         | Number fish released                                                                                                                                                                                                                  |           2 |
+| trap\_comments        | Trap comments                                                                                                                                                                                                                         |          78 |
+| gear\_condition\_code | A code for the condition of the trap on the SampleDate and SampleTime                                                                                                                                                                 |          95 |
+| start\_counter        | Beginning cone revolution counter number, usually zero                                                                                                                                                                                |          94 |
+| trap\_fishing         | Trap fished or not                                                                                                                                                                                                                    |          94 |
+| partial\_sample       | Partial sample                                                                                                                                                                                                                        |          94 |
+| velocity\_ft\_per\_s  | Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)\*.0875 (multiplied by 3.281 to convert from m/s to ft/s) |           4 |
 
 ## Explore Numeric Variables:
 
@@ -302,11 +399,11 @@ cleaner_rst_environmental %>% select_if(is.numeric) %>% colnames
 ```
 
     ##  [1] "counter"            "flow_start_meter"   "flow_end_meter"    
-    ##  [4] "flow_set_time"      "velocity"           "turbidity"         
-    ##  [7] "cone"               "river_left_depth"   "river_center_depth"
-    ## [10] "river_right_depth"  "depth_adjust"       "debris_tubs"       
-    ## [13] "avg_time_per_rev"   "baileys_eff"        "num_released"      
-    ## [16] "start_counter"
+    ##  [4] "flow_set_time"      "turbidity"          "cone"              
+    ##  [7] "river_left_depth"   "river_center_depth" "river_right_depth" 
+    ## [10] "depth_adjust"       "debris_tubs"        "avg_time_per_rev"  
+    ## [13] "baileys_eff"        "num_released"       "start_counter"     
+    ## [16] "velocity_ft_per_s"
 
 ### Variable: `counter`
 
@@ -356,7 +453,7 @@ summary(cleaner_rst_environmental$counter)
 ### Variables: `flow_start_meter`, `flow_end_meter`
 
 The read out number on the mechanical counter of the flow meter at the
-start and end of the velocity test
+start and end of the velocity
 
 **Plotting distribution of flow start meter and flow end meter**
 
@@ -391,8 +488,8 @@ summary(cleaner_rst_environmental$flow_start_meter)
 summary(cleaner_rst_environmental$flow_end_meter)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##      89  246845  508306  500231  749578 1090650     268
+    ##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max.       NA's 
+    ## -1.050e+09  2.522e+05  5.187e+05  9.682e+08  7.656e+05  8.292e+10        268
 
 **NA and Unknown Values**
 
@@ -431,26 +528,26 @@ almost 4500.
 summary(cleaner_rst_environmental$flow_set_time)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   180.0   300.0   302.0   373.9   365.0  4394.0     270
+    ##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max.       NA's 
+    ## -2.183e+09  3.000e+02  3.000e+02 -5.114e+07  3.600e+02  4.394e+03        270
 
 **NA and Unknown Values**
 
--   3.5 % of values in the `counter` column are NA.
+-   3.6 % of values in the `flow_set_time` column are NA.
 
-### Variable: `velocity`
+### Variable: `velocity_ft_per_s`
 
-Calculated water velocity in front of the cone using a General Oceanics
-mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow
-meter begin)/time in seconds)\*.0875
+Calculated water velocity\_ft\_per\_s in front of the cone using a
+General Oceanics mechanical flow meter (Oceanic ® Model 2030) = (
+(Flowmeter end - flow meter begin)/time in seconds)\*.0875
 
-**Plotting distribution of velocity**
+**Plotting distribution of velocity\_ft\_per\_s**
 
 ``` r
 cleaner_rst_environmental %>% 
-  filter(velocity < 25) %>% # filter out values greater than 25
+  filter(velocity_ft_per_s < 25) %>% # filter out values greater than 25
   ggplot() +
-  geom_histogram(aes(x = velocity), fill = "blue", alpha = .5) +
+  geom_histogram(aes(x = velocity_ft_per_s), fill = "blue", alpha = .5) +
   theme_minimal() + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
@@ -466,7 +563,7 @@ cleaner_rst_environmental %>%
          fake_year = 2000,
          fake_year = ifelse(month(sample_date) %in% 10:12, fake_year - 1, fake_year),
          fake_date = ymd(paste(fake_year, month(sample_date), day(sample_date)))) %>%
-  ggplot(aes(x = fake_date, y = velocity)) +
+  ggplot(aes(x = fake_date, y = velocity_ft_per_s)) +
   scale_x_date(date_breaks = "3 month", date_labels = "%b") +
   geom_line(size = 0.5) +
   xlab("") +
@@ -477,24 +574,25 @@ cleaner_rst_environmental %>%
 ![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 A lot of outliers are shown. These are clear because they create a large
-spike and make the other velocity measurements difficult to see.
+spike and make the other velocity\_ft\_per\_s measurements difficult to
+see.
 
-**Numeric Summary of velocity**
+**Numeric Summary of velocity\_ft\_per\_s**
 
 ``` r
-summary(cleaner_rst_environmental$velocity)
+summary(cleaner_rst_environmental$velocity_ft_per_s)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.030   2.230   2.670   2.902   3.380 280.760     278
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+    ##   0.0984   7.3166   8.7603   9.5219  11.0898 921.1736      278
 
-A velocity of 280 seems out of the range of possibilities. It seems like
-every velocity greater than 7 is probably a mistake that should be
-scaled down or filtered out.
+A velocity\_ft\_per\_s of 750 seems out of the range of possibilities.
+It seems like every velocity\_ft\_per\_s greater than 7 is probably a
+mistake that should be scaled down or filtered out.
 
 **NA and Unknown Values**
 
--   3.7 % of values in the `velocity` column are NA.
+-   3.7 % of values in the `velocity_ft_per_s` column are NA.
 
 ### Variable: `turbidity`
 
@@ -828,7 +926,7 @@ summary(cleaner_rst_environmental$avg_time_per_rev)
 Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily
 passage
 
-**Plotting distribution of counter**
+**Plotting distribution of baileys\_eff**
 
 ``` r
 cleaner_rst_environmental %>% 
@@ -901,7 +999,7 @@ cleaner_rst_environmental %>%
 
 ![](clear_creek_rst_environmental_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
-**Numeric Summary of counter over Period of Record**
+**Numeric Summary of num\_released over Period of Record**
 
 ``` r
 summary(cleaner_rst_environmental$num_released)
@@ -920,7 +1018,7 @@ Beginning cone revolution counter number, usually zero.
 
 All values either 0 or NA.
 
-**Numeric Summary of counter over Period of Record**
+**Numeric Summary of start\_counter over Period of Record**
 
 ``` r
 summary(cleaner_rst_environmental$start_counter)
@@ -1445,12 +1543,21 @@ table(cleaner_rst_environmental$partial_sample)
     an A. If it is split the days in the first substratum are A’s, the
     second are B’s, etc.  
 -   Outliers in some of the numeric variables:
-    -   Velocity (some outliers that need to be addressed)
+    -   velocity\_ft\_per\_s (some outliers that need to be addressed)
     -   Turbidity (some outliers that need to be addressed)
     -   Counter (some outliers that need to be addressed)
 -   There are a few variables that I am unsure of how they would be used
     (ex `depth_adjust`). Asking Mike and these may not be relevant to us
     and can be filtered out.
+
+## Next steps
+
+-   Need to figure out what RST data variables could be used. So far RST
+    environmental variables have been varied.Some variables such as
+    `diel` is only available for a this datasets and could be removed.
+    Other variable such as`avg_time_per_rev`, `baileys_eff`,
+    `flow_start_meter`, `flow_end_meter` needs to be standardized with
+    other RST environmental cone related variables.
 
 ## Save cleaned data back to google cloud
 
@@ -1470,7 +1577,6 @@ clear_rst_environmental <- cleaner_rst_environmental %>% glimpse()
     ## $ flow_start_meter    <dbl> 258000, 275000, 294000, 864000, 904000, 947400, 98~
     ## $ flow_end_meter      <dbl> 269659, 286594, 305055, 895943, 928917, 979885, 28~
     ## $ flow_set_time       <dbl> 303, 300, 302, 798, 720, 1080, 385, 300, 300, 540,~
-    ## $ velocity            <dbl> 3.37, 3.38, 3.20, 3.50, 3.03, 2.63, 3.37, 3.32, 3.~
     ## $ turbidity           <dbl> 1.5, 0.8, 0.8, 1.1, 0.7, 0.9, 0.6, 0.9, 1.0, 0.7, ~
     ## $ cone                <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
     ## $ weather_code        <chr> "clear", "clear", "clear", "clear", "clear", "clea~
@@ -1495,6 +1601,7 @@ clear_rst_environmental <- cleaner_rst_environmental %>% glimpse()
     ## $ start_counter       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ trap_fishing        <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
     ## $ partial_sample      <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ velocity_ft_per_s   <dbl> 11.05697, 11.08978, 10.49920, 11.48350, 9.94143, 8~
 
 ``` r
 # Write to google cloud 

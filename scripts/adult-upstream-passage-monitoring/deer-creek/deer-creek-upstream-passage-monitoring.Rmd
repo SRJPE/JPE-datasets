@@ -1,5 +1,5 @@
 ---
-title: "deer-creek-upstream-monitoring-qc-checklist"
+title: "Deer Creek Adult Upstream Passage Estimate QC"
 author: "Inigo Peng"
 date: "10/19/2021"
 output: rmarkdown::github_document
@@ -18,7 +18,9 @@ library (RColorBrewer)
 
 **Description of Monitoring Data**
 
-Adult spring run salmon passage daily estimate is recorded at SVRIC Dam on Deer River via video monitoring.
+Adult spring run salmon passage daily estimates based on data collected at SVRIC Dam on Deer River via video monitoring.
+
+**QC/Raw or Passage Estimate** QC Passage Estimates
 
 **Timeframe:** 
 
@@ -51,9 +53,11 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-
 ```
 
 Data for each year is in a separate sheet 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 sheets <- readxl::excel_sheets('deer_creek_passage_estimate_raw.xlsx')
-list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_passage_estimate_raw.xlsx", sheet = x, col_types = c("text", "numeric", "numeric", "numeric", "text")))
+list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_passage_estimate_raw.xlsx", 
+                                                          sheet = x, 
+                                                          col_types = c("text", "numeric", "numeric", "numeric", "text")))
 ```
 Bind the sheets into one file
 ```{r}
@@ -76,6 +80,27 @@ cleaner_data <- raw_data %>%
     TRUE ~ as.Date(date, "%m/%d/%Y")
   )) %>% 
   glimpse()
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Date of sampling",
+                                          "Passage estimate of Spring Run Chinook, TODO get methodlogy for generating passage estimates",
+                                          "Flow in CFS",
+                                          "Temperature"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
 ```
 
 ## Explore `date`
@@ -133,6 +158,8 @@ summary(cleaner_data$passage_estimate)
 
 ### Variable:`flow`
 
+Flow in cfs
+
 ```{r fig.height=8, fig.width=8}
 cleaner_data %>% 
   group_by(date) %>%
@@ -172,6 +199,8 @@ summary(cleaner_data$flow)
 *  `r round(sum(is.na(cleaner_data$flow))/nrow(cleaner_data), 3)*100` % of values in the `flow` column are NA.
 
 ### Variable:`temperature`
+
+Temperature in F, convert below
 
 ```{r fig.height=8, fig.width=8}
 cleaner_data %>% 
@@ -214,16 +243,25 @@ summary(cleaner_data$temperature)
 
 ### Notes and Issues
 
-* Temperature in F
+* Only have passage estimates may want to purse raw data
+* Temperature in F, convert to C below 
 
-* Lacking Units for flow
+```{r}
+cleaner_data <- cleaner_data %>%
+  mutate(temperature = (temperature - 32) * (5/9))
+```
+
+
+## Next steps
+
+* See if we need raw data from this video monitoring 
 
 ### Add cleaned data back onto google cloud
 ```{r}
 deer_upstream_estimate <- cleaner_data %>% glimpse()
 ```
 
-```{r}
+```{r, eval =FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(deer_upstream_estimate,

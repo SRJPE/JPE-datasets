@@ -7,15 +7,15 @@ Inigo Peng
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service’s, Red
-Bluff Fish and Wildlife Office’s, Clear Creek Monitoring Program.This
-data encompass spring-run Chinook Salmon carcasses retrieved on redd and
-escapement index surveys from 2008 to 2019 on Clear Creek. Data were
-collected on lower Clear Creek from Whiskeytown Dam located at river
-mile 18.1, (40.597786N latitude, -122.538791W longitude \[decimal
-degrees\]) to the Clear Creek Video Station located at river mile 0.0
-(40.504836N latitude, -122.369693W longitude \[decimal degrees\]) near
-the confluence with the Sacramento River.
+This carcass data were collected by the U.S. Fish and Wildlife
+Service’s, Red Bluff Fish and Wildlife Office’s, Clear Creek Monitoring
+Program.This data encompass spring-run Chinook Salmon carcasses
+retrieved on redd and escapement index surveys from 2008 to 2019 on
+Clear Creek. Data were collected on lower Clear Creek from Whiskeytown
+Dam located at river mile 18.1, (40.597786N latitude, -122.538791W
+longitude) to the Clear Creek Video Station located at river mile 0.0
+(40.504836N latitude, -122.369693W longitude) near the confluence with
+the Sacramento River.
 
 **Timeframe:** 2008 - 2019
 
@@ -27,7 +27,10 @@ Data available for all years.
 
 **Data Contact:** [Ryan Schaefer](mailto:ryan_a_schaefer@fws.gov)
 
-Any additional info?
+This
+[report](https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf)
+gives additional information on Adult Chinook monitoring and carcass
+collection.
 
 ## Access Cloud Data
 
@@ -98,7 +101,6 @@ raw_carcass_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", shee
 ``` r
 cleaner_data <- raw_carcass_data %>% 
   janitor::clean_names() %>% 
-  select(-c('survey','qc_type','qc_date','inspector','year', 'year_id')) %>% 
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'condition' = 'condit',
@@ -113,13 +115,15 @@ cleaner_data <- raw_carcass_data %>%
          age = as.numeric(age),
          brood_year = as.numeric(brood_year),
          sample_id = as.character(sample_id)) %>% 
+    filter(species == "Chinook") %>%
+    select(-c('survey','qc_type','qc_date','inspector','year', 'year_id', 'species')) %>% 
   glimpse()
 ```
 
     ## Warning in mask$eval_all_mutate(quo): NAs introduced by coercion
 
-    ## Rows: 601
-    ## Columns: 34
+    ## Rows: 561
+    ## Columns: 33
     ## $ type                          <chr> "snorkel", "snorkel", "snorkel", "snorke~
     ## $ date                          <date> 2008-09-10, 2008-09-23, 2008-09-23, 200~
     ## $ longitude                     <dbl> -122.5247, -122.5339, -121.7493, -122.53~
@@ -128,7 +132,6 @@ cleaner_data <- raw_carcass_data %>%
     ## $ river_mile                    <dbl> 10.968258, 15.600476, 14.922846, 15.2230~
     ## $ obs_only                      <chr> "NO", "NO", "NO", "YES", "YES", "NO", "N~
     ## $ sample_id                     <chr> "60024", "60008", "60009", "69000", "690~
-    ## $ species                       <chr> "Chinook", "Chinook", "Chinook", "Chinoo~
     ## $ adipose                       <chr> "PRESENT", "PRESENT", "PRESENT", "PRESEN~
     ## $ fork_length                   <dbl> NA, 825, 665, NA, NA, 689, 770, 725, 712~
     ## $ condition                     <chr> "UNKNOWN", "NON-FRESH", "NON-FRESH", "NO~
@@ -155,6 +158,93 @@ cleaner_data <- raw_carcass_data %>%
     ## $ run_call                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
     ## $ genetic                       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Survey type", 
+                                          "Date of sampling",
+                                          "GPS X point",
+                                          "GPS Y point",
+                                          "Reach number (1-7); other location",
+                                          "River mile number",
+                                          "True if the fish was observed and not sampled (T/F)",
+                                          "Unique sample ID number",
+                                          "Adipose status (absent, present, unknown)",
+                                          "Fork length of fish in mm",
+                                          "Condition of fish (fresh or not fresh)",
+                                          "? TODO", 
+                                          "? TODO", 
+                                          "True if a scale sample was taken", 
+                                          "True if an otolith sample was taken",
+                                          "Male, Female, Unknown",
+                                          "Why fish sex is unknown (decomposed, predation, NA)",
+                                          "Spawning status (partial, spawned, unspawned)",
+                                          "Why not spawned (decomposed, male, male always unknown, most eggs present, observed only, predation, prespawn, too decomposed",
+                                          "True if fish head was retrieved", 
+                                          "Type of tag, if any present (Floy, external mark)",
+                                          "Code describing if a photo of the carcass was taken, TODO get code definitions", 
+                                          "General comments from survey crew",
+                                          "Coded wire tag number",
+                                          "Run of Chinook (spring, fall, late-fall, winter, hybrid, unknown)",
+                                          "Brood year of carcass found", 
+                                          "Location where hatchery smolts were released, TODO figure out how this is relevent to carcass data", 
+                                          "Hatchery that produced the fish (Coleman hatchery or feather river hatchery)", 
+                                          "Age of fish", 
+                                          "Rate at which Hatchery Fish were marked, TODO figure out what this means",
+                                          "CWT code and relevant information, TODO clean this up",
+                                          "Run call based on field data, TODO differnciate from other run",
+                                          "Type of genetics taken, TODO elaborate on options"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables                        | description                                                                                                                   | percent\_na |
+|:---------------------------------|:------------------------------------------------------------------------------------------------------------------------------|------------:|
+| type                             | Survey type                                                                                                                   |           0 |
+| date                             | Date of sampling                                                                                                              |           0 |
+| longitude                        | GPS X point                                                                                                                   |           0 |
+| latitude                         | GPS Y point                                                                                                                   |           0 |
+| reach                            | Reach number (1-7); other location                                                                                            |           0 |
+| river\_mile                      | River mile number                                                                                                             |           0 |
+| obs\_only                        | True if the fish was observed and not sampled (T/F)                                                                           |           0 |
+| sample\_id                       | Unique sample ID number                                                                                                       |           1 |
+| adipose                          | Adipose status (absent, present, unknown)                                                                                     |           0 |
+| fork\_length                     | Fork length of fish in mm                                                                                                     |          16 |
+| condition                        | Condition of fish (fresh or not fresh)                                                                                        |           0 |
+| tis\_eth                         | ? TODO                                                                                                                        |           0 |
+| tis\_dry                         | ? TODO                                                                                                                        |           0 |
+| scale                            | True if a scale sample was taken                                                                                              |           0 |
+| otolith\_st                      | True if an otolith sample was taken                                                                                           |           0 |
+| sex                              | Male, Female, Unknown                                                                                                         |           0 |
+| why\_sex\_unknown                | Why fish sex is unknown (decomposed, predation, NA)                                                                           |          90 |
+| spawn\_status                    | Spawning status (partial, spawned, unspawned)                                                                                 |           1 |
+| why\_not\_sp                     | Why not spawned (decomposed, male, male always unknown, most eggs present, observed only, predation, prespawn, too decomposed |          21 |
+| head\_retrieved                  | True if fish head was retrieved                                                                                               |           0 |
+| tag\_type                        | Type of tag, if any present (Floy, external mark)                                                                             |           1 |
+| photo                            | Code describing if a photo of the carcass was taken, TODO get code definitions                                                |          51 |
+| comments                         | General comments from survey crew                                                                                             |          65 |
+| cwt\_code                        | Coded wire tag number                                                                                                         |          87 |
+| run                              | Run of Chinook (spring, fall, late-fall, winter, hybrid, unknown)                                                             |          90 |
+| brood\_year                      | Brood year of carcass found                                                                                                   |          90 |
+| release\_location                | Location where hatchery smolts were released, TODO figure out how this is relevent to carcass data                            |          90 |
+| hatchery                         | Hatchery that produced the fish (Coleman hatchery or feather river hatchery)                                                  |          90 |
+| age                              | Age of fish                                                                                                                   |          80 |
+| mark\_rate                       | Rate at which Hatchery Fish were marked, TODO figure out what this means                                                      |          98 |
+| verification\_and\_cwt\_comments | CWT code and relevant information, TODO clean this up                                                                         |          99 |
+| run\_call                        | Run call based on field data, TODO differnciate from other run                                                                |          68 |
+| genetic                          | Type of genetics taken, TODO elaborate on options                                                                             |          89 |
+
 ## Explore date
 
 ``` r
@@ -162,7 +252,7 @@ summary(cleaner_data$date)
 ```
 
     ##         Min.      1st Qu.       Median         Mean      3rd Qu.         Max. 
-    ## "2008-08-18" "2009-10-21" "2012-10-01" "2012-07-15" "2014-10-09" "2019-10-08"
+    ## "2008-09-10" "2009-10-19" "2012-10-01" "2012-06-26" "2014-10-07" "2019-10-08"
 
 **NA and Unknown Values**
 
@@ -176,17 +266,17 @@ cleaner_data %>% select_if(is.character) %>% colnames()
 
     ##  [1] "type"                          "reach"                        
     ##  [3] "obs_only"                      "sample_id"                    
-    ##  [5] "species"                       "adipose"                      
-    ##  [7] "condition"                     "tis_eth"                      
-    ##  [9] "tis_dry"                       "scale"                        
-    ## [11] "otolith_st"                    "sex"                          
-    ## [13] "why_sex_unknown"               "spawn_status"                 
-    ## [15] "why_not_sp"                    "head_retrieved"               
-    ## [17] "tag_type"                      "photo"                        
-    ## [19] "comments"                      "cwt_code"                     
-    ## [21] "run"                           "release_location"             
-    ## [23] "hatchery"                      "verification_and_cwt_comments"
-    ## [25] "run_call"                      "genetic"
+    ##  [5] "adipose"                       "condition"                    
+    ##  [7] "tis_eth"                       "tis_dry"                      
+    ##  [9] "scale"                         "otolith_st"                   
+    ## [11] "sex"                           "why_sex_unknown"              
+    ## [13] "spawn_status"                  "why_not_sp"                   
+    ## [15] "head_retrieved"                "tag_type"                     
+    ## [17] "photo"                         "comments"                     
+    ## [19] "cwt_code"                      "run"                          
+    ## [21] "release_location"              "hatchery"                     
+    ## [23] "verification_and_cwt_comments" "run_call"                     
+    ## [25] "genetic"
 
 ### Variable: `type`
 
@@ -201,7 +291,7 @@ table(cleaner_data$type)
 
     ## 
     ##    ccvs    psam      pw snorkel 
-    ##       7       1     249     344
+    ##       7       1     242     311
 
 **NA and Unknown Values**
 
@@ -217,7 +307,7 @@ table(cleaner_data$reach)
 
     ## 
     ##  R1  R2  R3  R4  R5 R5A R5B R5C  R6 R6A  R7 
-    ##  47  60  21  54   3 212 153  23  15   1  12
+    ##  41  52  18  48   3 204 151  23  10   1  10
 
 **NA and Unknown Values**
 
@@ -237,32 +327,11 @@ table(cleaner_data$obs_only)
 
     ## 
     ## FALSE  TRUE 
-    ##   557    44
+    ##   521    40
 
 **NA and Unknown Values**
 
 -   0 % of values in the `obs_only` column are NA.
-
-### Variable: `species`
-
-**Description:** Species of carcasses
-
-Filter for chinook only
-
-``` r
-cleaner_data <- cleaner_data %>% 
-  mutate(species = tolower(species)) %>% 
-  filter(species == "chinook")
-table(cleaner_data$species)
-```
-
-    ## 
-    ## chinook 
-    ##     561
-
-**NA and Unknown Values**
-
--   0 % of values in the `species` column are NA.
 
 ### Variable: `adipose`
 
@@ -270,18 +339,17 @@ table(cleaner_data$species)
 
 ``` r
 cleaner_data <- cleaner_data %>% 
-  mutate(adipose = tolower(adipose),
-         adipose = ifelse(adipose == "unknown", NA_character_, adipose))
+  mutate(adipose = tolower(adipose))
 table(cleaner_data$adipose)
 ```
 
     ## 
-    ##  absent present 
-    ##      54     465
+    ##  absent present unknown 
+    ##      54     465      42
 
 **NA and Unknown Values**
 
--   7.5 % of values in the `adipose` column are NA.
+-   0 % of values in the `adipose` column are NA.
 
 ### Variable: `condition`
 
@@ -777,7 +845,7 @@ cleaner_data %>%
 
     ## Warning: Removed 1 rows containing missing values (geom_point).
 
-![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 **Numeric Summary of river\_mile over Period of Time**
 
@@ -794,9 +862,6 @@ summary(cleaner_data$river_mile)
 
 ### Variable: `brood_year`
 
-TODO: Ask for clarification/description for brood\_year(is this a
-description for the carcasses?)
-
 ``` r
 cleaner_data %>% 
   ggplot(aes(x = brood_year))+
@@ -810,7 +875,7 @@ cleaner_data %>%
 
     ## Warning: Removed 505 rows containing non-finite values (stat_bin).
 
-![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
 **Numeric Summary of brood\_year over Period of Time**
 
@@ -841,7 +906,7 @@ cleaner_data %>%
 
     ## Warning: Removed 89 rows containing non-finite values (stat_bin).
 
-![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
 
 **Numeric Summary of fork\_length over Period of Time**
 
@@ -870,7 +935,7 @@ cleaner_data %>%
 
     ## Warning: Removed 449 rows containing non-finite values (stat_bin).
 
-![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
 
 **Numeric Summary of Age Over Period of Time**
 
@@ -899,7 +964,7 @@ cleaner_data %>%
 
     ## Warning: Removed 549 rows containing non-finite values (stat_bin).
 
-![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
+![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
 
 ``` r
 summary(cleaner_data$mark_rate)
@@ -914,9 +979,27 @@ summary(cleaner_data$mark_rate)
 
 ### Summary of Identified Issues
 
--   Some columns need better metadata description
--   Some columns such as ‘run’ and ‘run\_call’ seem to overlap - need to
-    email Ryan
+-   Some columns need better metadata description (tis\_eth, tis\_dry,
+    photo, release\_location, mark\_rate,
+    verification\_and\_cwt\_comments, run\_call)
+-   Some columns such as ‘run’ and ‘run\_call’ seem to contain the same
+    type of information but have very different values. TODO need to
+    contact Ryan for more details on these columns.
+
+## Next steps
+
+-   Work on data modeling to identify important variables needed for
+    carcass datasets.
+
+### Columns to remove
+
+-   Suggest removing some of the location variables we currently have:
+    `longitude`, `latitude`, `reach` and `river_mile`.
+-   Suggest removing one of the run columns, either `run` or `run_call`
+    should be removed
+-   `genetics`, `verification_and_cwt_comments`, `mark_rate`,
+    `hatchery`, `release_location`, `brood_year`, `comments` and `photo`
+    all contain a lot of NA values. These may not be needed.
 
 ### Save Cleaned data back to google cloud
 
@@ -925,7 +1008,7 @@ clear_carcass <- cleaner_data %>% glimpse
 ```
 
     ## Rows: 561
-    ## Columns: 34
+    ## Columns: 33
     ## $ type                          <chr> "snorkel", "snorkel", "snorkel", "snorke~
     ## $ date                          <date> 2008-09-10, 2008-09-23, 2008-09-23, 200~
     ## $ longitude                     <dbl> -122.5247, -122.5339, -121.7493, -122.53~
@@ -934,7 +1017,6 @@ clear_carcass <- cleaner_data %>% glimpse
     ## $ river_mile                    <dbl> 10.968258, 15.600476, 14.922846, 15.2230~
     ## $ obs_only                      <lgl> FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, ~
     ## $ sample_id                     <chr> "60024", "60008", "60009", "69000", "690~
-    ## $ species                       <chr> "chinook", "chinook", "chinook", "chinoo~
     ## $ adipose                       <chr> "present", "present", "present", "presen~
     ## $ fork_length                   <dbl> NA, 825, 665, NA, NA, 689, 770, 725, 712~
     ## $ condition                     <chr> NA, "non-fresh", "non-fresh", "non-fresh~

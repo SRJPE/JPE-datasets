@@ -12,6 +12,7 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library (RColorBrewer)
+library(knitr)
 ```
 # Mill Creek Redd Survey Data 
 
@@ -19,7 +20,7 @@ library (RColorBrewer)
 
 * Redd surveys Buckhorn Gulch to Upper Dam are conducted by air (helicopter).  All other survey sections completed on foot
 
-* McCarthy Place to Savercool Place and Savercool Place to Black Rock reaches combined 1997 to 2006
+
 
 
 
@@ -31,8 +32,8 @@ library (RColorBrewer)
 
 * Missing some elevation data
 * Buckhorn Gulch To Upper Dam missing significant count data
-* Savercool Place  To Black Rock and Canyon Camp to Sooner Place missing redd count data
-from 1997 - 2006
+* Canyon Camp to Sooner Place missing redd count data from 1997 - 2006
+* McCarthy Place to Savercool Place and Savercool Place to Black Rock reaches combined 1997 to 2006
 
 **Sampling Location:** 
 
@@ -92,6 +93,26 @@ cleaner_data <- raw_data %>%
   mutate(year = as.numeric(substr(year, 1,4)),
          starting_elevation_ft = as.numeric(str_replace(starting_elevation_ft, "'$", ""))) %>% 
   glimpse()
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Nominal description of sampling location",
+                                          "Elevation at sample start point",
+                                          "Survey year",
+                                          "Number of redds observed"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
 ```
 
 ## Explore Categorical Variables
@@ -170,11 +191,15 @@ cleaner_data %>%
 
 *  `r round(sum(is.na(cleaner_data$starting_elevation_ft))/nrow(cleaner_data), 3)*100` % of values in the `starting_elevation_ft` column are NA.
 
+## Next steps
+
+- Suggest transforming the nominal location variable into `latitude` and `longitude`
+
 ### Add cleaned data back onto google cloud
 ```{r}
 mill_redd_survey <- cleaner_data %>% glimpse()
 ```
-```{r}
+```{r, include = F}
 f <- function(input, output) write_csv(input, file = output)
 gcs_upload(mill_redd_survey,
            object_function = f,

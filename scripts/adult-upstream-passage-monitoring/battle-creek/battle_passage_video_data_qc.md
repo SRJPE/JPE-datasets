@@ -112,6 +112,40 @@ cleaner_video_data <- raw_video_data %>%
     ## $ passage_direction <chr> "up", "down", "up", "down", "up", "down", "up", "dow~
     ## $ count             <dbl> 1, 0, 1, 0, 5, 0, 1, 0, 2, 0, 2, 0, 2, 0, 1, 0, 2, 0~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_video_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_video_data),
+                          description = c("Date",
+                                          "Time",
+                                          "Adipose fin present or not",
+                                          "Comments",
+                                          "Run of the fish",
+                                          "Whether fish is moving upstream or downstream",
+                                          "Passage Counts"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables          | description                                   | percent\_na |
+|:-------------------|:----------------------------------------------|------------:|
+| date               | Date                                          |           0 |
+| time               | Time                                          |           4 |
+| adipose            | Adipose fin present or not                    |           0 |
+| comments           | Comments                                      |          88 |
+| run                | Run of the fish                               |           0 |
+| passage\_direction | Whether fish is moving upstream or downstream |           0 |
+| count              | Passage Counts                                |           0 |
+
 ## Explore Numeric Variables:
 
 ``` r
@@ -126,6 +160,7 @@ cleaner_video_data %>% select_if(is.numeric) %>% colnames()
 
 ``` r
 cleaner_video_data %>% 
+  filter(run == "SR") %>% 
   mutate(year = as.factor(year(date)),
          fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
@@ -136,7 +171,7 @@ cleaner_video_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Count of Passage All Runs", 
+  labs(title = "Daily Count of Passage Spring Runs", 
        x = "Date")  
 ```
 
@@ -148,6 +183,7 @@ September.
 ``` r
 # Boxplots of daily counts by year
 cleaner_video_data %>% group_by(date, passage_direction) %>%
+  filter(run == "SR") %>% 
   mutate(daily_count_upstream = sum(count)) %>%
   mutate(year = as.factor(year(date))) %>% 
   ungroup() %>%
@@ -156,13 +192,14 @@ cleaner_video_data %>% group_by(date, passage_direction) %>%
   theme_minimal() +
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Passage Count Sumarized by Year All Runs") 
+  labs(title = "Daily Passage Count Sumarized by Year Spring Runs") 
 ```
 
 ![](battle_passage_video_data_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 cleaner_video_data  %>%
+  filter(run == "SR") %>% 
   mutate(year = as.factor(year(date))) %>%
   filter(run %in% c("FR", "LF", "SR", "WR")) %>% # Filter to only show runs that have more than one data point and are not NA/Unknown
   group_by(year, passage_direction, run) %>%
@@ -170,7 +207,7 @@ cleaner_video_data  %>%
   ggplot(aes(x = year, y = total_count, fill = passage_direction)) + 
   geom_col(position = "dodge") + 
   theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
+  labs(title = "Total Yearly Fish Counts by Spring Run",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
@@ -312,6 +349,10 @@ table(cleaner_video_data$passage_direction)
 ## Summary of identified issues
 
 -   No info on viewing condition/outages/gaps in sampling
+
+## Next Steps
+
+-   Understand how this data fit in with passage monitoring data schema
 
 ## Save cleaned data back to google cloud
 

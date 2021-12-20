@@ -74,6 +74,8 @@ raw_upper_rst_count_data <- read_excel("raw_upper_clear_rst_data.xlsx", sheet = 
 ## Data transformations
 
 ```{r}
+raw_lower_rst_count_data <- raw_lower_rst_count_data %>% 
+  mutate(IDWeek = as.numeric(IDWeek))
 raw_rst_count_data <- bind_rows(raw_lower_rst_count_data, raw_upper_rst_count_data)
 
 cleaner_rst_count <- raw_rst_count_data %>%
@@ -104,7 +106,7 @@ Notes:
   * fWSRace - USFWS run designation base upon location or emergence timing used in reports and for passage indices, W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon					
   * race - Database generated Sheila Greene run designation of catch, W=winter-run, S=spring-run, F=fall-run, L=late-fall run Chinook Salmon, see RunDesignation and RunChart tables							
 
-These columns have simmilar run designations. 
+These columns have similar run designations. 
 ```{r}
 sum(raw_rst_count_data$Race == raw_rst_count_data$FWSRace, na.rm = T)/length(raw_rst_count_data$Race)
 ```
@@ -112,7 +114,33 @@ sum(raw_rst_count_data$Race == raw_rst_count_data$FWSRace, na.rm = T)/length(raw
   
 Additional info from Mike describing the race columns: 
 We use the FWSRace for our reports, all fish length-designated as fall-run by the Sheila Greene length-at-date (LAD) charts we consider spring-run at the upper Battle and Clear Creek sites.  We consider the barrier weir at Coleman National Fish Hatchery to be fish tight up to 800 cfs, flows rarely exceed that level during the spring-run and early fall-run escapement period. We are fairly confident that no fall-run get above the weir. Likewise, we install a separation (picket) weir in Clear Creek below the upper trap site that excludes fall-run from spawning with spring-run and superimposing redds on top of spring-run redds. At the lower Clear Creek (LCC) site we strictly go by the Sheila Green LAD chart because there is no way to tell the difference between spring-run and fall-run fish in the field.  There is overlap in the sizes of spring-run and fall-run and we know that the Sheila Greene LAD charts don't capture the overlap. In Clear Creek, some fish that classify as fall-run based on length from our LCC trap are actually spring-run and vise versa.
- 
+
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_rst_count %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_count),
+                          description = c("The station code, two stations Lower Clear Creek (LCC) and Upper Clear Creek (UCC)",
+                                          "Date",
+                                          "The calender year Julian date and year code for that ~24 h sample period (ddd_yy)",
+                                          "Run",
+                                          "Fork length of the fish captured",
+                                          "Life stage of the catch",
+                                          "Catch umber used to generate passage indices for the reports",
+                                          "Indicates if the fish was a mortality",
+                                          "Is count value an interpolated catch for the times the trap did not fish"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+``` 
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
@@ -378,6 +406,11 @@ table(cleaner_rst_count$interpolated)
 * Count values are interpolated on days where the traps were not fished, to see if interpolated or not refer to `interpolated` column - not exactly clear how interpolation is calculated 
 * Need to decide what Race (run) measure to keep (`fws_race` or `race`)
 * Investigate what it means for: zero fork lengths have been assigned - 0 `fork_length` values mean fish was not measured. TODO Ask Mike 
+
+## Next steps
+
+* Once we decide which Race (run) measure to keep, we could visualize the data based on Spring run.
+
 
 ## Save cleaned data back to google cloud 
 

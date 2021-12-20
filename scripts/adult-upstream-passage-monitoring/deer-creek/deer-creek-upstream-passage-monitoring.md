@@ -1,4 +1,4 @@
-deer-creek-upstream-monitoring-qc-checklist
+Deer Creek Adult Upstream Passage Estimate QC
 ================
 Inigo Peng
 10/19/2021
@@ -7,8 +7,10 @@ Inigo Peng
 
 **Description of Monitoring Data**
 
-Adult spring run salmon passage daily estimate is recorded at SVRIC Dam
-on Deer River via video monitoring.
+Adult spring run salmon passage daily estimates based on data collected
+at SVRIC Dam on Deer River via video monitoring.
+
+**QC/Raw or Passage Estimate** QC Passage Estimates
 
 **Timeframe:**
 
@@ -44,23 +46,10 @@ Data for each year is in a separate sheet
 
 ``` r
 sheets <- readxl::excel_sheets('deer_creek_passage_estimate_raw.xlsx')
-list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_passage_estimate_raw.xlsx", sheet = x, col_types = c("text", "numeric", "numeric", "numeric", "text")))
+list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_passage_estimate_raw.xlsx", 
+                                                          sheet = x, 
+                                                          col_types = c("text", "numeric", "numeric", "numeric", "text")))
 ```
-
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
-    ## New names:
-    ## * `` -> ...5
 
 Bind the sheets into one file
 
@@ -100,6 +89,35 @@ cleaner_data <- raw_data %>%
     ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 3, 16, 2, 0, 0, 0, 5, 6, 2, 0, 2~
     ## $ flow             <dbl> 111, 98, 91, 86, 81, 78, 80, 198, 297, 429, 274, 327,~
     ## $ temperature      <dbl> 49.35426, 49.84375, 50.09583, 50.25729, 51.05313, 51.~
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Date of sampling",
+                                          "Passage estimate of Spring Run Chinook, TODO get methodlogy for generating passage estimates",
+                                          "Flow in CFS",
+                                          "Temperature"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables         | description                                                                                  | percent\_na |
+|:------------------|:---------------------------------------------------------------------------------------------|------------:|
+| date              | Date of sampling                                                                             |           0 |
+| passage\_estimate | Passage estimate of Spring Run Chinook, TODO get methodlogy for generating passage estimates |           0 |
+| flow              | Flow in CFS                                                                                  |          15 |
+| temperature       | Temperature                                                                                  |           0 |
 
 ## Explore `date`
 
@@ -168,6 +186,8 @@ summary(cleaner_data$passage_estimate)
 
 ### Variable:`flow`
 
+Flow in cfs
+
 ``` r
 cleaner_data %>% 
   group_by(date) %>%
@@ -219,6 +239,8 @@ summary(cleaner_data$flow)
 
 ### Variable:`temperature`
 
+Temperature in F, convert below
+
 ``` r
 cleaner_data %>% 
   group_by(date) %>%
@@ -268,9 +290,17 @@ summary(cleaner_data$temperature)
 
 ### Notes and Issues
 
--   Temperature in F
+-   Only have passage estimates may want to purse raw data
+-   Temperature in F, convert to C below
 
--   Lacking Units for flow
+``` r
+cleaner_data <- cleaner_data %>%
+  mutate(temperature = (temperature - 32) * (5/9))
+```
+
+## Next steps
+
+-   See if we need raw data from this video monitoring
 
 ### Add cleaned data back onto google cloud
 
@@ -283,7 +313,7 @@ deer_upstream_estimate <- cleaner_data %>% glimpse()
     ## $ date             <date> 2014-02-20, 2014-02-21, 2014-02-22, 2014-02-23, 2014~
     ## $ passage_estimate <dbl> 0, 0, 0, 0, 0, 0, 0, 3, 16, 2, 0, 0, 0, 5, 6, 2, 0, 2~
     ## $ flow             <dbl> 111, 98, 91, 86, 81, 78, 80, 198, 297, 429, 274, 327,~
-    ## $ temperature      <dbl> 49.35426, 49.84375, 50.09583, 50.25729, 51.05313, 51.~
+    ## $ temperature      <dbl> 9.641253, 9.913194, 10.053241, 10.142940, 10.585069, ~
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
@@ -293,29 +323,3 @@ gcs_upload(deer_upstream_estimate,
            type = "csv",
            name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv")
 ```
-
-    ## i 2021-11-10 12:53:05 > File size detected as  39.7 Kb
-
-    ## i 2021-11-10 12:53:05 > Request Status Code:  400
-
-    ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
-
-    ## i 2021-11-10 12:53:05 > File size detected as  39.7 Kb
-
-    ## ==Google Cloud Storage Object==
-    ## Name:                adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv 
-    ## Type:                csv 
-    ## Size:                39.7 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv?generation=1636577584600706&alt=media 
-    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv 
-    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fdeer-creek%2Fdata%2Fdeer_upstream_passage_estimate.csv 
-    ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv/1636577584600706 
-    ## MD5 Hash:            09uD8o/DxSh/prRp3PlM8g== 
-    ## Class:               STANDARD 
-    ## Created:             2021-11-10 20:53:04 
-    ## Updated:             2021-11-10 20:53:04 
-    ## Generation:          1636577584600706 
-    ## Meta Generation:     1 
-    ## eTag:                CIKtz8zWjvQCEAE= 
-    ## crc32c:              eYkzNA==

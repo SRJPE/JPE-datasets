@@ -63,8 +63,7 @@ in changes section at end.
 
 ```{r}
 # read in data to clean 
-knl_rst <- read_csv("knl_combine_rst.csv", show_col_types = F)
-glimpse(knl_rst)
+knl_rst <- read_csv("knl_combine_rst.csv") %>% glimpse()
 ```
 
 
@@ -476,9 +475,14 @@ knl_rst_changes <- knl_rst %>%
   rename(catch_per_unit_effort = cpue)
 ```
 
-## Questions for follow up
+
+### Next Steps
+
+#### Questions for follow up
 
 Very large counts on 2014-03-03, 2014-03-04, and 2004-02-06. These exist in the raw data. Follow up with contact to double check that these are raw counts or if these might be typos.
+
+
 
 ### Save cleaned data back to google cloud 
 

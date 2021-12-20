@@ -19,7 +19,7 @@ library(readxl)
 
 ## Description of Monitoring Data
 
-Yuba river upstream passage data provided by Mike Healey in a xlsx doc. No associated description or metadata. We were warned by yuba river experts that this data has a lot of inconsistencies and they do not think the raw data here accuratly reflects the system. They recomend using values calculated in [this report.](https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring/yuba-river/data-raw/2020%20Update%20LYR%20Chinook%20Salmon%20Run%20Differentiation_December%202020.pdf)  
+Yuba river upstream passage data provided by Mike Healey in a xlsx doc. No associated description or metadata. We were warned by yuba river experts that this data has a lot of inconsistencies and they do not think the raw data here accuratly reflects the system. They recommend using values calculated in [this report.](https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring/yuba-river/data-raw/2020%20Update%20LYR%20Chinook%20Salmon%20Run%20Differentiation_December%202020.pdf)  
 					
 
 **Timeframe:** 2004 - 2019
@@ -70,13 +70,41 @@ cleaner_passage_data <- raw_passage_data %>%
   left_join(raw_passage_operations, c("Date", "Ladder")) %>% # Join passage data, no data on hours monitored in first 2 months
   janitor::clean_names() %>% 
   rename(speed_m_per_s = speed_m_s,
-         catagory = categorie,
+         category = categorie,
          passage_direction = direction_of_passage) %>%
   mutate(count = 1, 
          date = as.Date(date), 
-         time = hms::as_hms(time)) %>%
-  select(-percent) %>% # remove because just hours/24
+         time = hms::as_hms(time),
+         depth_m = depth_mm/1000) %>%
+  select(-percent, -depth_mm) %>% # remove because just hours/24, converted mm to m
   glimpse()
+```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_passage_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_data),
+                          description = c("Date of sampling",
+                                          "Time of sampling",
+                                          "Length of fish in CM",
+                                          "Category",
+                                          "State if the fish is moving upstream (Up) or downstream (Down)",
+                                          "Refers to which fish ladder observation occured on",
+                                          "Speed of fish in meter per second",
+                                          "Fish position in video frame.",
+                                          "Number of hours in day that were monitored",
+                                          "Passage counts",
+                                          "Depth in m"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -105,9 +133,11 @@ cleaner_passage_data %>% filter(year(date) > 2010) %>% # show only last 10 years
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
   labs(title = "Daily Count of Passage All Runs", 
        x = "Date")  
+#Spring Run Chinook appear to be seen moving upstream April through September.
 ```
 
-Spring Run Chinook appear to be seen moving upstream April through September.
+
+
 
 ```{r}
 # Boxplots of daily counts by year
@@ -152,30 +182,30 @@ cleaner_passage_data %>% group_by(date) %>%
 
 * `r round(sum(is.na(cleaner_passage_data$count))/nrow(cleaner_passage_data), 3) * 100` % of values in the `count` column are NA. Expected given I created the column assuming each row is one fish. 
 
-### Variable: `depth_mm`
+### Variable: `depth_m`
 
-**Plotting depth_mm over Period of Record**
+**Plotting depth_m over Period of Record**
 
 ```{r}
 cleaner_passage_data %>%
-  ggplot(aes(x = depth_mm)) + 
-  geom_histogram(breaks=seq(25, 275, by=2)) + 
-  scale_x_continuous(breaks=seq(25, 275, by=25)) +
+  ggplot(aes(x = depth_m)) + 
+  geom_histogram() + 
+  scale_x_continuous(breaks=seq(0.025, 0.275, by=0.025)) +
   theme_minimal() +
   labs(title = "depth distribution") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-**Numeric Summary of depth_mm over Period of Record**
+**Numeric Summary of depth_m over Period of Record**
 
 ```{r}
-summary(cleaner_passage_data$depth_mm)
+summary(cleaner_passage_data$depth_m)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_passage_data$depth_mm))/nrow(cleaner_passage_data), 3) * 100` % of values in the `depth_mm` column are NA. 
+* `r round(sum(is.na(cleaner_passage_data$depth_m))/nrow(cleaner_passage_data), 3) * 100` % of values in the `depth_m` column are NA. 
 
 ### Variable: `length_cm`
 
@@ -299,34 +329,34 @@ cleaner_passage_data %>% select_if(is.character) %>% colnames()
 ```
 
 
-### Variable: `catagory`
+### Variable: `category`
 ```{r}
-table(cleaner_passage_data$catagory)
+table(cleaner_passage_data$category)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-catagories_to_keep <- str_detect(cleaner_passage_data$catagory, c("chinook", "chn")) 
-cleaner_passage_data <- filter(cleaner_passage_data, str_detect(tolower(cleaner_passage_data$catagory), c("chinook", "chn")))
-cleaner_passage_data$catagory <- tolower(cleaner_passage_data$catagory)
+categories_to_keep <- str_detect(cleaner_passage_data$category, c("chinook", "chn")) 
+cleaner_passage_data <- filter(cleaner_passage_data, str_detect(tolower(cleaner_passage_data$category), c("chinook", "chn")))
+cleaner_passage_data$category <- tolower(cleaner_passage_data$category)
 
 # Create a column for adipose 
-cleaner_passage_data$adipose <- case_when(cleaner_passage_data$catagory %in% 
+cleaner_passage_data$adipose <- case_when(cleaner_passage_data$category %in% 
                                             c("chinook ad-unidentified", "chinook ad undetermined", "chinook ad-undetermi", 
                                                "chinook ad-undetermined", "chinook ad clip unde", "chinook ad underterm", 
                                                "chinook ad undetermi") ~ "unknown", 
-                                          cleaner_passage_data$catagory %in% 
+                                          cleaner_passage_data$category %in% 
                                             c("chinook ad-clip", "chinook ad clip", "chinook salmon ad cl", 
                                                "chinook salmon ad c", "chinook salomon ad c") ~ "clipped")
-table(cleaner_passage_data$catagory)
+table(cleaner_passage_data$category)
 # TODO figure out what the whole -p/+s and +p/+s means 
 ```
 
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_passage_data$catagory))/nrow(cleaner_passage_data), 3) * 100` % of values in the `category` column are NA. 
+* `r round(sum(is.na(cleaner_passage_data$category))/nrow(cleaner_passage_data), 3) * 100` % of values in the `category` column are NA. 
 
 ### Variable: `passage_direction`
 

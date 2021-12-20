@@ -20,7 +20,7 @@ library (RColorBrewer)
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.This data encompass spring-run Chinook Salmon carcasses retrieved on redd and escapement index surveys from 2008 to 2019 on Clear Creek. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
+This carcass data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.This data encompass spring-run Chinook Salmon carcasses retrieved on redd and escapement index surveys from 2008 to 2019 on Clear Creek. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude) near the confluence with the Sacramento River.						
 
 
 **Timeframe:** 2008 - 2019
@@ -33,7 +33,7 @@ Data available for all years.
 
 **Data Contact:** [Ryan Schaefer](mailto:ryan_a_schaefer@fws.gov)
 
-Any additional info?
+This [report](https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf) gives additional information on Adult Chinook monitoring and carcass collection. 
 
 ## Access Cloud Data
 
@@ -61,7 +61,6 @@ raw_carcass_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", shee
 ```{r}
 cleaner_data <- raw_carcass_data %>% 
   janitor::clean_names() %>% 
-  select(-c('survey','qc_type','qc_date','inspector','year', 'year_id')) %>% 
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'condition' = 'condit',
@@ -76,7 +75,60 @@ cleaner_data <- raw_carcass_data %>%
          age = as.numeric(age),
          brood_year = as.numeric(brood_year),
          sample_id = as.character(sample_id)) %>% 
+    filter(species == "Chinook") %>%
+    select(-c('survey','qc_type','qc_date','inspector','year', 'year_id', 'species')) %>% 
   glimpse()
+
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Survey type", 
+                                          "Date of sampling",
+                                          "GPS X point",
+                                          "GPS Y point",
+                                          "Reach number (1-7); other location",
+                                          "River mile number",
+                                          "True if the fish was observed and not sampled (T/F)",
+                                          "Unique sample ID number",
+                                          "Adipose status (absent, present, unknown)",
+                                          "Fork length of fish in mm",
+                                          "Condition of fish (fresh or not fresh)",
+                                          "? TODO", 
+                                          "? TODO", 
+                                          "True if a scale sample was taken", 
+                                          "True if an otolith sample was taken",
+                                          "Male, Female, Unknown",
+                                          "Why fish sex is unknown (decomposed, predation, NA)",
+                                          "Spawning status (partial, spawned, unspawned)",
+                                          "Why not spawned (decomposed, male, male always unknown, most eggs present, observed only, predation, prespawn, too decomposed",
+                                          "True if fish head was retrieved", 
+                                          "Type of tag, if any present (Floy, external mark)",
+                                          "Code describing if a photo of the carcass was taken, TODO get code definitions", 
+                                          "General comments from survey crew",
+                                          "Coded wire tag number",
+                                          "Run of Chinook (spring, fall, late-fall, winter, hybrid, unknown)",
+                                          "Brood year of carcass found", 
+                                          "Location where hatchery smolts were released, TODO figure out how this is relevent to carcass data", 
+                                          "Hatchery that produced the fish (Coleman hatchery or feather river hatchery)", 
+                                          "Age of fish", 
+                                          "Rate at which Hatchery Fish were marked, TODO figure out what this means",
+                                          "CWT code and relevant information, TODO clean this up",
+                                          "Run call based on field data, TODO differnciate from other run",
+                                          "Type of genetics taken, TODO elaborate on options"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
 ```
 
 ## Explore date
@@ -138,30 +190,12 @@ table(cleaner_data$obs_only)
 
 * `r round(sum(is.na(cleaner_data$obs_only))/nrow(cleaner_data), 3) * 100` % of values in the `obs_only` column are NA.
 
-### Variable: `species`
-
-**Description:** Species of carcasses
-
-Filter for chinook only
-
-```{r}
-cleaner_data <- cleaner_data %>% 
-  mutate(species = tolower(species)) %>% 
-  filter(species == "chinook")
-table(cleaner_data$species)
-```
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3) * 100` % of values in the `species` column are NA.
-
 ### Variable: `adipose`
 
 **Description:** Indicates the presence or absence of an adipose fin
 ```{r}
 cleaner_data <- cleaner_data %>% 
-  mutate(adipose = tolower(adipose),
-         adipose = ifelse(adipose == "unknown", NA_character_, adipose))
+  mutate(adipose = tolower(adipose))
 table(cleaner_data$adipose)
 ```
 
@@ -550,8 +584,6 @@ summary(cleaner_data$river_mile)
 
 ### Variable: `brood_year`
 
-TODO: Ask for clarification/description for brood_year(is this a description for the carcasses?) 
-
 ```{r}
 cleaner_data %>% 
   ggplot(aes(x = brood_year))+
@@ -632,8 +664,18 @@ summary(cleaner_data$mark_rate)
 
 ### Summary of Identified Issues
 
-* Some columns need better metadata description
-* Some columns such as 'run' and 'run_call' seem to overlap - need to email Ryan 
+* Some columns need better metadata description (tis_eth, tis_dry, photo, release_location, mark_rate, verification_and_cwt_comments, run_call)
+* Some columns such as 'run' and 'run_call' seem to contain the same type of information but have very different values. TODO need to contact Ryan for more details on these columns. 
+
+## Next steps
+
+* Work on data modeling to identify important variables needed for carcass datasets.
+
+### Columns to remove
+
+* Suggest removing some of the location variables we currently have: `longitude`, `latitude`, `reach` and `river_mile`. 
+* Suggest removing one of the run columns, either `run` or `run_call` should be removed 
+* `genetics`, `verification_and_cwt_comments`, `mark_rate`, `hatchery`, `release_location`, `brood_year`, `comments` and `photo` all contain a lot of NA values. These may not be needed.
 
 ### Save Cleaned data back to google cloud
 ```{r}

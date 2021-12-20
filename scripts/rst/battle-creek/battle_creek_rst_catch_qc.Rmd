@@ -13,6 +13,7 @@ library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
 library(readxl)
+library(knitr)
 palette <- wesanderson::wes_palette(name = "Moonrise2")
 ```
 
@@ -32,7 +33,6 @@ These data were collected by the U.S. Fish and Wildlife Service, Red Bluff Fish 
 
 **Data Contact:** [Mike Schraml](mailto:mike_schraml@fws.gov)
 
-Any additional info?
 
 ## Access Cloud Data
 
@@ -97,7 +97,33 @@ sum(raw_rst_count_data$Race == raw_rst_count_data$FWSRace, na.rm = T)/length(raw
 
   
 Additional info from Mike describing the race columns: 
-We use the FWSRace for our reports, all fish length-designated as fall-run by the Sheila Greene length-at-date (LAD) charts we consider spring-run at the upper Battle and Clear Creek sites.  We consider the barrier weir at Coleman National Fish Hatchery to be fish tight up to 800 cfs, flows rarely exceed that level during the spring-run and early fall-run escapement period. We are fairly confident that no fall-run get above the weir. Likewise, we install a separation (picket) weir in Clear Creek below the upper trap site that excludes fall-run from spawning with spring-run and superimposing redds on top of spring-run redds. At the lower Clear Creek (LCC) site we strictly go by the Sheila Green LAD chart because there is no way to tell the difference between spring-run and fall-run fish in the field.  There is overlap in the sizes of spring-run and fall-run and we know that the Sheila Greene LAD charts don't capture the overlap. In Clear Creek, some fish that classify as fall-run based on length from our LCC trap are actually spring-run and vise versa.
+We use the FWSRace for our reports, all fish length-designated as fall-run by the Sheila Greene length-at-date (LAD) charts we consider spring-run at the upper Battle and Clear Creek sites.  We consider the barrier weir at Coleman National Fish Hatchery to be fish tight up to 800 cfs, flows rarely exceed that level during the spring-run and early fall-run escapement period. We are fairly confident that no fall-run get above the weir. Likewise, we install a separation (picket) weir in Clear Creek below the upper trap site that excludes fall-run from spawning with spring-run and superimposing redds on top of spring-run redds. At the lower Clear Creek (LCC) site we strictly go by the Sheila Greene LAD chart because there is no way to tell the difference between spring-run and fall-run fish in the field.  There is overlap in the sizes of spring-run and fall-run and we know that the Sheila Greene LAD charts don't capture the overlap. In Clear Creek, some fish that classify as fall-run based on length from our LCC trap are actually spring-run and vise versa.
+
+FWSRace incorporates all the fine-scale decisions about when to use the Sheila Greene LAD chart. We use FWSRace to determine run, especially because this is used to determine passage estimates.
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_rst_count %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_count),
+                          description = c("Sample date - end date of approximately 24 hour sampling period",
+                                          "The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)",
+                                          "Run designation using the FWSRace variable",
+                                          "Fork length in millimeters",
+                                          "Life stage of the catch (yolk-sac fry, fry, parr, silvery parr, smolt)",
+                                          "Number of fish caught in trap",
+                                          "Indicates mortality (T/F)",
+                                          "Indicates interpolated catch for times the trap did not fish (T/F)"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
 
  
 ## Explore Numeric Variables: {.tabset}
@@ -166,8 +192,10 @@ sac_indices <- waterYearType::water_year_indices %>%
     transmute(water_year = WY, year_type = as.character(Yr_type))
 ```
 
+Total daily passage for spring run
+
 ```{r}
-cleaner_rst_count %>% 
+filter(cleaner_rst_count, run == "S") %>% 
   group_by(date) %>%
   summarise(total_daily_catch = sum(count)) %>%
   filter(year(date) > 2014, year(date) < 2021) %>%
@@ -184,18 +212,19 @@ cleaner_rst_count %>%
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.position = "bottom") + 
-  labs(title = "Total Daily Raw Passage 2015 - 2020",
+  labs(title = "Total Spring Run Daily Raw Passage 2015 - 2020",
        y = "Total daily raw catch",
        x = "Date")+ 
   facet_wrap(~water_year, scales = "free") +
   scale_color_manual(palette)
 ```
 
-  
+Total catch by year for spring run
+
 ```{r}
 cleaner_rst_count  %>%
   filter(year(date) < 2021, 
-         run %in% c("F", "L", "S", "W")
+         run == "S"
          ) %>% 
   mutate(year = as.factor(year(date))) %>%
   group_by(year, run) %>%
@@ -203,7 +232,7 @@ cleaner_rst_count  %>%
   ggplot(aes(x = year, y = total_yearly_catch)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Fish Counted each Year by run",
+  labs(title = "Total fish counted each year for spring run",
        y = "Total fish raw catch") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
@@ -211,6 +240,8 @@ cleaner_rst_count  %>%
 ```
 
 **Numeric Summary of counts over Period of Record**
+  
+  Numerical summary includes all runs
   
 ```{r}
 # Table with summary statistics
@@ -337,9 +368,14 @@ table(cleaner_rst_count$interpolated)
 
 ## Summary of identified issues
 
-* Count values are interpolated on days where the traps were not fished, to see if interpolated or not refer to `interpolated` column - not exactly clear how interpolation is calculated 
-* Need to decide what Race (run) measure to keep (`fws_race` or `race`)
-* Investigate what it means for: zero fork lengths have been assigned - 0 `fork_length` values mean fish was not measured. TODO Ask Mike 
+* Count values are interpolated on days where the traps were not fished, to see if interpolated or not refer to `interpolated` column. Recommend providing more information about how interpolation is calculated.
+* Investigate what it means for: zero fork lengths have been assigned - 0 `fork_length` values mean fish was not measured. 
+
+## Next steps
+
+### Columns to remove
+
+- `sample_id` may not be needed.
 
 ## Save cleaned data back to google cloud 
 

@@ -20,20 +20,22 @@ library (RColorBrewer)
 
 ## Description of Monitoring Data
 
-These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon redd index data from 2000 to 2019. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude [decimal degrees]) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude [decimal degrees]) near the confluence with the Sacramento River.						
+These data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.These data encompass spring-run Chinook Salmon counts and location data from 2008-2020 surveys. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude) near the confluence with the Sacramento River.						
+
+All data is gathered from snorkel surveys and data is filtered to only include Chinook salmon. All data is focused on Spring Run fish. 
 
 
 **Timeframe:** 2008 - 2019
 
-**Completeness of Record throughout timeframe:** 
+**QC?/Raw data or passage estimates** QC raw holding counts
 
-Data available for all years and QCed
+**Completeness of Record throughout timeframe:** Data available for all years 
 
 **Sampling Location:** Clear Creek 
 
 **Data Contact:** [Ryan Schaefer](mailto:ryan_a_schaefer@fws.gov)
 
-Any additional info?
+This [report](https://www.fws.gov/redbluff/CC%20BC/Clear%20Creek%20Monitoring%20Final%20Reports/2013-2018%20Clear%20Creek%20Adult%20Spring-run%20Chinook%20Salmon%20Monitoring.pdf) gives additional information on Adult Chinook monitoring and may have additional metadata for chinook holding
 
 ## Access Cloud Data
 
@@ -57,13 +59,17 @@ Read in data from google cloud, glimpse raw data sheet:
 ```{r include=FALSE}
  
 raw_holding_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Live") %>% glimpse()
+
+unique(raw_holding_data$Species)
 ```
+
 ## Data Transformation
+
+Columns renamed to be clearer, data filtered to just Chinook salmon, and columns that are all redundant were removed. 
 
 ```{r}
 cleaner_data <- raw_holding_data %>% 
   janitor::clean_names() %>% 
-  select(-c('survey','method','qc_type','qc_date','inspector','year')) %>% #all method is snorkel, year could be extracted from date, 
   rename('longitude' = 'point_x',
          'latitude' = 'point_y',
          'count' = 'total_fish',
@@ -71,7 +77,37 @@ cleaner_data <- raw_holding_data %>%
          'picket_weir_location_rm' = 'pw_location_rm',
          'picket_weir_relate' = 'pw_relate') %>% 
   mutate(date = as.Date(date)) %>% 
+  filter(species %in% c("Chinook", "CHINOOK")) %>%
+  select(-c('survey','method','qc_type','qc_date','inspector','year', 'species')) %>% #all method is snorkel, year could be extracted from date, 
   glimpse()
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("River mile number",
+                                          "GPS X point",
+                                          "GPS Y point",
+                                          "Date of sampling",
+                                          "Reach number (1-7); other location",
+                                          "Fish Count",
+                                          "Total number of 2-year old Chinook Salmon (Jacks/Jills) encountered",
+                                          "General comments from survey crew",
+                                          "Survey Intent, august index or spawning survey",
+                                          "Location of the Picket Weir",
+                                          "Fish above or below Picket Weir"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
 ```
 
 ## Explore Date
@@ -92,7 +128,9 @@ cleaner_data %>%
 
 ### Variable: `reach`
 
-**Description:** reach surveyed on each survey day
+**Description:** 
+
+Reach surveyed on each survey day
 
 ```{r}
 table(cleaner_data$reach)
@@ -112,22 +150,6 @@ unique(cleaner_data$comments)[1:5]
 
 *  `r round(sum(is.na(cleaner_data$comments))/nrow(cleaner_data), 3)*100` % of values in the `comments` column are NA.
 
-### Variable: `species`
-
-Change to lower-case capitalization; we are only interested in chinook data.
-
-```{r}
-
-cleaner_data <- cleaner_data %>% 
-  mutate(species = tolower(species)) %>% 
-  filter(species == 'chinook') 
-
-table(cleaner_data$species)
-```
-
-**NA and Unknown Values**  
-
-*  `r round(sum(is.na(cleaner_data$species))/nrow(cleaner_data), 3)*100` % of values in the `species` column are NA.
 
 ### Variable: `survey_intent`
 
@@ -145,7 +167,9 @@ table(cleaner_data$survey_intent)
 
 ### Variable: `picket_weir_relate`
 
-**Description:** Fish above or below Picket Weir
+**Description:** 
+
+Fish above or below Picket Weir
 
 ```{r}
 cleaner_data <- cleaner_data %>% 
@@ -172,6 +196,7 @@ cleaner_data %>%
   geom_point(alpha = .5, size = 1.5, color = "blue") +
   labs(x = "River Mile", y = "Year", title = "River Mile Over the Years")
 ```
+
 
 ```{r}
 cleaner_data %>% 
@@ -214,7 +239,9 @@ summary(cleaner_data$latitude)
 
 ## Variable: `count`
 
-**Description:** total number of Adult Chinook Salmon encountered including the number of 2-year olds (Jacks/Jills) 
+**Description:** 
+
+Total number of Adult Chinook Salmon encountered including the number of 2-year olds (Jacks/Jills) 
 
 ```{r}
 cleaner_data %>% 
@@ -303,8 +330,6 @@ cleaner_data %>%
   labs(title = "Distribution of picket_weir_location_rm")
 ```
 
-
-
 **Numeric Summary of picket_weir_location_rm over Period of Record**
 ```{r}
 
@@ -318,11 +343,17 @@ Seems like there are two locations
 
 *  `r round(sum(is.na(cleaner_data$picket_weir_location_rm))/nrow(cleaner_data), 3)*100` % of values in the `picket_weir_location_rm` column are NA.
 
+## Next steps
+
+### Columns to remove
+
+* Suggest removing `comments` because there are so few data points.
+* Figure out if picket weir information is important, if not remove `picket_weir_location_rm` and `picket_weir_relate`
 
 ## Save cleaned data back to google cloud
 
 ```{r}
-clear_holding <- cleaner_data  
+clear_holding <- cleaner_data  %>% glimpse()
 ```
 
 ```{r, eval=FALSE}

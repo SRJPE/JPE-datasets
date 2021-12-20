@@ -9,7 +9,7 @@ Inigo Peng
 
 The adult holding survey data is in two separate files: first one is
 from 1986 to 1996, second one is 1997 to 2020. The data is collected via
-snorkel counts.The data has been qced and summed up.
+snorkel counts.The data has been QCed and summarized.
 
 The data from 1986 to 1996 has been reformatted for better access. Both
 original file and reformatted file could be found on google cloud.
@@ -44,7 +44,7 @@ original file and reformatted file could be found on google cloud.
 
 In 1989 the section from Hwy 32 to Lower Falls was omitted from the
 indicator reach. From 1992 to 1996, an average of 2% of the total salmon
-observed were in the omitted section: hwy 32 to lower falls. This leaves
+observed were in the omitted section: Hwy 32 to lower falls. This leaves
 29% of the salmon holding in the reduced indicator reach.
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
@@ -73,9 +73,9 @@ glimpse(raw_data)
 
     ## Rows: 55
     ## Columns: 3
-    ## $ Year     <dbl> 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1992, 1992, 1992, 1~
-    ## $ Location <chr> "Hwy 32 to A-Line", "Hwy 32 to A-Line", "Hwy 32 to A-Line", "~
-    ## $ Count    <dbl> 166, 62, 115, 24, 142, 139, 12, 5, 7, 65, 13, 51, 21, 33, 2, ~
+    ## $ Year     <dbl> 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1992, 1992, 1992, 1…
+    ## $ Location <chr> "Hwy 32 to A-Line", "Hwy 32 to A-Line", "Hwy 32 to A-Line", "…
+    ## $ Count    <dbl> 166, 62, 115, 24, 142, 139, 12, 5, 7, 65, 13, 51, 21, 33, 2, …
 
 ## Data Transformations
 
@@ -87,9 +87,35 @@ cleaner_data <- raw_data %>%
 
     ## Rows: 55
     ## Columns: 3
-    ## $ year     <dbl> 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1992, 1992, 1992, 1~
-    ## $ location <chr> "Hwy 32 to A-Line", "Hwy 32 to A-Line", "Hwy 32 to A-Line", "~
-    ## $ count    <dbl> 166, 62, 115, 24, 142, 139, 12, 5, 7, 65, 13, 51, 21, 33, 2, ~
+    ## $ year     <dbl> 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1992, 1992, 1992, 1…
+    ## $ location <chr> "Hwy 32 to A-Line", "Hwy 32 to A-Line", "Hwy 32 to A-Line", "…
+    ## $ count    <dbl> 166, 62, 115, 24, 142, 139, 12, 5, 7, 65, 13, 51, 21, 33, 2, …
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Sample year",
+                                          "Description of location sampled",
+                                          "Number of fish observed"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+| variables | description                     | percent\_na |
+|:----------|:--------------------------------|------------:|
+| year      | Sample year                     |           0 |
+| location  | Description of location sampled |           0 |
+| count     | Number of fish observed         |           0 |
 
 ## Explore Categorical Variables
 
@@ -169,7 +195,13 @@ cleaner_data %>%
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
     ##    24.0   127.0   166.0   319.1   372.0  1295.0
 
-### Add cleaned data back onto google cloud
+## Next steps
+
+-   Recommend adding numerical location variable such as latitude,
+    longitude; or maybe four variables (starting latitude, starting
+    longitude, ending latitude, ending longitude)
+
+## Add cleaned data back onto google cloud
 
 ``` r
 deer_adult_holding_survey_1986_to_1996 <- cleaner_data %>% glimpse()
@@ -177,9 +209,9 @@ deer_adult_holding_survey_1986_to_1996 <- cleaner_data %>% glimpse()
 
     ## Rows: 55
     ## Columns: 3
-    ## $ year     <dbl> 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1992, 1992, 1992, 1~
-    ## $ location <chr> "Hwy 32 To A Line", "Hwy 32 To A Line", "Hwy 32 To A Line", "~
-    ## $ count    <dbl> 166, 62, 115, 24, 142, 139, 12, 5, 7, 65, 13, 51, 21, 33, 2, ~
+    ## $ year     <dbl> 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1992, 1992, 1992, 1…
+    ## $ location <chr> "Hwy 32 To A Line", "Hwy 32 To A Line", "Hwy 32 To A Line", "…
+    ## $ count    <dbl> 166, 62, 115, 24, 142, 139, 12, 5, 7, 65, 13, 51, 21, 33, 2, …
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
@@ -189,28 +221,28 @@ gcs_upload(deer_adult_holding_survey_1986_to_1996,
            name = "adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv")
 ```
 
-    ## i 2021-11-03 16:40:20 > File size detected as  1.6 Kb
+    ## ℹ 2021-12-01 11:00:08 > File size detected as  1.6 Kb
 
-    ## i 2021-11-03 16:40:20 > Request Status Code:  400
+    ## ℹ 2021-12-01 11:00:08 > Request Status Code:  400
 
     ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## i 2021-11-03 16:40:20 > File size detected as  1.6 Kb
+    ## ℹ 2021-12-01 11:00:08 > File size detected as  1.6 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv 
     ## Type:                csv 
     ## Size:                1.6 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv?generation=1635982820539600&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv?generation=1638385208628683&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1986_to_1996.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv/1635982820539600 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1986_to_1996.csv/1638385208628683 
     ## MD5 Hash:            csn3IgVajSpZGY84qcLHMg== 
     ## Class:               STANDARD 
-    ## Created:             2021-11-03 23:40:20 
-    ## Updated:             2021-11-03 23:40:20 
-    ## Generation:          1635982820539600 
+    ## Created:             2021-12-01 19:00:08 
+    ## Updated:             2021-12-01 19:00:08 
+    ## Generation:          1638385208628683 
     ## Meta Generation:     1 
-    ## eTag:                CND5gfeu/fMCEAE= 
+    ## eTag:                CMur9sKkw/QCEAE= 
     ## crc32c:              qD4iWg==

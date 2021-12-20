@@ -98,6 +98,30 @@ cleaner_effort_data <- raw_effort %>%
 
 ```
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_effort_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_effort_data),
+                          description = c("Site name",
+                                          "Visit time",
+                                          "Visit type",
+                                          "Trap functioning or not",
+                                          "Fish processed",
+                                          "Water temperature",
+                                          "Water turbidity"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
@@ -360,6 +384,11 @@ cleaner_effort_data$fish_processed <- ifelse(cleaner_effort_data$fish_processed 
   * 2008 data is 66 % NAs. 
   * 2017 and 2006 are both low catch years. These were wet years with difficult trapping conditions. Low catch may be due to traps not functioning correctly. 
 
+
+### Next Step:
+
+* Identify which one of these environmental variables is useful for generate passage estimate 
+
 ### Save cleaned data back to google cloud 
 
 First I am going to add in a date column, we can use this date column to join effort data with catch data. 
@@ -373,7 +402,6 @@ feather_rst_effort <- cleaner_effort_data %>%
          river_mile, latitude, longitude) %>%
   glimpse
 ```
-
 
 ```{r, eval = FALSE}
 # Write to google cloud 

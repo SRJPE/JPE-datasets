@@ -144,6 +144,42 @@ cleaner_effort_data <- raw_effort %>%
     ## $ water_temp_c     <dbl> NA, 8.888889, NA, 7.777778, 8.333333, 8.888889, 8.333~
     ## $ turbidity_ntu    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and
+the percent that do not include data.
+
+``` r
+percent_na <- cleaner_effort_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_effort_data),
+                          description = c("Site name",
+                                          "Visit time",
+                                          "Visit type",
+                                          "Trap functioning or not",
+                                          "Fish processed",
+                                          "Water temperature",
+                                          "Water turbidity"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+| variables         | description             | percent\_na |
+|:------------------|:------------------------|------------:|
+| sub\_site\_name   | Site name               |           0 |
+| visit\_time       | Visit time              |           0 |
+| visit\_type       | Visit type              |           0 |
+| trap\_functioning | Trap functioning or not |           0 |
+| fish\_processed   | Fish processed          |           0 |
+| water\_temp\_c    | Water temperature       |          12 |
+| turbidity\_ntu    | Water turbidity         |          23 |
+
 ## Explore Numeric Variables:
 
 ``` r
@@ -535,6 +571,11 @@ cleaner_effort_data$fish_processed <- ifelse(cleaner_effort_data$fish_processed 
     -   2017 and 2006 are both low catch years. These were wet years
         with difficult trapping conditions. Low catch may be due to
         traps not functioning correctly.
+
+### Next Step:
+
+-   Identify which one of these environmental variables is useful for
+    generate passage estimate
 
 ### Save cleaned data back to google cloud
 

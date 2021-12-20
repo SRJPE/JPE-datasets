@@ -84,6 +84,37 @@ cleaner_passage_data <- raw_passage_data %>%
   glimpse()
 
 ```
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_passage_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_passage_data),
+                          description = c("Date",
+                                          "Date trapping started",
+                                          "Date trapping ended",
+                                          "Time",
+                                          "Passage count",
+                                          "Sex of the fish",
+                                          "Confidence level in sex of the fish",
+                                          "Fork length of the fish",
+                                          "Adipose fin present or not",
+                                          "Describes fish coloration",
+                                          "Fish sexual maturity",
+                                          "Location of fish",
+                                          "Was the fish a recapture",
+                                          "What type of recapture",
+                                          "Floy tag number",
+                                          "Comments"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
 
 ## Explore Numeric Variables: {.tabset}
 
@@ -109,7 +140,7 @@ cleaner_passage_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 23),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Count of Upstream Passage All Runs", 
+  labs(title = "Daily Count of Upstream Passage", 
        x = "Date")  
 ```
 
@@ -125,7 +156,7 @@ cleaner_passage_data %>% group_by(date) %>%
   geom_boxplot() + 
   theme_minimal() +
   theme(text = element_text(size = 23)) + 
-  labs(title = "Daily Count of Upstream Passage Sumarized by Year All Runs") 
+  labs(title = "Daily Count of Upstream Passage Summarized by Year") 
 ```
 
 ```{r}
@@ -134,7 +165,7 @@ cleaner_passage_data  %>%
   ggplot(aes(x = year, y = count)) + 
   geom_col() + 
   theme_minimal() +
-  labs(title = "Total Yearly Fish Counts by Run",
+  labs(title = "Total Yearly Fish Counts",
        y = "Total fish count") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
@@ -423,6 +454,12 @@ unique(cleaner_passage_data$comments)[1:10]
 * No data on Run
 * No or very little data 2009 - 2018
 * they have information on recaptures but there are more unique floy tag numbers than total fish recaptured.
+
+## Next Steps
+
+* Decide which columns we should keep 
+
+* `mature`, `status`, `recapture`, `recapture_type`, and `confidence_in_sex` are columns that do not seem to be consistent with other upstream passage estimate datasets
 
 ## Save cleaned data back to google cloud 
 

@@ -12,7 +12,8 @@ library(lubridate)
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
-library(readxl)
+library(readxl) 
+library(knitr)
 ```
 
 # Battle Creek Carcass Survey QC
@@ -20,7 +21,6 @@ library(readxl)
 ## Description of Monitoring Data
 
 These data were acquired via snorkel and kayak surveys on Battle Creek from 1996 to 2019 and describe spring-run and unknown run Chinook Salmon carcasses found within and along Battle Creek.						
-
 
 **Timeframe:** 1996 - 2019
 
@@ -30,9 +30,7 @@ These data were acquired via snorkel and kayak surveys on Battle Creek from 1996
 
 **Sampling Location:** Battle Creek 
 
-**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov)
-
-Any additional info?
+**Data Contact:** [Natasha Wingerter](mailto:natasha_wingerter@fws.gov); [RJ Bottaro](mailto:rj_bottaro@fws.gov)
 
 ## Access Cloud Data
 
@@ -79,6 +77,38 @@ cleaner_carcass_data <- raw_carcass_data %>%
   glimpse()
 ```
 
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_carcass_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_carcass_data),
+                          description = c("GPS X point",
+                                          "GPS Y point",
+                                          "River mile number",
+                                          "Sample date",
+                                          "Survey method (barrier weir trap, fish rescue, kayak survey, snorkel survey, other)",
+                                          "Reach number (1-7); other location",
+                                          "Male, female, unknown",
+                                          "True if the fish was observed and not sampled (T/F)",
+                                          "Fork length of fish in mm",
+                                          "Adipose status (absent, present, unknown)",
+                                          "Carcass status (bright, fresh, non-fresh, unknown)",
+                                          "Spawning status (green, ripe, spawned, unknown, unspawned)",
+                                          "Run of Chinook (spring, unknown)",
+                                          "Coded wire tag number",
+                                          "Any other tag or recapture marking",
+                                          "General comments from survey crew"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
@@ -101,10 +131,12 @@ All values look within an expected range
 
 ### Variable: `river_mile`
 
+Data are filtered for spring run.
+
 **Plotting river mile over Period of Record**
 
 ```{r}
-cleaner_carcass_data %>% 
+filter(cleaner_carcass_data, run == "SCS") %>% 
   ggplot(aes(x = river_mile, y = year(date))) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "River Mile", 
@@ -116,7 +148,7 @@ cleaner_carcass_data %>%
 It looks like river miles 0 - 5 and 15 - 17 most commonly have carcasses. Very little data on river mile pre 2010. 
 
 ```{r}
-cleaner_carcass_data %>% 
+filter(cleaner_carcass_data, run == "SCS") %>% 
   ggplot(aes(x = river_mile)) +
   geom_histogram(alpha = .75) + 
   labs(x = "River Mile") +
@@ -136,10 +168,12 @@ summary(cleaner_carcass_data$river_mile)
 
 ### Variable: `fork_length`
 
+Fork length in mm. Data are filtered for spring run.
+
 **Plotting distribution of fork length**
 
 ```{r}
-cleaner_carcass_data %>% 
+filter(cleaner_carcass_data, run == "SCS") %>% 
   ggplot(aes(x = fork_length)) +
   geom_histogram(alpha = .75) + 
   labs(x = "Fork Length") +
@@ -148,7 +182,7 @@ cleaner_carcass_data %>%
 ```
 
 ```{r}
-cleaner_carcass_data %>% 
+filter(cleaner_carcass_data, run == "SCS") %>% 
   mutate(year = as.factor(year(date))) %>%
   ggplot(aes(x = fork_length, y = year)) + 
   geom_boxplot() + 
@@ -156,6 +190,14 @@ cleaner_carcass_data %>%
   labs(title = "Fork length summarized by year") + 
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+There is one observation where year is NA. This record should be removed from the dataset because it does not contain any data.
+
+```{r}
+cleaner_carcass_data %>% 
+  mutate(year = as.factor(year(date))) %>%
+  filter(is.na(year))
 ```
 
 **Numeric Summary of fork length over Period of Record**
@@ -260,11 +302,14 @@ table(cleaner_carcass_data$observed_only)
 table(cleaner_carcass_data$adipose) 
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
+- Fix inconsistencies with spelling, capitalization, and abbreviations. 
+- Converted to boolean variable.
 
 ```{r}
-cleaner_carcass_data$adipose <- tolower(cleaner_carcass_data$adipose)
-
+cleaner_carcass_data$adipose <- tolower(cleaner_carcass_data$adipose) 
+cleaner_carcass_data$adipose <- case_when(cleaner_carcass_data$adipose == "absent" ~ FALSE,
+                                          cleaner_carcass_data$adipose == "present" ~ TRUE,
+                                          T ~ NA)
 table(cleaner_carcass_data$adipose) 
 ```
 
@@ -381,13 +426,24 @@ unique(cleaner_carcass_data$comments)[1:5]
 ## Summary of identified issues
 
 * Looks like mostly samples after 2010 
-* Other tag column we should probably drop (only one AFTC tag identified)
-* Clarify what NTD means in CWT code and location info that is not reach length (Ask Natasha)
+* Clarify what NTD means in CWT code and location info that is not reach length
+* Other tag column was dropped because it has only one entry other than "none"
+
+## Next steps
+
+### Columns to remove
+
+- Suggest removing the `location` item or transforming to `longitude`, `latitude` or `river_mile`.
+- Decided to remove `other_tag` because no data except for one data point is included.
+- `comments` and `observed_only` may not be needed.
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-battle_carcass <- cleaner_carcass_data %>% glimpse()
+battle_carcass <- cleaner_carcass_data %>% 
+  select(-other_tag) %>%
+  filter(!is.na(date)) %>%
+  glimpse()
 ```
 
 
