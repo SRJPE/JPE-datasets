@@ -71,6 +71,8 @@ years <- c(2009, 2010, 2011, 2012, 2013, 2014,2015,2016, 2017, 2018, 2019, 2020)
 combined_data <- purrr::map(years, read_from_cloud) %>%  
   reduce(bind_rows) 
 write_csv(combined_data, "combined_feather_redd.csv")
+
+#combined_data <- read_csv("combined_feather_redd.csv")
 ```
 
 
@@ -112,10 +114,47 @@ data_dictionary <- tibble(variables = colnames(clean_data),
                                           "GPS X point",
                                           "GPX Y point"
                                           ),
+                          data_type = c("date",
+                                          "character",
+                                         "factor",
+                                          "integer",
+                                          "integer",
+                                          "numeric",
+                                          "numeric",
+                                          "numeric",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "numeric",
+                                          "numeric",
+                                          "numeric",
+                                          "numeric"
+                                          ),
+                          encoding = c(NA,
+                                          NA,
+                                         "Area, Point, Questionnable redds",
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA
+                                          ),
                           percent_na = round(percent_na$value*100)
                           
 )
 kable(data_dictionary)
+# saveRDS(data_dictionary, file = "data/feather_redd_data_dictionary.rds")
 ```
 
 

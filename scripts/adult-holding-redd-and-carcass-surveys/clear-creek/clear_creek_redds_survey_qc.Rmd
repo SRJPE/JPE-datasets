@@ -249,7 +249,7 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
                           
 )
 knitr::kable(data_dictionary)
-saveRDS(data_dictionary, file = "data/clear_redd_data_dictionary.rds")
+#saveRDS(data_dictionary, file = "data/clear_redd_data_dictionary.rds")
 ```
 
 

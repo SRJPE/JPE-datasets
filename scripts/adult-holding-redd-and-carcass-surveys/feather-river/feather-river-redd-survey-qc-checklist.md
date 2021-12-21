@@ -101,31 +101,71 @@ data_dictionary <- tibble(variables = colnames(clean_data),
                                           "GPS X point",
                                           "GPX Y point"
                                           ),
+                          data_type = c("date",
+                                          "character",
+                                         "factor",
+                                          "integer",
+                                          "integer",
+                                          "numeric",
+                                          "numeric",
+                                          "numeric",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "numeric",
+                                          "numeric",
+                                          "numeric",
+                                          "numeric"
+                                          ),
+                          encoding = c(NA,
+                                          NA,
+                                         "Area, Point, Questionnable redds",
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA
+                                          ),
                           percent_na = round(percent_na$value*100)
                           
 )
 kable(data_dictionary)
 ```
 
-| variables                  | description                                                               | percent\_na |
-|:---------------------------|:--------------------------------------------------------------------------|------------:|
-| date                       | Sample date                                                               |           0 |
-| location                   | Nominal description of location                                           |           0 |
-| type                       | Type of observation. A = polygon/area, P = point, Q = questionnable redd  |           0 |
-| redd\_count                | Number of redds observed                                                  |           0 |
-| salmon\_count              | Number of salmon observed                                                 |           0 |
-| depth\_m                   | Depth of water at observation location in meters                          |          85 |
-| pot\_depth\_m              | Depth of the pot in meters                                                |          86 |
-| velocity                   | Velocity of water at observation location in m/s but standardized to ft/s |          88 |
-| percent\_fine\_substrate   | Percent of fine substrate (fine &lt;1cm)                                  |          86 |
-| percent\_small\_substrate  | Percent of small substrate (small 1-5cm)                                  |          86 |
-| percent\_medium\_substrate | Percent of medium substrate (medium 6-15cm)                               |          86 |
-| percent\_large\_substrate  | Percent of large substrate (large 16-30cm)                                |          86 |
-| percent\_boulder           | Percent boulder (boulder &gt;30cm)                                        |          86 |
-| redd\_width\_m             | Width of redd in meters                                                   |          85 |
-| redd\_length\_m            | Length of redd in meters                                                  |          86 |
-| latitude                   | GPS X point                                                               |          67 |
-| longitude                  | GPX Y point                                                               |          67 |
+| variables                  | description                                                               | data\_type | encoding                         | percent\_na |
+|:---------------------------|:--------------------------------------------------------------------------|:-----------|:---------------------------------|------------:|
+| date                       | Sample date                                                               | date       | NA                               |           0 |
+| location                   | Nominal description of location                                           | character  | NA                               |           0 |
+| type                       | Type of observation. A = polygon/area, P = point, Q = questionnable redd  | factor     | Area, Point, Questionnable redds |           0 |
+| redd\_count                | Number of redds observed                                                  | integer    | NA                               |           0 |
+| salmon\_count              | Number of salmon observed                                                 | integer    | NA                               |           0 |
+| depth\_m                   | Depth of water at observation location in meters                          | numeric    | NA                               |          85 |
+| pot\_depth\_m              | Depth of the pot in meters                                                | numeric    | NA                               |          86 |
+| velocity                   | Velocity of water at observation location in m/s but standardized to ft/s | numeric    | NA                               |          88 |
+| percent\_fine\_substrate   | Percent of fine substrate (fine &lt;1cm)                                  | integer    | NA                               |          86 |
+| percent\_small\_substrate  | Percent of small substrate (small 1-5cm)                                  | integer    | NA                               |          86 |
+| percent\_medium\_substrate | Percent of medium substrate (medium 6-15cm)                               | integer    | NA                               |          86 |
+| percent\_large\_substrate  | Percent of large substrate (large 16-30cm)                                | integer    | NA                               |          86 |
+| percent\_boulder           | Percent boulder (boulder &gt;30cm)                                        | integer    | NA                               |          86 |
+| redd\_width\_m             | Width of redd in meters                                                   | numeric    | NA                               |          85 |
+| redd\_length\_m            | Length of redd in meters                                                  | numeric    | NA                               |          86 |
+| latitude                   | GPS X point                                                               | numeric    | NA                               |          67 |
+| longitude                  | GPX Y point                                                               | numeric    | NA                               |          67 |
+
+``` r
+# saveRDS(data_dictionary, file = "data/feather_redd_data_dictionary.rds")
+```
 
 ## Explore `date`
 
