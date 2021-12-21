@@ -126,14 +126,18 @@ feather_redd <- readRDS("data/feather_redd_data_dictionary.rds") %>%
 mill_redd <- readRDS("data/mill_redd_data_dictionary.rds") %>% 
   mutate(location = "Mill Creek") %>% glimpse
 
-redd_survey_variables <- bind_rows(battle_redd, clear_redd, feather_redd, mill_redd) %>%
+redd_full <- bind_rows(battle_redd, clear_redd, feather_redd, mill_redd)
+
+redd_survey_variables <- redd_full %>%
   group_by(variables) %>% 
   tally() %>% 
   glimpse()
 
 View(redd_survey_variables)
 
-redd_survey_variable_descriptions <- bind_rows(battle_redd, clear_redd, feather_redd, mill_redd) %>%
+# Condensing variables that are the same #######################################
+# Determining which descriptions to keep
+redd_survey_variable_descriptions <- redd_full %>%
   mutate(keep = case_when(variables %in% c("comments", "latitude", "longitude") ~ "Battle Creek",
                           variables %in% c("location", "redd_count") ~ "Mill Creek",
                           variables %in%  c("date", "pre_redd_depth", "pre_redd_substrate_size",
@@ -159,6 +163,7 @@ redd_full_data_dictionary <- left_join(redd_survey_variables_names %>%
                                          rename(variables = standard_name), 
                                        redd_survey_variable_descriptions) %>%
   distinct(variables, .keep_all= T)
+write_csv(redd_full_data_dictionary, file = "scripts/synthesis/redd_full_data_dictionary.csv")
 ```
 
 ```{r}
