@@ -183,39 +183,93 @@ data_dictionary <- tibble(variables = colnames(cleaner_redd_data),
                                           "End number for flow bomb at 80% depth; 80% depth was measured when redd was > 22 ft deep",
                                           "Number of seconds elapsed for flow bomb at 80% depth",
                                           "Qualitative comments on data collection"),
+                          data_type = c("numeric",
+                                       "numeric",
+                                       "date",
+                                          "integer",
+                                          "integer",
+                                          "ordered factor",
+                                          "ordered factor",
+                                          "ordered factor",
+                                          "boolean",
+                                          "boolean",
+                                          "factor",
+                                          "numeric",
+                                          "numeric",
+                                          "numeric",
+                                          "numeric",
+                                          "numeric",
+                                          "factor",
+                                          "numeric",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "integer",
+                                          "character"),
+                           encoding = c(NA,
+                                       NA,
+                                       NA,
+                                          NA,
+                                          NA,
+                                          "<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, >12",
+                                          "<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, >12",
+                                          "0.1 to 1, 1, 1 to 2, 1 to 3, 2 to 3, 2 to 4, 3 to 4, 3 to 5",
+                                          NA,
+                                          NA,
+                                          "fish on redd, sub sample, too deep",
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          "digital, flow bomb, flow watch, marsh",
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA,
+                                          NA),
                           percent_na = round(percent_na$value*100)
                           
 )
 kable(data_dictionary)
 ```
 
-| variables                      | description                                                                                   | percent\_na |
-|:-------------------------------|:----------------------------------------------------------------------------------------------|------------:|
-| longitude                      | GPS X point                                                                                   |           0 |
-| latitude                       | GPS Y point                                                                                   |           0 |
-| date                           | Date of sample                                                                                |           0 |
-| reach                          | Reach number (1-7)                                                                            |           0 |
-| river\_mile                    | River mile number                                                                             |           0 |
-| pre\_redd\_substrate\_size     | Size of pre-redd substrate. Originally reported in inches; standardized to meters             |          39 |
-| redd\_substrate\_size          | Size of side of redd substrate. Originally reported in inches; standardized to meters         |          39 |
-| tail\_substrate\_size          | Size of gravel in tail of redd. Originally reported in inches; standardized to meters         |          39 |
-| fish\_guarding                 | Fish gaurding the redd (T/F)                                                                  |           0 |
-| redd\_measured                 | Redd measured (T/F)                                                                           |           0 |
-| why\_not\_measured             | If the redd was not measured, reason why not (sub sample, too deep, fish on redd)             |           4 |
-| pre\_redd\_depth               | Pre-redd depth. Originally reported in inches; standardized to meters                         |          62 |
-| redd\_pit\_depth               | Redd pit depth. Originally reported in inches; standardized to meters                         |          62 |
-| redd\_tail\_depth              | Redd tailspill depth. Originally reported in inches; standardized to meters                   |          62 |
-| redd\_length                   | Overall length of disturbed area. Originally reported in inches; standardized to meters       |          55 |
-| redd\_width                    | Overall width of disturbed area. Originally reported in inches; standardized to meters        |          55 |
-| flow\_meter                    | Flow meter used (digital, flow bomb, flow watch, marsh)                                       |          64 |
-| flow\_fps                      | Flow immediately upstream of the redd in feet per second.                                     |          64 |
-| start\_number\_flow\_meter     | Start number for flow bomb                                                                    |          66 |
-| end\_number\_flow\_meter       | End number for flow bomb                                                                      |          66 |
-| flow\_meter\_time              | Number of seconds elapsed for flow bomb                                                       |          66 |
-| start\_number\_flow\_meter\_80 | Start number for flow bomb at 80% depth; 80% depth was measured when redd was &gt; 22 ft deep |          91 |
-| end\_number\_flow\_meter\_80   | End number for flow bomb at 80% depth; 80% depth was measured when redd was &gt; 22 ft deep   |          91 |
-| flow\_meter\_time\_80          | Number of seconds elapsed for flow bomb at 80% depth                                          |          91 |
-| comments                       | Qualitative comments on data collection                                                       |          44 |
+| variables                      | description                                                                                   | data\_type     | encoding                                                                                             | percent\_na |
+|:-------------------------------|:----------------------------------------------------------------------------------------------|:---------------|:-----------------------------------------------------------------------------------------------------|------------:|
+| longitude                      | GPS X point                                                                                   | numeric        | NA                                                                                                   |           0 |
+| latitude                       | GPS Y point                                                                                   | numeric        | NA                                                                                                   |           0 |
+| date                           | Date of sample                                                                                | date           | NA                                                                                                   |           0 |
+| reach                          | Reach number (1-7)                                                                            | integer        | NA                                                                                                   |           0 |
+| river\_mile                    | River mile number                                                                             | integer        | NA                                                                                                   |           0 |
+| pre\_redd\_substrate\_size     | Size of pre-redd substrate. Originally reported in inches; standardized to meters             | ordered factor | &lt;0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, &gt;12 |          39 |
+| redd\_substrate\_size          | Size of side of redd substrate. Originally reported in inches; standardized to meters         | ordered factor | &lt;0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, &gt;12 |          39 |
+| tail\_substrate\_size          | Size of gravel in tail of redd. Originally reported in inches; standardized to meters         | ordered factor | 0.1 to 1, 1, 1 to 2, 1 to 3, 2 to 3, 2 to 4, 3 to 4, 3 to 5                                          |          39 |
+| fish\_guarding                 | Fish gaurding the redd (T/F)                                                                  | boolean        | NA                                                                                                   |           0 |
+| redd\_measured                 | Redd measured (T/F)                                                                           | boolean        | NA                                                                                                   |           0 |
+| why\_not\_measured             | If the redd was not measured, reason why not (sub sample, too deep, fish on redd)             | factor         | fish on redd, sub sample, too deep                                                                   |           4 |
+| pre\_redd\_depth               | Pre-redd depth. Originally reported in inches; standardized to meters                         | numeric        | NA                                                                                                   |          62 |
+| redd\_pit\_depth               | Redd pit depth. Originally reported in inches; standardized to meters                         | numeric        | NA                                                                                                   |          62 |
+| redd\_tail\_depth              | Redd tailspill depth. Originally reported in inches; standardized to meters                   | numeric        | NA                                                                                                   |          62 |
+| redd\_length                   | Overall length of disturbed area. Originally reported in inches; standardized to meters       | numeric        | NA                                                                                                   |          55 |
+| redd\_width                    | Overall width of disturbed area. Originally reported in inches; standardized to meters        | numeric        | NA                                                                                                   |          55 |
+| flow\_meter                    | Flow meter used (digital, flow bomb, flow watch, marsh)                                       | factor         | digital, flow bomb, flow watch, marsh                                                                |          64 |
+| flow\_fps                      | Flow immediately upstream of the redd in feet per second.                                     | numeric        | NA                                                                                                   |          64 |
+| start\_number\_flow\_meter     | Start number for flow bomb                                                                    | integer        | NA                                                                                                   |          66 |
+| end\_number\_flow\_meter       | End number for flow bomb                                                                      | integer        | NA                                                                                                   |          66 |
+| flow\_meter\_time              | Number of seconds elapsed for flow bomb                                                       | integer        | NA                                                                                                   |          66 |
+| start\_number\_flow\_meter\_80 | Start number for flow bomb at 80% depth; 80% depth was measured when redd was &gt; 22 ft deep | integer        | NA                                                                                                   |          91 |
+| end\_number\_flow\_meter\_80   | End number for flow bomb at 80% depth; 80% depth was measured when redd was &gt; 22 ft deep   | integer        | NA                                                                                                   |          91 |
+| flow\_meter\_time\_80          | Number of seconds elapsed for flow bomb at 80% depth                                          | integer        | NA                                                                                                   |          91 |
+| comments                       | Qualitative comments on data collection                                                       | character      | NA                                                                                                   |          44 |
+
+``` r
+# saveRDS(data_dictionary, file = "data/battle_redd_data_dictionary.rds")
+```
 
 ## Explore Numeric Variables:
 
