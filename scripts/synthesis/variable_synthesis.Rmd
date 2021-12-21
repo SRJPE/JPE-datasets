@@ -147,6 +147,13 @@ redd_survey_variable_descriptions <- redd_full %>%
   filter(location == keep) %>%
   select(-c(location, keep, percent_na)) 
 
+# Gathering encodings for variables that have different encodings
+redd_encodings <- full_join(redd_full, redd_survey_variables) %>%
+  filter(n > 1, !is.na(encoding)) %>%
+  select(variables, encoding) %>%
+  pivot_wider(names_from = "variables", values_from = "encoding") %>%
+  pivot_longer(everything(), names_to = "variables", values_to = "encoding_options")
+
 # correcting variable names that are the same 
 redd_survey_variables_names <- redd_survey_variables %>%
   mutate(standard_name = case_when(
@@ -162,7 +169,11 @@ redd_survey_variables_names <- redd_survey_variables %>%
 redd_full_data_dictionary <- left_join(redd_survey_variables_names %>%
                                          rename(variables = standard_name), 
                                        redd_survey_variable_descriptions) %>%
-  distinct(variables, .keep_all= T)
+  distinct(variables, .keep_all= T) %>%
+  left_join(redd_encodings) %>%
+  mutate(encoding = case_when(encoding_options != "NULL" ~ as.character(encoding_options),
+                              T ~ encoding)) %>%
+  select(-encoding_options)
 write_csv(redd_full_data_dictionary, file = "scripts/synthesis/redd_full_data_dictionary.csv")
 ```
 
