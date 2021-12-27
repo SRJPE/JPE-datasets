@@ -142,9 +142,9 @@ percent_na <- cleaner_video_data %>%
   
 data_dictionary <- tibble(variables = colnames(cleaner_video_data),
                           description = c("Date",
-                                          "Time block",
+                                          "Time block - Use military time-Top of the hour or half hour through 29th or 59th minute. Example 00:00 = (00:00:00 through 00:29:59) and 15:30= (15:30:00 through 15:59:59)",
                                           "Viewing condition",
-                                          "Time passed",
+                                          "HH:MM:SS. Use specific time for all Salmon, Steelhead/trout/lamprey/Unk salmonid/Unk other fish.",
                                           "Adipose present or not",
                                           "Sex of the fish",
                                           "Describes fish condition as it relates to spawning",
@@ -158,19 +158,19 @@ data_dictionary <- tibble(variables = colnames(cleaner_video_data),
 knitr::kable(data_dictionary)
 ```
 
-| variables           | description                                             | percent\_na |
-|:--------------------|:--------------------------------------------------------|------------:|
-| date                | Date                                                    |           0 |
-| time\_block         | Time block                                              |           0 |
-| viewing\_condition  | Viewing condition                                       |           0 |
-| time\_passed        | Time passed                                             |           0 |
-| adipose             | Adipose present or not                                  |           0 |
-| sex                 | Sex of the fish                                         |           0 |
-| spawning\_condition | Describes fish condition as it relates to spawning      |          22 |
-| jack\_size          | Whether or not the total width of Jack plate is 22 inch |           1 |
-| run                 | Run of the fish                                         |          21 |
-| passage\_direction  | Whether fish is moving upstream or downstream           |           0 |
-| count               | Passage count                                           |           0 |
+| variables           | description                                                                                                                                                                 | percent\_na |
+|:--------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------:|
+| date                | Date                                                                                                                                                                        |           0 |
+| time\_block         | Time block - Use military time-Top of the hour or half hour through 29th or 59th minute. Example 00:00 = (00:00:00 through 00:29:59) and 15:30= (15:30:00 through 15:59:59) |           0 |
+| viewing\_condition  | Viewing condition                                                                                                                                                           |           0 |
+| time\_passed        | HH:MM:SS. Use specific time for all Salmon, Steelhead/trout/lamprey/Unk salmonid/Unk other fish.                                                                            |           0 |
+| adipose             | Adipose present or not                                                                                                                                                      |           0 |
+| sex                 | Sex of the fish                                                                                                                                                             |           0 |
+| spawning\_condition | Describes fish condition as it relates to spawning                                                                                                                          |          22 |
+| jack\_size          | Whether or not the total width of Jack plate is 22 inch                                                                                                                     |           1 |
+| run                 | Run of the fish                                                                                                                                                             |          21 |
+| passage\_direction  | Whether fish is moving upstream or downstream                                                                                                                               |           0 |
+| count               | Passage count                                                                                                                                                               |           0 |
 
 ## Explore Numeric Variables:
 
