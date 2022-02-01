@@ -1,0 +1,153 @@
+---
+title: "Clear Creek Mark Recapture Data"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+```
+
+# Clear Creek Mark Recapture Data 
+
+## Description of Monitoring Data
+
+Mike Schraml provided us with Mark Recapture data for Clear Creek. 
+
+**Timeframe:** 2003 - 2021
+
+**Completeness of Record throughout timeframe:** 
+
+**Sampling Location:**
+Clear Creek 
+
+**Data Contact:** [Mike Schraml](mailto:mike_schraml@fws.gov)
+
+**Additional description provided by Mike:**
+
+Here are the data you requested. We consider any trial where six or fewer are recaptured to be an invalid trial. Our season average efficiencies are calculated only from valid trial data. During some years we released clipped (upper caudal or lower caudal, or both clip types) and just dyed fish at nearly the same time. These data were combined for the efficiency calculation. See 04/12/12 release data at Vulture Bar (VB) on the Mark-Recap Database MASTER CC DWR Data.xlsx spreadsheet (and below) as an example.
+
+Released
+Upper 161
+Lower 143
+Unclipped 165
+Total 469
+
+Recaptured
+Upper 2 
+Lower 9
+Unclipped 10 
+Total 21
+
+Bailey's efficiency = (21+1) / (469+/) = 0.0468
+
+In this case, because the fish were released at nearly the same time we would use the upper clip data in the efficiency calculation and consider the trial valid.
+
+I hope this helps you understand these data.  If you have more questions please ask me.
+
+
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean 
+```
+
+## Data transformations
+
+```{r}
+# For different excel sheets for each year read in and combine years here
+```
+
+```{r}
+# Snake case, 
+# Columns are appropriate types
+# Remove redundant columns
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables 
+```
+
+### Variable: `[name]`
+
+**Plotting [Variable] over Period of Record**
+
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2+ plots are appropriate
+```
+
+**Numeric Summary of [Variable] over Period of Record**
+
+```{r}
+# Table with summary statistics
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+## Explore Categorical variables: {.tabset}
+
+General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
+
+```{r}
+# Filter clean data to show only categorical variables
+```
+
+
+### Variable: `[name]`
+```{r}
+#table() 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+# Fix any inconsistencies with categorical variables
+```
+
+**Create lookup rda for [variable] encoding:** 
+```{r}
+# Create named lookup vector
+# Name rda [watershed]_[data type]_[variable_name].rda
+# save rda to data/ 
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+## Summary of identified issues
+
+* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
+
+## Save cleaned data back to google cloud 
+
+```{r}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+```
