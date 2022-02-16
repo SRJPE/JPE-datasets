@@ -1,5 +1,5 @@
 ---
-title: "Clear Creek Mark Recapture Data"
+title: "Battle Creek Mark Recapture Data"
 author: "Erin Cain"
 date: "9/29/2021"
 output: rmarkdown::github_document
@@ -14,18 +14,18 @@ library(ggplot2)
 library(scales)
 ```
 
-# Clear Creek Mark Recapture Data 
+# Battle Creek Mark Recapture Data 
 
 ## Description of Monitoring Data
 
-Mike Schraml provided us with Mark Recapture data for Clear Creek. 
+Mike Schraml provided us with Mark Recapture data for Battle Creek. 
 
 **Timeframe:** 2003 - 2021
 
 **Completeness of Record throughout timeframe:** 
 
 **Sampling Location:**
-Clear Creek 
+Battle Creek 
 
 **Data Contact:** [Mike Schraml](mailto:mike_schraml@fws.gov)
 
@@ -65,9 +65,9 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
-gcs_get_object(object_name = "rst/clear-creek/data-raw/Mark-Recap Database MASTER CC DWR Data.xlsx",
+gcs_get_object(object_name = "rst/battle-creek/data-raw/Mark-Recap Database MASTER BC DWR Data.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_clear_mark_recapture_data.xlsx",
+               saveToDisk = "raw_battle_mark_recapture_data.xlsx",
                overwrite = TRUE)
 ```
 
@@ -75,7 +75,7 @@ Read in data from google cloud, glimpse raw data:
 Data is stored in a multi-tab sheet, we are interested in tab 2, Data Entry. There are additional non tidy merged cells at the top of the sheet that catagorize variables that we will skip when reading in. 
 ```{r}
 # read in data to clean 
-raw_mark_recapture <- readxl::read_excel("raw_clear_mark_recapture_data.xlsx", sheet = 2, skip  = 2) %>% glimpse()
+raw_mark_recapture <- readxl::read_excel("raw_battle_mark_recapture_data.xlsx", sheet = 2, skip  = 2) %>% glimpse()
 ```
 
 ## Data transformations
@@ -84,7 +84,11 @@ raw_mark_recapture <- readxl::read_excel("raw_clear_mark_recapture_data.xlsx", s
 # For different excel sheets for each year read in and combine years here
 mark_recapture_data <- raw_mark_recapture %>% 
   janitor::clean_names() %>% 
+  filter(release_date != "No Mark/Recap Studies for 2014-2015 Season") %>%
+  mutate(release_date = janitor::excel_numeric_to_date(as.numeric(as.character(release_date)), date_system = "modern")) %>%
   glimpse
+
+View(raw_mark_recapture)
 ```
 
 
@@ -127,7 +131,7 @@ mark_recapture_data %>% ggplot() +
 summary(mark_recapture_data$no_released)
 ```
 
-Looks like there are anywhere from 8 - 1032 fish released. 
+Looks like there are anywhere from 65 - 1143 fish released. 
 
 ### Variable: `recaps`
 
@@ -145,7 +149,7 @@ mark_recapture_data %>% ggplot() +
 summary(mark_recapture_data$recaps)
 ```
 
-Looks like there are anywhere from 0 - 110 fish recaptured 
+Looks like there are anywhere from 0 - 64 fish recaptured 
 
 ### Variable: `baileys_trap_efficiency`
 
@@ -163,7 +167,7 @@ mark_recapture_data %>% ggplot() +
 summary(mark_recapture_data$baileys_trap_efficiency)
 ```
 
-Looks like baileys efficiency is anywhere from .002 - .5. 
+Looks like baileys efficiency is anywhere from .22 - 100. 
 
 ## Summary of identified issues
 
@@ -171,5 +175,3 @@ Looks like baileys efficiency is anywhere from .002 - .5.
 
 
 TODO decide how we want to use this data and then save a subset of cleaned data to google cloud
-
-
