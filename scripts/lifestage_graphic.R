@@ -27,7 +27,7 @@ clear <- bind_rows(clear_upstream, clear_holding, clear_spawning, clear_outmigra
   mutate(Date = case_when(Year == 1 ~ paste0(1999, "-", Month, "-",Day),
                           T ~ paste0(2000, "-",Month, "-",Day)),
          Date = ymd(Date),
-         Lifestage = fct_relevel(Lifestage, "Adult upstream migration","Adult holding","Spawning","Juvenile outmigration"))
+         Lifestage = fct_relevel(Lifestage, "Juvenile outmigration","Spawning","Adult holding","Adult upstream migration"))
 clear1 <- filter(clear, Year == 1)
 clear2 <- filter(clear, Year == 2)
 
@@ -51,7 +51,7 @@ battle <- bind_rows(battle_upstream, battle_holding, battle_spawning, battle_out
   mutate(Date = case_when(Year == 1 ~ paste0(1999, "-", Month, "-",Day),
                           T ~ paste0(2000, "-",Month, "-",Day)),
          Date = ymd(Date),
-         Lifestage = fct_relevel(Lifestage, "Adult upstream migration","Adult holding","Spawning","Juvenile outmigration"))
+         Lifestage = fct_relevel(Lifestage, "Juvenile outmigration","Spawning","Adult holding","Adult upstream migration"))
 battle1 <- filter(battle, Year == 1)
 battle2 <- filter(battle, Year == 2)
 
@@ -75,7 +75,7 @@ mill <- bind_rows(mill_upstream, mill_holding, mill_spawning, mill_outmigration)
   mutate(Date = case_when(Year == 1 ~ paste0(1999, "-", Month, "-",Day),
                           T ~ paste0(2000, "-",Month, "-",Day)),
          Date = ymd(Date),
-         Lifestage = fct_relevel(Lifestage, "Adult upstream migration","Adult holding","Spawning","Juvenile outmigration"))
+         Lifestage = fct_relevel(Lifestage, "Juvenile outmigration","Spawning","Adult holding","Adult upstream migration"))
 mill1 <- filter(mill, Year == 1)
 mill2 <- filter(mill, Year == 2)
 
@@ -99,7 +99,7 @@ deer <- bind_rows(deer_upstream, deer_holding, deer_spawning, deer_outmigration)
   mutate(Date = case_when(Year == 1 ~ paste0(1999, "-", Month, "-",Day),
                           T ~ paste0(2000, "-",Month, "-",Day)),
          Date = ymd(Date),
-         Lifestage = fct_relevel(Lifestage, "Adult upstream migration","Adult holding","Spawning","Juvenile outmigration"))
+         Lifestage = fct_relevel(Lifestage, "Juvenile outmigration","Spawning","Adult holding","Adult upstream migration"))
 deer1 <- filter(deer, Year == 1)
 deer2 <- filter(deer, Year == 2)
 
@@ -123,7 +123,7 @@ butte <- bind_rows(butte_upstream, butte_holding, butte_spawning, butte_outmigra
   mutate(Date = case_when(Year == 1 ~ paste0(1999, "-", Month, "-",Day),
                           T ~ paste0(2000, "-",Month, "-",Day)),
          Date = ymd(Date),
-         Lifestage = fct_relevel(Lifestage, "Adult upstream migration","Adult holding","Spawning","Juvenile outmigration"))
+         Lifestage = fct_relevel(Lifestage, "Juvenile outmigration","Spawning","Adult holding","Adult upstream migration"))
 butte1 <- filter(butte, Year == 1)
 butte2 <- filter(butte, Year == 2)
 
@@ -147,7 +147,7 @@ yuba <- bind_rows(yuba_upstream, yuba_holding, yuba_spawning, yuba_outmigration)
   mutate(Date = case_when(Year == 1 ~ paste0(1999, "-", Month, "-",Day),
                           T ~ paste0(2000, "-",Month, "-",Day)),
          Date = ymd(Date),
-         Lifestage = fct_relevel(Lifestage, "Adult upstream migration","Adult holding","Spawning","Juvenile outmigration"))
+         Lifestage = fct_relevel(Lifestage, "Juvenile outmigration","Spawning","Adult holding","Adult upstream migration"))
 yuba1 <- filter(yuba, Year == 1)
 yuba2 <- filter(yuba, Year == 2)
 
@@ -171,7 +171,7 @@ feather <- bind_rows(feather_upstream, feather_holding, feather_spawning, feathe
   mutate(Date = case_when(Year == 1 ~ paste0(1999, "-", Month, "-",Day),
                           T ~ paste0(2000, "-",Month, "-",Day)),
          Date = ymd(Date),
-         Lifestage = fct_relevel(Lifestage, "Adult upstream migration","Adult holding","Spawning","Juvenile outmigration"))
+         Lifestage = fct_relevel(Lifestage,"Juvenile outmigration","Spawning","Adult holding","Adult upstream migration"))
 feather1 <- filter(feather, Year == 1)
 feather2 <- filter(feather, Year == 2)
 
@@ -197,7 +197,7 @@ life_stage_dat <- bind_rows(adult_upstream,adult_holding,spawning,
   mutate(Date = case_when(Year == 1 ~ paste0(1999, "-", Month, "-",Day),
                           T ~ paste0(2000, "-",Month, "-",Day)),
          Date = ymd(Date),
-         Lifestage = fct_relevel(Lifestage, "Adult upstream migration","Adult holding","Spawning","Juvenile outmigration"))
+         Lifestage = fct_relevel(Lifestage, "Juvenile outmigration","Spawning","Adult holding","Adult upstream migration"))
 
 life_stage_dat1 <- filter(life_stage_dat, Lifestage != "Juvenile outmigration") %>%
   rbind(filter(life_stage_dat, Lifestage == "Juvenile outmigration", Year == "1"))
@@ -249,7 +249,7 @@ data_available <- bind_rows(spawning_data_mode, holding_data_mode, juvenile_migr
   mutate(Date = case_when(Year == 1 ~ paste0(1999, "-", Month, "-",Day),
                           T ~ paste0(2000, "-",Month, "-",Day)),
          Date = ymd(Date),
-         Lifestage = fct_relevel(Lifestage, "Adult upstream migration","Adult holding","Spawning","Juvenile outmigration"))
+         Lifestage = fct_relevel(Lifestage, "Juvenile outmigration","Spawning","Adult holding","Adult upstream migration"))
 
 # data_all_some <- filter(data_available, Lifestage != "Adult upstream migration") %>%
 #   group_by(Year, Lifestage) %>%
@@ -284,24 +284,25 @@ ggplot(life_stage_dat, aes(x = Date, y = Lifestage)) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b") +
   scale_color_manual(name = "Lifestage", values = mycolors) +
   geom_vline(xintercept = ymd("2000-01-01"), linetype = "dashed", alpha = 0.6) +
-  annotate("curve", x = ymd("2000-01-25"), y = "Adult holding", xend = ymd("2000-01-07"), yend = "Adult upstream migration",
-           curvature = .3, arrow = arrow(length = unit(2, "mm")), alpha = 0.6) +
-  annotate("text", x = ymd("2000-02-20"), y = "Adult holding", label = "JPE needed", size = 3) +
-  annotate("curve", x = ymd("2000-04-05"), y = "Spawning", xend = ymd("2000-04-01"), yend = "Adult upstream migration",
-           curvature = .3, arrow = arrow(length = unit(2, "mm")), alpha = 0.6) +
-  annotate("text", x = ymd("2000-05-21"), y = "Spawning", label = "Juveniles enter delta", size = 3) +
-  annotate("text", x = ymd("1999-10-13"), y = "Adult upstream migration", label = "—Data available", size = 3) +
-  annotate("curve", x = ymd("1999-11-17"), y = "Adult upstream migration", xend = ymd("1999-11-25"), yend = "Adult holding",
-           curvature = .3, arrow = arrow(length = unit(2, "mm")), alpha = 0.6) +
+  #annotate("curve", x = ymd("2000-01-25"), y = "Adult holding", xend = ymd("2000-01-07"), yend = "Adult upstream migration",
+           #curvature = .3, arrow = arrow(length = unit(2, "mm")), alpha = 0.6) +
+  #annotate("text", x = ymd("2000-02-20"), y = "Adult holding", label = "JPE needed", size = 3) +
+  #annotate("curve", x = ymd("2000-04-05"), y = "Spawning", xend = ymd("2000-04-01"), yend = "Adult upstream migration",
+           #curvature = .3, arrow = arrow(length = unit(2, "mm")), alpha = 0.6) +
+  #annotate("text", x = ymd("2000-05-21"), y = "Spawning", label = "Juveniles enter delta", size = 3) +
+  #annotate("text", x = ymd("1999-10-13"), y = "Adult upstream migration", label = "—Data available", size = 3) +
+  #annotate("curve", x = ymd("1999-11-17"), y = "Adult upstream migration", xend = ymd("1999-11-25"), yend = "Adult holding",
+           #curvature = .3, arrow = arrow(length = unit(2, "mm")), alpha = 0.6) +
   xlab("") +
   ylab("") +
   theme_minimal() +
-  theme(legend.position = "none") 
+  theme(legend.position = "none")
 
 
 ggsave("lifestage_plot_updated.png", width = 8.50, height = 2, units = "in")
 
 
+### scrap code below ####
 
 ggplot(life_stage_dat, aes(x = Date, y = Lifestage)) +
   geom_line(life_stage_dat1, mapping = aes(x = Date, y = Lifestage, color = Lifestage), size = 2) +
