@@ -2,8 +2,10 @@ library(tidyverse)
 library(leaflet)
 library(sp)
 
-# TODO add jitter to spread points out
-gage_sites <- read_csv("scripts/exploratory-analysis/data/gage_sites.csv") 
+# TODO decide on information to show in popups and improve readability of map
+gage_sites <- read_csv("scripts/exploratory-analysis/data/gage_sites.csv") %>%
+  mutate(latitude = jitter(latitude, factor = .07),
+         longitude = jitter(longitude, factor = .07))
 
 cdec_sites <- gage_sites %>% 
   filter(gage_agency == "CDEC") 
@@ -11,7 +13,10 @@ cdec_sites <- gage_sites %>%
 usgs_sites <- gage_sites %>% 
   filter(gage_agency == "USGS")  
 
-rst_sites <- read_csv("scripts/exploratory-analysis/data/rst_sites.csv") 
+rst_sites <- read_csv("scripts/exploratory-analysis/data/rst_sites.csv") %>%
+  mutate(latitude = jitter(latitude, factor = .07),
+         longitude = jitter(longitude, factor = .07))
+
 leaflet(gage_sites)  %>% 
   addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
   addCircleMarkers(data = cdec_sites,  label = cdec_sites$gage_number, 
