@@ -173,13 +173,14 @@ Looks like baileys efficiency is anywhere from .002 - .5.
 
 ## Select relevent data, & save cleaned data to cloud
 ```{r}
+
 clear_mark_reacpture <- mark_recapture_data %>% 
   select(release_date, day_or_night_release = d_ay_or_n_ight_release, release_time, no_marked,
          no_released, recaps, mark_med_fork_length_mm, recap_med_fork_length_mm, 
          days_held_post_mark, release_temp, flow_release, release_turbidity, cone_status_h_f_recap, 
          mean_temp_day_of_rel, mean_flow_day_of_rel, caught_day_1, caught_day_2, 
          caught_day_3, caught_day_4, caught_day_5) %>%
-  mutate(release_time = hms::hms(as.numeric(release_time)),
+  mutate(release_time = hms::hms(days = as.numeric(release_time)),
          day_or_night_release = case_when(day_or_night_release == "?" ~ "unknown", 
                                           day_or_night_release == "D" ~ "day",
                                           day_or_night_release == "N" ~ "night"),
@@ -187,6 +188,7 @@ clear_mark_reacpture <- mark_recapture_data %>%
          cone_status = case_when(cone_status_h_f_recap == "H" ~ "half", 
                                  cone_status_h_f_recap == "F" ~ "full")) %>% 
   select(-cone_status_h_f_recap) %>% glimpse
+
 ```
 
 

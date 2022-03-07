@@ -329,7 +329,7 @@ clear_mark_reacpture <- mark_recapture_data %>%
          days_held_post_mark, release_temp, flow_release, release_turbidity, cone_status_h_f_recap, 
          mean_temp_day_of_rel, mean_flow_day_of_rel, caught_day_1, caught_day_2, 
          caught_day_3, caught_day_4, caught_day_5) %>%
-  mutate(release_time = hms::hms(as.numeric(release_time)),
+  mutate(release_time = hms::hms(days = as.numeric(release_time)),
          day_or_night_release = case_when(day_or_night_release == "?" ~ "unknown", 
                                           day_or_night_release == "D" ~ "day",
                                           day_or_night_release == "N" ~ "night"),
@@ -343,7 +343,7 @@ clear_mark_reacpture <- mark_recapture_data %>%
     ## Columns: 20
     ## $ release_date             <dttm> 2003-01-22, 2003-01-28, 2003-01-31, 2003-02-~
     ## $ day_or_night_release     <chr> "night", "night", "night", "night", "night", ~
-    ## $ release_time             <time> 00:00:00.864583, 00:00:00.937500, 00:00:00.7~
+    ## $ release_time             <time> 20:45:00.000000, 22:30:00.000000, 18:00:00.0~
     ## $ no_marked                <dbl> 1000, 975, 1041, 1010, 1000, 1002, 994, 989, ~
     ## $ no_released              <dbl> 996, 975, 1032, 1005, 992, 993, 983, 977, 902~
     ## $ recaps                   <dbl> 83, 23, 65, 38, 61, 36, 47, 33, 39, 87, 39, 1~
