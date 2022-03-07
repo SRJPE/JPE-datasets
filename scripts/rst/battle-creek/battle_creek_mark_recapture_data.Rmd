@@ -172,6 +172,36 @@ Looks like baileys efficiency is anywhere from .22 - 100.
 ## Summary of identified issues
 
 * What are all other variables doing in dataset if not being used to calculate trap efficiency? 
+* Does not look like consistent amount of mark recapture trials each year 
 
 
-TODO decide how we want to use this data and then save a subset of cleaned data to google cloud
+## Select relevent data, & save cleaned data to cloud
+```{r}
+battle_mark_reacpture <- mark_recapture_data %>% 
+  select(release_date, day_or_night_release = d_ay_or_n_ight_release, release_time, no_marked,
+         no_released, recaps, mortality, mark_med_fork_length_mm, recap_med_fork_length_mm, 
+         origin_h_n, days_held_post_mark, release_temp, flow_release, release_turbidity, cone_status_h_f, 
+         mean_temp_day_of_rel, mean_flow_day_of_rel, caught_day_1, caught_day_2, 
+         caught_day_3, caught_day_4, caught_day_5) %>% 
+  mutate(release_time = hms::as_hms(release_time),
+         day_or_night_release = case_when(day_or_night_release == "?" ~ "unknown", 
+                                          day_or_night_release == "D" ~ "day",
+                                          day_or_night_release == "N" ~ "night"),
+         origin = case_when(origin_h_n == "H" ~ "hatchery", 
+                                origin_h_n == "N" ~ "natural"),
+         release_temp = as.numeric(release_temp),
+         cone_status = case_when(cone_status_h_f == "H" ~ "half", 
+                                 cone_status_h_f == "F" ~ "full")) %>% 
+  select(-origin_h_n, -cone_status_h_f) %>% glimpse
+```
+
+
+```{r, eval = FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(battle_mark_reacpture,
+           object_function = f,
+           type = "csv",
+           name = "rst/battle-creek/data/battle_mark_reacpture.csv")
+
+```

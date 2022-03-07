@@ -332,6 +332,60 @@ Looks like baileys efficiency is anywhere from .22 - 100.
 
 -   What are all other variables doing in dataset if not being used to
     calculate trap efficiency?
+-   Does not look like consistent amount of mark recapture trials each
+    year
 
-TODO decide how we want to use this data and then save a subset of
-cleaned data to google cloud
+## Select relevent data, & save cleaned data to cloud
+
+``` r
+battle_mark_reacpture <- mark_recapture_data %>% 
+  select(release_date, day_or_night_release = d_ay_or_n_ight_release, release_time, no_marked,
+         no_released, recaps, mortality, mark_med_fork_length_mm, recap_med_fork_length_mm, 
+         origin_h_n, days_held_post_mark, release_temp, flow_release, release_turbidity, cone_status_h_f, 
+         mean_temp_day_of_rel, mean_flow_day_of_rel, caught_day_1, caught_day_2, 
+         caught_day_3, caught_day_4, caught_day_5) %>% 
+  mutate(release_time = hms::as_hms(release_time),
+         day_or_night_release = case_when(day_or_night_release == "?" ~ "unknown", 
+                                          day_or_night_release == "D" ~ "day",
+                                          day_or_night_release == "N" ~ "night"),
+         origin = case_when(origin_h_n == "H" ~ "hatchery", 
+                                origin_h_n == "N" ~ "natural"),
+         release_temp = as.numeric(release_temp),
+         cone_status = case_when(cone_status_h_f == "H" ~ "half", 
+                                 cone_status_h_f == "F" ~ "full")) %>% 
+  select(-origin_h_n, -cone_status_h_f) %>% glimpse
+```
+
+    ## Rows: 275
+    ## Columns: 22
+    ## $ release_date             <date> 2003-01-22, 2003-01-28, 2003-01-31, 2003-02-~
+    ## $ day_or_night_release     <chr> "night", "night", "night", "night", "night", ~
+    ## $ release_time             <time> 19:35:00, 18:09:00, 22:00:00, 19:00:00, 19:2~
+    ## $ no_marked                <dbl> 179, 404, 215, 127, 300, 297, 500, 248, 505, ~
+    ## $ no_released              <dbl> 168, 400, 212, 125, 292, 289, 491, 238, 498, ~
+    ## $ recaps                   <dbl> 0, 33, 14, 0, 23, 20, 33, 2, 20, 37, 13, 28, ~
+    ## $ mortality                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ mark_med_fork_length_mm  <dbl> 36, 36, 36, 35, 36, 36, 36, 37, 37, 36, 36, 3~
+    ## $ recap_med_fork_length_mm <dbl> NA, 36, 35, NA, 35, 36, 37, 37, 36, 37, 36, 3~
+    ## $ days_held_post_mark      <dbl> 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, ~
+    ## $ release_temp             <dbl> 49.9, 49.6, 51.3, 47.4, 46.0, 47.1, 50.7, 49.~
+    ## $ flow_release             <dbl> 1710, 817, 636, 614, 523, 481, 711, 668, 604,~
+    ## $ release_turbidity        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    ## $ mean_temp_day_of_rel     <dbl> 49.0, 49.1, 50.6, 46.3, 44.8, 45.5, 49.9, 48.~
+    ## $ mean_flow_day_of_rel     <dbl> 1190, 849, 638, 627, 542, 483, 583, 733, 617,~
+    ## $ caught_day_1             <dbl> NA, 33, 12, 0, 23, 20, 32, 2, 18, 36, 13, 25,~
+    ## $ caught_day_2             <dbl> 0, 0, 2, 0, 0, 0, 1, 0, 2, 1, 0, 1, 1, NA, 0,~
+    ## $ caught_day_3             <dbl> 0, 0, 0, 0, 0, 0, NA, 0, 0, 0, 0, 1, 0, 0, 0,~
+    ## $ caught_day_4             <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, ~
+    ## $ caught_day_5             <dbl> 0, 0, 0, 0, 0, 0, 0, 0, NA, 0, 0, 0, 0, 0, 0,~
+    ## $ origin                   <chr> "natural", "natural", "natural", "natural", "~
+    ## $ cone_status              <chr> "full", "full", "full", "full", "full", "full~
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(battle_mark_reacpture,
+           object_function = f,
+           type = "csv",
+           name = "rst/battle-creek/data/battle_mark_reacpture.csv")
+```
