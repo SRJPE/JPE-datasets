@@ -1,5 +1,5 @@
 ---
-title: "Butte Creek Snorkel Survey QC"
+title: "Butte Creek Snorkel Survey 2001 QC"
 author: "Erin Cain"
 date: "9/29/2021"
 output: rmarkdown::github_document
@@ -82,7 +82,7 @@ tidy_up_snorkel_data <- function(file_name, sheet_name){
     select(date, reach = Reach, personnel, fish_count, why_fish_count_na, comments = Comments)
   return(transformed_data)
 }
-cleaner_data <- bind_rows(purrr::map2(file_names, sheet_names, tidy_up_snorkel_data))
+cleaner_data <- bind_rows(purrr::map2(file_names, sheet_names, tidy_up_snorkel_data)) %>% glimpse
 
 ```
 
@@ -178,11 +178,21 @@ unique(cleaner_data$comments)
 
 ## Summary of identified issues
 
-* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
+* Each year is different formatted. Need to create a new markdown for wrangling. 
+* Lots of data points where there was not a good count of fish 
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+butte_holding_2001 <- cleaner_data %>% glimpse
+```
+
+```{r, eval= FALSE}
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(butte_holding_2001,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_holding_2001.csv")
+
+
 ```

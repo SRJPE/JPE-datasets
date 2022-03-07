@@ -1,4 +1,4 @@
-Butte Creek Snorkel Survey QC
+Butte Creek Snorkel Survey 2001 QC
 ================
 Erin Cain
 9/29/2021
@@ -96,7 +96,7 @@ tidy_up_snorkel_data <- function(file_name, sheet_name){
     select(date, reach = Reach, personnel, fish_count, why_fish_count_na, comments = Comments)
   return(transformed_data)
 }
-cleaner_data <- bind_rows(purrr::map2(file_names, sheet_names, tidy_up_snorkel_data))
+cleaner_data <- bind_rows(purrr::map2(file_names, sheet_names, tidy_up_snorkel_data)) %>% glimpse
 ```
 
     ## New names:
@@ -120,6 +120,15 @@ cleaner_data <- bind_rows(purrr::map2(file_names, sheet_names, tidy_up_snorkel_d
     ## * `` -> ...4
     ## * `` -> ...5
     ## * ...
+
+    ## Rows: 351
+    ## Columns: 6
+    ## $ date              <date> 2001-08-14, 2001-08-14, 2001-08-14, 2001-08-14, 200~
+    ## $ reach             <chr> "Quartz", "Quartz", "Quartz", "A1", "A1", "A1", "A1"~
+    ## $ personnel         <chr> "Clint", "Curtis", "Mike", "Clint", "Curtis", "Mike"~
+    ## $ fish_count        <dbl> 1400, 1200, 1500, 210, 240, 260, 250, 210, 260, 95, ~
+    ## $ why_fish_count_na <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ comments          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 
 ## Explore Date
 
@@ -153,7 +162,7 @@ cleaner_data %>%
   theme(axis.text.x=element_text(angle=90, hjust=1))
 ```
 
-![](butte-creek-snorkel-survey_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](butte-creek-snorkel-survey-2001_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 **Numeric Summary of fish\_count over Period of Record**
 
@@ -262,12 +271,29 @@ unique(cleaner_data$comments)
 
 ## Summary of identified issues
 
--   List things that are funcky/bothering us but that we don’t feel like
-    should be changed without more investigation
+-   Each year is different formatted. Need to create a new markdown for
+    wrangling.
+-   Lots of data points where there was not a good count of fish
 
 ## Save cleaned data back to google cloud
 
 ``` r
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+butte_holding_2001 <- cleaner_data %>% glimpse
+```
+
+    ## Rows: 351
+    ## Columns: 6
+    ## $ date              <date> 2001-08-14, 2001-08-14, 2001-08-14, 2001-08-14, 200~
+    ## $ reach             <chr> "Quartz", "Quartz", "Quartz", "A1", "A1", "A1", "A1"~
+    ## $ personnel         <chr> "Clint", "Curtis", "Mike", "Clint", "Curtis", "Mike"~
+    ## $ fish_count        <dbl> 1400, 1200, 1500, 210, 240, 260, 250, 210, 260, 95, ~
+    ## $ why_fish_count_na <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ comments          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(butte_holding_2001,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_holding_2001.csv")
 ```
