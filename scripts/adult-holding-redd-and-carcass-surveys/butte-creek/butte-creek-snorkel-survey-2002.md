@@ -87,7 +87,7 @@ tidy_up_snorkel_data <- function(file_name, sheet_name){
   }
   
   transformed_data <- combined_data %>%
-    filter(reach != "TOTAL", reach != "TOTALS", reach != "RANGE", reach != "Range") %>%
+    filter(reach != "TOTAL", reach != "TOTALS", reach != "Total", reach != "RANGE", reach != "Range") %>%
     mutate(why_fish_count_na = case_when(why_fish_count_na == "NGC" ~ "not a good count",
                                 why_fish_count_na == "DNS" ~ "did not see", 
                                 why_fish_count_na == "DNSw"| why_fish_count_na == "DNSW" ~ "did not swim",
@@ -150,7 +150,7 @@ cleaner_data <- bind_rows(purrr::map2(file_names, sheet_names, tidy_up_snorkel_d
     ## [1] "Mike"
     ## [1] 4
     ## [1] "Adam"
-    ## Rows: 512
+    ## Rows: 508
     ## Columns: 5
     ## $ date              <date> 2002-08-12, 2002-08-12, 2002-08-12, 2002-08-12, 200~
     ## $ reach             <chr> "Quartz", "A1", "A1", "A1", "A1", "A1", "A1", "A1", ~
@@ -199,11 +199,11 @@ summary(cleaner_data$fish_count)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##     1.0    14.0    40.0   112.2    90.0  2300.0     212
+    ##     1.0    14.0    40.0   100.6    88.5  2300.0     212
 
 **NA and Unknown Values**
 
--   41.4 % of values in the `fish_count` column are NA.
+-   41.7 % of values in the `fish_count` column are NA.
 
 ## Explore Categorical variables:
 
@@ -228,8 +228,8 @@ table(cleaner_data$reach)
     ##     52     84     32     56      4     20     12     24     20     16     24 
     ##     B7     B8     C1    C10    C11    C12     C2     C5     C6     C7     C8 
     ##     12     12      8      4      8     12     12      8      8     20     16 
-    ##     C9     D1     D3     D4     D5     E1     E4 Quartz  Total 
-    ##      8      4      8      8      4      4      4      4      4
+    ##     C9     D1     D3     D4     D5     E1     E4 Quartz 
+    ##      8      4      8      8      4      4      4      4
 
 They do not appear to do the same number of snorkels in each reach.
 
@@ -245,7 +245,7 @@ table(cleaner_data$personnel)
 
     ## 
     ##   Adam  Clint Curtis   Mike 
-    ##    128    128    128    128
+    ##    127    127    127    127
 
 **NA and Unknown Values**
 
@@ -265,7 +265,7 @@ table(cleaner_data$why_fish_count_na)
 
 **NA and Unknown Values**
 
--   78.7 % of values in the `why_fish_count_na` column are NA.
+-   78.5 % of values in the `why_fish_count_na` column are NA.
 
 ## Summary of identified issues
 
@@ -279,7 +279,7 @@ table(cleaner_data$why_fish_count_na)
 butte_holding_2002 <- cleaner_data %>% glimpse
 ```
 
-    ## Rows: 512
+    ## Rows: 508
     ## Columns: 5
     ## $ date              <date> 2002-08-12, 2002-08-12, 2002-08-12, 2002-08-12, 200~
     ## $ reach             <chr> "Quartz", "A1", "A1", "A1", "A1", "A1", "A1", "A1", ~
