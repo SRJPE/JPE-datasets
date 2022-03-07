@@ -93,7 +93,7 @@ tidy_up_snorkel_data <- function(file_name, sheet_name){
   }
   
   transformed_data <- combined_data %>%
-    filter(reach != "TOTAL", reach != "TOTALS", reach != "RANGE", reach != "Range") %>%
+    filter(reach != "TOTAL", reach != "Total", reach != "TOTALS", reach != "RANGE", reach != "Range") %>%
     mutate(why_fish_count_na = case_when(why_fish_count_na == "NGC" ~ "not a good count",
                                 why_fish_count_na == "DNS" ~ "did not see", 
                                 why_fish_count_na == "DNSw"| why_fish_count_na == "DNSW" ~ "did not swim",
