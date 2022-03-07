@@ -54,7 +54,7 @@ Read in data from google cloud, glimpse raw data:
 
 Butte creek data needs to be transformed before it can be easy reviewed and used. Currently each sheet describes snorkeling for a different site. 
 ```{r}
-butte_snorkel <- readxl::read_excel("ButteSnorkel2004.xls") %>% View()
+butte_snorkel <- readxl::read_excel("ButteSnorkel2004.xls")
 ```
 ## Create function that transforms each sheet 
 
@@ -93,11 +93,12 @@ tidy_up_snorkel_data <- function(file_name, sheet_name){
   transformed_data <- combined_data %>%
     filter(reach != "TOTAL", reach != "TOTALS", reach != "RANGE", reach != "Range", 
            reach != "total", reach != "Total", reach != "Reach") %>%
-    mutate(why_fish_count_na = case_when(why_fish_count_na == "NGC" ~ "not a good count",
+     mutate(why_fish_count_na = case_when(why_fish_count_na == "NGC" ~ "not a good count",
                                 why_fish_count_na == "DNS" ~ "did not see", 
                                 why_fish_count_na == "DNSw"| why_fish_count_na == "DNSW" ~ "did not swim",
                                 why_fish_count_na == "DNC" ~ "did not count", 
-                                why_fish_count_na == "FRAB" ~ "from above"),
+                                why_fish_count_na == "FRAB" | why_fish_count_na == "FR AB" ~ "from above",
+                                why_fish_count_na == "LAST"  ~ "last one through"),
            date = date_surveyed,
            fish_count = as.numeric(fish_count)) %>%
     select(date, reach, personnel, fish_count, why_fish_count_na)

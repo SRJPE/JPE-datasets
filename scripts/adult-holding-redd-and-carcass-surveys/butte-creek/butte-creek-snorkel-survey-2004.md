@@ -48,7 +48,7 @@ and used. Currently each sheet describes snorkeling for a different
 site.
 
 ``` r
-butte_snorkel <- readxl::read_excel("ButteSnorkel2004.xls") %>% View()
+butte_snorkel <- readxl::read_excel("ButteSnorkel2004.xls")
 ```
 
     ## New names:
@@ -92,11 +92,12 @@ tidy_up_snorkel_data <- function(file_name, sheet_name){
   transformed_data <- combined_data %>%
     filter(reach != "TOTAL", reach != "TOTALS", reach != "RANGE", reach != "Range", 
            reach != "total", reach != "Total", reach != "Reach") %>%
-    mutate(why_fish_count_na = case_when(why_fish_count_na == "NGC" ~ "not a good count",
+     mutate(why_fish_count_na = case_when(why_fish_count_na == "NGC" ~ "not a good count",
                                 why_fish_count_na == "DNS" ~ "did not see", 
                                 why_fish_count_na == "DNSw"| why_fish_count_na == "DNSW" ~ "did not swim",
                                 why_fish_count_na == "DNC" ~ "did not count", 
-                                why_fish_count_na == "FRAB" ~ "from above"),
+                                why_fish_count_na == "FRAB" | why_fish_count_na == "FR AB" ~ "from above",
+                                why_fish_count_na == "LAST"  ~ "last one through"),
            date = date_surveyed,
            fish_count = as.numeric(fish_count)) %>%
     select(date, reach, personnel, fish_count, why_fish_count_na)
@@ -155,7 +156,7 @@ cleaner_data <- bind_rows(purrr::map2(file_names, sheet_names, tidy_up_snorkel_d
     ## $ reach             <chr> "Quartz", "Quartz 2", "Quartz 3", "A1", "A1", "A2", ~
     ## $ personnel         <chr> "Clint", "Clint", "Clint", "Clint", "Clint", "Clint"~
     ## $ fish_count        <dbl> 180, 300, 250, 85, 16, 2, 130, 15, 6, 2, 1, 1, 5, 31~
-    ## $ why_fish_count_na <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ why_fish_count_na <chr> NA, NA, "from above", NA, NA, NA, NA, NA, NA, NA, NA~
 
 ## Explore Date
 
@@ -261,12 +262,12 @@ table(cleaner_data$why_fish_count_na)
 ```
 
     ## 
-    ##  did not see did not swim 
-    ##           39           13
+    ##  did not see did not swim   from above 
+    ##           39           13            3
 
 **NA and Unknown Values**
 
--   85.7 % of values in the `why_fish_count_na` column are NA.
+-   84.8 % of values in the `why_fish_count_na` column are NA.
 
 ## Summary of identified issues
 
@@ -286,7 +287,7 @@ butte_holding_2004 <- cleaner_data %>% glimpse
     ## $ reach             <chr> "Quartz", "Quartz 2", "Quartz 3", "A1", "A1", "A2", ~
     ## $ personnel         <chr> "Clint", "Clint", "Clint", "Clint", "Clint", "Clint"~
     ## $ fish_count        <dbl> 180, 300, 250, 85, 16, 2, 130, 15, 6, 2, 1, 1, 5, 31~
-    ## $ why_fish_count_na <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ why_fish_count_na <chr> NA, NA, "from above", NA, NA, NA, NA, NA, NA, NA, NA~
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)

@@ -48,7 +48,7 @@ and used. Currently each sheet describes snorkeling for a different
 site.
 
 ``` r
-butte_snorkel <- readxl::read_excel("ButteSnorkel2003.xls") %>% View()
+butte_snorkel <- readxl::read_excel("ButteSnorkel2003.xls") 
 ```
 
     ## New names:
@@ -97,11 +97,12 @@ tidy_up_snorkel_data <- function(file_name, sheet_name){
   
   transformed_data <- combined_data %>%
     filter(reach != "TOTAL", reach != "Total", reach != "TOTALS", reach != "RANGE", reach != "Range") %>%
-    mutate(why_fish_count_na = case_when(why_fish_count_na == "NGC" ~ "not a good count",
+     mutate(why_fish_count_na = case_when(why_fish_count_na == "NGC" ~ "not a good count",
                                 why_fish_count_na == "DNS" ~ "did not see", 
                                 why_fish_count_na == "DNSw"| why_fish_count_na == "DNSW" ~ "did not swim",
                                 why_fish_count_na == "DNC" ~ "did not count", 
-                                why_fish_count_na == "FRAB" ~ "from above"),
+                                why_fish_count_na == "FRAB" | why_fish_count_na == "FR AB" ~ "from above",
+                                why_fish_count_na == "LAST"  ~ "last one through"),
            date = date_surveyed,
            fish_count = as.numeric(fish_count)) %>%
     select(date, reach, personnel, fish_count, why_fish_count_na)
@@ -272,12 +273,12 @@ table(cleaner_data$why_fish_count_na)
 ```
 
     ## 
-    ##      did not see     did not swim not a good count 
-    ##               57               38               42
+    ##      did not see     did not swim       from above not a good count 
+    ##               57               38               17               42
 
 **NA and Unknown Values**
 
--   75.5 % of values in the `why_fish_count_na` column are NA.
+-   72.5 % of values in the `why_fish_count_na` column are NA.
 
 ## Summary of identified issues
 
