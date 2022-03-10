@@ -212,7 +212,7 @@ tisdale_rst_clean <- tisdale_rst %>%
          lifestage = life_stage,
          dead = mortality) %>%
   mutate(watershed = "Lower Sac",
-         site = "Tisdale",
+         site = paste("Tisdale", trap_position),
          run = tolower(run),
          run = case_when(run == "not recorded" ~ NA_character_,
                          T ~ run),
@@ -222,10 +222,7 @@ tisdale_rst_clean <- tisdale_rst %>%
          lifestage = case_when(lifestage == "button-up fry" ~ "fry",
                                lifestage == "yolk sac fry (alevin)" ~ "yolk sac fry",
                                lifestage == "not recorded" ~ NA_character_,
-                               T ~ lifestage)) %>% 
-  # condense trap_position
-  group_by(date, species, fork_length, lifestage, run, dead, rearing, watershed, site) %>%
-  summarize(count = sum(count))
+                               T ~ lifestage)) %>% glimpse
 
 # mill ####
 # TODO no run assigned or filtered to spring?
