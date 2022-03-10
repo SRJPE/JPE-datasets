@@ -1,0 +1,72 @@
+---
+title: "rst_eda"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+combined_rst <- read_rds("data/rst/combined_rst.rds")
+```
+
+```{r}
+rst_prep <- combined_rst %>%
+  mutate(fake_year = ifelse(month(date) %in% 10:12, 1999, 2000),
+         fake_date = ymd(paste(fake_year, month(date), day(date))))
+
+
+```
+
+# Daily catch by watershed
+
+TODO: Fix issues with Lower Sac; consider adding color for run (spring run higher alpha)
+
+```{r}
+daily_catch_dat <- rst_prep %>%
+  filter(species == "chinook") %>%
+  group_by(watershed, date, site, fake_date) %>%
+  summarize(count = sum(count)) %>%
+  mutate(site = ifelse(is.na(site), watershed, site))
+
+daily_catch_bar_chart <- function(dat, watershed_filter) {
+  ggplot(filter(dat, watershed == watershed_filter), aes(x = fake_date, y = count, fill = site)) +
+    geom_col(alpha = 0.5) +
+    facet_wrap(~year(date), scales = "free_y") +
+    scale_x_date(date_breaks = "3 months", date_labels = "%b") +
+    theme_minimal() +
+    theme(legend.position = "bottom") +
+    xlab("")
+}
+
+daily_catch_bar_chart(daily_catch_dat, "Battle Creek")
+daily_catch_bar_chart(daily_catch_dat, "Butte Creek")
+daily_catch_bar_chart(daily_catch_dat, "Clear Creek")
+daily_catch_bar_chart(daily_catch_dat, "Deer Creek")
+daily_catch_bar_chart(daily_catch_dat, "Lower Sac")
+```
+
+# Mean weekly fork length by year and watershed
+TODO: figure out knights landing min max fork length
+```{r}
+weekly_fork_length <- rst_prep %>%
+  filter(species == "chinook") %>%
+  mutate(week = week(date),
+         year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>%
+  group_by(watershed, week, year) %>%
+  summarize(avg_fork_length = mean(fork_length, na.rm = T)) %>%
+  glimpse
+
+weekly_fork_length_bar_chart <- function(dat, watershed_filter) {
+  ggplot(filter(dat, watershed == watershed_filter), aes(x = week, y = avg_fork_length)) +
+    geom_col() +
+    facet_wrap(~year, scales = "free_y") +
+    #scale_x_date(date_breaks = "3 weeks", date_labels = "%b") +
+    theme_minimal() +
+    theme(legend.position = "bottom") +
+    xlab("")
+}
+
+weekly_fork_length_bar_chart(weekly_fork_length, watershed_filter = "Battle Creek")
+
+```
