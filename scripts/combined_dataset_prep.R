@@ -13,16 +13,15 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 
 # lifestage encoding ------------------------------------------------------
-
+# This is currently not being used but is here for quick reference and later use
 encoding_fn <- function(dat) {
   dat %>%
     mutate(lifestage = case_when(lifestage %in% c("yolk-sac fry", "yolk sac fry (alevin)") ~ "yolk sac fry",
                                  lifestage == "fingerling" ~ "silvery parr",
-                                 lifestage %in% c("unknown", "not recorded", "not provided") ~ NA_character_,
-                                 lifestage == "yoy (young of the year)" ~ "young of year",
+                                 lifestage %in% c("unknown", "not recorded", "not provided", "yoy (young of the year)") ~ NA_character_,
                                  lifestage == "pre-smolt" ~ "parr",
-                                 lifestage == "older juvenile", "juvenile",
-                                 lifestage == "button-up fry" ~ "fry"))
+                                 lifestage == "button-up fry" ~ "fry",
+                                 T ~ NA_character_))
 }
 
 # rst data pull ####
@@ -90,7 +89,9 @@ clear_environmental <- read_csv("data/rst/clear_rst_environmental.csv")
 feather_effort <- read_csv("data/rst/feather_rst_effort.csv")
 knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
 
-# TODO make lifestage encoding consistent
+# passage estimates
+battle_passage <- read_csv("data/rst/battle_rst_passage_estimates.csv")
+
 # TODO filter out interpolated?
 
 # minor cleaning by watershed #####
@@ -167,7 +168,7 @@ unique(feather_rst$lifestage)
 feather_rst_clean <- feather_rst %>%
   mutate(watershed = "Feather River",
          lifestage = case_when(lifestage == "yolk sac fry (alevin)" ~ "yolk sac fry",
-                               lifestage == "yoy (young of the year)" ~ "young of year",
+                               lifestage == "yoy (young of the year)" ~ NA_character_,
                                lifestage == "pre-smolt" ~ "parr",
                                T ~ lifestage)) %>%
   rename(site = site_name)
@@ -192,7 +193,7 @@ knights_rst_clean <- knights_rst %>%
          species = tolower(species),
          rearing = case_when(rearing == T ~ "hatchery",
                              rearing == F ~ "natural"),
-         lifestage = ifelse(lifestage == "older juvenile", "juvenile", lifestage)) %>% glimpse
+         lifestage = ifelse(lifestage == "older juvenile", NA_character_, lifestage)) %>% glimpse
 
 # tisdale ####
 # Note that tisdale was aggregated to sum together traps from left and right
@@ -270,5 +271,48 @@ combined_rst <- bind_rows(battle_rst_clean,
                           yuba_rst_clean)
 saveRDS(combined_rst, "data/rst/combined_rst.rds")
 
-# trap data ####
 
+# trap data ####
+# battle ####
+# sample_id, trap_start_date, trap_start_time, sample_date, sample_time, counter,
+# flow_start_meter, flow_end_meter, velocity, temperature, turbidity, cone, depth_adjust, 
+# avg_time_per_rev, fish_properly
+
+# for mark recapture could take date, time, num released from environmental data
+# select for catch marked from catch data
+
+battle_environmental %>% str
+unique(battle_environmental$trap_sample_type)
+
+# butte ####
+# date, time, station, trap_status, gear_id, turbidity, velocity, trap_revolutions, 
+# rpms_start, rpms_end
+
+# clear #####
+# station_code, sample_id, trap_start_date, trap_start_time, sample_date, sample_time,
+# counter, flow_end_meter, flow_start_meter, velocity, turbidity, cone, depth_adjust
+# avg_time_per_rev, fish_properly
+
+# for mark recapture could take date, time, num released from environmental data
+# select for catch marked from catch data
+
+# deer ####
+# date, location, flow, time_for_10_revolutions, trap_condition_code, turbidity,
+# water_temperature_celsius
+
+# feather ####
+unique(feather_effort$trap_functioning)
+# date, site_name, visit_time, visit_type, trap_functioning, water_temp_c,
+# turbidity_ntu, latitude, longitude
+
+# knights ####
+unique(knights_effort$gear)
+# date, start_date, stop_date, number_traps, hrs_fished, flow_cfs, turbidity,
+# water_t_f, cone_sampling_effort, cone_id, cone_rpm, total_cone_rev
+
+# tisdale #####
+# no information about trap
+
+# mill #####
+# date, flow, time_for_10_revolutions, trap_condition_code, water_temperature,
+# turbidity
