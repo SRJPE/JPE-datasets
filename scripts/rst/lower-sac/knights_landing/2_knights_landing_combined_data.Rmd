@@ -72,15 +72,14 @@ rst_combine_clean <- rst_combine %>%
                                !is.na(stop_date) & !is.na(stop_time) ~ paste(stop_date, stop_time),
                                is.na(stop_date) & is.na(stop_time) ~ NA_character_,
                                 T ~ paste(stop_date, "00:00")),
-         stop_date = as.POSIXct(stop_date, tz = "America/Los_Angeles")) %>%
-  select(-start_time, -stop_time)
+         stop_date = as.POSIXct(stop_date, tz = "America/Los_Angeles"))
 ```
 
 ```{r}
 # separate into an effort file and an rst file
 bind_col <- tibble(names = colnames(rst_combine))
 
-effort_vars <- c("date", "start_date", "stop_date", "location", "gear", "number_traps", "hrs_fished", "sampling_period_hrs", "flow_cfs", "secchi_ft","turbidity_ftu","turbidity_ntu", "water_t_f", "klci", "cone_rpm_8_3", "cone_rpm_8_4", "total_cone_rev_8_3", "total_cone_rev_8_4", "cone_sampling_effort", "cpue_fall", "cpue_spring", "cpue_late_fall", "cpue_steelhead", "cpue_winter", "comments")
+effort_vars <- c("date", "start_date", "stop_date", "start_time", "stop_time", "location", "gear", "number_traps", "hrs_fished", "sampling_period_hrs", "flow_cfs", "secchi_ft","turbidity_ftu","turbidity_ntu", "water_t_f", "klci", "cone_rpm_8_3", "cone_rpm_8_4", "total_cone_rev_8_3", "total_cone_rev_8_4", "cone_sampling_effort", "cpue_fall", "cpue_spring", "cpue_late_fall", "cpue_steelhead", "cpue_winter", "comments")
 
 # need to include start_date, start_time, stop_date, stop_time here because there multiple observations per day for some years
 rst_vars <- c("date","start_date",  "stop_date", "location","catch", "fork_length_max_mm", "fork_length_min_mm", "number_marked_cs", "number_marked_sh", "number_fall", "number_late_fall", "number_spring", "number_unmarked_sh", "number_winter", "number_marked_fall", "number_marked_late_fall", "number_marked_spring", "number_marked_winter", "number_older_juv", "species")
@@ -201,7 +200,7 @@ filter(knights_landing_sampling_effort, !is.na(turbidity_ftu)) %>%
   group_by(year) %>%
   tally()
 
-knights_landing_sampling_effort_clean <- select(knights_landing_sampling_effort, c(date, start_date, stop_date, location, !contains("cpue"))) %>%
+knights_landing_sampling_effort_clean <- select(knights_landing_sampling_effort, c(date, start_date, stop_date, start_time, stop_time, location, !contains("cpue"))) %>%
   mutate(turbidity = case_when(!is.na(turbidity_ftu) ~ turbidity_ftu,
                                T ~ turbidity_ntu),
          turbidity_units = case_when(!is.na(turbidity_ftu) ~ "FTU",
@@ -230,7 +229,8 @@ upload_data <- function(data, name) {
 gcs_upload(data,
            object_function = f,
            type = "csv",
-           name = paste0("rst/lower-sac-river/data/knights-landing/knl_combine_", name, ".csv"))
+           name = paste0("rst/lower-sac-river/data/knights-landing/knl_combine_", name, ".csv"),
+           predefinedAcl = "bucketLevel")
 }
 
 upload_data(knights_landing_sampling_effort_clean, "sampling_effort")
