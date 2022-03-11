@@ -106,6 +106,7 @@ unique(battle_rst$run)
 battle_rst_clean <- battle_rst %>%
   select(-sample_id) %>%
   mutate(watershed = "Battle Creek",
+         site = "Battle Creek",
          species = "chinook",
          lifestage = ifelse(lifestage == "yolk-sac fry", "yolk sac fry", lifestage)) 
   
@@ -183,7 +184,7 @@ unique(knights_rst$marked)
 # lifestage encoding
 # older juvenile = juvenile
 
-knights_rst_clean <- knights_rst %>%
+knights_rst_clean <- filter(knights_rst, !is.na(count)) %>%
   select(date, fork_length_max_mm, fork_length_min_mm, species, count, at_capture_run, lifestage, marked) %>%
   rename(run = at_capture_run,
          rearing = marked) %>%
@@ -202,6 +203,7 @@ unique(tisdale_rst$run)
 unique(tisdale_rst$species)
 unique(tisdale_rst$rearing)
 unique(tisdale_rst$life_stage)
+filter(tisdale_rst, is.na(trap_position))
 # date, trap_position, fork_length_mm, life_stage, species, run, mortality, rearing, count
 # TODO lifestage encodings
 # button-up fry = fry, yolk sac fry (alvein) = yolk sac fry, not recorded = NA
@@ -233,7 +235,8 @@ unique(mill_rst$location)
 mill_rst_clean <- mill_rst %>%
   select(date, count, fork_length) %>%
   mutate(watershed = "Mill Creek",
-         species = "chinook")
+         species = "chinook",
+         site = "Mill Creek")
 
 # yuba ####
 yuba_rst %>% glimpse
@@ -272,40 +275,115 @@ saveRDS(combined_rst, "data/rst/combined_rst.rds")
 # trap data ####
 # battle ####
 # sample_id, trap_start_date, trap_start_time, sample_date, sample_time, counter,
-# flow_start_meter, flow_end_meter, velocity, temperature, turbidity, cone, depth_adjust, 
-# avg_time_per_rev, fish_properly
+# flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity, cone, 
+# trap_sample_type, thalweg, depth_adjust, avg_time_per_rev, fish_properly
 
-# for mark recapture could take date, time, num released from environmental data
-# select for catch marked from catch data
-
+# counter means number on cone revolution counter at sample_date, sample_time
 battle_environmental %>% str
 unique(battle_environmental$trap_sample_type)
+unique(battle_environmental$fish_properly)
+unique(battle_environmental$partial_sample)
+
+battle_trap_clean <- battle_environmental %>%
+  select(sample_id, trap_start_date, trap_start_time, sample_date, sample_time,
+         counter, flow_start_meter, flow_end_meter, flow_set_time, velocity,
+         turbidity, cone, trap_sample_type, thalweg, depth_adjust, avg_time_per_rev,
+         fish_properly, partial_sample) %>%
+  # sample_date and sample_time are described as the end of 24 hour sampling period
+  # rename to match others
+  rename(start_date = trap_start_date,
+         start_time = trap_start_time,
+         end_date = sample_date,
+         end_time = sample_time,
+         sample_period_revolutions = counter) %>%
+  mutate(site = "Battle Creek",
+         watershed = "Battle Creek")
 
 # butte ####
 # date, time, station, trap_status, gear_id, turbidity, velocity, trap_revolutions, 
 # rpms_start, rpms_end
 
+# trap_revolutions is the number of revolutions since last check
+
+unique(butte_rst$trap_status)
+unique(butte_rst$gear_id)
+unique(butte_rst$station)
+butte_rst %>%
+  group_by(station, gear_id) %>%
+  tally()
+
+butte_trap_clean <- butte_rst %>%
+  select(date, station, trap_status, time, gear_id, temperature, turbidity, velocity,
+         trap_revolutions, rpms_start, rpms_end) %>%
+  rename(site = station,
+         sample_period_revolutions = trap_revolutions) %>%
+  mutate(watershed = "Butte Creek")
+
 # clear #####
 # station_code, sample_id, trap_start_date, trap_start_time, sample_date, sample_time,
 # counter, flow_end_meter, flow_start_meter, velocity, turbidity, cone, depth_adjust
 # avg_time_per_rev, fish_properly
+unique(clear_environmental$gear_condition_code)
+unique(clear_environmental$station_code)
 
-# for mark recapture could take date, time, num released from environmental data
-# select for catch marked from catch data
+clear_trap_clean <- clear_environmental %>%
+  select(station_code, sample_id, trap_start_date, trap_start_time, sample_date,
+         sample_time, counter, flow_start_meter, flow_end_meter, flow_set_time,
+         velocity, turbidity, cone, trap_sample_type, thalweg, depth_adjust,
+         avg_time_per_rev, fish_properly, partial_sample) %>%
+  rename(site = station_code,
+         start_date = trap_start_date,
+         start_time = trap_start_time,
+         end_date = sample_date,
+         end_time = sample_time,
+         sample_period_revolutions = counter) %>%
+  mutate(watershed = "Clear Creek")
 
 # deer ####
 # date, location, flow, time_for_10_revolutions, trap_condition_code, turbidity,
 # water_temperature_celsius
+unique(deer_rst$location)
+unique(deer_rst$trap_condition_code)
+deer_trap_clean <- deer_rst %>%
+  select(date, location, flow, time_for_10_revolutions, trap_condition_code, turbidity,
+         water_temperature_celsius) %>%
+  rename(site = location,
+         temperature = water_temperature_celsius) %>%
+  mutate(watershed = "Deer Creek")
 
 # feather ####
 unique(feather_effort$trap_functioning)
+unique(feather_effort$sub_site_name)
 # date, site_name, visit_time, visit_type, trap_functioning, water_temp_c,
 # turbidity_ntu, latitude, longitude
+feather_trap_clean <- feather_effort %>%
+  select(date, site_name, sub_site_name, visit_time, visit_type, trap_functioning,
+         water_temp_c, turbidity_ntu, latitude, longitude) %>%
+  rename(site = site_name,
+         subsite = sub_site_name,
+         time = visit_time,
+         temperature = water_temp_c,
+         turbidity = turbidity_ntu,
+         trap_status = visit_type) %>%
+  mutate(time = as_hms(time),
+         watershed = "Feather River")
 
 # knights ####
 unique(knights_effort$gear)
+unique(knights_effort$cone_sampling_effort)
 # date, start_date, stop_date, number_traps, hrs_fished, flow_cfs, turbidity,
 # water_t_f, cone_sampling_effort, cone_id, cone_rpm, total_cone_rev
+knights_trap_clean <- knights_effort %>%
+  select(date, start_date, stop_date, start_time, stop_time, number_traps, hrs_fished, flow_cfs,
+         water_t_f, cone_sampling_effort, turbidity, cone_id, cone_rpm, total_cone_rev) %>%
+  # convert temp from F to C
+  mutate(temperature = (water_t_f - 32) * (5/9),
+         watershed = "Lower Sac",
+         site = "Knights Landing") %>%
+  rename(end_date = stop_date,
+         end_time = stop_time,
+         flow = flow_cfs,
+         sample_period_revolutions = total_cone_rev)
 
 # tisdale #####
 # no information about trap
@@ -313,3 +391,36 @@ unique(knights_effort$gear)
 # mill #####
 # date, flow, time_for_10_revolutions, trap_condition_code, water_temperature,
 # turbidity
+unique(mill_rst$location)
+unique(mill_rst$trap_condition_code)
+mill_trap_clean <- mill_rst %>%
+  select(date, location, flow, time_for_10_revolutions, trap_condition_code,
+         water_temperature, turbidity) %>%
+  rename(site = location,
+         temperature = water_temperature) %>%
+  mutate(watershed = "Mill Creek")
+
+# yuba ####
+# date, time, method, temperature, turbidity, velocity, trap_status, trap_revolutions,
+# trap_revolutions2, rpms_before, rpms_after, location
+unique(yuba_rst$method)
+unique(yuba_rst$trap_status)
+unique(yuba_rst$location)
+yuba_trap_clean <- yuba_rst %>%
+  select(date, time, method, temperature, turbidity, velocity, trap_status,
+         rpms_before, rpms_after, location) %>%
+  rename(site = location) %>%
+  mutate(watershed = "Yuba River")
+
+# trap combined ####
+combined_trap <- bind_rows(battle_trap_clean,
+                          butte_trap_clean,
+                          clear_trap_clean,
+                          deer_trap_clean,
+                          feather_trap_clean,
+                          knights_trap_clean,
+                          #tisdale_trap_clean,
+                          mill_trap_clean,
+                          yuba_trap_clean)
+
+saveRDS(combined_trap, "data/rst/combined_trap.rds")
