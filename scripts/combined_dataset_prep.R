@@ -1,5 +1,7 @@
+library(dplyr)
 library(tidyverse)
 library(googleCloudStorageR)
+library(hms)
 
 # script to prep data for eda #
 
@@ -284,8 +286,12 @@ unique(battle_environmental$trap_sample_type)
 unique(battle_environmental$fish_properly)
 unique(battle_environmental$partial_sample)
 
+# check to see why some dates are NA. I think this is an error
+# becuase these contain no data. Decided to remove. 
+filter(battle_trap_clean, is.na(start_date))
+
 battle_trap_clean <- battle_environmental %>%
-  select(sample_id, trap_start_date, trap_start_time, sample_date, sample_time,
+  select(trap_start_date, trap_start_time, sample_date, sample_time,
          counter, flow_start_meter, flow_end_meter, flow_set_time, velocity,
          turbidity, cone, trap_sample_type, thalweg, depth_adjust, avg_time_per_rev,
          fish_properly, partial_sample) %>%
@@ -297,7 +303,16 @@ battle_trap_clean <- battle_environmental %>%
          end_time = sample_time,
          sample_period_revolutions = counter) %>%
   mutate(site = "Battle Creek",
-         watershed = "Battle Creek")
+         watershed = "Battle Creek") %>%
+  filter(!is.na(start_date)) %>%
+  data.frame() %>%
+  distinct()
+ 
+# check to make sure one row per day/time 
+battle_trap_clean %>%
+  group_by(start_date, start_time) %>%
+  tally() %>%
+  filter(n > 1)
 
 # butte ####
 # date, time, station, trap_status, gear_id, turbidity, velocity, trap_revolutions, 
@@ -312,12 +327,28 @@ butte_rst %>%
   group_by(station, gear_id) %>%
   tally()
 
+# there are multiple obs per day which i think is a data entry issue.
+# group by date, station, time, gear_id, trap_status then average
 butte_trap_clean <- butte_rst %>%
   select(date, station, trap_status, time, gear_id, temperature, turbidity, velocity,
          trap_revolutions, rpms_start, rpms_end) %>%
+  group_by(date, station, trap_status, time, gear_id) %>%
+  summarize(temperature = mean(temperature, na.rm = T),
+            turbidity = mean(turbidity, na.rm = T),
+            velocity = mean(velocity, na.rm = T),
+            trap_revolutions = mean(trap_revolutions, na.rm = T),
+            rpms_start = mean(rpms_start, na.rm = T),
+            rpms_end = mean(rpms_end, na.rm = T)) %>%
   rename(site = station,
          sample_period_revolutions = trap_revolutions) %>%
-  mutate(watershed = "Butte Creek")
+  mutate(watershed = "Butte Creek") %>%
+  distinct()
+
+# check to make sure one row per day/time 
+butte_trap_clean %>%
+  group_by(date, time, site, gear_id, trap_status) %>%
+  tally() %>%
+  filter(n > 1)
 
 # clear #####
 # station_code, sample_id, trap_start_date, trap_start_time, sample_date, sample_time,
@@ -325,6 +356,8 @@ butte_trap_clean <- butte_rst %>%
 # avg_time_per_rev, fish_properly
 unique(clear_environmental$gear_condition_code)
 unique(clear_environmental$station_code)
+
+# there are NA start_dates which don't have any data. need to remove.
 
 clear_trap_clean <- clear_environmental %>%
   select(station_code, sample_id, trap_start_date, trap_start_time, sample_date,
@@ -337,19 +370,46 @@ clear_trap_clean <- clear_environmental %>%
          end_date = sample_date,
          end_time = sample_time,
          sample_period_revolutions = counter) %>%
-  mutate(watershed = "Clear Creek")
+  mutate(watershed = "Clear Creek") %>%
+  filter(!is.na(start_date)) %>%
+  distinct()
+
+# check to make sure one row per day/time 
+clear_trap_clean %>%
+  group_by(start_date, start_time, site) %>%
+  tally() %>%
+  filter(n > 1)
 
 # deer ####
 # date, location, flow, time_for_10_revolutions, trap_condition_code, turbidity,
 # water_temperature_celsius
+
+# few cases where there are different measurements per day
+# group by date, site and average
+
 unique(deer_rst$location)
 unique(deer_rst$trap_condition_code)
 deer_trap_clean <- deer_rst %>%
   select(date, location, flow, time_for_10_revolutions, trap_condition_code, turbidity,
          water_temperature_celsius) %>%
+  group_by(date, location, trap_condition_code) %>%
+  summarize(flow = mean(flow, na.rm = T),
+            time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T),
+            turbidity = mean(turbidity, na.rm = T),
+            water_temperature_celsius = mean(water_temperature_celsius, na.rm =T)) %>%
   rename(site = location,
          temperature = water_temperature_celsius) %>%
-  mutate(watershed = "Deer Creek")
+  mutate(watershed = "Deer Creek") %>%
+  distinct()
+
+
+# check to make sure one row per day/time 
+deer_trap_clean %>%
+  group_by(date,site, trap_condition_code) %>%
+  tally() %>%
+  filter(n > 1)
+
+filter(deer_trap_clean, date == "2001-11-10")
 
 # feather ####
 unique(feather_effort$trap_functioning)
@@ -366,7 +426,14 @@ feather_trap_clean <- feather_effort %>%
          turbidity = turbidity_ntu,
          trap_status = visit_type) %>%
   mutate(time = as_hms(time),
-         watershed = "Feather River")
+         watershed = "Feather River") %>%
+  distinct()
+
+# check to make sure one row per day/time 
+feather_trap_clean %>%
+  group_by(date,time, site, subsite) %>%
+  tally() %>%
+  filter(n > 1)
 
 # knights ####
 unique(knights_effort$gear)
@@ -383,7 +450,14 @@ knights_trap_clean <- knights_effort %>%
   rename(end_date = stop_date,
          end_time = stop_time,
          flow = flow_cfs,
-         sample_period_revolutions = total_cone_rev)
+         sample_period_revolutions = total_cone_rev) %>%
+  distinct()
+
+# check to make sure one row per day/time 
+knights_trap_clean %>%
+  group_by(start_date,start_time, cone_id, date) %>%
+  tally() %>%
+  filter(n > 1)
 
 # tisdale #####
 # no information about trap
@@ -396,10 +470,22 @@ unique(mill_rst$trap_condition_code)
 mill_trap_clean <- mill_rst %>%
   select(date, location, flow, time_for_10_revolutions, trap_condition_code,
          water_temperature, turbidity) %>%
+  group_by(date, location, trap_condition_code) %>%
+  summarize(flow = mean(flow, na.rm = T),
+            time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T),
+            turbidity = mean(turbidity, na.rm = T),
+            water_temperature = mean(water_temperature, na.rm =T)) %>%
   rename(site = location,
          temperature = water_temperature) %>%
-  mutate(watershed = "Mill Creek")
+  mutate(watershed = "Mill Creek") %>%
+  distinct()
 
+# check to make sure one row per day/time 
+mill_trap_clean %>%
+  group_by(date,site, trap_condition_code) %>%
+  tally() %>%
+  filter(n > 1)
+filter(mill_trap_clean, date == "2002-02-07")
 # yuba ####
 # date, time, method, temperature, turbidity, velocity, trap_status, trap_revolutions,
 # trap_revolutions2, rpms_before, rpms_after, location
@@ -410,7 +496,14 @@ yuba_trap_clean <- yuba_rst %>%
   select(date, time, method, temperature, turbidity, velocity, trap_status,
          rpms_before, rpms_after, location) %>%
   rename(site = location) %>%
-  mutate(watershed = "Yuba River")
+  mutate(watershed = "Yuba River") %>%
+  distinct()
+
+# check to make sure one row per day/time 
+yuba_trap_clean %>%
+  group_by(date,time, site) %>%
+  tally() %>%
+  filter(n > 1)
 
 # trap combined ####
 combined_trap <- bind_rows(battle_trap_clean,
