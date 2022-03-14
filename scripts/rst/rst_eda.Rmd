@@ -126,7 +126,16 @@ weekly_fork_length_bar_chart(filter(weekly_fork_length, site != "Tisdale NA"), "
 # Used method 2. 
 # Assumption - for data without start date assume that prior day is the start date
 # and current day is end date
+
+#TODO lots of errors with this code
+# there are some cases where the lag doesn't apply - for instance trap date in dec and then next in march. assumed it stopped in this time
+# these will be removed from the summary plots
 trap_prep <- combined_trap %>%
+  mutate(date_start_date = case_when(is.na(start_date) ~ date, 
+                                     T ~ start_date),
+         wy = ifelse(month(date_start_date) %in% 10:12, year(date_start_date) + 1, year(date_start_date))) %>%
+  group_by(wy, watershed, site, gear_id, cone_id) %>%
+  arrange(start_date, start_time) %>%
   mutate(start_date = case_when(is.na(start_date) ~ lag(date),
                                 T ~ start_date),
          start_date = as.Date(start_date),
@@ -137,19 +146,50 @@ trap_prep <- combined_trap %>%
          end_time = case_when(is.na(end_time) ~ time,
                               T ~ end_time),
          end_date = as.Date(end_date),
-         start_datetime = ymd_hms(paste(start_date, start_time)),
-         end_datetime = ymd_hms(paste(end_date, end_time)),
+         start_datetime = case_when(!is.na(start_date) & !is.na(start_time) ~ ymd_hms(paste(start_date, start_time)),
+                                                                                      T ~ NA_real_),
+         end_datetime = case_when(!is.na(end_date) & !is.na(end_time) ~ ymd_hms(paste(end_date, end_time)),
+                                                                                T ~ NA_real_),
          hrs_fished = case_when(is.na(hrs_fished) ~ difftime(end_datetime, start_datetime, units = "hours"),
                                 T ~ hrs_fished),
-         year = as.factor(year(start_date)))
+         hrs_fished = as.numeric(hrs_fished),
+         wy = as.factor(wy))
 
 
 ```
 
 
 ```{r}
-# TODO there is an issue with yuba. it likely has to do with the lag summary (need to make sure grouping correctly)
-ggplot(trap_prep, aes(x = year, y = hrs_fished)) +
-  geom_boxplot() +
-  facet_wrap(~watershed)
+
+ggplot(filter(trap_prep, watershed == "Battle Creek", hrs_fished < 1000), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+# Butte looks weird, a lot with hours less than 24 - TODO why
+# Butte is grouped by site and gear_id, in some cases gear_id is NA which messes up the start/date hrs etc.
+# Remove gear_id NA for this summary
+ggplot(filter(trap_prep, watershed == "Butte Creek", hrs_fished < 100, !is.na(gear_id)), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+ck <- filter(trap_prep, watershed == "Butte Creek", wy == 1998, gear_id == "rotary screw trap 2")
+
+ggplot(filter(trap_prep, watershed == "Clear Creek", hrs_fished < 100), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+# Can't calculate deer because they do not collect time. TODO double check this
+ggplot(filter(trap_prep, watershed == "Deer Creek", hrs_fished < 1000), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+# Lot of variance for Feather. TODO Look into this more.
+ggplot(filter(trap_prep, watershed == "Feather River", hrs_fished < 250), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+# Lot of variance for Lower Sac. TODO look into this more.
+ggplot(filter(trap_prep, watershed == "Lower Sac", hrs_fished < 100), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+# Can't calculate mill because they do not collect time. TODO double check this
+ggplot(filter(trap_prep, watershed == "Mill Creek", hrs_fished < 100), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+ggplot(filter(trap_prep, watershed == "Yuba River", hrs_fished < 100), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
 ```
