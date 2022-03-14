@@ -5,13 +5,13 @@ library(sp)
 # TODO decide on information to show in popups and improve readability of map
 gage_sites <- read_csv("scripts/exploratory-analysis/data/gage_sites.csv") %>%
   mutate(latitude = jitter(latitude, factor = .07),
-         longitude = jitter(longitude, factor = .07))
+         longitude = jitter(longitude, factor = .07)) 
 
 cdec_sites <- gage_sites %>% 
-  filter(gage_agency == "CDEC") 
+  filter(agency == "CDEC") 
 
 usgs_sites <- gage_sites %>% 
-  filter(gage_agency == "USGS")  
+  filter(agency == "USGS")  
 
 rst_sites <- read_csv("scripts/exploratory-analysis/data/rst_sites.csv") %>%
   mutate(latitude = jitter(latitude, factor = .07),
@@ -19,26 +19,28 @@ rst_sites <- read_csv("scripts/exploratory-analysis/data/rst_sites.csv") %>%
 
 leaflet(gage_sites)  %>% 
   addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
-  addCircleMarkers(data = cdec_sites,  label = cdec_sites$gage_number, 
+  addCircleMarkers(data = cdec_sites,  label = cdec_sites$identifier, 
                    weight = 1.5, color = "orange",
                    opacity =  1, fillOpacity = .25, 
                    labelOptions = labelOptions(noHide = T, # Set to F to hide labels
                                                style = list("font-size" = "14px")), 
                    popup = paste(sep = "<br/>",
-                                 cdec_sites$site_name,
+                                 cdec_sites$tributary,
+                                 paste("Identifier:", cdec_sites$identifier),
                                  case_when(cdec_sites$flow_gage == TRUE & 
                                              cdec_sites$temp_gage == TRUE ~ "FLow & Temp",
                                            cdec_sites$flow_gage == TRUE ~ "Flow",
                                            cdec_sites$temp_gage == TRUE ~ "Temp",
                                            TRUE ~ "No Flow or Temp Data"))
   ) %>%
-  addCircleMarkers(data = usgs_sites,  label = usgs_sites$gage_number, 
+  addCircleMarkers(data = usgs_sites,  label = usgs_sites$identifier, 
                    weight = 1.5, color = "green",
                    opacity =  1, fillOpacity = .25, 
                    labelOptions = labelOptions(noHide = T, # Set to F to hide labels
                                                style = list("font-size" = "14px")), 
                    popup = paste(sep = "<br/>",
-                                 usgs_sites$site_name,
+                                 usgs_sites$tributary,
+                                 paste("Identifier:", usgs_sites$identifier),
                                  case_when(usgs_sites$flow_gage == TRUE & 
                                              usgs_sites$temp_gage == TRUE ~ "FLow & Temp",
                                            usgs_sites$flow_gage == TRUE ~ "Flow",
