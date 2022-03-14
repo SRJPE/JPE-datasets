@@ -11,6 +11,9 @@ rst_sites <- readxl::read_excel("scripts/exploratory-analysis/data/JPE-rst-and-g
 rst_sites
 write_csv(rst_sites, "scripts/exploratory-analysis/data/rst_sites.csv")
 
-gage_sites <- readxl::read_excel("scripts/exploratory-analysis/data/JPE-rst-and-gage-sites.xlsx", sheet = "gage")
+gage_sites <- readxl::read_excel("scripts/exploratory-analysis/data/JPE-rst-and-gage-sites.xlsx", sheet = "gage")  %>% 
+  group_by(identifier) %>% 
+  filter(row_number() == 1) %>%
+  ungroup()
 gage_sites
 write_csv(gage_sites, "scripts/exploratory-analysis/data/gage_sites.csv")
