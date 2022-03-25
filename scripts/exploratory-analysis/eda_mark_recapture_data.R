@@ -36,7 +36,7 @@ percent_recaps_per_day <- combined_mark_recapture %>%
          percent_recap_day_3 = caught_day_3/recaps * 100, 
          percent_recap_day_4 = caught_day_4/recaps * 100, 
          percent_recap_day_5 = caught_day_5/recaps * 100) %>% 
-  filter(percent_recap_day_1 <= 100) %>% glimpse
+  filter(percent_recap_day_1 <= 100) 
 
 ggplot(data = percent_recaps_per_day) +
   geom_histogram(aes(x = percent_recap_day_1, fill = "Day 1"), 
