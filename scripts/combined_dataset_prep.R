@@ -60,11 +60,33 @@ get_data <- function(path, name, save) {
                  saveToDisk = paste0(save, name, ".csv"),
                  overwrite = TRUE)
 }
+# redd carcass holding ####
+
+files_battle <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_",3),
+                       name = c("carcass","holding","redd"),
+                       save = rep("data/redd_carcass_holding/battle_",3))
+files_butte <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_",20),
+                       name = c("carcass_2014-2016","carcass_2017-2020","carcass_chops", "holding_2001",
+                                "holding_2002", "holding_2003", "holding_2004", "holding_2005", "holding_2006",
+                                "holding_2007", "holding_2008", "holding_2009", "holding_2010", "holding_2011",
+                                "holding_2012", "holding_2013", "holding_2014", "holding_2015", "holding_2016",
+                                "holding_2017"),
+                       save = rep("data/redd_carcass_holding/butte_",20))
+files_clear <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_",3),
+                       name = c("carcass","holding","redd"),
+                       save = rep("data/redd_carcass_holding/clear_",3))
+files_deer <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_",2),
+                       name = c("1997_to_2020","1986_to_1996"),
+                       save = rep("data/redd_carcass_holding/deer_",2))
+
+
+
 
 pmap(files_battle, get_data)
 pmap(files_butte, get_data)
 pmap(files_clear, get_data)
 pmap(files_deer, get_data)
+
 pmap(files_feather, get_data)
 pmap(files_knights, get_data)
 pmap(files_tisdale, get_data)
@@ -95,6 +117,34 @@ knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
 battle_passage <- read_csv("data/rst/battle_rst_passage_estimates.csv")
 
 # TODO filter out interpolated?
+
+# carcass holding
+battle_carcass <- read_csv("data/redd_carcass_holding/battle_carcass.csv")
+battle_holding <- read_csv("data/redd_carcass_holding/battle_holding.csv")
+butte_carcass_2014_2016 <- read_csv(("data/redd_carcass_holding/butte_carcass_2014-2016.csv"))
+butte_carcass_2017_2020 <- read_csv(("data/redd_carcass_holding/butte_carcass_2017-2020.csv"))
+butte_carcass_chops <- read_csv(("data/redd_carcass_holding/butte_carcass_chops.csv"))
+butte_holding_01 <- read_csv("data/redd_carcass_holding/butte_holding_2001.csv")
+butte_holding_02 <- read_csv("data/redd_carcass_holding/butte_holding_2002.csv")
+butte_holding_03 <- read_csv("data/redd_carcass_holding/butte_holding_2003.csv")
+butte_holding_04 <- read_csv("data/redd_carcass_holding/butte_holding_2004.csv")
+butte_holding_05 <- read_csv("data/redd_carcass_holding/butte_holding_2005.csv")
+butte_holding_06 <- read_csv("data/redd_carcass_holding/butte_holding_2006.csv")
+butte_holding_07 <- read_csv("data/redd_carcass_holding/butte_holding_2007.csv")
+butte_holding_08 <- read_csv("data/redd_carcass_holding/butte_holding_2008.csv")
+butte_holding_09 <- read_csv("data/redd_carcass_holding/butte_holding_2009.csv")
+butte_holding_10 <- read_csv("data/redd_carcass_holding/butte_holding_2010.csv")
+butte_holding_11 <- read_csv("data/redd_carcass_holding/butte_holding_2011.csv")
+butte_holding_12 <- read_csv("data/redd_carcass_holding/butte_holding_2012.csv")
+butte_holding_13 <- read_csv("data/redd_carcass_holding/butte_holding_2013.csv")
+butte_holding_14 <- read_csv("data/redd_carcass_holding/butte_holding_2014.csv")
+butte_holding_15 <- read_csv("data/redd_carcass_holding/butte_holding_2015.csv")
+butte_holding_16 <- read_csv("data/redd_carcass_holding/butte_holding_2016.csv")
+butte_holding_17 <- read_csv("data/redd_carcass_holding/butte_holding_2017.csv")
+clear_carcass <- read_csv("data/redd_carcass_holding/clear_carcass.csv")
+clear_holding <- read_csv("data/redd_carcass_holding/clear_holding.csv")
+deer_holding_1997_2020 <- read_csv("data/redd_carcass_holding/deer_1997_to_2020.csv")
+deer_holding_1986_1996 <- read_csv("data/redd_carcass_holding/deer_1986_to_1996.csv")
 
 # minor cleaning by watershed #####
 # battle ####
@@ -475,9 +525,9 @@ mill_trap_clean <- mill_rst %>%
             time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T),
             turbidity = mean(turbidity, na.rm = T),
             water_temperature = mean(water_temperature, na.rm =T)) %>%
-  rename(site = location,
-         temperature = water_temperature) %>%
-  mutate(watershed = "Mill Creek") %>%
+  rename(temperature = water_temperature) %>%
+  mutate(watershed = "Mill Creek",
+         site = "Mill Creek") %>%
   distinct()
 
 # check to make sure one row per day/time 
@@ -517,3 +567,148 @@ combined_trap <- bind_rows(battle_trap_clean,
                           yuba_trap_clean)
 
 saveRDS(combined_trap, "data/rst/combined_trap.rds")
+
+
+# Carcass -----------------------------------------------------------------
+# TODO - how categorize spawn condition - can green, ripe be put in unspawned or are they useful as separate categories?
+# Battle
+battle_carcass %>% glimpse()
+unique(battle_carcass$sex)
+unique(battle_carcass$adipose)
+unique(battle_carcass$carcass_live_status)
+unique(battle_carcass$spawn_condition)
+unique(battle_carcass$run)
+
+battle_carcass_clean <- battle_carcass %>%
+  select(-c(observed_only, cwt_code, other_tag, comments)) %>%
+  rename(way_point = location,
+         carcass_status = carcass_live_status) %>%
+  mutate(adipose = case_when(adipose == "present" ~ T,
+                             adipose == "absent" ~ F),
+         carcass_status = case_when(carcass_status %in% c("bright", "fresh") ~ "fresh",
+                                    carcass_status == "non-fresh" ~ "decayed"),
+         spawn_condition = case_when(spawn_condition == "spawned" ~ "spawned",
+                                     spawn_condition %in% c("green", "ripe", "unspawned") ~ "unspawned"),
+         watershed = "Battle Creek")
+# Butte
+butte_carcass_2014_2016 %>% glimpse()
+unique(butte_carcass_2014_2016$disposition)
+unique(butte_carcass_2014_2016$sex)
+unique(butte_carcass_2014_2016$condition)
+unique(butte_carcass_2014_2016$spawning_status)
+unique(butte_carcass_2014_2016$ad_fin_clip_cd)
+
+butte_carcass_2017_2020 %>% glimpse()
+
+# TODO - what is "p" mean in spawning condition?
+# I think it means partial
+
+butte_carcass_clean <- bind_rows(butte_carcass_2014_2016,
+                                 butte_carcass_2017_2020) %>%
+  select(-c(disposition, disc_tag_applied, scale_nu, tissue_nu, otolith_nu, comments)) %>%
+  rename(reach = section_cd,
+         way_point = way_pt,
+         carcass_status = condition,
+         fork_length = fork_length_mm,
+         spawn_condition = spawning_status,
+         adipose = ad_fin_clip_cd,
+         carcass_survey_id = survey) %>%
+  mutate(watershed = "Butte Creek",
+         carcass_status = case_when(carcass_status == "f" ~ "fresh",
+                                    carcass_status == "d" ~ "decayed"),
+         spawn_condition = case_when(spawn_condition == "yes" ~ "spawned",
+                                     spawn_condition == "no" ~ "unspawned",
+                                     spawn_condition == "p" ~ "partial")) 
+
+# Clear
+# TODO what is hybrid mean in run
+clear_carcass %>% glimpse()
+unique(clear_carcass$hatchery)
+unique(clear_carcass$why_sex_unknown)
+unique(clear_carcass$condition)
+unique(clear_carcass$spawn_status)
+unique(clear_carcass$run)
+unique(clear_carcass$sex)
+unique(clear_carcass$adipose)
+# only chinook
+unique(clear_carcass$species)
+# only 10 when run_call is different than run and they don't really make sense,
+# use run
+ck <- filter(clear_carcass, run !=  run_call)
+
+clear_carcass_clean <- clear_carcass %>%
+  select(-c(obs_only, tis_eth, tis_dry, scale, otolith_st, why_sex_unknown, why_not_sp, head_retrieved, tag_type,
+            photo, comments, cwt_code, brood_year, release_location, hatchery, mark_rate, verification_and_cwt_comments,
+            genetic, run_call, species, sample_id)) %>%
+  rename(carcass_status = condition,
+         spawn_condition = spawn_status,
+         method = type) %>% 
+  mutate(carcass_status = case_when(carcass_status == "non-fresh" ~ "decayed",
+                                    T ~ carcass_status),
+         adipose = case_when(adipose == "present" ~ T,
+                             adipose == "absent" ~ F),
+         watershed = "Clear Creek")
+
+combined_carcass <- bind_rows(battle_carcass_clean,
+                              butte_carcass_clean,
+                              clear_carcass_clean)
+
+saveRDS(combined_carcass, "data/redd_carcass_holding/combined_carcass.rds")
+
+
+# Holding -----------------------------------------------------------------
+
+# Battle
+battle_holding %>% glimpse()
+
+battle_holding_clean <- battle_holding %>%
+  select(-notes) %>%
+  mutate(watershed = "Battle Creek")
+
+# Butte
+butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
+                                 butte_holding_02,
+                                 butte_holding_03,
+                                 butte_holding_04,
+                                 butte_holding_05,
+                                 butte_holding_06,
+                                 butte_holding_07, 
+                                 butte_holding_08,
+                                 butte_holding_09,
+                                 butte_holding_10,
+                                 butte_holding_11,
+                                 butte_holding_12,
+                                 butte_holding_13,
+                                 butte_holding_14,
+                                 butte_holding_15,
+                                 butte_holding_16,
+                                 butte_holding_17) %>%
+  select(-personnel, -why_fish_count_na) %>%
+  rename(count = fish_count) %>%
+  mutate(watershed = "Butte Creek")
+butte_holding_clean %>% glimpse()
+
+# Clear
+clear_holding %>% glimpse()
+
+clear_holding_clean <- clear_holding %>%
+  select(-c(comments, picket_weir_location_rm, picket_weir_relate)) %>%
+  rename(jacks = jack_count) %>%
+  mutate(watershed = "Clear Creek")
+
+clear_holding_clean %>% glimpse()
+
+# Deer
+deer_holding_1986_1996 %>% glimpse()
+
+deer_holding_clean <- bind_rows(deer_holding_1986_1996,
+                                deer_holding_1997_2020) %>%
+  rename(reach = location) %>%
+  mutate(watershed = "Deer Creek")
+
+combined_holding <- bind_rows(battle_holding_clean,
+                              butte_holding_clean,
+                              clear_holding_clean,
+                              deer_holding_clean)
+
+saveRDS(combined_holding, "data/redd_carcass_holding/combined_holding.rds")
