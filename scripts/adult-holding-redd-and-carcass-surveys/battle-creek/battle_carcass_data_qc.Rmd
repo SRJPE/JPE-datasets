@@ -69,11 +69,12 @@ raw_carcass_data <- read_excel("raw_adult_spawn_hold_carcass.xlsx",
 cleaner_carcass_data <- raw_carcass_data %>%
   janitor::clean_names() %>% 
   rename("river_mile" = rivermile,
-         "run" = fws_run_call) %>%
+         "run" = fws_run_call,
+         "year" = spawn_year) %>%
   mutate(date1 = date, 
          date2 = as.Date.numeric(as.numeric(date), origin = "1899-12-30"),
          date = if_else(is.na(date2), as.Date(date, format = "%m/%d/%Y"), date2)) %>% # see if there is a better way to deal with mixed date format
-  select(-species, -spawn_year, -date1, -date2) %>% # All either CHINOOK or Chinook
+  select(-species, -date1, -date2) %>% # All either CHINOOK or Chinook
   glimpse()
 ```
 
@@ -90,6 +91,7 @@ data_dictionary <- tibble(variables = colnames(cleaner_carcass_data),
                           description = c("GPS X point",
                                           "GPS Y point",
                                           "River mile number",
+                                          "Year of sample",
                                           "Sample date",
                                           "Survey method (barrier weir trap, fish rescue, kayak survey, snorkel survey, other)",
                                           "Reach number (1-7); other location",
@@ -453,5 +455,6 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(battle_carcass,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_carcass.csv")
+           name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_carcass.csv",
+           predefinedAcl = "bucketLevel")
 ```

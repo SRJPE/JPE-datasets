@@ -115,7 +115,8 @@ cleaner_2019_data<- raw_2019_individuals_data %>%
   janitor::clean_names() %>% 
   rename(condition = condition_cd, 
          spawning_status = spawned_cd) %>%
-  mutate(fork_length_mm = f_lcm*10) %>% 
+  mutate(fork_length_mm = f_lcm*10,
+         year = 2019) %>% 
   select(-c('head_nu','scale_nu','f_lcm','tissue_nu', 'dn_anu', 'otolith_nu','comments', 'other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd')) %>% 
   glimpse()
 ```
@@ -149,7 +150,8 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
                                           "Unique number for scale sampled collected",
                                           "Unique number for tissue sample collected",
                                           "Unique number for otolith sample collected",
-                                          "Any comments associated with a specific fish"),
+                                          "Any comments associated with a specific fish",
+                                          "Sample year for 2019 since no dates for 2019"),
                           percent_na = round(percent_na$value*100)
                           
 )
