@@ -570,7 +570,9 @@ saveRDS(combined_trap, "data/rst/combined_trap.rds")
 
 
 # Carcass -----------------------------------------------------------------
-# TODO - how categorize spawn condition - can green, ripe be put in unspawned or are they useful as separate categories?
+# TODO - how categorize spawn condition - can green, ripe be put in unspawned or 
+# are they useful as separate categories?
+
 # Battle
 battle_carcass %>% glimpse()
 unique(battle_carcass$sex)
@@ -580,7 +582,7 @@ unique(battle_carcass$spawn_condition)
 unique(battle_carcass$run)
 
 battle_carcass_clean <- battle_carcass %>%
-  select(-c(observed_only, cwt_code, other_tag, comments)) %>%
+  select(-c(observed_only, cwt_code, comments)) %>%
   rename(way_point = location,
          carcass_status = carcass_live_status) %>%
   mutate(adipose = case_when(adipose == "present" ~ T,
@@ -590,6 +592,8 @@ battle_carcass_clean <- battle_carcass %>%
          spawn_condition = case_when(spawn_condition == "spawned" ~ "spawned",
                                      spawn_condition %in% c("green", "ripe", "unspawned") ~ "unspawned"),
          watershed = "Battle Creek")
+#filter(battle_carcass_clean, is.na(date))
+
 # Butte
 butte_carcass_2014_2016 %>% glimpse()
 unique(butte_carcass_2014_2016$disposition)
@@ -619,6 +623,7 @@ butte_carcass_clean <- bind_rows(butte_carcass_2014_2016,
          spawn_condition = case_when(spawn_condition == "yes" ~ "spawned",
                                      spawn_condition == "no" ~ "unspawned",
                                      spawn_condition == "p" ~ "partial")) 
+#filter(butte_carcass_clean, is.na(date)) %>% distinct(year)
 
 # Clear
 # TODO what is hybrid mean in run
