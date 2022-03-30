@@ -102,6 +102,9 @@ unique(yuba_passage$ladder)
 # passage_direction: up, down, NA
 # viewing_condition (clear only)
 # spawning condition (clear only)
+# length (yuba only)
+# ladder (yuba only)
+# flow, temp (mill and deer only)
 # comments
 
 # Battle - ONLY LOOKING AT VIDEO NOW
@@ -111,7 +114,8 @@ clean_battle_upstream_passage <- battle_upstream_video %>%
                          run == "LF" ~ "latefall run", 
                          run == "WR" ~ "winter run",
                          run == "unknown" ~ "unknown"),
-         count_type = "raw count") %>% glimpse
+         count_type = "raw count",
+         watershed = "Battle Creek") %>% glimpse
 
 unique(clean_battle_upstream_passage$passage_direction)
 
@@ -152,7 +156,8 @@ clean_clear_upstream_passage <- clear_passage %>%
            viewing_condition == 3 ~ "weir flooded"
          ),
          time = time_passed,
-         count_type = "raw count") %>% 
+         count_type = "raw count",
+         watershed = "Clear Creek") %>% 
   select(-time_block, -time_passed) %>%
   glimpse
 
@@ -160,12 +165,52 @@ unique(clean_clear_upstream_passage$passage_direction)
 unique(clean_clear_upstream_passage$jack_size)
 
 # Deer creek 
-clean_deer_upstream_passage <- deer_passage %>% glimpse 
+clean_deer_upstream_passage <- deer_passage %>% 
+  mutate(count_type = "passage estimate", 
+         watershed = "Deer Creek") %>% 
+  rename(count = passage_estimate) %>% glimpse 
 
 # Mill creek 
-clean_mill_upstream_passage <- mill_passage %>% glimpse 
+clean_mill_upstream_passage <- mill_passage %>% 
+  mutate(count_type = "passage estimate", 
+         watershed = "Mill Creek") %>% 
+  rename(count = passage_estimate) %>% glimpse 
 
 # Yuba River 
-clean_yuba_upstream_passage <- yuba_passage %>% glimpse 
-# Combine
+clean_yuba_upstream_passage <- yuba_passage %>% 
+  mutate(adipose = case_when(adipose == "unknown" ~ "unknown", 
+                             adipose == "clipped" ~ "absent"),
+         count_type = "raw count",
+         watershed = "Yuba River") %>% 
+  select(date, time, count, adipose, 
+         passage_direction, ladder, watershed, length = length_cm) %>% glimpse 
 
+unique(clean_yuba_upstream_passage$adipose)
+
+# Combine
+combined_adult_upstream_passage <- bind_rows(clean_battle_upstream_passage, clean_clear_upstream_passage, 
+                                             clean_deer_upstream_passage, clean_mill_upstream_passage, 
+                                             clean_yuba_upstream_passage) %>% glimpse
+
+# Categorical variables 
+unique(combined_adult_upstream_passage$adipose)
+unique(combined_adult_upstream_passage$run)
+unique(combined_adult_upstream_passage$passage_direction)
+unique(combined_adult_upstream_passage$count_type)
+unique(combined_adult_upstream_passage$watershed)
+unique(combined_adult_upstream_passage$viewing_condition)
+unique(combined_adult_upstream_passage$sex)
+unique(combined_adult_upstream_passage$spawning_condition)
+unique(combined_adult_upstream_passage$jack_size)
+
+# Numeric variables 
+summary(combined_adult_upstream_passage$count) # -1 seems like a problem 
+summary(combined_adult_upstream_passage$flow)
+summary(combined_adult_upstream_passage$temperature)
+summary(combined_adult_upstream_passage$length)
+
+#DATE/TIME ranges 
+summary(combined_adult_upstream_passage$date)
+summary(combined_adult_upstream_passage$time)
+
+saveRDS(combined_adult_upstream_passage, "data/adult-upstream-passage-monitoring/combined_upstream_passage.rds")
