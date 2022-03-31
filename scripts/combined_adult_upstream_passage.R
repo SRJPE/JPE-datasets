@@ -109,10 +109,10 @@ unique(yuba_passage$ladder)
 
 # Battle - ONLY LOOKING AT VIDEO NOW
 clean_battle_upstream_passage <- battle_upstream_video %>% 
-  mutate(run = case_when(run == "SR" ~ "spring run", 
-                         run == "FR" ~ "fall run",
-                         run == "LF" ~ "latefall run", 
-                         run == "WR" ~ "winter run",
+  mutate(run = case_when(run == "SR" ~ "spring", 
+                         run == "FR" ~ "fall",
+                         run == "LF" ~ "late fall", 
+                         run == "WR" ~ "winter",
                          run == "unknown" ~ "unknown"),
          count_type = "raw count",
          watershed = "Battle Creek") %>% glimpse
@@ -137,10 +137,10 @@ unique(clean_battle_upstream_passage$passage_direction)
 
 
 clean_clear_upstream_passage <- clear_passage %>% 
-  mutate(run = case_when(run == "SR" ~ "spring run", 
-                         run == "FR" ~ "fall run",
-                         run == "LF" ~ "latefall run", 
-                         run == "WR" ~ "winter run",
+  mutate(run = case_when(run == "SR" ~ "spring", 
+                         run == "FR" ~ "fall",
+                         run == "LF" ~ "late fall", 
+                         run == "WR" ~ "winter",
                          run == "unknown" ~ "unknown"),
          spawning_condition = case_when(
            spawning_condition == 1 ~ "prespawn", 

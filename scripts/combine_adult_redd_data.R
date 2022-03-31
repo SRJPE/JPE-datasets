@@ -139,7 +139,7 @@ clean_mill_redd <- mill_redd %>%
 # Combine
 combined_redd <- bind_rows(clean_battle_redd, clean_clear_redd, 
                            clean_feather_redd, clean_mill_redd) %>% 
-  mutate(run = ifelse(run == "late-fall", "latefall", run)) %>%
+  mutate(run = ifelse(run == "late-fall", "late fall", run)) %>%
   select(-pre_redd_substrate_size, -redd_substrate_size, -tail_substrate_size) %>% glimpse
 
 # Categorical variables 
