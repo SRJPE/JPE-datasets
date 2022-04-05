@@ -133,8 +133,8 @@ weekly_fork_length_bar_chart(filter(weekly_fork_length, site != "Tisdale NA"), "
 trap_prep <- combined_trap %>%
   mutate(date_start_date = case_when(is.na(start_date) ~ date, 
                                      T ~ start_date),
-         wy = ifelse(month(date_start_date) %in% 10:12, year(date_start_date) + 1, year(date_start_date))) %>%
-  group_by(wy, watershed, site, gear_id, cone_id) %>%
+         water_year = ifelse(month(date_start_date) %in% 10:12, year(date_start_date) + 1, year(date_start_date))) %>%
+  group_by(water_year, watershed, site, gear_id, cone_id) %>%
   arrange(start_date, start_time) %>%
   mutate(start_date = case_when(is.na(start_date) ~ lag(date),
                                 T ~ start_date),
@@ -145,15 +145,15 @@ trap_prep <- combined_trap %>%
                               T ~ end_date),
          end_time = case_when(is.na(end_time) ~ time,
                               T ~ end_time),
-         end_date = as.Date(end_date),
-         start_datetime = case_when(!is.na(start_date) & !is.na(start_time) ~ ymd_hms(paste(start_date, start_time)),
-                                                                                      T ~ NA_real_),
+         end_date = as.Date(end_date)) %>%
+  filter(!is.na(start_time) & !is.na(end_time))   %>%
+  mutate(start_datetime = case_when(!is.na(start_date) & !is.na(start_time) ~ ymd_hms(paste(start_date, start_time)),
+                                    T ~ NA_real_),
          end_datetime = case_when(!is.na(end_date) & !is.na(end_time) ~ ymd_hms(paste(end_date, end_time)),
-                                                                                T ~ NA_real_),
+                                  T ~ NA_real_),
          hrs_fished = case_when(is.na(hrs_fished) ~ difftime(end_datetime, start_datetime, units = "hours"),
                                 T ~ hrs_fished),
-         hrs_fished = as.numeric(hrs_fished),
-         wy = as.factor(wy))
+         hrs_fished = as.numeric(hrs_fished))
 
 
 ```
@@ -161,7 +161,7 @@ trap_prep <- combined_trap %>%
 
 ```{r}
 
-ggplot(filter(trap_prep, watershed == "Battle Creek", hrs_fished < 1000), aes(x = wy, y = hrs_fished)) +
+ggplot(filter(trap_prep, watershed == "Battle Creek", hrs_fished < 1000), aes(x = as.factor(water_year), y = hrs_fished)) +
   geom_boxplot()
 
 # Butte looks weird, a lot with hours less than 24 - TODO why
@@ -192,4 +192,9 @@ ggplot(filter(trap_prep, watershed == "Mill Creek", hrs_fished < 100), aes(x = w
 
 ggplot(filter(trap_prep, watershed == "Yuba River", hrs_fished < 100), aes(x = wy, y = hrs_fished)) +
   geom_boxplot()
+```
+```{r}
+depth <- filter(combined_trap, !is.na(depth_adjust))
+
+unique(depth$watershed)
 ```

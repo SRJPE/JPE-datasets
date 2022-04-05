@@ -656,10 +656,13 @@ clear_carcass_clean <- clear_carcass %>%
 
 combined_carcass <- bind_rows(battle_carcass_clean,
                               butte_carcass_clean,
-                              clear_carcass_clean)
+                              clear_carcass_clean) %>%
+  mutate(run = case_when(is.na(run) | run == "unknown" ~ NA_character_,
+                         T ~ run))
 
 saveRDS(combined_carcass, "data/redd_carcass_holding/combined_carcass.rds")
 
+check <- filter(combined_carcass, !is.na(age))
 
 # Holding -----------------------------------------------------------------
 
@@ -688,8 +691,9 @@ butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
                                  butte_holding_15,
                                  butte_holding_16,
                                  butte_holding_17) %>%
-  select(-personnel, -why_fish_count_na) %>%
-  rename(count = fish_count) %>%
+  group_by(date, reach) %>%
+  summarize(avg_count = mean(fish_count, na.rm = T)) %>%
+  rename(count = avg_count) %>%
   mutate(watershed = "Butte Creek")
 butte_holding_clean %>% glimpse()
 
