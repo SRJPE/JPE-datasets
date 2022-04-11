@@ -11,67 +11,45 @@ CatchRaw <- sqlFetch(knights_landing_camp, "CatchRaw")
 TrapVisit <- sqlFetch(knights_landing_camp, "TrapVisit") %>% glimpse
 Release <- sqlFetch(knights_landing_camp, "Release") %>% glimpse
 
+# pull lookup tables
+visit_type_lu <- sqlFetch(knights_landing_camp, "luVisitType") %>% 
+  select(-activeID) %>%glimpse
+
+run_lu <- sqlFetch(knights_landing_camp, "luRun") %>% 
+  select(-activeID) %>% glimpse
+
+run_method_lu <- sqlFetch(knights_landing_camp, "luRunMethod") %>% 
+  select(-activeID) %>% glimpse
+
+lifestage_lu <- sqlFetch(knights_landing_camp, "luLifestage") %>% 
+  select(-activeID) %>% glimpse
+
+taxon_lu <-  sqlFetch(knights_landing_camp, "luTaxon") %>% 
+  mutate(taxonID = as.numeric(taxonID)) %>%
+  select(taxonID, commonName) %>% glimpse
+
+origin_lu <-  sqlFetch(knights_landing_camp, "luFishOrigin") %>% 
+  select(-activeID) %>% glimpse
 
 # select relevant column
 selected_trap_visit <- TrapVisit %>%
-  select(trapVisitID, visitTime) %>%
+  select(trapVisitID, visitTime, visitTime2) %>%
+  left_join(visit_type_lu, by = c("trapVisitID" = "visitTypeID")) %>%
+  select(-activeID) %>%
   glimpse
 
-selected_catch <- CatchRaw %>% select(catchRawID, trapVisitID, taxonID, finalRunID, n, releaseID) %>% glimpse
+selected_catch <- CatchRaw %>% 
+  select(catchRawID, taxonID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID) %>% 
+  left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
+  filter(commonName == "Chinook salmon") %>% 
+  left_join(run_lu, by = c("finalRunID" = "runID")) %>%
+  left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
+  left_join(lifestage_lu, by = c("lifeStageID" = "lifeStageID")) %>%
+  left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID) %>%
+  left_join(selected_trap_visit) %>%
+  glimpse
 
-# Look at releases per day 
-Release %>% 
-  filter(year(releaseTime) > 1970) %>% 
-  group_by(releasePurposeID, date = as_date(releaseTime)) %>% 
-  summarise(trials_per_day = n()) %>%
-  pivot_wider(names_from = releasePurposeID, values_from = trials_per_day) 
-
-Release %>% view
-
-selected_release <- Release %>% 
-  filter(releasePurposeID == 1) %>% 
-  select(releaseID, releaseSiteID, nReleased, releaseTime) %>% 
-  mutate(release_date = as_date(releaseTime)) %>% 
-  select(-releaseTime) %>% glimpse
-
-# Check catch ID 
-catch_trap_id <- CatchRaw$trapVisitID %>% unique() %>% sort()
-trap_trap_id <- TrapVisit$trapVisitID %>% unique() %>% sort()
-
-length(catch_trap_id)
-length(trap_trap_id)
-
-# Combine all tables 
-catch_with_date <- selected_catch %>% 
-  left_join(selected_trap_visit, by = c("trapVisitID" = "trapVisitID")) %>% 
-  mutate(recaptured_date = as_date(visitTime)) %>% 
-  filter(releaseID != 0 & releaseID != 255) %>% 
-  group_by(releaseID) %>% 
-  summarise(number_recaptured = sum(n, na.rm = T)) %>% 
-  left_join(selected_release, by = c("releaseID" = "releaseID")) %>% 
-  mutate(efficiency = number_recaptured/nReleased) %>% 
-  glimpse()
-
-# Visualize data 
-catch_with_date %>% 
-  ggplot(aes(x = efficiency, color = as.character(year(date)))) + 
-  geom_density()
-
-catch_with_date %>% 
-  filter(year(release_date) == 2020) %>% 
-  group_by(release_date) %>% 
-  summarise(daily_trials = n()) %>% 
-  filter(daily_trials > 1)
-
-catch_with_date %>% 
-  group_by(year = year(release_date)) %>% 
-  summarise(trials_per_year = n()) %>% 
-  ggplot(aes(x = as.character(year), y = trials_per_year)) +
-  geom_col()
-
-catch_with_date %>% 
-  ggplot(aes(x = month(release_date), y = year(release_date), size = efficiency)) +
-  geom_point()
 
 # Save data 
-write_rds(catch_with_date, "data/rst/knights_landing_mark_recapture_data.rds")
+write_rds(selected_catch, "data/rst/knights_landing_raw_catch.rds")
