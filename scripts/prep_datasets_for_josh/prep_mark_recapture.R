@@ -75,18 +75,7 @@ dat <- combined_mark_recapture %>%
   mutate(year = year(release_date), 
          julian_week = week(release_date),
          release_date = as_date(release_date)) %>% 
-  select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3) %>% view
-
-unique(dat$days_btw_release_and_catch)
-
-
-
-
-
-
-
-
-
-
-
-combined_mark_recapture <- bind_rows(battle_mark_recap, clear_mark_recap) %>% glimpse
+  select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3) %>% #TODO remove release_date
+  rename() %>% # TODO rename using col names josh provided
+  glimpse() 
+ 
