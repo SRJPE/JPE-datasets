@@ -113,7 +113,7 @@ feather_effort <- read_csv("data/rst/feather_rst_effort.csv")
 
 # Knights landing data pulled from camp
 knights_landing_rst <- read_rds("data/rst/knights_landing_raw_catch.rds")
-
+feather_rst_effort <- read_rds("data/rst/feather_camp_raw_catch.rds")
 # Data prep ---------------------------------------------------------------
 
 # battle ####
@@ -228,6 +228,31 @@ deer_rst_clean <- deer_rst %>%
          run = NA_character_)
 
 # feather ####
+# Hours fished #
+feather_hours_fished <- feather_effort %>%
+  distinct(visit_time, site_name) %>%
+  arrange(visit_time) %>%
+  mutate(end_date = lead(visit_time)) %>%
+  rename(start_date = visit_time) %>%
+  mutate(hours_fished = difftime(end_date, start_date, units = "hours"),
+         week = week(start_date),
+         year = year(start_date))
+
+feather_hours_fished_week_mean <- feather_hours_fished %>%
+  # manual check of values, negative values and those greater than 50 are typos
+  filter(hours_fished > 0, hours_fished < 100) %>%
+  group_by(week, year, site_name) %>%
+  summarize(mean_hours = mean(hours_fished))
+
+feather_hours_fished_final <- left_join(feather_hours_fished,feather_hours_fished_week_mean) %>%
+  mutate(hours_fished = case_when(hours_fished < 0 | hours_fished > 100 ~ mean_hours,
+                                  T ~ hours_fished)) %>%
+  group_by(week, year, site_name) %>%
+  summarize(hours_fished = sum(hours_fished, na.rm = T)) %>%
+  mutate(tributary = "Feather River") %>%
+  rename(site = site_name)
+
+
 feather_rst %>% glimpse
 unique(feather_rst$run)
 # 127 out of 180871 where run is not designated
@@ -260,7 +285,7 @@ knights_hours_fished_week_mean <- knights_hours_fished %>%
   summarize(mean_hours = mean(hours_fished))
 
 knights_hours_fished_final <- left_join(knights_hours_fished, knights_hours_fished_week_mean) %>%
-  mutate(hours_fished = case_when(hours_fished < 0 | hours_fished > 50 ~ mean_hours,
+  mutate(hours_fished = case_when(hours_fished < 0 | hours_fished > 100 ~ mean_hours,
                                   T ~ hours_fished)) %>%
   group_by(week, year) %>%
   summarize(hours_fished = sum(hours_fished, na.rm = T)) %>%
@@ -349,7 +374,8 @@ combined_rst <- bind_rows(battle_rst_clean,
 
 combined_hours_fished <- bind_rows(battle_hours_fished_final,
                                    clear_hours_fished_final,
-                                   knights_hours_fished_final)
+                                   knights_hours_fished_final,
+                                   feather_hours_fished_final)
 # format data -------------------------------------------------------------
 # TODO make sure the week is the right format
 combined_rst_format <- combined_rst %>%
@@ -390,3 +416,5 @@ combined_rst_format <- combined_rst %>%
 
 # yuba #
 # we have date and time but no start/stop
+
+
