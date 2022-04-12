@@ -1,0 +1,92 @@
+library(tidyverse)
+library(googleCloudStorageR)
+
+# script to prep data for eda 
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# rst pull battle and clear data from google cloud 
+battle_mark_recapture <- gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
+                                        bucket = gcs_get_global_bucket(),
+                                        saveToDisk = "data/rst/battle_mark_recapture.csv",
+                                        overwrite = TRUE)
+clear_mark_recapture <- gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
+                                       bucket = gcs_get_global_bucket(),
+                                       saveToDisk = "data/rst/clear_mark_recapture.csv",
+                                       overwrite = TRUE)
+
+battle_mark_recap <- read_csv("data/rst/battle_mark_recapture.csv") %>% 
+  rename(number_recaptured = recaps, number_released = no_released) %>% 
+  mutate(watershed = "Battle Creek") %>% glimpse
+
+clear_mark_recap <- read_csv("data/rst/clear_mark_recapture.csv")  %>% 
+  rename(number_recaptured = recaps, number_released = no_released) %>% 
+  mutate(watershed = "Clear Creek") %>% glimpse
+
+# Pull feather and knights landing data from package 
+feather_mark_recapture <- read_rds("data/rst/feather_mark_recapture_data.rds") %>% 
+  rename(number_released = nReleased) %>% 
+  mutate(watershed = "Feather River") %>%
+  glimpse
+
+knights_landing_mark_recapture <- read_rds("data/rst/knights_landing_mark_recapture_data.rds") %>% 
+  mutate(watershed = "Knights Landing") %>%
+  rename(number_released = nReleased) %>% glimpse
+
+feather_and_knights  <- bind_rows(feather_mark_recapture, knights_landing_mark_recapture) %>%
+   mutate(days_btw_release_and_catch = as_date(recaptured_date) - as_date(release_date), 
+          caught_week_1 = case_when(watershed == "Feather River" & days_btw_release_and_catch >= 0 & days_btw_release_and_catch <= 7 ~ number_recaptured,
+                                    watershed == "Knights Landing" & days_btw_release_and_catch >= 0 & days_btw_release_and_catch <= 7 ~ number_recaptured
+          ),
+          caught_week_2 = case_when(watershed == "Feather River" & days_btw_release_and_catch > 7 & days_btw_release_and_catch <= 14 ~ number_recaptured,
+                                    watershed == "Knights Landing" & days_btw_release_and_catch > 7 & days_btw_release_and_catch <= 14 ~ number_recaptured
+          ),
+          caught_week_3 = case_when(watershed == "Feather River" & days_btw_release_and_catch > 14 & days_btw_release_and_catch <= 21 ~ number_recaptured,
+                                    watershed == "Knights Landing" & days_btw_release_and_catch > 14 & days_btw_release_and_catch <= 21 ~ number_recaptured
+          )) %>% 
+  group_by(watershed, release_date, number_released) %>%
+  summarise(caught_week_1 = sum(caught_week_1, na.rm = T),
+            caught_week_2 = sum(caught_week_2, na.rm = T), 
+            caught_week_3 = sum(caught_week_3, na.rm = T)) %>%
+  ungroup() %>%
+  glimpse
+
+
+
+
+  battle_clear <- bind_rows(battle_mark_recap, clear_mark_recap) %>%
+  mutate(caught_week_1 = number_recaptured) %>% glimpse
+
+combined_mark_recapture <- bind_rows(battle_clear, feather_and_knights) %>% glimpse
+# Description from Josh of what he was looking for 
+# Table 2. Releases and Recaptures (~ 6 fields)
+# 
+# Year (yr)
+# Julian week marked fish were released on (Jwk)
+# Number of marked fish released (r1),
+# Number of recaptures of r1 within first week of release (m1)
+# Number of recaptures of r1 within second week of release (m2),
+# Number of recaptures of r1 within second week of release (m3),
+# … probably don’t need more than this, and m2 might be sufficient.
+dat <- combined_mark_recapture %>% 
+  select(watershed, release_date, number_released, number_recaptured, caught_week_1, caught_week_2, caught_week_3) %>% 
+  mutate(year = year(release_date), 
+         julian_week = week(release_date),
+         release_date = as_date(release_date)) %>% 
+  select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3) %>% view
+
+unique(dat$days_btw_release_and_catch)
+
+
+
+
+
+
+
+
+
+
+
+combined_mark_recapture <- bind_rows(battle_mark_recap, clear_mark_recap) %>% glimpse
