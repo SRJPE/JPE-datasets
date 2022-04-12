@@ -63,9 +63,9 @@ files_deer <- tibble(path = "rst/deer-creek/data/deer_rst",
 files_feather <- tibble(path = rep("rst/feather-river/data/feather_rst",2),
                         name = c("","_effort"),
                         save = rep("data/rst/feather_rst",2))
-files_knights <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/knl_combine_",2),
-                        name = c("rst_clean","sampling_effort_clean"),
-                        save = rep("data/rst/knights_",2))
+# files_knights <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/knl_combine_",2),
+#                         name = c("rst_clean","sampling_effort_clean"),
+#                         save = rep("data/rst/knights_",2))
 files_tisdale <- tibble(path = "rst/lower-sac-river/data/tisdale/rst_clean",
                         name = c(""),
                         save = "data/rst/tisdale_rst")
@@ -88,7 +88,7 @@ pmap(files_butte, get_data)
 pmap(files_clear, get_data)
 pmap(files_deer, get_data)
 pmap(files_feather, get_data)
-pmap(files_knights, get_data)
+# pmap(files_knights, get_data)
 pmap(files_tisdale, get_data)
 pmap(files_mill, get_data)
 pmap(files_yuba, get_data)
@@ -100,7 +100,7 @@ butte_rst <- read_csv("data/rst/butte_rst.csv") # contains trap data too
 clear_rst <- read_csv("data/rst/clear_rst_catch.csv")
 deer_rst <- read_csv("data/rst/deer_rst.csv") # contains trap data too
 feather_rst <- read_csv("data/rst/feather_rst.csv")
-knights_rst <- read_csv("data/rst/knights_rst_clean.csv") # contains cpue info
+# knights_rst <- read_csv("data/rst/knights_rst_clean.csv") # contains cpue info
 tisdale_rst <- read_csv("data/rst/tisdale_rst.csv")
 mill_rst <- read_csv("data/rst/mill_rst.csv") # contains trap data too
 yuba_rst <- read_csv("data/rst/yuba_rst.csv")
@@ -109,8 +109,10 @@ yuba_rst <- read_csv("data/rst/yuba_rst.csv")
 battle_environmental <- read_csv("data/rst/battle_rst_environmental.csv")
 clear_environmental <- read_csv("data/rst/clear_rst_environmental.csv")
 feather_effort <- read_csv("data/rst/feather_rst_effort.csv")
-knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
+# knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
 
+# Knights landing data pulled from camp
+knights_landing_rst <- read_rds("data/rst/knights_landing_raw_catch.rds")
 
 # Data prep ---------------------------------------------------------------
 
@@ -240,20 +242,46 @@ feather_rst_clean <- feather_rst %>%
   rename(site = site_name)
 
 # knights ####
-# TODO replace this with disaggregated data from CAMP
-knights_rst %>% glimpse
-unique(knights_rst$at_capture_run)
-# run is NA for 4%
-filter(knights_rst, is.na(at_capture_run), species == "Chinook", !is.na(count), count > 0) %>% tally()
-filter(knights_rst, species == "Chinook", !is.na(count)) %>% tally()
-unique(knights_rst$lifestage)
-unique(knights_rst$marked)
+# knights hours fished #
+knights_hours_fished <- knights_landing_rst %>%
+  distinct(visitTime, visitTime2) %>%
+  arrange(visitTime) %>%
+  mutate(end_date = lead(visitTime)) %>%
+  rename(start_date = visitTime) %>%
+  select(-visitTime2) %>%
+  mutate(hours_fished = difftime(end_date, start_date, units = "hours"),
+         week = week(start_date),
+         year = year(start_date))
 
-knights_rst_clean_spring <- knights_rst %>%
-  # filter for chinook, spring, not marked
-  filter(species == "Chinook", at_capture_run == "Spring", marked == F, !is.na(count), count > 0) %>%
-  select(date, fork_length_max_mm, fork_length_min_mm, count) %>%
+knights_hours_fished_week_mean <- knights_hours_fished %>%
+  # manual check of values, negative values and those greater than 50 are typos
+  filter(hours_fished > 0, hours_fished < 100) %>%
+  group_by(week, year) %>%
+  summarize(mean_hours = mean(hours_fished))
+
+knights_hours_fished_final <- left_join(knights_hours_fished, knights_hours_fished_week_mean) %>%
+  mutate(hours_fished = case_when(hours_fished < 0 | hours_fished > 50 ~ mean_hours,
+                                  T ~ hours_fished)) %>%
+  group_by(week, year) %>%
+  summarize(hours_fished = sum(hours_fished, na.rm = T)) %>%
   mutate(tributary = "Lower Sacramento - Knights Landing")
+
+# knights catch #
+unique(knights_landing_rst$commonName)
+unique(knights_landing_rst$fishOrigin)
+unique(knights_landing_rst$run)
+
+knights_rst_clean <- knights_landing_rst %>%
+  filter(commonName == "Chinook salmon", fishOrigin == "Natural", n > 0) %>%
+  select(forkLength, n, run, visitTime) %>%
+  rename(count = n,
+         date = visitTime,
+         fork_length = forkLength) %>%
+  mutate(tributary = "Lower Sacramento - Knights Landing",
+         run = case_when(run == "Not recorded" ~ NA_character_,
+                         run == "Not applicable (n/a)" ~ NA_character_,
+                         T ~ tolower(run)),
+         date = as_date(date))
 
 # tisdale ####
 # Note that tisdale was aggregated to sum together traps from left and right
@@ -314,13 +342,14 @@ combined_rst <- bind_rows(battle_rst_clean,
                           clear_rst_clean,
                           deer_rst_clean,
                           feather_rst_clean,
-                          #knights_rst_clean
+                          knights_rst_clean,
                           tisdale_rst_clean,
                           mill_rst_clean,
                           yuba_rst_clean)
 
 combined_hours_fished <- bind_rows(battle_hours_fished_final,
-                                   clear_hours_fished_final)
+                                   clear_hours_fished_final,
+                                   knights_hours_fished_final)
 # format data -------------------------------------------------------------
 # TODO make sure the week is the right format
 combined_rst_format <- combined_rst %>%
@@ -352,12 +381,6 @@ combined_rst_format <- combined_rst %>%
 
 # deer #
 # do not have start/end or time
-
-# feather #
-# data and time (take the difference between next in order)
-
-# knights #
-# hours fished variable available in data set
 
 # tisdale #
 # do not have start/end or time
