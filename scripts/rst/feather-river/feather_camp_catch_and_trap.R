@@ -7,28 +7,28 @@ library(lubridate)
 feather_camp <- odbcConnectAccess2007("../../../projects/JPE/CAMP Feather River/CAMP_RST_29Oct2018/Data/CAMP.mdb")
 
 # Pull in relevant data 
-CatchRaw <- sqlFetch(knights_landing_camp, "CatchRaw") 
-TrapVisit <- sqlFetch(knights_landing_camp, "TrapVisit") %>% glimpse
-Release <- sqlFetch(knights_landing_camp, "Release") %>% glimpse
+CatchRaw <- sqlFetch(feather_camp, "CatchRaw") 
+TrapVisit <- sqlFetch(feather_camp, "TrapVisit") %>% glimpse
+Release <- sqlFetch(feather_camp, "Release") %>% glimpse
 
 # pull lookup tables
-visit_type_lu <- sqlFetch(knights_landing_camp, "luVisitType") %>% 
+visit_type_lu <- sqlFetch(feather_camp, "luVisitType") %>% 
   select(-activeID) %>%glimpse
 
-run_lu <- sqlFetch(knights_landing_camp, "luRun") %>% 
+run_lu <- sqlFetch(feather_camp, "luRun") %>% 
   select(-activeID) %>% glimpse
 
-run_method_lu <- sqlFetch(knights_landing_camp, "luRunMethod") %>% 
+run_method_lu <- sqlFetch(feather_camp, "luRunMethod") %>% 
   select(-activeID) %>% glimpse
 
-lifestage_lu <- sqlFetch(knights_landing_camp, "luLifestage") %>% 
+lifestage_lu <- sqlFetch(feather_camp, "luLifestage") %>% 
   select(-activeID) %>% glimpse
 
-taxon_lu <-  sqlFetch(knights_landing_camp, "luTaxon") %>% 
-  mutate(taxonID = as.numeric(taxonID)) %>%
+taxon_lu <-  sqlFetch(feather_camp, "luTaxon") %>% 
+  # mutate(taxonID = as.numeric(taxonID)) %>%
   select(taxonID, commonName) %>% glimpse
 
-origin_lu <-  sqlFetch(knights_landing_camp, "luFishOrigin") %>% 
+origin_lu <-  sqlFetch(feather_camp, "luFishOrigin") %>% 
   select(-activeID) %>% glimpse
 
 # select relevant column
@@ -45,10 +45,10 @@ selected_catch <- CatchRaw %>%
   left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
   left_join(lifestage_lu, by = c("lifeStageID" = "lifeStageID")) %>%
   left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
-  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID, - lifeStageCAMPID) %>%
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID, -lifeStageCAMPID) %>%
   left_join(selected_trap_visit) %>%
   glimpse
 
 
 # Save data 
-write_rds(selected_catch, "data/rst/knights_landing_raw_catch.rds")
+write_rds(selected_catch, "data/rst/feather_camp_raw_catch.rds")

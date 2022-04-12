@@ -46,7 +46,7 @@ catch_with_date <- selected_catch %>%
   left_join(selected_trap_visit, by = c("trapVisitID" = "trapVisitID")) %>% 
   mutate(recaptured_date = as_date(visitTime)) %>% 
   filter(releaseID != 0 & releaseID != 255) %>% 
-  group_by(releaseID) %>% 
+  group_by(releaseID, recaptured_date) %>% 
   summarise(number_recaptured = sum(n, na.rm = T)) %>% 
   left_join(selected_release, by = c("releaseID" = "releaseID")) %>% 
   mutate(efficiency = number_recaptured/nReleased) %>% 
@@ -54,7 +54,7 @@ catch_with_date <- selected_catch %>%
 
 # Visualize data 
 catch_with_date %>% 
-  ggplot(aes(x = efficiency, color = as.character(year(date)))) + 
+  ggplot(aes(x = efficiency, color = as.character(year(release_date)))) + 
   geom_density()
 
 catch_with_date %>% 
