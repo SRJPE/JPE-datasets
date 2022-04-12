@@ -1,4 +1,5 @@
 library(tidyverse)
+library(lubridate)
 library(googleCloudStorageR)
 
 # script to prep data for eda 
@@ -56,7 +57,7 @@ feather_and_knights  <- bind_rows(feather_mark_recapture, knights_landing_mark_r
 
 
 
-  battle_clear <- bind_rows(battle_mark_recap, clear_mark_recap) %>%
+battle_clear <- bind_rows(battle_mark_recap, clear_mark_recap) %>%
   mutate(caught_week_1 = number_recaptured) %>% glimpse
 
 combined_mark_recapture <- bind_rows(battle_clear, feather_and_knights) %>% glimpse
@@ -78,4 +79,9 @@ dat <- combined_mark_recapture %>%
   select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3) %>% #TODO remove release_date
   rename() %>% # TODO rename using col names josh provided
   glimpse() 
- 
+
+releases_and_recaptures <- dat %>% 
+  select(-release_date) %>%
+  rename(yr = year, Jwl = julian_week, r1 = number_released, m1 = caught_week_1, m2 = caught_week_2, m3 = caught_week_3) %>% glimpse
+
+write_csv(releases_and_recaptures, "data/datasets_for_josh/jpe_releases_and_recaptures.csv")
