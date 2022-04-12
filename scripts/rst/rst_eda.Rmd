@@ -1,0 +1,200 @@
+---
+title: "rst_eda"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+combined_rst <- read_rds("data/rst/combined_rst.rds")
+
+combined_trap <- read_rds("data/rst/combined_trap.rds")
+```
+
+```{r}
+rst_prep <- combined_rst %>%
+  mutate(fake_year = ifelse(month(date) %in% 10:12, 1999, 2000),
+         fake_date = ymd(paste(fake_year, month(date), day(date))))
+
+
+```
+
+# Daily catch by watershed
+
+notes
+
+- consider adding color for run (spring run higher alpha)
+- filter out hatchery?
+
+
+```{r}
+# data prep
+daily_catch_dat <- rst_prep %>%
+  filter(species == "chinook" | is.na(species)) %>%
+  group_by(watershed, date, site, fake_date) %>%
+  summarize(count = sum(count))
+
+# plot function
+daily_catch_bar_chart <- function(dat, watershed_filter) {
+  ggplot(filter(dat, watershed == watershed_filter), aes(x = fake_date, y = count, fill = site)) +
+    geom_col(alpha = 0.75) +
+    facet_wrap(~year(date), scales = "free_y") +
+    scale_x_date(date_breaks = "3 months", date_labels = "%b") +
+    theme_minimal() +
+    theme(legend.position = "bottom") +
+    xlab("")
+}
+
+# plots for each watershed
+daily_catch_bar_chart(daily_catch_dat, "Battle Creek")
+daily_catch_bar_chart(daily_catch_dat, "Butte Creek")
+daily_catch_bar_chart(daily_catch_dat, "Clear Creek")
+daily_catch_bar_chart(daily_catch_dat, "Deer Creek")
+daily_catch_bar_chart(daily_catch_dat, "Feather River")
+# There are 5 cases where the site is NA for Tisdale
+daily_catch_bar_chart(filter(daily_catch_dat, site != "Tisdale NA"), "Lower Sac")
+daily_catch_bar_chart(daily_catch_dat, "Mill Creek")
+daily_catch_bar_chart(daily_catch_dat, "Yuba River")
+```
+
+# Daily number of traps with non zero catch by watershed
+
+```{r}
+site_number <- daily_catch_dat %>%
+  filter(count > 0) %>%
+  group_by(watershed, date, fake_date) %>%
+  tally() %>%
+  rename(number_sites = n) 
+
+site_number_table <- site_number %>%
+  group_by(watershed, year(date)) %>%
+  summarize(mean_number_sites = mean(number_sites))
+
+ggplot(site_number_table, aes(x = `year(date)`, y = mean_number_sites)) +
+  geom_col() +
+  facet_wrap(~watershed) +
+  xlab("")
+```
+
+# Mean weekly fork length by year and watershed
+
+TODO: figure out knights landing min max fork length
+
+notes
+
+- consider adding color for run (spring run higher alpha)
+- filter out hatchery?
+
+```{r}
+# Summarize the mean fork length by week
+weekly_fork_length <- rst_prep %>%
+  filter(species == "chinook") %>%
+  mutate(week = week(date),
+         year = year(date)) %>%
+  group_by(watershed, week, year, site) %>%
+  summarize(avg_fork_length = mean(fork_length, na.rm = T),
+            fake_date = min(date),
+            fake_year = ifelse(month(date) %in% 10:12, 1999, 2000),
+            fake_date = ymd(paste(fake_year, month(fake_date), day(fake_date)))) %>%
+  glimpse
+
+weekly_fork_length_bar_chart <- function(dat, watershed_filter) {
+  ggplot(filter(dat, watershed == watershed_filter), aes(x = fake_date, y = avg_fork_length, fill = site)) +
+    geom_col(alpha = 0.7) +
+    facet_wrap(~year) +
+    scale_x_date(date_breaks = "3 months", date_labels = "%b") +
+    theme_minimal() +
+    theme(legend.position = "bottom") +
+    xlab("") +
+    ylab("Mean weekly fork length (mm)")
+}
+
+weekly_fork_length_bar_chart(weekly_fork_length, watershed_filter = "Battle Creek")
+weekly_fork_length_bar_chart(weekly_fork_length, watershed_filter = "Butte Creek")
+weekly_fork_length_bar_chart(filter(weekly_fork_length, site != "Tisdale NA"), "Lower Sac")
+```
+
+# Hours fished boxplot for each year and watershed
+
+```{r}
+# Method to calculated hours fished #
+# We can only calculate when we have the start and stop times
+# 1) Add 24 to start_time and substract end_time 
+# 2) Create datetime variable and subtract
+
+# Used method 2. 
+# Assumption - for data without start date assume that prior day is the start date
+# and current day is end date
+
+#TODO lots of errors with this code
+# there are some cases where the lag doesn't apply - for instance trap date in dec and then next in march. assumed it stopped in this time
+# these will be removed from the summary plots
+trap_prep <- combined_trap %>%
+  mutate(date_start_date = case_when(is.na(start_date) ~ date, 
+                                     T ~ start_date),
+         water_year = ifelse(month(date_start_date) %in% 10:12, year(date_start_date) + 1, year(date_start_date))) %>%
+  group_by(water_year, watershed, site, gear_id, cone_id) %>%
+  arrange(start_date, start_time) %>%
+  mutate(start_date = case_when(is.na(start_date) ~ lag(date),
+                                T ~ start_date),
+         start_date = as.Date(start_date),
+         start_time = case_when(is.na(start_time) ~ lag(time),
+                                T ~ start_time),
+         end_date = case_when(is.na(end_date) ~ date,
+                              T ~ end_date),
+         end_time = case_when(is.na(end_time) ~ time,
+                              T ~ end_time),
+         end_date = as.Date(end_date)) %>%
+  filter(!is.na(start_time) & !is.na(end_time))   %>%
+  mutate(start_datetime = case_when(!is.na(start_date) & !is.na(start_time) ~ ymd_hms(paste(start_date, start_time)),
+                                    T ~ NA_real_),
+         end_datetime = case_when(!is.na(end_date) & !is.na(end_time) ~ ymd_hms(paste(end_date, end_time)),
+                                  T ~ NA_real_),
+         hrs_fished = case_when(is.na(hrs_fished) ~ difftime(end_datetime, start_datetime, units = "hours"),
+                                T ~ hrs_fished),
+         hrs_fished = as.numeric(hrs_fished))
+
+
+```
+
+
+```{r}
+
+ggplot(filter(trap_prep, watershed == "Battle Creek", hrs_fished < 1000), aes(x = as.factor(water_year), y = hrs_fished)) +
+  geom_boxplot()
+
+# Butte looks weird, a lot with hours less than 24 - TODO why
+# Butte is grouped by site and gear_id, in some cases gear_id is NA which messes up the start/date hrs etc.
+# Remove gear_id NA for this summary
+ggplot(filter(trap_prep, watershed == "Butte Creek", hrs_fished < 100, !is.na(gear_id)), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+ck <- filter(trap_prep, watershed == "Butte Creek", wy == 1998, gear_id == "rotary screw trap 2")
+
+ggplot(filter(trap_prep, watershed == "Clear Creek", hrs_fished < 100), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+# Can't calculate deer because they do not collect time. TODO double check this
+ggplot(filter(trap_prep, watershed == "Deer Creek", hrs_fished < 1000), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+# Lot of variance for Feather. TODO Look into this more.
+ggplot(filter(trap_prep, watershed == "Feather River", hrs_fished < 250), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+# Lot of variance for Lower Sac. TODO look into this more.
+ggplot(filter(trap_prep, watershed == "Lower Sac", hrs_fished < 100), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+# Can't calculate mill because they do not collect time. TODO double check this
+ggplot(filter(trap_prep, watershed == "Mill Creek", hrs_fished < 100), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+
+ggplot(filter(trap_prep, watershed == "Yuba River", hrs_fished < 100), aes(x = wy, y = hrs_fished)) +
+  geom_boxplot()
+```
+```{r}
+depth <- filter(combined_trap, !is.na(depth_adjust))
+
+unique(depth$watershed)
+```

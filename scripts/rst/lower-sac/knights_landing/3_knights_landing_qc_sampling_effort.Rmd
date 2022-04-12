@@ -79,8 +79,10 @@ percent_na <- knl_effort %>%
   
 data_dictionary <- tibble(variables = colnames(knl_effort),
                           description = c("Date of sampling. In more recent years, start and stop date are collected in which case date is the stop date.",
-                                          "Date and time when sampling started. This was not collected in earlier sampling years.",
-                                          "Date and time when sampling stopped. This was not collected in earlier sampling years.",
+                                          "Date when sampling started. This was not collected in earlier sampling years.",
+                                          "Date when sampling stopped. This was not collected in earlier sampling years.",
+                                          "Time when sampling started. This was not collected in earlier sampling years.",
+                                          "Time when sampling stopped. This was not collected in earlier sampling years.",
                                           "Site name/code for the RST trap. All are KL.",
                                           "Type of gear used. The options used are RST or 2 x 8 cone.",
                                           "The number of traps used. Consistently 2 except in a few cases.",
@@ -656,7 +658,8 @@ upload_data <- function(data, name) {
 gcs_upload(data,
            object_function = f,
            type = "csv",
-           name = paste0("rst/lower-sac-river/data/knights-landing/knl_combine_", name, ".csv"))
+           name = paste0("rst/lower-sac-river/data/knights-landing/knl_combine_", name, ".csv"),
+           predefinedAcl = "bucketLevel")
 }
 
 upload_data(knl_effort_changes, "sampling_effort_clean")
