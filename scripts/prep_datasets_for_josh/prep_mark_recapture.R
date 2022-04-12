@@ -39,15 +39,9 @@ knights_landing_mark_recapture <- read_rds("data/rst/knights_landing_mark_recapt
 # Combine feather and knights landing and add catch week for recaptures 
 feather_and_knights  <- bind_rows(feather_mark_recapture, knights_landing_mark_recapture) %>%
    mutate(days_btw_release_and_catch = as_date(recaptured_date) - as_date(release_date), 
-          caught_week_1 = case_when(watershed == "Feather River" & days_btw_release_and_catch >= 0 & days_btw_release_and_catch <= 7 ~ number_recaptured,
-                                    watershed == "Knights Landing" & days_btw_release_and_catch >= 0 & days_btw_release_and_catch <= 7 ~ number_recaptured
-          ),
-          caught_week_2 = case_when(watershed == "Feather River" & days_btw_release_and_catch > 7 & days_btw_release_and_catch <= 14 ~ number_recaptured,
-                                    watershed == "Knights Landing" & days_btw_release_and_catch > 7 & days_btw_release_and_catch <= 14 ~ number_recaptured
-          ),
-          caught_week_3 = case_when(watershed == "Feather River" & days_btw_release_and_catch > 14 & days_btw_release_and_catch <= 21 ~ number_recaptured,
-                                    watershed == "Knights Landing" & days_btw_release_and_catch > 14 & days_btw_release_and_catch <= 21 ~ number_recaptured
-          )) %>% 
+          caught_week_1 = ifelse(days_btw_release_and_catch >= 0 & days_btw_release_and_catch <= 7, number_recaptured, 0),
+          caught_week_2 = ifelse(days_btw_release_and_catch > 7 & days_btw_release_and_catch <= 14, number_recaptured, 0),
+          caught_week_3 = ifelse(days_btw_release_and_catch > 14 & days_btw_release_and_catch <= 21, number_recaptured, 0)) %>% 
   group_by(watershed, release_date, number_released) %>%
   summarise(caught_week_1 = sum(caught_week_1, na.rm = T),
             caught_week_2 = sum(caught_week_2, na.rm = T), 
@@ -78,11 +72,17 @@ mark_recapture_data <- combined_mark_recapture %>%
   mutate(year = year(release_date), 
          julian_week = week(release_date),
          release_date = as_date(release_date)) %>% 
-  select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3) 
+  select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3) %>%
   glimpse() 
 
 releases_and_recaptures <- mark_recapture_data %>% 
   select(-release_date) %>%
-  rename(yr = year, Jwl = julian_week, r1 = number_released, m1 = caught_week_1, m2 = caught_week_2, m3 = caught_week_3) %>% glimpse
+  rename(tributary = watershed, yr = year, Jwl = julian_week, r1 = number_released, m1 = caught_week_1, m2 = caught_week_2, m3 = caught_week_3) %>% 
+  group_by(tributary, yr, Jwl) %>%
+  summarize(r1 = sum(r1, na.rm = T),
+            m1 = sum(m1, na.rm = T), 
+            m2 = sum(m2, na.rm = T),
+            m3 = sum(m3, na.rm = T)) %>%
+  glimpse
 
-write_csv(releases_and_recaptures, "data/datasets_for_josh/jpe_releases_and_recaptures.csv")
+write_csv(releases_and_recaptures, "data/datasets_for_josh/jpe_weekley_releases_and_recaptures.csv")
