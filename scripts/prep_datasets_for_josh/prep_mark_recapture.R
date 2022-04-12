@@ -68,11 +68,11 @@ combined_mark_recapture <- bind_rows(battle_clear, feather_and_knights) %>% glim
 # Number of recaptures of r1 within second week of release (m3),
 # … probably don’t need more than this, and m2 might be sufficient.
 mark_recapture_data <- combined_mark_recapture %>% 
-  select(watershed, release_date, number_released, number_recaptured, caught_week_1, caught_week_2, caught_week_3) %>% 
+  select(watershed, release_date, number_released, number_recaptured, caught_week_1, caught_week_2, caught_week_3, median_fl_released = mark_med_fork_length_mm, median_fl_recaptured = recap_med_fork_length_mm) %>% 
   mutate(year = year(release_date), 
          julian_week = week(release_date),
          release_date = as_date(release_date)) %>% 
-  select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3) %>%
+  select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3, median_fl_released, median_fl_recaptured) %>%
   glimpse() 
 
 releases_and_recaptures <- mark_recapture_data %>% 
@@ -82,7 +82,9 @@ releases_and_recaptures <- mark_recapture_data %>%
   summarize(r1 = sum(r1, na.rm = T),
             m1 = sum(m1, na.rm = T), 
             m2 = sum(m2, na.rm = T),
-            m3 = sum(m3, na.rm = T)) %>%
+            m3 = sum(m3, na.rm = T),
+            released_fl = mean(median_fl_released, na.rm = T),
+            recaptured_fl = mean(median_fl_recaptured, na.rm = T)) %>%
   glimpse
 
 write_csv(releases_and_recaptures, "data/datasets_for_josh/jpe_weekley_releases_and_recaptures.csv")
