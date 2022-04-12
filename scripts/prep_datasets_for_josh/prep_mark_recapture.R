@@ -36,6 +36,7 @@ knights_landing_mark_recapture <- read_rds("data/rst/knights_landing_mark_recapt
   mutate(watershed = "Knights Landing") %>%
   rename(number_released = nReleased) %>% glimpse
 
+# Combine feather and knights landing and add catch week for recaptures 
 feather_and_knights  <- bind_rows(feather_mark_recapture, knights_landing_mark_recapture) %>%
    mutate(days_btw_release_and_catch = as_date(recaptured_date) - as_date(release_date), 
           caught_week_1 = case_when(watershed == "Feather River" & days_btw_release_and_catch >= 0 & days_btw_release_and_catch <= 7 ~ number_recaptured,
@@ -55,12 +56,13 @@ feather_and_knights  <- bind_rows(feather_mark_recapture, knights_landing_mark_r
   glimpse
 
 
-
-
+# Combine battle and clear 
 battle_clear <- bind_rows(battle_mark_recap, clear_mark_recap) %>%
   mutate(caught_week_1 = number_recaptured) %>% glimpse
 
+# COmbine battle, clear, feather, and knights 
 combined_mark_recapture <- bind_rows(battle_clear, feather_and_knights) %>% glimpse
+
 # Description from Josh of what he was looking for 
 # Table 2. Releases and Recaptures (~ 6 fields)
 # 
@@ -71,16 +73,15 @@ combined_mark_recapture <- bind_rows(battle_clear, feather_and_knights) %>% glim
 # Number of recaptures of r1 within second week of release (m2),
 # Number of recaptures of r1 within second week of release (m3),
 # … probably don’t need more than this, and m2 might be sufficient.
-dat <- combined_mark_recapture %>% 
+mark_recapture_data <- combined_mark_recapture %>% 
   select(watershed, release_date, number_released, number_recaptured, caught_week_1, caught_week_2, caught_week_3) %>% 
   mutate(year = year(release_date), 
          julian_week = week(release_date),
          release_date = as_date(release_date)) %>% 
-  select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3) %>% #TODO remove release_date
-  rename() %>% # TODO rename using col names josh provided
+  select(watershed, release_date, year, julian_week, number_released, caught_week_1, caught_week_2, caught_week_3) 
   glimpse() 
 
-releases_and_recaptures <- dat %>% 
+releases_and_recaptures <- mark_recapture_data %>% 
   select(-release_date) %>%
   rename(yr = year, Jwl = julian_week, r1 = number_released, m1 = caught_week_1, m2 = caught_week_2, m3 = caught_week_3) %>% glimpse
 
