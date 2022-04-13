@@ -48,10 +48,14 @@ feather_and_knights  <- bind_rows(feather_mark_recapture, knights_landing_mark_r
   group_by(watershed, release_date, number_released) %>%
   summarise(caught_week_1 = sum(caught_week_1, na.rm = T),
             caught_week_2 = sum(caught_week_2, na.rm = T), 
-            caught_week_3 = sum(caught_week_3, na.rm = T)) %>%
+            caught_week_3 = sum(caught_week_3, na.rm = T),
+            mark_med_fork_length_mm = median(median_fork_length_released, na.rm = T),
+            recap_med_fork_length_mm = median(median_fork_length_recaptured, na.rm = T)) %>%
   ungroup() %>%
   glimpse
 
+feather_and_knights$mark_med_fork_length_mm %>% unique
+feather_and_knights$recap_med_fork_length_mm %>% unique
 # Combine battle and clear 
 battle_clear <- bind_rows(battle_mark_recap, clear_mark_recap) %>%
   mutate(caught_week_1 = number_recaptured) %>% glimpse
@@ -82,6 +86,8 @@ mark_recapture_data <- combined_mark_recapture %>%
          median_fl_recaptured) %>%
   glimpse() 
 
+mark_recapture_data$median_fl_released %>% unique
+mark_recapture_data$median_fl_recaptured %>% unique
 # Rename and reformat for Josh
 # Summarize by week 
 weekly_releases_and_recaptures <- mark_recapture_data %>% 
@@ -97,12 +103,12 @@ weekly_releases_and_recaptures <- mark_recapture_data %>%
             released_fl = mean(median_fl_released, na.rm = T),
             recaptured_fl = mean(median_fl_recaptured, na.rm = T)) %>%
   mutate(m2 = ifelse(tributary %in% c("Battle Creek", "Clear Creek"), NA, m2), # Replace 0 that were created in summarize statement with NA
-         m3 = ifelse(tributary %in% c("Battle Creek", "Clear Creek"), NA, m3),
-         released_fl = ifelse(tributary %in% c("Feather River", "Knights Landing"), NA, released_fl),
-         recaptured_fl = ifelse(tributary %in% c("Feather River", "Knights Landing"), NA, recaptured_fl)) %>% 
+         m3 = ifelse(tributary %in% c("Battle Creek", "Clear Creek"), NA, m3)) %>% 
   filter(tributary == "Knights Landing") %>%
   glimpse
 
+unique(weekly_releases_and_recaptures$recaptured_fl)
+unique(weekly_releases_and_recaptures$released_fl)
 # Rename and reformat for Josh
 # Do not summarize by week 
 releases_and_recaptures <- mark_recapture_data %>% 
