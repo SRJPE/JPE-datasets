@@ -26,6 +26,11 @@ clear_mark_recap <- read_csv("data/rst/clear_mark_recapture.csv")  %>%
   rename(number_recaptured = recaps, number_released = no_released) %>% 
   mutate(watershed = "Clear Creek") %>% glimpse
 
+filter(battle_mark_recap, is.na(mark_med_fork_length_mm))
+filter(battle_mark_recap, is.na(recap_med_fork_length_mm))
+filter(clear_mark_recap, is.na(mark_med_fork_length_mm))
+filter(clear_mark_recap, is.na(recap_med_fork_length_mm))
+
 # Pull feather and knights landing data from package 
 feather_mark_recapture <- read_rds("data/rst/feather_mark_recapture_data.rds") %>% 
   rename(number_released = nReleased) %>% 
@@ -33,7 +38,7 @@ feather_mark_recapture <- read_rds("data/rst/feather_mark_recapture_data.rds") %
   glimpse
 
 knights_landing_mark_recapture <- read_rds("data/rst/knights_landing_mark_recapture_data.rds") %>% 
-  mutate(watershed = "Knights Landing") %>%
+  mutate(watershed = "Lower Sacramento - Knights Landing") %>%
   rename(number_released = nReleased) %>% glimpse
 
 # Combine feather and knights landing and add catch week for recaptures 
@@ -92,10 +97,10 @@ mark_recapture_data$median_fl_recaptured %>% unique
 # Summarize by week 
 weekly_releases_and_recaptures <- mark_recapture_data %>% 
   select(-release_date) %>%
-  rename(tributary = watershed, yr = year, Jwl = julian_week, 
+  rename(tributary = watershed, yr = year, Jwk = julian_week, 
          r1 = number_released, m1 = caught_week_1, 
          m2 = caught_week_2, m3 = caught_week_3) %>% 
-  group_by(tributary, yr, Jwl) %>%
+  group_by(tributary, yr, Jwk) %>%
   summarize(r1 = sum(r1, na.rm = T),
             m1 = sum(m1, na.rm = T), 
             m2 = sum(m2, na.rm = T),
@@ -103,9 +108,7 @@ weekly_releases_and_recaptures <- mark_recapture_data %>%
             released_fl = mean(median_fl_released, na.rm = T),
             recaptured_fl = mean(median_fl_recaptured, na.rm = T)) %>%
   mutate(m2 = ifelse(tributary %in% c("Battle Creek", "Clear Creek"), NA, m2), # Replace 0 that were created in summarize statement with NA
-         m3 = ifelse(tributary %in% c("Battle Creek", "Clear Creek"), NA, m3)) %>% 
-  filter(tributary == "Knights Landing") %>%
-  glimpse
+         m3 = ifelse(tributary %in% c("Battle Creek", "Clear Creek"), NA, m3)) 
 
 unique(weekly_releases_and_recaptures$recaptured_fl)
 unique(weekly_releases_and_recaptures$released_fl)
@@ -113,7 +116,7 @@ unique(weekly_releases_and_recaptures$released_fl)
 # Do not summarize by week 
 releases_and_recaptures <- mark_recapture_data %>% 
   select(-release_date) %>%
-  rename(tributary = watershed, yr = year, Jwl = julian_week, 
+  rename(tributary = watershed, yr = year, Jwk = julian_week, 
          r1 = number_released, m1 = caught_week_1, 
          m2 = caught_week_2, m3 = caught_week_3) %>% 
   glimpse
