@@ -127,6 +127,8 @@ battle_hours_fished <- battle_environmental %>%
          week = week(sample_date),
          year = year(sample_date))
 
+#filter(battle_environmental, is.na(trap_start_time)) %>% tally()
+
 battle_hours_fished_week_mean <- battle_hours_fished %>%
     # manual check of values, negative values and those greater than 50 are typos
     filter(hours_fished > 0, hours_fished < 50) %>%
@@ -148,22 +150,24 @@ unique(battle_rst$run)
 # some data may be interpolated (~1% may be interpolated)
 # no variable for marked so assume all are unmarked
 # run is not filtered
+# TODO compare mean observed v interpolated to decide if we should use
 
 battle_rst_clean <- battle_rst %>%
-  filter(count > 0) %>%
   select(-c(sample_id, lifestage, dead, interpolated)) %>%
   mutate(tributary = "Battle Creek")
 
 ## Butte ####
 # No hours fished available
 # Run was filtered to spring (or only spring is collected) prior to sharing data
+# TODO include hatchery?
+
 butte_rst %>% glimpse
 unique(butte_rst$station)
 unique(butte_rst$mark_code)
 
 butte_rst_clean <- butte_rst %>%
   # filter out marked or adclipped fish
-  filter((mark_code == "none" | is.na(mark_code)), count > 0) %>%
+  # filter((mark_code == "none" | is.na(mark_code)), count > 0) %>%
   select(date, station, count, fork_length) %>%
   mutate(tributary = "Butte Creek",
          run = "spring") %>%
@@ -207,7 +211,6 @@ filter(clear_rst, is.na(run)) %>% tally()
 unique(clear_rst$station_code)
 
 clear_rst_clean <- clear_rst %>%
-  filter(count > 0) %>%
   select(-c(sample_id, lifestage, dead, interpolated)) %>%
   mutate(tributary = "Clear Creek") %>%
   rename(site = station_code)
@@ -223,7 +226,6 @@ deer_rst %>% glimpse
 unique(deer_rst$location)
 
 deer_rst_clean <- deer_rst %>%
-  filter(count > 0) %>%
   select(date, location, count, fork_length) %>%
   group_by(date, fork_length) %>%
   summarize(count = sum(count, na.rm = T)) %>%
@@ -264,7 +266,6 @@ filter(feather_rst, is.na(run)) %>% tally()
 # notes - sites are unique locations
 
 feather_rst_clean <- feather_rst %>%
-  filter(count > 0) %>%
   select(date, site_name, fork_length, count, run) %>%
   mutate(tributary = "Feather River") %>%
   rename(site = site_name)
@@ -300,7 +301,7 @@ unique(knights_landing_rst$fishOrigin)
 unique(knights_landing_rst$run)
 
 knights_rst_clean <- knights_landing_rst %>%
-  filter(commonName == "Chinook salmon", fishOrigin == "Natural", n > 0) %>%
+  filter(commonName == "Chinook salmon", fishOrigin == "Natural") %>%
   select(forkLength, n, run, visitTime) %>%
   rename(count = n,
          date = visitTime,
@@ -322,7 +323,7 @@ unique(tisdale_rst$rearing)
 unique(tisdale_rst$mark_type)
 
 tisdale_rst_clean <- tisdale_rst %>%
-  filter(rearing == "Natural", mark_type == "None", count > 0) %>%
+  filter(rearing == "Natural", mark_type == "None") %>%
   select(date, trap_position, fork_length_mm, count, run) %>%
   rename(fork_length = fork_length_mm) %>%
   group_by(date, fork_length, run) %>%
@@ -338,7 +339,6 @@ mill_rst %>% glimpse
 unique(mill_rst$location)
 
 mill_rst_clean <- mill_rst %>%
-  filter(count > 0) %>%
   select(date, count, fork_length) %>%
   mutate(tributary = "Mill Creek",
          run = NA_character_)
@@ -355,7 +355,6 @@ unique(yuba_rst$organism_code)
 # sites are names for traps at the same location and should be summed
 
 yuba_rst_clean<- yuba_rst %>%
-  filter(count > 0) %>%
   select(date, fork_length, count, location, run) %>%
   group_by(date, fork_length, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
