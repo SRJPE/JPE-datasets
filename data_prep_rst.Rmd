@@ -543,6 +543,7 @@ tributaries because they are different monitoring programs but could be summariz
 
 ```{r, save_data}
 saveRDS(combined_rst_model_format, "data/rst/jpe_historical_rst.rds")
+write_csv(combined_rst_model_format, "data/rst/jpe_weekly_unmarked_catch.csv")
 ```
 
 ## Table 2. Releases and Recaptures (~ 6 fields)
