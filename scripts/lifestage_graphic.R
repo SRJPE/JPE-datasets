@@ -283,7 +283,7 @@ ggplot(life_stage_dat, aes(x = Date, y = Lifestage)) +
   geom_point(data_available, mapping = aes(x = Date, y = Lifestage, color = Lifestage), size = 4, alpha = 0.4) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b") +
   scale_color_manual(name = "Lifestage", values = mycolors) +
-  geom_vline(xintercept = ymd("2000-01-01"), linetype = "dashed", alpha = 0.6) +
+  # geom_vline(xintercept = ymd("2000-01-01"), linetype = "dashed", alpha = 0.6) +
   #annotate("curve", x = ymd("2000-01-25"), y = "Adult holding", xend = ymd("2000-01-07"), yend = "Adult upstream migration",
            #curvature = .3, arrow = arrow(length = unit(2, "mm")), alpha = 0.6) +
   #annotate("text", x = ymd("2000-02-20"), y = "Adult holding", label = "JPE needed", size = 3) +
