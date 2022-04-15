@@ -230,8 +230,8 @@ holding_data <- tibble(Lifestage = c("Adult holding"),
                        Year = c("1","1", "2","2"))
 
 holding_data_mode <- tibble(Lifestage = "Adult holding",
-                            Month = "12",
-                            Day = "01",
+                            Month = "09",
+                            Day = "15",
                             Year = "1")
 # rst mode = 1 week
 # battle - 6 mon, Butte - 1 week; clear - 3 mon; deer - only historical; feather - 3 mon; sac knl - 1 week; sac tisdale 1 week
