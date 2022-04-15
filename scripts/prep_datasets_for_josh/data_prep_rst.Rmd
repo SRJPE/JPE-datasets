@@ -107,17 +107,52 @@ data is interpolated. Fork length measurements
 are missing for `r (filter(battle_rst, is.na(fork_length), count >0) %>% tally()/length(battle_rst$date))*100`%. There are no
 missing run designations.
 
+
+```{r, helpers}
+
+# calculating hours fished when have start and stop datetime
+hours_fished <- function(dat){
+  dat %>%
+    filter(!is.na(start_date), !is.na(start_time)) %>%
+    mutate(start_datetime = ymd_hms(paste(start_date, start_time)),
+         stop_datetime = ymd_hms(paste(stop_date, stop_time)),
+         hours_fished = difftime(stop_datetime, start_datetime, units = "hours"),
+         week = week(stop_date),
+         year = year(stop_date))
+}
+
+# calculating hours fished when have only date and time
+hours_fished_no_end_date <- function(dat) {
+  dat %>%
+  arrange(start_datetime) %>%
+  mutate(end_datetime = lead(start_datetime)) %>%
+  mutate(hours_fished = difftime(end_datetime, start_datetime, units = "hours"),
+         week = week(end_datetime),
+         year = year(end_datetime)) %>%
+  # removing counts between seasons (e.g. 06-23 to 10-01)
+  filter(hours_fished < 1500)
+}
+
+# standard encoding fixes for run
+run_encoding <- function(dat) {
+  dat %>%
+    mutate(run = case_when(is.na(run) | run == "Not recorded" |  run == "Not applicable (n/a)" ~ "not recorded",
+                         count == 0  ~ NA_character_,
+                         T ~ tolower(run)))
+}
+```
+
+
 ```{r, battle}
 ## Battle ####
 ### Hours fished ####
 # battle_environmental has trap_start_date, trap_state_time, sample_date, sample_time
 battle_hours_fished <- battle_environmental %>%
-  filter(!is.na(trap_start_date), !is.na(trap_start_time)) %>%
-  mutate(start_datetime = ymd_hms(paste(trap_start_date, trap_start_time)),
-         stop_datetime = ymd_hms(paste(sample_date, sample_time)),
-         hours_fished = difftime(stop_datetime, start_datetime, units = "hours"),
-         week = week(sample_date),
-         year = year(sample_date))
+  rename(start_date = trap_start_date,
+         start_time = trap_start_time,
+         stop_date = sample_date,
+         stop_time = sample_time) %>%
+  hours_fished()
 
 #filter(battle_environmental, is.na(trap_start_time)) %>% tally()
 
@@ -149,10 +184,8 @@ filter(battle_rst, is.na(run)) %>% glimpse
 battle_rst_clean <- battle_rst %>%
   select(-c(sample_id, lifestage, dead, interpolated)) %>%
   mutate(tributary = "Battle Creek",
-         site = "Battle Creek",
-         run = case_when(is.na(run) ~ "not recorded",
-                         count == 0 ~ NA_character_,
-                          T ~ run))
+         site = "Battle Creek") %>%
+  run_encoding()
 ```
 
 Hours fished are calculated by taking the difference between the date/time at for 
@@ -167,14 +200,7 @@ are missing for `r (filter(butte_rst, is.na(fork_length), count >0) %>% tally()/
 butte_hours_fished <- butte_rst %>%
   distinct(date, time, station) %>%
   mutate(start_datetime = ymd_hms(paste(date, time))) %>%
-  arrange(start_datetime) %>%
-  mutate(end_datetime = lead(start_datetime)) %>%
-  select(start_datetime, end_datetime, station) %>%
-  mutate(hours_fished = difftime(end_datetime, start_datetime, units = "hours"),
-         week = week(start_datetime),
-         year = year(start_datetime)) %>%
-  # removing counts between seasons (e.g. 06-23 to 10-01)
-  filter(hours_fished < 1500)
+  hours_fished_no_end_date()
 
 butte_hours_fished_week_mean <- butte_hours_fished %>%
   # manual check of values, negative values and those greater than 100 are typos
@@ -215,12 +241,11 @@ missing run designation with no fork length, lifestage is parr.
 ### Hours fished ####
 # clear_environmental has trap_start_date, trap_state_time, sample_date, sample_time
 clear_hours_fished <- clear_environmental %>%
-  filter(!is.na(trap_start_date), !is.na(trap_start_time)) %>%
-  mutate(start_datetime = ymd_hms(paste(trap_start_date, trap_start_time)),
-         stop_datetime = ymd_hms(paste(sample_date, sample_time)),
-         hours_fished = difftime(stop_datetime, start_datetime, units = "hours"),
-         week = week(sample_date),
-         year = year(sample_date))
+  rename(start_date = trap_start_date,
+         start_time = trap_start_time,
+         stop_date = sample_date,
+         stop_time = sample_time) %>%
+  hours_fished()
 
 clear_hours_fished_week_mean <- clear_hours_fished %>%
   # manual check of values, negative values and those greater than 50 are typos
@@ -250,10 +275,8 @@ unique(clear_rst$station_code)
 
 clear_rst_clean <- clear_rst %>%
   select(-c(sample_id, lifestage, dead, interpolated)) %>%
-  mutate(tributary = "Clear Creek",
-         run = case_when(is.na(run) ~ "not recorded",
-                         count == 0 ~ NA_character_,
-                          T ~ run)) %>%
+  mutate(tributary = "Clear Creek") %>%
+  run_encoding() %>%
   rename(site = station_code)
 ```
 
@@ -290,12 +313,8 @@ are missing for `r (filter(feather_rst, is.na(fork_length), count > 0) %>% tally
 ### Hours fished ####
 feather_hours_fished <- feather_effort %>%
   distinct(visit_time, site_name) %>%
-  arrange(visit_time) %>%
-  mutate(end_date = lead(visit_time)) %>%
-  rename(start_date = visit_time) %>%
-  mutate(hours_fished = difftime(end_date, start_date, units = "hours"),
-         week = week(start_date),
-         year = year(start_date))
+  rename(start_datetime = visit_time) %>%
+  hours_fished_no_end_date()
 
 feather_hours_fished_week_mean <- feather_hours_fished %>%
   # manual check of values, negative values and those greater than 50 are typos
@@ -321,10 +340,8 @@ filter(feather_rst, is.na(run)) %>% tally()
 
 feather_rst_clean <- feather_rst %>%
   select(date, site_name, fork_length, count, run) %>%
-  mutate(tributary = "Feather River",
-         run = case_when(is.na(run) ~ "not recorded",
-                         count == 0 ~ NA_character_,
-                          T ~ run)) %>%
+  mutate(tributary = "Feather River") %>%
+  run_encoding() %>%
   rename(site = site_name)
 ```
 Knights Landing has data available to calculate the hours fished. Data include hatchery
@@ -337,13 +354,8 @@ are missing for `r (filter(knights_landing_rst, is.na(forkLength), n > 0) %>% ta
 ### Hours fished ####
 knights_hours_fished <- knights_landing_rst %>%
   distinct(visitTime, visitTime2) %>%
-  arrange(visitTime) %>%
-  mutate(end_date = lead(visitTime)) %>%
-  rename(start_date = visitTime) %>%
-  select(-visitTime2) %>%
-  mutate(hours_fished = difftime(end_date, start_date, units = "hours"),
-         week = week(start_date),
-         year = year(start_date))
+  rename(start_datetime = visitTime) %>%
+  hours_fished_no_end_date()
 
 knights_hours_fished_week_mean <- knights_hours_fished %>%
   # manual check of values, negative values and those greater than 50 are typos
@@ -375,10 +387,8 @@ knights_rst_clean <- knights_landing_rst %>%
          fork_length = forkLength) %>%
   mutate(tributary = "Lower Sacramento - Knights Landing",
          site = "Lower Sacramento - Knights Landing",
-         run = case_when(is.na(run) | run == "Not recorded" |  run == "Not applicable (n/a)" ~ "not recorded",
-                         count == 0  ~ NA_character_,
-                         T ~ tolower(run)),
-         date = as_date(date))
+         date = as_date(date)) %>%
+  run_encoding()
 ```
 Tisdale does not have data available to calculate the hours fished though we
 did not receive their CAMP database and it may be in there. Data include hatchery
@@ -411,10 +421,8 @@ tisdale_rst_clean <- tisdale_rst %>%
   group_by(date, fork_length, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(tributary = "Lower Sacramento - Tisdale",
-         site = "Lower Sacramento - Tisdale",
-         run = case_when(is.na(run) ~ "not recorded",
-                         count == 0 ~ NA_character_,
-                          T ~ tolower(run)))
+         site = "Lower Sacramento - Tisdale") %>%
+  run_encoding()
 ```
 
 Mill Creek does not have data available (no time variable) to calculate hours
@@ -447,14 +455,7 @@ run was encoded as "unknown"
 yuba_hours_fished <- yuba_rst %>%
   distinct(date, time) %>%
   mutate(start_datetime = ymd_hms(paste(date, time))) %>%
-  arrange(start_datetime) %>%
-  mutate(end_datetime = lead(start_datetime)) %>%
-  select(start_datetime, end_datetime) %>%
-  mutate(hours_fished = difftime(end_datetime, start_datetime, units = "hours"),
-         week = week(start_datetime),
-         year = year(start_datetime)) %>%
-  # removing counts between seasons (e.g. 06-23 to 10-01)
-  filter(hours_fished < 1500)
+  hours_fished_no_end_date()
 
 yuba_hours_fished_week_mean <- yuba_hours_fished %>%
   # manual check of values, negative values and those greater than 100 are typos
@@ -488,10 +489,8 @@ yuba_rst_clean<- yuba_rst %>%
   group_by(date, fork_length, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(tributary = "Yuba River",
-         site = "Yuba River",
-         run = case_when(is.na(run) ~ "not recorded",
-                         count == 0 ~ NA_character_,
-                          T ~ run))
+         site = "Yuba River") %>%
+  run_encoding()
 ```
 
 ```{r, combine_format}
@@ -709,7 +708,7 @@ releases_and_recaptures %>%
 
 releases_and_recaptures %>% 
   mutate(week_1_efficiency = m1/r1) %>%
-  ggplot(aes(x = Jwl, y = yr, size = week_1_efficiency)) +
+  ggplot(aes(x = Jwk, y = yr, size = week_1_efficiency)) +
   geom_point()
 
 ```
