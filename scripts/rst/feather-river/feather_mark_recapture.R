@@ -10,13 +10,15 @@ feather_camp <- odbcConnectAccess2007("../../../projects/JPE/CAMP Feather River/
 CatchRaw <- sqlFetch(feather_camp, "CatchRaw") 
 TrapVisit <- sqlFetch(feather_camp, "TrapVisit") %>% glimpse
 Release <- sqlFetch(feather_camp, "Release")
+ReleaseFish <- sqlFetch(feather_camp, "ReleaseFish") %>% glimpse
 
 # select relevant column
 selected_trap_visit <- TrapVisit %>% 
   select(trapVisitID, visitTime) %>% 
   glimpse 
 
-selected_catch <- CatchRaw %>% select(catchRawID, trapVisitID, taxonID, finalRunID, n, releaseID) %>% glimpse
+selected_catch <- CatchRaw %>% 
+  select(catchRawID, trapVisitID, taxonID, finalRunID, n, releaseID, forkLength) %>% glimpse
 
 # Look at releases per day 
 Release %>% 
@@ -28,9 +30,17 @@ Release %>%
 
 Release %>% view
 
+selected_released_fish <- ReleaseFish %>%
+  group_by(releaseID) %>%
+  summarise(median_fork_length_released = median(forkLength, na.rm = T)) %>%
+  glimpse
+
+unique(selected_released_fish$median_fork_length_released)
+
 selected_release <- Release %>% 
+  full_join(selected_released_fish, by = c("releaseID" = "releaseID")) %>%
   filter(releasePurposeID == 1) %>% 
-  select(releaseID, releaseSiteID, nReleased, releaseTime) %>% 
+  select(releaseID, releaseSiteID, nReleased, releaseTime, median_fork_length_released) %>% 
   mutate(release_date = as_date(releaseTime)) %>% 
   select(-releaseTime) %>% glimpse
 
@@ -46,15 +56,19 @@ catch_with_date <- selected_catch %>%
   left_join(selected_trap_visit, by = c("trapVisitID" = "trapVisitID")) %>% 
   mutate(recaptured_date = as_date(visitTime)) %>% 
   filter(releaseID != 0 & releaseID != 255) %>% 
-  group_by(releaseID) %>% 
-  summarise(number_recaptured = sum(n, na.rm = T)) %>% 
-  left_join(selected_release, by = c("releaseID" = "releaseID")) %>% 
+  group_by(releaseID, recaptured_date) %>% 
+  summarise(number_recaptured = sum(n, na.rm = T),
+            median_fork_length_recaptured = median(forkLength, na.rm = T)) %>% 
+  full_join(selected_release, by = c("releaseID" = "releaseID")) %>% 
   mutate(efficiency = number_recaptured/nReleased) %>% 
   glimpse()
 
+unique(selected_release$median_fork_length_recaptured)
+unique(catch_with_date$median_fork_length_recaptured)
+
 # Visualize data 
 catch_with_date %>% 
-  ggplot(aes(x = efficiency, color = as.character(year(date)))) + 
+  ggplot(aes(x = efficiency, color = as.character(year(recaptured_date)))) + 
   geom_density()
 
 catch_with_date %>% 
