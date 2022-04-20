@@ -299,7 +299,7 @@ ggplot(life_stage_dat, aes(x = Date, y = Lifestage)) +
   theme(legend.position = "none")
 
 
-ggsave("lifestage_plot_updated.png", width = 8.50, height = 2, units = "in")
+ggsave("analysis/lifestage_plot_updated.png", width = 8.50, height = 2, units = "in")
 
 
 ### scrap code below ####
