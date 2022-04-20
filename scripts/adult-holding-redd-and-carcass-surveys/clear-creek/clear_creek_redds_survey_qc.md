@@ -104,49 +104,49 @@ cleaner_data <- raw_redds_data %>%
 
     ## Rows: 1,495
     ## Columns: 43
-    ## $ method                  <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel", "S~
-    ## $ longitude               <dbl> -122.5404, -122.5404, -122.5381, -122.5338, -1~
-    ## $ latitude                <dbl> 40.58156, 40.58160, 40.57883, 40.57394, 40.562~
-    ## $ survey                  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ river_mile              <dbl> 16.38723, 16.38717, 16.12547, 15.58567, 14.701~
-    ## $ x1000ftbreak            <dbl> 87000, 87000, 86000, 83000, 78000, 80000, 5700~
-    ## $ ucc_relate              <chr> "Above", "Above", "Above", "Above", "Above", "~
-    ## $ picket_weir_location    <dbl> 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8~
-    ## $ picket_weir_relation    <chr> "Above", "Above", "Above", "Above", "Above", "~
-    ## $ date                    <date> 2000-09-25, 2000-10-13, 2000-09-26, 2000-09-2~
-    ## $ surveyed_reach          <chr> "R1", "R1", "R2", "R2", "R2", "R2", "R4", "R4"~
-    ## $ redd_id                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ age                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_loc                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ gravel                  <chr> "Native", "Native", "Native", "Native", "Nativ~
-    ## $ inj_site                <chr> "Paige Bar", "Paige Bar", "Above Need Camp", "~
-    ## $ pre_redd_substrate_size <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ tail_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ fish_on_redd            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ measured                <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO"~
-    ## $ why_not_measured        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_measured           <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ pre_redd_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_pit_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_tail_depth         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_length_in          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_width_in           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ velocity                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ start_60                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ end_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ sec_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ start_80                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ end_80                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ secs_80                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ bomb_vel60              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ bomb_vel80              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ comments                <chr> "NEED CAMP 16.2", "NEED CAMP 16.2", "NEED TEMP~
-    ## $ run                     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ observation_reach       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ observation_date        <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ observation_age         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_observed         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ method                  <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel", "S…
+    ## $ longitude               <dbl> -122.5404, -122.5404, -122.5381, -122.5338, -1…
+    ## $ latitude                <dbl> 40.58156, 40.58160, 40.57883, 40.57394, 40.562…
+    ## $ survey                  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ river_mile              <dbl> 16.38723, 16.38717, 16.12547, 15.58567, 14.701…
+    ## $ x1000ftbreak            <dbl> 87000, 87000, 86000, 83000, 78000, 80000, 5700…
+    ## $ ucc_relate              <chr> "Above", "Above", "Above", "Above", "Above", "…
+    ## $ picket_weir_location    <dbl> 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8…
+    ## $ picket_weir_relation    <chr> "Above", "Above", "Above", "Above", "Above", "…
+    ## $ date                    <date> 2000-09-25, 2000-10-13, 2000-09-26, 2000-09-2…
+    ## $ surveyed_reach          <chr> "R1", "R1", "R2", "R2", "R2", "R2", "R4", "R4"…
+    ## $ redd_id                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ age                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_loc                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ gravel                  <chr> "Native", "Native", "Native", "Native", "Nativ…
+    ## $ inj_site                <chr> "Paige Bar", "Paige Bar", "Above Need Camp", "…
+    ## $ pre_redd_substrate_size <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ tail_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ fish_on_redd            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ measured                <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO", "NO"…
+    ## $ why_not_measured        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ date_measured           <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ pre_redd_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_pit_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_tail_depth         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_length_in          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_width_in           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ velocity                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ start_60                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ end_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ sec_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ start_80                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ end_80                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ secs_80                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ bomb_vel60              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ bomb_vel80              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ comments                <chr> "NEED CAMP 16.2", "NEED CAMP 16.2", "NEED TEMP…
+    ## $ run                     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ observation_reach       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ observation_date        <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ observation_age         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ survey_observed         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
 
 ## Data Dictionary
 
@@ -202,6 +202,92 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
                                           "Date of observation", 
                                           "Age at observation", 
                                           "?TODO"),
+                          data_type = c("factor", 
+                                          "numeric",
+                                          "numeric",
+                                          "numeric", 
+                                          "numeric",  
+                                          "numeric", 
+                                          "factor", 
+                                          "numeric", 
+                                          "factor",
+                                          "date", 
+                                          "ordered factor", 
+                                          "integer", 
+                                          "integer", 
+                                          "factor", 
+                                          "factor", 
+                                          "factor", 
+                                          "ordered factor",
+                                          "ordered factor", 
+                                          "ordered factor",
+                                          "boolean", 
+                                          "boolean", 
+                                          "factor", 
+                                          "date", 
+                                          "numeric", 
+                                          "numeric", 
+                                          "numeric", 
+                                          "numeric", 
+                                          "numeric", 
+                                          "numeric", 
+                                          "integer", 
+                                          "integer", 
+                                          "integer", 
+                                          "integer", 
+                                          "integer", 
+                                          "interger", 
+                                          "numeric", 
+                                          "numeric ", 
+                                          "character", 
+                                          "factor", 
+                                          "ordered factor", 
+                                          "date", 
+                                          "integer", 
+                                          "numeric"),
+                          encoding = c("pw, rstr, snorkel", 
+                                          NA,
+                                          NA,
+                                          NA, 
+                                          NA,  
+                                          NA, 
+                                          "above, below", 
+                                          NA, 
+                                          "above, below",
+                                          NA, 
+                                          "R1, R2, R3, R4, R5, R5A, R5B, R5C, R6, R6A, R7", 
+                                          NA, 
+                                          NA, 
+                                          "river left, river right, river center, river center to river right", 
+                                          "injection, native, or combination", 
+                                          "above need camp, above peltier, below dog gulch, clear creek road bridge, guardian rock, paige bar, placer, r6, r7, reading bar, whiskeytown", 
+                                          "0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5, 4-6, 6-8, >12", 
+                                          "0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5, 4-6, 6-8, 8-10, >12", 
+                                          "0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5", 
+                                          "boolean", 
+                                          "boolean", 
+                                          "fall run, fish on redd, fish on redd when first observed measured next survey, flow too high, time constraints, too deep, too old", 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          NA, 
+                                          "spring, fall, late fall", 
+                                          "R1, R2, R3, R4, R5, R5A, R5B, R5C, R6, R6A, R7", 
+                                          NA, 
+                                          NA, 
+                                          NA),
                           
                           percent_na = round(percent_na$value*100)
                           
@@ -209,51 +295,51 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
 knitr::kable(data_dictionary)
 ```
 
-| variables                  | description                                                                                                                                                                                  | percent\_na |
-|:---------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------:|
-| method                     | Survey method                                                                                                                                                                                |           0 |
-| longitude                  | GPS X point                                                                                                                                                                                  |           0 |
-| latitude                   | GPS Y point                                                                                                                                                                                  |           0 |
-| survey                     | Survey Number, TODO figure out what this number means                                                                                                                                        |          10 |
-| river\_mile                | River mile Number                                                                                                                                                                            |           0 |
-| x1000ftbreak               | ?TODO                                                                                                                                                                                        |          14 |
-| ucc\_relate                | Above or below Upper Clear Creek Rotary Screw Trap                                                                                                                                           |           0 |
-| picket\_weir\_location     | Picket weir location                                                                                                                                                                         |           0 |
-| picket\_weir\_relation     | Above or below picket weir                                                                                                                                                                   |           0 |
-| date                       | Date survey occured                                                                                                                                                                          |           0 |
-| surveyed\_reach            | Reach number                                                                                                                                                                                 |           0 |
-| redd\_id                   | Unique ID number for a Redd                                                                                                                                                                  |          11 |
-| age                        | Age of Redd                                                                                                                                                                                  |          31 |
-| redd\_loc                  | Latitudinal location of the redd in the creek (RL: river left, RR: river right, RC: river center)                                                                                            |          37 |
-| gravel                     | predominant type of gravel used in redd construction: injection, native, or combo (native and injection)                                                                                     |           0 |
-| inj\_site                  | source of the injection gravel (site on Clear Creek)                                                                                                                                         |           4 |
-| pre\_redd\_substrate\_size | Dominant substrate size in the pre-redd (area just of stream of the disturbance)                                                                                                             |          50 |
-| redd\_substrate\_size      | Dominant substrate size on the sides of the redd                                                                                                                                             |          50 |
-| tail\_substrate\_size      | Dominant substrate size in the tailspill (excavated material behind the pit)                                                                                                                 |          50 |
-| fish\_on\_redd             | TRUE if fish is seen on Redd (TRUE/FALSE)                                                                                                                                                    |          52 |
-| measured                   | TRUE if redd is measured (TRUE/FALSE)                                                                                                                                                        |           0 |
-| why\_not\_measured         | Description of why the reddd was not measured if applicable                                                                                                                                  |          98 |
-| date\_measured             | Date the redd was measured                                                                                                                                                                   |          54 |
-| pre\_redd\_depth           | Depth in the pre-redd (area just of stream of the disturbance)                                                                                                                               |          56 |
-| redd\_pit\_depth           | Depth at the deepest part of the pit                                                                                                                                                         |          56 |
-| redd\_tail\_depth          | Depth at the shallowest part of the tailspill                                                                                                                                                |          54 |
-| redd\_length\_in           | Length of the longest part of the disturbed area, measured parallel to streamflow (in inches)                                                                                                |          54 |
-| redd\_width\_in            | Width of the widest part of the disturbed area, perpendicular to streamflow.                                                                                                                 |          54 |
-| velocity                   | Mean water column velocity measured at 60 percent depth from the water surface or the average of the 60% depth and 80/20% depth, if the redd depth is = 30 inches (Allan and Castillo 2007). |          65 |
-| start\_60                  | starting values on the mechanical flow meter at 60% depth                                                                                                                                    |          65 |
-| end\_60                    | ending values on the mechanical flow meter at 60% depth                                                                                                                                      |          65 |
-| sec\_60                    | time the meter was in the water                                                                                                                                                              |          64 |
-| start\_80                  | Starting values on the mechanical flow meter at 80/20% depth                                                                                                                                 |          95 |
-| end\_80                    | End values on the mechanical flow meter at 80/20% depth                                                                                                                                      |          95 |
-| secs\_80                   | time the meter was in the water                                                                                                                                                              |          95 |
-| bomb\_vel60                | Mean water column velocity measured at 60 percent depth from the water surface if the redd depth is = 30 inches from the water surface (Allan and Castillo 2007).                            |          77 |
-| bomb\_vel80                | Mean water column velocity measured at 80 percent depth from the water surface if the redd depth is = 30 inches from the water surface (Allan and Castillo 2007).                            |          98 |
-| comments                   | Comments from survey crew                                                                                                                                                                    |          76 |
-| run                        | Run call based on field data                                                                                                                                                                 |          90 |
-| observation\_reach         | Reach of observation                                                                                                                                                                         |          78 |
-| observation\_date          | Date of observation                                                                                                                                                                          |          78 |
-| observation\_age           | Age at observation                                                                                                                                                                           |          78 |
-| survey\_observed           | ?TODO                                                                                                                                                                                        |          78 |
+| variables                  | description                                                                                                                                                                                  | data\_type     | encoding                                                                                                                                     | percent\_na |
+|:---------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------|------------:|
+| method                     | Survey method                                                                                                                                                                                | factor         | pw, rstr, snorkel                                                                                                                            |           0 |
+| longitude                  | GPS X point                                                                                                                                                                                  | numeric        | NA                                                                                                                                           |           0 |
+| latitude                   | GPS Y point                                                                                                                                                                                  | numeric        | NA                                                                                                                                           |           0 |
+| survey                     | Survey Number, TODO figure out what this number means                                                                                                                                        | numeric        | NA                                                                                                                                           |          10 |
+| river\_mile                | River mile Number                                                                                                                                                                            | numeric        | NA                                                                                                                                           |           0 |
+| x1000ftbreak               | ?TODO                                                                                                                                                                                        | numeric        | NA                                                                                                                                           |          14 |
+| ucc\_relate                | Above or below Upper Clear Creek Rotary Screw Trap                                                                                                                                           | factor         | above, below                                                                                                                                 |           0 |
+| picket\_weir\_location     | Picket weir location                                                                                                                                                                         | numeric        | NA                                                                                                                                           |           0 |
+| picket\_weir\_relation     | Above or below picket weir                                                                                                                                                                   | factor         | above, below                                                                                                                                 |           0 |
+| date                       | Date survey occured                                                                                                                                                                          | date           | NA                                                                                                                                           |           0 |
+| surveyed\_reach            | Reach number                                                                                                                                                                                 | ordered factor | R1, R2, R3, R4, R5, R5A, R5B, R5C, R6, R6A, R7                                                                                               |           0 |
+| redd\_id                   | Unique ID number for a Redd                                                                                                                                                                  | integer        | NA                                                                                                                                           |          11 |
+| age                        | Age of Redd                                                                                                                                                                                  | integer        | NA                                                                                                                                           |          31 |
+| redd\_loc                  | Latitudinal location of the redd in the creek (RL: river left, RR: river right, RC: river center)                                                                                            | factor         | river left, river right, river center, river center to river right                                                                           |          37 |
+| gravel                     | predominant type of gravel used in redd construction: injection, native, or combo (native and injection)                                                                                     | factor         | injection, native, or combination                                                                                                            |           0 |
+| inj\_site                  | source of the injection gravel (site on Clear Creek)                                                                                                                                         | factor         | above need camp, above peltier, below dog gulch, clear creek road bridge, guardian rock, paige bar, placer, r6, r7, reading bar, whiskeytown |           4 |
+| pre\_redd\_substrate\_size | Dominant substrate size in the pre-redd (area just of stream of the disturbance)                                                                                                             | ordered factor | 0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5, 4-6, 6-8, &gt;12                                                                                   |          50 |
+| redd\_substrate\_size      | Dominant substrate size on the sides of the redd                                                                                                                                             | ordered factor | 0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5, 4-6, 6-8, 8-10, &gt;12                                                                             |          50 |
+| tail\_substrate\_size      | Dominant substrate size in the tailspill (excavated material behind the pit)                                                                                                                 | ordered factor | 0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5                                                                                                     |          50 |
+| fish\_on\_redd             | TRUE if fish is seen on Redd (TRUE/FALSE)                                                                                                                                                    | boolean        | boolean                                                                                                                                      |          52 |
+| measured                   | TRUE if redd is measured (TRUE/FALSE)                                                                                                                                                        | boolean        | boolean                                                                                                                                      |           0 |
+| why\_not\_measured         | Description of why the reddd was not measured if applicable                                                                                                                                  | factor         | fall run, fish on redd, fish on redd when first observed measured next survey, flow too high, time constraints, too deep, too old            |          98 |
+| date\_measured             | Date the redd was measured                                                                                                                                                                   | date           | NA                                                                                                                                           |          54 |
+| pre\_redd\_depth           | Depth in the pre-redd (area just of stream of the disturbance)                                                                                                                               | numeric        | NA                                                                                                                                           |          56 |
+| redd\_pit\_depth           | Depth at the deepest part of the pit                                                                                                                                                         | numeric        | NA                                                                                                                                           |          56 |
+| redd\_tail\_depth          | Depth at the shallowest part of the tailspill                                                                                                                                                | numeric        | NA                                                                                                                                           |          54 |
+| redd\_length\_in           | Length of the longest part of the disturbed area, measured parallel to streamflow (in inches)                                                                                                | numeric        | NA                                                                                                                                           |          54 |
+| redd\_width\_in            | Width of the widest part of the disturbed area, perpendicular to streamflow.                                                                                                                 | numeric        | NA                                                                                                                                           |          54 |
+| velocity                   | Mean water column velocity measured at 60 percent depth from the water surface or the average of the 60% depth and 80/20% depth, if the redd depth is ≥ 30 inches (Allan and Castillo 2007). | numeric        | NA                                                                                                                                           |          65 |
+| start\_60                  | starting values on the mechanical flow meter at 60% depth                                                                                                                                    | integer        | NA                                                                                                                                           |          65 |
+| end\_60                    | ending values on the mechanical flow meter at 60% depth                                                                                                                                      | integer        | NA                                                                                                                                           |          65 |
+| sec\_60                    | time the meter was in the water                                                                                                                                                              | integer        | NA                                                                                                                                           |          64 |
+| start\_80                  | Starting values on the mechanical flow meter at 80/20% depth                                                                                                                                 | integer        | NA                                                                                                                                           |          95 |
+| end\_80                    | End values on the mechanical flow meter at 80/20% depth                                                                                                                                      | integer        | NA                                                                                                                                           |          95 |
+| secs\_80                   | time the meter was in the water                                                                                                                                                              | interger       | NA                                                                                                                                           |          95 |
+| bomb\_vel60                | Mean water column velocity measured at 60 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007).                            | numeric        | NA                                                                                                                                           |          77 |
+| bomb\_vel80                | Mean water column velocity measured at 80 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007).                            | numeric        | NA                                                                                                                                           |          98 |
+| comments                   | Comments from survey crew                                                                                                                                                                    | character      | NA                                                                                                                                           |          76 |
+| run                        | Run call based on field data                                                                                                                                                                 | factor         | spring, fall, late fall                                                                                                                      |          90 |
+| observation\_reach         | Reach of observation                                                                                                                                                                         | ordered factor | R1, R2, R3, R4, R5, R5A, R5B, R5C, R6, R6A, R7                                                                                               |          78 |
+| observation\_date          | Date of observation                                                                                                                                                                          | date           | NA                                                                                                                                           |          78 |
+| observation\_age           | Age at observation                                                                                                                                                                           | integer        | NA                                                                                                                                           |          78 |
+| survey\_observed           | ?TODO                                                                                                                                                                                        | numeric        | NA                                                                                                                                           |          78 |
 
 ## Explore `date`
 
@@ -614,10 +700,10 @@ table(cleaner_data$why_not_measured)
     ##                                                      1 
     ##                                          Flow too high 
     ##                                                      1 
-    ##                                        Time-Constraint 
-    ##                                                     11 
     ##                                       TIME CONSTRAINTS 
     ##                                                      1 
+    ##                                        Time-Constraint 
+    ##                                                     11 
     ##                                               Too Deep 
     ##                                                      4 
     ##                                               TOO DEEP 
@@ -897,18 +983,18 @@ names(clear_creek_redd_age) <- c(
   "Pit and tail-spill indistinguishable from the surrounding substrate"
 )
 
-write_rds(clear_creek_redd_age, "../../../data/clear_creek_redd_age.rds")
+write_rds(clear_creek_redd_age, "data/clear_creek_redd_age.rds")
 tibble(age = clear_creek_redd_age,
        definitions = names(clear_creek_redd_age))
 ```
 
-    ## # A tibble: 5 x 2
+    ## # A tibble: 5 × 2
     ##     age definitions                                                             
     ##   <int> <chr>                                                                   
     ## 1     1 ""                                                                      
-    ## 2     2 "Clearly visible and clean (clearly defined pit and tail-spill and no p~
-    ## 3     3 "Less visible with minor tail-spill flattening (pit and tail-spill stil~
-    ## 4     4 "Barely visible with shallow pit and flattened tail-spill (periphyton g~
+    ## 2     2 "Clearly visible and clean (clearly defined pit and tail-spill and no p…
+    ## 3     3 "Less visible with minor tail-spill flattening (pit and tail-spill stil…
+    ## 4     4 "Barely visible with shallow pit and flattened tail-spill (periphyton g…
     ## 5     5 "Pit and tail-spill indistinguishable from the surrounding substrate"
 
 **NA and Unknown Values**
@@ -1385,49 +1471,49 @@ clear_redd <- cleaner_data %>% glimpse
 
     ## Rows: 1,495
     ## Columns: 43
-    ## $ method                  <chr> "snorkel", "snorkel", "snorkel", "snorkel", "s~
-    ## $ longitude               <dbl> -122.5404, -122.5404, -122.5381, -122.5338, -1~
-    ## $ latitude                <dbl> 40.58156, 40.58160, 40.57883, 40.57394, 40.562~
-    ## $ survey                  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ river_mile              <dbl> 16.38723, 16.38717, 16.12547, 15.58567, 14.701~
-    ## $ x1000ftbreak            <dbl> 87000, 87000, 86000, 83000, 78000, 80000, 5700~
-    ## $ ucc_relate              <chr> "above", "above", "above", "above", "above", "~
-    ## $ picket_weir_location    <dbl> 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8~
-    ## $ picket_weir_relation    <chr> "above", "above", "above", "above", "above", "~
-    ## $ date                    <date> 2000-09-25, 2000-10-13, 2000-09-26, 2000-09-2~
-    ## $ surveyed_reach          <chr> "R1", "R1", "R2", "R2", "R2", "R2", "R4", "R4"~
-    ## $ redd_id                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ age                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_loc                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ gravel                  <chr> "native", "native", "native", "native", "nativ~
-    ## $ inj_site                <chr> "paige bar", "paige bar", "above need camp", "~
-    ## $ pre_redd_substrate_size <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ tail_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ fish_on_redd            <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ measured                <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALS~
-    ## $ why_not_measured        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ date_measured           <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ pre_redd_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_pit_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_tail_depth         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ velocity                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ start_60                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ end_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ sec_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ start_80                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ end_80                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ secs_80                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ bomb_vel60              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ bomb_vel80              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ comments                <chr> "NEED CAMP 16.2", "NEED CAMP 16.2", "NEED TEMP~
-    ## $ run                     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ observation_reach       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ observation_date        <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ observation_age         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ survey_observed         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_length             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ redd_width              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ method                  <chr> "snorkel", "snorkel", "snorkel", "snorkel", "s…
+    ## $ longitude               <dbl> -122.5404, -122.5404, -122.5381, -122.5338, -1…
+    ## $ latitude                <dbl> 40.58156, 40.58160, 40.57883, 40.57394, 40.562…
+    ## $ survey                  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ river_mile              <dbl> 16.38723, 16.38717, 16.12547, 15.58567, 14.701…
+    ## $ x1000ftbreak            <dbl> 87000, 87000, 86000, 83000, 78000, 80000, 5700…
+    ## $ ucc_relate              <chr> "above", "above", "above", "above", "above", "…
+    ## $ picket_weir_location    <dbl> 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8…
+    ## $ picket_weir_relation    <chr> "above", "above", "above", "above", "above", "…
+    ## $ date                    <date> 2000-09-25, 2000-10-13, 2000-09-26, 2000-09-2…
+    ## $ surveyed_reach          <chr> "R1", "R1", "R2", "R2", "R2", "R2", "R4", "R4"…
+    ## $ redd_id                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ age                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_loc                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ gravel                  <chr> "native", "native", "native", "native", "nativ…
+    ## $ inj_site                <chr> "paige bar", "paige bar", "above need camp", "…
+    ## $ pre_redd_substrate_size <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ tail_substrate_size     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ fish_on_redd            <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ measured                <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALS…
+    ## $ why_not_measured        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ date_measured           <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ pre_redd_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_pit_depth          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_tail_depth         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ velocity                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ start_60                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ end_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ sec_60                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ start_80                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ end_80                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ secs_80                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ bomb_vel60              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ bomb_vel80              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ comments                <chr> "NEED CAMP 16.2", "NEED CAMP 16.2", "NEED TEMP…
+    ## $ run                     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ observation_reach       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ observation_date        <date> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ observation_age         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ survey_observed         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_length             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ redd_width              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
 
 ``` r
 # gcs_list_objects()

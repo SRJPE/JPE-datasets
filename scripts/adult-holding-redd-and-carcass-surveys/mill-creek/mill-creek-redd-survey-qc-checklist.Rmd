@@ -109,10 +109,19 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
                                           "Elevation at sample start point",
                                           "Survey year",
                                           "Number of redds observed"),
+                          data_type = c("character",
+                                        "integer",
+                                        "year",
+                                        "numeric"),
+                          encoding = c(NA,
+                                       NA,
+                                       NA,
+                                       NA),
                           percent_na = round(percent_na$value*100)
                           
 )
 kable(data_dictionary)
+#saveRDS(data_dictionary, file = "data/mill_redd_data_dictionary.rds")
 ```
 
 ## Explore Categorical Variables

@@ -157,18 +157,30 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
                                           "Elevation at sample start point",
                                           "Survey year",
                                           "Number of redds observed"),
+                          data_type = c("character",
+                                        "integer",
+                                        "year",
+                                        "numeric"),
+                          encoding = c(NA,
+                                       NA,
+                                       NA,
+                                       NA),
                           percent_na = round(percent_na$value*100)
                           
 )
 kable(data_dictionary)
 ```
 
-| variables               | description                              | percent\_na |
-|:------------------------|:-----------------------------------------|------------:|
-| location                | Nominal description of sampling location |           0 |
-| starting\_elevation\_ft | Elevation at sample start point          |          53 |
-| year                    | Survey year                              |           0 |
-| redd\_count             | Number of redds observed                 |          11 |
+| variables               | description                              | data\_type | encoding | percent\_na |
+|:------------------------|:-----------------------------------------|:-----------|:---------|------------:|
+| location                | Nominal description of sampling location | character  | NA       |           0 |
+| starting\_elevation\_ft | Elevation at sample start point          | integer    | NA       |          53 |
+| year                    | Survey year                              | year       | NA       |           0 |
+| redd\_count             | Number of redds observed                 | numeric    | NA       |          11 |
+
+``` r
+#saveRDS(data_dictionary, file = "data/mill_redd_data_dictionary.rds")
+```
 
 ## Explore Categorical Variables
 
