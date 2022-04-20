@@ -140,6 +140,13 @@ run_encoding <- function(dat) {
                          count == 0  ~ NA_character_,
                          T ~ tolower(run)))
 }
+
+# origin_encoding <- function(dat) {
+#   dat %>%
+#     mutate(origin = case_when(is.na(origin) ~ "not recorded",
+#                               count == 0 ~ NA_character_,
+#                               T ~ tolower(origin)))
+# }
 ```
 
 
@@ -180,11 +187,13 @@ filter(battle_rst, is.na(run)) %>% glimpse
 # no variable for marked so assume all are unmarked
 # run is not filtered
 # TODO compare mean observed v interpolated to decide if we should use
+# TODO determine if natural production or if unknown. Natural because trap is above that hatchery
 
 battle_rst_clean <- battle_rst %>%
   select(-c(sample_id, lifestage, dead, interpolated)) %>%
   mutate(tributary = "Battle Creek",
-         site = "Battle Creek") %>%
+         site = "Battle Creek",
+         origin = "natural") %>%
   run_encoding()
 ```
 
@@ -218,16 +227,23 @@ butte_hours_fished_final <- left_join(butte_hours_fished, butte_hours_fished_wee
 
 # Run was filtered to spring (or only spring is collected) prior to sharing data
 # TODO include hatchery?
+# TODO create origin variable where adclip is "hatchery", is NA natural or unknown?
 
 butte_rst %>% glimpse
 unique(butte_rst$station)
 unique(butte_rst$mark_code)
 filter(butte_rst, is.na(fork_length), count > 0) %>% glimpse
+filter(butte_rst, is.na(mark_code)) %>% tally()
 
 butte_rst_clean <- butte_rst %>%
-  select(date, station, count, fork_length) %>%
+  select(date, station, count, fork_length, mark_code) %>%
+  rename(origin = mark_code) %>%
   mutate(tributary = "Butte Creek",
-         run = "spring") %>%
+         run = "spring",
+         origin = case_when(is.na(origin) ~ "not recorded",
+                            count == 0 ~ NA_character_,
+                            origin == "none" ~ "natural",
+                            origin == "adclipped" ~ "hatchery")) %>%
   rename(site = station)
 ```
 
@@ -272,10 +288,12 @@ filter(clear_rst, is.na(run)) %>% tally()
 # no variable for mark code so assume all unmarked
 # locations are unique locations
 unique(clear_rst$station_code)
+# TODO all natural or uknown origin?
 
 clear_rst_clean <- clear_rst %>%
   select(-c(sample_id, lifestage, dead, interpolated)) %>%
-  mutate(tributary = "Clear Creek") %>%
+  mutate(tributary = "Clear Creek",
+         origin = "natural") %>%
   run_encoding() %>%
   rename(site = station_code)
 ```
@@ -287,11 +305,11 @@ are different names for the same trap and are summed across.
 
 ```{r, deer}
 ## Deer #####
-
 # notes to include
 # no variable for mark code so assume all unmarked
 # locations are different names for trap at same location
 # run is NA (not recorded or collected)
+# TODO all natural origin or origin unknown?
 
 deer_rst %>% glimpse
 unique(deer_rst$location)
@@ -302,7 +320,8 @@ deer_rst_clean <- deer_rst %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(tributary = "Deer Creek",
          site = "Deer Creek",
-         run = "not recorded")
+         run = "not recorded",
+         origin = "natural")
 ```
 Feather River has data available to calculate the hours fished. Data are for all 
 natural salmon. Fork length measurements
@@ -337,10 +356,12 @@ unique(feather_rst$run)
 # data are for all natural salmon
 filter(feather_rst, is.na(run)) %>% tally()
 # notes - sites are unique locations
+# origin is all natural
 
 feather_rst_clean <- feather_rst %>%
   select(date, site_name, fork_length, count, run) %>%
-  mutate(tributary = "Feather River") %>%
+  mutate(tributary = "Feather River",
+         origin = "natural") %>%
   run_encoding() %>%
   rename(site = site_name)
 ```
@@ -377,17 +398,21 @@ unique(knights_landing_rst$fishOrigin)
 unique(knights_landing_rst$run)
 filter(knights_landing_rst, run == "Not applicable (n/a)") %>% glimpse
 filter(knights_landing_rst, is.na(forkLength), n > 0) %>% glimpse
+# 1,603 unknown, 2 not recorded
+filter(knights_landing_rst, fishOrigin == "Unknown") %>% tally()
 
 knights_rst_clean <- knights_landing_rst %>%
   # filter(commonName == "Chinook salmon", fishOrigin == "Natural") %>%
   filter(commonName == "Chinook salmon") %>%
-  select(forkLength, n, run, visitTime) %>%
+  select(forkLength, n, run, visitTime, fishOrigin) %>%
   rename(count = n,
          date = visitTime,
-         fork_length = forkLength) %>%
+         fork_length = forkLength,
+         origin = fishOrigin) %>%
   mutate(tributary = "Lower Sacramento - Knights Landing",
          site = "Lower Sacramento - Knights Landing",
-         date = as_date(date)) %>%
+         date = as_date(date),
+         origin = tolower(origin)) %>%
   run_encoding()
 ```
 Tisdale does not have data available to calculate the hours fished though we
@@ -416,12 +441,14 @@ tisdale_rst_clean <- tisdale_rst %>%
   # filter(rearing == "Natural", mark_type == "None") %>%
   # removed marked fish that were marked for efficiency
   filter(mark_type != "Pigment") %>%
-  select(date, trap_position, fork_length_mm, count, run) %>%
-  rename(fork_length = fork_length_mm) %>%
-  group_by(date, fork_length, run) %>%
+  select(date, trap_position, fork_length_mm, count, run, rearing) %>%
+  rename(fork_length = fork_length_mm,
+         origin = rearing) %>%
+  group_by(date, fork_length, run, origin) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(tributary = "Lower Sacramento - Tisdale",
-         site = "Lower Sacramento - Tisdale") %>%
+         site = "Lower Sacramento - Tisdale",
+         origin = tolower(origin)) %>%
   run_encoding()
 ```
 
@@ -433,6 +460,7 @@ are missing for `r (filter(mill_rst, is.na(fork_length), count >0) %>% tally()/l
 ## Mill ####
 # No hours fishing data available
 # Run is not collected
+# TODO natural origin or origin unknown?
 mill_rst %>% glimpse
 unique(mill_rst$location)
 filter(mill_rst, is.na(fork_length), count > 0) %>% glimpse
@@ -441,7 +469,8 @@ mill_rst_clean <- mill_rst %>%
   select(date, count, fork_length) %>%
   mutate(tributary = "Mill Creek",
          site = "Mill Creek",
-         run = "not recorded")
+         run = "not recorded",
+         origin = "natural")
 ```
 Hours fished are calculated by taking the difference between the date/time at for 
 each observation. Fork length measurements
@@ -480,6 +509,7 @@ unique(yuba_rst$organism_code)
 # note that run designation is a combination of run and lifestage.
 # run not filtered
 # sites are names for traps at the same location and should be summed
+# TODO natural origin or origin unknown?
 filter(yuba_rst, is.na(fork_length), count > 0) %>% glimpse
 filter(yuba_rst, is.na(run), count > 0) %>% glimpse
 filter(yuba_rst, run == "unknown") %>% glimpse
@@ -489,7 +519,8 @@ yuba_rst_clean<- yuba_rst %>%
   group_by(date, fork_length, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(tributary = "Yuba River",
-         site = "Yuba River") %>%
+         site = "Yuba River",
+         origin = "natural") %>%
   run_encoding()
 ```
 
@@ -514,7 +545,7 @@ combined_hours_fished <- bind_rows(butte_hours_fished_final,
 combined_rst_format <- combined_rst %>%
   mutate(week = week(date),
          year = year(date)) %>%
-  group_by(week, year, tributary, site, run) %>%
+  group_by(week, year, tributary, site, run, origin) %>%
   summarize(count = sum(count, na.rm = T),
             mean_fork_length = mean(fork_length, na.rm = T)) %>%
   left_join(combined_hours_fished) %>%
