@@ -1,0 +1,115 @@
+---
+title: "Standardize Mark Recapture Data"
+author: "Erin Cain"
+date: "4/20/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(googleCloudStorageR)
+```
+
+## Mark Recapture Data Standardization 
+
+FlowWest received mark recapture data from 4 monitoring programs: 
+
+* Battle Creek 
+* Clear Creek 
+* Feather River
+* Knights Landing 
+
+Tisdale has conducted efficiency tests but these are in paper format. 
+Mill and Deer did not historically conduct efficiency tests but will do so moving forward. 
+
+TODO Butte & Yuba ? do we have any idea here 
+
+## Standard format for Mark Recapture Data
+
+Data dictionary for standard format: 
+
+| Column Name | Definition | 
+| :------------------------------------ | :---------------------------------------------------------------- | 
+| tributary | Which Spring Run JPE is the data from |
+| date_released | date that marked fish are released |
+| time_released | time that marked fish are released |
+| location_released | subsite on tributary where fish are released |
+| number_released | Count of fish released |
+| number_recaptured  | Count of fish recaptured in RST |
+| efficiency | Efficiency of mark recapture trial, calculated by (number_recaps + 1)/(number_released + 1) |
+| median_fork_length_released | median fork length of group of fish released|
+| median_fork_length_recaptured | median fork length of group of fish recaptured |
+
+(this data is summarized by efficiency trial - there is some raw data that describes individual fish fork_lengths or the time each individual fish was recaptured - this data is not consistently available for all monitoring programs and is not retained here)
+
+All released and recaptured fish are chinook salmon. 
+
+## Read in data {.tabset} 
+
+### Battle Creek  
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/battle_mark_recapture.csv",
+#                overwrite = TRUE)
+
+battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>% 
+  mutate(tributary = "Battle Creek",
+         efficiency = (recaps + 1)/(no_released + 1)) %>%
+  rename(number_released = no_released, number_recaptured = recaps,
+         median_fork_length_recaptured = mark_med_fork_length_mm, 
+         median_fork_length_released = recap_med_fork_length_mm) %>%
+  select(-no_marked, -mortality, -release_temp, -flow_release, -release_turbidity) %>% 
+  glimpse
+```
+
+### Clear Creek 
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/clear_mark_recapture.csv",
+#                overwrite = TRUE)
+
+clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>% 
+  mutate(tributary = "Clear Creek",
+         efficiency = (recaps + 1)/(no_released + 1)) %>% 
+  rename(number_released = no_released, number_recaptured = recaps,
+         median_fork_length_recaptured = mark_med_fork_length_mm, 
+         median_fork_length_released = recap_med_fork_length_mm) %>%
+  glimpse
+```
+
+### Feather River
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/feather-river/data/feather_river_mark_recapture_data.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/feather_mark_recapture.csv",
+#                overwrite = TRUE)
+
+feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>% 
+  mutate(tributary = "Feather River") %>% 
+  rename(number_released = nReleased) %>% glimpse
+```
+
+### Knights Landing
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knights_landing_mark_recapture_data.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/knights_landing_mark_recapture.csv",
+#                overwrite = TRUE)
+
+knights_landing_mark_recap <- read_csv("../../data/rst/knights_landing_mark_recapture.csv") %>% 
+  mutate(tributary = "Lower Sac - Knights Landing") %>% 
+  rename(number_released = nReleased) %>% glimpse
+```
+
+## Combine data: 
+```{r}
+combined_mark_recapture <- bind_rows(battle_mark_recap, clear_mark_recap, feather_mark_recap, knights_landing_mark_recap)
+
+combined_mark_recapture %>% 
+  relocate(tributary, release_date, release_time, ) %>% glimpse
+```
+
+
