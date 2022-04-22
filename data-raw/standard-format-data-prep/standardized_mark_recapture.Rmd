@@ -2,13 +2,18 @@
 title: "Standardize Mark Recapture Data"
 author: "Erin Cain"
 date: "4/20/2022"
-output: html_document
+output: 
+  html_document:
+    theme: flatly
+
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 library(tidyverse)
 library(googleCloudStorageR)
+
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089")
 ```
 
 ## Mark Recapture Data Standardization 
@@ -56,7 +61,17 @@ All released and recaptured fish are chinook salmon.
 
 ### Battle Creek  
 
-#TODO describe logic behind removing columns 
+#### Columns Removed 
+
+* **no_marked:** Number of fish marked was removed since we are focused on fish recaptured not fish marked
+* **mortality:** Fish who died are removed since we are using number of fish relelased not number of fish marked 
+* **mean_flow_day_of_rel, mean_temp_day_of_rel:** Other environmental variables kept 
+(flow_at_release, temperature_at_release, and turbidity_at_release). Additional 
+environmental variables can be added back in based on gage data or trap_environmentals.csv
+if we need more information. There are no environmental variables for Feather River and Knights Landing. 
+* **number_recaptured:** Number recaptured is removed since we are interested in the 
+number recaptured per day not the total number recaptured 
+
 ```{r, message=FALSE, warning=FALSE}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
@@ -82,6 +97,18 @@ battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>%
 ```
 
 ### Clear Creek 
+
+#### Columns Removed 
+
+* **no_marked:** Number of fish marked was removed since we are focused on fish recaptured not fish marked
+* **mortality:** Fish who died are removed since we are using number of fish relelased not number of fish marked 
+* **mean_flow_day_of_rel, mean_temp_day_of_rel:** Other environmental variables kept 
+(flow_at_release, temperature_at_release, and turbidity_at_release). Additional 
+environmental variables can be added back in based on gage data or trap_environmentals.csv
+if we need more information. There are no environmental variables for Feather River and Knights Landing. 
+* **number_recaptured:** Number recaptured is removed since we are interested in the 
+number recaptured per day not the total number recaptured 
+
 ```{r, message=FALSE, warning=FALSE}
 # gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
 #                bucket = gcs_get_global_bucket(),
@@ -104,6 +131,13 @@ clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>%
 ```
 
 ### Feather River
+
+#### Columns Removed 
+
+* **efficiency:** Efficiency is removed since it is a calculated value and will 
+vary depending on how the data is aggregated (see efficiency data in the section
+below that summarized the data by efficiency trial)
+
 ```{r, message=FALSE, warning=FALSE}
 # gcs_get_object(object_name = "rst/feather-river/data/feather_river_mark_recapture_data.csv",
 #                bucket = gcs_get_global_bucket(),
@@ -119,6 +153,13 @@ feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>%
 ```
 
 ### Knights Landing
+
+#### Columns Removed 
+
+* **efficiency:** Efficiency is removed since it is a calculated value and will 
+vary depending on how the data is aggregated (see efficiency data in the section
+below that summarized the data by efficiency trial)
+
 ```{r, message=FALSE, warning=FALSE}
 # gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knights_landing_mark_recapture_data.csv",
 #                bucket = gcs_get_global_bucket(),
@@ -179,8 +220,11 @@ filter(combined_mark_recapture, tributary %in% c("Battle Creek", "Clear Creek"))
 ```{r}
 combined_mark_recapture %>% ggplot() + 
   geom_point(aes(x = release_date, y = tributary, color = tributary), alpha = .1) + 
+  scale_color_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "none")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 
@@ -190,9 +234,12 @@ combined_mark_recapture %>% ggplot() +
 ```{r}
 combined_mark_recapture %>% ggplot() + 
   geom_point(aes(x = release_time, y = tributary, color = tributary), alpha = .1) + 
+  scale_color_manual(values = color_pal) +
   theme_minimal() + 
   scale_x_time() +
-  theme(legend.position = "none")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 
@@ -202,16 +249,22 @@ Most release trials release less than 2000 fish.
 ```{r}
 combined_mark_recapture %>% ggplot() + 
   geom_histogram(aes(x = number_released, fill = tributary), alpha = .5) + 
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 ### recaptured_date  
 
 ```{r}
 combined_mark_recapture %>% ggplot() + 
   geom_point(aes(x = recaptured_date, y = tributary, color = tributary), alpha = .1) + 
+  scale_color_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "none")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 ### number_recaptured     
@@ -223,8 +276,11 @@ combined_mark_recapture %>%
   filter(number_recaptured < 250) %>% 
   ggplot() + 
   geom_histogram(aes(x = number_recaptured, fill = tributary), alpha = .5, binwidth = 10) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 There are 10 values where number_recaptured is greater than 250
@@ -245,6 +301,7 @@ combined_mark_recapture %>%
   ggplot(aes(x = median_fork_length_released, fill = tributary)) + 
   geom_histogram(breaks=seq(0, 200, by=2), alpha = .5) + 
   scale_x_continuous(breaks=seq(0, 200, by=25)) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() +
   labs(title = "median fork length released distribution") + 
   theme(legend.position = "bottom", 
@@ -257,6 +314,7 @@ combined_mark_recapture %>%
   mutate(year = as.factor(lubridate::year(release_date))) %>%
   ggplot(aes(x = median_fork_length_released, y = year, fill = tributary)) + 
   geom_boxplot() + 
+  scale_fill_manual(values = color_pal) +
   theme_minimal() +
   labs(title = "median fork length released by year") + 
   theme(legend.position = "bottom", 
@@ -277,6 +335,7 @@ combined_mark_recapture %>%
   ggplot(aes(x = median_fork_length_recaptured, fill = tributary)) + 
   geom_histogram(breaks=seq(0, 200, by=2),  alpha = .5) + 
   scale_x_continuous(breaks=seq(0, 200, by=25)) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() +
   labs(title = "median fork length recaptured distribution") + 
   theme(legend.position = "bottom", 
@@ -289,6 +348,7 @@ combined_mark_recapture %>%
   mutate(year = as.factor(lubridate::year(release_date))) %>%
   ggplot(aes(x = median_fork_length_recaptured, y = year, fill = tributary)) + 
   geom_boxplot() + 
+  scale_fill_manual(values = color_pal) +
   theme_minimal() +
   labs(title = "median fork length recaptured by year") + 
   theme(legend.position = "bottom", 
@@ -312,8 +372,11 @@ Only battle and clear provide the days held post mark (pre release), most fish a
 combined_mark_recapture %>% 
   ggplot() + 
   geom_histogram(aes(x = days_held_post_mark, fill = tributary), alpha = .5, binwidth = 1) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 ### flow_at_release                      
@@ -322,8 +385,11 @@ Only battle and clear provide flow at release
 combined_mark_recapture %>% 
   ggplot() + 
   geom_histogram(aes(x = flow_at_release, fill = tributary), alpha = .5, binwidth = 25) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 ### temperature_at_release  
@@ -332,8 +398,11 @@ Only battle and clear provide temperature at release, temperature values mostly 
 combined_mark_recapture %>% 
   ggplot() + 
   geom_histogram(aes(x = temperature_at_release, fill = tributary), alpha = .5, binwidth = 2.5) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 ### turbidity_at_release
 Only battle and clear provide turbidity measures, most turbidity measures fall below 25 NTU 
@@ -341,8 +410,11 @@ Only battle and clear provide turbidity measures, most turbidity measures fall b
 combined_mark_recapture %>% 
   ggplot() + 
   geom_histogram(aes(x = turbidity_at_release, fill = tributary), alpha = .5, binwidth = 2) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 ### origin   
 Only battle and clear provide
@@ -388,8 +460,11 @@ summarized_mark_recapture %>%
   ggplot() + 
   geom_histogram(aes(x = efficiency, fill = tributary), alpha = .5) + 
   facet_wrap(~tributary, scales ="free") +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 ### Flow vs Efficiency 
@@ -401,8 +476,11 @@ summarized_mark_recapture %>%
   ggplot() + 
   geom_point(aes(x = flow_at_release, y = efficiency, color = tributary), alpha = .5) + 
   facet_wrap(~tributary) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 ### Temperature vs Efficiency 
@@ -415,8 +493,11 @@ summarized_mark_recapture %>%
   ggplot() + 
   geom_point(aes(x = temperature_at_release, y = efficiency, color = tributary), alpha = .5) + 
   facet_wrap(~tributary) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 
@@ -429,15 +510,18 @@ summarized_mark_recapture %>%
   ggplot() + 
   geom_point(aes(x = turbidity_at_release, y = efficiency, color = tributary), alpha = .5) + 
   facet_wrap(~tributary) +
+  scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
 ## Save unsumarized data to google cloud
 
 
 ```{r}
-knitr::kable(head(combined_mark_recapture, 5))
+knitr::kable(align = 'c', head(combined_mark_recapture, 5))
 ```
 
 

@@ -5,6 +5,7 @@ date: "4/21/2022"
 output:
   html_document:
      code_folding: hide
+     theme: flatly
 ---
 
 ```{r setup, include=FALSE}
@@ -29,7 +30,7 @@ rst_sites <- read_csv("../../analysis/exploratory-analysis/data/rst_sites.csv") 
   select(-year) %>%
   distinct() %>% 
   arrange(tributary)
-knitr::kable(rst_sites)
+knitr::kable(rst_sites, align = 'c')
 ```
 
 ### Map of RST sites
