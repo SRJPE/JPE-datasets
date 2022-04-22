@@ -55,6 +55,8 @@ All released and recaptured fish are chinook salmon.
 ## Read in data {.tabset} 
 
 ### Battle Creek  
+
+#TODO describe logic behind removing columns 
 ```{r, message=FALSE, warning=FALSE}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
@@ -231,10 +233,11 @@ combined_mark_recapture %>%
   filter(number_recaptured > 250)
 ```
 ### median_fork_length_released
+Individual fork lengths for released fish are not provided by Battle Creek, Clear Creek, or Feather River. 
+Kights Landing does provide some of this data but it is very sparse, so was not included here since we are standizing historical data. For future data we would want to be able to have a seperate table that includes individual release fork lengths for every fish released. 
 
 All fork length values are summarized to just show medium fork length. Feather data does not
-provide data on the fork length of released fish. Knights Landing data are summarized to show 
-median fork length per recapture day. Battle and 
+provide data on the fork length of released fish. Knights Landing, Battle Creek, and 
 Clear Creek only show median fork length per efficiency trial.
 
 ```{r}
@@ -262,6 +265,8 @@ combined_mark_recapture %>%
 ```
 
 ### median_fork_length_recaptured
+Individual fork lengths for recaptured fish are not provided by Battle Creek or Clear Creek. 
+Kights Landing and Feather River do provide some of this data but it is sparse, so was not included here since we are standardizing historical data. For future data we would want to be able to include fork lengths for every fish recaptured (likeley from a catch raw table).
 
 All fork length values are summarized to just show medium fork length. Feather and 
 Knights Landing are summarized to show median fork length per recapture day. Battle and 
