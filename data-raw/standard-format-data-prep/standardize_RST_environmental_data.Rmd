@@ -1,0 +1,283 @@
+---
+  title: "Standardize Mark Recapture Data"
+author: "Erin Cain"
+date: "4/20/2022"
+output: 
+  html_document:
+  theme: flatly
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(googleCloudStorageR)
+
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089")
+```
+
+## Mark Recapture Data Standardization 
+
+FlowWest received environmental data for rst from []monitoring programs: 
+  
+* Battle Creek 
+* Butte Creek 
+* Clear Creek 
+* Deer Creek
+* Feather River
+* Mill Creek
+* Knights Landing 
+* Yuba River
+
+No data is provided for tisdale
+
+## Standard format for Mark Recapture Data
+
+Data dictionary for standard format: 
+
+(B - Battle Creek, Bu - Butte Creek, C - Clear Creek, F - Feather River, 
+  D - Deer Creek, F - Feather River, M - Mill Creek, K - Knights Landing,
+  Y - Yuba River)
+
+| column name | tributary collects | definition | 
+  | :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
+  | tributary | B, Bu, C, D, F, M, KL, Y | Which Spring Run JPE is the data from |
+  | date | B, Bu, C, D, F, M, KL, Y | date that samples are taken |
+  | sample_id | B, C | sample id that links with catch or trap condition tables |
+  | flow |  | flow measure in CFS |
+  | velocity |  | velocity measure in feet per seccond |
+  | temperature | | temperature measure in degrees celcius|
+  | turbidity |  | turbidity measure in NTU |
+  | secchi |  | secchi measure in ft |
+  | weather  |  |  |
+  | lunar_phase |  |  |
+  | habitat |  |  |
+  | thalweg |  |  |
+  | flow_start_meter |  |  | 
+  | flow_end_meter |  |  |
+  | flow_set_time |  |  |
+  |  |  |  |
+  
+  
+  All released and recaptured fish are chinook salmon. 
+
+## Read in data {.tabset} 
+
+### Battle Creek  
+
+#### Columns Removed 
+The dataset included operations and environmental data. Below only columns 
+for environmental data are selected. 
+
+```{r, message=FALSE, warning=FALSE}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# gcs_get_object(object_name = "rst/battle-creek/data/battle_rst_environmental.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/battle_rst_environmental.csv",
+#                overwrite = TRUE)
+
+battle_env <- read_csv("../../data/rst/battle_rst_environmental.csv") %>%
+  select(sample_id, date = sample_date, flow_start_meter, flow_end_meter, flow_set_time, 
+         velocity, turbidity, weather = weather_code, lunar_phase, habitat, thalweg) %>%
+  mutate(tributary = "Battle Creek") %>%
+  glimpse
+```
+### Butte Creek  
+
+#### Columns Removed 
+The dataset included catch, operations and environmental data. Below only columns 
+for environmental data are selected. 
+
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/butte-creek/data/butte_rst.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/butte_rst_environmental.csv",
+#                overwrite = TRUE)
+
+butte_env <- read_csv("../../data/rst/butte_rst_environmental.csv", 
+                      col_types = list(
+                      "D", "c", "c", "l", "n", "n", "n", "n", "c", "t", 
+                      "c", "c", "n", "n", "n", "n", "l", "l", "n", "c", 
+                      "n", "n", "c"
+                      )) %>%
+  select(date, station, weather, temperature, turbidity, secchi, velocity) %>%
+  mutate(tributary = "Butte Creek") %>%
+  glimpse
+```
+
+
+### Clear Creek  
+
+#### Columns Removed 
+The dataset included operations and environmental data. Below only columns 
+for environmental data are selected. 
+
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/clear-creek/data/clear_rst_environmental.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/clear_rst_environmental.csv",
+#                overwrite = TRUE)
+
+clear_env <- read_csv("../../data/rst/clear_rst_environmental.csv") %>%
+  select(sample_id, date = sample_date, flow_start_meter, flow_end_meter, flow_set_time, 
+         velocity, turbidity, weather = weather_code, lunar_phase, habitat, thalweg) %>%
+  mutate(tributary = "Clear Creek") %>%
+  glimpse
+```
+
+### Deer Creek
+
+#### Columns Removed 
+The dataset included operations and environmental data. Below only columns 
+for environmental data are selected. 
+
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/deer-creek/data/deer_rst.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/deer_rst_environmental.csv",
+#                overwrite = TRUE)
+
+deer_env <- read_csv("../../data/rst/deer_rst_environmental.csv", 
+                     col_types = list("D", "c", "n", "n", "n", "n", "n", "n", "c", 
+                                      "n", "c", "c", "n")) %>% 
+  select(date, site = location, flow, turbidity, weather, temperature = water_temperature_celsius) %>%
+  mutate(temperature = round((temperature - 32) * (5/9), 1),
+         tributary = "Deer Creek") %>%
+  glimpse
+
+```
+
+### Feather River
+
+#### Columns Removed 
+The dataset included operations and environmental data. Below only columns 
+for environmental data are selected. 
+
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/feather-river/data/feather_rst_effort.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/feather_rst_environmental.csv",
+#                overwrite = TRUE)
+
+feather_env <- read_csv("../../data/rst/feather_rst_environmental.csv") %>% 
+  select(date, site = site_name, sub_site = sub_site_name, temperature = water_temp_c, 
+         turbidity = turbidity_ntu) %>%
+  mutate(tributary = "Feather Creek") %>%
+  glimpse
+
+```
+
+### Lower Sac - Knights Landing
+
+#### Columns Removed 
+The dataset included operations and environmental data. Below only columns 
+for environmental data are selected. 
+
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knl_combine_sampling_effort_clean.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/knights_landing_rst_environmental.csv",
+#                overwrite = TRUE)
+
+knights_landing_env <- read_csv("../../data/rst/knights_landing_rst_environmental.csv") %>% 
+  select(date, site = location, flow = flow_cfs, secchi = secchi_ft, temperature = water_t_f, turbidity) %>%
+  mutate(temperature = round((temperature - 32) * (5/9), 1), 
+         tributary = "Lower Sac - Knights Landing") %>%
+  glimpse
+
+```
+
+
+### Mill Creek
+
+#### Columns Removed 
+The dataset included operations and environmental data. Below only columns 
+for environmental data are selected. 
+
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/mill-creek/data/mill_rst.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/mill_rst_environmental.csv",
+#                overwrite = TRUE)
+
+mill_env <- read_csv("../../data/rst/mill_rst_environmental.csv") %>% 
+  select(date, site = location, flow, temperature = water_temperature, turbidity, weather) %>%
+  mutate(temperature = round((temperature - 32) * (5/9), 1),
+         tributary = "Mill Creek") %>%
+  glimpse
+mill_env$weather %>% unique()
+```
+### Yuba River
+
+#### Columns Removed 
+The dataset included operations and environmental data. Below only columns 
+for environmental data are selected. 
+
+```{r, message=FALSE, warning=FALSE}
+# gcs_get_object(object_name = "rst/yuba-river/data/yuba_rst.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/rst/yuba_rst_environmental.csv",
+#                overwrite = TRUE)
+
+yuba_env <- read_csv("../../data/rst/yuba_rst_environmental.csv", 
+                     col_types = list("D", "t", "c", "n", "n", "n", "c", "n", 
+                                      "n", "c", "n", "n", "c", "c", "n", "n", 
+                                      "c", "n", "c", "c")) %>% 
+  select(date, temperature, turbidity, velocity, site = location) %>%
+  mutate(tributary = "Yuba Creek") %>%
+  glimpse
+
+```
+
+## Combine data: 
+```{r}
+combined_env <- bind_rows(battle_env, butte_env, clear_env, deer_env,
+                          feather_env, knights_landing_env, mill_env, 
+                          yuba_env) %>% glimpse
+
+
+```
+
+## Explore Varibles{.tabset} 
+
+### tributary 
+
+```{r}
+table(combined_mark_recapture$tributary)
+```
+
+### tributary 
+
+```{r}
+table(combined_mark_recapture$tributary)
+```
+
+### tributary 
+
+```{r}
+table(combined_mark_recapture$tributary)
+```
+
+
+
+
+## Save unsumarized data to google cloud
+
+
+```{r}
+knitr::kable(align = 'c', head(combined_trap_env, 5))
+```
+
+
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(combined_trap_env,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_RST_environmental.csv")
+
+```
