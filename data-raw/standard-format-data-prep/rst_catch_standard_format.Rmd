@@ -1,0 +1,781 @@
+---
+title: "Create standard format for RST catch data"
+output: html_document
+---
+
+```{r, include = F}
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+
+Sys.setenv("GCS_AUTH_FILE" = "config.json")
+Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+```
+
+Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
+Cleaned data were saved on the jpe-dev-bucket on google cloud with the exception
+of Knights Landing data from CAMP which has not yet been saved to google cloud.
+
+```{r, data_pull, include = F, echo = F}
+# # Data pull ---------------------------------------------------------------
+
+# Set your authentication using gcs_auth
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# define files to pull in (in some cases there is just one catch file while others
+# have sample and environmental data)
+files_battle <- tibble(path = rep("rst/battle-creek/data/battle_rst_",3),
+                       name = c("catch","environmental","passage_estimates"),
+                       save = rep("data/rst/battle_rst_",3))
+files_butte <- tibble(path = "rst/butte-creek/data/butte_rst",
+                      name = c(""),
+                      save = "data/rst/butte_rst")
+files_clear <- tibble(path = rep("rst/clear-creek/data/clear_rst_",3),
+                      name = c("catch","environmental","passage_estimates"),
+                      save = rep("data/rst/clear_rst_",3))
+files_deer <- tibble(path = "rst/deer-creek/data/deer_rst",
+                     name = c(""),
+                     save = "data/rst/deer_rst")
+files_feather <- tibble(path = rep("rst/feather-river/data/feather_rst",2),
+                        name = c("","_effort"),
+                        save = rep("data/rst/feather_rst",2))
+# files_knights <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/knl_combine_",2),
+#                         name = c("rst_clean","sampling_effort_clean"),
+#                         save = rep("data/rst/knights_",2))
+files_tisdale <- tibble(path = "rst/lower-sac-river/data/tisdale/rst_clean",
+                        name = c(""),
+                        save = "data/rst/tisdale_rst")
+files_mill <- tibble(path = "rst/mill-creek/data/mill_rst",
+                     name = c(""),
+                     save = "data/rst/mill_rst")
+files_yuba <- tibble(path = "rst/yuba-river/data/yuba_rst",
+                     name = c(""),
+                     save = "data/rst/yuba_rst")
+# function to save file to disk
+get_data <- function(path, name, save) {
+  gcs_get_object(object_name = paste0(path, name, ".csv"),
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = paste0(save, name, ".csv"),
+                 overwrite = TRUE)
+}
+# apply function to each set of files
+pmap(files_battle, get_data)
+pmap(files_butte, get_data)
+pmap(files_clear, get_data)
+pmap(files_deer, get_data)
+pmap(files_feather, get_data)
+# pmap(files_knights, get_data)
+pmap(files_tisdale, get_data)
+pmap(files_mill, get_data)
+pmap(files_yuba, get_data)
+
+# load in data
+# catch data
+battle_rst <- read_csv("data/rst/battle_rst_catch.csv")
+butte_rst <- read_csv("data/rst/butte_rst.csv") # contains trap data too
+clear_rst <- read_csv("data/rst/clear_rst_catch.csv")
+deer_rst <- read_csv("data/rst/deer_rst.csv") # contains trap data too
+feather_rst <- read_csv("data/rst/feather_rst.csv")
+# knights_rst <- read_csv("data/rst/knights_rst_clean.csv") # contains cpue info
+tisdale_rst <- read_csv("data/rst/tisdale_rst.csv")
+mill_rst <- read_csv("data/rst/mill_rst.csv") # contains trap data too
+yuba_rst <- read_csv("data/rst/yuba_rst.csv")
+
+# sampling effort and environmental
+battle_environmental <- read_csv("data/rst/battle_rst_environmental.csv")
+clear_environmental <- read_csv("data/rst/clear_rst_environmental.csv")
+feather_effort <- read_csv("data/rst/feather_rst_effort.csv")
+# knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
+
+# Knights landing data pulled from camp
+# TODO add to cloud (this dataset was shared later and has not yet been added to cloud)
+knights_landing_rst <- read_rds("data/rst/knights_landing_raw_catch.rds")
+```
+
+# Data formatting {.tabset}
+
+```{r, helpers}
+# standard encoding fixes for run
+run_encoding <- function(dat) {
+  dat %>%
+    mutate(run = case_when(is.na(run) | run == "Not recorded" |  run == "Not applicable (n/a)" ~ "not recorded",
+                           run == "outlier salmon" ~ "unknown",
+                         count == 0  ~ NA_character_,
+                         T ~ tolower(run)))
+}
+
+# note that there is only one "yoy (young of the year)"
+lifestage_encoding <- function(dat) {
+  dat %>%
+    mutate(lifestage = case_when(count == 0 ~ NA_character_,
+                                 lifestage %in% c("yolk-sac fry", "yolk sac fry (alevin)", "yolk sac fry") ~ "yolk sac fry",
+                                 lifestage %in% c("silvery parr", "fingerling", "pre-smolt") ~ "silvery parr",
+                                 lifestage %in% c("unknown", "yoy (young of the year)", "juvenile") ~ "unknown",
+                                 lifestage %in% c("not recorded", "not provided") | is.na(lifestage) ~ "not recorded",
+                                 lifestage == "parr" ~ "parr",
+                                 lifestage %in% c("fry", "button-up fry", "fry (button-up)") ~ "fry",
+                                 lifestage == "smolt" ~ "smolt",
+                                 lifestage == "adult" ~ "adult",
+                                 lifestage == "yearling" ~ "yearling"))
+}
+```
+
+## Battle Creek
+
+```{r, battle_data_dictionary}
+battle_data_dictionary <- read_rds("data/rst/battle_rst_data_dictionary.rds")
+kable(battle_data_dictionary)
+```
+
+```{r, battle_clean}
+### Catch #####
+battle_rst %>% glimpse
+unique(battle_rst$run)
+unique(battle_rst$lifestage)
+filter(battle_rst, is.na(fork_length), count > 0) %>% glimpse
+filter(battle_rst, is.na(run)) %>% glimpse
+# notes to include
+# some data may be interpolated (~1% may be interpolated)
+# run is not filtered
+# TODO compare mean observed v interpolated to decide if we should use
+# Origin - Natural because trap is above that hatchery
+
+battle_rst_clean <- battle_rst %>%
+  select(-c(sample_id)) %>%
+  mutate(tributary = "Battle Creek",
+         site = "Battle Creek",
+         origin = "natural")
+```
+
+### Variables removed
+
+- sample_id: unable to connect this to any additional data so it is not relevant
+to include
+
+
+## Butte Creek
+```{r, butte_data_dictionary}
+butte_data_dictionary <- read_rds("data/rst/butte_rst_data_dictionary.rds")
+kable(butte_data_dictionary)
+```
+
+```{r, butte_clean}
+# Run was filtered to spring (or only spring is collected) prior to sharing data
+
+butte_rst %>% glimpse
+unique(butte_rst$station)
+unique(butte_rst$mark_code)
+unique(butte_rst$gear_id)
+unique(butte_rst$lifestage)
+ck <- filter(butte_rst, gear_id == "diversion fyke trap 1")
+filter(butte_rst, is.na(fork_length), count > 0) %>% glimpse
+filter(butte_rst, is.na(mark_code)) %>% tally()
+
+butte_rst_clean <- butte_rst %>%
+  select(date, station, dead, count, fork_length, weight, mark_code, lifestage, time) %>%
+  rename(origin = mark_code) %>%
+  mutate(tributary = "Butte Creek",
+         run = "spring",
+         origin = case_when(is.na(origin) ~ "not recorded",
+                            count == 0 ~ NA_character_,
+                            origin == "none" ~ "natural",
+                            origin == "adclipped" ~ "hatchery")) %>%
+  rename(site = station)
+```
+
+### Variables removed
+
+- trap_status, gear_id, north_brush, south_brush, debris, comments, trap_revolutions, rpms_start, rpms_end: included in operations table
+- weather, temperature, turbidity, secchi, velocity: included in environmental table
+
+## Clear Creek
+
+```{r, clear_data_dictionary}
+clear_data_dictionary <- read_rds("data/rst/clear_rst_data_dictionary.rds")
+kable(clear_data_dictionary)
+```
+
+```{r, clear_clean}
+clear_rst %>%glimpse
+unique(clear_rst$run)
+unique(clear_rst$lifestage)
+# only one with missing run designation
+filter(clear_rst, is.na(run)) %>% tally()
+# notes to include
+# some data may be interpolated (less than 1% may be interpolated)
+# all runs included
+# no variable for mark code so assume all unmarked
+# locations are unique locations
+unique(clear_rst$station_code)
+
+clear_rst_clean <- clear_rst %>%
+  select(-c(sample_id)) %>%
+  mutate(tributary = "Clear Creek",
+         origin = "natural") %>%
+  rename(site = station_code)
+```
+
+### Variables removed
+
+- sample_id: unable to connect this to any additional data so it is not relevant
+to include
+
+
+## Deer Creek
+
+```{r, deer_data_dictionary}
+deer_data_dictionary <- read_rds("data/rst/deer_rst_data_dictionary.rds")
+kable(deer_data_dictionary)
+```
+
+```{r, deer_clean}
+deer_rst %>% glimpse
+unique(deer_rst$location)
+filter(deer_rst, is.na(fork_length), count > 0) %>% glimpse
+
+deer_rst_clean <- deer_rst %>%
+  select(date, location, count, fork_length, weight) %>%
+  group_by(date, fork_length, weight) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  mutate(tributary = "Deer Creek",
+         site = "Deer Creek",
+         run = "not recorded",
+         origin = "natural",
+         lifestage = "not recorded")
+```
+
+### Variables removed
+
+- flow, turbidity, weather, water_temperature_celsius: included in environmental table
+- tubs_of_debris, trap_condition_code, comments, time_for_10_revolutions: included in operations table
+
+## Feather River
+
+```{r, feather_data_dictionary}
+feather_data_dictionary <- read_rds("data/rst/feather_rst_data_dictionary.rds")
+kable(feather_data_dictionary)
+```
+
+```{r, feather_clean}
+feather_rst %>% glimpse
+unique(feather_rst$run)
+unique(feather_rst$lifestage)
+# 127 out of 180871 where run is not designated
+# data are for all natural salmon
+filter(feather_rst, is.na(run)) %>% tally()
+# notes - sites are unique locations
+# origin is all natural
+
+feather_rst_clean <- feather_rst %>%
+  mutate(tributary = "Feather River",
+         origin = "natural") %>%
+  rename(site = site_name)
+```
+
+## Mill Creek
+
+```{r, mill_data_dictionary}
+mill_data_dictionary <- read_rds("data/rst/mill_rst_data_dictionary.rds")
+kable(mill_data_dictionary)
+```
+
+```{r, mill_clean}
+# No hours fishing data available
+# Run is not collected
+mill_rst %>% glimpse
+unique(mill_rst$location)
+filter(mill_rst, is.na(fork_length), count > 0) %>% glimpse
+filter(mill_rst, is.na(count))
+
+mill_rst_clean <- mill_rst %>%
+  select(date, count, fork_length) %>%
+  mutate(tributary = "Mill Creek",
+         site = "Mill Creek",
+         run = "not recorded",
+         origin = "natural",
+         lifestage = "not recorded")
+```
+
+### Variables removed
+
+- flow, water_temperature, turbidity, weather: included in environmental table
+- tubs_of_debris, trap_condition_code, comments, time_for_10_revolutions: included in operations table
+
+## Yuba River
+
+```{r, yuba_data_dictionary}
+yuba_data_dictionary <- read_rds("data/rst/yuba_rst_data_dictionary.rds")
+kable(yuba_data_dictionary)
+```
+
+```{r, yuba_clean}
+yuba_rst %>% glimpse
+unique(yuba_rst$location)
+unique(yuba_rst$run)
+ck <- filter(yuba_rst, is.na(run), !is.na(count), count > 0)
+# all are CHN
+unique(yuba_rst$organism_code)
+unique(yuba_rst$lifestage)
+# note that run designation is a combination of run and lifestage.
+# run not filtered
+# sites are names for traps at the same location and should be summed
+filter(yuba_rst, is.na(fork_length), count > 0) %>% glimpse
+filter(yuba_rst, is.na(run), count > 0) %>% glimpse
+filter(yuba_rst, run == "unknown") %>% glimpse
+
+yuba_rst_clean<- yuba_rst %>%
+  select(date, time, fork_length, weight, lifestage, count, location, run) %>%
+  group_by(date, fork_length, weight, lifestage, run) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  mutate(tributary = "Yuba River",
+         site = "Yuba River",
+         origin = "natural")
+```
+
+### Variables removed
+
+- method, trap_status, debris, comments, trap_revolutions, trap_revolutions2, rpms_before, rpms_after: included in operations table
+- temperature, turbidity, velocity: included in environmental table
+- organism_code removed because all are CHN
+
+## Lower Sacramento - Knights Landing
+
+```{r, knights_clean}
+unique(knights_landing_rst$commonName)
+unique(knights_landing_rst$fishOrigin)
+unique(knights_landing_rst$run)
+filter(knights_landing_rst, run == "Not applicable (n/a)") %>% glimpse
+filter(knights_landing_rst, is.na(forkLength), n > 0) %>% glimpse
+unique(knights_landing_rst$runMethod)
+unique(knights_landing_rst$lifeStage)
+
+# 1,603 unknown, 2 not recorded
+filter(knights_landing_rst, fishOrigin == "Unknown") %>% tally()
+
+knights_rst_clean <- knights_landing_rst %>%
+  select(-c(catchRawID, trapVisitID, lifeStageCAMPID, visitTime2, visitType)) %>%
+  rename(count = n,
+         date = visitTime,
+         fork_length = forkLength,
+         origin = fishOrigin,
+         species = commonName,
+         run_method = runMethod,
+         lifestage = lifeStage) %>%
+  mutate(tributary = "Lower Sacramento - Knights Landing",
+         site = "Lower Sacramento - Knights Landing",
+         time = as_hms(date),
+         date = as_date(date),
+         origin = tolower(origin),
+         run_method = tolower(run_method),
+         species = tolower(species),
+         lifestage = tolower(lifestage)) 
+```
+
+### Variables removed
+
+- catchRawID, trapVisitID, lifeStageCAMPID removed because outside of CAMP this doesn't link well
+- visitTime2 is typically the same as visitTime and is included in effort table
+- visitType is included in operations table
+
+
+## Lower Sacramento - Tisdale
+
+```{r, tisdale_data_dictionary}
+tisdale_data_dictionary <- read_rds("data/rst/lower_sac_tisdale_rst_data_dictionary.rds")
+kable(tisdale_data_dictionary)
+```
+
+```{r, tisdale_clean}
+tisdale_rst %>% glimpse
+# 15 obs where run is not recorded, 9 where run is NA
+unique(tisdale_rst$run)
+unique(tisdale_rst$species)
+unique(tisdale_rst$rearing)
+unique(tisdale_rst$mark_type)
+# 18 rows with mark type pigment
+filter(tisdale_rst, mark_type == "Pigment") %>% glimpse
+# 17 rows with mark type elastomer
+filter(tisdale_rst, mark_type == "Elastomer") %>% glimpse
+filter(tisdale_rst, is.na(run)) %>% glimpse
+filter(tisdale_rst, is.na(fork_length_mm), count > 0) %>% glimpse
+filter(tisdale_rst, run == "unknown") %>% glimpse
+unique(tisdale_rst$life_stage)
+filter(tisdale_rst, random == F, count > 0)
+
+tisdale_rst_clean <- tisdale_rst %>%
+  # filter(rearing == "Natural", mark_type == "None") %>%
+  # removed marked fish that were marked for efficiency
+  filter(mark_type != "Pigment") %>%
+  select(-c(fish_processed, at_capture_run, final_run, release_id, mark_type, mark_position, mark_color, trap_visit_comment)) %>%
+  rename(fork_length = fork_length_mm,
+         origin = rearing,
+         lifestage = life_stage,
+         dead = mortality) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, origin, random) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  mutate(tributary = "Lower Sacramento - Tisdale",
+         site = "Lower Sacramento - Tisdale",
+         origin = tolower(origin),
+         lifestage = tolower(lifestage),
+         species = tolower(species)) 
+```
+
+### Variables removed
+
+- fish_processed: included in operations table
+- run is a combination of at_capture_run and final_run (replaces at_capture_run with final_run when final_run exists)
+- release_id is an ID column from CAMP and doesn't link well outside of CAMP
+- mark_type, mark_position, mark_color removed because little information (35 obs) and rearing includes the fin clip marking
+
+# Standard format {.tabset}
+
+```{r, combined}
+# TODO fill in run method
+# TODO decide if we need the "random" variable. It only applies to Tisdale
+combined_rst_raw <- bind_rows(battle_rst_clean,
+                          butte_rst_clean,
+                          clear_rst_clean,
+                          deer_rst_clean,
+                          feather_rst_clean,
+                          mill_rst_clean,
+                          yuba_rst_clean,
+                          knights_rst_clean,
+                          tisdale_rst_clean) 
+combined_rst <- combined_rst_raw %>%
+  run_encoding() %>%
+  lifestage_encoding() %>%
+  # all should be chinook salmon
+  mutate(species = ifelse(is.na(species), "chinook salmon", species),
+         run_method = case_when(is.na(run_method) ~ "not recorded",
+                                run == "not recorded" | count == 0 ~ NA_character_,
+                                T ~ tolower(run_method)))
+
+unique(combined_rst$run)
+unique(combined_rst$lifestage)
+unique(combined_rst$species)
+```
+
+## Data dictionary
+
+```{r, data_dictionary_prep, include = F}
+colnames(combined_rst)
+
+rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
+                                    description = c("Date trap checked. Some locations also have a time component.",
+                                                    "Designated run of fish using method in run_method. Some locations did not designated a run. NA when count is 0.",
+                                                    "Fork length of fish in mm.",
+                                                    "Life stage of fish. NA when count is 0.",
+                                                    "Number of fish caught.",
+                                                    "Describes if fish were dead when observed (T/F).",
+                                                    "Describes if data were interpolated (T/F).",
+                                                    "Mainstem/tributary location of trap.",
+                                                    "Site of trap within tributary. Some locations do not have multiples sites in which tributary = site. Site names are specific to the tributary.",
+                                                    "Describes if the fish is natural or hatchery origin. In some cases this information may be unknown.",
+                                                    "Weight in grams.",
+                                                    "Time trap checked.",
+                                                    "Species of fish. All were filtered to chinook.",
+                                                    "Method used to designate run. NA if count is 0.",
+                                                    "Describes if fish were caught randomly (T/F)"),
+                                    
+                                    encoding = c(NA,
+                                                 "late fall, spring, fall, winter, not recorded, unknown, outlier salmon",
+                                                 NA,
+                                                 "smolt, fry, yolk sac fry, not recorded, parr, silvery parr, adult, unknown, yearling",
+                                                 NA,
+                                                 "TRUE, FALSE",
+                                                 "TRUE, FALSE",
+                                                 "Battle Creek, Butte Creek, Clear Creek, Deer Creek, Feather River, Mill Creek, Yuba River, Lower Sacramento - Knights Landing, Lower Sacramento - Tisdale",
+                                                 "Battle Creek, Okie Dam 1, Adams Dam, Okie Dam 2, LCC, UCC, Deer Creek, Eye Riffle, Live Oak, Herringer Riffle, Steep Riffle, Sunset Pumps, Shawns Beach, Gateway Riffle, Mill Creek, Yuba River, Lower Sacramento - Knights Landing, Lower Sacramento - Tisdale",
+                                                 "natural, not recorded, hatchery, unknown",
+                                                 NA,
+                                                 NA,
+                                                 "chinook salmon",
+                                                 "not recorded, length-at-date criteria, appearance, hatchery attribute",
+                                                 "TRUE, FALSE"),
+                                    `not collected` = c(NA,
+                                                       "Deer, Mill",
+                                                       NA,
+                                                       "Deer, Mill",
+                                                       NA,
+                                                       "Deer, Feather, Mill, Yuba, Knights",
+                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       NA,
+                                                       NA,
+                                                       NA,
+                                                       "Battle, Clear, Feather, Mill",
+                                                       "Battle, Clear, Deer, Feather, Mill, Yuba, Tisdale",
+                                                       NA,
+                                                       "Battle, Butte, Clear, Deer, Feather, Mill, Yuba, Tisdale",
+                                                       "Battle, Butte, Clear, Deer, Feather, Mill, Yuba, Knights"))
+```
+
+```{r, data_dictionary}
+kable(rst_catch_data_dictionary)
+```
+
+## Exploratory plots
+
+Boxplots of lifestage and fork length to verify lifestage encodings
+
+```{r}
+ggplot(combined_rst_raw, aes(x = lifestage, y = fork_length)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+Yolk sac fry categories
+
+```{r}
+# check category mappings
+# yolk sac fry
+ggplot(filter(combined_rst_raw, lifestage %in% c("yolk-sac fry", "yolk sac fry (alevin)", "yolk sac fry")), aes(x = lifestage, y = fork_length)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+Silvery fry categories 
+
+```{r}
+# silvery parr
+ggplot(filter(combined_rst_raw, lifestage %in% c("silvery parr", "fingerling", "pre-smolt")), aes(x = lifestage, y = fork_length)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+Juvenile and unknown
+
+```{r}
+# unknown
+ggplot(filter(combined_rst_raw, lifestage %in% c("unknown", "yoy (young of the year)", "juvenile")), aes(x = lifestage, y = fork_length)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+Parr
+
+Pre-smolt fits better with silvery parr
+
+```{r}
+# parr
+ggplot(filter(combined_rst_raw, lifestage %in% c("parr", "pre-smolt")), aes(x = lifestage, y = fork_length)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+Fry
+
+```{r}
+# fry
+ggplot(filter(combined_rst_raw,  lifestage %in% c("fry", "button-up fry", "fry (button-up)")), aes(x = lifestage, y = fork_length)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+
+# QA/QC {.tabset}
+
+## run
+
+Run is not recorded for Mill and Deer. Butte only has spring run.
+
+Figure below shows the percentage by run for each tributary and year.
+
+```{r, run_qaqc}
+unique(combined_rst$run)
+
+total_count <- combined_rst %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year) %>%
+  summarize(total = sum(count, na.rm = T))
+
+combined_rst %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year, run) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  left_join(total_count) %>%
+  mutate(percent = (count/total)*100) %>%
+  ggplot(aes(x = year, y = percent, fill = run)) +
+  geom_col() +
+  facet_wrap(~tributary, scales = "free_y") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+## fork_length
+
+Figure below shows the percent of total fish counted that have a fork length measurement.
+
+```{r, forklength_qaqc}
+combined_rst %>%
+  filter(!is.na(fork_length)) %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  left_join(total_count) %>%
+  mutate(percent = (count/total)*100) %>%
+  ggplot(aes(x = year, y = percent)) +
+  geom_col() +
+  facet_wrap(~tributary)
+  
+```
+
+## lifestage
+
+Deer and Mill do not recored lifestage. Data is spotty for Butte and Yuba.
+
+Figure below shows the percentage by lifestage for each tributary and year.
+
+```{r, lifestage_qaqc}
+combined_rst %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year, lifestage) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  left_join(total_count) %>%
+  mutate(percent = (count/total)*100) %>%
+  ggplot(aes(x = year, y = percent, fill = lifestage)) +
+  geom_col() +
+  facet_wrap(~tributary, scales = "free_y") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+## count
+
+Note that there are 72 observations for Mill Creek where count is NA. Count could be 0, 1, or more than 1. 
+
+```{r, count_qaqc}
+filter(combined_rst, is.na(count)) %>% glimpse()
+```
+
+## dead
+
+Figure below shows percent of fish observed that were marked as dead. Note that some
+locations do not record this information.
+
+```{r, dead_qaqc}
+combined_rst %>%
+  filter(dead == T) %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  left_join(total_count) %>%
+  mutate(percent = (count/total)*100) %>%
+  ggplot(aes(x = year, y = percent)) +
+  geom_col() +
+  facet_wrap(~tributary)
+```
+
+## interpolated
+
+Battle and Clear include interpolated values.
+
+Figure below shows percent of fish observed that were interpolated. Interpolated
+counts do not include values for fork length.
+
+```{r, interpolated_qaqc}
+combined_rst %>%
+  filter(interpolated == T) %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  left_join(total_count) %>%
+  mutate(percent = (count/total)*100) %>%
+  ggplot(aes(x = year, y = percent)) +
+  geom_col() +
+  facet_wrap(~tributary)
+
+combined_rst %>%
+  filter(tributary %in% c("Battle Creek", "Clear Creek")) %>%
+  group_by(tributary, date, interpolated) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  ggplot(aes(x = date, y = count, color = interpolated)) +
+  geom_line() +
+  facet_wrap(~tributary, scales = "free_y")
+```
+
+## origin
+
+Origin is mostly natural. Only Butte Creek, Knights Landing, Tisdale included data
+for origin. For other locations it is not relevant or was already filtered.
+
+```{r, origin_qaqc}
+combined_rst %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year, origin) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  left_join(total_count) %>%
+  mutate(percent = (count/total)*100) %>%
+  ggplot(aes(x = year, y = percent, fill = origin)) +
+  geom_col() +
+  facet_wrap(~tributary, scales = "free_y") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+## weight
+
+Figure below shows the percent of total fish counted that have a weight measurement.
+
+```{r, weight_qaqc}
+combined_rst %>%
+  filter(!is.na(weight)) %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  left_join(total_count) %>%
+  mutate(percent = (count/total)*100) %>%
+  ggplot(aes(x = year, y = percent)) +
+  geom_col() +
+  facet_wrap(~tributary)
+```
+## run_method
+
+Only Knights Landing recorded this information. Method is assumed to be length-at-date
+for all others. 
+
+```{r, runmethod_qaqc}
+combined_rst %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year, run_method) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  left_join(total_count) %>%
+  mutate(percent = (count/total)*100) %>%
+  ggplot(aes(x = year, y = percent, fill = run_method)) +
+  geom_col() +
+  facet_wrap(~tributary, scales = "free_y") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+## random
+
+Only Tisdale recorded this information. There are very few cases where random is not true.
+
+```{r, random_qaqc}
+combined_rst %>%
+  filter(random == F) %>%
+  mutate(year = year(date)) %>%
+  group_by(tributary, year) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
+  left_join(total_count) %>%
+  mutate(percent = (count/total)*100) %>%
+  ggplot(aes(x = year, y = percent)) +
+  geom_col() +
+  facet_wrap(~tributary)
+```
+
+# Save data
+
+```{r, save_data}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(combined_rst,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_rst_catch.csv",
+           predefinedAcl = "bucketLevel")
+```
