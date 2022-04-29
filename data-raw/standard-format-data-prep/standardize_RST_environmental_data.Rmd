@@ -1,5 +1,5 @@
 ---
-  title: "Standardize Mark Recapture Data"
+title: "Standardize Mark Recapture Data"
 author: "Erin Cain"
 date: "4/20/2022"
 output: 
@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 library(tidyverse)
 library(googleCloudStorageR)
 
-color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089")
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
 ```
 
 ## Mark Recapture Data Standardization 
@@ -44,20 +44,20 @@ Data dictionary for standard format:
   | tributary | B, Bu, C, D, F, M, KL, Y | Which Spring Run JPE is the data from |
   | date | B, Bu, C, D, F, M, KL, Y | date that samples are taken |
   | sample_id | B, C | sample id that links with catch or trap condition tables |
-  | flow |  | flow measure in CFS |
-  | velocity |  | velocity measure in feet per seccond |
-  | temperature | | temperature measure in degrees celcius|
-  | turbidity |  | turbidity measure in NTU |
-  | secchi |  | secchi measure in ft |
-  | weather  |  |  |
-  | lunar_phase |  |  |
-  | habitat |  |  |
-  | thalweg |  |  |
-  | flow_start_meter |  |  | 
-  | flow_end_meter |  |  |
-  | flow_set_time |  |  |
-  |  |  |  |
-  
+  | velocity | B, Bu, C, Y | velocity measure in feet per seccond |
+  | temperature |  Bu, D, F, KL, M, Y | temperature measure in degrees celcius|
+  | turbidity | B, Bu, C, D, F, M, KL, Y | turbidity measure in NTU |
+  | secchi | Bu, KL | secchi measure in ft |
+  | weather  | B, Bu, C, D, M | Weather condition at time of trapping  |
+  | lunar_phase | B, C | Phase of moon (full, half, new) |
+  | habitat | B, C | Habitat trap is located in (backwater pool, glide, run) |
+  | thalweg | B, C | If the trap is fishing in the thawleg |
+  | flow_start_meter | B, C | Start time of flow meter | 
+  | flow_end_meter | B, C | End time of flow meter |
+  | flow_set_time | B, C | Flow set time ? |
+  | flow | D, KL, M | flow in cfs |
+  | site | Y, Bu, F | site name  |
+  | sub_site | F | sub site name |
   
   All released and recaptured fish are chinook salmon. 
 
@@ -70,9 +70,9 @@ The dataset included operations and environmental data. Below only columns
 for environmental data are selected. 
 
 ```{r, message=FALSE, warning=FALSE}
-gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
-gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # gcs_get_object(object_name = "rst/battle-creek/data/battle_rst_environmental.csv",
 #                bucket = gcs_get_global_bucket(),
@@ -103,7 +103,7 @@ butte_env <- read_csv("../../data/rst/butte_rst_environmental.csv",
                       "c", "c", "n", "n", "n", "n", "l", "l", "n", "c", 
                       "n", "n", "c"
                       )) %>%
-  select(date, station, weather, temperature, turbidity, secchi, velocity) %>%
+  select(date, site = station, weather, temperature, turbidity, secchi, velocity) %>%
   mutate(tributary = "Butte Creek") %>%
   glimpse
 ```
@@ -223,11 +223,12 @@ for environmental data are selected.
 #                overwrite = TRUE)
 
 yuba_env <- read_csv("../../data/rst/yuba_rst_environmental.csv", 
-                     col_types = list("D", "t", "c", "n", "n", "n", "c", "n", 
+                     col_types = list("T", "t", "c", "n", "n", "n", "c", "n", 
                                       "n", "c", "n", "n", "c", "c", "n", "n", 
                                       "c", "n", "c", "c")) %>% 
+  mutate(date = lubridate::as_date(date)) %>%
   select(date, temperature, turbidity, velocity, site = location) %>%
-  mutate(tributary = "Yuba Creek") %>%
+  mutate(tributary = "Yuba River") %>%
   glimpse
 
 ```
@@ -243,24 +244,294 @@ combined_env <- bind_rows(battle_env, butte_env, clear_env, deer_env,
 
 ## Explore Varibles{.tabset} 
 
-### tributary 
+### sample_id 
+Battle and Clear Creeks are the only tribs that give a sample ID. The rest of the tribs are entirely NA for this column. 
 
 ```{r}
-table(combined_mark_recapture$tributary)
+combined_env %>% group_by(tributary) %>%
+  summarize(unique_sample_id = length(unique(sample_id)))
+```
+
+
+### date 
+
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_point(aes(x = date, y = tributary, color = tributary), alpha = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) + 
+  theme(legend.position = "none", 
+        text = element_text(size = 18)) 
+```
+
+### flow_start_meter 
+
+Battle and Clear Creeks are the only tribs that give a flow_start_meter. The rest of the tribs are entirely NA for this column. 
+
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = flow_start_meter, y = tributary, color = tributary), alpha = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+
+### flow_start_meter 
+
+Battle and Clear Creeks are the only tribs that give a flow_end_meter. The rest of the tribs are entirely NA for this column. 
+
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = flow_end_meter, y = tributary, color = tributary), alpha = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+
+### flow_set_time   
+
+Battle and Clear Creeks are the only tribs that give a flow_set_time. The rest of the tribs are entirely NA for this column.
+
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = flow_set_time, y = tributary, color = tributary), alpha = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+
+### velocity   
+
+Battle, Butte, Clear, and Yuba provide velocity data. 
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = velocity, y = tributary, color = tributary), alpha = .5, binwidth = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+Zoom in on 0 - 10 velocity range: 
+```{r}
+combined_env %>% 
+  filter(velocity < 10) %>%
+  ggplot() + 
+  geom_histogram(aes(x = velocity, fill = tributary), alpha = .5, binwidth = .3, position="identity") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "buttom", 
+        text = element_text(size = 18))
+```
+
+
+### turbidity   
+
+All watersheds provide turbidity data
+
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = turbidity, y = tributary, color = tributary), alpha = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+Zoom in on 0 - 25 velocity range: 
+```{r}
+combined_env %>% 
+  filter(turbidity < 50) %>% # 1,647 values above 50 (274,049 rows total)
+  ggplot() + 
+  geom_histogram(aes(x = turbidity, fill = tributary), alpha = .5, binwidth = .3, position="identity") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+```
+### weather   
+
+Battle, Butte, Clear Deer, and Mill collect weather data: 
+```{r}
+unique(combined_env$weather)
+combined_env %>% 
+  ggplot() + 
+  geom_bar(aes(x = weather, fill = tributary), position = "dodge") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+Fix encodings of weather data 
+```{r}
+combined_env <- combined_env %>% 
+  mutate(weather = case_when(weather %in% c("precipitation", "rain", "rainy", "windy and precipitation") ~ "precipitation",
+                             weather %in% c("sunny", "clear") ~ "clear",
+                             weather %in% c("partially cloudy", "partly cloudy") ~ "partially cloudy",
+                             weather %in% c("fog", "foggy") ~ "clear",
+                             weather %in% c("windy", "windy and clear") ~ "windy",
+                             weather == "cloudy" ~ "cloudy")) %>% glimpse
+
+table(combined_env$weather, useNA = "ifany")
+
+combined_env %>% 
+  ggplot() + 
+  geom_bar(aes(x = weather, fill = tributary), position = "dodge") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+```
+
+### lunar_phase 
+
+```{r}
+table(combined_env$lunar_phase, useNA = "ifany")
+```
+Only battle and clear give lunar_phase: 
+
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_bar(aes(x = lunar_phase, fill = tributary), position = "dodge") +
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+
+```
+### habitat
+```{r}
+table(combined_env$habitat, useNA = "ifany")
+```
+Only battle and clear give habitat: 
+
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_bar(aes(x = habitat, fill = tributary), position = "dodge") +
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+
+
+```
+### thawleg
+```{r}
+table(combined_env$thalweg, useNA = "ifany")
+```
+Only battle and clear give thawleg: 
+
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_bar(aes(x = thalweg, fill = tributary), position = "dodge") +
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+
 ```
 
 ### tributary 
+```{r}
+table(combined_env$tributary, useNA = "ifany")
+```
+### temperature
+
+TODO fix funky temp stuff 
+
+Butte, Deer, Feather, Knights Landing, Mill, and Yuba provide temperature data
 
 ```{r}
-table(combined_mark_recapture$tributary)
+combined_env %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = temperature, y = tributary, color = tributary), alpha = .5, binwidth = .5) + 
+  theme_minimal() +
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+Zoom in on 0 - 25 temperature range: 
+```{r}
+combined_env %>% 
+  filter(temperature < 100) %>% # Filter out outliers
+  ggplot() + 
+  geom_histogram(aes(x = temperature, fill = tributary), alpha = .5, binwidth = 2.5, position = "identity") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
 ```
 
-### tributary 
+### secchi
+
+Knights Landing and Butte provide secchi data
 
 ```{r}
-table(combined_mark_recapture$tributary)
+combined_env %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = secchi, y = tributary, color = tributary), alpha = .5, binwidth = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
 ```
 
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_histogram(aes(x = secchi, fill = tributary), binwidth = 2.5, position = "identity", alpha = .5) + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+```
+
+### site
+```{r}
+table(combined_env$site, useNA = "ifany")
+```
+### flow 
+
+Mill, Deer, and Knights Landing provide flow data
+```{r}
+combined_env %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = flow, y = tributary, color = tributary), alpha = .5, binwidth = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+
+```{r}
+combined_env %>% 
+  filter(tributary %in% c("Mill Creek", "Lower Sac - Knights Landing", "Deer Creek")) %>%
+  ggplot() + 
+  geom_histogram(aes(x = flow, fill = tributary), binwidth = 10) + 
+  theme_minimal() + 
+  facet_wrap(~tributary, ncol = 1, drop = TRUE, scales = "free") + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+
+### sub_site 
+```{r}
+table(combined_env$sub_site, useNA = "ifany")
+```
 
 
 
@@ -268,14 +539,14 @@ table(combined_mark_recapture$tributary)
 
 
 ```{r}
-knitr::kable(align = 'c', head(combined_trap_env, 5))
+knitr::kable(align = 'c', head(combined_env, 5)) 
 ```
 
 
-```{r}
+```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
-gcs_upload(combined_trap_env,
+gcs_upload(combined_env,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_RST_environmental.csv")
