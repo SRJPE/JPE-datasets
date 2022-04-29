@@ -1,0 +1,47 @@
+---
+title: "RST QA/QC Ranges"
+author: "Erin Cain"
+date: "4/29/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## RST QA/QC
+
+Add description of QA/QC methods
+
+
+## Load in combined RST Datasets {.tabset}
+
+### Catch 
+
+### Environmental  
+
+### Trap Operations 
+
+### Mark Recapture  
+
+
+## Explore Catch Ranges {.tabset}
+
+Description of what variables we are defining ranges for. 
+
+* Variable 1 - description of why we want to define QA/QC ranges for it 
+
+
+### Variable 1
+```{r}
+
+```
+
+### Variable 2 
+
+
+## Explore Environmental Ranges {.tabset}
+
+### Variable 1
+
+### Variable 2 
