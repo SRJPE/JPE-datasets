@@ -18,7 +18,7 @@ color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455"
 
 ## Mark Recapture Data Standardization 
 
-FlowWest received environmental data for rst from []monitoring programs: 
+FlowWest received environmental data for rst from 8 monitoring programs: 
   
 * Battle Creek 
 * Butte Creek 
@@ -29,7 +29,7 @@ FlowWest received environmental data for rst from []monitoring programs:
 * Knights Landing 
 * Yuba River
 
-No data is provided for tisdale
+No environmental data is provided for the Tisdale RST. 
 
 ## Standard format for Mark Recapture Data
 
@@ -54,7 +54,7 @@ Data dictionary for standard format:
   | thalweg | B, C | If the trap is fishing in the thawleg |
   | flow_start_meter | B, C | Start time of flow meter | 
   | flow_end_meter | B, C | End time of flow meter |
-  | flow_set_time | B, C | Flow set time ? |
+  | flow_set_time | B, C | Flow set time |
   | flow | D, KL, M | flow in cfs |
   | site | Y, Bu, F | site name  |
   | sub_site | F | sub site name |
@@ -144,8 +144,7 @@ deer_env <- read_csv("../../data/rst/deer_rst_environmental.csv",
                      col_types = list("D", "c", "n", "n", "n", "n", "n", "n", "c", 
                                       "n", "c", "c", "n")) %>% 
   select(date, site = location, flow, turbidity, weather, temperature = water_temperature_celsius) %>%
-  mutate(temperature = round((temperature - 32) * (5/9), 1),
-         tributary = "Deer Creek") %>%
+  mutate(tributary = "Deer Creek") %>%
   glimpse
 
 ```
@@ -228,7 +227,8 @@ yuba_env <- read_csv("../../data/rst/yuba_rst_environmental.csv",
                                       "c", "n", "c", "c")) %>% 
   mutate(date = lubridate::as_date(date)) %>%
   select(date, temperature, turbidity, velocity, site = location) %>%
-  mutate(tributary = "Yuba River") %>%
+  mutate(tributary = "Yuba River",
+         temperature = ifelse(temperature > 40, round((temperature - 32) * (5/9), 1), temperature)) %>% # appears to be F and C temps at yuba 
   glimpse
 
 ```
@@ -450,8 +450,6 @@ table(combined_env$tributary, useNA = "ifany")
 ```
 ### temperature
 
-TODO fix funky temp stuff 
-
 Butte, Deer, Feather, Knights Landing, Mill, and Yuba provide temperature data
 
 ```{r}
@@ -463,10 +461,23 @@ combined_env %>%
   theme(legend.position = "none", 
         text = element_text(size = 18))
 ```
+How many values are above 30 degrees C?
+```{r}
+combined_env %>% 
+  filter(temperature > 40) # all on butte creek and seem like errors 
+
+
+# Remove temps above 40 
+combined_env <- combined_env %>% 
+  filter(temperature < 40) 
+```
+
+
+
 Zoom in on 0 - 25 temperature range: 
 ```{r}
 combined_env %>% 
-  filter(temperature < 100) %>% # Filter out outliers
+  filter(temperature < 30) %>% # Filter out outliers
   ggplot() + 
   geom_histogram(aes(x = temperature, fill = tributary), alpha = .5, binwidth = 2.5, position = "identity") + 
   theme_minimal() + 
@@ -535,20 +546,23 @@ table(combined_env$sub_site, useNA = "ifany")
 
 
 
-## Save unsumarized data to google cloud
+## Reorder columns and save data to GC 
 
 
 ```{r}
-knitr::kable(align = 'c', head(combined_env, 5)) 
+reordered_env <- combined_env %>% relocate(tributary, site, sub_site, date, sample_id, velocity, turbidity, 
+                            temperature, flow, secchi, weather, lunar_phase, habitat, thalweg)
+
+knitr::kable(align = 'c', head(reordered_env, 5)) 
 ```
 
 
 ```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
-gcs_upload(combined_env,
+gcs_upload(reordered_env,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_RST_environmental.csv")
-
+write_csv(reordered_env, "standard_RST_environmental.csv")
 ```
