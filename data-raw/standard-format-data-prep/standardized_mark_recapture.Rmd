@@ -73,9 +73,9 @@ if we need more information. There are no environmental variables for Feather Ri
 number recaptured per day not the total number recaptured 
 
 ```{r, message=FALSE, warning=FALSE}
-gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
-gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
 #                bucket = gcs_get_global_bucket(),
 #                saveToDisk = "../../data/rst/battle_mark_recapture.csv",
@@ -525,7 +525,7 @@ knitr::kable(align = 'c', head(combined_mark_recapture, 5))
 ```
 
 
-```{r}
+```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(combined_mark_recapture,
