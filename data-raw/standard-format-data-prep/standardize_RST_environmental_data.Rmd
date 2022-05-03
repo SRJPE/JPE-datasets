@@ -1,5 +1,5 @@
 ---
-title: "Standardize Mark Recapture Data"
+title: "Standardize RST Environmental Data"
 author: "Erin Cain"
 date: "4/20/2022"
 output: 
@@ -16,7 +16,7 @@ library(googleCloudStorageR)
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
 ```
 
-## Mark Recapture Data Standardization 
+## RST Environmental Data Standardization 
 
 FlowWest received environmental data for rst from 8 monitoring programs: 
   
@@ -31,7 +31,7 @@ FlowWest received environmental data for rst from 8 monitoring programs:
 
 No environmental data is provided for the Tisdale RST. 
 
-## Standard format for Mark Recapture Data
+## Standard format for RST Environmental Data
 
 Data dictionary for standard format: 
 
@@ -59,7 +59,6 @@ Data dictionary for standard format:
   | site | Y, Bu, F | site name  |
   | sub_site | F | sub site name |
   
-  All released and recaptured fish are chinook salmon. 
 
 ## Read in data {.tabset} 
 
