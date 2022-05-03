@@ -63,14 +63,14 @@ All released and recaptured fish are chinook salmon.
 
 #### Columns Removed 
 
-* **no_marked:** Number of fish marked was removed since we are focused on fish recaptured not fish marked
-* **mortality:** Fish who died are removed since we are using number of fish relelased not number of fish marked 
+* **no_marked:** Number of fish marked was removed since we are focused on fish released not the fish marked. no_marked = no_released + mortality. We keep no_released as the total number released durring a mark recapture trial
+* **mortality:** Fish who died are removed since we are using number of fish released not number of fish marked 
 * **mean_flow_day_of_rel, mean_temp_day_of_rel:** Other environmental variables kept 
 (flow_at_release, temperature_at_release, and turbidity_at_release). Additional 
 environmental variables can be added back in based on gage data or trap_environmentals.csv
 if we need more information. There are no environmental variables for Feather River and Knights Landing. 
 * **number_recaptured:** Number recaptured is removed since we are interested in the 
-number recaptured per day not the total number recaptured 
+number recaptured per day not the total number recaptured
 
 ```{r, message=FALSE, warning=FALSE}
 # gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
@@ -84,8 +84,8 @@ number recaptured per day not the total number recaptured
 battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>% 
   mutate(tributary = "Battle Creek") %>%
   rename(number_released = no_released, number_recaptured = recaps,
-         median_fork_length_recaptured = mark_med_fork_length_mm, 
-         median_fork_length_released = recap_med_fork_length_mm) %>%
+         median_fork_length_recaptured = recap_med_fork_length_mm, 
+         median_fork_length_released = mark_med_fork_length_mm) %>%
   select(-no_marked, -mortality, -mean_flow_day_of_rel, -mean_temp_day_of_rel, -number_recaptured) %>% 
   pivot_longer(cols = caught_day_1:caught_day_5, names_to = "recaptured_date", values_to = "number_recaptured") %>%
   mutate(recaptured_date = case_when(recaptured_date == "caught_day_1" ~ release_date + 1, 
@@ -100,7 +100,7 @@ battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>%
 
 #### Columns Removed 
 
-* **no_marked:** Number of fish marked was removed since we are focused on fish recaptured not fish marked
+* **no_marked:** Number of fish marked was removed since we are focused on fish released not the fish marked. no_marked = no_released + mortality. We keep no_released as the total number released durring a mark recapture trial
 * **mortality:** Fish who died are removed since we are using number of fish relelased not number of fish marked 
 * **mean_flow_day_of_rel, mean_temp_day_of_rel:** Other environmental variables kept 
 (flow_at_release, temperature_at_release, and turbidity_at_release). Additional 
@@ -118,8 +118,8 @@ number recaptured per day not the total number recaptured
 clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>% 
   mutate(tributary = "Clear Creek") %>% 
   rename(number_released = no_released, number_recaptured = recaps,
-         median_fork_length_recaptured = mark_med_fork_length_mm, 
-         median_fork_length_released = recap_med_fork_length_mm) %>%
+         median_fork_length_recaptured = recap_med_fork_length_mm, 
+         median_fork_length_released = mark_med_fork_length_mm) %>%
   select(-no_marked, -mean_flow_day_of_rel, -mean_temp_day_of_rel, -number_recaptured) %>% 
   pivot_longer(cols = caught_day_1:caught_day_5, names_to = "recaptured_date", values_to = "number_recaptured") %>%
   mutate(recaptured_date = case_when(recaptured_date == "caught_day_1" ~ release_date + 1, 
