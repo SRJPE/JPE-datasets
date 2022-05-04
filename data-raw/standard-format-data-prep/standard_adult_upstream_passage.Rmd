@@ -1,0 +1,52 @@
+---
+title: "Standardize Adult Upstream Passage Datasets"
+author: "Erin Cain"
+date: '2022-05-03'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(googleCloudStorageR)
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
+```
+
+## Adult Upstream Passage Data Standardization
+
+FlowWest received Adult Upstream Passage data from 6 monitoring programs:
+
+-   Battle Creek
+-   Butte Creek
+-   Clear Creek
+-   Deer Creek
+-   Mill Creek
+-   Yuba River
+
+## Standard format for Adult Upstream Passage Data
+
+Data dictionary for standard format:
+
+(B - Battle Creek, Bu - Butte Creek, C - Clear Creek,  
+D - Deer Creek, M - Mill Creek, Y - Yuba River)
+
+| column name        | tributary collects | definition                                                                                             |
+|:-------------------|:--------------|:------------------------------------|
+| stream             |                    | Which Spring Run JPE stream is the data from                                                           |
+| location           |                    | what is the location name                                                                              |
+| date               |                    | date of video footage                                                                                  |
+| time               |                    | time of video footage                                                                                  |
+| hours_viewed       |                    | number of hours viewed by day                                                                          |
+| count              |                    | number of fish observed                                                                                |
+| adipose            |                    | if adipose fin is present (TRUE/FALSE)                                                                 |
+| run                |                    | run designation                                                                                        |
+| run_method         |                    | method used to identify run                                                                            |
+| passage_direction  |                    | direction of fish passage                                                                              |
+| sex                |                    | sex of fish observed                                                                                   |
+| length             |                    | length of fish observed in feet TODO check units                                                       |
+| viewing_condition  |                    | direction of fish observed (normal, readable, not readable, weir is flooded)                           |
+| spawning_condition |                    | description of spawning status based on coloration (none, energetic, spawning colors, fungus, unknown) |
+
+## Read in data {.tabset}
+
+### Battle Creek
