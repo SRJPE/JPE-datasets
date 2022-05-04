@@ -90,7 +90,7 @@ yuba_rst <- read_csv("data/rst/yuba_rst.csv")
 battle_environmental <- read_csv("data/rst/battle_rst_environmental.csv")
 clear_environmental <- read_csv("data/rst/clear_rst_environmental.csv")
 feather_effort <- read_csv("data/rst/feather_rst_effort.csv")
-# knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
+knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
 
 # Knights landing data pulled from camp
 # TODO add to cloud (this dataset was shared later and has not yet been added to cloud)
