@@ -31,7 +31,7 @@ Data dictionary for standard format:
 D - Deer Creek, M - Mill Creek, Y - Yuba River)
 
 | column name        | tributary collects | definition                                                                                             |
-|:-------------------|:--------------|:------------------------------------|
+|:------------------|:-----------------|:-----------------------------------|
 | stream             |                    | Which Spring Run JPE stream is the data from                                                           |
 | location           |                    | what is the location name                                                                              |
 | date               |                    | date of video footage                                                                                  |
@@ -49,4 +49,109 @@ D - Deer Creek, M - Mill Creek, Y - Yuba River)
 
 ## Read in data {.tabset}
 
+Below we read in the adult upstream passage data for each monitoring program and rename or select columns so that we can join all the monitoring datasets together in the section below.
+
 ### Battle Creek
+
+#### Columns Removed 
+
+No columns are removed from battle creek upstream passage video data. 
+```{r}
+# Set your authentication using gcs_auth
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# # Set global bucket
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# download file as csv
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/battle-creek/data/battle_passage_video.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/adult-upstream-passage-monitoring/battle_adult_upstream.csv",
+#                overwrite = TRUE)
+
+battle_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/battle_adult_upstream.csv") %>% 
+  mutate(stream = "Battle Creek") %>% 
+  glimpse
+```
+
+### Clear Creek
+
+#### Columns Removed 
+
+* **time_bloc**: Time block was removed because it refers to the time block being viewed and this is not relevent if we only care speicifically about when the fish passes. We retained the time_passed column instead to keep this information 
+
+```{r}
+# download file as csv
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/data/clear_passage.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/adult-upstream-passage-monitoring/clear_adult_upstream.csv",
+#                overwrite = TRUE)
+
+clear_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/clear_adult_upstream.csv") %>% 
+  select(-time_block) %>%
+  mutate(stream = "Clear Creek") %>% 
+  glimpse
+```
+
+### Deer Creek
+
+#### Columns Removed 
+
+```{r}
+# download file as csv
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/adult-upstream-passage-monitoring/deer_adult_upstream.csv",
+#                overwrite = TRUE)
+
+deer_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/deer_adult_upstream.csv") %>% 
+    rename(count = passage_estimate) %>% # confirm with matt johnson that this is a count not a modeled passage
+    mutate(stream = "Deer Creek") %>% 
+    glimpse
+```
+
+### Mill Creek 
+
+#### Columns Removed 
+
+```{r}
+
+# download file as csv
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv",
+#                 bucket = gcs_get_global_bucket(),
+#                 saveToDisk = "../../data/adult-upstream-passage-monitoring/mill_adult_upstream.csv",
+#                 overwrite = TRUE)
+
+mill_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/mill_adult_upstream.csv") %>% 
+  rename(count = passage_estimate) %>% # confirm with matt johnson that this is a count not a modeled passage
+  mutate(stream = "Mill Creek") %>% 
+  glimpse
+```
+
+
+### Yuba River
+
+#### Columns Removed 
+
+```{r}
+
+# download file as csv
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/yuba-river/data/yuba_upstream_passage.csv",
+#                 bucket = gcs_get_global_bucket(),
+#                 saveToDisk = "../../data/adult-upstream-passage-monitoring/yuba_adult_upstream.csv",
+#                 overwrite = TRUE)
+
+yuba_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/yuba_adult_upstream.csv") %>% 
+  select(-category, -length_cm, -speed_m_per_s, -depth_m, -position_in_frame) %>% # No clear methodology shared by yuba on these data and how they should be used  
+  mutate(stream = "Yuba River") %>% 
+  glimpse
+```
+
+
+## Combine data: 
+```{r}
+combined_upstream_passage <- bind_rows(battle_upstream_passage, clear_upstream_passage, 
+                                       deer_upstream_passage, mill_upstream_passage, 
+                                       yuba_upstream_passage) %>% 
+  glimpse
+```
+
+## Explore Varibles{.tabset} 
