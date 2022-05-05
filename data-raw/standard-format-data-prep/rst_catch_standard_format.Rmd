@@ -178,7 +178,7 @@ filter(butte_rst, is.na(fork_length), count > 0) %>% glimpse
 filter(butte_rst, is.na(mark_code)) %>% tally()
 
 butte_rst_clean <- butte_rst %>%
-  select(date, station, dead, count, fork_length, weight, mark_code, lifestage, time) %>%
+  select(date, station, dead, count, fork_length, weight, mark_code, lifestage) %>%
   rename(origin = mark_code) %>%
   mutate(tributary = "Butte Creek",
          run = "spring",
@@ -194,6 +194,7 @@ butte_rst_clean <- butte_rst %>%
 
 - trap_status, gear_id, north_brush, south_brush, debris, comments, trap_revolutions, rpms_start, rpms_end: included in operations table
 - weather, temperature, turbidity, secchi, velocity: included in environmental table
+- time is removed because this is captured in trap operations table
 
 ## Clear Creek
 
@@ -339,7 +340,7 @@ filter(yuba_rst, is.na(run), count > 0) %>% glimpse
 filter(yuba_rst, run == "unknown") %>% glimpse
 
 yuba_rst_clean<- yuba_rst %>%
-  select(date, time, fork_length, weight, lifestage, count, location, run) %>%
+  select(date, fork_length, weight, lifestage, count, location, run) %>%
   group_by(date, fork_length, weight, lifestage, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(tributary = "Yuba River",
@@ -352,6 +353,7 @@ yuba_rst_clean<- yuba_rst %>%
 - method, trap_status, debris, comments, trap_revolutions, trap_revolutions2, rpms_before, rpms_after: included in operations table
 - temperature, turbidity, velocity: included in environmental table
 - organism_code removed because all are CHN
+- time removed because this is captured in trap operations
 
 ## Lower Sacramento - Knights Landing
 
@@ -432,7 +434,8 @@ tisdale_rst_clean <- tisdale_rst %>%
          site = "Lower Sacramento - Tisdale",
          origin = tolower(origin),
          lifestage = tolower(lifestage),
-         species = tolower(species)) 
+         species = tolower(species),
+         run_method = "unknown") 
 ```
 
 ### Variables removed
@@ -550,6 +553,8 @@ ggplot(filter(combined_rst_raw, lifestage %in% c("yolk-sac fry", "yolk sac fry (
 
 Silvery fry categories 
 
+Fingerling and pre-smolt added to silvery parr because of similar fork lengths.
+
 ```{r}
 # silvery parr
 ggplot(filter(combined_rst_raw, lifestage %in% c("silvery parr", "fingerling", "pre-smolt")), aes(x = lifestage, y = fork_length)) +
@@ -559,11 +564,17 @@ ggplot(filter(combined_rst_raw, lifestage %in% c("silvery parr", "fingerling", "
 
 Juvenile and unknown
 
+Only one "yoy (young of the year)" and two juvenile. These are added to unknown (there is 1 unknown).
+
 ```{r}
 # unknown
 ggplot(filter(combined_rst_raw, lifestage %in% c("unknown", "yoy (young of the year)", "juvenile")), aes(x = lifestage, y = fork_length)) +
   geom_boxplot() +
   theme(axis.text.x = element_text(angle = 45))
+
+filter(combined_rst_raw, lifestage == "yoy (young of the year)") %>% tally()
+filter(combined_rst_raw, lifestage == "juvenile") %>% tally()
+filter(combined_rst_raw, lifestage == "unknown") %>% tally()
 ```
 
 Parr
@@ -578,6 +589,8 @@ ggplot(filter(combined_rst_raw, lifestage %in% c("parr", "pre-smolt")), aes(x = 
 ```
 
 Fry
+
+Button up fry and fry are similar fork lengths
 
 ```{r}
 # fry
