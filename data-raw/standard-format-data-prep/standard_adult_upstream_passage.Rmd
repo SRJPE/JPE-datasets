@@ -14,24 +14,25 @@ color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455"
 
 ## Adult Upstream Passage Data Standardization
 
-FlowWest received Adult Upstream Passage data from 6 monitoring programs:
+FlowWest received Adult Upstream Passage data from 5 monitoring programs:
 
 -   Battle Creek
--   Butte Creek
 -   Clear Creek
 -   Deer Creek
 -   Mill Creek
 -   Yuba River
 
+Butte collects this data but has not been acquired (database lost?). Feather River started adult video monitoring in 2022.
+
 ## Standard format for Adult Upstream Passage Data
 
 Data dictionary for standard format:
 
-(B - Battle Creek, Bu - Butte Creek, C - Clear Creek,  
+(B - Battle Creek, C - Clear Creek,  
 D - Deer Creek, M - Mill Creek, Y - Yuba River)
 
 | column name        | tributary collects | definition                                                                                             |
-|:------------------|:-----------------|:-----------------------------------|
+|:------------------|:-----------------|:----------------------------------|
 | stream             |                    | Which Spring Run JPE stream is the data from                                                           |
 | location           |                    | what is the location name                                                                              |
 | date               |                    | date of video footage                                                                                  |
@@ -53,9 +54,12 @@ Below we read in the adult upstream passage data for each monitoring program and
 
 ### Battle Creek
 
-#### Columns Removed 
+#### Columns Removed
 
-No columns are removed from battle creek upstream passage video data. 
+No columns are removed from battle creek upstream passage video data.
+
+TODO see if we can pull useful info from comments
+
 ```{r}
 # Set your authentication using gcs_auth
 # gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
@@ -70,13 +74,24 @@ No columns are removed from battle creek upstream passage video data.
 battle_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/battle_adult_upstream.csv") %>% 
   mutate(stream = "Battle Creek") %>% 
   glimpse
+
+battle_upstream_passage %>% View
 ```
 
 ### Clear Creek
 
-#### Columns Removed 
+#### Columns Removed
 
-* **time_bloc**: Time block was removed because it refers to the time block being viewed and this is not relevent if we only care speicifically about when the fish passes. We retained the time_passed column instead to keep this information 
+-   **time_block**: Time block was removed because it refers to the time block being viewed and this is not relevant if we only care specifically about when the fish passes. We retained the time_passed column instead to keep this information
+
+-   TODO update encoding for spawning_condition
+
+        names(clear_passage_spawning_condition) <- c(
+          "Energetic; bright or silvery; no spawning coloration or developed secondary sex characteristics.",
+          "Energetic, can tell sex from secondary characteristics (kype) silvery or bright coloration but may have some hint of spawning colors.",
+          "Spawning colors, defined kype, some tail wear or small amounts of fungus.",
+          "Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred.",
+          "Unable to make distinction.")
 
 ```{r}
 # download file as csv
@@ -87,13 +102,21 @@ battle_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitorin
 
 clear_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/clear_adult_upstream.csv") %>% 
   select(-time_block) %>%
-  mutate(stream = "Clear Creek") %>% 
+  rename(time = time_passed) %>% 
+  mutate(stream = "Clear Creek",
+         viewing_condition = case_when( 
+           viewing_condition == 1 ~ "Normal",  
+           viewing_condition == 2 ~ "Readable",  
+           viewing_condition == 3 ~ "Not Readable",
+           viewing_condition == 4 ~"Weir is flooded")) %>% 
   glimpse
 ```
 
 ### Deer Creek
 
-#### Columns Removed 
+#### Columns Removed
+
+No columns are removed from battle creek upstream passage video data.
 
 ```{r}
 # download file as csv
@@ -108,9 +131,11 @@ deer_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/
     glimpse
 ```
 
-### Mill Creek 
+### Mill Creek
 
-#### Columns Removed 
+#### Columns Removed
+
+No columns are removed from battle creek upstream passage video data.
 
 ```{r}
 
@@ -126,10 +151,21 @@ mill_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/
   glimpse
 ```
 
-
 ### Yuba River
 
-#### Columns Removed 
+#### Columns Removed
+
+The following columns were removed from the Yuba River dataset. There was no clear methodology on how these columns were generated or how they should be used so we removed from dataset.
+
+-   category
+
+-   length_cm
+
+-   speed_m\_per_s
+
+-   depth_m
+
+-   position_in_frame
 
 ```{r}
 
@@ -140,13 +176,14 @@ mill_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/
 #                 overwrite = TRUE)
 
 yuba_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/yuba_adult_upstream.csv") %>% 
-  select(-category, -length_cm, -speed_m_per_s, -depth_m, -position_in_frame) %>% # No clear methodology shared by yuba on these data and how they should be used  
+  select(-category, -length_cm, -speed_m_per_s, 
+         -depth_m, -position_in_frame) %>% # No clear methodology shared by yuba on these data and how they should be used  
   mutate(stream = "Yuba River") %>% 
   glimpse
 ```
 
+## Combine data:
 
-## Combine data: 
 ```{r}
 combined_upstream_passage <- bind_rows(battle_upstream_passage, clear_upstream_passage, 
                                        deer_upstream_passage, mill_upstream_passage, 
@@ -154,4 +191,98 @@ combined_upstream_passage <- bind_rows(battle_upstream_passage, clear_upstream_p
   glimpse
 ```
 
-## Explore Varibles{.tabset} 
+## Explore Varibles{.tabset}
+
+### stream 
+
+```{r}
+unique(combined_upstream_passage$stream)
+```
+
+### date 
+
+```{r}
+combined_upstream_passage %>% ggplot() + 
+  geom_point(aes(x = date, y = stream, color = stream), alpha = .1) +
+  scale_color_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+### time 
+
+Mill and Deer do not give passage time they give daily passage only.
+
+```{r}
+combined_upstream_passage %>% ggplot() + 
+  geom_point(aes(x = time, y = stream, color = stream), alpha = .1) +
+  scale_color_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+### count 
+
+Group by day to see distribution of daily count values
+
+```{r}
+daily <- combined_upstream_passage %>% 
+  group_by(stream, date) %>%
+  summarize(count = sum(count, na.rm = T)) 
+
+summary(daily$count)
+
+
+daily %>% ggplot() + 
+  geom_boxplot(aes(x = count,y = stream,  color = stream), 
+                 alpha = .5, binwidth  = 1) + 
+  scale_color_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+### run
+
+```{r}
+unique(combined_upstream_passage$run)
+
+combined_upstream_passage <- combined_upstream_passage %>% 
+  mutate(run = case_when(run == "SR" ~ "spring run",
+                         run == "LF" ~ "late fall run",
+                         run == "WR" ~ "winter run", 
+                         run == "FR" ~ "fall run", 
+                         run == "unknown" ~ "unknown"))
+
+unique(combined_upstream_passage$run)
+```
+
+### adipose 
+
+```{r}
+unique(combined_upstream_passage$adipose)
+
+combined_upstream_passage <- combined_upstream_passage %>% 
+  mutate(adipose = ifelse(adipose == "clipped", "absent", adipose))
+
+unique(combined_upstream_passage$adipose)
+
+
+```
+
+### sex
+
+### passage_direction
+
+### viewing_condition
+
+### spawning_condition
+
+### jack_size
+
+### ladder
