@@ -32,21 +32,22 @@ Data dictionary for standard format:
 D - Deer Creek, M - Mill Creek, Y - Yuba River)
 
 | column name        | tributary collects | definition                                                                                             |
-|:------------------|:-----------------|:----------------------------------|
-| stream             |                    | Which Spring Run JPE stream is the data from                                                           |
-| location           |                    | what is the location name                                                                              |
-| date               |                    | date of video footage                                                                                  |
-| time               |                    | time of video footage                                                                                  |
-| hours_viewed       |                    | number of hours viewed by day                                                                          |
-| count              |                    | number of fish observed                                                                                |
-| adipose            |                    | if adipose fin is present (TRUE/FALSE)                                                                 |
-| run                |                    | run designation                                                                                        |
-| run_method         |                    | method used to identify run                                                                            |
-| passage_direction  |                    | direction of fish passage                                                                              |
-| sex                |                    | sex of fish observed                                                                                   |
-| length             |                    | length of fish observed in feet TODO check units                                                       |
-| viewing_condition  |                    | direction of fish observed (normal, readable, not readable, weir is flooded)                           |
-| spawning_condition |                    | description of spawning status based on coloration (none, energetic, spawning colors, fungus, unknown) |
+|:------------------|:------------------|:---------------------------------|
+| stream             | **B, C, D, M, Y**  | Which Spring Run JPE stream is the data from                                                           |
+| date               | **B, C, D, M, Y**  | date of video footage                                                                                  |
+| time               | **B, C, Y**        | time of video footage                                                                                  |
+| count              | **B, C, D, M, Y**  | number of fish observed                                                                                |
+| adipose            | **B, C, Y**        | if adipose fin is present (TRUE/FALSE)                                                                 |
+| run                | **B, C, D, M**     | run designation                                                                                        |
+| passage_direction  | **B, C, Y**        | direction of fish passage                                                                              |
+| sex                | **C**              | sex of fish observed                                                                                   |
+| viewing_condition  | **C**              | direction of fish observed (normal, readable, not readable, weir is flooded)                           |
+| spawning_condition | **C**              | description of spawning status based on coloration (none, energetic, spawning colors, fungus, unknown) |
+| jack_size          | **C**              | If the fish is jack sized or not                                                                       |
+| ladder             | **Y**              | describes which ladder the fish was seen traveling up                                                  |
+| hours              | **Y**              | number of hours viewed by day                                                                          |
+| flow               | **D, M**           | flow in cfs at the weir                                                                                |
+| temperature        | **D, M**           | temperature in C at the weir                                                                           |
 
 ## Read in data {.tabset}
 
@@ -75,7 +76,6 @@ battle_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitorin
   mutate(stream = "Battle Creek") %>% 
   glimpse
 
-battle_upstream_passage %>% View
 ```
 
 ### Clear Creek
@@ -84,14 +84,27 @@ battle_upstream_passage %>% View
 
 -   **time_block**: Time block was removed because it refers to the time block being viewed and this is not relevant if we only care specifically about when the fish passes. We retained the time_passed column instead to keep this information
 
--   TODO update encoding for spawning_condition
+    These were the original definitions given for viewing condition
 
-        names(clear_passage_spawning_condition) <- c(
-          "Energetic; bright or silvery; no spawning coloration or developed secondary sex characteristics.",
-          "Energetic, can tell sex from secondary characteristics (kype) silvery or bright coloration but may have some hint of spawning colors.",
-          "Spawning colors, defined kype, some tail wear or small amounts of fungus.",
-          "Fungus, lethargic, wandering; “ Zombie fish”. Significant tail wear in females to indicate the spawning process has already occurred.",
-          "Unable to make distinction.")
+-   Normal (good visibility, clear water, all equipment working, no obstructions);
+
+-   Readable but confidence lower due to turbidity or partial loss of video equipment, obstructions (note specifics in comments);
+
+-   Not readable due to turbidity or equipment failure;
+
+-   Weir is flooded (note if footage is readable or note in comments)
+
+    These were the original definitions given for spawn condition
+
+-   "Energetic; bright or silvery; no spawning coloration or developed secondary sex characteristics.",
+
+-   "Energetic, can tell sex from secondary characteristics (kype) silvery or bright coloration but may have some hint of spawning colors.",
+
+-   "Spawning colors, defined kype, some tail wear or small amounts of fungus.",
+
+-   "Fungus, lethargic, wandering; " Zombie fish". Significant tail wear in females to indicate the spawning process has already occurred.",
+
+-   "Unable to make distinction."
 
 ```{r}
 # download file as csv
@@ -105,10 +118,17 @@ clear_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring
   rename(time = time_passed) %>% 
   mutate(stream = "Clear Creek",
          viewing_condition = case_when( 
-           viewing_condition == 1 ~ "Normal",  
+           viewing_condition == 1 ~ "normal",  
            viewing_condition == 2 ~ "Readable",  
            viewing_condition == 3 ~ "Not Readable",
-           viewing_condition == 4 ~"Weir is flooded")) %>% 
+           viewing_condition == 4 ~"Weir is flooded"),
+         spawning_condition = case_when(
+           spawning_condition == 1 ~ "no spawn coloration", 
+           spawning_condition == 2 ~ "some spawn coloration",
+           spawning_condition == 3 ~ "full spawn coloration",
+           spawning_condition == 4 ~ "post spawn",
+           spawning_condition == 5 ~ "unknown"
+         )) %>% 
   glimpse
 ```
 
@@ -176,10 +196,11 @@ The following columns were removed from the Yuba River dataset. There was no cle
 #                 overwrite = TRUE)
 
 yuba_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/yuba_adult_upstream.csv") %>% 
-  select(-category, -length_cm, -speed_m_per_s, 
+  select(-category, -speed_m_per_s, -length_cm, 
          -depth_m, -position_in_frame) %>% # No clear methodology shared by yuba on these data and how they should be used  
   mutate(stream = "Yuba River") %>% 
   glimpse
+
 ```
 
 ## Combine data:
@@ -188,18 +209,20 @@ yuba_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/
 combined_upstream_passage <- bind_rows(battle_upstream_passage, clear_upstream_passage, 
                                        deer_upstream_passage, mill_upstream_passage, 
                                        yuba_upstream_passage) %>% 
+  relocate(stream, date, time, count, run, adipose, sex, passage_direction, 
+           viewing_condition, spawning_condition, jack_size, ladder, flow, hours, temperature) %>%
   glimpse
 ```
 
 ## Explore Varibles{.tabset}
 
-### stream 
+### stream
 
 ```{r}
 unique(combined_upstream_passage$stream)
 ```
 
-### date 
+### date
 
 ```{r}
 combined_upstream_passage %>% ggplot() + 
@@ -211,7 +234,7 @@ combined_upstream_passage %>% ggplot() +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### time 
+### time
 
 Mill and Deer do not give passage time they give daily passage only.
 
@@ -225,7 +248,7 @@ combined_upstream_passage %>% ggplot() +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### count 
+### count
 
 Group by day to see distribution of daily count values
 
@@ -249,40 +272,199 @@ daily %>% ggplot() +
 
 ### run
 
-```{r}
-unique(combined_upstream_passage$run)
+Clear and Battle Creeks datasets include spring run, fall run, late full run, winter run, and unknown chinook salmon
 
+Deer and Mill Creek datasets only report spring run values
+
+```{r}
+ unique(combined_upstream_passage$run)
+```
+
+Change the run names to be consistent with the other monitoring types
+
+```{r}
 combined_upstream_passage <- combined_upstream_passage %>% 
   mutate(run = case_when(run == "SR" ~ "spring run",
                          run == "LF" ~ "late fall run",
                          run == "WR" ~ "winter run", 
                          run == "FR" ~ "fall run", 
-                         run == "unknown" ~ "unknown"))
+                         run == "unknown" ~ "unknown"),
+         run = ifelse(stream %in% c("Mill Creek", "Deer Creek"), "spring run", run))
+
+combined_upstream_passage %>% 
+  group_by(stream) %>%
+  summarise(run = unique(run) %>% base::paste(collapse = ', '))
 
 unique(combined_upstream_passage$run)
+
 ```
 
-### adipose 
+### adipose
 
 ```{r}
 unique(combined_upstream_passage$adipose)
+```
 
+Change clipped to absent for adipose
+
+```{r}
 combined_upstream_passage <- combined_upstream_passage %>% 
   mutate(adipose = ifelse(adipose == "clipped", "absent", adipose))
 
-unique(combined_upstream_passage$adipose)
-
-
+combined_upstream_passage %>% 
+  group_by(stream) %>%
+  summarise(adipose = unique(adipose) %>% base::paste(collapse = ', ')) 
 ```
 
 ### sex
 
+Clear Creek is the only stream that reports data on the sex of fish
+
+```{r}
+combined_upstream_passage %>% 
+  group_by(stream) %>%
+  summarise(sex = unique(sex) %>% base::paste(collapse = ', ')) 
+
+unique(combined_upstream_passage$sex)
+
+```
+
 ### passage_direction
+
+```{r}
+combined_upstream_passage %>% 
+  group_by(stream) %>%
+  summarise(passage_direction = unique(passage_direction) %>% base::paste(collapse = ', '))
+```
 
 ### viewing_condition
 
+Only clear creek provides a viewing condition
+
+```{r}
+combined_upstream_passage %>% 
+  group_by(stream) %>%
+  summarise(viewing_condition = unique(viewing_condition) %>% base::paste(collapse = ', ')) 
+
+```
+
 ### spawning_condition
+
+Only clear creek provides a spawning condition
+
+```{r}
+combined_upstream_passage %>% 
+  group_by(stream) %>%
+  summarise(spawning_condition = unique(spawning_condition) %>% base::paste(collapse = ', ')) 
+
+```
 
 ### jack_size
 
+Only clear creek provides a jack size
+
+```{r}
+combined_upstream_passage %>% 
+  group_by(stream) %>%
+  summarise(jack_size = unique(jack_size) %>% base::paste(collapse = ', ')) 
+
+```
+
 ### ladder
+
+Only yuba river gives a ladder variable to describe which ladder the fish is seen on
+
+```{r}
+combined_upstream_passage %>% 
+  group_by(stream) %>%
+  summarise(ladder = unique(ladder) %>% base::paste(collapse = ', ')) 
+
+```
+
+### hours
+
+Only yuba river gives a hours variable to describe how many of 24 hours in a day are accounted for in the data, typically this value is 24 with some exceptions
+
+```{r}
+combined_upstream_passage %>% 
+  ggplot() +
+  geom_histogram(aes(x = hours, fill = stream), binwidth = 1) + 
+   scale_fill_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+### flow
+
+Only mill and deer creek give daily flow and temperature values attached to their data
+
+```{r}
+combined_upstream_passage %>% 
+  ggplot() +
+  geom_histogram(aes(x = flow, fill = stream), binwidth = 30, alpha = .5, position = "identity") + 
+   scale_fill_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+combined_upstream_passage %>% 
+  filter(stream %in% c("Mill Creek", "Deer Creek")) %>%
+  ggplot() +
+  geom_line(aes(x = date, y = flow, color = stream), size = 1) + 
+  scale_color_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+### temperature
+
+Only mill and deer creek give daily flow and temperature values attached to their data
+
+```{r}
+combined_upstream_passage %>% 
+  ggplot() +
+  geom_histogram(aes(x = temperature, fill = stream), binwidth = 1, alpha = .5, position = "identity") + 
+   scale_fill_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+combined_upstream_passage %>% 
+  filter(stream %in% c("Mill Creek", "Deer Creek")) %>%
+  ggplot() +
+  geom_line(aes(x = date, y = temperature, color = stream), size = 1) + 
+  scale_color_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+## Save Cleaned Data to Google Cloud
+
+```{r}
+clean_passage <- combined_upstream_passage
+
+knitr::kable(clean_passage %>% head)
+```
+
+```{r, eval=FALSE}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+write_csv(clean_passage, "../../data/standard-format-data/standard_adult_upstream_passage.csv")
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(clean_passage,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_adult_upstream_passage.csv")
+```
