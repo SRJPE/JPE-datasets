@@ -58,7 +58,10 @@ unique(battle_environmental$gear_condition_code)
 # filter(battle_trap_clean, is.na(start_date))
 
 battle_trap_clean <- battle_environmental %>%
-  select(-c(sample_id, baileys_eff, num_released, report_baileys_eff, sub_week, sample_weight)) %>%
+  select(-c(sample_id, baileys_eff, num_released, report_baileys_eff, sub_week, sample_weight,
+            flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
+            weather_code, lunar_phase, diel,
+            habitat, debris_type, start_counter)) %>%
   # select(trap_start_date, trap_start_time, sample_date, sample_time,
   #        counter, flow_start_meter, flow_end_meter, flow_set_time, velocity,
   #        turbidity, cone, trap_sample_type, thalweg, depth_adjust, avg_time_per_rev,
@@ -73,7 +76,10 @@ battle_trap_clean <- battle_environmental %>%
          comments = trap_comments,
          cone_setting = cone) %>%
   mutate(site = "Battle Creek",
-         watershed = "Battle Creek") %>%
+         watershed = "Battle Creek",
+         # debris in gallons
+         debris_volume = debris_tubs*10) %>%
+  select(-debris_tubs) %>%
   filter(!is.na(start_date)) %>%
   data.frame() %>%
   distinct()
@@ -83,6 +89,9 @@ battle_trap_clean <- battle_environmental %>%
 #   group_by(start_date, start_time) %>%
 #   tally() %>%
 #   filter(n < 1)
+
+battle_trap_clean %>% group_by(trap_sample_type) %>% tally()
+battle_trap_clean %>% glimpse
 ```
 
 ### Variables removed
@@ -92,6 +101,12 @@ battle_trap_clean <- battle_environmental %>%
 - num_released included in mark and recapture data
 - sub_week: is related to efficiency and included in efficiency table
 - sample_weight: same as cone variable
+- flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
+weather_code, lunar_phase, diel included in environmental table
+- habitat removed because most data are in "run"
+- debris_type removed because data does not exist for other locations and is treated like a comments field
+- start_counter is always NA or 0. No meaningful data.
+- TODO: considered removing trap_sample_type. 3666 non-intensive, 57 random. do we care about this?
 
 ## Butte Creek
 
@@ -106,14 +121,12 @@ butte_rst %>%
 # there are multiple obs per day which i think is a data entry issue.
 # group by date, station, time, gear_id, trap_status then average
 butte_trap_clean <- butte_rst %>%
-  select(-c(dead, count, fork_length, weight, mark_code, lifestage)) %>%
+  select(-c(dead, count, fork_length, weight, mark_code, lifestage,
+            weather, temperature, turbidity, secchi, velocity)) %>%
   # select(date, station, trap_status, time, gear_id, temperature, turbidity, velocity,
   #        trap_revolutions, rpms_start, rpms_end) %>%
   group_by(date, station, trap_status, time, gear_id) %>%
-  summarize(temperature = mean(temperature, na.rm = T),
-            turbidity = mean(turbidity, na.rm = T),
-            velocity = mean(velocity, na.rm = T),
-            trap_revolutions = mean(trap_revolutions, na.rm = T),
+  summarize(trap_revolutions = mean(trap_revolutions, na.rm = T),
             rpms_start = mean(rpms_start, na.rm = T),
             rpms_end = mean(rpms_end, na.rm = T)) %>%
   rename(site = station,
@@ -126,12 +139,12 @@ butte_trap_clean <- butte_rst %>%
 #   group_by(date, time, site, gear_id, trap_status) %>%
 #   tally() %>%
 #   filter(n > 1)
-
+butte_trap_clean %>% glimpse
 ```
 
 ### Variables removed
 
-All variables removed are included in the catch table.
+All variables removed are included in the catch table or environmental table.
 
 ## Clear Creek
 
@@ -142,7 +155,10 @@ unique(clear_environmental$station_code)
 # there are NA start_dates which don't have any data. need to remove.
 
 clear_trap_clean <- clear_environmental %>%
-  select(-c(sample_id, num_released, baileys_eff, sub_week)) %>%
+  select(-c(sample_id, num_released, baileys_eff, sub_week,
+            flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
+            weather_code, lunar_phase, diel,
+            habitat, debris_type, start_counter)) %>%
   rename(site = station_code,
          start_date = trap_start_date,
          start_time = trap_start_time,
@@ -151,7 +167,10 @@ clear_trap_clean <- clear_environmental %>%
          sample_period_revolutions = counter,
          comments = trap_comments,
          cone_setting = cone) %>%
-  mutate(watershed = "Clear Creek") %>%
+  mutate(watershed = "Clear Creek",
+         # debris in gallons
+         debris_volume = debris_tubs*10) %>%
+  select(-debris_tubs) %>%
   filter(!is.na(start_date)) %>%
   distinct()
 
@@ -160,6 +179,8 @@ clear_trap_clean <- clear_environmental %>%
 #   group_by(start_date, start_time, site) %>%
 #   tally() %>%
 #   filter(n > 1)
+clear_trap_clean %>% group_by(trap_sample_type) %>% tally()
+clear_trap_clean %>% glimpse
 ```
 
 ### Variables removed
@@ -168,26 +189,36 @@ clear_trap_clean <- clear_environmental %>%
 - baileys_eff is a calculated value
 - num_released included in mark and recapture data
 - sub_week: is related to efficiency and included in efficiency table
+- flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
+weather_code, lunar_phase, diel included in environmental table
+- habitat removed because most data are in "run"
+- debris_type removed because data does not exist for other locations and is treated like a comments field
+- start_counter is always NA or 0. No meaningful data.
+- TODO: considered removing trap_sample_type. 7414 non-intensive, 36 random, 8 intensive, 1, sunrise-sunset. do we care about this?
 
 ## Deer Creek
 
 ```{r, deer_clean}
 unique(deer_rst$location)
+
+deer_rst %>%
+  filter(year(date) > 1995) %>%
+  group_by(location) %>%
+  tally()
 unique(deer_rst$trap_condition_code)
 
 deer_trap_clean <- deer_rst %>%
-  select(-c(count, fork_length, weight)) %>%
+  select(-c(count, fork_length, weight,
+            flow, turbidity, weather, water_temperature_celsius)) %>%
   # select(date, location, flow, time_for_10_revolutions, trap_condition_code, turbidity,
   #        water_temperature_celsius) %>%
   group_by(date, location, trap_condition_code) %>%
-  summarize(flow = mean(flow, na.rm = T),
-            time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T),
-            turbidity = mean(turbidity, na.rm = T),
-            water_temperature_celsius = mean(water_temperature_celsius, na.rm =T)) %>%
+  summarize(time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T)) %>%
   rename(site = location,
-         temperature = water_temperature_celsius,
          gear_condition_code = trap_condition_code) %>%
-  mutate(watershed = "Deer Creek") %>%
+  mutate(watershed = "Deer Creek",
+         avg_time_per_rev = time_for_10_revolutions/10) %>%
+  select(-time_for_10_revolutions) %>%
   distinct()
 
 
@@ -198,11 +229,14 @@ deer_trap_clean <- deer_rst %>%
 #   filter(n > 1)
 # 
 # filter(deer_trap_clean, date == "2001-11-10")
+deer_trap_clean %>% glimpse
 ```
 
 ### Variables removed
 
-All variables removed are included in the catch table.
+All variables removed are included in the catch table or environmental table.
+
+- transformed time_for_10_revolutions to avg_time_per_rev to align with others
 
 ## Feather River
 
@@ -213,14 +247,13 @@ unique(feather_effort$fish_processed)
 # date, site_name, visit_time, visit_type, trap_functioning, water_temp_c,
 # turbidity_ntu, latitude, longitude
 feather_trap_clean <- feather_effort %>%
-  select(-c(river_location, river_mile, latitude, longitude)) %>%
+  select(-c(river_location, river_mile, latitude, longitude,
+            water_temp_c, turbidity_ntu)) %>%
   # select(date, site_name, sub_site_name, visit_time, visit_type, trap_functioning,
   #        water_temp_c, turbidity_ntu, latitude, longitude) %>%
   rename(site = site_name,
          subsite = sub_site_name,
          time = visit_time,
-         temperature = water_temp_c,
-         turbidity = turbidity_ntu,
          trap_status = visit_type,
          gear_condition_code = trap_functioning) %>%
   mutate(time = as_hms(time),
@@ -232,11 +265,12 @@ feather_trap_clean <- feather_effort %>%
 #   group_by(date,time, site, subsite) %>%
 #   tally() %>%
 #   filter(n > 1)
+feather_trap_clean %>% glimpse
 ```
 
 ### Variables removed
 
-All variables removed are included in the location table.
+All variables removed are included in the location table or environmental table.
 
 ## Mill Creek
 
@@ -245,18 +279,17 @@ unique(mill_rst$location)
 unique(mill_rst$trap_condition_code)
 
 mill_trap_clean <- mill_rst %>%
-  select(-c(count, fork_length, weight, location)) %>%
+  select(-c(count, fork_length, weight, location,
+            flow, water_temperature, turbidity, weather)) %>%
   # select(date, location, flow, time_for_10_revolutions, trap_condition_code,
   #        water_temperature, turbidity) %>%
   group_by(date, trap_condition_code) %>%
-  summarize(flow = mean(flow, na.rm = T),
-            time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T),
-            turbidity = mean(turbidity, na.rm = T),
-            water_temperature = mean(water_temperature, na.rm =T)) %>%
-  rename(temperature = water_temperature,
-         gear_condition_code = trap_condition_code) %>%
+  summarize(time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T)) %>%
+  rename(gear_condition_code = trap_condition_code) %>%
   mutate(watershed = "Mill Creek",
-         site = "Mill Creek") %>%
+         site = "Mill Creek",
+         avg_time_per_rev = time_for_10_revolutions/10) %>%
+  select(-time_for_10_revolutions) %>%
   distinct()
 
 # check to make sure one row per day/time 
@@ -265,11 +298,14 @@ mill_trap_clean <- mill_rst %>%
 #   tally() %>%
 #   filter(n > 1)
 # filter(mill_trap_clean, date == "2002-02-07")
+mill_trap_clean %>% glimpse
 ```
 
 ### Variables removed
 
 - location: all are Mill Creek RSTR
+- flow, water_temperature, turbidity, weather in environmental table
+- transformed time_for_10_revolutions to avg_time_per_rev to align with others
 
 All other removed variables included in the catch table.
 
@@ -281,8 +317,15 @@ unique(yuba_rst$method)
 unique(yuba_rst$trap_status)
 unique(yuba_rst$location)
 
+ck <- yuba_rst %>%
+  group_by(location, year(date)) %>%
+  tally()
+
+check <- filter(yuba_rst, trap_revolutions != trap_revolutions2, trap_revolutions2 != 0)
+
 yuba_trap_clean <- yuba_rst %>%
-  select(-c(organism_code, fork_length, weight, lifestage, count, run)) %>%
+  select(-c(organism_code, fork_length, weight, lifestage, count, run,
+            temperature, turbidity, velocity)) %>%
   # select(date, time, method, temperature, turbidity, velocity, trap_status,
   #        rpms_before, rpms_after, location) %>%
   rename(site = location,
@@ -298,11 +341,12 @@ yuba_trap_clean <- yuba_rst %>%
 #   group_by(date,time, site) %>%
 #   tally() %>%
 #   filter(n > 1)
+yuba_trap_clean %>% glimpse
 ```
 
 ### Variables removed
 
-All variables removed are included in the catch table.
+All variables removed are included in the catch table or environmental table.
 
 ## Lower Sacramento - Knights Landing
 
@@ -312,18 +356,16 @@ unique(knights_effort$cone_sampling_effort)
 # date, start_date, stop_date, number_traps, hrs_fished, flow_cfs, turbidity,
 # water_t_f, cone_sampling_effort, cone_id, cone_rpm, total_cone_rev
 knights_trap_clean <- knights_effort %>%
-  select(-c(date, location, gear, sampling_period_hrs, turbidity_units, cone_sampling_effort)) %>%
+  select(-c(date, location, gear, sampling_period_hrs, cone_sampling_effort,
+            flow_cfs, secchi_ft, water_t_f, turbidity, turbidity_units,
+            hrs_fished)) %>%
   # convert temp from F to C
-  mutate(temperature = (water_t_f - 32) * (5/9),
-         watershed = "Lower Sacramento - Knights Landing",
+  mutate(watershed = "Lower Sacramento - Knights Landing",
          site = "Lower Sacramento - Knights Landing",
          cone_id = as.character(cone_id)) %>%
-  select(-water_t_f) %>%
   rename(end_date = stop_date,
          end_time = stop_time,
-         flow = flow_cfs,
          sample_period_revolutions = total_cone_rev,
-         secchi = secchi_ft,
          gear_id = cone_id) %>%
   distinct()
 # 
@@ -332,6 +374,7 @@ knights_trap_clean <- knights_effort %>%
 #   group_by(start_date,start_time, cone_id, date) %>%
 #   tally() %>%
 #   filter(n > 1)
+knights_trap_clean %>% glimpse
 ```
 
 ### Variables removed
@@ -342,6 +385,8 @@ knights_trap_clean <- knights_effort %>%
 - sampling_period_hrs: unclear how this variable is different than hrs_fished
 - turbidity_units: all are NTU except in 2014 when they are FTU
 - cone_sampling_effort: Variable is unclear and is redundant of number of traps and hrs fished
+- flow_cfs, secchi_ft, water_t_f, turbidity, turbidity_units included in environmental table
+- hrs_fished is a derived field and can be calculated
 
 ## Lower Sacramento - Tisdale
 
@@ -350,8 +395,6 @@ No effort data is currently available for Tisdale.
 # Standard format {.tabset}
 
 ```{r, combined}
-# TODO fill in run method
-# TODO decide if we need the "random" variable. It only applies to Tisdale
 combined_trap_raw <- bind_rows(battle_trap_clean,
                           butte_trap_clean,
                           clear_trap_clean,
@@ -361,30 +404,57 @@ combined_trap_raw <- bind_rows(battle_trap_clean,
                           yuba_trap_clean,
                           knights_trap_clean)
 colnames(combined_trap_raw)
-combined_rst <- combined_rst_raw %>%
-  run_encoding() %>%
-  lifestage_encoding() %>%
-  # all should be chinook salmon
-  mutate(species = ifelse(is.na(species), "chinook salmon", species),
-         run_method = case_when(is.na(run_method) ~ "not recorded",
-                                run == "not recorded" | count == 0 ~ NA_character_,
-                                T ~ tolower(run_method)))
 
+combined_trap <- combined_trap_raw %>%
+  rename(debris_level = debris) %>%
+  mutate(debris_level = tolower(debris_level),
+         debris_level = ifelse(debris_level == "veryheavy", "very heavy", debris_level))
+
+unique(combined_trap_raw$cone_setting)
 unique(combined_trap_raw$fish_processed)
 unique(combined_trap_raw$trap_status)
 unique(combined_trap_raw$gear_condition_code)
+unique(combined_trap_raw$habitat)
+unique(combined_trap_raw$debris_type)
+unique(combined_trap_raw$method)
+unique(combined_trap_raw$debris)
 
 gear_condition_encoding <- function(dat) {
   dat %>%
-    mutate(gear_condition_code = case_when(gear_condition_code %in% c("not rotating", "total block", 
-                                                                      "total blockage", "cone stopped", 
-                                                                      "Trap not in service", "Trap stopped functioning") ~ "out of service",
-                                           gear_condition_code %in% c("partial block", "partial blockage", "Trap functioning, but not normally") ~ "abnormal",
-                                           gear_condition_code %in% c("normal", "Trap functioning normally") ~ "normal"))
+    mutate(gear_condition_code = case_when(gear_condition_code %in% c("total block", "total blockage", "Trap not in service", ) ~ "trap not in service",
+                                           gear_condition_code %in% c("not rotating", "cone stopped", "Trap stopped functioning") ~ "trap stopped functioning",
+                                           gear_condition_code %in% c("partial block", "partial blockage", "Trap functioning, but not normally") ~ "trap functioning but not normally",
+                                           gear_condition_code %in% c("normal", "Trap functioning normally") ~ "trap functioning normally"))
 }
+
+trap_status_encoding <- function(dat) {
+  dat %>%
+    mutate(trap_status = case_when(trap_status %in% c("pull", "End trapping") ~ "end trapping",
+                                   trap_status %in% c("set", "Start trap & begin trapping") ~ "start trapping",
+                                   trap_status %in% c("check", "Drive-by only") ~ "drive by",
+                                   trap_status %in% c("Continue trapping", "set/pull") ~ "continue trapping",
+                                   trap_status %in% c("Unplanned restart", "breached") ~ "unplanned restart",
+                                   trap_status %in% c("Service/adjust/clean trap") ~ "service trap"))
+}
+
+fish_processed_encoding <- function(dat) {
+  dat %>%
+    mutate(fish_processed = case_when(fish_processed == "Processed fish" ~ "processed fish",
+                                      fish_processed == "No fish were caught" ~ "no fish caught",
+                                      fish_processed == "No catch data; fish released" ~ "no catch data, fish released",
+                                      fish_processed == "No catch data; fish left in live box" ~ "no catch data, fish left in live box"))
+}
+
+
 
 trap_visit_type_encoding <- function(dat) {
   dat %>%
     mutate(trap_visit_type = case_when(trap_status %in% ))
 }
 ```
+
+# Variables to consider removing
+
+- habitat - is there a lot of data here? what does this mean?
+- debris_type - no idea what these encodings mean
+- debris_tubs - what volume unit?
