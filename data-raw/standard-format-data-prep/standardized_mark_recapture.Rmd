@@ -35,6 +35,8 @@ TODO Butte & Yuba ? do we have any idea here
 Data dictionary for standard format: 
 (B - Battle Creek, C - Clear Creek, F - Feather River, K - Knights Landing)
 
+Release Table: 
+
 | column name | tributary collects | definition | 
 | :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
 | tributary | B, C, F, KL | Which Spring Run JPE is the data from |
@@ -42,18 +44,25 @@ Data dictionary for standard format:
 | time_released | B, C |time that marked fish are released |
 | location_released | F, KL | subsite on tributary where fish are released |
 | number_released | B, C, F, KL | Count of fish released |
-| date_recaptured | B, C, F, KL | Date that fish were recaptured |
-| number_recaptured | B, C, F, KL | Count of fish recaptured in RST on a specific recapture date |
 | median_fork_length_released | B, C, KL | median fork length of group of fish released|
-| median_fork_length_recaptured | B, C, F, KL | median fork length of group of fish recaptured |
 | day_or_night_release |B, C, F, KL | median fork length of group of fish released|
 | days_held_post_mark | B, C | umber of days marked fish are held before released |
 | flow_at_release | B, C | flow measure at time and location of release |
 | temperature_at_release | B, C | temperature measure at time and location of release |
 | turbidity_at_release | B, C | turbidity measure at time and location of release |
 | origin | B, C | if released fish are natural or hatchery fish |
-| cone_status | B, C | if RST cone is fishing half or full |
 
+
+
+Recapture Table: 
+
+| column name | tributary collects | definition | 
+| :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
+| tributary | B, C, F, KL | Which Spring Run JPE is the data from |
+| date_recaptured | B, C, F, KL | Date that fish were recaptured |
+| number_recaptured | B, C, F, KL | Count of fish recaptured in RST on a specific recapture date |
+| median_fork_length_recaptured | B, C, F, KL | median fork length of group of fish recaptured |
+| cone_status | B, C | if RST cone is fishing half or full |
 
 All released and recaptured fish are chinook salmon. 
 
@@ -82,7 +91,8 @@ number recaptured per day not the total number recaptured
 #                overwrite = TRUE)
 
 battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>% 
-  mutate(tributary = "Battle Creek") %>%
+  mutate(location = "Battle Creek",
+         release_id = paste0("BAT", row_number())) %>%
   rename(number_released = no_released, number_recaptured = recaps,
          median_fork_length_recaptured = recap_med_fork_length_mm, 
          median_fork_length_released = mark_med_fork_length_mm) %>%
@@ -92,8 +102,21 @@ battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>%
                                     recaptured_date == "caught_day_2" ~ release_date + 2,
                                     recaptured_date == "caught_day_3" ~ release_date + 3,
                                     recaptured_date == "caught_day_4" ~ release_date + 4,
-                                    recaptured_date == "caught_day_5" ~ release_date + 5,)) %>%
+                                    recaptured_date == "caught_day_5" ~ release_date + 5,)) 
+
+
+battle_release <- battle_mark_recap %>% 
+  select(location, release_id, release_date, release_time, number_released, median_fork_length_released, 
+         days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity, 
+         origin) %>% 
   glimpse
+  
+  
+battle_recaptured <-  battle_mark_recap %>% 
+  select(location, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured, 
+         cone_status) %>% 
+  glimpse
+  
 ```
 
 ### Clear Creek 
@@ -116,7 +139,8 @@ number recaptured per day not the total number recaptured
 #                overwrite = TRUE)
 
 clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>% 
-  mutate(tributary = "Clear Creek") %>% 
+  mutate(location = "Clear Creek",
+         release_id = paste0("CLR", row_number())) %>% 
   rename(number_released = no_released, number_recaptured = recaps,
          median_fork_length_recaptured = recap_med_fork_length_mm, 
          median_fork_length_released = mark_med_fork_length_mm) %>%
@@ -126,8 +150,20 @@ clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>%
                                     recaptured_date == "caught_day_2" ~ release_date + 2,
                                     recaptured_date == "caught_day_3" ~ release_date + 3,
                                     recaptured_date == "caught_day_4" ~ release_date + 4,
-                                    recaptured_date == "caught_day_5" ~ release_date + 5,)) %>%
+                                    recaptured_date == "caught_day_5" ~ release_date + 5,)) 
+
+clear_release <- clear_mark_recap %>% 
+  select(location, release_id, release_date, release_time, number_released, median_fork_length_released, 
+         days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity, 
+         origin) %>% 
   glimpse
+  
+  
+clear_recaptured <-  clear_mark_recap %>% 
+  select(location, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured, 
+         cone_status) %>% 
+  glimpse
+  
 ```
 
 ### Feather River
@@ -145,9 +181,17 @@ below that summarized the data by efficiency trial)
 #                overwrite = TRUE)
 
 feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>% 
-  mutate(tributary = "Feather River") %>% 
-  rename(number_released = nReleased) %>% 
+  mutate(location = "Feather River") %>% 
+  rename(number_released = nReleased, release_id = releaseID, 
+         release_site = releaseSiteID) %>% 
   select(-efficiency) %>%
+  glimpse
+
+feather_released <- feather_mark_recap %>% 
+  select(location, release_id, release_site, release_date, number_released, median_fork_length_released) %>% glimpse
+  
+feather_recaptured <- feather_mark_recap %>% 
+  select(location, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
   glimpse
 
 ```
@@ -167,9 +211,18 @@ below that summarized the data by efficiency trial)
 #                overwrite = TRUE)
 
 knights_landing_mark_recap <- read_csv("../../data/rst/knights_landing_mark_recapture.csv") %>% 
-  mutate(tributary = "Lower Sac - Knights Landing") %>% 
-  rename(number_released = nReleased) %>% 
-  select(-efficiency) %>%
+  mutate(location = "sacramento river", 
+         release_site = "knights landing release site") %>% 
+  rename(number_released = nReleased, release_id = releaseID) %>% 
+  select(-efficiency, -releaseSiteID) %>%
+  glimpse
+
+knights_landing_released <- knights_landing_mark_recap %>% 
+  select(location, release_id, release_site, release_date, number_released, median_fork_length_released) %>% 
+  glimpse
+  
+knights_landing_recaptured <- knights_landing_mark_recap %>% 
+  select(location, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
   glimpse
 ```
 
