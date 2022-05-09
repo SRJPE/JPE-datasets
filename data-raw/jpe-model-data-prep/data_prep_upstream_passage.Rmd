@@ -49,7 +49,9 @@ Assuming only spring run fish are included in the count - this assumption is not
 ```{r}
 model_format_upstream <- standard_adult_upsream %>% 
   mutate(year = year(date)) %>%
-  select(location, year, count, run, sex, origin) %>% glimpse
+  group_by(location, year, passage_direction, run, sex, origin) %>% 
+  summarize(count = sum(count, na.rm = TRUE)) %>%
+  select(location, year, count, passage_direction, run, sex, origin) %>% glimpse
 ```
 
 
@@ -57,10 +59,8 @@ model_format_upstream <- standard_adult_upsream %>%
 
 ```{r}
 model_format_upstream %>% 
-  group_by(location, year) %>% 
-  summarise(count = sum(count, na.rm = T)) %>% 
   ggplot() + 
-  geom_col(aes(x = year, y = count, fill = location), position = position_dodge2(width = 0.9, preserve = "single")) + 
+  geom_col(aes(x = year, y = count, fill = location), position = "dodge") + 
   labs(title = "total yearly upstream passage count") +
   scale_fill_manual(values = color_pal) + 
   theme_minimal() + 
@@ -68,13 +68,25 @@ model_format_upstream %>%
         text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
+
 ```{r}
 model_format_upstream %>% 
-  group_by(location, year, run) %>% 
-  summarise(count = sum(count, na.rm = T)) %>% 
   ggplot() + 
-  geom_col(aes(x = year, y = count, fill = run), position = position_dodge2(width = 0.9, preserve = "single")) + 
+  geom_col(aes(x = year, y = count, fill = location)) + 
   labs(title = "total yearly upstream passage count") +
+  scale_fill_manual(values = color_pal) + 
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  facet_wrap(~location, scales = "free_y")
+```
+
+```{r}
+model_format_upstream %>% 
+  ggplot() + 
+  geom_col(aes(x = year, y = count, fill = run)) + 
+  labs(title = "total yearly upstream passage count by run") +
   scale_fill_manual(values = color_pal) + 
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -83,12 +95,26 @@ model_format_upstream %>%
   facet_wrap(~location, scales = "free")
 ```
 
+```{r}
+model_format_upstream %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = count, y = location, color = location)) + 
+  labs(title = "range of count per year by tributatry ") +
+  scale_color_manual(values = color_pal) + 
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
 ### Save to Google Cloud 
 
 ```{r}
 clean_passage <- model_format_upstream
 
 knitr::kable(clean_passage %>% head)
+
 ```
 
 ```{r, eval=FALSE}
