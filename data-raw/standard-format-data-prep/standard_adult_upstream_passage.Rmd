@@ -72,6 +72,7 @@ No columns are removed from battle creek upstream passage video data.
 
 battle_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/battle_adult_upstream.csv") %>% 
   mutate(location = "Battle Creek") %>% 
+  filter(count != 0) %>% # occurs when catch of non chinook fish
   glimpse
 
 ```
@@ -127,6 +128,7 @@ clear_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring
            spawning_condition == 4 ~ "post spawn",
            spawning_condition == 5 ~ "unknown"
          )) %>% 
+  filter(count != 0) %>% # occurs when catch of non chinook fish
   glimpse
 ```
 
@@ -197,8 +199,9 @@ yuba_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/
   select(-category, -speed_m_per_s, -length_cm, 
          -depth_m, -position_in_frame) %>% # No clear methodology shared by yuba on these data and how they should be used  
   mutate(location = "Yuba River") %>% 
+  distinct() %>%
   glimpse
-
+View(yuba_upstream_passage)
 ```
 
 ## Combine data:
@@ -208,7 +211,7 @@ combined_upstream_passage <- bind_rows(battle_upstream_passage, clear_upstream_p
                                        deer_upstream_passage, mill_upstream_passage, 
                                        yuba_upstream_passage) %>% 
   relocate(location, date, time, count, run, adipose, sex, passage_direction, 
-           viewing_condition, spawning_condition, jack_size, ladder, flow, hours, temperature) %>%
+           viewing_condition, spawning_condition, jack_size, ladder, flow, temperature, hours) %>%
   glimpse
 ```
 
@@ -390,6 +393,8 @@ combined_upstream_passage %>%
 ### hours
 
 Only yuba river gives a hours variable to describe how many of 24 hours in a day are accounted for in the data, typically this value is 24 with some exceptions
+
+Our assumption is that all other locations attempt to view all 24 hours of video footage however we do not have a way to calculate actual hours viewed from the data provided 
 
 ```{r}
 combined_upstream_passage %>% 
