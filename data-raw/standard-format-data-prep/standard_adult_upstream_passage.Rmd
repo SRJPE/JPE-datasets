@@ -287,7 +287,7 @@ combined_upstream_passage <- combined_upstream_passage %>%
                          run == "WR" ~ "winter", 
                          run == "FR" ~ "fall", 
                          run == "unknown" ~ "unknown"),
-         run = ifelse(location %in% c("Mill Creek", "Deer Creek"), "spring run", run))
+         run = ifelse(location %in% c("Mill Creek", "Deer Creek"), "spring", run))
 
 combined_upstream_passage %>% 
   group_by(location) %>%
@@ -297,7 +297,7 @@ unique(combined_upstream_passage$run)
 
 ```
 
-### adipose 
+### adipose
 
 Change adipose field to origin field
 
