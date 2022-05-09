@@ -420,7 +420,7 @@ combined_upstream_passage %>%
 
 ```{r}
 combined_upstream_passage %>% 
-  filter(stream %in% c("Mill Creek", "Deer Creek")) %>%
+  filter(location %in% c("Mill Creek", "Deer Creek")) %>%
   ggplot() +
   geom_line(aes(x = date, y = flow, color = location), size = 1) + 
   scale_color_manual(values = color_pal) +
@@ -447,7 +447,7 @@ combined_upstream_passage %>%
 
 ```{r}
 combined_upstream_passage %>% 
-  filter(stream %in% c("Mill Creek", "Deer Creek")) %>%
+  filter(location %in% c("Mill Creek", "Deer Creek")) %>%
   ggplot() +
   geom_line(aes(x = date, y = temperature, color = location), size = 1) + 
   scale_color_manual(values = color_pal) +
