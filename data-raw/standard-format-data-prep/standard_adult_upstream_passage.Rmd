@@ -59,8 +59,6 @@ Below we read in the adult upstream passage data for each monitoring program and
 
 No columns are removed from battle creek upstream passage video data.
 
-TODO see if we can pull useful info from comments
-
 ```{r}
 # Set your authentication using gcs_auth
 # gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
@@ -119,9 +117,9 @@ clear_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring
   mutate(stream = "Clear Creek",
          viewing_condition = case_when( 
            viewing_condition == 1 ~ "normal",  
-           viewing_condition == 2 ~ "Readable",  
-           viewing_condition == 3 ~ "Not Readable",
-           viewing_condition == 4 ~"Weir is flooded"),
+           viewing_condition == 2 ~ "readable",  
+           viewing_condition == 3 ~ "not readable",
+           viewing_condition == 4 ~"weir is flooded"),
          spawning_condition = case_when(
            spawning_condition == 1 ~ "no spawn coloration", 
            spawning_condition == 2 ~ "some spawn coloration",
@@ -284,10 +282,10 @@ Change the run names to be consistent with the other monitoring types
 
 ```{r}
 combined_upstream_passage <- combined_upstream_passage %>% 
-  mutate(run = case_when(run == "SR" ~ "spring run",
-                         run == "LF" ~ "late fall run",
-                         run == "WR" ~ "winter run", 
-                         run == "FR" ~ "fall run", 
+  mutate(run = case_when(run == "SR" ~ "spring",
+                         run == "LF" ~ "late fall",
+                         run == "WR" ~ "winter", 
+                         run == "FR" ~ "fall", 
                          run == "unknown" ~ "unknown"),
          run = ifelse(stream %in% c("Mill Creek", "Deer Creek"), "spring run", run))
 
@@ -299,21 +297,29 @@ unique(combined_upstream_passage$run)
 
 ```
 
-### adipose
+### adipose 
+
+Change adipose field to origin field
+
+Look at unique values for adipose
 
 ```{r}
 unique(combined_upstream_passage$adipose)
 ```
 
-Change clipped to absent for adipose
+Change clipped to absent for adipose and reassign as origin: hatchery, natural, or unknown
 
 ```{r}
 combined_upstream_passage <- combined_upstream_passage %>% 
-  mutate(adipose = ifelse(adipose == "clipped", "absent", adipose))
+  mutate(adipose = ifelse(adipose == "clipped", "absent", adipose),
+         origin = case_when(adipose == "absent" ~ "hatchery", 
+                            adipose == "present" ~ "natural", 
+                            adipose == "unknown" ~ "unknown")) %>%
+  select(-adipose)
 
 combined_upstream_passage %>% 
   group_by(stream) %>%
-  summarise(adipose = unique(adipose) %>% base::paste(collapse = ', ')) 
+  summarise(origin = unique(origin) %>% base::paste(collapse = ', ')) 
 ```
 
 ### sex
