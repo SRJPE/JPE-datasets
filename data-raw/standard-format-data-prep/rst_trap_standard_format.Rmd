@@ -63,7 +63,8 @@ battle_trap_clean <- battle_environmental %>%
   select(-c(baileys_eff, num_released, report_baileys_eff, sub_week, sample_weight,
             flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
             weather_code, lunar_phase, diel,
-            habitat, debris_type, start_counter)) %>%
+            habitat, debris_type, start_counter,
+            trap_sample_type)) %>%
   # sample_date and sample_time are described as the end of 24 hour sampling period
   # rename to match others
   rename(trap_visit_id = sample_id,
@@ -105,8 +106,7 @@ weather_code, lunar_phase, diel included in environmental table
 - habitat removed because most data are in "run"
 - debris_type removed because data does not exist for other locations and is treated like a comments field
 - start_counter is always NA or 0. No meaningful data.
-
-TODO: considered removing trap_sample_type. 3666 non-intensive, 57 random. do we care about this?
+- trap_sample_type - 3666 non-intensive, 57 random. we do not know what encodings mean and almost all are non-intensive
 
 Note that sample_id was renamed to trap_visit_id for clarity and links to catch and environmental data.
 
@@ -170,7 +170,8 @@ clear_trap_clean <- clear_environmental %>%
   select(-c(num_released, baileys_eff, sub_week,
             flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
             weather_code, lunar_phase, diel,
-            habitat, debris_type, start_counter)) %>%
+            habitat, debris_type, start_counter,
+            trap_sample_type)) %>%
   rename(trap_visit_id = sample_id,
          site = station_code,
          start_date = trap_start_date,
@@ -209,8 +210,8 @@ weather_code, lunar_phase, diel included in environmental table
 - habitat removed because most data are in "run"
 - debris_type removed because data does not exist for other locations and is treated like a comments field
 - start_counter is always NA or 0. No meaningful data.
+- trap_sample_type - 3666 non-intensive, 57 random. we do not know what encodings mean and almost all are non-intensive
 
-TODO: considered removing trap_sample_type. 7414 non-intensive, 36 random, 8 intensive, 1, sunrise-sunset. do we care about this?
 
 Note that sample_id was renamed to trap_visit_id for clarity and links to catch and environmental data
 
@@ -430,7 +431,7 @@ combined_trap_raw <- bind_rows(battle_trap_clean,
                           yuba_trap_clean,
                           knights_trap_clean)
 colnames(combined_trap_raw)
-
+# TODO convert depth to cm and m (currently in ft and in)
 combined_trap <- combined_trap_raw %>%
   rename(debris_level = debris) %>%
   mutate(debris_level = tolower(debris_level),
@@ -462,6 +463,141 @@ unique(combined_trap_raw$debris)
 
 ```
 
-# Variables to consider removing
+## Variables to consider removing
 
 - trap_sample_type, method - only applies to one location
+
+TODO river depth measured in m? No in ft - convert
+TODO check that time per 10 rev is also in seconds
+
+TODO fill in number of traps when missing?
+
+TODO do we need start date/time and end date/time
+change names - > trap_start_data, trap_sample_date (assign date to trap_sample_date, and no trap_start_date)
+
+```{r}
+
+check <- combined_trap %>%
+  filter(!is.na(start_date)) %>%
+  group_by(location, site, subsite) %>%
+  arrange(start_date) %>%
+  mutate(date_ck = lag(end_date)) %>%
+  filter(date_ck != start_date) %>%
+  select(start_date, end_date, date_ck, location, site, subsite)
+
+```
+
+
+## Data dictionary
+
+```{r, data_dictionary_prep, include = F}
+colnames(combined_trap)
+
+rst_trap_data_dictionary <- tibble(variable_name = colnames(combined_trap),
+                                    description = c("Key variable that links trap operations to catch data and environmental data. Currently not all locations use this key.",
+                                                    "Date when trap was started or restarted.",
+                                                    "Time when trap was started or restarted.",
+                                                    "Date when trap was checked and catch counted. The start date is typically the end date from the previous day.",
+                                                    "Time when trap was checked and catch counted. The start time is typically the end time from the previous day.",
+                                                    "Number of cone revolutions during sampling period.",
+                                                    "Describes if cone was at full or half cone.",
+                                                    "River depth from inside of the river left",
+                                                    "River depth from directly in the center of cone",
+                                                    "River depth from inside of the river right",
+                                                    "The type of sample regime (non-intensive, intensive, sunrise-sunset, random)",
+                                                    "Was trap fishing in the thalweg (T/F)",
+                                                    "The depth of the bottom of the cone. Measured in inches",
+                                                    "Cone rate measurement - average time for one revolution (units = seconds).",
+                                                    "Was there a problem with the trap (T/F)",
+                                                    "Qualitative comments about sampling event.",
+                                                    "A code for the condition of the trap",
+                                                    "Did the trap fish (T/F)",
+                                                    "Did the trap fish for the entire sample day (T/F)",
+                                                    "Location of monitoring program (e.g. stream or river)",
+                                                    "Site within the location",
+                                                    "Subsite or specific trap location within each site and location. Names are specific to location.",
+                                                    "Volume of debris measured in trap (gallons).",
+                                                    "Date when trap was sampled/started.",
+                                                    "Status of trap during visit",
+                                                    "Time when trap was sampled/started.",
+                                                    "Cone rate measurement - revolutions per mintue at the start of trap visit",
+                                                    "Cone rate  measurement - revolutions per minute at the end of the trap visit",
+                                                    "Description of whether fish were processed.",
+                                                    "Method of sampling. Categories: fish screen diversion trap, rotary screw trap",
+                                                    "Categorical level of debris in trap (visual assessment).",
+                                                    "Number of traps operating",
+                                                    "Cone rate measurement - revolutions per mintue"),
+                                    
+                                    encoding = c(),
+                                   collected = c("Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Butte, Clear, Yuba, Knights",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear, Deer, Mill",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear, Yuba, Knights",
+                                                 "Battle, Clear, Deer, Feather, Mill",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 NA,
+                                                 NA,
+                                                 NA,
+                                                 "Battle, Clear",
+                                                 "Butte, Deer, Feather, Mill, Yuba",
+                                                 "Butte, Feather, Yuba",
+                                                 "Butte, Feather, Yuba",
+                                                 "Butte, Yuba",
+                                                 "Butte, Yuba",
+                                                 "Feather",
+                                                 "Yuba",
+                                                 "Yuba",
+                                                 "Knights",
+                                                 "Knights"),
+                                    `not collected` = c("Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       "Deer, Feather, Mill, Tisdale",
+                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                      "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                      "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                      "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                       "Butte, Feather, Yuba, Knights, Tisdale",
+                                                      "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                      "Butte, Deer, Feather, Mill, Tisdale",
+                                                      "Butte, Yuba, Knights, Tisdale",
+                                                      "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                      "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                      NA,
+                                                      NA,
+                                                      NA,
+                                                      "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
+                                                      "Battle, Clear, Knights, Tisdale",
+                                                      "Battle, Clear, Deer, Mill, Knights, Tisdale",
+                                                      "Battle, Clear, Deer, Mill, Knights, Tisdale",
+                                                      "Battle, Clear, Deer, Feather, Mill, Knights, Tisdale",
+                                                      "Battle, Clear, Deer, Feather, Mill, Knights, Tisdale",
+                                                       "Battle, Butte, Clear, Deer, Mill, Yuba, Knights, Tisdale",
+                                                      "Battle, Butte, Clear, Deer, Feather, Mill, Knights, Tisdale",
+                                                      "Battle, Butte, Clear, Deer, Feather, Mill, Knights, Tisdale",
+                                                      "Battle, Butte, Clear, Deer, Feather, Mill, Yuba, Tisdale",
+                                                      "Battle, Butte, Clear, Deer, Feather, Mill, Yuba, Tisdale"
+                                                      ))
+```
+
+```{r, data_dictionary}
+kable(rst_trap_data_dictionary)
+```
