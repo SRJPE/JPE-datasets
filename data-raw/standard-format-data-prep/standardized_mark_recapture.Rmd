@@ -39,7 +39,8 @@ Release Table:
 
 | column name | tributary collects | definition | 
 | :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
-| tributary | B, C, F, KL | Which Spring Run JPE is the data from |
+| location | B, C, F, KL | Which Spring Run JPE is the data from |
+| release_id | B, C, F, KL | the unique identifier for each release trial | 
 | date_released | B, C, F, KL | date that marked fish are released |
 | time_released | B, C |time that marked fish are released |
 | location_released | F, KL | subsite on tributary where fish are released |
@@ -58,7 +59,8 @@ Recapture Table:
 
 | column name | tributary collects | definition | 
 | :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
-| tributary | B, C, F, KL | Which Spring Run JPE is the data from |
+| location | B, C, F, KL | Which Spring Run JPE is the data from |
+| release_id | B, C, F, KL | the unique identifier for each release trial | 
 | date_recaptured | B, C, F, KL | Date that fish were recaptured |
 | number_recaptured | B, C, F, KL | Count of fish recaptured in RST on a specific recapture date |
 | median_fork_length_recaptured | B, C, F, KL | median fork length of group of fish recaptured |
@@ -91,7 +93,7 @@ number recaptured per day not the total number recaptured
 #                overwrite = TRUE)
 
 battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>% 
-  mutate(location = "Battle Creek",
+  mutate(location = "battle creek",
          release_id = paste0("BAT", row_number())) %>%
   rename(number_released = no_released, number_recaptured = recaps,
          median_fork_length_recaptured = recap_med_fork_length_mm, 
@@ -105,7 +107,7 @@ battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>%
                                     recaptured_date == "caught_day_5" ~ release_date + 5,)) 
 
 
-battle_release <- battle_mark_recap %>% 
+battle_released <- battle_mark_recap %>% 
   select(location, release_id, release_date, release_time, number_released, median_fork_length_released, 
          days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity, 
          origin) %>% 
@@ -139,7 +141,7 @@ number recaptured per day not the total number recaptured
 #                overwrite = TRUE)
 
 clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>% 
-  mutate(location = "Clear Creek",
+  mutate(location = "clear creek",
          release_id = paste0("CLR", row_number())) %>% 
   rename(number_released = no_released, number_recaptured = recaps,
          median_fork_length_recaptured = recap_med_fork_length_mm, 
@@ -152,10 +154,9 @@ clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>%
                                     recaptured_date == "caught_day_4" ~ release_date + 4,
                                     recaptured_date == "caught_day_5" ~ release_date + 5,)) 
 
-clear_release <- clear_mark_recap %>% 
+clear_released <- clear_mark_recap %>% 
   select(location, release_id, release_date, release_time, number_released, median_fork_length_released, 
-         days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity, 
-         origin) %>% 
+         days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity) %>% 
   glimpse
   
   
@@ -181,14 +182,23 @@ below that summarized the data by efficiency trial)
 #                overwrite = TRUE)
 
 feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>% 
-  mutate(location = "Feather River") %>% 
-  rename(number_released = nReleased, release_id = releaseID, 
-         release_site = releaseSiteID) %>% 
+  rename(number_released = nReleased, 
+         release_id = releaseID, 
+         site = releaseSiteID) %>% 
+  mutate(location = "feather river",
+         release_id = as.character(release_id),
+         site = case_when(site == 44000 ~ "eye riffle",
+                          site == 51000 ~ "gateway riffle",
+                          site == 46000 ~ "herringer riffle",
+                          site == 45000 ~ "live oak",
+                          site == 50000 ~ "shawns beach", 
+                          site == 43000 ~ "steep riffle",
+                          site == 47000 ~ "sunset pumps")) %>% 
   select(-efficiency) %>%
   glimpse
 
 feather_released <- feather_mark_recap %>% 
-  select(location, release_id, release_site, release_date, number_released, median_fork_length_released) %>% glimpse
+  select(location, release_id, site, release_date, number_released, median_fork_length_released) %>% glimpse
   
 feather_recaptured <- feather_mark_recap %>% 
   select(location, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
@@ -211,14 +221,15 @@ below that summarized the data by efficiency trial)
 #                overwrite = TRUE)
 
 knights_landing_mark_recap <- read_csv("../../data/rst/knights_landing_mark_recapture.csv") %>% 
-  mutate(location = "sacramento river", 
-         release_site = "knights landing release site") %>% 
   rename(number_released = nReleased, release_id = releaseID) %>% 
+  mutate(location = "sacramento river", 
+         site = "knights landing",
+         release_id = as.character(release_id)) %>% 
   select(-efficiency, -releaseSiteID) %>%
   glimpse
 
 knights_landing_released <- knights_landing_mark_recap %>% 
-  select(location, release_id, release_site, release_date, number_released, median_fork_length_released) %>% 
+  select(location, release_id, site, release_date, number_released, median_fork_length_released) %>% 
   glimpse
   
 knights_landing_recaptured <- knights_landing_mark_recap %>% 
@@ -226,46 +237,50 @@ knights_landing_recaptured <- knights_landing_mark_recap %>%
   glimpse
 ```
 
-## Combine data: 
+## Combine datasets: 
 ```{r}
-combined_mark_recapture <- bind_rows(battle_mark_recap, clear_mark_recap, feather_mark_recap, knights_landing_mark_recap) %>% 
-  relocate(tributary, release_site_id = releaseSiteID, release_id = releaseID, release_date, release_time, number_released, 
-           recaptured_date, number_recaptured, median_fork_length_released, median_fork_length_recaptured, day_or_night_release, 
+combined_release <- bind_rows(battle_released, clear_released, feather_released, knights_landing_released) %>% 
+  relocate(location, site, release_id, release_date, release_time, number_released, 
+           median_fork_length_released, day_or_night_release, 
            days_held_post_mark, flow_at_release = flow_release, temperature_at_release = release_temp, turbidity_at_release = release_turbidity, 
-           origin, cone_status) %>% glimpse
+           origin) %>% glimpse
+
+combined_recapture <- bind_rows(battle_recaptured, clear_recaptured, feather_recaptured, knights_landing_recaptured) %>% 
+  relocate(location, release_id,
+           recaptured_date, number_recaptured, median_fork_length_recaptured, cone_status) %>% glimpse
 ```
 
 ## Explore Varibles{.tabset} 
 
-### tributary 
+### location 
 
 ```{r}
-table(combined_mark_recapture$tributary)
+table(combined_release$location)
+table(combined_recapture$location)
 ```
 
-### release_site_id 
+### site
 
 Site ids can be joined to additional locational data using RST_trap_locations.rds
 ```{r}
-table(combined_mark_recapture$release_site_id)
+table(combined_release$site)
 ```
 
 Battle and Clear Creek do not provide a site id 
 ```{r}
-filter(combined_mark_recapture, tributary %in% c("Battle Creek", "Clear Creek")) %>% pull(release_site_id) %>% unique()
+filter(combined_release, location %in% c("Battle Creek", "Clear Creek")) %>% pull(site) %>% unique()
 ```
 
 ### release_id 
 
 Release id are unique identifiers for an efficiency trial on a specific tributary. There are 843 unique release IDs  
 ```{r}
-length(unique(combined_mark_recapture$release_id))
+length(unique(combined_release$release_id))
+length(unique(combined_recapture$release_id))
 ```
 
-Battle and Clear Creek do not provide a site id 
-```{r}
-filter(combined_mark_recapture, tributary %in% c("Battle Creek", "Clear Creek")) %>% pull(release_id) %>% unique()
-```
+Battle and Clear Creek do not provide a site id so we generated above. 
+
 
 ### release_date     
 
