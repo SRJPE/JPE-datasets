@@ -44,7 +44,7 @@ Y - Yuba River)
 | column name   | stream collects         | definition                                               |
 |:-----------------|:-------------------|:---------------------------------|
 | location      | B, Bu, C, D, F, M, S, Y | Which stream the RST is located on                       |
-| site          | B, Bu, C, D, F, M, S, Y | ?                                                        |
+| site          | B, Bu, C, D, F, M, S, Y | site name                                                |
 | subsite       | B, Bu, C, F, Y          | sub site information name                                |
 | date          | B, Bu, C, D, F, M, S, Y | date that samples are taken                              |
 | trap_visit_ID | B, C                    | sample id that links with catch or trap condition tables |
