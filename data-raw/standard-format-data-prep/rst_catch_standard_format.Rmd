@@ -147,8 +147,8 @@ filter(battle_rst, is.na(run)) %>% glimpse
 # run method: fWS_race (Sheila Greene LAD with adjustments, all fall run are spring run)
 battle_rst_clean <- battle_rst %>%
   select(-c(sample_id)) %>%
-  mutate(tributary = "Battle Creek",
-         site = "Battle Creek",
+  mutate(location = "battle creek",
+         site = location,
          origin = "natural",
          run_method = "adjusted length-at-date")
 ```
@@ -179,15 +179,18 @@ filter(butte_rst, is.na(mark_code)) %>% tally()
 
 butte_rst_clean <- butte_rst %>%
   select(date, station, dead, count, fork_length, weight, mark_code, lifestage) %>%
-  rename(origin = mark_code) %>%
-  mutate(tributary = "Butte Creek",
+  rename(origin = mark_code, 
+         site = station) %>%
+  mutate(location = "butte creek",
+         subsite = tolower(site),
+         site = case_when(grepl("Okie Dam", site) ~ "okie dam",
+                          T ~ tolower(site)),
          run = "spring",
          origin = case_when(is.na(origin) ~ "not recorded",
                             count == 0 ~ NA_character_,
                             origin == "none" ~ "natural",
                             origin == "adclipped" ~ "hatchery"),
-         run_method = "unknown") %>%
-  rename(site = station)
+         run_method = "unknown")
 ```
 
 ### Variables removed
@@ -219,10 +222,12 @@ unique(clear_rst$station_code)
 
 clear_rst_clean <- clear_rst %>%
   select(-c(sample_id)) %>%
-  mutate(tributary = "Clear Creek",
+  rename(site = station_code) %>%
+  mutate(location = "clear creek",
+         site = tolower(site),
          origin = "natural",
-         run_method = "adjusted length-at-date") %>%
-  rename(site = station_code)
+         run_method = "adjusted length-at-date")
+  
 ```
 
 ### Variables removed
@@ -247,8 +252,8 @@ deer_rst_clean <- deer_rst %>%
   select(date, location, count, fork_length, weight) %>%
   group_by(date, fork_length, weight) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(tributary = "Deer Creek",
-         site = "Deer Creek",
+  mutate(location = "deer creek",
+         site = location,
          run = "not recorded",
          run_method = NA_character_,
          origin = "natural",
@@ -279,10 +284,12 @@ filter(feather_rst, is.na(run)) %>% tally()
 # TODO method for designating run?
 
 feather_rst_clean <- feather_rst %>%
-  mutate(tributary = "Feather River",
+  rename(site = site_name) %>%
+  mutate(location = "feather river",
+         site = tolower(site),
          origin = "natural",
-         run_method = "unknown") %>%
-  rename(site = site_name)
+         run_method = "unknown")
+  
 ```
 
 ## Mill Creek
@@ -302,8 +309,8 @@ filter(mill_rst, is.na(count))
 
 mill_rst_clean <- mill_rst %>%
   select(date, count, fork_length) %>%
-  mutate(tributary = "Mill Creek",
-         site = "Mill Creek",
+  mutate(location = "mill creek",
+         site = location,
          run = "not recorded",
          run_method = NA_character_,
          origin = "natural",
@@ -343,8 +350,8 @@ yuba_rst_clean<- yuba_rst %>%
   select(date, fork_length, weight, lifestage, count, location, run) %>%
   group_by(date, fork_length, weight, lifestage, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(tributary = "Yuba River",
-         site = "Yuba River",
+  mutate(location = "yuba river",
+         site = location,
          origin = "natural")
 ```
 
@@ -378,9 +385,8 @@ knights_rst_clean <- knights_landing_rst %>%
          species = commonName,
          run_method = runMethod,
          lifestage = lifeStage) %>%
-  mutate(tributary = "Lower Sacramento - Knights Landing",
-         site = "Lower Sacramento - Knights Landing",
-         time = as_hms(date),
+  mutate(location = "sacramento river",
+         site = "knights landing",
          date = as_date(date),
          origin = tolower(origin),
          run_method = tolower(run_method),
@@ -430,8 +436,8 @@ tisdale_rst_clean <- tisdale_rst %>%
          dead = mortality) %>%
   group_by(date, species, fork_length, weight, lifestage, dead, run, origin, random) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(tributary = "Lower Sacramento - Tisdale",
-         site = "Lower Sacramento - Tisdale",
+  mutate(location = "sacramento river",
+         site = "tisdale",
          origin = tolower(origin),
          lifestage = tolower(lifestage),
          species = tolower(species),
@@ -487,10 +493,10 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                     "Describes if fish were dead when observed (T/F).",
                                                     "Describes if data were interpolated (T/F).",
                                                     "Mainstem/tributary location of trap.",
-                                                    "Site of trap within tributary. Some locations do not have multiples sites in which tributary = site. Site names are specific to the tributary.",
+                                                    "Site of trap within location. Some locations do not have multiples sites in which location = site. Site names are specific to the tributary.",
                                                     "Describes if the fish is natural or hatchery origin. In some cases this information may be unknown.",
                                                     "Weight in grams.",
-                                                    "Time trap checked.",
+                                                    "Subsite location of trap",
                                                     "Species of fish. All were filtered to chinook.",
                                                     "Method used to designate run. NA if count is 0.",
                                                     "Describes if fish were caught randomly (T/F)"),
@@ -510,21 +516,21 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                  "chinook salmon",
                                                  "not recorded, length-at-date criteria, appearance, hatchery attribute",
                                                  "TRUE, FALSE"),
-                                    `not collected` = c(NA,
-                                                       "Deer, Mill",
-                                                       NA,
-                                                       "Deer, Mill",
-                                                       NA,
-                                                       "Deer, Feather, Mill, Yuba, Knights",
-                                                       "Butte, Deer, Feather, Mill, Yuba, Knights, Tisdale",
-                                                       NA,
-                                                       NA,
-                                                       NA,
-                                                       "Battle, Clear, Feather, Mill",
-                                                       "Battle, Clear, Deer, Feather, Mill, Yuba, Tisdale",
-                                                       NA,
-                                                       "Battle, Butte, Clear, Deer, Feather, Mill, Yuba, Tisdale",
-                                                       "Battle, Butte, Clear, Deer, Feather, Mill, Yuba, Knights"))
+                                    collected = c("All",
+                                                       "All but Deer, Mill",
+                                                       "All",
+                                                       "All but Deer, Mill",
+                                                       "All",
+                                                       "Battle, Butte, Clear, Tisdale",
+                                                       "Battle, Clear",
+                                                       "All",
+                                                       "All",
+                                                       "All",
+                                                       "Butte, Deer, Yuba, Knights, Tisdale",
+                                                       "Butte",
+                                                       "All",
+                                                       "Knights",
+                                                       "Tisdale"))
 ```
 
 ```{r, data_dictionary}
@@ -613,18 +619,18 @@ unique(combined_rst$run)
 
 total_count <- combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year) %>%
+  group_by(location, year) %>%
   summarize(total = sum(count, na.rm = T))
 
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year, run) %>%
+  group_by(location, year, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = run)) +
   geom_col() +
-  facet_wrap(~tributary, scales = "free_y") +
+  facet_wrap(~location, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -637,13 +643,13 @@ Figure below shows the percent of total fish counted that have a fork length mea
 combined_rst %>%
   filter(!is.na(fork_length)) %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year) %>%
+  group_by(location, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~tributary)
+  facet_wrap(~location)
   
 ```
 
@@ -656,13 +662,13 @@ Figure below shows the percentage by lifestage for each tributary and year.
 ```{r, lifestage_qaqc}
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year, lifestage) %>%
+  group_by(location, year, lifestage) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = lifestage)) +
   geom_col() +
-  facet_wrap(~tributary, scales = "free_y") +
+  facet_wrap(~location, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -683,13 +689,13 @@ locations do not record this information.
 combined_rst %>%
   filter(dead == T) %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year) %>%
+  group_by(location, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~tributary)
+  facet_wrap(~location)
 ```
 
 ## interpolated
@@ -703,21 +709,21 @@ counts do not include values for fork length.
 combined_rst %>%
   filter(interpolated == T) %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year) %>%
+  group_by(location, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~tributary)
+  facet_wrap(~location)
 
 combined_rst %>%
-  filter(tributary %in% c("Battle Creek", "Clear Creek")) %>%
-  group_by(tributary, date, interpolated) %>%
+  filter(location %in% c("battle creek", "clear creek")) %>%
+  group_by(location, date, interpolated) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   ggplot(aes(x = date, y = count, color = interpolated)) +
   geom_line() +
-  facet_wrap(~tributary, scales = "free_y")
+  facet_wrap(~location, scales = "free_y")
 ```
 
 ## origin
@@ -728,13 +734,13 @@ for origin. For other locations it is not relevant or was already filtered.
 ```{r, origin_qaqc}
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year, origin) %>%
+  group_by(location, year, origin) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = origin)) +
   geom_col() +
-  facet_wrap(~tributary, scales = "free_y") +
+  facet_wrap(~location, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -747,13 +753,13 @@ Figure below shows the percent of total fish counted that have a weight measurem
 combined_rst %>%
   filter(!is.na(weight)) %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year) %>%
+  group_by(location, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~tributary)
+  facet_wrap(~location)
 ```
 ## run_method
 
@@ -763,13 +769,13 @@ for all others.
 ```{r, runmethod_qaqc}
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year, run_method) %>%
+  group_by(location, year, run_method) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = run_method)) +
   geom_col() +
-  facet_wrap(~tributary, scales = "free_y") +
+  facet_wrap(~location, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -782,13 +788,13 @@ Only Tisdale recorded this information. There are very few cases where random is
 combined_rst %>%
   filter(random == F) %>%
   mutate(year = year(date)) %>%
-  group_by(tributary, year) %>%
+  group_by(location, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~tributary)
+  facet_wrap(~location)
 ```
 
 # Save data
