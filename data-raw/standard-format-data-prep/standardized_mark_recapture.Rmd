@@ -28,14 +28,12 @@ FlowWest received mark recapture data from 4 monitoring programs:
 Tisdale has conducted efficiency tests but these are in paper format. 
 Mill and Deer did not historically conduct efficiency tests but will do so moving forward. 
 
-TODO Butte & Yuba ? do we have any idea here 
-
 ## Standard format for Mark Recapture Data
 
 Data dictionary for standard format: 
 (B - Battle Creek, C - Clear Creek, F - Feather River, K - Knights Landing)
 
-Release Table: 
+**Release Table:**
 
 | column name | tributary collects | definition | 
 | :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
@@ -51,11 +49,11 @@ Release Table:
 | flow_at_release | B, C | flow measure at time and location of release |
 | temperature_at_release | B, C | temperature measure at time and location of release |
 | turbidity_at_release | B, C | turbidity measure at time and location of release |
-| origin | B, C | if released fish are natural or hatchery fish |
+| origin | B | if released fish are natural or hatchery fish |
 
 
 
-Recapture Table: 
+**Recapture Table:**
 
 | column name | tributary collects | definition | 
 | :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
@@ -111,6 +109,7 @@ battle_released <- battle_mark_recap %>%
   select(location, release_id, release_date, release_time, number_released, median_fork_length_released, 
          days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity, 
          origin) %>% 
+  distinct() %>% 
   glimpse
   
   
@@ -157,6 +156,7 @@ clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>%
 clear_released <- clear_mark_recap %>% 
   select(location, release_id, release_date, release_time, number_released, median_fork_length_released, 
          days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity) %>% 
+  distinct() %>% 
   glimpse
   
   
@@ -198,7 +198,9 @@ feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>%
   glimpse
 
 feather_released <- feather_mark_recap %>% 
-  select(location, release_id, site, release_date, number_released, median_fork_length_released) %>% glimpse
+  select(location, release_id, site, release_date, number_released, median_fork_length_released) %>% 
+  distinct() %>% 
+  glimpse
   
 feather_recaptured <- feather_mark_recap %>% 
   select(location, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
@@ -230,6 +232,7 @@ knights_landing_mark_recap <- read_csv("../../data/rst/knights_landing_mark_reca
 
 knights_landing_released <- knights_landing_mark_recap %>% 
   select(location, release_id, site, release_date, number_released, median_fork_length_released) %>% 
+  distinct() %>% 
   glimpse
   
 knights_landing_recaptured <- knights_landing_mark_recap %>% 
@@ -243,20 +246,20 @@ combined_release <- bind_rows(battle_released, clear_released, feather_released,
   relocate(location, site, release_id, release_date, release_time, number_released, 
            median_fork_length_released, day_or_night_release, 
            days_held_post_mark, flow_at_release = flow_release, temperature_at_release = release_temp, turbidity_at_release = release_turbidity, 
-           origin) %>% glimpse
+           origin) %>% 
+  distinct() %>%glimpse
 
 combined_recapture <- bind_rows(battle_recaptured, clear_recaptured, feather_recaptured, knights_landing_recaptured) %>% 
   relocate(location, release_id,
            recaptured_date, number_recaptured, median_fork_length_recaptured, cone_status) %>% glimpse
 ```
 
-## Explore Varibles{.tabset} 
+## Explore Varibles Release{.tabset} 
 
 ### location 
 
 ```{r}
 table(combined_release$location)
-table(combined_recapture$location)
 ```
 
 ### site
@@ -268,7 +271,7 @@ table(combined_release$site)
 
 Battle and Clear Creek do not provide a site id 
 ```{r}
-filter(combined_release, location %in% c("Battle Creek", "Clear Creek")) %>% pull(site) %>% unique()
+filter(combined_release, location %in% c("battle creek", "cear creek")) %>% pull(site) %>% unique()
 ```
 
 ### release_id 
@@ -276,7 +279,6 @@ filter(combined_release, location %in% c("Battle Creek", "Clear Creek")) %>% pul
 Release id are unique identifiers for an efficiency trial on a specific tributary. There are 843 unique release IDs  
 ```{r}
 length(unique(combined_release$release_id))
-length(unique(combined_recapture$release_id))
 ```
 
 Battle and Clear Creek do not provide a site id so we generated above. 
@@ -286,8 +288,8 @@ Battle and Clear Creek do not provide a site id so we generated above.
 
 
 ```{r}
-combined_mark_recapture %>% ggplot() + 
-  geom_point(aes(x = release_date, y = tributary, color = tributary), alpha = .1) + 
+combined_release %>% ggplot() + 
+  geom_point(aes(x = release_date, y = location, color = location), alpha = .1) + 
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -298,10 +300,9 @@ combined_mark_recapture %>% ggplot() +
 
 ### release_time      
 
-#TODO see if we can get feather and knights landing release time
 ```{r}
-combined_mark_recapture %>% ggplot() + 
-  geom_point(aes(x = release_time, y = tributary, color = tributary), alpha = .1) + 
+combined_release %>% ggplot() + 
+  geom_point(aes(x = release_time, y = location, color = location), alpha = .1) + 
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   scale_x_time() +
@@ -315,19 +316,145 @@ combined_mark_recapture %>% ggplot() +
 
 Most release trials release less than 2000 fish. 
 ```{r}
-combined_mark_recapture %>% ggplot() + 
-  geom_histogram(aes(x = number_released, fill = tributary), alpha = .5) + 
+combined_release %>% ggplot() + 
+  geom_histogram(aes(x = number_released, fill = location), alpha = .5) + 
   scale_fill_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
         text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
+
+### median_fork_length_released
+Individual fork lengths for released fish are not provided by Battle Creek, Clear Creek, or Feather River. 
+Kights Landing does provide some of this data but it is very sparse, so was not included here since we are standizing historical data. For future data we would want to be able to have a seperate table that includes individual release fork lengths for every fish released. 
+
+All fork length values are summarized to just show medium fork length. Feather data does not
+provide data on the fork length of released fish. Knights Landing, Battle Creek, and 
+Clear Creek only show median fork length per efficiency trial.
+
+```{r}
+combined_release %>% 
+  ggplot(aes(x = median_fork_length_released, fill = location)) + 
+  geom_histogram(breaks=seq(0, 200, by=2), alpha = .5) + 
+  scale_x_continuous(breaks=seq(0, 200, by=25)) +
+  scale_fill_manual(values = color_pal) +
+  theme_minimal() +
+  labs(title = "median fork length released distribution") + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+combined_release %>% 
+  mutate(year = as.factor(lubridate::year(release_date))) %>%
+  ggplot(aes(x = median_fork_length_released, y = year, fill = location)) + 
+  geom_boxplot() + 
+  scale_fill_manual(values = color_pal) +
+  theme_minimal() +
+  labs(title = "median fork length released by year") + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+### day_or_night_release           
+Only battle and clear provide timing of release (day or night)
+```{r}
+table(combined_release$day_or_night_release)
+```
+
+```{r}
+filter(combined_release, location %in% c("sacramento river", "feather river")) %>% pull(day_or_night_release) %>% unique()
+```
+
+### days_held_post_mark    
+Only battle and clear provide the days held post mark (pre release), most fish are held one day at most before release
+```{r}
+combined_release %>% 
+  ggplot() + 
+  geom_histogram(aes(x = days_held_post_mark, fill = location), alpha = .5, binwidth = 1) +
+  scale_fill_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+### flow_at_release                      
+Only battle and clear provide flow at release
+```{r}
+combined_release %>% 
+  ggplot() + 
+  geom_histogram(aes(x = flow_at_release, fill = location), alpha = .5, binwidth = 25) +
+  scale_fill_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+### temperature_at_release  
+Only battle and clear provide temperature at release, temperature values mostly fall between 40 and 60 degrees C
+```{r}
+combined_release %>% 
+  ggplot() + 
+  geom_histogram(aes(x = temperature_at_release, fill = location), alpha = .5, binwidth = 2.5) +
+  scale_fill_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+### turbidity_at_release
+Only battle and clear provide turbidity measures, most turbidity measures fall below 25 NTU 
+```{r}
+combined_release %>% 
+  ggplot() + 
+  geom_histogram(aes(x = turbidity_at_release, fill = location), alpha = .5, binwidth = 2) +
+  scale_fill_manual(values = color_pal) +
+  theme_minimal() + 
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+### origin   
+Only battle creek provides origin
+```{r}
+table(combined_release$origin)
+```
+
+
+```{r}
+filter(combined_release, location %in% c("sacramento river", "feather river")) %>% pull(origin) %>% unique()
+```
+
+
+## Explore Varibles Recapture{.tabset} 
+
+### location 
+
+```{r}
+
+table(combined_recapture$location)
+```
+
+
+### release_id 
+
+Release id are unique identifiers for an efficiency trial on a specific tributary. There are 843 unique release IDs  
+```{r}
+length(unique(combined_recapture$release_id))
+```
+
+Battle and Clear Creek do not provide a site id so we generated above. 
+
 ### recaptured_date  
 
 ```{r}
-combined_mark_recapture %>% ggplot() + 
-  geom_point(aes(x = recaptured_date, y = tributary, color = tributary), alpha = .1) + 
+combined_recapture %>% ggplot() + 
+  geom_point(aes(x = recaptured_date, y = location, color = location), alpha = .1) + 
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -340,10 +467,10 @@ combined_mark_recapture %>% ggplot() +
 Most trials only recapture less than 200 fish. 
 
 ```{r}
-combined_mark_recapture %>% 
+combined_recapture %>% 
   filter(number_recaptured < 250) %>% 
   ggplot() + 
-  geom_histogram(aes(x = number_recaptured, fill = tributary), alpha = .5, binwidth = 10) +
+  geom_histogram(aes(x = number_recaptured, fill = location), alpha = .5, binwidth = 10) +
   scale_fill_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -353,42 +480,10 @@ combined_mark_recapture %>%
 
 There are 10 values where number_recaptured is greater than 250
 ```{r}
-combined_mark_recapture %>% 
+combined_recapture %>% 
   filter(number_recaptured > 250)
 ```
-### median_fork_length_released
-Individual fork lengths for released fish are not provided by Battle Creek, Clear Creek, or Feather River. 
-Kights Landing does provide some of this data but it is very sparse, so was not included here since we are standizing historical data. For future data we would want to be able to have a seperate table that includes individual release fork lengths for every fish released. 
 
-All fork length values are summarized to just show medium fork length. Feather data does not
-provide data on the fork length of released fish. Knights Landing, Battle Creek, and 
-Clear Creek only show median fork length per efficiency trial.
-
-```{r}
-combined_mark_recapture %>% 
-  ggplot(aes(x = median_fork_length_released, fill = tributary)) + 
-  geom_histogram(breaks=seq(0, 200, by=2), alpha = .5) + 
-  scale_x_continuous(breaks=seq(0, 200, by=25)) +
-  scale_fill_manual(values = color_pal) +
-  theme_minimal() +
-  labs(title = "median fork length released distribution") + 
-  theme(legend.position = "bottom", 
-        text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-
-```{r}
-combined_mark_recapture %>% 
-  mutate(year = as.factor(lubridate::year(release_date))) %>%
-  ggplot(aes(x = median_fork_length_released, y = year, fill = tributary)) + 
-  geom_boxplot() + 
-  scale_fill_manual(values = color_pal) +
-  theme_minimal() +
-  labs(title = "median fork length released by year") + 
-  theme(legend.position = "bottom", 
-        text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
 
 ### median_fork_length_recaptured
 Individual fork lengths for recaptured fish are not provided by Battle Creek or Clear Creek. 
@@ -399,8 +494,8 @@ Knights Landing are summarized to show median fork length per recapture day. Bat
 Clear Creek only show median fork length per efficiency trial. 
 
 ```{r}
-combined_mark_recapture %>% 
-  ggplot(aes(x = median_fork_length_recaptured, fill = tributary)) + 
+combined_recapture %>% 
+  ggplot(aes(x = median_fork_length_recaptured, fill = location)) + 
   geom_histogram(breaks=seq(0, 200, by=2),  alpha = .5) + 
   scale_x_continuous(breaks=seq(0, 200, by=25)) +
   scale_fill_manual(values = color_pal) +
@@ -412,9 +507,9 @@ combined_mark_recapture %>%
 ```
 
 ```{r}
-combined_mark_recapture %>% 
-  mutate(year = as.factor(lubridate::year(release_date))) %>%
-  ggplot(aes(x = median_fork_length_recaptured, y = year, fill = tributary)) + 
+combined_recapture %>% 
+  mutate(year = as.factor(lubridate::year(recaptured_date))) %>%
+  ggplot(aes(x = median_fork_length_recaptured, y = year, fill = location)) + 
   geom_boxplot() + 
   scale_fill_manual(values = color_pal) +
   theme_minimal() +
@@ -424,93 +519,23 @@ combined_mark_recapture %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### day_or_night_release           
-Only battle and clear provide timing of release (day or night)
-```{r}
-table(combined_mark_recapture$day_or_night_release)
-```
-
-```{r}
-filter(combined_mark_recapture, tributary %in% c("Lower Sac - Knights Landing", "Feather River")) %>% pull(day_or_night_release) %>% unique()
-```
-
-### days_held_post_mark    
-Only battle and clear provide the days held post mark (pre release), most fish are held one day at most before release
-```{r}
-combined_mark_recapture %>% 
-  ggplot() + 
-  geom_histogram(aes(x = days_held_post_mark, fill = tributary), alpha = .5, binwidth = 1) +
-  scale_fill_manual(values = color_pal) +
-  theme_minimal() + 
-  theme(legend.position = "bottom", 
-        text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-
-### flow_at_release                      
-Only battle and clear provide flow at release
-```{r}
-combined_mark_recapture %>% 
-  ggplot() + 
-  geom_histogram(aes(x = flow_at_release, fill = tributary), alpha = .5, binwidth = 25) +
-  scale_fill_manual(values = color_pal) +
-  theme_minimal() + 
-  theme(legend.position = "bottom", 
-        text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-
-### temperature_at_release  
-Only battle and clear provide temperature at release, temperature values mostly fall between 40 and 60 degrees C
-```{r}
-combined_mark_recapture %>% 
-  ggplot() + 
-  geom_histogram(aes(x = temperature_at_release, fill = tributary), alpha = .5, binwidth = 2.5) +
-  scale_fill_manual(values = color_pal) +
-  theme_minimal() + 
-  theme(legend.position = "bottom", 
-        text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-### turbidity_at_release
-Only battle and clear provide turbidity measures, most turbidity measures fall below 25 NTU 
-```{r}
-combined_mark_recapture %>% 
-  ggplot() + 
-  geom_histogram(aes(x = turbidity_at_release, fill = tributary), alpha = .5, binwidth = 2) +
-  scale_fill_manual(values = color_pal) +
-  theme_minimal() + 
-  theme(legend.position = "bottom", 
-        text = element_text(size = 18),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-```
-### origin   
-Only battle and clear provide
-```{r}
-table(combined_mark_recapture$origin)
-```
-
-
-```{r}
-filter(combined_mark_recapture, tributary %in% c("Lower Sac - Knights Landing", "Feather River")) %>% pull(origin) %>% unique()
-```
-
 ### cone_status
 Only battle and clear provide a cone_status
 ```{r}
-table(combined_mark_recapture$cone_status)
+table(combined_recapture$cone_status)
 ```
 
 ```{r}
-filter(combined_mark_recapture, tributary %in% c("Lower Sac - Knights Landing", "Feather River")) %>% pull(cone_status) %>% unique()
+filter(combined_recapture, location %in% c("sacramento river", "feather river")) %>% pull(cone_status) %>% unique()
 ```
 
 ## Summarize data by mark recapture data {.tabset}
 
 To calculate the efficiency of each mark recapture trial the data is now summarized by trial and total fish recaptured per trial is calculated below. 
 ```{r}
-summarized_mark_recapture <- combined_mark_recapture %>% 
-  group_by(tributary, release_id, release_date, number_released) %>%
+summarized_mark_recapture <- combined_release %>% 
+  left_join(combined_recapture, by = c("release_id" = "release_id", "location" = "location")) %>%
+  group_by(location, release_id, release_date, number_released) %>%
   summarize(total_fish_recaptured = sum(number_recaptured, na.rm = T), 
             median_fork_length_released = median(median_fork_length_released, na.rm = T),
             median_fork_length_recaptured = median(median_fork_length_recaptured, na.rm = T),
@@ -526,8 +551,8 @@ summarized_mark_recapture <- combined_mark_recapture %>%
 summarized_mark_recapture %>% 
   filter(efficiency < 1) %>% 
   ggplot() + 
-  geom_histogram(aes(x = efficiency, fill = tributary), alpha = .5) + 
-  facet_wrap(~tributary, scales ="free") +
+  geom_histogram(aes(x = efficiency, fill = location), alpha = .5) + 
+  facet_wrap(~location, scales ="free") +
   scale_fill_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -540,11 +565,11 @@ No points for knights landing and feather since we do not have flow
 
 ```{r}
 summarized_mark_recapture %>% 
-  filter(efficiency < 1, tributary %in% c("Battle Creek", "Clear Creek")) %>%  # one efficiency outlier (TODO check and remove)
+  filter(efficiency < 1, location %in% c("battle creek", "clear creek")) %>%  # one efficiency outlier (TODO check and remove)
   ggplot() + 
-  geom_point(aes(x = flow_at_release, y = efficiency, color = tributary), alpha = .5) + 
-  facet_wrap(~tributary) +
-  scale_fill_manual(values = color_pal) +
+  geom_point(aes(x = flow_at_release, y = efficiency, color = location), alpha = .5) + 
+  facet_wrap(~location) +
+  scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
         text = element_text(size = 18),
@@ -557,11 +582,11 @@ No points for knights landing and feather since we do not have temp
 
 ```{r}
 summarized_mark_recapture %>% 
-  filter(efficiency < 1, tributary %in% c("Battle Creek", "Clear Creek")) %>% # one efficiency outlier (TODO check and remove)
+  filter(efficiency < 1, location %in% c("battle creek", "clear creek")) %>% # one efficiency outlier (TODO check and remove)
   ggplot() + 
-  geom_point(aes(x = temperature_at_release, y = efficiency, color = tributary), alpha = .5) + 
-  facet_wrap(~tributary) +
-  scale_fill_manual(values = color_pal) +
+  geom_point(aes(x = temperature_at_release, y = efficiency, color = location), alpha = .5) + 
+  facet_wrap(~location) +
+  scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
         text = element_text(size = 18),
@@ -574,11 +599,11 @@ No points for knights landing and feather since we do not have turbidity
 
 ```{r}
 summarized_mark_recapture %>% 
-  filter(efficiency < 1, tributary %in% c("Battle Creek", "Clear Creek")) %>%
+  filter(efficiency < 1, location %in% c("battle creek", "clear creek")) %>%
   ggplot() + 
-  geom_point(aes(x = turbidity_at_release, y = efficiency, color = tributary), alpha = .5) + 
-  facet_wrap(~tributary) +
-  scale_fill_manual(values = color_pal) +
+  geom_point(aes(x = turbidity_at_release, y = efficiency, color = location), alpha = .5) + 
+  facet_wrap(~location) +
+  scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
         text = element_text(size = 18),
@@ -589,16 +614,23 @@ summarized_mark_recapture %>%
 
 
 ```{r}
-knitr::kable(align = 'c', head(combined_mark_recapture, 5))
+knitr::kable(align = 'c', head(combined_release, 5))
+
+knitr::kable(align = 'c', head(combined_recapture, 5))
 ```
 
 
 ```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
-gcs_upload(combined_mark_recapture,
+gcs_upload(combined_release,
            object_function = f,
            type = "csv",
-           name = "standard-format-data/standard_mark_recapture.csv")
+           name = "standard-format-data/standard_release.csv")
+
+gcs_upload(combined_recapture,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_recapture.csv")
 
 ```
