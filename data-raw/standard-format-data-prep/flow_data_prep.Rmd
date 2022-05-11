@@ -26,13 +26,14 @@ library(hms)
 # This table is also helpful for understanding years where we need flow data for each location:
 # https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/rst
 
-trap_locations_raw <- read_csv("data-raw/standard-format-data-prep/rst_sites.csv")
+trap_locations_raw <- read_csv("rst_sites.csv")
 
 trap_locations <- trap_locations_raw %>%
   select(tributary, site_name, river_location, latitude, longitude, year) %>%
   distinct()
+  # identify years
 
-gage_locations_raw <- read_csv("data-raw/standard-format-data-prep/gage_sites.csv")
+gage_locations_raw <- read_csv("gage_sites.csv")
 
 # Pull flow data from each of the gage sites here 
 gage_locations <- gage_locations_raw %>%
@@ -41,6 +42,7 @@ gage_locations <- gage_locations_raw %>%
   distinct() %>%
   rename(gage_latitude = latitude,
          gage_longitude = longitude)
+  # to get the codes
 ```
 
 # Pull in flow data {.tabset}
