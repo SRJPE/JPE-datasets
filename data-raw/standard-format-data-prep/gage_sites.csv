@@ -1,0 +1,521 @@
+tributary,site_name,sub_site_name,identifier,agency,latitude,longitude,flow_gage,temp_gage,gage_type,year
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2001
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2002
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2003
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2004
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2005
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2006
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2007
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2008
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2009
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2010
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2011
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2012
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2013
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2014
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2015
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2016
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2017
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2018
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2019
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2020
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2021
+Feather River,Steep Riffle,Steep Riffle RST,FTO,CDEC,39.522,-121.547,TRUE,FALSE,flow,2022
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2002
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2003
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2004
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2005
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2006
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2007
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2008
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2009
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2010
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2011
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2012
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2013
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2014
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2015
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2016
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2017
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2018
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2019
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2020
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2021
+Feather River,Eye Riffle,Eye riffle north,FRA,CDEC,39.468,-121.597,FALSE,TRUE,temp,2022
+Feather River,Live Oak,Live Oak,YUB,CDEC,39.13857,-121.60629,FALSE,FALSE,NA,NA
+Feather River,Herringer Riffle,Herringer east,GRL,CDEC,39.13857,-121.60629,TRUE,TRUE,temp,2003
+Feather River,Herringer Riffle,Herringer east,GRL,CDEC,39.13857,-121.60629,TRUE,TRUE,temp,2004
+Feather River,Herringer Riffle,Herringer east,GRL,CDEC,39.13857,-121.60629,TRUE,TRUE,temp,2005
+Feather River,Herringer Riffle,Herringer east,GRL,CDEC,39.13857,-121.60629,TRUE,TRUE,temp,2006
+Feather River,Herringer Riffle,Herringer east,GRL,CDEC,39.13857,-121.60629,TRUE,TRUE,temp,2007
+Feather River,Herringer Riffle,Herringer east,GRL,CDEC,39.13857,-121.60629,TRUE,TRUE,temp,2020
+Feather River,Herringer Riffle,Herringer east,GRL,CDEC,39.13857,-121.60629,TRUE,TRUE,temp,2021
+Feather River,Herringer Riffle,Herringer east,GRL,CDEC,39.13857,-121.60629,TRUE,TRUE,temp,2022
+Feather River,Shawns Beach,Shawns east,NA,NA,NA,NA,NA,NA,NA,NA
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1988
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1989
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1990
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1991
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1992
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1993
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1994
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1995
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1996
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1997
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1998
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,1999
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2000
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2001
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2002
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2003
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2004
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2005
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2006
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2007
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2008
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2009
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2010
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2011
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2012
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2013
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2014
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2015
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2016
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2017
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2018
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2019
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2020
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2021
+Clear Creek,Lower Clear Creek,LCC,11372000,USGS,40.51320587,-122.5241795,TRUE,FALSE,flow,2022
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2001
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2002
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2003
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2004
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2005
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2006
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2007
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2008
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2009
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2010
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2011
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2012
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2013
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2014
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2015
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2016
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2017
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2018
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2019
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2020
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2021
+Clear Creek,Lower Clear Creek,LCC,IGO,CDEC,40.51321,-122.52418,TRUE,TRUE,flow,2022
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,1995
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,1996
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,1997
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,1998
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,1999
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2000
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2001
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2002
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2003
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2004
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2005
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2006
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2007
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2008
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2009
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2010
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2011
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2012
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2013
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2014
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2015
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2016
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2017
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2018
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2019
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2020
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2021
+Battle Creek,Lower Battle Creek,LBC,BAT,CDEC,40.39821,-122.14639,TRUE,FALSE,flow,2022
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1961
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1962
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1963
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1964
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1965
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1966
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1967
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1968
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1969
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1970
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1971
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1972
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1973
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1974
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1975
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1976
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1977
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1978
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1979
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1980
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1981
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1982
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1983
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1984
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1985
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1986
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1987
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1988
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1989
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1990
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1991
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1992
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1993
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1994
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1995
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1996
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1997
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1998
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,1999
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2000
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2001
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2002
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2003
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2004
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2005
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2006
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2007
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2008
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2009
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2010
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2011
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2012
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2013
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2014
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2015
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2016
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2017
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2018
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2019
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2020
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2021
+Battle Creek,Lower Battle Creek,LBC,11376550,USGS,40.39821,-122.14639,TRUE,TRUE,flow,2022
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,1998
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,1999
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2000
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2001
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2002
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2003
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2004
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2005
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2006
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2007
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2008
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2009
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2010
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2011
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2012
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2013
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2014
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2015
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2016
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2017
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2018
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2019
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2020
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2021
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,BCK,CDEC,39.72599,-121.70886,TRUE,TRUE,temp,2022
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2007
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2008
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2009
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2010
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2011
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2012
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2013
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2014
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2015
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2016
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2017
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2018
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2019
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2020
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2021
+Butte Creek,Parrott-Phelan Diversion Dam (PPRST),NA,1139000,USGS,39.72599524,-121.7088643,TRUE,TRUE,temp,2022
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,1993
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,1994
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,1995
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,1996
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,1997
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,1998
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,1999
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2000
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2001
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2002
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2003
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2004
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2005
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2006
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2007
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2008
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2009
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2010
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2011
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2012
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2013
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2014
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2015
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2016
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2017
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2018
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2019
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2020
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2021
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,MRY,CDEC,39.17572,-121.52496,TRUE,FALSE,flow,2022
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1987
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1988
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1989
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1990
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1991
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1992
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1993
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1994
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1995
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1996
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1997
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1998
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,1999
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2000
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2001
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2002
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2003
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2004
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2005
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2006
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2007
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2008
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2009
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2010
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2011
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2012
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2013
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2014
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2015
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2016
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2017
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2018
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2019
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2020
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2021
+Yuba River,RST 1 at Hallwood on Yuba River,HAL,11421000,USGS,39.17572,-121.52496,TRUE,FALSE,flow,2022
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,1998
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,1999
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2000
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2001
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2002
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2003
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2004
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2005
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2006
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2007
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2008
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2009
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2010
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2011
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2012
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2013
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2014
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2015
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2016
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2017
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2018
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2019
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2020
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2021
+Sacramento River,Tisdale Weir,TIS,TIS,CDEC,39.02644,-121.82208,TRUE,FALSE,flow,2022
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,1993
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,1994
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,1995
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,1996
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,1997
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,1998
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,1999
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2000
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2001
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2002
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2003
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2004
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2005
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2006
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2007
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2008
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2009
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2010
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2011
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2012
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2013
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2014
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2015
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2016
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2017
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2018
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2019
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2020
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2021
+Sacramento River,Knights Landing,KNL,WLK,CDEC,39.0099,-121.82469,TRUE,TRUE,flow,2022
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1987
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1988
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1989
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1990
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1991
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1992
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1993
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1994
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1995
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1996
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1997
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1998
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,1999
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2000
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2001
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2002
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2003
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2004
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2005
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2006
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2007
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2008
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2009
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2010
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2011
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2012
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2013
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2014
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2015
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2016
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2017
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2018
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2019
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2020
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2021
+Sacramento River,Knights Landing,KNL,11390500,USGS,39.00989476,-121.82469,TRUE,TRUE,flow,2022
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,1997
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,1998
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,1999
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2000
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2001
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2002
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2003
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2004
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2005
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2006
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2007
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2008
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2009
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2010
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2011
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2012
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2013
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2014
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2015
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2016
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2017
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2018
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2019
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2020
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2021
+Deer Creek,Deer Creek Near Confluence,NA,DCV,CDEC,40.01405,-121.94832,TRUE,TRUE,flow,2022
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1988
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1989
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1990
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1991
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1992
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1993
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1994
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1995
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1996
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1997
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1998
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,1999
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2000
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2001
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2002
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2003
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2004
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2005
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2006
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2007
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2008
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2009
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2010
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2011
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2012
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2013
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2014
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2015
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2016
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2017
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2018
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2019
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2020
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2021
+Deer Creek,Deer Creek Near Confluence,NA,11383500,USGS,40.01404745,-121.9483181,TRUE,TRUE,flow,2022
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,1997
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,1998
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,1999
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2000
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2001
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2002
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2003
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2004
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2005
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2006
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2007
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2008
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2009
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2010
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2011
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2012
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2013
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2014
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2015
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2016
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2017
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2018
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2019
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2020
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2021
+Mill Creek,Mill Creek Near Confluence,NA,MLM,CDEC,40.0546,-122.02415,TRUE,TRUE,flow,2022
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1988
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1989
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1990
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1991
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1992
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1993
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1994
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1995
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1996
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1997
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1998
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,1999
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2000
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2001
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2002
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2003
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2004
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2005
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2006
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2007
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2008
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2009
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2010
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2011
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2012
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2013
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2014
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2015
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2016
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2017
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2018
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2019
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2020
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2021
+Mill Creek,Mill Creek Near Confluence,NA,11381500,USGS,40.0546022,-122.0241541,TRUE,TRUE,flow,2022

@@ -1,0 +1,121 @@
+---
+title: "pull flow data for trap locations"
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(CDECRetrieve)
+library(dataRetrieval)
+library(hms)
+```
+
+# Trap location and flow gage lookup
+
+```{r}
+# We need flow data for each of the sites included in the trap_locations table
+# for all of the years listed.
+# We do not need to go to subsite scale of resolution.
+# For now this table is for reference to find the years that data is needed.
+trap_locations_raw <- read_csv("data-raw/standard-format-data-prep/rst_sites.csv")
+
+trap_locations <- trap_locations_raw %>%
+  select(tributary, site_name, river_location, latitude, longitude, year) %>%
+  distinct()
+
+gage_locations_raw <- read_csv("data-raw/standard-format-data-prep/gage_sites.csv")
+
+# Pull flow data from each of the gage sites here 
+gage_locations <- gage_locations_raw %>%
+  filter(flow_gage == T) %>%
+  select(tributary, site_name, agency, latitude, longitude) %>%
+  distinct() %>%
+  rename(gage_latitude = latitude,
+         gage_longitude = longitude)
+```
+
+# Pull in flow data {.tabset}
+
+## Battle Creek
+
+## Butte Creek
+
+## Clear Creek
+
+## Deer Creek
+
+## Feather River
+
+### High flow channel sites
+
+```{r}
+# We already identified the code for the CDEC gage of interest here: GRL
+# Use this code to see what data are available
+cdec_datasets("GRL") 
+# For reference - this mapping tool shows CDEC sites: https://cdec.water.ca.gov/webgis/?appid=cdecstation
+
+# Use this code to pull the data from CDEC. 
+gridley_CDEC <- CDECRetrieve::cdec_query(station = "GRL", dur_code = "H"  , sensor_num = "20", start_date = "1996-01-01")
+
+# Format data
+gridley_hourly_flows <- gridley_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+  
+```
+
+#### QA/QC 
+
+It looks like there are some negative values. We should remove those.
+
+```{r}
+ggplot(gridley_CDEC, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
+```
+#### Clean data
+
+```{r}
+gridley_hourly_flows_clean <- gridley_hourly_flows %>%
+  filter(flow_cfs >= 0)
+```
+
+
+### Low flow channel sites
+
+```{r}
+# For reference - this mapping tool shows USGS sites: https://maps.waterdata.usgs.gov/mapper/index.html
+# You can use the mapper to search for sites and find the right parameter code. I use 0060 below for daily discharge. 
+# Hourly or instaneous would be better but it is not available.
+oroville_USGS <- dataRetrieval::readNWISdv(11407000, "00060")
+
+# Format to make tidier
+oroville_daily_flows <- oroville_USGS %>%
+  select(Date, flow_cfs =  X_00060_00003) %>%
+  filter(lubridate::year(Date) >= 1996) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+
+
+#### QA/QC
+
+```{r}
+ggplot(oroville_daily_flows, aes(x = date, y = flow_cfs)) +
+  geom_line()
+```
+
+## Mill Creek
+
+## Yuba River
+
+## Sacramento River
+
+
+
