@@ -34,7 +34,7 @@ gage_locations_raw <- read_csv("data-raw/standard-format-data-prep/gage_sites.cs
 # Pull flow data from each of the gage sites here 
 gage_locations <- gage_locations_raw %>%
   filter(flow_gage == T) %>%
-  select(tributary, site_name, agency, latitude, longitude) %>%
+  select(tributary, site_name, agency, latitude, longitude, identifier) %>%
   distinct() %>%
   rename(gage_latitude = latitude,
          gage_longitude = longitude)
@@ -133,7 +133,7 @@ cdec_datasets("GRL")
 # For reference - this mapping tool shows CDEC sites: https://cdec.water.ca.gov/webgis/?appid=cdecstation
 
 # Use this code to pull the data from CDEC. 
-gridley_CDEC <- CDECRetrieve::cdec_query(station = "GRL", dur_code = "H"  , sensor_num = "20", start_date = "1996-01-01")
+gridley_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "20", start_date = "1996-01-01")
 
 # Format data
 gridley_hourly_flows <- gridley_CDEC %>%
@@ -148,7 +148,7 @@ gridley_hourly_flows <- gridley_CDEC %>%
 It looks like there are some negative values. We should make these NA.
 
 ```{r}
-ggplot(gridley_CDEC, aes(x = datetime, y = flow_cfs)) +
+ggplot(gridley_hourly_flows, aes(x = datetime, y = flow_cfs)) +
   geom_line()
 ```
 #### Clean data
@@ -165,7 +165,9 @@ gridley_hourly_flows_clean <- gridley_hourly_flows %>%
 # For reference - this mapping tool shows USGS sites: https://maps.waterdata.usgs.gov/mapper/index.html
 # You can use the mapper to search for sites and find the right parameter code. I use 0060 below for daily discharge. 
 # Hourly or instaneous would be better but it is not available.
-oroville_USGS <- dataRetrieval::readNWISdv(11407000, "00060")
+# Documentation for dataRetrieval: https://github.com/USGS-R/dataRetrieval
+
+oroville_USGS <- readNWISdv(11407000, "00060")
 
 # Format to make tidier
 oroville_daily_flows <- oroville_USGS %>%
