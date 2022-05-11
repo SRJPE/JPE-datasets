@@ -44,11 +44,83 @@ gage_locations <- gage_locations_raw %>%
 
 ## Battle Creek
 
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+```
+
+### USGS data
+
+```{r}
+
+```
+
 ## Butte Creek
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+```
+
+### USGS data
+
+```{r}
+
+```
 
 ## Clear Creek
 
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+```
+
+### USGS data
+
+```{r}
+
+```
+
 ## Deer Creek
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+```
+
+### USGS data
+
+```{r}
+
+```
 
 ## Feather River
 
@@ -73,7 +145,7 @@ gridley_hourly_flows <- gridley_CDEC %>%
 
 #### QA/QC 
 
-It looks like there are some negative values. We should remove those.
+It looks like there are some negative values. We should make these NA.
 
 ```{r}
 ggplot(gridley_CDEC, aes(x = datetime, y = flow_cfs)) +
@@ -83,7 +155,7 @@ ggplot(gridley_CDEC, aes(x = datetime, y = flow_cfs)) +
 
 ```{r}
 gridley_hourly_flows_clean <- gridley_hourly_flows %>%
-  filter(flow_cfs >= 0)
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
 ```
 
 
@@ -113,9 +185,82 @@ ggplot(oroville_daily_flows, aes(x = date, y = flow_cfs)) +
 
 ## Mill Creek
 
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+```
+
+### USGS data
+
+```{r}
+
+```
+
 ## Yuba River
 
-## Sacramento River
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+```
+
+### USGS data
+
+```{r}
+
+```
+
+## Sacramento River - Knights Landing
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+```
+
+### USGS data
+
+```{r}
+
+```
+
+## Sacramento River - Tisdale
+
+### CDEC data
+
+```{r}
+# Only CDEC data is available for Tisdale
+
+```
+
+#### QA/QC
+
+```{r}
+# plots to check the quality of data. no data below zero.
+```
+
+
+
+
 
 
 
