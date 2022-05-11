@@ -42,13 +42,13 @@ knitr::kable(rst_sites, align = 'c')
 ```{r}
 leaflet(rst_sites)  %>% 
   addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
-  addCircleMarkers(data = rst_sites,  label = rst_sites$site_name, 
+  addCircleMarkers(data = rst_sites,  label = rst_sites$site, 
                    weight = 1.5, color = "blue",
                    opacity =  1, fillOpacity = .25, 
                    labelOptions = labelOptions(noHide = T, # Set to F to hide labels
                                                style = list("font-size" = "14px")), 
                    popup = paste(sep = "<br/>",
-                                 rst_sites$sub_site_name,
+                                 rst_sites$subsite,
                                  paste("River Mile:", rst_sites$river_mile),
                                  paste("RST Size:", rst_sites$rst_size),
                                  paste("RST Season:", rst_sites$trapping_season))
@@ -65,7 +65,7 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 f <- function(input, output) write_csv(input, file = output)
-
+write_csv(rst_sites, "../../data/standard-format-data/rst_trap_locations.csv")
 gcs_upload(rst_sites,
            object_function = f,
            type = "csv",
