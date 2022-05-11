@@ -23,6 +23,9 @@ library(hms)
 # for all of the years listed.
 # We do not need to go to subsite scale of resolution.
 # For now this table is for reference to find the years that data is needed.
+# This table is also helpful for understanding years where we need flow data for each location:
+# https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/rst
+
 trap_locations_raw <- read_csv("data-raw/standard-format-data-prep/rst_sites.csv")
 
 trap_locations <- trap_locations_raw %>%
@@ -146,6 +149,8 @@ gridley_hourly_flows <- gridley_CDEC %>%
 #### QA/QC 
 
 It looks like there are some negative values. We should make these NA.
+
+It would be important to note any gaps in data collection.
 
 ```{r}
 ggplot(gridley_hourly_flows, aes(x = datetime, y = flow_cfs)) +
