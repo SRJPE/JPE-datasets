@@ -42,7 +42,11 @@ gage_locations <- gage_locations_raw %>%
   distinct() %>%
   rename(gage_latitude = latitude,
          gage_longitude = longitude)
+<<<<<<< HEAD
   # to get the codes
+=======
+  # get codes
+>>>>>>> 5bae8e9eedab0fe0250589a85e5721627dec9ca5
 ```
 
 # Pull in flow data {.tabset}
