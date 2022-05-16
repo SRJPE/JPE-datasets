@@ -189,8 +189,6 @@ butte_rst_clean <- butte_rst %>%
   select(date, station, dead, count, fork_length, weight, mark_code, lifestage) %>%
   rename(origin = mark_code, 
          site = station) %>%
-  group_by(date, site, dead, fork_length, weight, origin, lifestage) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "butte creek",
          subsite = tolower(site),
          site = case_when(grepl("Okie Dam", site) ~ "okie dam",
@@ -200,7 +198,9 @@ butte_rst_clean <- butte_rst %>%
                             count == 0 ~ NA_character_,
                             origin == "none" ~ "natural",
                             origin == "adclipped" ~ "hatchery"),
-         run_method = "unknown")
+         run_method = "unknown") %>%
+  group_by(date, site, dead, fork_length, weight, origin, lifestage, location, run, run_method) %>%
+  summarize(count = sum(count, na.rm = T))
 ```
 
 ### Variables removed
