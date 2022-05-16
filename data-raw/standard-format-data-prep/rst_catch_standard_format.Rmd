@@ -139,14 +139,22 @@ unique(battle_rst$run)
 unique(battle_rst$lifestage)
 filter(battle_rst, is.na(fork_length), count > 0) %>% glimpse
 filter(battle_rst, is.na(run)) %>% glimpse
+
+battle_rst %>% group_by(date, run, fork_length, lifestage, dead, interpolated) %>% count() %>% filter(n > 1)
+
+filter(battle_rst, date == "2003-12-28")
+
 # notes to include
 # some data may be interpolated (~1% may be interpolated)
 # run is not filtered
 # TODO compare mean observed v interpolated to decide if we should use
 # Origin - Natural because trap is above that hatchery
 # run method: fWS_race (Sheila Greene LAD with adjustments, all fall run are spring run)
+
 battle_rst_clean <- battle_rst %>%
   select(-c(sample_id)) %>%
+  group_by(date, run, fork_length, lifestage, dead, interpolated) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "battle creek",
          site = location,
          origin = "natural",
@@ -181,6 +189,8 @@ butte_rst_clean <- butte_rst %>%
   select(date, station, dead, count, fork_length, weight, mark_code, lifestage) %>%
   rename(origin = mark_code, 
          site = station) %>%
+  group_by(date, site, dead, fork_length, weight, origin, lifestage) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "butte creek",
          subsite = tolower(site),
          site = case_when(grepl("Okie Dam", site) ~ "okie dam",
@@ -223,6 +233,8 @@ unique(clear_rst$station_code)
 clear_rst_clean <- clear_rst %>%
   select(-c(sample_id)) %>%
   rename(site = station_code) %>%
+  group_by(date, site, run, fork_length, lifestage, dead, interpolated) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "clear creek",
          site = tolower(site),
          origin = "natural",
@@ -285,6 +297,8 @@ filter(feather_rst, is.na(run)) %>% tally()
 
 feather_rst_clean <- feather_rst %>%
   rename(site = site_name) %>%
+  group_by(date, site, run, lifestage, fork_length) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "feather river",
          site = tolower(site),
          origin = "natural",
@@ -309,6 +323,8 @@ filter(mill_rst, is.na(count))
 
 mill_rst_clean <- mill_rst %>%
   select(date, count, fork_length) %>%
+  group_by(date, fork_length) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "mill creek",
          site = location,
          run = "not recorded",
@@ -340,19 +356,19 @@ unique(yuba_rst$lifestage)
 # note that run designation is a combination of run and lifestage.
 # run not filtered
 # sites are names for traps at the same location and should be summed
-# TODO use CAMP to find run_method
 
 filter(yuba_rst, is.na(fork_length), count > 0) %>% glimpse
 filter(yuba_rst, is.na(run), count > 0) %>% glimpse
 filter(yuba_rst, run == "unknown") %>% glimpse
 
 yuba_rst_clean<- yuba_rst %>%
-  select(date, fork_length, weight, lifestage, count, location, run) %>%
+  select(date, fork_length, weight, lifestage, count, run) %>%
   group_by(date, fork_length, weight, lifestage, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "yuba river",
-         site = location,
-         origin = "natural")
+         site = "hallwood",
+         origin = "natural",
+         run_method = "unknown")
 ```
 
 ### Variables removed
@@ -385,6 +401,8 @@ knights_rst_clean <- knights_landing_rst %>%
          species = commonName,
          run_method = runMethod,
          lifestage = lifeStage) %>%
+  group_by(fork_length, weight, species, run, run_method, lifestage, origin, date) %>%
+  summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "sacramento river",
          site = "knights landing",
          date = as_date(date),
@@ -426,15 +444,12 @@ unique(tisdale_rst$life_stage)
 filter(tisdale_rst, random == F, count > 0)
 
 tisdale_rst_clean <- tisdale_rst %>%
-  # filter(rearing == "Natural", mark_type == "None") %>%
-  # removed marked fish that were marked for efficiency
-  filter(mark_type != "Pigment") %>%
-  select(-c(fish_processed, at_capture_run, final_run, release_id, mark_type, mark_position, mark_color, trap_visit_comment)) %>%
+  select(-c(fish_processed, at_capture_run, final_run, release_id, mark_position, mark_color, trap_visit_comment)) %>%
   rename(fork_length = fork_length_mm,
          origin = rearing,
          lifestage = life_stage,
          dead = mortality) %>%
-  group_by(date, species, fork_length, weight, lifestage, dead, run, origin, random) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, origin, random, mark_type) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "sacramento river",
          site = "tisdale",
@@ -454,7 +469,7 @@ tisdale_rst_clean <- tisdale_rst %>%
 # Standard format {.tabset}
 
 ```{r, combined}
-# TODO fill in run method
+# TODO fill in run method - this will involve outreach with monitoring programs
 # TODO decide if we need the "random" variable. It only applies to Tisdale
 combined_rst_raw <- bind_rows(battle_rst_clean,
                           butte_rst_clean,

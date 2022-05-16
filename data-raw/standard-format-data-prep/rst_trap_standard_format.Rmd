@@ -356,7 +356,7 @@ yuba_trap_clean <- yuba_rst %>%
          trap_sample_date = date,
          trap_sample_time = time) %>%
   mutate(location = "yuba river",
-         subsite = tolower(site),
+         subsite = ifelse(site %in% c("5 foot RST at Hallwood","Yuba River"), "hallwood", tolower(site)),
          site = "hallwood",
          sample_period_revolutions = case_when(trap_revolutions == 0 ~ trap_revolutions2,
                                                T ~ trap_revolutions)) %>%
@@ -439,13 +439,14 @@ combined_trap_raw <- bind_rows(battle_trap_clean,
 colnames(combined_trap_raw)
 
 combined_trap <- combined_trap_raw %>%
-  rename(debris_level = debris) %>%
+  rename(debris_level = debris,
+         gear_condition = gear_condition_code) %>%
   mutate(debris_level = tolower(debris_level),
          debris_level = ifelse(debris_level == "veryheavy", "very heavy", debris_level),
-         gear_condition_code = case_when(gear_condition_code %in% c("total block", "total blockage", "Trap not in service") ~ "trap not in service",
-                                         gear_condition_code %in% c("not rotating", "cone stopped", "Trap stopped functioning") ~ "trap stopped functioning",
-                                           gear_condition_code %in% c("partial block", "partial blockage", "Trap functioning, but not normally") ~ "trap functioning but not normally",
-                                           gear_condition_code %in% c("normal", "Trap functioning normally") ~ "trap functioning normally"),
+         gear_condition = case_when(gear_condition %in% c("total block", "total blockage", "Trap not in service") ~ "trap not in service",
+                                         gear_condition %in% c("not rotating", "cone stopped", "Trap stopped functioning") ~ "trap stopped functioning",
+                                           gear_condition %in% c("partial block", "partial blockage", "Trap functioning, but not normally") ~ "trap functioning but not normally",
+                                           gear_condition %in% c("normal", "Trap functioning normally") ~ "trap functioning normally"),
          trap_status = case_when(trap_status %in% c("pull", "End trapping") ~ "end trapping",
                                    trap_status %in% c("set", "Start trap & begin trapping") ~ "start trapping",
                                    trap_status %in% c("Drive-by only") ~ "drive by",
