@@ -83,7 +83,7 @@ number recaptured per day not the total number recaptured
 
 ```{r, message=FALSE, warning=FALSE}
 # gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# Set global bucket 
+# # Set global bucket 
 # gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
 #                bucket = gcs_get_global_bucket(),
@@ -470,7 +470,7 @@ Most trials only recapture less than 200 fish.
 combined_recapture %>% 
   filter(number_recaptured < 250) %>% 
   ggplot() + 
-  geom_histogram(aes(x = number_recaptured, fill = location), alpha = .5, binwidth = 10) +
+  geom_histogram(aes(x = number_recaptured, fill = location), alpha = .5, binwidth = 10, position = "identity") +
   scale_fill_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -496,7 +496,7 @@ Clear Creek only show median fork length per efficiency trial.
 ```{r}
 combined_recapture %>% 
   ggplot(aes(x = median_fork_length_recaptured, fill = location)) + 
-  geom_histogram(breaks=seq(0, 200, by=2),  alpha = .5) + 
+  geom_histogram(breaks=seq(0, 200, by=2),  alpha = .5, position = "identity") + 
   scale_x_continuous(breaks=seq(0, 200, by=25)) +
   scale_fill_manual(values = color_pal) +
   theme_minimal() +
@@ -551,7 +551,7 @@ summarized_mark_recapture <- combined_release %>%
 summarized_mark_recapture %>% 
   filter(efficiency < 1) %>% 
   ggplot() + 
-  geom_histogram(aes(x = efficiency, fill = location), alpha = .5) + 
+  geom_histogram(aes(x = efficiency, fill = location), alpha = .5, position = "identity") + 
   facet_wrap(~location, scales ="free") +
   scale_fill_manual(values = color_pal) +
   theme_minimal() + 
