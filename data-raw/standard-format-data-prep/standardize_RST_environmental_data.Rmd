@@ -264,11 +264,11 @@ yuba_env <- read_csv("../../data/rst/yuba_rst_environmental.csv",
   mutate(date = lubridate::as_date(date)) %>%
   select(date, temperature, turbidity, velocity, site = location) %>%
   mutate(location = "yuba river",
-         subsite = case_when(site == "Yuba River" ~ NA_character_,
+         subsite = case_when(site == "Yuba River" ~ "yub",
                              site == "RST 1 at Hallwood on Yuba River" ~ "hal",
                              site == "RST 2 at Hallwood" ~ "hal2",
                              site == "5 foot RST at Hallwood" ~ "hal3"),
-         site = "hallwood",
+         site = ifelse(subsite == "yub", "yub", "hallwood"),
          temperature = ifelse(temperature > 40, round((temperature - 32) * (5/9), 1), temperature)) %>% # appears to be F and C temps at yuba 
   distinct() %>%
   glimpse
