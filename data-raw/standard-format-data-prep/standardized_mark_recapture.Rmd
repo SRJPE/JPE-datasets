@@ -92,6 +92,7 @@ number recaptured per day not the total number recaptured
 
 battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>% 
   mutate(location = "battle creek",
+         site = "ubc",
          release_id = paste0("BAT", row_number())) %>%
   rename(number_released = no_released, number_recaptured = recaps,
          median_fork_length_recaptured = recap_med_fork_length_mm, 
@@ -106,7 +107,7 @@ battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>%
 
 
 battle_released <- battle_mark_recap %>% 
-  select(location, release_id, release_date, release_time, number_released, median_fork_length_released, 
+  select(location, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
          days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity, 
          origin) %>% 
   distinct() %>% 
@@ -407,6 +408,7 @@ combined_release %>%
         text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
+
 ### turbidity_at_release
 Only battle and clear provide turbidity measures, most turbidity measures fall below 25 NTU 
 ```{r}

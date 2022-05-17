@@ -26,7 +26,7 @@ have one or more RST running at the following trap locations:
 
 ### Table of RST site 
 ```{r, message=FALSE}
-rst_sites <- read_csv("../../analysis/exploratory-analysis/data/rst_sites.csv") %>% 
+rst_sites <- read_csv("../../analysis/exploratory-analysis/data-raw/rst_sites.csv") %>% 
   select(-year) %>%
   distinct() %>% 
   rename(location = tributary, site = site_name, subsite = sub_site_name) %>%
@@ -59,7 +59,7 @@ leaflet(rst_sites)  %>%
 
 ## Save RST_trap_locations.csv to google cloud 
 
-```{r}
+```{r, eval = FALSE}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
