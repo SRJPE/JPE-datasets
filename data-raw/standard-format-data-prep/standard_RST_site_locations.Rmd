@@ -29,11 +29,11 @@ have one or more RST running at the following trap locations:
 rst_sites <- read_csv("../../analysis/exploratory-analysis/data-raw/rst_sites.csv") %>% 
   select(-year) %>%
   distinct() %>% 
-  rename(location = tributary, site = site_name, subsite = sub_site_name) %>%
-  mutate(location = tolower(location), 
+  rename(stream = tributary, site = site_name, subsite = sub_site_name) %>%
+  mutate(stream = tolower(stream), 
          site = tolower(site), 
          subsite = tolower(subsite)) %>%
-  arrange(location)
+  arrange(stream)
 knitr::kable(rst_sites, align = 'c')
 ```
 
