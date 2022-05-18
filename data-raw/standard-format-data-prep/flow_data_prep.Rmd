@@ -429,7 +429,7 @@ gridley_hourly_flows_clean <- gridley_hourly_flows %>%
 oroville_USGS <- readNWISdv(11407000, "00060")
 
 # Format to make tidier
-oroville_daily_flows <- oroville_USGS %>%
+oroville_hourly_flows <- oroville_USGS %>%
   select(Date, flow_cfs =  X_00060_00003) %>%
   filter(lubridate::year(Date) >= 1996) %>%
   as_tibble() %>% 
@@ -521,7 +521,7 @@ cdec_datasets("MLM")
 MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "20", start_date = "1996-01-01")
 
 # Format data
-MLM_USGS <- MLM_CDEC %>%
+MLM_hourly_flows <- MLM_CDEC %>%
   mutate(date = as_date(datetime),
          time = as_hms(datetime),
          flow_cfs = parameter_value)
