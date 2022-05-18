@@ -40,16 +40,16 @@ Data dictionary for standard format:
 | stream | B, C, F, KL | stream that the data is from |
 | release_id | B, C, F, KL | the unique identifier for each release trial | 
 | date_released | B, C, F, KL | date that marked fish are released |
-| time_released | B, C |time that marked fish are released |
+| time_released | B, C | time that marked fish are released |
 | site | F, KL | site on stream where fish are released |
-| number_released | B, C, F, KL | Count of fish released |
-| median_fork_length_released | B, C, KL | median fork length of group of fish released|
+| number_released | B, C, F, KL | count of fish released |
+| median_fork_length_released | B, C, KL | median fork length of group of fish released |
 | night_release |B, C, F, KL | TRUE if the release is at night|
 | days_held_post_mark | B, C | number of days marked fish are held before released |
 | flow_at_release | B, C | flow measure at time and stream of release |
 | temperature_at_release | B, C | temperature measure at time and stream of release |
 | turbidity_at_release | B, C | turbidity measure at time and stream of release |
-| origin | B | if released fish are natural or hatchery fish |
+| adipose_clipped | B | TRUE is adipose fin clipped |
 
 
 
@@ -57,10 +57,10 @@ Data dictionary for standard format:
 
 | column name | tributary collects | definition | 
 | :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
-| stream | B, C, F, KL | Which Spring Run JPE is the data from |
+| stream | B, C, F, KL | stream that the data is from |
 | release_id | B, C, F, KL | the unique identifier for each release trial | 
-| date_recaptured | B, C, F, KL | Date that fish were recaptured |
-| number_recaptured | B, C, F, KL | Count of fish recaptured in RST on a specific recapture date |
+| date_recaptured | B, C, F, KL | date that fish were recaptured |
+| number_recaptured | B, C, F, KL | count of fish recaptured in RST on a specific recapture date |
 | median_fork_length_recaptured | B, C, F, KL | median fork length of group of fish recaptured |
 | cone_status | B, C | if RST cone is fishing half or full |
 
