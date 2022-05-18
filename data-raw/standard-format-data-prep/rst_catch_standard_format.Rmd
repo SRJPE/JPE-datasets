@@ -362,11 +362,11 @@ filter(yuba_rst, is.na(run), count > 0) %>% glimpse
 filter(yuba_rst, run == "unknown") %>% glimpse
 
 yuba_rst_clean<- yuba_rst %>%
-  select(date, fork_length, weight, lifestage, count, run) %>%
-  group_by(date, fork_length, weight, lifestage, run) %>%
+  select(date, fork_length, weight, lifestage, count, run, location) %>%
+  mutate(site = ifelse(location == "Yuba River", "yuba river", "hallwood")) %>%
+  group_by(date, fork_length, weight, lifestage, run, site) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(location = "yuba river",
-         site = "hallwood",
          origin = "natural",
          run_method = "unknown")
 ```
@@ -517,7 +517,7 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                     "Describes if fish were caught randomly (T/F)"),
                                     
                                     encoding = c(NA,
-                                                 "late fall, spring, fall, winter, not recorded, unknown, outlier salmon",
+                                                 "late fall, spring, fall, winter, not recorded, unknown",
                                                  NA,
                                                  "smolt, fry, yolk sac fry, not recorded, parr, silvery parr, adult, unknown, yearling",
                                                  NA,
@@ -550,6 +550,7 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
 
 ```{r, data_dictionary}
 kable(rst_catch_data_dictionary)
+# write_csv(rst_catch_data_dictionary, "rst_catch_data_dictionary.csv")
 ```
 
 ## Exploratory plots
