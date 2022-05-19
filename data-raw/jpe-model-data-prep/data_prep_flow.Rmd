@@ -18,7 +18,7 @@ If there are NA’s for all days within a creek-year-julian week strata, then th
 # Data pull, QA/QC for each gage is here: data-raw/standard-format-data-prep/flow_data_prep.Rmd
 # Data are combined and summarized as mean daily flow (if hourly was pulled): data-raw/standard-format-data-prep/combine_flow_data.Rmd
 
-standard_flow <- read_csv("data/standard-format-data/standard_flow.csv")
+standard_flow <- read_csv("../../data/standard-format-data/standard_flow.csv")
 
 josh_format_flow_daily <- standard_flow %>%
   select(-source) %>%
@@ -26,7 +26,7 @@ josh_format_flow_daily <- standard_flow %>%
          yr = year(date)) %>%
   rename(mean_daily_flow = flow_cfs)
 
-write_csv(josh_format_flow_daily, "data/datasets_for_josh/mean_daily_flow.csv")
+write_csv(josh_format_flow_daily, "../../data/jpe-model-data/mean_daily_flow.csv")
 ```
 
 # Summarize mean daily flow by week (take average)
@@ -48,10 +48,10 @@ josh_format_flow_weekly <- josh_format_flow_daily %>%
 ```{r}
 gcs_get_object(object_name = paste0("jpe-model-data/weekly_releases_and_recaptures.csv"),
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/datasets_for_josh/jpe_weekly_releases_and_recaptures.csv",
+               saveToDisk = "../../data/jpe-model-data/jpe_weekly_releases_and_recaptures.csv",
                overwrite = TRUE)
 
-weekly_mark_recapture <- read_csv("data/datasets_for_josh/jpe_weekly_releases_and_recaptures.csv")
+weekly_mark_recapture <- read_csv("../../data/jpe-model-data/jpe_weekly_releases_and_recaptures.csv")
 ```
 
 
