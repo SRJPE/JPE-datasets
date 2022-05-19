@@ -17,7 +17,7 @@ library(dataRetrieval)
 library(hms)
 ```
 
-# Trap location and flow gage lookup
+# Flow gage lookup
 
 ```{r}
 # We need flow data for each of the sites included in the trap_locations table
@@ -28,23 +28,23 @@ library(hms)
 # https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/rst
 
 # trap_locations_raw <- read_csv("data-raw/standard-format-data-prep/rst_sites.csv")
-trap_locations_raw <- read_csv("rst_sites.csv")
-
-trap_locations <- trap_locations_raw %>%
-  select(tributary, site_name, river_location, latitude, longitude, year) %>%
-  distinct()
+# trap_locations_raw <- read_csv("rst_sites.csv")
+# 
+# trap_locations <- trap_locations_raw %>%
+#   select(tributary, site_name, river_location, latitude, longitude, year) %>%
+#   distinct()
   # identify years
 
-# gage_locations_raw <- read_csv("data-raw/standard-format-data-prep/gage_sites.csv")
-gage_locations_raw <- read_csv("gage_sites.csv")
+gage_locations_raw <- read_csv("data-raw/standard-format-data-prep/gage_sites.csv")
 
-# Pull flow data from each of the gage sites here 
+# Pull flow data from each of the gage sites here
 gage_locations <- gage_locations_raw %>%
   filter(flow_gage == T) %>%
   select(tributary, site_name, agency, latitude, longitude, identifier) %>%
   distinct() %>%
   rename(gage_latitude = latitude,
-         gage_longitude = longitude)
+         gage_longitude = longitude) %>%
+  glimpse()
   # get codes
 ```
 
@@ -89,7 +89,12 @@ BAT_daily_flows <- BAT_USGS %>%
 
 ```{r}
 # plots to check the quality of data. no data below zero.
+# TODO from ashley - curious what the -9998 means. I am guessing this is a code for something, maybe missing data.
 ggplot(BAT_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
+
+# Adds plots for USGS flows too
+ggplot(BAT_daily_flows, aes(x = date, y = flow_cfs)) +
   geom_line()
 ```
 
@@ -101,10 +106,12 @@ BAT_hourly_flows_clean <- BAT_hourly_flows %>%
 BAT_daily_flows_clean <- BAT_daily_flows %>%
   mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
 
-ggplot(BAT_daily_flows_clean, aes(x = date, y = flow_cfs)) +
+# check to make sure the cleaning worked for hourly flows. there was no issue for daily
+ggplot(BAT_hourly_flows_clean, aes(x = date, y = flow_cfs)) +
   geom_line()
 
 ```
+
 #### USGS vs CDEC data
 
 ```{r}
@@ -120,7 +127,14 @@ ggplot(BAT_combined, aes(x=date)) +
   geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
   labs(y="flow_cfs")
 
+# from ashley - the way you did it works! just wanted to mention that you don't 
+# need to combine data before plotting. example code below
+# ggplot(BAT_daily_flows, aes(x = date, y = flow_cfs)) +
+#   geom_line(color = "steelblue") +
+#   geom_line(data = BAT_hourly_flows_clean, aes(x = date, y = flow_cfs), color = "darkred", alpha = 0.5)
+
 ```
+
 #### USGS vs CDEC Mean data
 
 ```{r}
@@ -135,6 +149,14 @@ BAT_combined %>%
   geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
   labs(y="flow_cfs")
 
+```
+
+### Recommendations
+
+Battle Creek : recommend using USGS because CDEC had a lot of NA (-9998) values.
+
+```{r}
+saveRDS(BAT_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/battle_flow.rds")
 ```
 
 ## Butte Creek
@@ -163,7 +185,7 @@ BCK_hourly_flows <- BCK_CDEC %>%
 ### USGS data
 
 ```{r}
-BCK_USGS <- readNWISdv(11372000, "00060")
+BCK_USGS <- readNWISdv(11390000, "00060")
 
 # Format to make tidier
 BCK_daily_flows <- BCK_USGS %>%
@@ -176,6 +198,14 @@ BCK_daily_flows <- BCK_USGS %>%
 #### QA/QC
 
 ```{r}
+
+ggplot(BCK_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
+
+# Adds plots for USGS flows too
+ggplot(BCK_daily_flows, aes(x = date, y = flow_cfs)) +
+  geom_line()
+
 # Clean negative values
 BCK_hourly_flows_clean <- BCK_hourly_flows %>%
   mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
@@ -215,6 +245,17 @@ BCK_combined %>%
   geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
   labs(y="flow_cfs")
 
+```
+### Recommendations
+
+Buttle Creek : Recommended to use CDEC to not lose significant fluctuations
+
+```{r}
+
+BCK_hourly_flows_clean_mean <- BCK_hourly_flows_clean %>%
+  group_by(date) %>%
+  summarize(flow_cfs = mean(flow_cfs, na.rm = T))
+saveRDS(BCK_hourly_flows_clean_mean, "data-raw/standard-format-data-prep/flow_data/butte_flow.rds")
 ```
 
 ## Clear Creek
@@ -256,6 +297,10 @@ IGO_daily_flows <- IGO_USGS %>%
 #### QA/QC
 
 ```{r}
+
+ggplot(IGO_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
+
 # Clean negative values
 IGO_hourly_flows_clean <- IGO_hourly_flows %>%
   mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
@@ -295,6 +340,13 @@ IGO_combined %>%
   geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
   labs(y="flow_cfs")
 
+```
+### Recommendations
+
+Clear Creek : recommend using USGS because CDEC had a lot of NA (-9998) values.
+
+```{r}
+saveRDS(IGO_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/clear_flow.rds")
 ```
 
 ## Deer Creek
@@ -338,6 +390,8 @@ DCV_daily_flows <- DCV_USGS %>%
 #### QA/QC
 
 ```{r}
+ggplot(DCV_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
 # Clean negative values
 DCV_hourly_flows_clean <- DCV_hourly_flows %>%
   mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
@@ -354,7 +408,7 @@ DCV_daily_flows_clean <- DCV_daily_flows %>%
 # Does one have more data?
 # Does one have a finer scale?
 DCV_combined = DCV_hourly_flows_clean %>% 
-  full_join(IGO_daily_flows_clean, by ="date") %>% 
+  full_join(DCV_daily_flows_clean, by ="date") %>% 
   rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
 
 ggplot(DCV_combined, aes(x=date)) +
@@ -378,6 +432,13 @@ DCV_combined %>%
   geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
   labs(y="flow_cfs")
 
+```
+### Recommendations
+
+Deer Creek : recommend using USGS because CDEC had a lot of NA (-9998) values.
+
+```{r}
+saveRDS(DCV_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/deer_flow.rds")
 ```
 
 ## Feather River
@@ -416,6 +477,10 @@ ggplot(gridley_hourly_flows, aes(x = datetime, y = flow_cfs)) +
 ```{r}
 gridley_hourly_flows_clean <- gridley_hourly_flows %>%
   mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+gridley_hourly_flows_clean_mean <- gridley_hourly_flows_clean %>%
+  group_by(date) %>%
+  summarize(flow_cfs = mean(flow_cfs, na.rm = T))
 ```
 
 ### Low flow channel sites
@@ -429,7 +494,7 @@ gridley_hourly_flows_clean <- gridley_hourly_flows %>%
 oroville_USGS <- readNWISdv(11407000, "00060")
 
 # Format to make tidier
-oroville_hourly_flows <- oroville_USGS %>%
+oroville_daily_flows <- oroville_USGS %>%
   select(Date, flow_cfs =  X_00060_00003) %>%
   filter(lubridate::year(Date) >= 1996) %>%
   as_tibble() %>% 
@@ -442,65 +507,19 @@ oroville_hourly_flows <- oroville_USGS %>%
 ```{r}
 ggplot(oroville_daily_flows, aes(x = date, y = flow_cfs)) +
   geom_line()
+# just checking to make sure there aren't any zeros
+filter(oroville_daily_flows, flow_cfs == 0)
+filter(oroville_daily_flows, is.na(flow_cfs))
+min(oroville_daily_flows$flow_cfs)
 ```
+### Recommendations
+
+There are two major sites on the Feather River - High Flow Channel and Low Flow Channel.
+We will use the CDEC GRL gage for HFC and the USGS Oroville gage for LFC.
 
 ```{r}
-# Clean negative values
-gridley_hourly_flows_clean <- gridley_hourly_flows %>%
-  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
-
-oroville_daily_flows_clean <- oroville_daily_flows %>%
-  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
-
-```
-
-#### USGS vs CDEC data
-
-```{r}
-# comparison of USGS vs CDEC
-# Does one have more data?
-# Does one have a finer scale?
-gridley_combined = gridley_hourly_flows_clean %>% 
-  full_join(oroville_daily_flows_clean, by ="date") %>% 
-  rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
-
-ggplot(gridley_combined, aes(x=date)) +
-  geom_line(aes(y = flow_cfs.CDEC), color ="darkred") +
-  geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
-  labs(y="flow_cfs")
-
-```
-
-#### USGS vs CDEC Mean data
-
-```{r}
-gridley_combined %>% 
-  group_by(date = date(datetime)) %>% 
-  group_by(date) %>% 
-  summarise(
-    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
-    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
-  ggplot(aes(x=date)) +
-  geom_line(aes(y = flow_CDEC), color ="darkred") +
-  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
-  labs(y="flow_cfs")
-
-```
-
-#### USGS vs CDEC Mean data
-
-```{r}
-gridley_combined %>% 
-  group_by(date = date(datetime)) %>% 
-  group_by(date) %>% 
-  summarise(
-    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
-    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
-  ggplot(aes(x=date)) +
-  geom_line(aes(y = flow_CDEC), color ="darkred") +
-  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
-  labs(y="flow_cfs")
-
+saveRDS(gridley_hourly_flows_clean_mean, "data-raw/standard-format-data-prep/flow_data/feather_hfc_flow.rds")
+saveRDS(oroville_daily_flows, "data-raw/standard-format-data-prep/flow_data/feather_lfc_flow.rds")
 ```
 
 ## Mill Creek
@@ -544,6 +563,8 @@ MLM_daily_flows <- MLM_USGS %>%
 #### QA/QC
 
 ```{r}
+ggplot(MLM_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
 # Clean negative values
 MLM_hourly_flows_clean <- MLM_hourly_flows %>%
   mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
@@ -584,6 +605,15 @@ MLM_combined %>%
   labs(y="flow_cfs")
 
 ```
+
+### Recommendations
+
+Mill Creek: Recommend to use USGS because CDEC has no available data from 2008-2020.
+
+```{r}
+saveRDS(MLM_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/mill_flow.rds")
+```
+
 ## Yuba River
 
 ### CDEC data
@@ -623,6 +653,8 @@ MRY_daily_flows <- MRY_USGS %>%
 #### QA/QC
 
 ```{r}
+ggplot(MRY_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
 # Clean negative values
 MRY_hourly_flows_clean <- MRY_hourly_flows %>%
   mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
@@ -662,6 +694,13 @@ MRY_combined %>%
   geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
   labs(y="flow_cfs")
 
+```
+### Recommendations
+
+Yuba : Recommend to use USGS because CDEC has no available data from 2003-2020.
+
+```{r}
+saveRDS(MRY_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/yuba_flow.rds")
 ```
 
 ## Sacramento River - Knights Landing
@@ -703,6 +742,8 @@ WLK_daily_flows <- WLK_USGS %>%
 #### QA/QC
 
 ```{r}
+ggplot(WLK_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
 # Clean negative values
 WLK_hourly_flows_clean <- WLK_hourly_flows %>%
   mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
@@ -744,6 +785,14 @@ WLK_combined %>%
   labs(y="flow_cfs")
 
 ```
+### Recommendations
+
+Sacramento River- Knights Landing :  Use USGS because there are a few gaps where there is not data for CDEC
+
+```{r}
+saveRDS(WLK_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/knights_flow.rds")
+```
+
 
 ## Sacramento River - Tisdale
 
@@ -780,18 +829,34 @@ ggplot(TIS_hourly_flows_clean, aes(x = datetime, y = flow_cfs)) +
 
 ```
 
+There are a lot of gaps in this data. Try pulling less fine data to see if any better.
+The event data is not any better. I looked at [map](https://flowwest.shinyapps.io/jpe-eda-app/)
+and the USGS gage for Knights Landing is not that far from Tisdale. It would better to
+use that data.
+
+```{r}
+TIS_CDEC_event <- cdec_query(station = "TIS", dur_code = "E", sensor_num = "20", start_date = "2010-01-01")
+
+# Format data
+TIS_event_flows <- TIS_CDEC_event %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+
+ggplot(TIS_event_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
+
+```
 
 ## Recommendations
 
-Battle Creek : no significant differences
-Buttle Creek : Recommended to use CDEC to not lose significant fluctuations
-Clear Creek :  no significant differences
-Feather River : Recommend to use CDEC to capture significant fluctuations
-Mill Creek : Recommend to use USGS because CDEC has no available data from 2008-2020.
-Yuba : Recommend to use USGS because CDEC has no available data from 2003-2020.
-Sacramento River- Knights Landing :  no significant difference
-Sacramento Tisdale : only CDEC data is available 
-# ##
+The CDEC data for Tisdale is really sparse. Recommend using the USGS gage for Knights
+because it is very close.
+
+```{r}
+saveRDS(WLK_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/tisdale_flow.rds")
+```
+
 
 
 
