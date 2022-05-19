@@ -47,7 +47,7 @@ weekly_releases_and_recaptures <- summarized_mark_recapture %>%
   rename(yr = year, Jwk = julian_week, 
          r1 = number_released, m1 = caught_week_1, 
          m2 = caught_week_2, m3 = caught_week_3) %>% 
-  group_by(stream, yr, Jwk) %>%
+  group_by(stream, site, yr, Jwk) %>%
   summarize(r1 = sum(r1, na.rm = T),
             m1 = sum(m1, na.rm = T), 
             m2 = sum(m2, na.rm = T),
@@ -55,13 +55,16 @@ weekly_releases_and_recaptures <- summarized_mark_recapture %>%
             released_fl = mean(median_fork_length_released, na.rm = T),
             recaptured_fl = mean(median_fork_length_recaptured, na.rm = T)) %>%
   mutate(m2 = ifelse(stream %in% c("battle creek", "clear creek"), NA, m2), # Replace 0 that were created in summarize statement with NA
-         m3 = ifelse(stream %in% c("battle creek", "clear creek"), NA, m3)) 
+         m3 = ifelse(stream %in% c("battle creek", "clear creek"), NA, m3)) %>% glimpse
+
 
 unique(weekly_releases_and_recaptures$recaptured_fl)
 unique(weekly_releases_and_recaptures$released_fl)
 # Rename and reformat for Josh
 # Do not summarize by week 
 releases_and_recaptures <- summarized_mark_recapture %>% 
+  mutate(year = year(release_date), 
+         julian_week = week(release_date)) %>%
   select(-release_date) %>%
   rename(yr = year, Jwk = julian_week, 
          r1 = number_released, m1 = caught_week_1, 
@@ -73,7 +76,7 @@ releases_and_recaptures <- summarized_mark_recapture %>%
 write_csv(weekly_releases_and_recaptures, "../../data/jpe-model-data/jpe_weekly_releases_and_recaptures.csv")
 
 # row for each efficiency trial 
-write_csv(releases_and_recaptures, "data/datasets_for_josh/jpe_releases_and_recaptures.csv")
+write_csv(releases_and_recaptures, "../../data/jpe-model-data/jpe_releases_and_recaptures.csv")
 
 
 f <- function(input, output) write_csv(input, file = output)
@@ -82,5 +85,10 @@ gcs_upload(weekly_releases_and_recaptures,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/weekly_releases_and_recaptures.csv")
+
+gcs_upload(releases_and_recaptures,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/releases_and_recaptures.csv")
 ```
 
