@@ -58,5 +58,25 @@ weekly_mark_recapture <- read_csv("../../data/jpe-model-data/jpe_weekly_releases
 # Join weekly flow data with mark and recaptures
 
 ```{r}
-weekly_flow_efficiency <- left_join(weekly_mark_recapture, josh_format_flow_weekly)
+weekly_flow_efficiency <- left_join(weekly_mark_recapture, josh_format_flow_weekly) %>% 
+  filter(!is.na(site)) %>% # 2 NA values - filtering out 
+  glimpse
+
+```
+```{r}
+unique(weekly_flow_efficiency$stream)
+unique(weekly_flow_efficiency$site)
+
+weekly_flow_efficiency %>% filter(is.na(site))
+unique(weekly_flow_efficiency$yr)
+unique(weekly_flow_efficiency$Jwk)
+
+weekly_flow_efficiency %>% filter(r1 == 0)
+
+summary(weekly_flow_efficiency$r1) #investigage 0 values for r1
+summary(weekly_flow_efficiency$m1)
+weekly_flow_efficiency %>% filter(m1 > 1000)
+
+summary(weekly_flow_efficiency$m2)
+summary(weekly_flow_efficiency$m3)
 ```
