@@ -1,0 +1,202 @@
+---
+title: "combine flow data for trap locations"
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+
+Sys.setenv("GCS_AUTH_FILE" = "config.json")
+Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+
+library(tidyverse)
+library(googleCloudStorageR)
+```
+
+# Pull in data and format {.tabset}
+
+## Battle
+
+```{r}
+# Pull in flow data saved in flow_data_prep.Rmd
+# Format data as date, flow_cfs, stream, site, source
+
+# source USGS
+battle <- read_rds("data-raw/standard-format-data-prep/flow_data/battle_flow.rds")
+
+battle_format <- battle %>%
+  mutate(site = "ubc") %>%
+  bind_rows(battle %>%
+              mutate(site = "lbc")) %>%
+  mutate(stream = "battle creek",
+         source = "USGS 11376550") %>%
+  glimpse()
+```
+
+## Butte
+
+```{r}
+# source CDEC
+butte <- read_rds("data-raw/standard-format-data-prep/flow_data/butte_flow.rds")
+
+butte_format <- butte %>%
+  mutate(site = "adams dam") %>%
+  bind_rows(butte %>%
+              mutate(site = "okie dam")) %>%
+  mutate(stream = "butte creek",
+         source = "CDEC BCK") %>%
+glimpse()
+```
+
+## Clear
+
+```{r}
+# source USGS
+clear <- read_rds("data-raw/standard-format-data-prep/flow_data/clear_flow.rds")
+
+clear_format <- clear %>%
+  mutate(stream = "clear creek",
+         site = "lcc",
+         source = "USGS 11372000") %>%
+glimpse()
+```
+
+## Deer
+
+```{r}
+# source USGS
+deer <- read_rds("data-raw/standard-format-data-prep/flow_data/deer_flow.rds")
+
+deer_format <- deer %>%
+  mutate(stream = "deer creek",
+         site = stream,
+         source = "USGS 11383500") %>%
+glimpse()
+```
+
+## Feather
+
+```{r}
+# source CDEC
+feather_hfc <- read_rds("data-raw/standard-format-data-prep/flow_data/feather_hfc_flow.rds")
+
+# There are 4 sites that map to this flow data so set up table to merge
+feather_hfc_sites <- tibble(stream = c(rep("feather river", 4)),
+                           site = c("herringer riffle", "live oak", "sunset pumps", "shawns beach"))
+feather_hfc_format <- feather_hfc %>%
+  mutate(stream = "feather river",
+         source = "CDEC GRL") %>%
+  full_join(feather_hfc_sites) %>%
+glimpse()
+
+# source USGS
+feather_lfc <- read_rds("data-raw/standard-format-data-prep/flow_data/feather_lfc_flow.rds")
+
+# There are 3 sites that map to this flow data so set up table to merge
+feather_lfc_sites <- tibble(stream = c(rep("feather river", 3)),
+                           site = c("gateway riffe", "eye riffle", "steep riffle"))
+feather_lfc_format <- feather_lfc %>%
+  mutate(stream = "feather river",
+         source = "USGS 11407000") %>%
+  full_join(feather_lfc_sites) %>%
+glimpse()
+```
+
+## Mill
+
+```{r}
+# source USGS
+mill <- read_rds("data-raw/standard-format-data-prep/flow_data/mill_flow.rds")
+
+mill_format <- mill %>%
+  mutate(stream = "mill creek",
+         site = stream, 
+         source = "USGS 11381500") %>%
+glimpse()
+```
+
+## Yuba
+
+```{r}
+# source USGS
+yuba <- read_rds("data-raw/standard-format-data-prep/flow_data/yuba_flow.rds")
+
+yuba_format <- yuba %>%
+  mutate(site = "yub") %>%
+  bind_rows(yuba %>%
+              mutate(site = "hallwood")) %>%
+  mutate(stream = "yuba river",
+         source = "USGS 11421000") %>%
+glimpse()
+```
+
+## Sacramento
+
+```{r}
+# source USGS
+knights <- read_rds("data-raw/standard-format-data-prep/flow_data/knights_flow.rds")
+
+knights_format <- knights %>%
+  mutate(stream = "sacramento river",
+         site = "knights landing",
+         source = "USGS 11390500") %>%
+glimpse()
+
+# source USGS (same as Knights)
+tisdale <- read_rds("data-raw/standard-format-data-prep/flow_data/tisdale_flow.rds")
+
+tisdale_format <- tisdale %>%
+  mutate(stream = "sacramento river",
+         site = "tisdale",
+         source = "USGS 11390500") %>%
+glimpse()
+```
+
+# Combine flow data {.tabset}
+
+```{r}
+combined_flow <- bind_rows(battle_format,
+                           butte_format,
+                           clear_format,
+                           deer_format,
+                           feather_hfc_format,
+                           feather_lfc_format,
+                           mill_format,
+                           yuba_format,
+                           knights_format,
+                           tisdale_format) %>%
+  glimpse()
+```
+## QA/QC
+
+```{r}
+unique(combined_flow$stream)
+unique(combined_flow$site)
+
+ggplot(combined_flow, aes(x = date, y = flow_cfs, color = stream)) +
+  geom_line()
+
+filter(combined_flow, is.na(date))
+
+combined_flow_clean <- filter(combined_flow, !is.na(date))
+```
+
+```{r, eval = FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_upload(combined_flow_clean,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_flow.csv",
+           predefinedAcl = "bucketLevel")
+
+write_csv(combined_flow_clean, "data/standard-format-data/standard_flow.csv")
+```
