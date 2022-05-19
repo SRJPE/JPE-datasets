@@ -142,11 +142,13 @@ number recaptured per day not the total number recaptured
 
 clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>% 
   mutate(stream = "clear creek",
-         release_id = paste0("CLR", row_number())) %>% 
+         release_id = paste0("CLR", row_number()), 
+         site = case_when(release_site == "CCRB" ~ "ucc", 
+                          release_site == "VB" ~ "lcc")) %>% 
   rename(number_released = no_released, number_recaptured = recaps,
          median_fork_length_recaptured = recap_med_fork_length_mm, 
          median_fork_length_released = mark_med_fork_length_mm) %>%
-  select(-no_marked, -mean_flow_day_of_rel, -mean_temp_day_of_rel, -number_recaptured) %>% 
+  select(-no_marked, -mean_flow_day_of_rel, -mean_temp_day_of_rel, -number_recaptured, -release_site) %>% 
   pivot_longer(cols = caught_day_1:caught_day_5, names_to = "recaptured_date", values_to = "number_recaptured") %>%
   mutate(recaptured_date = case_when(recaptured_date == "caught_day_1" ~ release_date + 1, 
                                     recaptured_date == "caught_day_2" ~ release_date + 2,
@@ -155,7 +157,7 @@ clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>%
                                     recaptured_date == "caught_day_5" ~ release_date + 5,)) 
 
 clear_released <- clear_mark_recap %>% 
-  select(stream, release_id, release_date, release_time, number_released, median_fork_length_released, 
+  select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
          days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity) %>% 
   distinct() %>% 
   glimpse
@@ -183,6 +185,7 @@ below that summarized the data by efficiency trial)
 #                overwrite = TRUE)
 
 feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>% 
+  filter(!is.na(releaseSiteID)) %>%
   rename(number_released = nReleased, 
          release_id = releaseID, 
          site = releaseSiteID) %>% 
@@ -630,6 +633,7 @@ summarized_mark_recapture %>%
 
 ```{r}
 knitr::kable(align = 'c', head(combined_release, 5))
+combined_release$site %>% unique
 
 knitr::kable(align = 'c', head(combined_recapture, 5))
 ```
@@ -642,10 +646,11 @@ gcs_upload(combined_release,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_release.csv")
+write_csv(combined_release, "../../data/standard-format-data/standard_release.csv")
 
 gcs_upload(combined_recapture,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_recapture.csv")
-
+write_csv(combined_recapture, "../../data/standard-format-data/standard_recapture.csv")
 ```
