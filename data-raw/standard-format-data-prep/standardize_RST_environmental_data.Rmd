@@ -213,6 +213,7 @@ knights_landing_env <- read_csv("../../data/rst/knights_landing_rst_environmenta
          site = "knights landing", 
          subsite = NA, 
          stream = "sacramento river") %>%
+  select(-location) %>%
   distinct() %>%
   glimpse
 
@@ -455,7 +456,7 @@ combined_env %>%
 
 # Remove temps above 40 
 combined_env <- combined_env %>% 
-  filter(temperature < 40) 
+  filter(temperature < 40 | is.na(temperature)) 
 ```
 
 Zoom in on 0 - 25 temperature range:
