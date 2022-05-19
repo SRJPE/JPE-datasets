@@ -1,0 +1,62 @@
+---
+title: "prep flow data for josh"
+output: html_document
+---
+
+# Background information from Josh
+
+Any sub-daily resolution is fine (hourly, 15-minute, etc.) is fine. But would you please compute a daily average discharge from the gauge data. I don’t need discharge at a finer scale then daily.
+
+In fact, I would take the daily averages from you and compute an average for each creek-year-julian week record in the jpe_weekly_releases_and_recaptures.csv file. If you want to do that step that is fine with me. The simplest for me is that you include an extra column in the jpe_weekly_releases_and_recaptures.csv or as a separate file but with a 1:1 relationship between the two files.
+
+If there are NA’s for all days within a creek-year-julian week strata, then the Q for that strata will be NA. The associated mark-recapture efficiency data for that strata cannot be included in my analysis looking at Q effects. We can then determine how many records will be dropped. If it is a substantive number, then we might look into ways of filling in missing data. That could be a lot of work though.
+
+# Prepare mean daily flow by stream, site, date
+
+```{r}
+
+# Data pull, QA/QC for each gage is here: data-raw/standard-format-data-prep/flow_data_prep.Rmd
+# Data are combined and summarized as mean daily flow (if hourly was pulled): data-raw/standard-format-data-prep/combine_flow_data.Rmd
+
+standard_flow <- read_csv("data/standard-format-data/standard_flow.csv")
+
+josh_format_flow_daily <- standard_flow %>%
+  select(-source) %>%
+  mutate(Jwk = week(date),
+         yr = year(date)) %>%
+  rename(mean_daily_flow = flow_cfs)
+
+write_csv(josh_format_flow_daily, "data/datasets_for_josh/mean_daily_flow.csv")
+```
+
+# Summarize mean daily flow by week (take average)
+
+```{r}
+weekly_na <- josh_format_flow_daily %>%
+  filter(is.na(mean_daily_flow)) %>%
+  group_by(site, stream, Jwk, yr) %>%
+  tally() %>%
+  rename(days_na = n)
+
+josh_format_flow_weekly <- josh_format_flow_daily %>%
+  group_by(site, stream, Jwk, yr) %>%
+  summarize(average_weekly_flow = mean(mean_daily_flow, na.rm = T)) %>%
+  left_join(weekly_na)
+
+```
+
+```{r}
+gcs_get_object(object_name = paste0("jpe-model-data/weekly_releases_and_recaptures.csv"),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/datasets_for_josh/jpe_weekly_releases_and_recaptures.csv",
+               overwrite = TRUE)
+
+weekly_mark_recapture <- read_csv("data/datasets_for_josh/jpe_weekly_releases_and_recaptures.csv")
+```
+
+
+# Join weekly flow data with mark and recaptures
+
+```{r}
+weekly_flow_efficiency <- left_join(weekly_mark_recapture, josh_format_flow_weekly)
+```
