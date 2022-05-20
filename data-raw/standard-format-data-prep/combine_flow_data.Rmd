@@ -31,8 +31,6 @@ battle <- read_rds("../../data-raw/standard-format-data-prep/flow_data/battle_fl
 
 battle_format <- battle %>%
   mutate(site = "ubc") %>%
-  bind_rows(battle %>%
-              mutate(site = "lbc")) %>%
   mutate(stream = "battle creek",
          source = "USGS 11376550") %>%
   glimpse()
@@ -60,8 +58,10 @@ glimpse()
 clear <- read_rds("../../data-raw/standard-format-data-prep/flow_data/clear_flow.rds")
 
 clear_format <- clear %>%
+  mutate(site = "ucc") %>%
+  bind_rows(clear %>%
+            mutate(site = "lcc")) %>%
   mutate(stream = "clear creek",
-         site = "lcc",
          source = "USGS 11372000") %>%
 glimpse()
 ```
