@@ -44,40 +44,52 @@ josh_format_flow_weekly <- josh_format_flow_daily %>%
   summarize(average_weekly_flow = mean(mean_daily_flow, na.rm = T)) %>%
   left_join(weekly_na)
 
+
+unique(josh_format_flow_weekly$site)
+View(josh_format_flow_weekly)
 ```
 
 ```{r}
-gcs_get_object(object_name = paste0("jpe-model-data/weekly_releases_and_recaptures.csv"),
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "../../data/jpe-model-data/jpe_weekly_releases_and_recaptures.csv",
-               overwrite = TRUE)
+# gcs_get_object(object_name = paste0("jpe-model-data/weekly_releases_and_recaptures.csv"),
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/jpe-model-data/jpe_weekly_releases_and_recaptures.csv",
+#                overwrite = TRUE)
 
-weekly_mark_recapture <- read_csv("../../data/jpe-model-data/jpe_weekly_releases_and_recaptures.csv")
+weekly_mark_recapture <- read_csv("../../data/jpe-model-data/jpe_weekly_releases_and_recaptures.csv") 
 ```
 
 
 # Join weekly flow data with mark and recaptures
 
 ```{r}
-weekly_flow_efficiency <- left_join(weekly_mark_recapture, josh_format_flow_weekly) %>% 
+weekly_efficiency_with_flow <- left_join(weekly_mark_recapture, josh_format_flow_weekly) %>% 
+  rename(jwk = Jwk) %>%
   filter(!is.na(site), r1 > 0) %>% # 2 NA values - filtering out 
+  filter(r1 > m1) %>% # remove one value on battle creek in 2018 where raw data shows more recaptures than released (data entry error)
   glimpse
-View(weekly_flow_efficiency)
+
+View(weekly_efficiency_with_flow)
+
+write_csv(weekly_efficiency_with_flow, "../../data/jpe-model-data/jpe_weekly_efficiency_with_flow.csv")
 ```
 ```{r}
-unique(weekly_flow_efficiency$stream)
-unique(weekly_flow_efficiency$site)
+unique(weekly_efficiency_with_flow$stream)
+unique(weekly_efficiency_with_flow$site)
 
-weekly_flow_efficiency %>% filter(is.na(site))
-unique(weekly_flow_efficiency$yr)
-unique(weekly_flow_efficiency$Jwk)
+weekly_efficiency_with_flow %>% filter(is.na(site))
+unique(weekly_efficiency_with_flow$yr)
+unique(weekly_efficiency_with_flow$jwk)
 
-weekly_flow_efficiency %>% filter(r1 == 0)
+weekly_efficiency_with_flow %>% filter(r1 == 0)
 
-summary(weekly_flow_efficiency$r1) #investigage 0 values for r1
-summary(weekly_flow_efficiency$m1)
-weekly_flow_efficiency %>% filter(m1 > 1000)
+summary(weekly_efficiency_with_flow$r1) #investigage 0 values for r1
+summary(weekly_efficiency_with_flow$m1)
+weekly_efficiency_with_flow %>% filter(m1 > 1000)
 
-summary(weekly_flow_efficiency$m2)
-summary(weekly_flow_efficiency$m3)
+summary(weekly_efficiency_with_flow$m2)
+summary(weekly_efficiency_with_flow$m3)
+
+summary(weekly_efficiency_with_flow$average_weekly_flow)
+
+  
 ```
