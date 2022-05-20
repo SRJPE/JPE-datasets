@@ -14,7 +14,8 @@ If there are NA’s for all days within a creek-year-julian week strata, then th
 # Prepare mean daily flow by stream, site, date
 
 ```{r}
-
+library(tidyverse)
+library(lubridate)
 # Data pull, QA/QC for each gage is here: data-raw/standard-format-data-prep/flow_data_prep.Rmd
 # Data are combined and summarized as mean daily flow (if hourly was pulled): data-raw/standard-format-data-prep/combine_flow_data.Rmd
 
@@ -59,9 +60,9 @@ weekly_mark_recapture <- read_csv("../../data/jpe-model-data/jpe_weekly_releases
 
 ```{r}
 weekly_flow_efficiency <- left_join(weekly_mark_recapture, josh_format_flow_weekly) %>% 
-  filter(!is.na(site)) %>% # 2 NA values - filtering out 
+  filter(!is.na(site), r1 > 0) %>% # 2 NA values - filtering out 
   glimpse
-
+View(weekly_flow_efficiency)
 ```
 ```{r}
 unique(weekly_flow_efficiency$stream)
