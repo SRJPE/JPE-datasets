@@ -482,11 +482,12 @@ combined_recapture %>% ggplot() +
 
 ### number_recaptured     
 
-Most trials only recapture less than 200 fish. 
+Most trials only recapture less than 400 fish. 
 
 ```{r}
 combined_recapture %>% 
-  filter(number_recaptured < 250) %>% 
+  group_by(release_id, stream) %>% 
+  summarise(number_recaptured = sum(number_recaptured, na.rm = T)) %>% 
   ggplot() + 
   geom_histogram(aes(x = number_recaptured, fill = stream), alpha = .5, binwidth = 10, position = "identity") +
   scale_fill_manual(values = color_pal) +
@@ -553,7 +554,7 @@ To calculate the efficiency of each mark recapture trial the data is now summari
 ```{r}
 summarized_mark_recapture <- combined_release %>% 
   left_join(combined_recapture, by = c("release_id" = "release_id", "stream" = "stream")) %>%
-  group_by(stream, release_id, release_date, number_released) %>%
+  group_by(stream, site, release_id, release_date, number_released) %>%
   summarize(total_fish_recaptured = sum(number_recaptured, na.rm = T), 
             median_fork_length_released = median(median_fork_length_released, na.rm = T),
             median_fork_length_recaptured = median(median_fork_length_recaptured, na.rm = T),
