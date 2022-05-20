@@ -99,7 +99,7 @@ feather_lfc <- read_rds("../../data-raw/standard-format-data-prep/flow_data/feat
 
 # There are 3 sites that map to this flow data so set up table to merge
 feather_lfc_sites <- tibble(stream = c(rep("feather river", 3)),
-                           site = c("gateway riffe", "eye riffle", "steep riffle"))
+                           site = c("gateway riffle", "eye riffle", "steep riffle"))
 feather_lfc_format <- feather_lfc %>%
   mutate(stream = "feather river",
          source = "USGS 11407000") %>%
