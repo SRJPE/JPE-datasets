@@ -40,18 +40,22 @@ knitr::kable(rst_sites, align = 'c')
 ### Map of RST sites
 
 ```{r}
-leaflet(rst_sites)  %>% 
+jitter_rst_sites <- rst_sites%>%
+  mutate(latitude = jitter(latitude, factor = .5),
+         longitude = jitter(longitude, factor = .07))
+
+leaflet(jitter_rst_sites)  %>% 
   addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
-  addCircleMarkers(data = rst_sites,  label = rst_sites$site, 
+  addCircleMarkers(data = jitter_rst_sites,  label = jitter_rst_sites$site, 
                    weight = 1.5, color = "blue",
                    opacity =  1, fillOpacity = .25, 
                    labelOptions = labelOptions(noHide = T, # Set to F to hide labels
                                                style = list("font-size" = "14px")), 
                    popup = paste(sep = "<br/>",
-                                 rst_sites$subsite,
-                                 paste("River Mile:", rst_sites$river_mile),
-                                 paste("RST Size:", rst_sites$rst_size),
-                                 paste("RST Season:", rst_sites$trapping_season))
+                                 jitter_rst_sites$subsite,
+                                 paste("River Mile:", jitter_rst_sites$river_mile),
+                                 paste("RST Size:", jitter_rst_sites$rst_size),
+                                 paste("RST Season:", jitter_rst_sites$trapping_season))
   ) %>%
   addScaleBar()
 
