@@ -1,0 +1,798 @@
+---
+title: "pull flow data for trap locations"
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(CDECRetrieve)
+library(dataRetrieval)
+library(hms)
+```
+
+# Trap location and flow gage lookup
+
+```{r}
+# We need flow data for each of the sites included in the trap_locations table
+# for all of the years listed.
+# We do not need to go to subsite scale of resolution.
+# For now this table is for reference to find the years that data is needed.
+# This table is also helpful for understanding years where we need flow data for each location:
+# https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/rst
+
+# trap_locations_raw <- read_csv("data-raw/standard-format-data-prep/rst_sites.csv")
+trap_locations_raw <- read_csv("rst_sites.csv")
+
+trap_locations <- trap_locations_raw %>%
+  select(tributary, site_name, river_location, latitude, longitude, year) %>%
+  distinct()
+  # identify years
+
+# gage_locations_raw <- read_csv("data-raw/standard-format-data-prep/gage_sites.csv")
+gage_locations_raw <- read_csv("gage_sites.csv")
+
+# Pull flow data from each of the gage sites here 
+gage_locations <- gage_locations_raw %>%
+  filter(flow_gage == T) %>%
+  select(tributary, site_name, agency, latitude, longitude, identifier) %>%
+  distinct() %>%
+  rename(gage_latitude = latitude,
+                  gage_longitude = longitude)
+  # get codes
+```
+
+# Pull in flow data {.tabset}
+
+## Battle Creek
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+cdec_datasets("BAT") 
+
+BAT_CDEC <- cdec_query(station = "BAT", dur_code = "H", sensor_num = "20", start_date = "2003-01-01")
+
+# Format data
+BAT_hourly_flows <- BAT_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+```
+
+### USGS data
+
+```{r}
+BAT_USGS <- readNWISdv(11376550, "00060")
+
+# Format to make tidier
+BAT_daily_flows <- BAT_USGS %>%
+  select(Date, flow_cfs =  X_00060_00003) %>%
+  filter(lubridate::year(Date) >= 2003) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+#### QA/QC
+
+```{r}
+# plots to check the quality of data. no data below zero.
+ggplot(BAT_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
+```
+
+```{r}
+# Clean negative values
+BAT_hourly_flows_clean <- BAT_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+BAT_daily_flows_clean <- BAT_daily_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+ggplot(BAT_daily_flows_clean, aes(x = date, y = flow_cfs)) +
+  geom_line()
+
+```
+#### USGS vs CDEC data
+
+```{r}
+# comparison of USGS vs CDEC
+# Does one have more data?
+# Does one have a finer scale?
+BAT_combined = BAT_hourly_flows_clean %>% 
+  full_join(BAT_daily_flows_clean, by ="date") %>% 
+  rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
+
+ggplot(BAT_combined, aes(x=date)) +
+  geom_line(aes(y = flow_cfs.CDEC), color ="darkred") +
+  geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+#### USGS vs CDEC Mean data
+
+```{r}
+BAT_combined %>% 
+  group_by(date = date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(
+    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
+    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = flow_CDEC), color ="darkred") +
+  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+## Butte Creek
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+cdec_datasets("BCK") 
+
+BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
+
+# Format data
+BCK_hourly_flows <- BCK_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+```
+
+### USGS data
+
+```{r}
+BCK_USGS <- readNWISdv(11372000, "00060")
+
+# Format to make tidier
+BCK_daily_flows <- BCK_USGS %>%
+  select(Date, flow_cfs =  X_00060_00003) %>%
+  filter(lubridate::year(Date) >= 1995) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+
+#### QA/QC
+
+```{r}
+# Clean negative values
+BCK_hourly_flows_clean <- BCK_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+BCK_daily_flows_clean <- BCK_daily_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+```
+
+#### USGS vs CDEC data
+
+```{r}
+# comparison of USGS vs CDEC
+# Does one have more data?
+# Does one have a finer scale?
+BCK_combined = BCK_hourly_flows_clean %>% 
+  full_join(BCK_daily_flows_clean, by ="date") %>% 
+  rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
+
+ggplot(BCK_combined, aes(x=date)) +
+  geom_line(aes(y = flow_cfs.CDEC), color ="darkred") +
+  geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+#### USGS vs CDEC Mean data
+
+```{r}
+BCK_combined %>% 
+  group_by(date = date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(
+    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
+    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = flow_CDEC), color ="darkred") +
+  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+## Clear Creek
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+ 
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+cdec_datasets("IGO") 
+
+IGO_CDEC <- cdec_query(station = "IGO", dur_code = "H", sensor_num = "20", start_date = "2003-01-01")
+
+# Format data
+IGO_hourly_flows <- IGO_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+```
+
+### USGS data
+
+```{r}
+IGO_USGS <- readNWISdv(11372000, "00060")
+
+# Format to make tidier
+IGO_daily_flows <- IGO_USGS %>%
+  select(Date, flow_cfs =  X_00060_00003) %>%
+  filter(lubridate::year(Date) >= 2003) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+
+#### QA/QC
+
+```{r}
+# Clean negative values
+IGO_hourly_flows_clean <- IGO_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+IGO_daily_flows_clean <- IGO_daily_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+```
+
+#### USGS vs CDEC data
+
+```{r}
+# comparison of USGS vs CDEC
+# Does one have more data?
+# Does one have a finer scale?
+IGO_combined = IGO_hourly_flows_clean %>% 
+  full_join(IGO_daily_flows_clean, by ="date") %>% 
+  rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
+
+ggplot(IGO_combined, aes(x=date)) +
+  geom_line(aes(y = flow_cfs.CDEC), color ="darkred") +
+  geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+#### USGS vs CDEC Mean data
+
+```{r}
+IGO_combined %>% 
+  group_by(date = date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(
+    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
+    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = flow_CDEC), color ="darkred") +
+  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+## Deer Creek
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+
+cdec_datasets("DCV") 
+
+DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
+
+# Format data
+DCV_hourly_flows <- DCV_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+  
+```
+
+### USGS data
+
+```{r}
+DCV_USGS <- readNWISdv(11383500, "00060")
+
+# Format to make tidier
+DCV_daily_flows <- DCV_USGS %>%
+  select(Date, flow_cfs =  X_00060_00003) %>%
+  filter(lubridate::year(Date) >= 1995) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+
+#### QA/QC
+
+```{r}
+# Clean negative values
+DCV_hourly_flows_clean <- DCV_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+DCV_daily_flows_clean <- DCV_daily_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+```
+
+#### USGS vs CDEC data
+
+```{r}
+# comparison of USGS vs CDEC
+# Does one have more data?
+# Does one have a finer scale?
+DCV_combined = DCV_hourly_flows_clean %>% 
+  full_join(IGO_daily_flows_clean, by ="date") %>% 
+  rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
+
+ggplot(DCV_combined, aes(x=date)) +
+  geom_line(aes(y = flow_cfs.CDEC), color ="darkred") +
+  geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+#### USGS vs CDEC Mean data
+
+```{r}
+DCV_combined %>% 
+  group_by(date = date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(
+    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
+    flow_USGS = max(flow_cfs.USGS, na.rm = TRUE)) %>% 
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = flow_CDEC), color ="darkred") +
+  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+## Feather River
+
+
+### High flow channel sites
+
+```{r}
+# We already identified the code for the CDEC gage of interest here: GRL
+# Use this code to see what data are available
+cdec_datasets("GRL") 
+# For reference - this mapping tool shows CDEC sites: https://cdec.water.ca.gov/webgis/?appid=cdecstation
+
+# Use this code to pull the data from CDEC. 
+gridley_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "20", start_date = "1996-01-01")
+
+# Format data
+gridley_hourly_flows <- gridley_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+  
+```
+
+#### QA/QC 
+
+It looks like there are some negative values. We should make these NA.
+
+It would be important to note any gaps in data collection.
+
+```{r}
+ggplot(gridley_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
+```
+#### Clean data
+
+```{r}
+gridley_hourly_flows_clean <- gridley_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+```
+
+### Low flow channel sites
+
+```{r}
+# For reference - this mapping tool shows USGS sites: https://maps.waterdata.usgs.gov/mapper/index.html
+# You can use the mapper to search for sites and find the right parameter code. I use 0060 below for daily discharge. 
+# Hourly or instaneous would be better but it is not available.
+# Documentation for dataRetrieval: https://github.com/USGS-R/dataRetrieval
+
+oroville_USGS <- readNWISdv(11407000, "00060")
+
+# Format to make tidier
+oroville_hourly_flows <- oroville_USGS %>%
+  select(Date, flow_cfs =  X_00060_00003) %>%
+  filter(lubridate::year(Date) >= 1996) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+
+
+#### QA/QC
+
+```{r}
+ggplot(oroville_daily_flows, aes(x = date, y = flow_cfs)) +
+  geom_line()
+```
+
+```{r}
+# Clean negative values
+gridley_hourly_flows_clean <- gridley_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+oroville_daily_flows_clean <- oroville_daily_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+```
+
+#### USGS vs CDEC data
+
+```{r}
+# comparison of USGS vs CDEC
+# Does one have more data?
+# Does one have a finer scale?
+gridley_combined = gridley_hourly_flows_clean %>% 
+  full_join(oroville_daily_flows_clean, by ="date") %>% 
+  rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
+
+ggplot(gridley_combined, aes(x=date)) +
+  geom_line(aes(y = flow_cfs.CDEC), color ="darkred") +
+  geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+#### USGS vs CDEC Mean data
+
+```{r}
+gridley_combined %>% 
+  group_by(date = date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(
+    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
+    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = flow_CDEC), color ="darkred") +
+  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+#### USGS vs CDEC Mean data
+
+```{r}
+gridley_combined %>% 
+  group_by(date = date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(
+    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
+    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = flow_CDEC), color ="darkred") +
+  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+## Mill Creek
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+
+cdec_datasets("MLM") 
+
+MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "20", start_date = "1996-01-01")
+
+# Format data
+MLM_hourly_flows <- MLM_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+  
+```
+
+### USGS data
+
+```{r}
+MLM_USGS <- readNWISdv(11381500, "00060")
+
+# Format to make tidier
+MLM_daily_flows <- MLM_USGS %>%
+  select(Date, flow_cfs =  X_00060_00003) %>%
+  filter(lubridate::year(Date) >= 1996) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+
+#### QA/QC
+
+```{r}
+# Clean negative values
+MLM_hourly_flows_clean <- MLM_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+MLM_daily_flows_clean <- MLM_daily_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+```
+
+#### USGS vs CDEC data
+
+```{r}
+# comparison of USGS vs CDEC
+# Does one have more data?
+# Does one have a finer scale?
+MLM_combined = MLM_hourly_flows_clean %>% 
+  full_join(MLM_daily_flows_clean, by ="date") %>% 
+  rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
+
+ggplot(MLM_combined, aes(x=date)) +
+  geom_line(aes(y = flow_cfs.CDEC), color ="darkred") +
+  geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+#### USGS vs CDEC Mean data
+
+```{r}
+MLM_combined %>% 
+  group_by(date = date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(
+    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
+    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = flow_CDEC), color ="darkred") +
+  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+## Yuba River
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+cdec_datasets("MRY") 
+
+MRY_CDEC <- cdec_query(station = "MRY", dur_code = "H", sensor_num = "20", start_date = "1999-01-01")
+
+# Format data
+MRY_hourly_flows <- MRY_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+```
+
+### USGS data
+
+```{r}
+MRY_USGS <- readNWISdv(11421000, "00060")
+
+# Format to make tidier
+MRY_daily_flows <- MRY_USGS %>%
+  select(Date, flow_cfs =  X_00060_00003) %>%
+  filter(lubridate::year(Date) >= 1999) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+
+#### QA/QC
+
+```{r}
+# Clean negative values
+MRY_hourly_flows_clean <- MRY_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+MRY_daily_flows_clean <- MRY_daily_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+```
+
+#### USGS vs CDEC data
+
+```{r}
+# comparison of USGS vs CDEC
+# Does one have more data?
+# Does one have a finer scale?
+MRY_combined = MRY_hourly_flows_clean %>% 
+  full_join(MRY_daily_flows_clean, by ="date") %>% 
+  rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
+
+ggplot(MRY_combined, aes(x=date)) +
+  geom_line(aes(y = flow_cfs.CDEC), color ="darkred") +
+  geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+#### USGS vs CDEC Mean data
+
+```{r}
+MRY_combined %>% 
+  group_by(date = date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(
+    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
+    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = flow_CDEC), color ="darkred") +
+  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+## Sacramento River - Knights Landing
+
+### CDEC data
+
+```{r}
+# Determine what data are available for the CDEC gauge vs the USGS gauge and how that
+# matches with the years needed (reference trap_locations table for years)
+
+# If both gauges offer similar data, is one at a finer scale (hourly vs daily)?
+
+# Choose the gauge with the most data at the finest scale. If years don't overlap, could use
+# combination of both
+cdec_datasets("WLK") 
+
+WLK_CDEC <- cdec_query(station = "WLK", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
+
+# Format data
+WLK_hourly_flows <- WLK_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+```
+
+### USGS data
+
+```{r}
+WLK_USGS <- readNWISdv(11390500, "00060")
+
+# Format to make tidier
+WLK_daily_flows <- WLK_USGS %>%
+  select(Date, flow_cfs =  X_00060_00003) %>%
+  filter(lubridate::year(Date) >= 1995) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+
+#### QA/QC
+
+```{r}
+# Clean negative values
+WLK_hourly_flows_clean <- WLK_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+WLK_daily_flows_clean <- WLK_daily_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+```
+
+#### USGS vs CDEC data
+
+```{r}
+# comparison of USGS vs CDEC
+# Does one have more data?
+# Does one have a finer scale?
+WLK_combined = WLK_hourly_flows_clean %>% 
+  full_join(WLK_daily_flows_clean, by ="date") %>% 
+  rename("flow_cfs.CDEC"="flow_cfs.x", "flow_cfs.USGS"="flow_cfs.y")
+
+ggplot(WLK_combined, aes(x=date)) +
+  geom_line(aes(y = flow_cfs.CDEC), color ="darkred") +
+  geom_line(aes(y = flow_cfs.USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+#### USGS vs CDEC Mean data
+
+```{r}
+WLK_combined %>% 
+  group_by(date = date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(
+    flow_CDEC = mean(flow_cfs.CDEC, na.rm = TRUE),
+    flow_USGS = max(flow_cfs.USGS,na.rm = TRUE)) %>% 
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = flow_CDEC), color ="darkred") +
+  geom_line(aes(y = flow_USGS), color ="steelblue", linetype ="twodash") +
+  labs(y="flow_cfs")
+
+```
+
+## Sacramento River - Tisdale
+
+### CDEC data
+
+```{r}
+# Only CDEC data is available for Tisdale
+cdec_datasets("TIS") 
+
+TIS_CDEC <- cdec_query(station = "TIS", dur_code = "H", sensor_num = "20", start_date = "2010-01-01")
+
+# Format data
+TIS_hourly_flows <- TIS_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)
+
+```
+
+#### QA/QC
+
+```{r}
+# plots to check the quality of data. no data below zero.
+ggplot(TIS_hourly_flows, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
+```
+
+```{r}
+TIS_hourly_flows_clean <- TIS_hourly_flows %>%
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
+
+ggplot(TIS_hourly_flows_clean, aes(x = datetime, y = flow_cfs)) +
+  geom_line()
+
+```
+
+
+## Recommendations
+
+Battle Creek : no significant differences
+Buttle Creek : Recommended to use CDEC to not lose significant fluctuations
+Clear Creek :  no significant differences
+Feather River : Recommend to use CDEC to capture significant fluctuations
+Mill Creek : Recommend to use USGS because CDEC has no available data from 2008-2020.
+Yuba : Recommend to use USGS because CDEC has no available data from 2003-2020.
+Sacramento River- Knights Landing :  no significant difference
+Sacramento Tisdale : only CDEC data is available 
+# ##
+
+
+
