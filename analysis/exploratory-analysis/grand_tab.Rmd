@@ -32,14 +32,19 @@ grand_tab <- DSMCalibrationData::grandtab_observed$spring %>%
 
 ```{r}
 weir_counts <- read_csv("../../data/standard-format-data/standard_adult_upstream_passage.csv") %>% 
-  select(stream = location, date, count, passage_direction, origin) %>%
+  select(stream = location, date, count, passage_direction, origin, run) %>%
+  filter(run %in% c("spring", "unknown", NA_character_)) %>%
   mutate(year = lubridate::year(date),
          stream = tolower(stream)) %>% 
   group_by(stream, year, passage_direction) %>%
   summarize(weir_count = sum(count, na.rm = T)) %>%
-  ungroup %>% glimpse() 
-  pivot_wider()
-  
+  ungroup %>% 
+  pivot_wider(names_from = passage_direction, values_from = weir_count) %>% 
+  mutate(up = ifelse(is.na(up), 0, up), 
+         down = ifelse(is.na(down), 0, down), 
+         weir_count = ifelse(!is.na(`NA`), `NA`, up - down), # Mill and deer do not give passage direction, assume passage is up
+         ) %>% 
+  select(-up, -down, -`NA`) %>% glimpse
 
 ```
 
@@ -168,6 +173,8 @@ passage_data %>% filter(stream == "mill creek") %>%
 ```
 
 ### Yuba River
+
+Yuba Weir data is not filtered to Spring run values. This is likely part of the reason that Yuba Weir counts are higher than grand tab values. 
 ```{r}
 passage_data %>% filter(stream == "yuba river") %>% 
   ggplot() + 
