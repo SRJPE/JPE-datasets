@@ -60,6 +60,7 @@ cdec_datasets("BAT")
 # CDEC has no temperature data available
 ```
 
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
@@ -78,6 +79,7 @@ cdec_datasets("BCK")
 
 # Since this location has sensor that collects temp data, we can make request
 BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
+write.csv(BCK_CDEC,"BCK_CDEC.csv", row.names = FALSE)
 
 BCK_hourly_temps <- BCK_CDEC %>%
   mutate(date = as_date(datetime),
@@ -91,9 +93,10 @@ head(BCK_hourly_temps$date,n=1)
 
 ggplot(BCK_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degf), color ="darkred") +
-  labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Butte Creek (CDEC)")
+  labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Butte Creek: Hourly (CDEC)")
 ```
-CDEC data provides temperature data for Butte Creek. It ranges from 2002-12-31 to 2022-05-27.It seems there are some outliers and missing data values worth exploring.
+
+CDEC data provides temperature data for Butte Creek. It ranges from 1997-03-14 to 2022-05-28
 
 ### USGS
 ```{r}
@@ -104,12 +107,13 @@ BCK_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperat
 # no data available from USGS
 ```
 
+USGS provides no temperature data for Butte Creek. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
+
 ### Explore Outliers
 ```{r}
 BCK_hourly_temps %>%
   filter(temp_degf > 200)
 ```
-As expected, the days in which there are outliers in temperature for Butte Creeek it occurs throughout the entire day. It could be an input or sensor error?
 
 ### Explore Missing Values
 ```{r}
@@ -117,13 +121,21 @@ As expected, the days in which there are outliers in temperature for Butte Creee
 BCK_hourly_temps_missing <- filter(BCK_hourly_temps,is.na(temp_degf))
 BCK_hourly_temps_missing <- data.frame(table(BCK_hourly_temps_missing$date))
 
+# Identify missing data by year
 BCK_hourly_temps_missing %>%
   mutate(date = as_date(Var1),
          count = Freq) %>%
   select(date,count) %>%
-  arrange(desc(count))
+  arrange(desc(count)) %>%
+  mutate(month = format(date, "%m"), year = format(date, "%Y")) %>%
+  group_by(year) %>%
+  summarise(count = sum(count)) %>%
+  ggplot(aes(x=as.numeric(year))) +
+  geom_line(aes(y=count)) +
+  labs(x="Year",y="Frequency",title="Missing Data at Butte Creek : Hourly (CDEC)")
 ```
 
+Majority Butte Creek Missing data comes from the period of 2000 to 2008.
 #===============================================================================
 ## Clear Creek
 ### CDEC
@@ -133,6 +145,7 @@ cdec_datasets("IGO")
 
 # Since this location has sensor that collects temp data, we can make request
 IGO_CDEC <- cdec_query(station = "IGO", dur_code = "H", sensor_num = "25", start_date = "2003-01-01")
+write.csv(IGO_CDEC,"IGO_CDEC.csv", row.names = FALSE)
 
 IGO_hourly_temps <- IGO_CDEC %>%
   mutate(date = as_date(datetime),
@@ -140,10 +153,15 @@ IGO_hourly_temps <- IGO_CDEC %>%
          temp_degf = parameter_value) %>%
   select(date,time,temp_degf)
 
+# Date Ranges
+tail(IGO_hourly_temps$date,n=1)
+head(IGO_hourly_temps$date,n=1)
+
 ggplot(IGO_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degf), color ="darkred") +
-  labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Clear Creek (CDEC)")
+  labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Clear Creek: Hourly (CDEC)")
 ```
+CDEC temeprature data for Clear Cleek ranges from 2002-12-31 to 2022-05-27.
 
 ### USGS
 ```{r}
@@ -153,6 +171,8 @@ ggplot(IGO_hourly_temps, aes(x=date)) +
 IGO_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperature
 # no data available from USGS
 ```
+
+USGS provides no temperature data for Clear Creek. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
 
 ### Explore Outliers
 ```{r}
@@ -166,13 +186,21 @@ IGO_hourly_temps %>%
 IGO_hourly_temps_missing <- filter(IGO_hourly_temps,is.na(temp_degf))
 IGO_hourly_temps_missing <- data.frame(table(IGO_hourly_temps_missing$date))
 
+# Identify missing data by year
 IGO_hourly_temps_missing %>%
   mutate(date = as_date(Var1),
          count = Freq) %>%
   select(date,count) %>%
-  arrange(desc(count))
+  arrange(desc(count)) %>%
+  mutate(month = format(date, "%m"), year = format(date, "%Y")) %>%
+  group_by(year) %>%
+  summarise(count = sum(count)) %>%
+  ggplot(aes(x=as.numeric(year))) +
+  geom_line(aes(y=count)) +
+  labs(x="Year",y="Frequency",title="Missing Data at Clear Creek : Hourly (CDEC)")
 ```
 
+Majority of the missing data for clear creek comes from 2018-2020.
 
 #===============================================================================
 ## Deer Creek
@@ -182,6 +210,7 @@ IGO_hourly_temps_missing %>%
 cdec_datasets("DCV")
 
 DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
+write.csv(DCV_CDEC,"DCV_CDEC.csv", row.names = FALSE)
 
 DCV_hourly_temps <- DCV_CDEC %>%
   mutate(date = as_date(datetime),
@@ -193,17 +222,20 @@ DCV_hourly_temps <- DCV_CDEC %>%
 tail(DCV_hourly_temps$date,n=1)
 head(DCV_hourly_temps$date,n=1)
 
-# Plot DCV
+# Plot
 ggplot(DCV_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degf), color ="darkred") +
   labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Deer Creek: Hourly (CDEC)")
 ```
+CDEC Temperature Data for Deer Creek ranges from 1997-03-14 to 2022-05-07.
+
 ### USGS
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 DCV_USGS <- readNWISdv(11383500, "00010") # parameter code 00010: water temperature
+write.csv(DCV_USGS,"DCV_USGS.csv", row.names = FALSE)
 
 # Format to make tidier
 DCV_daily_temps <- DCV_USGS %>%
@@ -211,7 +243,17 @@ DCV_daily_temps <- DCV_USGS %>%
   filter(lubridate::year(Date) >= 1995) %>%
   as_tibble() %>% 
   rename(date = Date)
+
+# Date Ranges
+tail(DCV_daily_temps$date,n=1)
+head(DCV_daily_temps$date,n=1)
+
+# Plot
+ggplot(DCV_daily_temps, aes(x=date)) +
+  geom_line(aes(y = temp_degf), color ="darkred") +
+  labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Deer Creek: Daily (USGS)")
 ```
+USGS temperature data for deer creek ranges from 2016-10-01 to 2022-05-25.
 
 #### Hourly USGS vs Daily CDEC data
 ```{r}
@@ -229,6 +271,8 @@ ggplot(DCV_combined, aes(x=date)) +
   labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Deer Creek : Hourly CDEC vs Daily USGS")
 ```
 
+Not as helpful to compare hourly CDEC data to daily USGS, it would be better to adjust the granularity to daily by taking the average.
+
 #### Mean Daily USGS vs Daily CDEC data
 ```{r}
 DCV_combined %>% 
@@ -243,6 +287,9 @@ DCV_combined %>%
   labs(y="Temperature (deg f)",title="Water Temperature at Deer Creek: Mean Daily CDEC vs Daily USGS")
 
 ```
+
+This helps it become more apparent that we should use CDEC data for deer creek due to the availability of the data.
+
 #===============================================================================
 ## Feather River
 ### CDEC
@@ -251,6 +298,7 @@ DCV_combined %>%
 cdec_datasets("GRL")
 
 GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+write.csv(GRL_CDEC,"GRL_CDEC.csv", row.names = FALSE)
 
 GRL_hourly_temps <- GRL_CDEC %>%
   mutate(date = as_date(datetime),
@@ -267,6 +315,7 @@ ggplot(GRL_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degf), color ="darkred") +
   labs(x="Year",y="Temperature (deg f)",title="Temperature at Feather River: Hourly (CDEC)")
 ```
+CDEC provides temperature data for Feather River from 2003-01-05 to 2007-06-15.
 
 ### USGS
 ```{r}
@@ -277,7 +326,9 @@ GRL_USGS <- readNWISdv(11407000, "00010") # parameter code 00010: water temperat
 # No USGS
 ```
 
-#### Hourly USGS vs Daily CDEC data
+USGS does not provide temperature data for Feather River. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
+
+#### Mean Daily CDEC
 ```{r}
 GRL_hourly_temps %>% 
   group_by(date) %>% 
@@ -297,6 +348,7 @@ GRL_hourly_temps %>%
 cdec_datasets("MLM") 
 
 MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+write.csv(MLM_CDEC,"MLM_CDEC.csv", row.names = FALSE)
 
 MLM_hourly_temps <- MLM_CDEC %>%
   mutate(date = as_date(datetime),
@@ -313,6 +365,7 @@ ggplot(MLM_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degf), color ="darkred") +
   labs(x="Year",y="Temperature (deg f)",title="Temperature at Mill Creek: Hourly (CDEC)")
 ```
+CDEC provides temperature data for Mill Creek from 1998-09-30 to 2022-05-27
 
 ### USGS
 ```{r}
@@ -320,6 +373,7 @@ ggplot(MLM_hourly_temps, aes(x=date)) +
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 MLM_USGS <- readNWISdv(11381500, "00010") # parameter code 00010: water temperature temperature
+write.csv(MLM_USGS,"MLM_USGS.csv", row.names = FALSE)
 
 # Format to make tidier
 MLM_daily_temps <- MLM_USGS %>%
@@ -327,7 +381,18 @@ MLM_daily_temps <- MLM_USGS %>%
   filter(lubridate::year(Date) >= 1996) %>%
   as_tibble() %>% 
   rename(date = Date)
+
+# Date Ranges
+tail(MLM_daily_temps$date,n=1)
+head(MLM_daily_temps$date,n=1)
+
+# Plot DCV
+ggplot(MLM_daily_temps, aes(x=date)) +
+  geom_line(aes(y = temp_degf), color ="darkred") +
+  labs(x="Year",y="Temperature (deg f)",title="Temperature at Mill Creek: Daily (USGS)")
 ```
+
+USGS provides daily temperature daily for Mill Creek from 2016-10-01 to 2022-05-25
 
 #### Hourly USGS vs Daily CDEC data
 ```{r}
@@ -344,6 +409,8 @@ ggplot(MLM_combined, aes(x=date)) +
   geom_line(aes(y = temp_degf.USGS), color ="steelblue", linetype ="twodash") +
   labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Mill Creek : Hourly CDEC vs Daily USGS")
 ```
+Again, not as clear comparing hourly CDEC to daily USGS, can adjust granularity of CDEC to daily by taking the mean.
+
 #### Mean Daily USGS vs Daily CDEC data
 ```{r}
 MLM_combined %>% 
@@ -358,6 +425,9 @@ MLM_combined %>%
   labs(y="Temperature (deg f)",title="Water Temperature at Deer Creek: Mean Daily CDEC vs Daily USGS")
 
 ```
+
+I would recommend using the CDEC data for Mill Creek due to the significant data gaps for USGS.
+
 #===============================================================================
 ## Yuba River
 ### CDEC
@@ -366,6 +436,7 @@ MLM_combined %>%
 cdec_datasets("MRY")
 # CDEC doesn not have temperature data
 ```
+There is not CDEC data available for Yuba River.
 ### USGS
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
@@ -375,14 +446,15 @@ MLM_USGS <- readNWISdv(11421000, "00010") # parameter code 00010: water temperat
 # No temp data
 ```
 
-
+There is no USGS temperature data available for Yuba River.
 
 ## Sacramento River - Knights Landing
 ```{r}
 
-cdec_datasets("WLK") 
+cdec_datasets("WLK")
 
 WLK_CDEC <- cdec_query(station = "WLK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+write.csv(WLK_CDEC,"WLK_CDEC.csv", row.names = FALSE)
 
 WLK_hourly_temps <- WLK_CDEC %>%
   mutate(date = as_date(datetime),
@@ -400,20 +472,55 @@ ggplot(WLK_hourly_temps, aes(x=date)) +
   labs(x="Year",y="Temperature (deg f)",title="Temperature at Sacramento River- Knights Landing: Hourly (CDEC)")
 ```
 
+CDEC provides temperature data for Sacramento River - Knights Landing from 2002-12-31 to 2022-05-25
+
+### Explore Missing Values
+```{r}
+# Get the dates and frequency where the temp data is missing
+WLK_hourly_temps_missing <- filter(WLK_hourly_temps,is.na(temp_degf))
+WLK_hourly_temps_missing <- data.frame(table(WLK_hourly_temps_missing$date))
+
+# Identify missing data by year
+WLK_hourly_temps_missing %>%
+  mutate(date = as_date(Var1),
+         count = Freq) %>%
+  select(date,count) %>%
+  arrange(desc(count)) %>%
+  mutate(month = format(date, "%m"), year = format(date, "%Y")) %>%
+  group_by(year) %>%
+  summarise(count = sum(count)) %>%
+  ggplot(aes(x=as.numeric(year))) +
+  geom_line(aes(y=count)) +
+  labs(x="Year",y="Frequency",title="Missing Data at Sacramento River - Knights Landing : Hourly (CDEC)")
+```
+
+This plot gives a cleaer look to see were most of the missing data is for Sacramento River - Knights Landing. Which is around 2007.
 ### USGS
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 WLK_USGS <- readNWISdv(11390500, "00010") # parameter code 00010: water temperature temperature
+write.csv(WLK_USGS,"WLK_USGS.csv", row.names = FALSE)
 
 # Format to make tidier
 WLK_daily_temps <- WLK_USGS %>%
   select(Date, temp_degf =  X_00010_00003) %>%
-  filter(lubridate::year(Date) >= 2003) %>%
+  filter(lubridate::year(Date) >= 1995) %>%
   as_tibble() %>% 
   rename(date = Date)
+
+# Date Ranges
+tail(WLK_daily_temps$date,n=1)
+head(WLK_daily_temps$date,n=1)
+
+# Plot
+ggplot(WLK_daily_temps, aes(x=date)) +
+  geom_line(aes(y = temp_degf), color ="darkred") +
+  labs(x="Year",y="Temperature (deg f)",title="Temperature at Sacramento River- Knights Landing: Daily (USGS)")
 ```
+
+USGS provides temperature data for Sacramento River - Knights Landing from 1995-01-01 to 2022-05-25
 
 #### Hourly USGS vs Daily CDEC data
 ```{r}
@@ -431,6 +538,8 @@ ggplot(WLK_combined, aes(x=date)) +
   labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Sacramento River - Knights Landing : Hourly CDEC vs Daily USGS")
 ```
 
+
+
 #### Mean Daily USGS vs Daily CDEC data
 ```{r}
 WLK_combined %>% 
@@ -446,12 +555,35 @@ WLK_combined %>%
 
 ```
 
-
-
+#===============================================================================
 ## Sacramento River - Tisdale
+### CDEC data
 
+```{r}
+# Only CDEC data is available for Tisdale
+cdec_datasets("TIS") 
 
+TIS_CDEC <- cdec_query(station = "TIS", dur_code = "H", sensor_num = "20", start_date = "2010-01-01")
+write.csv(TIS_CDEC,"TIS_CDEC.csv", row.names = FALSE)
 
+# Format data
+TIS_hourly_temps <- TIS_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degf = parameter_value) %>%
+  select(date,time,temp_degf)
+
+# Date Ranges
+tail(TIS_hourly_temps$date,n=1)
+head(TIS_hourly_temps$date,n=1)
+
+# Plot DCV
+ggplot(TIS_hourly_temps, aes(x=date)) +
+  geom_line(aes(y = temp_degf), color ="darkred") +
+  labs(x="Year",y="Temperature (deg f)",title="Temperature at Sacramento River - Tisdale: Hourly (CDEC)")
+
+```
+CDEC provides temperature data for Sacramento River - Tisdale from 2009-12-31 to 2022-05-27.
 
 
 
