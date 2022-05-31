@@ -155,9 +155,9 @@ battle_rst_clean <- battle_rst %>%
   select(-c(sample_id)) %>%
   group_by(date, run, fork_length, lifestage, dead, interpolated) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(location = "battle creek",
-         site = location,
-         origin = "natural",
+  mutate(stream = "battle creek",
+         site = stream,
+         adipose_clipped = F,
          run_method = "adjusted length-at-date")
 ```
 
@@ -187,19 +187,17 @@ filter(butte_rst, is.na(mark_code)) %>% tally()
 
 butte_rst_clean <- butte_rst %>%
   select(date, station, dead, count, fork_length, weight, mark_code, lifestage) %>%
-  rename(origin = mark_code, 
+  rename(adipose_clipped = mark_code, 
          site = station) %>%
-  mutate(location = "butte creek",
+  mutate(stream = "butte creek",
          subsite = tolower(site),
          site = case_when(grepl("Okie Dam", site) ~ "okie dam",
                           T ~ tolower(site)),
          run = "spring",
-         origin = case_when(is.na(origin) ~ "not recorded",
-                            count == 0 ~ NA_character_,
-                            origin == "none" ~ "natural",
-                            origin == "adclipped" ~ "hatchery"),
+         adipose_clipped = case_when(adipose_clipped == "none" ~ F,
+                            adipose_clipped == "adclipped" ~ T),
          run_method = "unknown") %>%
-  group_by(date, site, dead, fork_length, weight, origin, lifestage, location, run, run_method) %>%
+  group_by(date, site, dead, fork_length, weight, adipose_clipped, lifestage, stream, run, run_method) %>%
   summarize(count = sum(count, na.rm = T))
 ```
 
@@ -235,9 +233,9 @@ clear_rst_clean <- clear_rst %>%
   rename(site = station_code) %>%
   group_by(date, site, run, fork_length, lifestage, dead, interpolated) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(location = "clear creek",
+  mutate(stream = "clear creek",
          site = tolower(site),
-         origin = "natural",
+         adipose_clipped = F,
          run_method = "adjusted length-at-date")
   
 ```
@@ -264,11 +262,11 @@ deer_rst_clean <- deer_rst %>%
   select(date, location, count, fork_length, weight) %>%
   group_by(date, fork_length, weight) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(location = "deer creek",
-         site = location,
+  mutate(stream = "deer creek",
+         site = stream,
          run = "not recorded",
          run_method = NA_character_,
-         origin = "natural",
+         adipose_clipped = F,
          lifestage = "not recorded")
 ```
 
@@ -299,9 +297,9 @@ feather_rst_clean <- feather_rst %>%
   rename(site = site_name) %>%
   group_by(date, site, run, lifestage, fork_length) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(location = "feather river",
+  mutate(stream = "feather river",
          site = tolower(site),
-         origin = "natural",
+         adipose_clipped = F,
          run_method = "unknown")
   
 ```
@@ -325,11 +323,11 @@ mill_rst_clean <- mill_rst %>%
   select(date, count, fork_length) %>%
   group_by(date, fork_length) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(location = "mill creek",
-         site = location,
+  mutate(stream = "mill creek",
+         site = stream,
          run = "not recorded",
          run_method = NA_character_,
-         origin = "natural",
+         adipose_clipped = F,
          lifestage = "not recorded")
 ```
 
@@ -366,8 +364,8 @@ yuba_rst_clean<- yuba_rst %>%
   mutate(site = ifelse(location == "Yuba River", "yuba river", "hallwood")) %>%
   group_by(date, fork_length, weight, lifestage, run, site) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(location = "yuba river",
-         origin = "natural",
+  mutate(stream = "yuba river",
+         adipose_clipped = F,
          run_method = "unknown")
 ```
 
@@ -397,16 +395,17 @@ knights_rst_clean <- knights_landing_rst %>%
   rename(count = n,
          date = visitTime,
          fork_length = forkLength,
-         origin = fishOrigin,
+         adipose_clipped = fishOrigin,
          species = commonName,
          run_method = runMethod,
          lifestage = lifeStage) %>%
-  group_by(fork_length, weight, species, run, run_method, lifestage, origin, date) %>%
+  group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(location = "sacramento river",
+  mutate(stream = "sacramento river",
          site = "knights landing",
          date = as_date(date),
-         origin = tolower(origin),
+         adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
+                                     adipose_clipped == "Hatchery" ~ T),
          run_method = tolower(run_method),
          species = tolower(species),
          lifestage = tolower(lifestage)) 
@@ -446,14 +445,15 @@ filter(tisdale_rst, random == F, count > 0)
 tisdale_rst_clean <- tisdale_rst %>%
   select(-c(fish_processed, at_capture_run, final_run, release_id, mark_position, mark_color, trap_visit_comment)) %>%
   rename(fork_length = fork_length_mm,
-         origin = rearing,
+         adipose_clipped = rearing,
          lifestage = life_stage,
          dead = mortality) %>%
-  group_by(date, species, fork_length, weight, lifestage, dead, run, origin, random, mark_type) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped) %>%
   summarize(count = sum(count, na.rm = T)) %>%
-  mutate(location = "sacramento river",
+  mutate(stream = "sacramento river",
          site = "tisdale",
-         origin = tolower(origin),
+         adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
+                                     adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
          species = tolower(species),
          run_method = "unknown") 
@@ -470,7 +470,6 @@ tisdale_rst_clean <- tisdale_rst %>%
 
 ```{r, combined}
 # TODO fill in run method - this will involve outreach with monitoring programs
-# TODO decide if we need the "random" variable. It only applies to Tisdale
 combined_rst_raw <- bind_rows(battle_rst_clean,
                           butte_rst_clean,
                           clear_rst_clean,
@@ -491,7 +490,7 @@ combined_rst <- combined_rst_raw %>%
 
 unique(combined_rst$run)
 unique(combined_rst$lifestage)
-unique(combined_rst$species)
+unique(combined_rst$site)
 ```
 
 ## Data dictionary
@@ -500,52 +499,46 @@ unique(combined_rst$species)
 colnames(combined_rst)
 
 rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
-                                    description = c("Date trap checked. Some locations also have a time component.",
+                                    description = c("Date trap checked.",
                                                     "Designated run of fish using method in run_method. Some locations did not designated a run. NA when count is 0.",
                                                     "Fork length of fish in mm.",
                                                     "Life stage of fish. NA when count is 0.",
-                                                    "Number of fish caught.",
                                                     "Describes if fish were dead when observed (T/F).",
                                                     "Describes if data were interpolated (T/F).",
+                                                    "Number of fish caught.",
                                                     "Mainstem/tributary location of trap.",
-                                                    "Site of trap within location. Some locations do not have multiples sites in which location = site. Site names are specific to the tributary.",
-                                                    "Describes if the fish is natural or hatchery origin. In some cases this information may be unknown.",
-                                                    "Weight in grams.",
-                                                    "Subsite location of trap",
-                                                    "Species of fish. All were filtered to chinook.",
+                                                    "Site of trap within location. Some locations do not have multiples sites in which stream = site. Site names are specific to the tributary.",
+                                                    "Describes if adipose fin is clipped (T/F). This is used to determine if the fish is natural or hatchery origin. In some cases this information may be unknown.",
                                                     "Method used to designate run. NA if count is 0.",
-                                                    "Describes if fish were caught randomly (T/F)"),
+                                                    "Weight in grams.",
+                                                    "Species of fish. All were filtered to chinook."),
                                     
                                     encoding = c(NA,
                                                  "late fall, spring, fall, winter, not recorded, unknown",
                                                  NA,
                                                  "smolt, fry, yolk sac fry, not recorded, parr, silvery parr, adult, unknown, yearling",
-                                                 NA,
                                                  "TRUE, FALSE",
                                                  "TRUE, FALSE",
-                                                 "Battle Creek, Butte Creek, Clear Creek, Deer Creek, Feather River, Mill Creek, Yuba River, Lower Sacramento - Knights Landing, Lower Sacramento - Tisdale",
-                                                 "Battle Creek, Okie Dam 1, Adams Dam, Okie Dam 2, LCC, UCC, Deer Creek, Eye Riffle, Live Oak, Herringer Riffle, Steep Riffle, Sunset Pumps, Shawns Beach, Gateway Riffle, Mill Creek, Yuba River, Lower Sacramento - Knights Landing, Lower Sacramento - Tisdale",
-                                                 "natural, not recorded, hatchery, unknown",
                                                  NA,
-                                                 NA,
-                                                 "chinook salmon",
+                                                 "battle creek, butte creek, clear creek, deer creek, feather river, mill creek, yuba river, sacramento river",
+                                                 "battle creek, okie dam, adams dam, lcc, ucc, deer creek, eye riffle, live oak, herringer riffle, steep riffle, sunset pumps, shawns beach, gateway riffle, mill creek, yuba river, hallwood, knights landing, tisdale",
+                                                 "TRUE, FALSE",
                                                  "not recorded, length-at-date criteria, appearance, hatchery attribute",
-                                                 "TRUE, FALSE"),
+                                                 NA,
+                                                 "chinook salmon"),
                                     collected = c("All",
                                                        "All but Deer, Mill",
                                                        "All",
                                                        "All but Deer, Mill",
-                                                       "All",
                                                        "Battle, Butte, Clear, Tisdale",
                                                        "Battle, Clear",
                                                        "All",
                                                        "All",
                                                        "All",
-                                                       "Butte, Deer, Yuba, Knights, Tisdale",
+                                                       "Butte, Feather, Knights, Tisdale",
                                                        "Butte",
-                                                       "All",
-                                                       "Knights",
-                                                       "Tisdale"))
+                                                       "Butte, Deer, Yuba, Knights, Tisdale",
+                                                       "Knights"))
 ```
 
 ```{r, data_dictionary}
@@ -635,18 +628,18 @@ unique(combined_rst$run)
 
 total_count <- combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(location, year) %>%
+  group_by(stream, year) %>%
   summarize(total = sum(count, na.rm = T))
 
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(location, year, run) %>%
+  group_by(stream, year, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = run)) +
   geom_col() +
-  facet_wrap(~location, scales = "free_y") +
+  facet_wrap(~stream, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -659,13 +652,13 @@ Figure below shows the percent of total fish counted that have a fork length mea
 combined_rst %>%
   filter(!is.na(fork_length)) %>%
   mutate(year = year(date)) %>%
-  group_by(location, year) %>%
+  group_by(stream, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~location)
+  facet_wrap(~stream)
   
 ```
 
@@ -678,13 +671,13 @@ Figure below shows the percentage by lifestage for each tributary and year.
 ```{r, lifestage_qaqc}
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(location, year, lifestage) %>%
+  group_by(stream, year, lifestage) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = lifestage)) +
   geom_col() +
-  facet_wrap(~location, scales = "free_y") +
+  facet_wrap(~stream, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -705,13 +698,13 @@ locations do not record this information.
 combined_rst %>%
   filter(dead == T) %>%
   mutate(year = year(date)) %>%
-  group_by(location, year) %>%
+  group_by(stream, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~location)
+  facet_wrap(~stream)
 ```
 
 ## interpolated
@@ -725,24 +718,24 @@ counts do not include values for fork length.
 combined_rst %>%
   filter(interpolated == T) %>%
   mutate(year = year(date)) %>%
-  group_by(location, year) %>%
+  group_by(stream, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~location)
+  facet_wrap(~stream)
 
 combined_rst %>%
-  filter(location %in% c("battle creek", "clear creek")) %>%
-  group_by(location, date, interpolated) %>%
+  filter(stream %in% c("battle creek", "clear creek")) %>%
+  group_by(stream, date, interpolated) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   ggplot(aes(x = date, y = count, color = interpolated)) +
   geom_line() +
-  facet_wrap(~location, scales = "free_y")
+  facet_wrap(~stream, scales = "free_y")
 ```
 
-## origin
+## adipose_clipped
 
 Origin is mostly natural. Only Butte Creek, Knights Landing, Tisdale included data
 for origin. For other locations it is not relevant or was already filtered.
@@ -750,13 +743,13 @@ for origin. For other locations it is not relevant or was already filtered.
 ```{r, origin_qaqc}
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(location, year, origin) %>%
+  group_by(stream, year, adipose_clipped) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = origin)) +
   geom_col() +
-  facet_wrap(~location, scales = "free_y") +
+  facet_wrap(~stream, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -769,13 +762,13 @@ Figure below shows the percent of total fish counted that have a weight measurem
 combined_rst %>%
   filter(!is.na(weight)) %>%
   mutate(year = year(date)) %>%
-  group_by(location, year) %>%
+  group_by(stream, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~location)
+  facet_wrap(~stream)
 ```
 ## run_method
 
@@ -785,32 +778,15 @@ for all others.
 ```{r, runmethod_qaqc}
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(location, year, run_method) %>%
+  group_by(stream, year, run_method) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = run_method)) +
   geom_col() +
-  facet_wrap(~location, scales = "free_y") +
+  facet_wrap(~stream, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
-```
-
-## random
-
-Only Tisdale recorded this information. There are very few cases where random is not true.
-
-```{r, random_qaqc}
-combined_rst %>%
-  filter(random == F) %>%
-  mutate(year = year(date)) %>%
-  group_by(location, year) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
-  left_join(total_count) %>%
-  mutate(percent = (count/total)*100) %>%
-  ggplot(aes(x = year, y = percent)) +
-  geom_col() +
-  facet_wrap(~location)
 ```
 
 # Save data
