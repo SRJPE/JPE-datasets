@@ -33,11 +33,11 @@ D - Deer Creek, M - Mill Creek, Y - Yuba River)
 
 | column name        | tributary collects | definition                                                                                             |
 |:------------------|:------------------|:---------------------------------|
-| location           | **B, C, D, M, Y**  | which Spring Run JPE stream is the data from                                                           |
+| stream           | **B, C, D, M, Y**  | which Spring Run JPE stream is the data from                                                           |
 | date               | **B, C, D, M, Y**  | date of video footage                                                                                  |
 | time               | **B, C, Y**        | time of video footage                                                                                  |
 | count              | **B, C, D, M, Y**  | number of fish observed                                                                                |
-| adipose            | **B, C, Y**        | if adipose fin is present (TRUE/FALSE)                                                                 |
+| adipose_clipped    | **B, C, Y**        | if adipose fin is clipped (TRUE/FALSE)                                                                 |
 | run                | **B, C, D, M**     | run designation                                                                                        |
 | passage_direction  | **B, C, Y**        | direction of fish passage                                                                              |
 | sex                | **C**              | sex of fish observed                                                                                   |
@@ -71,7 +71,7 @@ No columns are removed from battle creek upstream passage video data.
 #                overwrite = TRUE)
 
 battle_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/battle_adult_upstream.csv") %>% 
-  mutate(location = "Battle Creek") %>% 
+  mutate(stream = "Battle Creek") %>% 
   filter(count != 0) %>% # occurs when catch of non chinook fish
   glimpse
 
@@ -115,7 +115,7 @@ battle_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitorin
 clear_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/clear_adult_upstream.csv") %>% 
   select(-time_block) %>%
   rename(time = time_passed) %>% 
-  mutate(location = "Clear Creek",
+  mutate(stream = "Clear Creek",
          viewing_condition = case_when( 
            viewing_condition == 1 ~ "normal",  
            viewing_condition == 2 ~ "readable",  
@@ -147,7 +147,7 @@ No columns are removed from battle creek upstream passage video data.
 
 deer_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/deer_adult_upstream.csv") %>% 
     rename(count = passage_estimate) %>% # confirm with matt johnson that this is a count not a modeled passage
-    mutate(location = "Deer Creek") %>% 
+    mutate(stream = "Deer Creek") %>% 
     glimpse
 ```
 
@@ -167,7 +167,7 @@ No columns are removed from battle creek upstream passage video data.
 
 mill_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/mill_adult_upstream.csv") %>% 
   rename(count = passage_estimate) %>% # confirm with matt johnson that this is a count not a modeled passage
-  mutate(location = "Mill Creek") %>% 
+  mutate(stream = "Mill Creek") %>% 
   glimpse
 ```
 
@@ -198,7 +198,7 @@ The following columns were removed from the Yuba River dataset. There was no cle
 yuba_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/yuba_adult_upstream.csv") %>% 
   select(-category, -speed_m_per_s, -length_cm, 
          -depth_m, -position_in_frame) %>% # No clear methodology shared by yuba on these data and how they should be used  
-  mutate(location = "Yuba River") %>% 
+  mutate(stream = "Yuba River") %>% 
   distinct() %>%
   glimpse
 View(yuba_upstream_passage)
@@ -210,24 +210,25 @@ View(yuba_upstream_passage)
 combined_upstream_passage <- bind_rows(battle_upstream_passage, clear_upstream_passage, 
                                        deer_upstream_passage, mill_upstream_passage, 
                                        yuba_upstream_passage) %>% 
-  relocate(location, date, time, count, run, adipose, sex, passage_direction, 
+  rename(adipose_clipped = adipose) %>%
+  relocate(stream, date, time, count, run, adipose_clipped, sex, passage_direction, 
            viewing_condition, spawning_condition, jack_size, ladder, flow, temperature, hours) %>%
   glimpse
 ```
 
 ## Explore Varibles{.tabset}
 
-### location
+### stream
 
 ```{r}
-unique(combined_upstream_passage$location)
+unique(combined_upstream_passage$stream)
 ```
 
 ### date
 
 ```{r}
 combined_upstream_passage %>% ggplot() + 
-  geom_point(aes(x = date, y = location, color = location), alpha = .1) +
+  geom_point(aes(x = date, y = stream, color = stream), alpha = .1) +
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -241,7 +242,7 @@ Mill and Deer do not give passage time they give daily passage only.
 
 ```{r}
 combined_upstream_passage %>% ggplot() + 
-  geom_point(aes(x = time, y = location, color = location), alpha = .1) +
+  geom_point(aes(x = time, y = stream, color = stream), alpha = .1) +
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -255,14 +256,14 @@ Group by day to see distribution of daily count values
 
 ```{r}
 daily <- combined_upstream_passage %>% 
-  group_by(location, date) %>%
+  group_by(stream, date) %>%
   summarize(count = sum(count, na.rm = T)) 
 
 summary(daily$count)
 
 
 daily %>% ggplot() + 
-  geom_boxplot(aes(x = count,y = location,  color = location), 
+  geom_boxplot(aes(x = count,y = stream,  color = stream), 
                  alpha = .5, binwidth  = 1) + 
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
@@ -290,39 +291,34 @@ combined_upstream_passage <- combined_upstream_passage %>%
                          run == "WR" ~ "winter", 
                          run == "FR" ~ "fall", 
                          run == "unknown" ~ "unknown"),
-         run = ifelse(location %in% c("Mill Creek", "Deer Creek"), "spring", run))
+         run = ifelse(stream %in% c("Mill Creek", "Deer Creek"), "spring", run))
 
 combined_upstream_passage %>% 
-  group_by(location) %>%
+  group_by(stream) %>%
   summarise(run = unique(run) %>% base::paste(collapse = ', '))
 
 unique(combined_upstream_passage$run)
 
 ```
 
-### adipose
+### adipose_clipped
 
-Change adipose field to origin field
-
-Look at unique values for adipose
+Look at unique values for adipose_clipped
 
 ```{r}
-unique(combined_upstream_passage$adipose)
+unique(combined_upstream_passage$adipose_clipped)
 ```
 
-Change clipped to absent for adipose and reassign as origin: hatchery, natural, or unknown
 
 ```{r}
 combined_upstream_passage <- combined_upstream_passage %>% 
-  mutate(adipose = ifelse(adipose == "clipped", "absent", adipose),
-         origin = case_when(adipose == "absent" ~ "hatchery", 
-                            adipose == "present" ~ "natural", 
-                            adipose == "unknown" ~ "unknown")) %>%
-  select(-adipose)
+  mutate(adipose_clipped = case_when(adipose_clipped == "absent" ~ TRUE, 
+                                     adipose_clipped == "present" ~ FALSE, 
+                                     adipose_clipped == "clipped" ~ TRUE))
 
 combined_upstream_passage %>% 
-  group_by(location) %>%
-  summarise(origin = unique(origin) %>% base::paste(collapse = ', ')) 
+  group_by(stream) %>%
+  summarise(origin = unique(adipose_clipped) %>% base::paste(collapse = ', ')) 
 ```
 
 ### sex
@@ -331,7 +327,7 @@ Clear Creek is the only stream that reports data on the sex of fish
 
 ```{r}
 combined_upstream_passage %>% 
-  group_by(location) %>%
+  group_by(stream) %>%
   summarise(sex = unique(sex) %>% base::paste(collapse = ', ')) 
 
 unique(combined_upstream_passage$sex)
@@ -342,7 +338,7 @@ unique(combined_upstream_passage$sex)
 
 ```{r}
 combined_upstream_passage %>% 
-  group_by(location) %>%
+  group_by(stream) %>%
   summarise(passage_direction = unique(passage_direction) %>% base::paste(collapse = ', '))
 ```
 
@@ -352,7 +348,7 @@ Only clear creek provides a viewing condition
 
 ```{r}
 combined_upstream_passage %>% 
-  group_by(location) %>%
+  group_by(stream) %>%
   summarise(viewing_condition = unique(viewing_condition) %>% base::paste(collapse = ', ')) 
 
 ```
@@ -363,7 +359,7 @@ Only clear creek provides a spawning condition
 
 ```{r}
 combined_upstream_passage %>% 
-  group_by(location) %>%
+  group_by(stream) %>%
   summarise(spawning_condition = unique(spawning_condition) %>% base::paste(collapse = ', ')) 
 
 ```
@@ -374,7 +370,7 @@ Only clear creek provides a jack size
 
 ```{r}
 combined_upstream_passage %>% 
-  group_by(location) %>%
+  group_by(stream) %>%
   summarise(jack_size = unique(jack_size) %>% base::paste(collapse = ', ')) 
 
 ```
@@ -385,7 +381,7 @@ Only yuba river gives a ladder variable to describe which ladder the fish is see
 
 ```{r}
 combined_upstream_passage %>% 
-  group_by(location) %>%
+  group_by(stream) %>%
   summarise(ladder = unique(ladder) %>% base::paste(collapse = ', ')) 
 
 ```
@@ -399,7 +395,7 @@ Our assumption is that all other locations attempt to view all 24 hours of video
 ```{r}
 combined_upstream_passage %>% 
   ggplot() +
-  geom_histogram(aes(x = hours, fill = location), binwidth = 1) + 
+  geom_histogram(aes(x = hours, fill = stream), binwidth = 1) + 
   scale_fill_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -414,7 +410,7 @@ Only mill and deer creek give daily flow and temperature values attached to thei
 ```{r}
 combined_upstream_passage %>% 
   ggplot() +
-  geom_histogram(aes(x = flow, fill = location), 
+  geom_histogram(aes(x = flow, fill = stream), 
                  binwidth = 30, alpha = .5, position = "identity") + 
   scale_fill_manual(values = color_pal) +
   theme_minimal() + 
@@ -425,9 +421,9 @@ combined_upstream_passage %>%
 
 ```{r}
 combined_upstream_passage %>% 
-  filter(location %in% c("Mill Creek", "Deer Creek")) %>%
+  filter(stream %in% c("Mill Creek", "Deer Creek")) %>%
   ggplot() +
-  geom_line(aes(x = date, y = flow, color = location), size = 1) + 
+  geom_line(aes(x = date, y = flow, color = stream), size = 1) + 
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -442,7 +438,7 @@ Only mill and deer creek give daily flow and temperature values attached to thei
 ```{r}
 combined_upstream_passage %>% 
   ggplot() +
-  geom_histogram(aes(x = temperature, fill = location), binwidth = 1, alpha = .5, position = "identity") + 
+  geom_histogram(aes(x = temperature, fill = stream), binwidth = 1, alpha = .5, position = "identity") + 
    scale_fill_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -452,9 +448,9 @@ combined_upstream_passage %>%
 
 ```{r}
 combined_upstream_passage %>% 
-  filter(location %in% c("Mill Creek", "Deer Creek")) %>%
+  filter(stream %in% c("Mill Creek", "Deer Creek")) %>%
   ggplot() +
-  geom_line(aes(x = date, y = temperature, color = location), size = 1) + 
+  geom_line(aes(x = date, y = temperature, color = stream), size = 1) + 
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
