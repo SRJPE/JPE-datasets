@@ -175,7 +175,7 @@ Looks like baileys efficiency is anywhere from .002 - .5.
 ```{r}
 
 clear_mark_reacpture <- mark_recapture_data %>% 
-  select(release_date, day_or_night_release = d_ay_or_n_ight_release, release_time, no_marked,
+  select(release_date, release_site, day_or_night_release = d_ay_or_n_ight_release, release_time, no_marked,
          no_released, recaps, mark_med_fork_length_mm, recap_med_fork_length_mm, 
          days_held_post_mark, release_temp, flow_release, release_turbidity, cone_status_h_f_recap, 
          mean_temp_day_of_rel, mean_flow_day_of_rel, caught_day_1, caught_day_2, 
