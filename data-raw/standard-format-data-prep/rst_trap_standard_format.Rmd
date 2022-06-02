@@ -76,8 +76,8 @@ battle_trap_clean <- battle_environmental %>%
          sample_period_revolutions = counter,
          comments = trap_comments,
          cone_setting = cone) %>%
-  mutate(location = "battle creek",
-         site = location,
+  mutate(stream = "battle creek",
+         site = stream,
          subsite = site,
          # debris in gallons (1 tub = 10 gallons)
          debris_volume = debris_tubs*10) %>%
@@ -139,7 +139,7 @@ butte_trap_clean <- butte_rst %>%
          sample_period_revolutions = trap_revolutions,
          trap_sample_date = date,
          trap_sample_time = time) %>%
-  mutate(location = "butte creek",
+  mutate(stream = "butte creek",
          subsite = tolower(site),
          site = case_when(grepl("Okie Dam", site) ~ "okie dam",
                           T ~ tolower(site))) %>%
@@ -182,7 +182,7 @@ clear_trap_clean <- clear_environmental %>%
          sample_period_revolutions = counter,
          comments = trap_comments,
          cone_setting = cone) %>%
-  mutate(location = "clear creek",
+  mutate(stream = "clear creek",
          # debris in gallons (1 tub = 10 gallons)
          debris_volume = debris_tubs*10,
          site = tolower(site),
@@ -234,8 +234,8 @@ deer_trap_clean <- deer_rst %>%
   summarize(time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T)) %>%
   rename(gear_condition_code = trap_condition_code,
          trap_sample_date = date) %>%
-  mutate(location = "deer creek",
-         site = location,
+  mutate(stream = "deer creek",
+         site = stream,
          subsite = site,
          # transforming to avg_time_per_rev to align with other locations
          avg_time_per_rev = ifelse(is.na(time_for_10_revolutions), NA_real_, time_for_10_revolutions/10)) %>%
@@ -277,7 +277,7 @@ feather_trap_clean <- feather_effort %>%
          trap_status = visit_type,
          gear_condition_code = trap_functioning) %>%
   mutate(trap_sample_time = as_hms(trap_sample_time),
-         location = "feather river",
+         stream = "feather river",
          site = tolower(site),
          subsite = tolower(subsite)) %>%
   distinct()
@@ -308,8 +308,8 @@ mill_trap_clean <- mill_rst %>%
   summarize(time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T)) %>%
   rename(gear_condition_code = trap_condition_code,
          trap_sample_date = date) %>%
-  mutate(location = "mill creek",
-         site = location,
+  mutate(stream = "mill creek",
+         site = stream,
          subsite = site,
          avg_time_per_rev = ifelse(is.na(time_for_10_revolutions), NA_real_, time_for_10_revolutions/10)) %>%
   select(-time_for_10_revolutions) %>%
@@ -355,9 +355,12 @@ yuba_trap_clean <- yuba_rst %>%
          rpms_end = rpms_after,
          trap_sample_date = date,
          trap_sample_time = time) %>%
-  mutate(location = "yuba river",
-         subsite = ifelse(site %in% c("5 foot RST at Hallwood","Yuba River"), "hallwood", tolower(site)),
-         site = "hallwood",
+  mutate(stream = "yuba river",
+         subsite = case_when(site == "Yuba River" ~ "yub",
+                             site == "5 foot RST at Hallwood" ~ "hal3",
+                             site == "RST 1 at Hallwood on Yuba River" ~ "hal",
+                             site == "RST 2 at Hallwood" ~ "hal2"),
+         site = ifelse(subsite == "yub", "yuba river", "hallwood"),
          sample_period_revolutions = case_when(trap_revolutions == 0 ~ trap_revolutions2,
                                                T ~ trap_revolutions)) %>%
   select(-c(trap_revolutions, trap_revolutions2)) %>%
@@ -389,7 +392,7 @@ knights_trap_clean <- knights_effort %>%
             flow_cfs, secchi_ft, water_t_f, turbidity, turbidity_units,
             hrs_fished)) %>%
   # convert temp from F to C
-  mutate(location = "sacramento river",
+  mutate(stream = "sacramento river",
          site = "knights landing",
          subsite = as.character(cone_id)) %>%
   select(-cone_id) %>%
@@ -490,11 +493,11 @@ change names - > trap_start_data, trap_sample_date (assign date to trap_sample_d
 
 check <- combined_trap %>%
   filter(!is.na(trap_start_date)) %>%
-  group_by(location, site, subsite) %>%
+  group_by(stream, site, subsite) %>%
   arrange(trap_start_date) %>%
   mutate(date_ck = lag(trap_sample_date)) %>%
   filter(date_ck != trap_start_date) %>%
-  select(trap_start_date, trap_sample_date, date_ck, location, site, subsite)
+  select(trap_start_date, trap_sample_date, date_ck, stream, site, subsite)
 
 ```
 
@@ -600,11 +603,11 @@ kable(rst_trap_data_dictionary)
 
 ```{r}
 combined_trap %>% 
-  ggplot(aes(x = trap_sample_date, y = location, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = stream, color = stream)) +
   geom_point()
 
 combined_trap %>% 
-  ggplot(aes(x = trap_start_date, y = location, color = location)) +
+  ggplot(aes(x = trap_start_date, y = stream, color = stream)) +
   geom_point()
 ```
 
@@ -614,11 +617,11 @@ Does not appear that traps are checked at a specific time
 
 ```{r}
 combined_trap %>% 
-  ggplot(aes(x = trap_sample_time, y = location, color = location)) +
+  ggplot(aes(x = trap_sample_time, y = stream, color = stream)) +
   geom_point()
 
 combined_trap %>% 
-  ggplot(aes(x = trap_start_time, y = location, color = location)) +
+  ggplot(aes(x = trap_start_time, y = stream, color = stream)) +
   geom_point()
 ```
 
@@ -628,7 +631,7 @@ TODO should we clean up (impute by averages) outlier values
 
 ```{r}
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = sample_period_revolutions, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = sample_period_revolutions, color = stream)) +
   geom_point()
 
 # There are a few Yuba River obs that seem unlikely
@@ -644,7 +647,7 @@ and Clear is at half cone more frequently.
 ```{r}
 combined_trap %>%
   filter(!is.na(cone_setting)) %>%
-  group_by(location, cone_setting) %>%
+  group_by(stream, cone_setting) %>%
   tally() %>%
   kable()
 ```
@@ -653,16 +656,16 @@ combined_trap %>%
 
 ```{r}
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = river_left_depth, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = river_left_depth, color = stream)) +
   geom_point()
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = river_right_depth, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = river_right_depth, color = stream)) +
   geom_point()
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = river_center_depth, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = river_center_depth, color = stream)) +
   geom_point()
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = depth_adjust, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = depth_adjust, color = stream)) +
   geom_point()
 
 ```
@@ -674,7 +677,7 @@ Battle and Clear collect information of trap in thalweg and it is almost always 
 ```{r}
 combined_trap %>%
   filter(!is.na(thalweg)) %>%
-  group_by(location, thalweg) %>%
+  group_by(stream, thalweg) %>%
   tally() %>%
   kable()
 ```
@@ -685,11 +688,11 @@ Battle, Clear, Deer, Mill collect this data. Battle has the most variation.
 
 ```{r}
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = avg_time_per_rev, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = avg_time_per_rev, color = stream)) +
   geom_point()
 
 combined_trap %>%
-  ggplot(aes(x = location, y = avg_time_per_rev)) +
+  ggplot(aes(x = stream, y = avg_time_per_rev)) +
   geom_boxplot()
 ```
 
@@ -700,7 +703,7 @@ Battle and Clear collect this data and almost always TRUE
 ```{r}
 combined_trap %>%
   filter(!is.na(fish_properly)) %>%
-  group_by(location, fish_properly) %>%
+  group_by(stream, fish_properly) %>%
   tally() %>%
   kable()
 ```
@@ -721,17 +724,17 @@ TODO Encode NAs as "not recorded"?
 ```{r}
 total <-
   combined_trap %>%
-  group_by(year(trap_sample_date), location) %>%
+  group_by(year(trap_sample_date), stream) %>%
   tally() %>%
   rename(total = n)
 combined_trap %>%
-  group_by(year(trap_sample_date), location, gear_condition_code) %>%
+  group_by(year(trap_sample_date), stream, gear_condition) %>%
   tally() %>%
   left_join(total) %>%
   mutate(percent = n/total) %>%
-  ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = gear_condition_code)) +
+  ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = gear_condition)) +
   geom_bar(stat = "identity", position = "stack") +
-  facet_wrap(~location)
+  facet_wrap(~stream)
 ```
 
 ## trap_fishing
@@ -741,7 +744,7 @@ Battle and Clear collect this data. Based on this decided to remove. All TRUE ex
 ```{r}
 combined_trap %>%
   filter(!is.na(trap_fishing)) %>%
-  group_by(location, trap_fishing) %>%
+  group_by(stream, trap_fishing) %>%
   tally() %>%
   kable()
 ```
@@ -753,7 +756,7 @@ Battle and Clear collect this data. Based on this decided to remove. Mostly all 
 ```{r}
 combined_trap %>%
   filter(!is.na(partial_sample)) %>%
-  group_by(location, partial_sample) %>%
+  group_by(stream, partial_sample) %>%
   tally() %>%
   kable()
 ```
@@ -762,7 +765,7 @@ combined_trap %>%
 
 ```{r}
 combined_trap %>%
-  group_by(location, site, subsite) %>%
+  group_by(stream, site, subsite) %>%
   tally()
 ```
 
@@ -770,11 +773,11 @@ combined_trap %>%
 
 ```{r}
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = debris_volume, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = debris_volume, color = stream)) +
   geom_point()
 
 combined_trap %>%
-  ggplot(aes(x = location, y = debris_volume)) +
+  ggplot(aes(x = stream, y = debris_volume)) +
   geom_boxplot()
 ```
 
@@ -784,13 +787,13 @@ This data is really only used by Feather. Majority of Butte and Yuba were encode
 
 ```{r}
 combined_trap %>%
-  group_by(year(trap_sample_date), location, trap_status) %>%
+  group_by(year(trap_sample_date), stream, trap_status) %>%
   tally() %>%
   left_join(total) %>%
   mutate(percent = n/total) %>%
   ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = trap_status)) +
   geom_bar(stat = "identity", position = "stack") +
-  facet_wrap(~location)
+  facet_wrap(~stream)
 
 ```
 
@@ -802,21 +805,21 @@ TODO few outliers do we want to impute?
 
 ```{r}
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = rpms_start, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = rpms_start, color = stream)) +
   geom_point()
 
 filter(combined_trap, rpms_start < 100) %>%
-  ggplot(aes(x = trap_sample_date, y = rpms_start, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = rpms_start, color = stream)) +
   geom_point()
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = rpms_end, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = rpms_end, color = stream)) +
   geom_point()
 
 combined_trap %>%
-  ggplot(aes(x = location, y = rpms_start)) +
+  ggplot(aes(x = stream, y = rpms_start)) +
   geom_boxplot()
 combined_trap %>%
-  ggplot(aes(x = location, y = rpms_end)) +
+  ggplot(aes(x = stream, y = rpms_end)) +
   geom_boxplot()
 ```
 
@@ -826,13 +829,13 @@ Feather is only location that collects this data.
 
 ```{r}
 combined_trap %>%
-  group_by(year(trap_sample_date), location, fish_processed) %>%
+  group_by(year(trap_sample_date), stream, fish_processed) %>%
   tally() %>%
   left_join(total) %>%
   mutate(percent = n/total) %>%
   ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = fish_processed)) +
   geom_bar(stat = "identity", position = "stack") +
-  facet_wrap(~location)
+  facet_wrap(~stream)
 
 ```
 
@@ -842,13 +845,13 @@ Yuba is only location that collects this data. Almost always RST. Remove?
 
 ```{r}
 combined_trap %>%
-  group_by(year(trap_sample_date), location, method) %>%
+  group_by(year(trap_sample_date), stream, method) %>%
   tally() %>%
   left_join(total) %>%
   mutate(percent = n/total) %>%
   ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = method)) +
   geom_bar(stat = "identity", position = "stack") +
-  facet_wrap(~location)
+  facet_wrap(~stream)
 ```
 
 ## debris_level
@@ -857,13 +860,13 @@ Yuba only location that collects this data
 
 ```{r}
 combined_trap %>%
-  group_by(year(trap_sample_date), location, debris_level) %>%
+  group_by(year(trap_sample_date), stream, debris_level) %>%
   tally() %>%
   left_join(total) %>%
   mutate(percent = n/total) %>%
   ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = debris_level)) +
   geom_bar(stat = "identity", position = "stack") +
-  facet_wrap(~location)
+  facet_wrap(~stream)
 ```
 
 ## number_traps
@@ -872,7 +875,7 @@ Knights is only location that collects this data but it is mostly missing data. 
 ```{r}
 combined_trap %>%
   filter(!is.na(number_traps)) %>%
-  group_by(location, number_traps) %>%
+  group_by(stream, number_traps) %>%
   tally() %>%
   kable()
 ```
@@ -884,7 +887,7 @@ not sure when this is collected (start or end)
 
 ```{r}
 combined_trap %>%
-  ggplot(aes(x = trap_sample_date, y = cone_rpm, color = location)) +
+  ggplot(aes(x = trap_sample_date, y = cone_rpm, color = stream)) +
   geom_point()
 ```
 
