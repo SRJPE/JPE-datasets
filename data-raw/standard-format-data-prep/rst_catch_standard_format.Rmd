@@ -175,7 +175,9 @@ kable(butte_data_dictionary)
 
 ```{r, butte_clean}
 # Run was filtered to spring (or only spring is collected) prior to sharing data
-# TODO run_method
+# According to methods (https://www.calfish.org/ProgramsData/ConservationandManagement/CentralValleyMonitoring/SacramentoValleyTributaryMonitoring/ButteCreek.aspx)
+# the trapping site is downstream of spring run spawning habitat but upstream of fall run spawning habitat
+# TODO uncertainty associated with trapping spring - what percentage may be fall?
 butte_rst %>% glimpse
 unique(butte_rst$station)
 unique(butte_rst$mark_code)
