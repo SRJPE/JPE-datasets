@@ -7,41 +7,135 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(googleCloudStorageR)
 ```
+
 
 ## RST QA/QC
 
 Add description of QA/QC methods
 
-
 ## Load in combined RST Datasets {.tabset}
 
-### Catch 
+### Import Data-sets
+```{r}
+# Access Data from Google Cloud (Download and Import)
+# Link : <https://console.cloud.google.com/storage/browser/jpe-dev-bucket/standard-format-data;tab=[…]iew=project&prefix=&forceOnObjectsSortingFiltering=false>
 
-### Environmental  
-
-### Trap Operations 
-
-### Mark Recapture  
+# Import Data-sets
+environmental <- read_csv("standard_RST_environmental.csv")
+trap_operation <- read_csv("standard-format-data_standard_rst_trap.csv")
+catch <- read_csv("standard-format-data_standard_rst_catch.csv")
+mark_recapture <- read_csv("standard-format-data_standard_recapture.csv")
+```
 
 
 ## Explore Catch Ranges {.tabset}
 
 Description of what variables we are defining ranges for. 
 
-* Variable 1 - description of why we want to define QA/QC ranges for it 
+* `fork_length` - 
+* `count` - 
+* `weight` - 
 
-
-### Variable 1
+### Variables
 ```{r}
+# Identify Numerical Columns
+catch_variables %>% glimpse()
+
+# Filter for numerical columns
+catch_variables <- catch %>%
+  select(c(fork_length,count,weight))
+
+# HELPER FUNCTION: Get Ranges of a column
+find_range <- function(data) {
+  # Get the min and max value
+  result <- range(data, na.rm = TRUE)
+}
+
+# Get Ranges
+catch_ranges <- as.data.frame(apply(catch_variables, 2, find_range)) # get ranges
+rownames(catch_ranges) <- c("min","max") # labels
+catch_ranges
 
 ```
 
-### Variable 2 
-
-
 ## Explore Environmental Ranges {.tabset}
+Description of what variables we are defining ranges for. 
 
-### Variable 1
+* `turbidity` - 
+* `flow` -
+* `secchi` - 
 
-### Variable 2 
+### Variables
+```{r}
+# Identify Numerical Columns
+environmental %>%
+  glimpse()
+
+# Filter for numerical columns
+environmental_variables <- environmental %>%
+  select(c(turbidity, flow, secchi))
+
+# Get Ranges
+environmental_ranges <- as.data.frame(apply(environmental_variables, 2, find_range)) # get ranges
+rownames(environmental_ranges) <- c("min","max") # labels
+catch_ranges
+```
+
+## Explore Trap Operation Ranges {.tabset}
+Description of what variables we are defining ranges for. 
+
+* `sample_period_revolutions` - 
+* `cone_setting,river_left_depth` -
+* `river_center_depth` - 
+* `river_right_depth` - 
+* `depth_adjust` -
+* `avg_time_per_rev` -
+* `debris_volume` - 
+* `rpms_start` -
+* `rpms_end` - 
+* `cone_rpm` -
+
+### Variables
+```{r}
+# Identify Numerical Columns
+trap_operation %>%
+  glimpse()
+
+# Filter for numerical columns
+trap_operation_variables <- trap_operation %>%
+  select(c(sample_period_revolutions, cone_setting,river_left_depth,
+           river_center_depth, river_right_depth, depth_adjust, avg_time_per_rev,
+           debris_volume, rpms_start, rpms_end, cone_rpm))
+
+# Get Ranges
+trap_operation_ranges <- as.data.frame(apply(trap_operation_variables, 2, find_range)) # get ranges
+rownames(trap_operation_ranges) <- c("min","max") # labels
+trap_operation_ranges
+```
+
+## Explore Mark Recapture Ranges {.tabset}
+Description of what variables we are defining ranges for. 
+
+* `number_recaptured` -
+* `median_fork_length_recaptured` - 
+
+### Variables
+```{r}
+# Identify Numerical Columns
+mark_recapture %>%
+  glimpse()
+
+# Filter for numerical columns
+mark_recapture_variables <- mark_recapture %>%
+  select(c(number_recaptured, median_fork_length_recaptured))
+
+# Get Ranges
+mark_recapture_ranges <- as.data.frame(apply(mark_recapture_variables, 2, find_range)) # get ranges
+rownames(mark_recapture_ranges) <- c("min","max") # labels
+mark_recapture_ranges
+```
