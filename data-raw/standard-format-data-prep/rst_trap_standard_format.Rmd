@@ -71,11 +71,12 @@ battle_trap_clean <- battle_environmental %>%
   # sample_date and sample_time are described as the end of 24 hour sampling period
   # rename to match others
   rename(trap_visit_id = sample_id,
-         trap_sample_date = sample_date,
-         trap_sample_time = sample_time,
+         trap_stop_date = sample_date,
+         trap_stop_time = sample_time,
          sample_period_revolutions = counter,
          comments = trap_comments,
-         cone_setting = cone) %>%
+         cone_setting = cone,
+         in_thlaweg = thalweg) %>%
   mutate(stream = "battle creek",
          site = stream,
          subsite = site,
@@ -137,8 +138,8 @@ butte_trap_clean <- butte_rst %>%
             rpms_end = mean(rpms_end, na.rm = T)) %>%
   rename(site = station,
          sample_period_revolutions = trap_revolutions,
-         trap_sample_date = date,
-         trap_sample_time = time) %>%
+         trap_stop_date = date,
+         trap_stop_time = time) %>%
   mutate(stream = "butte creek",
          subsite = tolower(site),
          site = case_when(grepl("Okie Dam", site) ~ "okie dam",
@@ -177,8 +178,8 @@ clear_trap_clean <- clear_environmental %>%
             trap_sample_type)) %>%
   rename(trap_visit_id = sample_id,
          site = station_code,
-         trap_sample_date = sample_date,
-         trap_sample_time = sample_time,
+         trap_stop_date = sample_date,
+         trap_stop_time = sample_time,
          sample_period_revolutions = counter,
          comments = trap_comments,
          cone_setting = cone) %>%
@@ -233,7 +234,7 @@ deer_trap_clean <- deer_rst %>%
   group_by(date, trap_condition_code) %>%
   summarize(time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T)) %>%
   rename(gear_condition_code = trap_condition_code,
-         trap_sample_date = date) %>%
+         trap_stop_date = date) %>%
   mutate(stream = "deer creek",
          site = stream,
          subsite = site,
@@ -272,11 +273,11 @@ feather_trap_clean <- feather_effort %>%
             water_temp_c, turbidity_ntu)) %>%
   rename(site = site_name,
          subsite = sub_site_name,
-         trap_sample_time = visit_time,
-         trap_sample_date = date,
+         trap_stop_time = visit_time,
+         trap_stop_date = date,
          trap_status = visit_type,
          gear_condition_code = trap_functioning) %>%
-  mutate(trap_sample_time = as_hms(trap_sample_time),
+  mutate(trap_stop_time = as_hms(trap_stop_time),
          stream = "feather river",
          site = tolower(site),
          subsite = tolower(subsite)) %>%
@@ -307,7 +308,7 @@ mill_trap_clean <- mill_rst %>%
   group_by(date, trap_condition_code) %>%
   summarize(time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T)) %>%
   rename(gear_condition_code = trap_condition_code,
-         trap_sample_date = date) %>%
+         trap_stop_date = date) %>%
   mutate(stream = "mill creek",
          site = stream,
          subsite = site,
@@ -353,8 +354,8 @@ yuba_trap_clean <- yuba_rst %>%
   rename(site = location,
          rpms_start = rpms_before,
          rpms_end = rpms_after,
-         trap_sample_date = date,
-         trap_sample_time = time) %>%
+         trap_stop_date = date,
+         trap_stop_time = time) %>%
   mutate(stream = "yuba river",
          subsite = case_when(site == "Yuba River" ~ "yub",
                              site == "5 foot RST at Hallwood" ~ "hal3",
@@ -396,8 +397,8 @@ knights_trap_clean <- knights_effort %>%
          site = "knights landing",
          subsite = as.character(cone_id)) %>%
   select(-cone_id) %>%
-  rename(trap_sample_date = stop_date,
-         trap_sample_time = stop_time,
+  rename(trap_stop_date = stop_date,
+         trap_stop_time = stop_time,
          trap_start_date = start_date,
          trap_start_time = start_time,
          sample_period_revolutions = total_cone_rev) %>%
@@ -443,8 +444,10 @@ colnames(combined_trap_raw)
 
 combined_trap <- combined_trap_raw %>%
   rename(debris_level = debris,
-         gear_condition = gear_condition_code) %>%
-  mutate(debris_level = tolower(debris_level),
+         gear_condition = gear_condition_code,
+         is_half_cone_configuration = cone_setting) %>%
+  mutate(is_half_cone_configuration = ifelse(is_half_cone_configuration == 0.5, T, F),
+         debris_level = tolower(debris_level),
          debris_level = ifelse(debris_level == "veryheavy", "very heavy", debris_level),
          gear_condition = case_when(gear_condition %in% c("total block", "total blockage", "Trap not in service") ~ "trap not in service",
                                          gear_condition %in% c("not rotating", "cone stopped", "Trap stopped functioning") ~ "trap stopped functioning",
@@ -540,7 +543,7 @@ rst_trap_data_dictionary <- tibble(variable_name = colnames(combined_trap),
                                                     "Cone rate measurement - revolutions per mintue"),
                                     
                                    encoding = c(NA, NA, NA, NA, NA, NA, 
-                                                "1 = full cone, 0.5 = half cone",
+                                                "F = full cone, T = half cone",
                                                 NA, NA, NA,
                                                 "T/F",
                                                 NA, NA, 
