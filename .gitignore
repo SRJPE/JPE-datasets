@@ -7,8 +7,5 @@ config.json
 *.xlsx
 *.csv
 *.html
-<<<<<<< HEAD
 *.xls
-=======
 .DS_Store
->>>>>>> 539c213 (Adds ds_store to gitignore)
