@@ -31,9 +31,9 @@ library(googleCloudStorageR)
 #                overwrite = TRUE)
 
 # standard catch data (formatted in rst_catch_standard_format.Rmd)
-standard_catch <- read_csv("../../data/standard-format-data/standard_rst_catch.csv")
+standard_catch <- read_csv(here::here("data","standard-format-data", "standard_rst_catch.csv"))
 # length at date table from brett harvey
-lad <- read_csv("../../data-raw/standard-format-data-prep/rivermodel_lengthrun_criteria.csv")
+lad <- read_csv(here::here("data-raw", "standard-format-data-prep", "rivermodel_lengthrun_criteria.csv"))
 ```
 
 ## Process length at date table
