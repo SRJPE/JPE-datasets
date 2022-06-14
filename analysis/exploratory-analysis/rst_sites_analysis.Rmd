@@ -228,11 +228,7 @@ Blue sites below are the lowest traps on a stream. Taking just blue traps would 
 
 ### Use All Sites {.tabset} 
 
-### Mean of all sites with scaling factor applied 
-
-Pros: Get all spawning extent in every case, prespawn mortality in system is accounted for, data loss 
-
-Cons: ? 
+#### Mean of all sites with scaling factor applied 
 
 Pros: Get all spawning extent in every case, prespawn mortality in system is accounted for, data loss 
 
@@ -248,7 +244,7 @@ Butte, Clear, Feather, Sacramento, & Yuba all have more than one RST located at 
 | Feather | 7 | Use all sites to maximize data. LFC sites add a percentage of juveniles to account for the proportion of spawning grounds below the RST. Apply efficiency trials to get expanded catch for each site and then take the mean of passage estimates for each week or year. | 
 | Yuba | 2 | Use both sites. For both sites will need to add a percentage of juveniles to account for the proportion of spawning grounds below the RSTs. The side by side traps at hallwood should be summed. Apply efficiency trials to both sites to get expanded catch and then take the mean of passage estimates for each week or year. 
 
-### Max of all sites with scaling factor applied 
+#### Max of all sites with scaling factor applied 
 
 Pros: Get all spawning extent in every case, data loss 
 
