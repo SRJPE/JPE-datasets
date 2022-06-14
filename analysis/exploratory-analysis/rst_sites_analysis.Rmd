@@ -87,7 +87,7 @@ The above map shows RST spring run habitat extents and RST on each tributary. We
 
 
 ```{r}
-rst_catch <- read_csv("../../data/standard-format-data/standard_rst_catch.csv")
+rst_catch <- read_csv(here::here("data", "standard-format-data", "standard_rst_catch.csv"))
 
 catch_per_site_per_year <- rst_catch %>% group_by(stream, site, year = year(date)) %>% 
   summarize(total_catch = sum(count, na.rm = T))
