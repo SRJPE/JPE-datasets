@@ -220,7 +220,8 @@ rst_catch %>% left_join(upper_lower) %>%
   geom_col() + 
   labs(x = "Site", y = "Total Days Fished") + 
   facet_wrap(~stream, scales = "free")+ 
-  theme_minimal()
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
 ```
 
 Blue sites below are the lowest traps on a stream. Taking just blue traps would loose a lot of total days fished. Some lower sites were only fished a few monitoring seasons. 
