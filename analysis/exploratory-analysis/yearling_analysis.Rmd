@@ -1,0 +1,95 @@
+---
+title: "Analysis of spring run fork length distribution"
+author: "Ashley Vizek"
+date: "6/10/2022"
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(lubridate)
+library(wesanderson)
+library(googleCloudStorageR)
+#library(knitr)
+#library(hms)
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=8, fig.height=12)
+```
+
+Compare fork length distribution by week and stream
+Look for bimodal distribution though these would be classified as
+winter and would not show up as spring run
+
+```{r, include = F}
+catch_raw <- read_csv(here::here("data", "standard-format-data", "standard_rst_catch.csv"))
+```
+```{r}
+
+# catch_spring <- catch_raw %>% 
+#   filter(run == "spring") %>% 
+#   mutate(day = day(date),
+#          month = month(date),
+#          year = year(date),
+#          water_year = ifelse(month %in% 10:12, year + 1, year),
+#          fake_date = as_date(paste(ifelse(month %in% 10:12, 1999, 2000), month, day)))
+# 
+# catch_spring <- catch_raw %>% 
+#   filter(run == "spring") %>% 
+#   group_by(date, stream, fork_length) %>% 
+#   summarize(count = max(count)) %>% 
+#   ungroup() %>% 
+#   mutate(week = week(date)) %>% 
+#   group_by(week, stream, fork_length) %>% 
+#   summarize(count = sum(count))
+# 
+catch_spring <- catch_raw %>%
+  filter(run %in% c("spring", "winter")) %>%
+  group_by(date, stream, fork_length) %>%
+  summarize(count = max(count)) %>%
+  ungroup() %>%
+  mutate(month = month.abb[month(date)]) %>%
+  group_by(month, stream, fork_length) %>%
+  summarize(count = sum(count))
+
+# fl_distribution <- filter(catch_spring, (week %in% c(1:26) | week > 44)) %>% 
+#   mutate(week = factor(week, levels = c(37:53, 1:36))) %>% 
+
+fl_distribution <- catch_spring %>% 
+  filter(fork_length < 300, !month %in% c("Jul", "Aug", "Sep")) %>% 
+  mutate(month = factor(month, levels = c("Oct", "Nov","Dec", "Jan", "Feb","Mar", "Apr", "May", "Jun"))) %>% 
+  ggplot(aes(x = fork_length)) +
+  geom_histogram(fill = "#F8AFA8") +
+  facet_wrap(~month, ncol = 1) +
+  theme_minimal() +
+  xlab("fork length (mm)")
+
+fl_distribution
+```
+```{r, include = F}
+
+catch_all <- catch_raw %>%
+  group_by(date, stream, fork_length) %>%
+  summarize(count = max(count)) %>%
+  ungroup() %>%
+  mutate(month = month(date)) %>%
+  group_by(month, stream, fork_length) %>%
+  summarize(count = sum(count))
+
+# fl_distribution <- filter(catch_spring, (week %in% c(1:26) | week > 44)) %>% 
+#   mutate(week = factor(week, levels = c(37:53, 1:36))) %>% 
+
+fl_distribution <- catch_all %>% 
+  filter(fork_length < 200, !month %in% c(7, 8, 9)) %>% 
+  mutate(month = factor(month, levels = c(10:12, 1:9))) %>% 
+  ggplot(aes(x = fork_length)) +
+  geom_histogram() +
+  facet_wrap(~month, ncol = 2)
+
+fl_distribution
+
+```
