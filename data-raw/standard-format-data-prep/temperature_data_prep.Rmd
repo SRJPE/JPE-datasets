@@ -15,6 +15,12 @@ library(lubridate)
 library(CDECRetrieve)
 library(dataRetrieval)
 library(hms)
+
+# TO-DO: Standardize Units
+# TO-DO: Update writing and reading CSV
+# TO-DO: Pre and post outlier graph
+# TO-DO: Update Labeling of graphs for clarity
+# TO-DO: Set-up pull from Google Cloud
 ```
 
 # Trap location and flow gage lookup
@@ -31,7 +37,7 @@ library(hms)
 trap_locations_raw <- read_csv("rst_sites.csv")
 
 trap_locations <- trap_locations_raw %>%
-  select(tributary, site_name, river_location, latitude, longitude, year) %>%
+  select(tributary, site_name, sub_site_name, river_location, latitude, longitude, year) %>%
   distinct()
   # identify years
 
@@ -39,6 +45,7 @@ trap_locations <- trap_locations_raw %>%
 gage_locations_raw <- read_csv("gage_sites.csv")
 
 # Idenntify which flow gage locations have temperature measures
+
 gage_locations <- gage_locations_raw %>%
   filter(flow_gage == T) %>%
   select(tributary, site_name, agency, latitude, longitude, identifier) %>%
@@ -66,6 +73,7 @@ cdec_datasets("BAT")
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 DCV_USGS <- readNWISdv(11376550, "00010") # parameter code 00010: water temperature
+DCV_USGS
 ```
 
 CDEC and USGS do not provide temperature data for Battle Creek. Temperature data is collected by sensor 25, but CDEC data is not available for this sensor. USGS mapper indicates as well there is no data available for the requested period.
@@ -75,7 +83,7 @@ CDEC and USGS do not provide temperature data for Battle Creek. Temperature data
 ### CDEC
 ```{r}
 # Check if CDEC data provides temp data for respective location
-cdec_datasets("BCK") 
+cdec_datasets("BCK")
 
 # Since this location has sensor that collects temp data, we can make request
 BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
@@ -466,7 +474,7 @@ WLK_hourly_temps <- WLK_CDEC %>%
 tail(WLK_hourly_temps$date,n=1)
 head(WLK_hourly_temps$date,n=1)
 
-# Plot DCV
+# Plot WLK
 ggplot(WLK_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degf), color ="darkred") +
   labs(x="Year",y="Temperature (deg f)",title="Temperature at Sacramento River- Knights Landing: Hourly (CDEC)")
@@ -521,24 +529,6 @@ ggplot(WLK_daily_temps, aes(x=date)) +
 ```
 
 USGS provides temperature data for Sacramento River - Knights Landing from 1995-01-01 to 2022-05-25
-
-#### Hourly USGS vs Daily CDEC data
-```{r}
-# comparison of USGS vs CDEC
-# Does one have more data?
-# Does one have a finer scale?
-WLK_combined = WLK_hourly_temps %>% 
-  full_join(MLM_daily_temps, by ="date") %>% 
-  rename("temp_degf.CDEC"="temp_degf.x", "temp_degf.USGS"="temp_degf.y")
-
-# Plot Temp CDEC vs USGS
-ggplot(WLK_combined, aes(x=date)) +
-  geom_line(aes(y = temp_degf.CDEC), color ="darkred") +
-  geom_line(aes(y = temp_degf.USGS), color ="steelblue", linetype ="twodash") +
-  labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Sacramento River - Knights Landing : Hourly CDEC vs Daily USGS")
-```
-
-
 
 #### Mean Daily USGS vs Daily CDEC data
 ```{r}
