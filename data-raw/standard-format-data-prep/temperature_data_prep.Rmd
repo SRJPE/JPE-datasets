@@ -266,6 +266,10 @@ USGS temperature data for deer creek ranges from 2016-10-01 to 2022-05-25.
 
 #### Mean Daily USGS vs Daily CDEC data
 ```{r}
+DCV_combined = DCV_hourly_temps %>% 
+  full_join(DCV_daily_temps, by ="date") %>% 
+  rename("temp_degf.CDEC"="temp_degf.x", "temp_degf.USGS"="temp_degf.y")
+
 DCV_combined %>% 
   group_by(date = date(date)) %>% 
   group_by(date) %>% 
