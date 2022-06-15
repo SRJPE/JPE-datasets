@@ -17,13 +17,16 @@ library(wesanderson)
 library(googleCloudStorageR)
 #library(knitr)
 #library(hms)
+
+Sys.setenv("GCS_AUTH_FILE" = "config.json")
+Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
 ```
 
 # Data pull {.tabset}
 ```{r}
-# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# Set global bucket
-# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+#Set global bucket
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
 #                bucket = gcs_get_global_bucket(),
@@ -33,7 +36,7 @@ library(googleCloudStorageR)
 # standard catch data (formatted in rst_catch_standard_format.Rmd)
 standard_catch <- read_csv(here::here("data","standard-format-data", "standard_rst_catch.csv"))
 # length at date table from brett harvey
-lad <- read_csv(here::here("data-raw", "standard-format-data-prep", "rivermodel_lengthrun_criteria.csv"))
+lad <- read_csv(here::here("analysis", "exploratory-analysis", "rivermodel_lengthrun_criteria.csv"))
 ```
 
 ## Process length at date table
@@ -277,4 +280,18 @@ ggplot(run_summary_stream, aes(x = run, y = percent, fill = run_rivermodel)) +
 # TODO add heat map type plot - quadrants to represent four different run types. Run is a color and location is the river model
 ```
 
+```{r, save_data}
 
+catch_standard_lad <- catch_lad %>%
+  select(-c("s_start_1", "s_end_1", "s_start_2", "s_end_2", "f_start_1", "f_end_1",
+            "f_start_2", "f_end_2", "w_start_1", "w_end_1", "w_start_2", "w_end_2",
+            "l_start_1", "l_end_1", "l_start_2", "l_end_2", "day", "month"))
+
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(catch_standard_lad,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_rst_catch_lad.csv",
+           predefinedAcl = "bucketLevel")
+```
