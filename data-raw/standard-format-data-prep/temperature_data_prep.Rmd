@@ -72,8 +72,12 @@ cdec_datasets("BAT")
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-DCV_USGS <- readNWISdv(11376550, "00010") # parameter code 00010: water temperature
-DCV_USGS
+#BAT_USGS <- readNWISdv(11376550, "00010") # parameter code 00010: water temperature
+#write.csv(BAT_USGS,"BAT_USGS.csv", row.names = FALSE)
+
+# Read created CSV
+BAT_USGS <- read_csv("BAT_USGS.csv")
+BAT_USGS
 ```
 
 CDEC and USGS do not provide temperature data for Battle Creek. Temperature data is collected by sensor 25, but CDEC data is not available for this sensor. USGS mapper indicates as well there is no data available for the requested period.
@@ -86,8 +90,11 @@ CDEC and USGS do not provide temperature data for Battle Creek. Temperature data
 cdec_datasets("BCK")
 
 # Since this location has sensor that collects temp data, we can make request
-BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
-write.csv(BCK_CDEC,"BCK_CDEC.csv", row.names = FALSE)
+#BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
+#write.csv(BCK_CDEC,"BCK_CDEC.csv", row.names = FALSE)
+
+# Read created CSV
+BCK_CDEC <- read_csv("BCK_CDEC.csv")
 
 BCK_hourly_temps <- BCK_CDEC %>%
   mutate(date = as_date(datetime),
@@ -111,7 +118,12 @@ CDEC data provides temperature data for Butte Creek. It ranges from 1997-03-14 t
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-BCK_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperature
+#BCK_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperature
+#write.csv(BCK_USGS,"BCK_USGS.csv", row.names = FALSE)
+
+# Read created CSV
+BCK_USGS <- read_csv("BCK_USGS.csv")
+BCK_USGS
 # no data available from USGS
 ```
 
@@ -149,11 +161,14 @@ Majority Butte Creek Missing data comes from the period of 2000 to 2008.
 ### CDEC
 ```{r}
 # Check if CDEC data provides temp data for respective location
-cdec_datasets("IGO") 
+cdec_datasets("IGO")
 
 # Since this location has sensor that collects temp data, we can make request
-IGO_CDEC <- cdec_query(station = "IGO", dur_code = "H", sensor_num = "25", start_date = "2003-01-01")
-write.csv(IGO_CDEC,"IGO_CDEC.csv", row.names = FALSE)
+#IGO_CDEC <- cdec_query(station = "IGO", dur_code = "H", sensor_num = "25", start_date = "2003-01-01")
+#write.csv(IGO_CDEC,"IGO_CDEC.csv", row.names = FALSE)
+
+# Read created CSV
+IGO_CDEC <- read_csv("IGO_CDEC.csv")
 
 IGO_hourly_temps <- IGO_CDEC %>%
   mutate(date = as_date(datetime),
@@ -176,7 +191,12 @@ CDEC temeprature data for Clear Cleek ranges from 2002-12-31 to 2022-05-27.
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-IGO_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperature
+#IGO_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperature
+#write.csv(IGO_USGS,"IGO_USGS.csv", row.names = FALSE)
+
+# Read created CSV
+IGO_USGS <- read_csv("IGO_USGS.csv")
+IGO_USGS
 # no data available from USGS
 ```
 
@@ -217,8 +237,11 @@ Majority of the missing data for clear creek comes from 2018-2020.
 
 cdec_datasets("DCV")
 
-DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
-write.csv(DCV_CDEC,"DCV_CDEC.csv", row.names = FALSE)
+#DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "20", start_date = "1995-01-01")
+#write.csv(DCV_CDEC,"DCV_CDEC.csv", row.names = FALSE)
+
+# Read created CSV
+DCV_CDEC <- read_csv("DCV_CDEC.csv")
 
 DCV_hourly_temps <- DCV_CDEC %>%
   mutate(date = as_date(datetime),
@@ -242,8 +265,11 @@ CDEC Temperature Data for Deer Creek ranges from 1997-03-14 to 2022-05-07.
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-DCV_USGS <- readNWISdv(11383500, "00010") # parameter code 00010: water temperature
-write.csv(DCV_USGS,"DCV_USGS.csv", row.names = FALSE)
+#DCV_USGS <- readNWISdv(11383500, "00010") # parameter code 00010: water temperature
+#write.csv(DCV_USGS,"DCV_USGS.csv", row.names = FALSE)
+
+# Read created CSV
+DCV_USGS <- read_csv("DCV_USGS.csv")
 
 # Format to make tidier
 DCV_daily_temps <- DCV_USGS %>%
@@ -305,8 +331,12 @@ This helps it become more apparent that we should use CDEC data for deer creek d
 
 cdec_datasets("GRL")
 
-GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
-write.csv(GRL_CDEC,"GRL_CDEC.csv", row.names = FALSE)
+#GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+#write.csv(GRL_CDEC,"GRL_CDEC.csv", row.names = FALSE)
+
+# Read created CSV
+GRL_USGS <- read_csv("GRL_CDEC.csv")
+
 
 GRL_hourly_temps <- GRL_CDEC %>%
   mutate(date = as_date(datetime),
@@ -330,8 +360,12 @@ CDEC provides temperature data for Feather River from 2003-01-05 to 2007-06-15.
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-GRL_USGS <- readNWISdv(11407000, "00010") # parameter code 00010: water temperature
-# No USGS
+#GRL_USGS <- readNWISdv(11407000, "00010") # parameter code 00010: water temperature
+#write.csv(GRL_USGS,"GRL_USGS.csv", row.names = FALSE)
+
+# Read created CSV
+GRL_USGS <- read_csv("GRL_USGS.csv")
+GRL_USGS
 ```
 
 USGS does not provide temperature data for Feather River. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
@@ -355,8 +389,11 @@ GRL_hourly_temps %>%
 
 cdec_datasets("MLM") 
 
-MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
-write.csv(MLM_CDEC,"MLM_CDEC.csv", row.names = FALSE)
+#MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+#rite.csv(MLM_CDEC,"MLM_CDEC.csv", row.names = FALSE)
+
+# Read created CSV
+MLM_CDEC <- read_csv("MLM_CDEC.csv")
 
 MLM_hourly_temps <- MLM_CDEC %>%
   mutate(date = as_date(datetime),
@@ -380,8 +417,11 @@ CDEC provides temperature data for Mill Creek from 1998-09-30 to 2022-05-27
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-MLM_USGS <- readNWISdv(11381500, "00010") # parameter code 00010: water temperature temperature
-write.csv(MLM_USGS,"MLM_USGS.csv", row.names = FALSE)
+#MLM_USGS <- readNWISdv(11381500, "00010") # parameter code 00010: water temperature temperature
+#write.csv(MLM_USGS,"MLM_USGS.csv", row.names = FALSE)
+
+# Read created CSV
+MLM_USGS <- read_csv("MLM_USGS.csv")
 
 # Format to make tidier
 MLM_daily_temps <- MLM_USGS %>%
@@ -442,7 +482,7 @@ I would recommend using the CDEC data for Mill Creek due to the significant data
 ```{r}
 
 cdec_datasets("MRY")
-# CDEC doesn not have temperature data
+# CDEC doesnt not have temperature data
 ```
 There is not CDEC data available for Yuba River.
 ### USGS
@@ -459,10 +499,15 @@ There is no USGS temperature data available for Yuba River.
 ## Sacramento River - Knights Landing
 ```{r}
 
+# TODO : Re-run when cdec is back up
+
 cdec_datasets("WLK")
 
 WLK_CDEC <- cdec_query(station = "WLK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
 write.csv(WLK_CDEC,"WLK_CDEC.csv", row.names = FALSE)
+
+# Read created CSV
+WLK_CDEC <- read_csv("WLK_CDEC.csv")
 
 WLK_hourly_temps <- WLK_CDEC %>%
   mutate(date = as_date(datetime),
