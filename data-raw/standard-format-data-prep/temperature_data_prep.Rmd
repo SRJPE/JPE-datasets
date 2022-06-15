@@ -17,6 +17,8 @@ library(dataRetrieval)
 library(hms)
 
 # TODO: Re-run Sac River, CDEC website was down
+# TODO: Plots to show gaps in sampling
+# TODO: Why is there difference in USGS vs CDEC?
 # TODO: Set-up pull from Google Cloud
 ```
 
@@ -483,6 +485,16 @@ ggplot(WLK_hourly_temps, aes(x=date)) +
 
 CDEC provides temperature data for Sacramento River - Knights Landing from 2002-12-31 to 2022-05-25
 
+
+# Plot without outliers
+```{r}
+WLK_hourly_temps %>%
+  filter(temp_degf<100, temp_degf>0) %>%
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = temp_degf), color ="darkred") +
+  labs(x="Year",y="Temperature (deg f)",title="Temperature at Sacramento River - Tisdale",caption="CDEC")
+```
+
 ### USGS
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
@@ -553,6 +565,7 @@ ggplot(TIS_hourly_temps, aes(x=date)) +
   labs(x="Year",y="Temperature (deg f)",title="Temperature at Sacramento River - Tisdale",caption="CDEC")
 ```
 CDEC provides temperature data for Sacramento River - Tisdale from 2009-12-31 to 2022-05-27.
+NO USGS Data is available.
 
 # Plot without outliers
 ```{r}
@@ -562,8 +575,6 @@ TIS_hourly_temps %>%
   geom_line(aes(y = temp_degf), color ="darkred") +
   labs(x="Year",y="Temperature (deg f)",title="Temperature at Sacramento River - Tisdale",caption="CDEC")
 ```
-
-
 
 
 
