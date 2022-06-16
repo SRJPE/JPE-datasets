@@ -16,8 +16,6 @@ library(googleCloudStorageR)
 
 ## RST QA/QC
 
-Add description of QA/QC methods
-
 ## Load in combined RST Datasets {.tabset}
 
 ### Import Data-sets
@@ -25,11 +23,34 @@ Add description of QA/QC methods
 # Access Data from Google Cloud (Download and Import)
 # Link : <https://console.cloud.google.com/storage/browser/jpe-dev-bucket/standard-format-data;tab=[…]iew=project&prefix=&forceOnObjectsSortingFiltering=false>
 
+# Google Cloud Set up
+# Sys.setenv("GCS_AUTH_FILE" = "config.json")
+# Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# 
+# gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "standard_RST_environmental.csv",
+#                overwrite = TRUE)
+# gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "standard_rst_trap.csv",
+#                overwrite = TRUE)
+# gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "standard_rst_catch.csv",
+#                overwrite = TRUE)
+# gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "standard_recapture.csv",
+#                overwrite = TRUE)
+
 # Import Data-sets
 environmental <- read_csv("standard_RST_environmental.csv")
-trap_operation <- read_csv("standard-format-data_standard_rst_trap.csv")
-catch <- read_csv("standard-format-data_standard_rst_catch.csv")
-mark_recapture <- read_csv("standard-format-data_standard_recapture.csv")
+trap_operation <- read_csv("standard_rst_trap.csv")
+catch <- read_csv("standard_rst_catch.csv")
+mark_recapture <- read_csv("standard_recapture.csv")
 ```
 
 
@@ -44,7 +65,7 @@ Description of what variables we are defining ranges for.
 ### Variables
 ```{r}
 # Identify Numerical Columns
-catch_variables %>% glimpse()
+catch %>% glimpse()
 
 # Filter for numerical columns
 catch_variables <- catch %>%
@@ -108,7 +129,7 @@ trap_operation %>%
 
 # Filter for numerical columns
 trap_operation_variables <- trap_operation %>%
-  select(c(sample_period_revolutions, cone_setting,river_left_depth,
+  select(c(sample_period_revolutions,river_left_depth,
            river_center_depth, river_right_depth, depth_adjust, avg_time_per_rev,
            debris_volume, rpms_start, rpms_end, cone_rpm))
 
