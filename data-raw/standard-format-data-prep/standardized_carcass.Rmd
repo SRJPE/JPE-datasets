@@ -1,0 +1,96 @@
+---
+title: "Standardize Carcass Data"
+author: "Erin Cain"
+date: "4/20/2022"
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(googleCloudStorageR)
+
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
+```
+
+## RST Environmental Data Standardization
+
+FlowWest received environmental data for rst from 8 monitoring programs:
+
+-   Battle Creek
+-   Butte Creek
+-   Clear Creek
+-   Deer Creek
+-   Feather River
+-   Mill Creek
+-   Knights Landing
+-   Yuba River
+
+No environmental data is provided for the Tisdale RST.
+
+## Standard format Carcass Data
+
+Data dictionary for standard format:
+
+(B - Battle Creek, Bu - Butte Creek, C - Clear Creek, F - Feather River,
+D - Deer Creek, F - Feather River, M - Mill Creek, S- Sacramento River,
+Y - Yuba River)
+
+| column name   | stream collects         | definition                                               |
+|:-----------------|:-------------------|:---------------------------------|
+| stream      | | Which stream the RST is located on                       |
+| site          | | site name                                                |
+
+
+## Read in data {.tabset}
+
+### Battle Creek
+
+#### Columns Removed
+
+
+
+
+```{r, message=FALSE, warning=FALSE}
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# # Set global bucket 
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# 
+# gcs_list_objects()
+# 
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_carcass.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/redd-carcas-holding/battle_carcass.csv",
+#                overwrite = TRUE)
+
+battle_carcass <- read_csv("../../data/redd-carcas-holding/battle_carcass.csv") %>% glimpse
+```
+
+### Clear Creek
+
+#### Columns Removed
+
+
+
+
+```{r, message=FALSE, warning=FALSE}
+gcs_get_object(object_name = "rst/battle-creek/data/battle_rst_environmental.csv",
+                bucket = gcs_get_global_bucket(),
+                saveToDisk = "../../data/rst/battle_rst_environmental.csv",
+                overwrite = TRUE)
+
+
+clear_carcass <- read_csv("../../data/rst/battle_rst_environmental.csv") %>% 
+  select(trap_visit_id = sample_id, date = sample_date, 
+         velocity, turbidity, weather = weather_code, habitat) %>%
+  mutate(stream = "battle creek",
+         site = "ubc",
+         subsite = "ubc") %>%
+  distinct() %>%
+  glimpse
+```
