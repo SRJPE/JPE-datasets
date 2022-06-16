@@ -31,6 +31,17 @@ library(googleCloudStorageR)
 # This table is also helpful for understanding years where we need flow data for each location:
 # https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/rst
 
+
+# Google Cloud Set up
+# Sys.setenv("GCS_AUTH_FILE" = "config.json")
+# Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# gcs_get_object(object_name = "standard-format-data/rst_trap_locations.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "rst_sites.csv",
+#                overwrite = TRUE)
+
 trap_locations_raw <- read_csv("rst_sites.csv")
 
 trap_locations <- trap_locations_raw %>%
