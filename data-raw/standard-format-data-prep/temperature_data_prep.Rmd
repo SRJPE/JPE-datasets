@@ -16,11 +16,8 @@ library(CDECRetrieve)
 library(dataRetrieval)
 library(hms)
 library(weathermetrics) # conversion of temperature units
+library(googleCloudStorageR)
 
-# TODO: Plots to show gaps in sampling 
-  # line plot followed with time frame
-# TODO: Why is there difference in USGS vs CDEC?
-  # convert all to celsius
 # TODO: Set-up pull from Google Cloud
 ```
 
@@ -34,7 +31,6 @@ library(weathermetrics) # conversion of temperature units
 # This table is also helpful for understanding years where we need flow data for each location:
 # https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/rst
 
-# trap_locations_raw <- read_csv("data-raw/standard-format-data-prep/rst_sites.csv")
 trap_locations_raw <- read_csv("rst_sites.csv")
 
 trap_locations <- trap_locations_raw %>%
@@ -520,14 +516,44 @@ ggplot(WLK_daily_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color ="darkred") +
   labs(x="Year",y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing",caption="USGS")
 ```
+Temperature data for Sacramento River - Knights landing has data from 1995-01-01 to 2022-06-14, but we should explore further the signifcant data gap and identify that period.
 
-USGS provides temperature data for Sacramento River - Knights Landing from 1995-01-01 to 2022-05-25
+### Data before Missing Data Gap
+```{r}
+### Identify date data starts to be missing
+WLK_daily_temps %>%
+  filter(date < "2004-01-01") %>%
+  arrange(desc(date))
+  # 1998-09-30
+
+# data before missing data gap
+WLK_daily_temps %>%
+  filter(date < "1999-10-01") %>% 
+  arrange(desc(date)) %>%
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = temp_degC), color ="darkred") +
+  labs(x="Year",y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing",caption="USGS")
+```
+### Data after missing data gap
+```{r}
+### Identify date data starts to be missing
+WLK_daily_temps %>%
+  filter(date > "2015-01-01") %>%
+  arrange(date)
+  # 2016-10-01
+
+# data after missing data gap
+WLK_daily_temps %>%
+  filter(date >= "2016-10-01") %>% 
+  arrange(desc(date)) %>%
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = temp_degC), color ="darkred") +
+  labs(x="Year",y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing",caption="USGS")
+```
+Temperature data for Sacramento River - Knights landing is missing significant data from the period of 1998-09-30 to 2016-09-31.
 
 #### Mean Daily USGS vs Daily CDEC data
 ```{r}
-# comparison of USGS vs CDEC
-# Does one have more data?
-# Does one have a finer scale?
 WLK_combined = WLK_hourly_temps %>% 
   full_join(WLK_daily_temps, by ="date") %>% 
   rename("temp_degC.CDEC"="temp_degC.x", "temp_degC.USGS"="temp_degC.y")
@@ -544,7 +570,6 @@ WLK_combined %>%
   labs(y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing",caption="USGS")
 
 ```
-
 #===============================================================================
 ## Sacramento River - Tisdale
 ### CDEC data
