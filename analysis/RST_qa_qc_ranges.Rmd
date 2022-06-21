@@ -73,7 +73,7 @@ find_range <- function(data) {
   result <- range(data, na.rm = TRUE)
 }
 
-# Get Ranges
+# Get Unfiltered Ranges
 catch_ranges <- as.data.frame(apply(catch_variables, 2, find_range)) # get ranges
 rownames(catch_ranges) <- c("min","max") # labels
 catch_ranges
@@ -97,6 +97,7 @@ catch_variables %>%
   geom_boxplot() +
   labs(title="weight")
 ```
+It seems there are some weights and fork lengths that do not seem reasonable, we can plot some association plots to see the expected trends of the numerical variables.
 
 ### Association Plots
 ```{r}
@@ -105,7 +106,7 @@ catch_variables %>%
   geom_point() +
   labs(y="Weight",x ="Fork Length (mm)",title="Fork Length vs Weight")
 ```
-Current axis values does not give an accurate representation of ranges.
+Current axis values does not give an accurate representation of ranges.So we can consider refining the scale to get a better representation.
 
 ```{r}
 catch_variables %>% 
@@ -117,7 +118,7 @@ catch_variables %>%
   geom_point() +
   labs(y="Weight",x ="Fork Length (mm)",title="Fork Length vs Weight")
 ```
-It looks like the average fork length and weight will fall within these axis ranges as these bound are more representative of the data than we had originally. Therefore, we can get our expected ranges by getting the 5num summary for the following.
+It looks like the average fork length and weight will fall within these axis ranges as these bound are more representative of the data than we had originally. Now, we can get our expected ranges by getting the five number summary for the following.
 
 ```{r}
 catch_variables %>% 
@@ -130,7 +131,7 @@ catch_variables %>%
   geom_point() +
   labs(y="Weight",x ="Fork Length (mm)",title="Fork Length vs Weight")
 ```
-It appears that when counts are abnormally high (greater than 40) the data for weight and and fork length is usually missing. So we can exclude count greater than 40 when considering our ranges.
+It appears that when counts are abnormally high (greater than 40) the data for weight and and fork length is usually missing. So we can exclude when count greater than 40 when considering our ranges to get a better represenation of the data.
 
 ### Cleaned Variable
 ```{r}
@@ -154,9 +155,11 @@ colnames(catch_5NumSum) = c("fork_length","count","weight")
 catch_5NumSum
 ```
 ### Recommendations
-`fork length`: 41-75
-`count`: 1-39
-`weight`: 0.5-4.3
+`fork length`: 22-220
+`count`: 1
+`weight`: 0.04-95.4
+
+#========================================
 
 ## Explore Environmental Ranges
 * `turbidity` - turbidity measure in NTU 
@@ -173,7 +176,7 @@ environmental %>%
 environmental_variables <- environmental %>%
   select(c(turbidity, flow, secchi))
 
-# Get Ranges
+# Get Unfiltered Ranges
 environmental_ranges <- as.data.frame(apply(environmental_variables, 2, find_range)) # get ranges
 rownames(environmental_ranges) <- c("min","max") # labels
 environmental_ranges
@@ -227,25 +230,25 @@ colnames(environmental_5NumSum) = c("Turbidity","Flow","Secchi")
 environmental_5NumSum
 ```
 ### Recommendation
-`Turbidity`: 6.82-26.8
-`Flow`: 1.1-2.8
-`Secchi`: 1.1-2.8
+`Turbidity`: 0-473.5
+`Flow`: 3090-32863
+`Secchi`: 0.06-8.8
+
+#========================================
 
 ## Explore Trap Operation Ranges
 Capture juvenile fish during out migration. During efficiency trials, the sample of fish are caught and later released to determine how effective the trap is at capturing the fish. Traps are sometimes measured with rotational as a function of flow going through trap and its affect on velocity.
 
-# TODO: revolution and flow. IF flow is 10,000 then revloution could be. Pair ranging.Reasonal numbers might be rotary screwshop and rotary number on google. Box plots will help us narrow.
-
 * `sample_period_revolutions` - number of revolutions on cone at given point of time
-* `river_left_depth`- 
-* `river_center_depth` -
-* `river_right_depth`-
-* `depth_adjust`-
-* `avg_time_per_rev` -
-* `debris_volume` -
+* `river_left_depth`- depth of river left
+* `river_center_depth` - depth of river center
+* `river_right_depth`- depth of river right
+* `depth_adjust`- depth of adjust
+* `avg_time_per_rev` - average time per revolution
+* `debris_volume` - volume of debris
 * `rpms_start`- revolutions per minute at start
 * `rpms_end` - revolutions per minute at end
-* `cone_rpm`- 
+* `cone_rpm`- cone revolutions per minute
 
 ### Variables
 ```{r}
@@ -256,24 +259,157 @@ trap_operation %>%
 # Filter for numerical columns
 trap_operation_variables <- trap_operation %>%
   select(c(sample_period_revolutions,river_left_depth,
-           river_center_depth, river_right_depth, depth_adjust, avg_time_per_rev,
+           river_center_depth, river_right_depth, avg_time_per_rev,
            debris_volume, rpms_start, rpms_end, cone_rpm))
 
-# Get Ranges
+# Get Unfiltered Ranges
 trap_operation_ranges <- as.data.frame(apply(trap_operation_variables, 2, find_range)) # get ranges
 rownames(trap_operation_ranges) <- c("min","max") # labels
 trap_operation_ranges
 ```
+### Boxplots
+Boxplots will be used to identify major outliers, but refined through association plots.
 
+```{r}
+trap_operation %>%
+  ggplot(aes(sample_period_revolutions)) +
+  geom_boxplot() +
+  labs(title="sample_period_revolutions")
 
+trap_operation %>%
+  ggplot(aes(river_left_depth)) +
+  geom_boxplot() +
+  labs(title="river_left_depth")
 
+trap_operation %>%
+  ggplot(aes(river_center_depth)) +
+  geom_boxplot() +
+  labs(title="river_center_depth")
 
+trap_operation %>%
+  ggplot(aes(river_right_depth)) +
+  geom_boxplot() +
+  labs(title="river_right_depth")
 
+trap_operation %>%
+  ggplot(aes(avg_time_per_rev)) +
+  geom_boxplot() +
+  labs(title="avg_time_per_rev")
 
+trap_operation %>%
+  ggplot(aes(debris_volume)) +
+  geom_boxplot() +
+  labs(title="debris_volume")
 
+trap_operation %>%
+  ggplot(aes(rpms_start)) +
+  geom_boxplot() +
+  labs(title="rpms_start")
 
+trap_operation %>%
+  ggplot(aes(rpms_end)) +
+  geom_boxplot() +
+  labs(title="rpms_end")
 
+trap_operation %>%
+  ggplot(aes(cone_rpm)) +
+  geom_boxplot() +
+  labs(title="cone_rpm")
 
+```
+There are some extremes, but can be better addressed by association plots to identify trends.
+
+### Revolutions Variables
+```{r}
+# Association Plot
+trap_operation_variables %>%
+  ggplot(mapping=aes(x= sample_period_revolutions,y=avg_time_per_rev)) +
+  geom_point() +
+  labs(y="Avg Time Per Rev",x ="Sample Period Rev")
+
+# Association Plot: Remove the Outliers to get better representation
+trap_operation_variables %>%
+  filter(sample_period_revolutions<30000,
+         avg_time_per_rev<300) %>%
+  ggplot(mapping=aes(x= sample_period_revolutions,y=avg_time_per_rev)) +
+  geom_point() +
+  labs(y="Avg Time Per Rev",x ="Sample Period Rev")
+
+# Create a 5Num summary of filtered data
+trap_operation_rev_variables <- trap_operation_variables %>%
+  filter(sample_period_revolutions<30000,
+         avg_time_per_rev<300) 
+
+col1 = summary(trap_operation_rev_variables$sample_period_revolutions)
+col2 = summary(trap_operation_rev_variables$avg_time_per_rev)
+
+trap_operation_rev_5NumSum = matrix(c(col1,col2),ncol=2)
+rownames(trap_operation_rev_5NumSum) = c("Min","1st Qu.","Median","Mean","3rd Qu.","Max")
+colnames(trap_operation_rev_5NumSum) = c("sample_period_revolutions","avg_time_per_rev")
+trap_operation_rev_5NumSum
+```
+### Recommendations
+`sample_period_revolutions`: 0-28962
+`avg_time_per_rev`: 8-271
+
+### Revolutions Per Minute Variables
+```{r}
+# Association Plot
+trap_operation_variables %>%
+  ggplot(mapping=aes(x= rpms_start,y=rpms_end)) +
+  geom_point() +
+  labs(y="rpms_start",x ="rpms_end")
+
+# Association Plot: Remove the Outliers to get better representation
+trap_operation_variables %>%
+  filter(rpms_start<15,
+         rpms_end<15) %>%
+  ggplot(mapping=aes(x= rpms_start,y=rpms_end)) +
+  geom_point() +
+  labs(y="rpms_start",x ="rpms_end")
+
+# 5Num Summary
+trap_operation_rev_pm_variables <- trap_operation_variables %>%
+  filter(rpms_start<15,
+         rpms_end<15)
+
+col1 = summary(trap_operation_rev_pm_variables$rpms_start)
+col2 = summary(trap_operation_rev_pm_variables$rpms_end)
+
+trap_operation_rev_rpm_5NumSum = matrix(c(col1,col2),ncol=2)
+rownames(trap_operation_rev_rpm_5NumSum) = c("Min","1st Qu.","Median","Mean","3rd Qu.","Max")
+colnames(trap_operation_rev_rpm_5NumSum) = c("rpms_start","rpms_end")
+trap_operation_rev_rpm_5NumSum
+```
+#### Recommendations
+`rpms_start`: 0-10.5
+`rpms_end`: 0.10.5
+
+### Depth Variables
+```{r}
+# depth variables are equivalent
+trap_operation_variables %>%
+  filter(!is.na(river_left_depth),
+         !is.na(river_center_depth),
+         !is.na(river_right_depth))
+
+#5 Number Summary of Filtered Data
+trap_operation_depth_variables <- trap_operation_variables
+
+col1 = summary(trap_operation_depth_variables$river_left_depth)
+col2 = summary(trap_operation_depth_variables$river_center_depth)
+col3 = summary(trap_operation_depth_variables$river_right_depth)
+
+trap_operation_depth_5NumSum = matrix(c(col1,col2,col3),ncol=3)
+rownames(trap_operation_depth_5NumSum) = c("Min","1st Qu.","Median","Mean","3rd Qu.","Max","NA's")
+colnames(trap_operation_depth_5NumSum) = c("river_left_depth","river_center_depth","river_right_depth")
+trap_operation_depth_5NumSum
+```
+
+#### Recommendations
+`river_left_depth`: 0.304-1.77
+`river_center_depth`: 0.304-1.76
+`river_right_depth`: 0.304-1.76
 
 # ===== Consider Doing Later
 
