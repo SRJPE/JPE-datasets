@@ -16,7 +16,7 @@ library(googleCloudStorageR)
 
 ## RST QA/QC
 
-## Load in combined RST Datasets {.tabset}
+## Load in combined RST Datasets
 
 ### Import Data-sets
 ```{r}
@@ -78,6 +78,7 @@ catch_ranges <- as.data.frame(apply(catch_variables, 2, find_range)) # get range
 rownames(catch_ranges) <- c("min","max") # labels
 catch_ranges
 ```
+These min and max seem a bit strange, so we would need to explore further to define more representative ranges.
 
 ### Boxplots
 ```{r}
@@ -97,26 +98,67 @@ catch_variables %>%
   labs(title="weight")
 ```
 
-### Defining Ranges
+### Association Plots
 ```{r}
-col1 = summary(catch_variables$fork_length)
-col2 = summary(catch_variables$count)
-col3 = summary(catch_variables$weight)
+catch_variables %>%
+  ggplot(mapping=aes(x= fork_length,y=weight)) +
+  geom_point() +
+  labs(y="Weight",x ="Fork Length (mm)",title="Fork Length vs Weight")
+```
+Current axis values does not give an accurate representation of ranges.
+
+```{r}
+catch_variables %>% 
+  filter(fork_length<250,
+         fork_length>0,
+         weight<100,
+         weight>0) %>% 
+  ggplot(mapping=aes(x= fork_length,y=weight)) +
+  geom_point() +
+  labs(y="Weight",x ="Fork Length (mm)",title="Fork Length vs Weight")
+```
+It looks like the average fork length and weight will fall within these axis ranges as these bound are more representative of the data than we had originally. Therefore, we can get our expected ranges by getting the 5num summary for the following.
+
+```{r}
+catch_variables %>% 
+  filter(fork_length<250,
+         fork_length>0,
+         weight<100,
+         weight>0,
+         count>40) %>%
+  ggplot(mapping=aes(x= fork_length,y=weight)) +
+  geom_point() +
+  labs(y="Weight",x ="Fork Length (mm)",title="Fork Length vs Weight")
+```
+It appears that when counts are abnormally high (greater than 40) the data for weight and and fork length is usually missing. So we can exclude count greater than 40 when considering our ranges.
+
+### Cleaned Variable
+```{r}
+catach_variables_cleaned <- catch_variables %>% 
+  filter(fork_length<250,
+         fork_length>0,
+         weight<100,
+         weight>0,
+         count<40)
+```
+
+### 5 Number Summary
+```{r}
+### 5NumSum
+col1 = summary(catach_variables_cleaned$fork_length)
+col2 = summary(catach_variables_cleaned$count)
+col3 = summary(catach_variables_cleaned$weight)
 catch_5NumSum = matrix(c(col1,col2,col3),ncol=3)
-rownames(catch_5NumSum) = c("Min","1st Qu.","Median","Mean","3rd Qu.","Max","NA's")
+rownames(catch_5NumSum) = c("Min","1st Qu.","Median","Mean","3rd Qu.","Max")
 colnames(catch_5NumSum) = c("fork_length","count","weight")
 catch_5NumSum
 ```
+### Recommendations
+`fork length`: 41-75
+`count`: 1-39
+`weight`: 0.5-4.3
 
-```{r}
-catch_variables %>%
-  filter(fork_length > 10) %>%
-  ggplot(aes(fork_length)) +
-  geom_boxplot() +
-  labs(x="Fork Length",y="Length",title="Fork Lengths")
-```
-
-## Explore Environmental Ranges {.tabset}
+## Explore Environmental Ranges
 * `turbidity` - turbidity measure in NTU 
 * `flow`-  flow in cfs  
 * `secchi` - secchi measure in ft 
@@ -134,7 +176,16 @@ environmental_variables <- environmental %>%
 # Get Ranges
 environmental_ranges <- as.data.frame(apply(environmental_variables, 2, find_range)) # get ranges
 rownames(environmental_ranges) <- c("min","max") # labels
-catch_ranges
+environmental_ranges
+```
+
+
+### Association Plots
+```{r}
+environmental_variables %>%
+  ggplot(mapping=aes(x= fork_length,y=weight)) +
+  geom_point() +
+  labs(y="Weight",x ="Fork Length (mm)",title="Fork Length vs Weight")
 ```
 
 ## Explore Trap Operation Ranges
@@ -144,11 +195,11 @@ Capture juvenile fish during out migration. During efficiency trials, the sample
 
 * `sample_period_revolutions` - number of revolutions on cone at given point of time
 * `river_left_depth`- 
-* `river_center_depth` 
-* `river_right_depth`
-* `depth_adjust`
-* `avg_time_per_rev` 
-* `debris_volume` 
+* `river_center_depth` -
+* `river_right_depth`-
+* `depth_adjust`-
+* `avg_time_per_rev` -
+* `debris_volume` -
 * `rpms_start`- revolutions per minute at start
 * `rpms_end` - revolutions per minute at end
 * `cone_rpm`- 
@@ -170,6 +221,10 @@ trap_operation_ranges <- as.data.frame(apply(trap_operation_variables, 2, find_r
 rownames(trap_operation_ranges) <- c("min","max") # labels
 trap_operation_ranges
 ```
+
+
+# ===== Consider Doing Later
+
 
 ## Explore Mark Recapture Ranges 
 Description of what variables we are defining ranges for. 
