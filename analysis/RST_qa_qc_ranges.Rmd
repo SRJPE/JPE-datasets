@@ -182,7 +182,6 @@ rownames(environmental_ranges) <- c("min","max") # labels
 environmental_ranges
 ```
 
-
 ### Association Plots
 ```{r}
 environmental_variables %>%
