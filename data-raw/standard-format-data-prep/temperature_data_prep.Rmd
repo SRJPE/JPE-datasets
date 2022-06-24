@@ -33,19 +33,19 @@ library(googleCloudStorageR)
 
 
 # Google Cloud Set up
-# Sys.setenv("GCS_AUTH_FILE" = "config.json")
-# Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
-# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-# gcs_get_object(object_name = "standard-format-data/rst_trap_locations.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "rst_sites.csv",
-#                overwrite = TRUE)
+Sys.setenv("GCS_AUTH_FILE" = "config.json")
+Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_get_object(object_name = "standard-format-data/rst_trap_locations.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "rst_sites.csv",
+               overwrite = TRUE)
 
 trap_locations_raw <- read_csv("rst_sites.csv")
 
 trap_locations <- trap_locations_raw %>%
-  select(tributary, site_name, sub_site_name, river_location, latitude, longitude, year) %>%
+  select(stream, site, subsite, river_location, latitude, longitude, start_date) %>%
   distinct()
   # identify years
 
@@ -112,15 +112,15 @@ BCK_hourly_temps <- BCK_CDEC %>%
   mutate(date = as_date(datetime),
          time = as_hms(datetime),
          temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
-  select(date,time,temp_degC)
+  select(date, time, temp_degC)
 
 # Date Ranges
-tail(BCK_hourly_temps$date,n=1)
-head(BCK_hourly_temps$date,n=1)
+tail(BCK_hourly_temps$date, n=1)
+head(BCK_hourly_temps$date, n=1)
 
 ggplot(BCK_hourly_temps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="CDEC Water Temperature at Buttle Creek",caption="CDEC")
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Buttle Creek", caption = "CDEC")
 ```
 
 CDEC data provides temperature data for Butte Creek. It ranges from 1998-09-16 to 2022-06-16
@@ -129,10 +129,10 @@ CDEC data provides temperature data for Butte Creek. It ranges from 1998-09-16 t
 ```{r}
 # Plot without outliers
 BCK_hourly_temps %>%
-  filter(temp_degC<37, temp_degC>-18) %>%
+  filter(temp_degC < 37, temp_degC > -18) %>%
   ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="CDEC Water Temperature at Buttle Creek", caption="CDEC")
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Buttle Creek", caption = "CDEC")
 ```
 
 ### USGS
@@ -172,12 +172,12 @@ IGO_hourly_temps <- IGO_CDEC %>%
   select(date,time,temp_degC)
 
 # Date Ranges
-tail(IGO_hourly_temps$date,n=1)
-head(IGO_hourly_temps$date,n=1)
+tail(IGO_hourly_temps$date, n=1)
+head(IGO_hourly_temps$date, n=1)
 
 ggplot(IGO_hourly_temps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Water Temperature at Clear Creek",caption = "CDEC")
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y ="Temperature (deg C)", title = "Water Temperature at Clear Creek", caption = "CDEC")
 ```
 CDEC temeprature data for Clear Cleek ranges from 2002-12-31 to 2022-05-27.
 
@@ -185,10 +185,10 @@ CDEC temeprature data for Clear Cleek ranges from 2002-12-31 to 2022-05-27.
 ```{r}
 # Plot without outliers
 IGO_hourly_temps %>%
-  filter(temp_degC<37, temp_degC>-18) %>%
-  ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="CDEC Water Temperature at Clear Creek", caption="CDEC")
+  filter(temp_degC < 37, temp_degC > -18) %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Clear Creek", caption = "CDEC")
 ```
 
 ### USGS
@@ -226,13 +226,13 @@ DCV_hourly_temps <- DCV_CDEC %>%
   select(date,time,temp_degC)
 
 # Date Ranges
-tail(DCV_hourly_temps$date,n=1)
-head(DCV_hourly_temps$date,n=1)
+tail(DCV_hourly_temps$date, n = 1)
+head(DCV_hourly_temps$date, n = 1)
 
 # Plot
 ggplot(DCV_hourly_temps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Water Temperature at Deer Creek",caption="CDEC")
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)",title = "Water Temperature at Deer Creek", caption = " CDEC")
 ```
 CDEC Temperature Data for Deer Creek ranges from 1998-10-01 to 2022-06-16.
 
@@ -240,10 +240,10 @@ CDEC Temperature Data for Deer Creek ranges from 1998-10-01 to 2022-06-16.
 ```{r}
 # Plot without outliers
 DCV_hourly_temps %>%
-    filter(temp_degC<37, temp_degC>-18) %>%
+    filter(temp_degC < 37, temp_degC > -18) %>%
   ggplot(aes(x=date)) +
   geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="CDEC Water Temperature at Buttle Creek", caption="CDEC")
+  labs(x = "Year",y = "Temperature (deg C)", title = "CDEC Water Temperature at Buttle Creek", caption = "CDEC")
 ```
 
 ### USGS
@@ -270,8 +270,8 @@ head(DCV_daily_temps$date,n=1)
 
 # Plot
 ggplot(DCV_daily_temps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg f)",title="Water Temperature at Deer Creek",caption = "USGS")
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg f)", title = "Water Temperature at Deer Creek", caption = "USGS")
 ```
 USGS temperature data for deer creek ranges from 2016-10-01 to 2022-05-25.
 
@@ -287,10 +287,10 @@ DCV_combined %>%
   summarise(
     temp_CDEC = median(temp_degC.CDEC, na.rm = TRUE),
     temp_USGS = max(temp_degC.USGS, na.rm = TRUE)) %>% 
-  ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_CDEC), color ="darkred") +
-  geom_line(aes(y = temp_USGS), color ="steelblue", linetype ="twodash") +
-  labs(y="Temperature (deg C)",title="Water Temperature at Deer Creek")
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = temp_CDEC), color = "darkred") +
+  geom_line(aes(y = temp_USGS), color = "steelblue", linetype = "twodash") +
+  labs(y = "Temperature (deg C)", title = "Water Temperature at Deer Creek")
 ```
 
 This helps it become more apparent that we should use CDEC data for deer creek due to the availability of the data.
@@ -315,13 +315,13 @@ GRL_hourly_temps <- GRL_CDEC %>%
   select(date,time,temp_degC)
 
 # Date Ranges
-tail(GRL_hourly_temps$date,n=1)
-head(GRL_hourly_temps$date,n=1)
+tail(GRL_hourly_temps$date, n = 1)
+head(GRL_hourly_temps$date, n = 1)
 
 # Plot GRL
-ggplot(GRL_hourly_temps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Temperature at Feather River", caption="CDEC")
+ggplot(GRL_hourly_temps, aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y="Temperature (deg C)", title = "Temperature at Feather River", caption = "CDEC")
 ```
 CDEC provides temperature data for Feather River from 2003-01-05 to 2007-06-15.
 
@@ -329,10 +329,10 @@ CDEC provides temperature data for Feather River from 2003-01-05 to 2007-06-15.
 ```{r}
 # Plot without outliers
 GRL_hourly_temps %>%
-   filter(temp_degC<37, temp_degC>-18) %>%
+   filter(temp_degC < 37, temp_degC > -18) %>%
   ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="CDEC Water Temperature at Feather River", caption="CDEC")
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Feather River", caption = "CDEC")
 ```
 
 ### USGS
@@ -369,13 +369,13 @@ MLM_hourly_temps <- MLM_CDEC %>%
   select(date,time,temp_degC)
 
 # Date Ranges
-tail(MLM_hourly_temps$date,n=1)
-head(MLM_hourly_temps$date,n=1)
+tail(MLM_hourly_temps$date, n = 1)
+head(MLM_hourly_temps$date, n = 1)
 
 # Plot DCV
-ggplot(MLM_hourly_temps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Temperature at Mill Creek", caption="CDEC")
+ggplot(MLM_hourly_temps, aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Mill Creek", caption = "CDEC")
 ```
 CDEC provides temperature data for Mill Creek from 1998-09-30 to 2022-05-27
 
@@ -383,10 +383,10 @@ CDEC provides temperature data for Mill Creek from 1998-09-30 to 2022-05-27
 ```{r}
 # Plot without outliers
 MLM_hourly_temps %>%
-    filter(temp_degC<37, temp_degC>-18) %>%
-  ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="CDEC Water Temperature at Mill Creek", caption="CDEC")
+    filter(temp_degC < 37, temp_degC > -18) %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)", title = "CDEC Water Temperature at Mill Creek", caption = "CDEC")
 ```
 
 ### USGS
@@ -408,13 +408,13 @@ MLM_daily_temps <- MLM_USGS %>%
   rename(date = Date)
 
 # Date Ranges
-tail(MLM_daily_temps$date,n=1)
-head(MLM_daily_temps$date,n=1)
+tail(MLM_daily_temps$date, n = 1)
+head(MLM_daily_temps$date, n = 1)
 
 # Plot DCV
 ggplot(MLM_daily_temps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Temperature at Mill Creek", caption="USGS")
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)",title = "Temperature at Mill Creek", caption = "USGS")
 ```
 
 USGS provides daily temperature daily for Mill Creek from 2016-10-01 to 2022-05-25
@@ -425,8 +425,8 @@ USGS provides daily temperature daily for Mill Creek from 2016-10-01 to 2022-05-
 # Does one have more data?
 # Does one have a finer scale?
 MLM_combined = MLM_hourly_temps %>% 
-  full_join(MLM_daily_temps, by ="date") %>% 
-  rename("temp_degC.CDEC"="temp_degC.x", "temp_degC.USGS"="temp_degC.y")
+  full_join(MLM_daily_temps, by = "date") %>% 
+  rename("temp_degC.CDEC" = "temp_degC.x", "temp_degC.USGS" = "temp_degC.y")
 
 MLM_combined %>% 
   group_by(date = date(date)) %>% 
@@ -435,9 +435,9 @@ MLM_combined %>%
     temp_CDEC = median(temp_degC.CDEC, na.rm = TRUE),
     temp_USGS = max(temp_degC.USGS, na.rm = TRUE)) %>% 
   ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_CDEC), color ="darkred") +
-  geom_line(aes(y = temp_USGS), color ="steelblue", linetype ="twodash") +
-  labs(y="Temperature (deg C)",title="Water Temperature at Mill Creek")
+  geom_line(aes(y = temp_CDEC), color = "darkred") +
+  geom_line(aes(y = temp_USGS), color = "steelblue", linetype = "twodash") +
+  labs(y = "Temperature (deg C)", title = "Water Temperature at Mill Creek")
 
 ```
 
@@ -479,13 +479,13 @@ WLK_hourly_temps <- WLK_CDEC %>%
   select(date,time,temp_degC)
 
 # Date Ranges
-tail(WLK_hourly_temps$date,n=1)
-head(WLK_hourly_temps$date,n=1)
+tail(WLK_hourly_temps$date, n = 1)
+head(WLK_hourly_temps$date, n = 1)
 
 # Plot WLK
-ggplot(WLK_hourly_temps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing", caption="CDEC")
+ggplot(WLK_hourly_temps, aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "CDEC")
 ```
 
 CDEC provides temperature data for Sacramento River - Knights Landing from 2012-11-15 to 2022-06-16
@@ -494,10 +494,10 @@ CDEC provides temperature data for Sacramento River - Knights Landing from 2012-
 ```{r}
 # Plot without outliers
 WLK_hourly_temps %>%
-  filter(temp_degC<37, temp_degC>-18) %>%
-  ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing", caption="CDEC")
+  filter(temp_degC < 37, temp_degC > -18) %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "CDEC")
 ```
 
 ### USGS
@@ -519,13 +519,13 @@ WLK_daily_temps <- WLK_USGS %>%
   rename(date = Date)
 
 # Date Ranges
-tail(WLK_daily_temps$date,n=1)
-head(WLK_daily_temps$date,n=1)
+tail(WLK_daily_temps$date, n = 1)
+head(WLK_daily_temps$date, n = 1)
 
 # Plot
 ggplot(WLK_daily_temps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing",caption="USGS")
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
 Temperature data for Sacramento River - Knights landing has data from 1995-01-01 to 2022-06-14, but we should explore further the signifcant data gap and identify that period.
 
@@ -541,9 +541,9 @@ WLK_daily_temps %>%
 WLK_daily_temps %>%
   filter(date < "1999-10-01") %>% 
   arrange(desc(date)) %>%
-  ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing",caption="USGS")
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
 ### Data after missing data gap
 ```{r}
@@ -557,17 +557,17 @@ WLK_daily_temps %>%
 WLK_daily_temps %>%
   filter(date >= "2016-10-01") %>% 
   arrange(desc(date)) %>%
-  ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_degC), color ="darkred") +
-  labs(x="Year",y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing",caption="USGS")
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y ="Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
 Temperature data for Sacramento River - Knights landing is missing significant data from the period of 1998-09-30 to 2016-09-31.
 
 #### Mean Daily USGS vs Daily CDEC data
 ```{r}
 WLK_combined = WLK_hourly_temps %>% 
-  full_join(WLK_daily_temps, by ="date") %>% 
-  rename("temp_degC.CDEC"="temp_degC.x", "temp_degC.USGS"="temp_degC.y")
+  full_join(WLK_daily_temps, by = "date") %>% 
+  rename("temp_degC.CDEC" = "temp_degC.x", "temp_degC.USGS" = "temp_degC.y")
 
 WLK_combined %>% 
   group_by(date = date(date)) %>% 
@@ -576,9 +576,9 @@ WLK_combined %>%
     temp_CDEC = median(temp_degC.CDEC, na.rm = TRUE),
     temp_USGS = max(temp_degC.USGS, na.rm = TRUE)) %>% 
   ggplot(aes(x=date)) +
-  geom_line(aes(y = temp_CDEC), color ="darkred") +
-  geom_line(aes(y = temp_USGS), color ="steelblue", linetype ="twodash") +
-  labs(y="Temperature (deg C)",title="Temperature at Sacramento River- Knights Landing",caption="USGS")
+  geom_line(aes(y = temp_CDEC), color = "darkred") +
+  geom_line(aes(y = temp_USGS), color = "steelblue", linetype =" twodash") +
+  labs(y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 
 ```
 #===============================================================================
