@@ -286,7 +286,7 @@ head(DCV_daily_temps$date,n=1)
 # Plot
 ggplot(DCV_daily_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
-  labs(x = "Year",y = "Temperature (deg f)", title = "Water Temperature at Deer Creek", caption = "USGS")
+  labs(x = "Year",y = "Temperature (deg C)", title = "Water Temperature at Deer Creek", caption = "USGS")
 ```
 USGS temperature data for deer creek ranges from 2016-10-01 to 2022-05-25.
 
@@ -308,7 +308,7 @@ DCV_combined %>%
   labs(y = "Temperature (deg C)", title = "Water Temperature at Deer Creek")
 ```
 
-This helps it become more apparent that we should use CDEC data for deer creek due to the availability of the data.
+The plot below shows the daily average to allow for comparison between CDEC and USGS datasets. This helps it become more apparent that we should use CDEC data for deer creek due to the availability of the data.
 
 ```{r}
 # write_rds(DCV_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/deer_temp.rds")
