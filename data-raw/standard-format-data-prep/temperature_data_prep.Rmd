@@ -9,7 +9,9 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10, 
+                      root.dir = rprojroot::find_rstudio_root_file())
+
 library(tidyverse)
 library(lubridate)
 library(CDECRetrieve)
@@ -42,14 +44,18 @@ gcs_get_object(object_name = "standard-format-data/rst_trap_locations.csv",
                saveToDisk = "rst_sites.csv",
                overwrite = TRUE)
 
-trap_locations_raw <- read_csv("rst_sites.csv")
+trap_locations_raw <- read_csv("../../data/standard-format-data/rst_trap_locations.csv")
 
 trap_locations <- trap_locations_raw %>%
+<<<<<<< HEAD
   select(stream, site, subsite, river_location, latitude, longitude, start_date) %>%
+=======
+  select(stream, site, subsite, river_location, latitude, longitude) %>%
+>>>>>>> 74c731d2a657d379d3b0d887420351309bc5b6ea
   distinct()
   # identify years
 
-# gage_locations_raw <- read_csv("data-raw/standard-format-data-prep/gage_sites.csv")
+gage_locations_raw <- read_csv("../../analysis/exploratory-analysis/data-raw/gage_sites.csv")
 gage_locations_raw <- read_csv("gage_sites.csv")
 
 # Idenntify which flow gage locations have temperature measures
@@ -80,7 +86,7 @@ cdec_datasets("BAT")
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-#BAT_USGS <- readNWISdv(11376550, "00010") # parameter code 00010: water temperature
+# BAT_USGS <- readNWISdv(11376550, "00010") # parameter code 00010: water temperature
 #write.csv(BAT_USGS,"BAT_USGS.csv", row.names = FALSE)
 
 # Read created CSV
@@ -149,6 +155,12 @@ BCK_USGS
 # no data available from USGS
 ```
 
+```{r}
+# write_rds(BCK_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/butte_temp.rds")
+
+```
+
+
 USGS provides no temperature data for Butte Creek. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
 
 #===============================================================================
@@ -206,6 +218,11 @@ IGO_USGS
 ```
 
 USGS provides no temperature data for Clear Creek. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
+
+```{r}
+# write_rds(IGO_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/clear_temp.rds")
+```
+
 #===============================================================================
 ## Deer Creek
 ### CDEC
@@ -295,6 +312,10 @@ DCV_combined %>%
 
 This helps it become more apparent that we should use CDEC data for deer creek due to the availability of the data.
 
+```{r}
+# write_rds(DCV_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/deer_temp.rds")
+```
+
 #===============================================================================
 ## Feather River
 ### CDEC
@@ -340,8 +361,8 @@ GRL_hourly_temps %>%
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-#GRL_USGS <- readNWISdv(11407000, "00010") # parameter code 00010: water temperature
-#write.csv(GRL_USGS,"GRL_USGS.csv", row.names = FALSE)
+# GRL_USGS <- readNWISdv(11407000, "00010") # parameter code 00010: water temperature
+# write.csv(GRL_USGS,"GRL_USGS.csv", row.names = FALSE)
 
 # Read created CSV
 GRL_USGS <- read_csv("GRL_USGS.csv")
@@ -349,6 +370,10 @@ GRL_USGS
 ```
 
 USGS does not provide temperature data for Feather River. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
+
+```{r}
+# write_rds(GRL_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/feather_temp.rds")
+```
 
 ## Mill Creek
 ### CDEC
@@ -442,6 +467,10 @@ MLM_combined %>%
 ```
 
 I would recommend using the CDEC data for Mill Creek due to the significant data gaps for USGS.
+
+```{r}
+# write_rds(MLM_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/mill_temp.rds")
+```
 
 #===============================================================================
 ## Yuba River
@@ -560,6 +589,7 @@ WLK_daily_temps %>%
   ggplot(aes(x = date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y ="Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
+#
 ```
 Temperature data for Sacramento River - Knights landing is missing significant data from the period of 1998-09-30 to 2016-09-31.
 
