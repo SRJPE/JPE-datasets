@@ -47,11 +47,9 @@ gcs_get_object(object_name = "standard-format-data/rst_trap_locations.csv",
 trap_locations_raw <- read_csv("../../data/standard-format-data/rst_trap_locations.csv")
 
 trap_locations <- trap_locations_raw %>%
-<<<<<<< HEAD
+
   select(stream, site, subsite, river_location, latitude, longitude, start_date) %>%
-=======
   select(stream, site, subsite, river_location, latitude, longitude) %>%
->>>>>>> 74c731d2a657d379d3b0d887420351309bc5b6ea
   distinct()
   # identify years
 
