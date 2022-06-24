@@ -7,11 +7,17 @@ output: rmarkdown::github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
 library(ggplot2)
 library(scales)
+library(readxl)
+library(janitor)
+library(hms) #?as_hms()
+library(RODBC)
+
 ```
 
 # [Watershed] [Data type long version]
@@ -42,50 +48,212 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
-
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet: 
 ```{r}
-# read in data to clean 
-```
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
+# Google Cloud Set up
+# Sys.setenv("GCS_AUTH_FILE" = "config.json")
+# Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopChannelTBL1.xlsx",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "ChopChannelTBL1.xlsx",
+#                overwrite = TRUE)
+# 
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopHeaderTBL.xlsx",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "ChopHeaderTBL.xlsx",
+#                overwrite = TRUE)
+# 
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopRecovTBL.xlsx",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "Cç",
+#                overwrite = TRUE)
+
+# Read Data
+ChopChannel_raw <- read_excel("ChopChannelTBL1.xlsx") %>% 
+  rename("ID" = HeaderID)
+ChopHeader_raw <- read_excel("ChopHeaderTBL.xlsx") %>% 
+  rename("ID" = headerID)
+ChopRecov_raw <-read_excel("ChopRecovTBL.xlsx")
+```
+Read in data from Microsoft Access, glimpse raw data and domain description sheet: 
+```{r}
+# TODO: Attempt, but not needed
+library(RODBC)
+feather_camp <- odbcConnectAccess2007("CAMP_Escapement_20210412.mdb")
+```
 ## Data transformations
 
 ```{r}
-# For different excel sheets for each year read in and combine years here
-```
-
-```{r}
+# TODO: Clean Names
+# TODO: Consider combining tables
 # Snake case, 
 # Columns are appropriate types
 # Remove redundant columns
+
+# Checking Join
+# chopTBL_test1 <- left_join(ChopChannel_raw, ChopHeader_raw, by = "ID")
+# chopTBL_test2 <- full_join(chopTBL_test1, ChopRecov_raw, by = "ChanID")
+
+chopTBL <- left_join(ChopChannel_raw, ChopHeader_raw, by = "ID") %>%
+  full_join(ChopRecov_raw, by = "ChanID")
+
+cleaner_chopTBL <- chopTBL %>% 
+  clean_names() %>% 
+  glimpse()
+
+# TODO: Any columns to remove? Check in with Ashley on this.
+ # cleaner_chopTBL %>% 
+ #  select(-sect,chan,crew,week_num) %>%
+ #  glimpse()
+```
+
+## Data Dictionary
+```{r}
+percent_na <- cleaner_chopTBL %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_chopTBL),
+                          description = c("Channel ID", # TODO: Identify linkage, Lat/long?
+                                          "Section", # TODO: Identify encoding
+                                          "Channel", # TODO: Identify encoding
+                                          "Minimum", # What exactly?
+                                          "Head ID", # TODO: Rename to head_ID
+                                          "Observed unknown sex chops",
+                                          "Observed unknown sex tags",
+                                          "Observed male chops",
+                                          "Observed female chops",
+                                          "Observed female tags",
+                                          "Observed male tags",
+                                          "Color of tag applied to carcass", # color?
+                                          "Date",
+                                          "Initials of crew conducting survey", 
+                                          "Time of Day",
+                                          "Initials of person recording data",
+                                          "Weather (sunny, cloudy, rainy)",
+                                          "Comments",
+                                          "Week Number"),
+                          percent_na = round(percent_na$value*100))
+kable(data_dictionary)
 ```
 
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
 # Filter clean data to show only numeric variables 
+cleaner_chopTBL %>% 
+  select_if(is.numeric) %>%
+  colnames()
 ```
 
-### Variable: `[name]`
+### Variable: `female_chop`, `male_chop`,`unknown_chop`
 
-**Plotting [Variable] over Period of Record**
+**Numeric Summary of `female_chop`, `male_chop`,`unknown_chops` over Period of Record**
 
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+summary(cleaner_chopTBL$female_chop)
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
+```{r}
+summary(cleaner_chopTBL$male_chop)
+```
 
 ```{r}
-# Table with summary statistics
+summary(cleaner_chopTBL$unknown_chops)
 ```
 
 **NA and Unknown Values**
 
 Provide a stat on NA or unknown values
+
+NA and Unknown Values
+  - <1 % of values in the female_chop column are NA.
+  - <1 % of values in the male_chop column are NA.
+  - <1 % of values in the unknown_chops column are NA.
+
+**Plotting female_chop over Period of Record**
+
+### TODO: compare Male, female, unknowntogether -> histogram?
+
+```{r}
+# Make whatever plot is appropriate 
+filter(cleaner_chopTBL) %>% 
+  ggplot(aes(x = female_chop, y = date)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Female Chop", 
+       y = "Date") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+
+**Plotting male_chop over Period of Record**
+```{r}
+# Make whatever plot is appropriate 
+filter(cleaner_chopTBL) %>% 
+  ggplot(aes(x = male_chop, y = date)) +
+  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  labs(x = "Male Chop", 
+       y = "Date") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting unknown_chops over Period of Record**
+```{r}
+# Make whatever plot is appropriate 
+filter(cleaner_chopTBL) %>% 
+  ggplot(aes(x = unknown_chops, y = date)) +
+  geom_point(size = 1.4, alpha = .5, color = "black") + 
+  labs(x = "Unknown Chops", 
+       y = "Date") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting female_tag over Period of Record**
+
+```{r}
+# Make whatever plot is appropriate 
+filter(cleaner_chopTBL) %>% 
+  ggplot(aes(x = female_tag, y = date)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Female Tag", 
+       y = "Date") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting male_tag over Period of Record**
+
+```{r}
+# Make whatever plot is appropriate 
+filter(cleaner_chopTBL) %>% 
+  ggplot(aes(x = male_tag, y = date)) +
+  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  labs(x = "Male Tag", 
+       y = "Date") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting unknown_tags over Period of Record**
+```{r}
+# Make whatever plot is appropriate 
+filter(cleaner_chopTBL) %>% 
+  ggplot(aes(x = unknown_tags, y = date)) +
+  geom_point(size = 1.4, alpha = .5, color = "black") + 
+  labs(x = "Unknown Tags", 
+       y = "Date") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
 
 ## Explore Categorical variables: {.tabset}
 
@@ -118,6 +286,8 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 Provide a stat on NA or unknown values
 
+
+
 ## Summary of identified issues
 
 * List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
@@ -125,6 +295,7 @@ Provide a stat on NA or unknown values
 ## Save cleaned data back to google cloud 
 
 ```{r}
+# TODO: Request Permission Access
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
 ```
