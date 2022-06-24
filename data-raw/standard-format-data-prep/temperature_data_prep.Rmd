@@ -580,6 +580,7 @@ WLK_combined %>%
   geom_line(aes(y = temp_USGS), color = "steelblue", linetype =" twodash") +
   labs(y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 
+
 ```
 #===============================================================================
 ## Sacramento River - Tisdale
