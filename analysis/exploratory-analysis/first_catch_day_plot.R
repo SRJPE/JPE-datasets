@@ -74,12 +74,29 @@ catch_trap_days %>%
   mutate(days_since = first_spring_catch_date - first_trap_date) %>% 
   filter(stream != "sacramento river") %>% #filter out one -300 value TODO investigate
   ggplot() + 
-  geom_histogram(aes(x = days_since, y =..density.., fill = stream), 
-                 alpha = .5, position = "identity") + 
+  # geom_histogram(aes(x = days_since, y =..density.., fill = stream), 
+                 # alpha = .5, position = "identity") + 
   geom_density(aes(x = days_since, color = stream), adjust = 4, size = 1) +
+  # scale_fill_manual(values = color_pal) +
+  scale_color_manual(values = color_pal) +
+  theme_minimal() + 
+  labs(title = "Days Since Trapping Started and First Spring Run Fish Caught",
+       x = "Days after trapping started")
+
+catch_trap_days %>% 
+  mutate(days_since = first_spring_catch_date - first_trap_date) %>% 
+  filter(stream != "sacramento river") %>% #filter out one -300 value TODO investigate
+  ggplot() + 
+  # geom_histogram(aes(x = days_since, y =..density.., fill = stream), 
+  # alpha = .5, position = "identity") + 
+  geom_boxplot(aes(x = days_since, y = stream,  fill = stream), alpha = .7) +
   scale_fill_manual(values = color_pal) +
   scale_color_manual(values = color_pal) +
-  theme_minimal()
+  theme_minimal() + 
+  labs(title = "Days Since Trapping Started and First Spring Run Fish Caught",
+       x = "Days after trapping started",
+       y = "")
+
 
 #distribution first days caught overlayed 
 catch_trap_days %>% 
@@ -89,7 +106,9 @@ catch_trap_days %>%
   geom_histogram(aes(x = days_since, fill = stream), alpha = .5, position = "identity") + 
   scale_fill_manual(values = color_pal) +
   theme_minimal() + 
-  facet_wrap(~stream)
+  facet_wrap(~stream) + 
+  labs(title = "Days Since Trapping Started and First Spring Run Fish Caught",
+       x = "Days after trapping started")
 
 
 plot_barbell_catch <- function(selected_site) {
@@ -115,7 +134,7 @@ plot_barbell_catch <- function(selected_site) {
     geom_jitter(aes(x = fake_date, y = monitoring_year, color = day_type), size = 4, width = 0.4, height = 0) + 
     scale_color_manual(values = color_pal) + 
     theme_minimal() + 
-    labs(title = paste0("First Trap days and First SR catch day: ", selected_site), 
+    labs(title = paste0("First Trap Day and First SR Catch Day: ", selected_site), 
          y = "Monitoring Year (sept - june)",
          x = "Date") + 
     theme(legend.title = element_blank(), 
