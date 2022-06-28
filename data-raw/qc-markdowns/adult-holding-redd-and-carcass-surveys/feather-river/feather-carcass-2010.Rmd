@@ -82,9 +82,17 @@ ChopHeader_raw <- read_excel("ChopHeaderTBL.xlsx") %>%
 ChopRecov_raw <-read_excel("ChopRecovTBL.xlsx")
 ```
 Read in data from Microsoft Access, glimpse raw data and domain description sheet: 
+
 ```{r}
 # TODO: Attempt, but not needed
-library(RODBC)
+library(Hmisc) 
+
+# List of all available tables
+mdb.get("CAMP_Escapement_20210412.mdb")
+
+# Code to read in the CatchRaw table
+carcasschops <- mdb.get("CAMP_DB_for_FlowWest/CAMP_Escapement_20210412.mdb", tables = "CarcassChops")
+
 feather_camp <- odbcConnectAccess2007("CAMP_Escapement_20210412.mdb")
 ```
 ## Data transformations
@@ -220,6 +228,58 @@ filter(cleaner_chopTBL) %>%
 **Plotting female_tag over Period of Record**
 
 ```{r}
+cleaner_chopTBL %>% glimpse()
+
+# checking for duplicates
+cleaner_chopTBL %>% 
+  mutate(total_chops = unknown_chops + male_chop + female_chop) %>% 
+  filter(date == as_date("2010-09-07")) %>% 
+  select(chan_id, sect, week_num, date, time, total_chops)
+
+# total number of chops
+total_chops  <- cleaner_chopTBL %>% 
+  mutate(total_chops = unknown_chops + male_chop + female_chop) %>% 
+  group_by(date) %>%
+  summarise(total_chops = sum(total_chops, na.rm = T),
+            male_chops = sum(male_chop, na.rm = T),
+            female_chops = sum(female_chop, na.rm = T),
+            unknown_chops = sum(unknown_chops, na.rm = T))
+
+# TODO: Look into NA in date
+# Potential issue: Reading in excel can introduce NA -> Go back to excel workout and identify if NA for date
+# Potential issue: Joins introduces NA
+# TODO: Resolve NA and document solution (if able to)
+
+# sum should be 58
+sum(total_chops$total_chops == (total_chops$male_chops + total_chops$female_chops + total_chops$unknown_chops))
+
+total_chops %>% 
+  filter(total_chops != (male_chops + female_chops + unknown_chops))
+
+cleaner_chopTBL %>% 
+  mutate(total_chops = unknown_chops + male_chop + female_chop) %>% 
+  filter(total_chops != (male_chop + female_chop + unknown_chops))
+
+
+total_chops %>% 
+  pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_chops)) %>% 
+  ggplot(aes(x = date, y = proportions, fill = sex)) +
+  geom_bar(stat = "identity", position = "stack")
+
+# TODO: Make prettier
+# TODO: Explore 
+  
+
+
+
+# TODO: Look into chan_id
+
+```
+
+**Plotting female_tag over Period of Record**
+
+```{r}
 # Make whatever plot is appropriate 
 filter(cleaner_chopTBL) %>% 
   ggplot(aes(x = female_tag, y = date)) +
@@ -255,6 +315,7 @@ filter(cleaner_chopTBL) %>%
   theme(text = element_text(size = 15)) 
 ```
 
+# TODO : Male to Female to Unkown (proportion)
 ## Explore Categorical variables: {.tabset}
 
 General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
