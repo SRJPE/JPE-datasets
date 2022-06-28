@@ -17,6 +17,7 @@ library(readxl)
 library(janitor)
 library(hms) #?as_hms()
 library(RODBC)
+library(knitr)
 
 ```
 
@@ -98,16 +99,11 @@ feather_camp <- odbcConnectAccess2007("CAMP_Escapement_20210412.mdb")
 ## Data transformations
 
 ```{r}
-# TODO: Clean Names
-# TODO: Consider combining tables
-# Snake case, 
-# Columns are appropriate types
-# Remove redundant columns
-
 # Checking Join
 # chopTBL_test1 <- left_join(ChopChannel_raw, ChopHeader_raw, by = "ID")
 # chopTBL_test2 <- full_join(chopTBL_test1, ChopRecov_raw, by = "ChanID")
 
+# Join Tables
 chopTBL <- left_join(ChopChannel_raw, ChopHeader_raw, by = "ID") %>%
   full_join(ChopRecov_raw, by = "ChanID")
 
@@ -116,7 +112,6 @@ cleaner_chopTBL <- chopTBL %>%
   glimpse()
 
 # TODO: Any columns to remove? Check in with Ashley on this.
- # cleaner_chopTBL %>% 
  #  select(-sect,chan,crew,week_num) %>%
  #  glimpse()
 ```
@@ -146,7 +141,10 @@ data_dictionary <- tibble(variables = colnames(cleaner_chopTBL),
                                           "Initials of person recording data",
                                           "Weather (sunny, cloudy, rainy)",
                                           "Comments",
-                                          "Week Number"),
+                                          "Week Number",
+                                          "Recovery ID",
+                                          "Recovery color",
+                                          "Recovery count"),
                           percent_na = round(percent_na$value*100))
 kable(data_dictionary)
 ```
@@ -225,57 +223,87 @@ filter(cleaner_chopTBL) %>%
   theme(text = element_text(size = 15)) 
 ```
 
-**Plotting female_tag over Period of Record**
+**Plotting Total chops over Period of Record**
 
 ```{r}
 cleaner_chopTBL %>% glimpse()
 
-# checking for duplicates
-cleaner_chopTBL %>% 
-  mutate(total_chops = unknown_chops + male_chop + female_chop) %>% 
-  filter(date == as_date("2010-09-07")) %>% 
-  select(chan_id, sect, week_num, date, time, total_chops)
+# Percentage by Gender of Daily Chops
+# Address NA values for chops
+total_chopsTBL <- cleaner_chopTBL %>%
+  mutate(male_chop = ifelse(is.na(male_chop), 0, male_chop), # fill na
+         female_chop = ifelse(is.na(female_chop), 0, female_chop),
+         unknown_chop = ifelse(is.na(unknown_chops), 0, unknown_chops),
+         total_chops = unknown_chops + male_chop + female_chop) %>% 
+  select(date, male_chop, female_chop, unknown_chops, total_chops)
 
-# total number of chops
-total_chops  <- cleaner_chopTBL %>% 
-  mutate(total_chops = unknown_chops + male_chop + female_chop) %>% 
+# Case check: checking for duplicates
+total_chops_test <- total_chopsTBL %>% # get total chops
+  filter(date == as_date("2010-09-07"))
+
+# Check if NAs introduced in creating total chop columns
+nrow(total_chops_test) == (sum(total_chops_test$total_chops == (total_chops_test$male_chop + total_chops_test$female_chop + total_chops_test$unknown_chops)))
+
+# total number of chops for the day
+total_chopsTBL <- total_chopsTBL %>%
   group_by(date) %>%
   summarise(total_chops = sum(total_chops, na.rm = T),
             male_chops = sum(male_chop, na.rm = T),
             female_chops = sum(female_chop, na.rm = T),
             unknown_chops = sum(unknown_chops, na.rm = T))
 
-# TODO: Look into NA in date
-# Potential issue: Reading in excel can introduce NA -> Go back to excel workout and identify if NA for date
-# Potential issue: Joins introduces NA
-# TODO: Resolve NA and document solution (if able to)
+# TODO: Look into NA in date. Why are there date gaps?
+# Potential issue: Reading in excel can introduce NA (not case here)
+# Potential issue: Joins introduces NA (the case)
+# Potential issue: Could just be missing (not missing, but just periodically collected 2-3 weekdays of the week no specific day)
 
-# sum should be 58
-sum(total_chops$total_chops == (total_chops$male_chops + total_chops$female_chops + total_chops$unknown_chops))
+# check if NAs are introduced in merge
+A = left_join(ChopChannel_raw, ChopHeader_raw, by = "ID")$ChanID
+B = ChopRecov_raw$ChanID
+sum(B %in% A) # they are
 
-total_chops %>% 
-  filter(total_chops != (male_chops + female_chops + unknown_chops))
-
-cleaner_chopTBL %>% 
-  mutate(total_chops = unknown_chops + male_chop + female_chop) %>% 
-  filter(total_chops != (male_chop + female_chop + unknown_chops))
-
-
-total_chops %>% 
+# TODO: Resolve missing dates?
+# Plot to identify proportions by sex for each day
+total_chopsTBL %>% 
   pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_chops)) %>% 
   ggplot(aes(x = date, y = proportions, fill = sex)) +
   geom_bar(stat = "identity", position = "stack")
 
-# TODO: Make prettier
-# TODO: Explore 
-  
+# TODO: Check why some plots are above 100%
+proportion_irregularities <- total_chopsTBL %>%
+  pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>%
+  mutate(proportions = (count / total_chops)) %>% 
+  group_by(date) %>%
+  summarise(date = date,
+            proportion_sum = sum(proportions)) %>% 
+  mutate(need_to_check = ifelse((proportion_sum > 1), TRUE, FALSE)) %>% 
+  filter(need_to_check == TRUE)
 
+# Explore the irregularities
+proportion_irregularities_date = proportion_irregularities$date
+proportion_irregularities_date_index = total_chopsTBL$date %in% proportion_irregularities_date
+total_chopsTBL %>% 
+  filter(proportion_irregularities_date_index) %>% 
+  mutate(proportion = (male_chops + female_chops + unknown_chops) / (total_chops))
+# It seems is just significance level
 
+# TODO: Make Graph Prettier
+total_chopsTBL %>% 
+  pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_chops)) %>% 
+  ggplot(aes(x = date, y = proportions, fill = sex)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red", "Black"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male", "Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date")
 
 # TODO: Look into chan_id
 
 ```
+This plot shows the gender proportion of chops for each day over the the period of 2010-09-07 to 2010-12-22. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. We can also observe some of the proportions exceed 1 which was a result of rounding/significant figure sums, so these can be ignored. Also, it was interesting to see the unknown sex account for most of the chops towards the latter periods.
 
 **Plotting female_tag over Period of Record**
 
@@ -315,6 +343,55 @@ filter(cleaner_chopTBL) %>%
   theme(text = element_text(size = 15)) 
 ```
 
+
+**Plotting Total Tags over Period of Record**
+```{r}
+# Percentage by Gender of Daily Chops
+# Address NA values for chops
+total_tagsTBL <- cleaner_chopTBL %>%
+  mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na
+         female_tag = ifelse(is.na(female_tag), 0, female_tag),
+         unknown_tags = ifelse(is.na(unknown_tags), 0, unknown_tags),
+         total_tags = unknown_tags + male_tag + female_tag) %>% 
+  select(date, male_tag, female_tag, unknown_tags, total_tags)
+
+# total number of chops for the day
+total_tagsTBL <- total_tagsTBL %>%
+  group_by(date) %>%
+  summarise(total_tags = sum(total_tags, na.rm = T),
+            male_tags = sum(male_tag, na.rm = T),
+            female_tags = sum(female_tag, na.rm = T),
+            unknown_tags = sum(unknown_tags, na.rm = T))
+
+# Plot to identify proportions by sex for each day
+total_tagsTBL %>% 
+  pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_tags)) %>% 
+  ggplot(aes(x = date, y = proportions, fill = sex)) +
+  geom_bar(stat = "identity", position = "stack")
+
+# TODO: Make Graph Prettier
+total_tagsTBL %>% 
+  pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_tags)) %>% 
+  ggplot(aes(x = date, y = proportions, fill = sex)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red", "Black"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male", "Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date")
+
+#check why period of graph is cut short
+# cleaner_chopTBL %>% filter(date > "2010-11-01") %>% 
+#   select(date, male_tag, female_tag, unknown_tags)
+# 
+# #check why there is such a big gap
+# cleaner_chopTBL %>% filter(date < "2010-10-01") %>% 
+#   select(date, male_tag, female_tag, unknown_tags)
+```
+This plot shows the gender proportion of chops for each day over the the period of 2010-09-07 to 2010-12-22. The period appears to be shorter, because the tags recorded during the december period are 0. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. In comparison to the chops, we can see the tags tend to be more identifiable in terms of gender. The observed data gap is a result of reporting to be 0.
+
 # TODO : Male to Female to Unkown (proportion)
 ## Explore Categorical variables: {.tabset}
 
@@ -322,36 +399,36 @@ General notes: If there is an opportunity to turn yes no into boolean do so, but
 
 ```{r}
 # Filter clean data to show only categorical variables
+cleaner_chopTBL %>% 
+  select_if(is.character) %>%
+  colnames()
 ```
 
 
-### Variable: `[name]`
+### Variable: `characters`
 ```{r}
-#table() 
+# Frequencies
+table(cleaner_chopTBL$chan)
+table(cleaner_chopTBL$crew)
+table(cleaner_chopTBL$weather)
+table(cleaner_chopTBL$comment)
+table(cleaner_chopTBL$recov_color)
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
 # Fix any inconsistencies with categorical variables
+cleaner_chopTBL <- cleaner_chopTBL %>% 
+  mutate_if(is.character, str_to_lower)
+
+# Frequencies
+table(cleaner_chopTBL$chan)
+table(cleaner_chopTBL$crew)
+table(cleaner_chopTBL$weather)
+table(cleaner_chopTBL$comment)
+table(cleaner_chopTBL$recov_color)
 ```
-
-**Create lookup rda for [variable] encoding:** 
-```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
-
-**NA and Unknown Values**
-
-Provide a stat on NA or unknown values
-
-
-
-## Summary of identified issues
-
-* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
 
 ## Save cleaned data back to google cloud 
 
