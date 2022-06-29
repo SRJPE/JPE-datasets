@@ -97,6 +97,7 @@ catch_variables %>%
   geom_boxplot() +
   labs(title="weight")
 ```
+
 It seems there are some weights and fork lengths that do not seem reasonable, we can plot some association plots to see the expected trends of the numerical variables.
 
 ### Association Plots
@@ -106,6 +107,7 @@ catch_variables %>%
   geom_point() +
   labs(y="Weight",x ="Fork Length (mm)",title="Fork Length vs Weight")
 ```
+
 Current axis values does not give an accurate representation of ranges.So we can consider refining the scale to get a better representation.
 
 ```{r}
@@ -118,7 +120,8 @@ catch_variables %>%
   geom_point() +
   labs(y="Weight",x ="Fork Length (mm)",title="Fork Length vs Weight")
 ```
-It looks like the average fork length and weight will fall within these axis ranges as these bound are more representative of the data than we had originally. Now, we can get our expected ranges by getting the five number summary for the following.
+
+It looks like the average fork length and weight will fall within these axis ranges as these bound are more representative of the data than we had originally because there does not appear to be any extreme outliers. Now, we can get our expected ranges by getting the five number summary for the following.
 
 ```{r}
 catch_variables %>% 
@@ -158,8 +161,6 @@ catch_5NumSum
 `fork length`: 22-220
 `count`: 1
 `weight`: 0.04-95.4
-
-#========================================
 
 ## Explore Environmental Ranges
 * `turbidity` - turbidity measure in NTU 
@@ -233,8 +234,6 @@ environmental_5NumSum
 `Flow`: 3090-32863
 `Secchi`: 0.06-8.8
 
-#========================================
-
 ## Explore Trap Operation Ranges
 Capture juvenile fish during out migration. During efficiency trials, the sample of fish are caught and later released to determine how effective the trap is at capturing the fish. Traps are sometimes measured with rotational as a function of flow going through trap and its affect on velocity.
 
@@ -266,8 +265,8 @@ trap_operation_ranges <- as.data.frame(apply(trap_operation_variables, 2, find_r
 rownames(trap_operation_ranges) <- c("min","max") # labels
 trap_operation_ranges
 ```
+
 ### Boxplots
-Boxplots will be used to identify major outliers, but refined through association plots.
 
 ```{r}
 trap_operation %>%
@@ -316,6 +315,7 @@ trap_operation %>%
   labs(title="cone_rpm")
 
 ```
+
 There are some extremes, but can be better addressed by association plots to identify trends.
 
 ### Revolutions Variables
