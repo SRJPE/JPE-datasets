@@ -124,9 +124,9 @@ percent_na <- cleaner_chopTBL %>%
   
 data_dictionary <- tibble(variables = colnames(cleaner_chopTBL),
                           description = c("Channel ID", # TODO: Identify linkage, Lat/long?
-                                          "Section", # TODO: Identify encoding
-                                          "Channel", # TODO: Identify encoding
-                                          "Minimum", # What exactly?
+                                          "Sec", # TODO: Identify encoding
+                                          "Chan", # TODO: Identify encoding
+                                          "Min", # What exactly?
                                           "Head ID", # TODO: Rename to head_ID
                                           "Observed unknown sex chops",
                                           "Observed unknown sex tags",
@@ -179,9 +179,9 @@ summary(cleaner_chopTBL$unknown_chops)
 Provide a stat on NA or unknown values
 
 NA and Unknown Values
-  - <1 % of values in the female_chop column are NA.
-  - <1 % of values in the male_chop column are NA.
-  - <1 % of values in the unknown_chops column are NA.
+  - <5 % of values in the female_chop column are NA.
+  - <5 % of values in the male_chop column are NA.
+  - <5 % of values in the unknown_chops column are NA.
 
 **Plotting female_chop over Period of Record**
 
@@ -370,7 +370,7 @@ total_tagsTBL %>%
   ggplot(aes(x = date, y = proportions, fill = sex)) +
   geom_bar(stat = "identity", position = "stack")
 
-# TODO: Make Graph Prettier
+# Make Graph Prettier
 total_tagsTBL %>% 
   pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_tags)) %>% 
@@ -390,7 +390,7 @@ total_tagsTBL %>%
 # cleaner_chopTBL %>% filter(date < "2010-10-01") %>% 
 #   select(date, male_tag, female_tag, unknown_tags)
 ```
-This plot shows the gender proportion of chops for each day over the the period of 2010-09-07 to 2010-12-22. The period appears to be shorter, because the tags recorded during the december period are 0. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. In comparison to the chops, we can see the tags tend to be more identifiable in terms of gender. The observed data gap is a result of reporting to be 0.
+This plot shows the gender proportion of chops for each day over the the period of 2010-09-07 to 2010-12-22. The period appears to be shorter, because the tags recorded during the december period are 0. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. In comparison to the chops, we can see the tags tend to be more identifiable in terms of gender. The observed data gap is a result of reporting to be 0, which we would not expect the case to be. I am thinking they may have had not collected data during this period and the values of 0 might be an indication of missing data. 
 
 # TODO : Male to Female to Unkown (proportion)
 ## Explore Categorical variables: {.tabset}
