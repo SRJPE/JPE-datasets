@@ -412,7 +412,6 @@ trap_operation_depth_5NumSum
 
 # ===== Consider Doing Later
 
-
 ## Explore Mark Recapture Ranges 
 Description of what variables we are defining ranges for. 
 
