@@ -44,16 +44,15 @@ library(googleCloudStorageR)
 #                saveToDisk = "rst_sites.csv",
 #                overwrite = TRUE)
 
-trap_locations_raw <- read_csv("../../data/standard-format-data/rst_trap_locations.csv")
+trap_locations_raw <- read_csv("rst_sites.csv")
 
 trap_locations <- trap_locations_raw %>%
-
   select(stream, site, subsite, river_location, latitude, longitude, start_date) %>%
-  select(stream, site, subsite, river_location, latitude, longitude) %>%
   distinct()
+
+trap_locations
   # identify years
 
-gage_locations_raw <- read_csv("../../analysis/exploratory-analysis/data-raw/gage_sites.csv")
 gage_locations_raw <- read_csv("gage_sites.csv")
 
 # Idenntify which flow gage locations have temperature measures
@@ -472,22 +471,42 @@ I would recommend using the CDEC data for Mill Creek due to the significant data
 
 #===============================================================================
 ## Yuba River
-### CDEC
-```{r}
-cdec_datasets("MRY")
-# CDEC doesnt not have temperature data
-```
-There is not CDEC data available for Yuba River.
-### USGS
-```{r}
-# Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
-# Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
+There is not CDEC or USGS data available for Yuba River.
 
-MLM_USGS <- readNWISdv(11421000, "00010") # parameter code 00010: water temperature temperature
-# No temp data
+### Air Gage
+```{r}
+# https://www.ncdc.noaa.gov/cdo-web/datasets/GHCND/stations/GHCND:USR0000CFOR/detail
+# query returns a list
+yuba_air_gage1 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CFOR', 
+                         datatypeid = 'TAVG', startdate = '2000-12-22', 
+                         enddate = '2009-12-30', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
+ uba_air_gage1 <- yuba_air_gage1$data %>% 
+  select(date,value) %>% 
+  mutate(date = as.Date(date))
+
+yuba_air_gage2 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CFOR', 
+                         datatypeid = 'TAVG', startdate = '2010-01-01', 
+                         enddate = '2012-12-30', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
+
+yuba_air_gage2 <- yuba_air_gage2$data %>% 
+  select(date,value) %>% 
+  mutate(date = as.Date(date))
+
+yuba_air_gage3 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CFOR', 
+                         datatypeid = 'TAVG', startdate = '2013-01-01', 
+                         enddate = '2022-06-29', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
+yuba_air_gage3 <- tisdale_air_gage3$data %>% 
+  select(date,value) %>% 
+  mutate(date = as.Date(date))
+
+# Combine Gage ranges spans
+rbind(as.data.frame(yuba_air_gage1), as.data.frame(yuba_air_gage2))
+yuba_air_gage12 = rbind(as.data.frame(yuba_air_gage1), as.data.frame(yuba_air_gage2))
+yuba_air_gage123 = rbind(yuba_air_gage12, as.data.frame(yuba_air_gage3))
+yuba_air_gage123
 ```
 
-There is no USGS temperature data available for Yuba River.
+Foresthills California has an air gage with elevation of 1327.4m. 
 
 ## Sacramento River - Knights Landing
 ```{r}
@@ -614,16 +633,56 @@ WLK_combined %>%
 ## Sacramento River - Tisdale
 ### CDEC data
 
-```{r}
-cdec_datasets("TIS") 
-```
 CDEC and USSGS temperature data is available for Tisdale
 
+```{r}
+
+# consider hiding token?
+# date must be last 10 years
+# Elevation : 635.5 m 
+# Link https://www.ncdc.noaa.gov/cdo-web/datasets/GHCND/stations/GHCND:USR0000CCOU/detail
+
+
+tisdale_air_gage rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USC00R0000CCOUdat
+                         atypeid = 'TAVG', '»¿rtdate = '1991995-01', end
+                         date = '2007-04-12'31toktoken = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", it = 130)
+
+``
+tisdale_air_gage1 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CCOU', 
+                         datatypeid = 'TAVG', startdate = '2005-01-01', 
+                         enddate = '2014-12-31', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
+tisdale_air_gage1 <- tisdale_air_gage1$data %>% 
+  select(date, value) %>% 
+  mutate(date = as.Date(date))
+
+tisdale_air_gage2 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CCOU', 
+                         datatypeid = 'TAVG', startdate = '2015-01-01', 
+                         enddate = '2022-12-31', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
+tisdale_air_gage2 <- tisdale_air_gage2$data %>% 
+  select(date,value) %>% 
+  mutate(date = as.Date(date))
+
+tisdale_air_gage3 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CCOU', 
+                         datatypeid = 'TAVG', startdate = '2013-01-01', 
+                         enddate = '2022-06-29', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
+tisdale_air_gage3 <- tisdale_air_gage3$data %>% 
+  select(date,value) %>% 
+  mutate(date = as.Date(date))
+
+# Combine Gage ranges spans
+rbind(as.data.frame(tisdale_air_gage1), as.data.frame(tisdale_air_gage2))
+tisdale_air_gage12 = rbind(as.data.frame(tisdale_air_gage1), as.data.frame(tisdale_air_gage2))`tisdale_air_gage123 = rbind(tisdale_air_gage12, as.data.frame(tisdale_air_gage3))
+tisdale_air_gage123
 
 
 
 
 
+
+# Questions
+1) Errors? binds?
+2) How would we like to include elevation?
+3) Can we plan the next steps together after getting as requested?
 
 
 
