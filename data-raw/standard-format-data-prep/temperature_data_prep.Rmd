@@ -19,6 +19,7 @@ library(dataRetrieval)
 library(hms)
 library(weathermetrics) # conversion of temperature units
 library(googleCloudStorageR)
+library(purrr)
 
 # TODO: Set-up pull from Google Cloud
 ```
@@ -477,16 +478,48 @@ There is not CDEC or USGS data available for Yuba River.
 ```{r}
 # https://www.ncdc.noaa.gov/cdo-web/datasets/GHCND/stations/GHCND:USR0000CFOR/detail
 # query returns a list
-yuba_air_gage1 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CFOR', 
-                         datatypeid = 'TAVG', startdate = '2000-12-22', 
-                         enddate = '2009-12-30', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
- uba_air_gage1 <- yuba_air_gage1$data %>% 
-  select(date,value) %>% 
-  mutate(date = as.Date(date))
+# TODO : Token
+# TODO : Get daily data
+# spot checks https://www.ncdc.noaa.gov/cdo-web/quickdata
+# mapping function -> purr functions
+# TODO : temp plots
+# TODO : Save as RDS
 
-yuba_air_gage2 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CFOR', 
-                         datatypeid = 'TAVG', startdate = '2010-01-01', 
-                         enddate = '2012-12-30', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
+
+# token <- Sys.getenv("token") #noaa cdo api token saved
+
+get_temp <- function(start_date, end_date, noaa_token = mytoken) {
+  
+  query <- rnoaa::ncdc(datasetid = 'GHCND', stationid = 'GHCND:USR0000CFOR', 
+                       datatypeid = 'TAVG', startdate = start_date, 
+                       enddate = end_date, token = noaa_token, limit = 365)
+
+  # Get columns of interest
+  temp_data <- query$data %>%
+    select(date, value) %>%
+    mutate(date = as.Date(date))
+  
+  # Return
+  return(temp_data)
+}
+
+# list date ranges, note we can only take yearly data
+date_ranges <- tibble(start_date = c('2001-01-01', '2002-01-01', '2003-01-01', '2004-01-01', '2005-01-01', '2006-01-01', '2007-01-01', '2008-01-01',
+                                     '2009-01-01', '2010-01-01', '2011-01-01', '2012-01-01', '2013-01-01', '2014-01-01', '2015-01-01',
+                                     '2016-01-01', '2017-01-01', '2018-01-01', '2019-01-01', '2020-01-01', '2021-01-01', '2022-01-01'), 
+                      end_date = c('2001-12-31', '2002-12-31', '2003-12-31', '2004-12-31', '2005-12-31', '2006-12-31', '2007-12-31', '2008-12-31',
+                                   '2009-12-31', '2010-12-31', '2011-12-31', '2012-12-31', '2013-12-31', '2014-12-31', '2015-12-31',
+                                   '2016-12-31', '2017-12-31', '2018-12-31', '2019-12-31', '2020-12-311', '2021-12-31', '2022-12-31'))
+                      
+temp_pulls = pmap(date_ranges, get_temp)
+
+yuba_air_temps = do.call("rbind", temp_pulls)
+
+# Save an object to a file
+saveRDS(___, file = "yuba_air_temperatures.rds")
+
+
+
 
 yuba_air_gage2 <- yuba_air_gage2$data %>% 
   select(date,value) %>% 
@@ -495,6 +528,7 @@ yuba_air_gage2 <- yuba_air_gage2$data %>%
 yuba_air_gage3 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CFOR', 
                          datatypeid = 'TAVG', startdate = '2013-01-01', 
                          enddate = '2022-06-29', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
+
 yuba_air_gage3 <- tisdale_air_gage3$data %>% 
   select(date,value) %>% 
   mutate(date = as.Date(date))
