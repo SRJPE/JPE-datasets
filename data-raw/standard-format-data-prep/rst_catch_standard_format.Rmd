@@ -165,11 +165,7 @@ filter(battle_rst, date == "2003-12-28")
 battle_rst_clean <- battle_rst %>%
   select(-c(sample_id)) %>%
   group_by(date, run, fork_length, lifestage, dead, interpolated) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
-  mutate(stream = "battle creek",
-         site = stream,
-         adipose_clipped = F,
-         run_method = "adjusted length-at-date")
+  summarize(count = sum(count, na.rm = T)) 
 
 battle_rst_min <- battle_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -198,7 +194,11 @@ battle_min_date_compare <- full_join(battle_rst_min, battle_trap_min)
 battle_rst_clean_final <- full_join(battle_rst_clean, 
                                     battle_trap_clean %>% 
                                       rename(date = sample_date)) %>% 
-  mutate(count = ifelse(is.na(count), 0, count))
+  mutate(count = ifelse(is.na(count), 0, count),
+         stream = "battle creek",
+         site = stream,
+         adipose_clipped = F,
+         run_method = "adjusted length-at-date")
 ```
 
 ### Variables removed
@@ -272,11 +272,7 @@ clear_rst_clean <- clear_rst %>%
   select(-c(sample_id)) %>%
   rename(site = station_code) %>%
   group_by(date, site, run, fork_length, lifestage, dead, interpolated) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
-  mutate(stream = "clear creek",
-         site = tolower(site),
-         adipose_clipped = F,
-         run_method = "adjusted length-at-date")
+  summarize(count = sum(count, na.rm = T)) 
 
 clear_rst_min <- clear_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -288,8 +284,9 @@ clear_rst_min <- clear_rst_clean %>%
 # e.g. make sure that if no catch then 0 in catch data
 
 clear_trap_clean <- clear_environmental %>%
+  rename(site = station_code) %>%
   # use sample date because this is the date the trap would have been checked
-  select(sample_date)
+  select(site, sample_date)
 
 clear_trap_min <- clear_trap_clean %>% 
   mutate(wy = ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))) %>% 
@@ -305,7 +302,11 @@ clear_min_date_compare <- full_join(clear_rst_min, clear_trap_min)
 clear_rst_clean_final <- full_join(clear_rst_clean, 
                                     clear_trap_clean %>% 
                                       rename(date = sample_date)) %>% 
-  mutate(count = ifelse(is.na(count), 0, count))
+  mutate(count = ifelse(is.na(count), 0, count),
+         stream = "clear creek",
+         site = tolower(site),
+         adipose_clipped = F,
+         run_method = "adjusted length-at-date")
   
 ```
 
@@ -365,11 +366,7 @@ filter(feather_rst, is.na(run)) %>% tally()
 feather_rst_clean <- feather_rst %>%
   rename(site = site_name) %>%
   group_by(date, site, run, lifestage, fork_length) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
-  mutate(stream = "feather river",
-         site = tolower(site),
-         adipose_clipped = F,
-         run_method = "unknown")
+  summarize(count = sum(count, na.rm = T))
 
 feather_rst_min <- feather_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -381,8 +378,9 @@ feather_rst_min <- feather_rst_clean %>%
 # e.g. make sure that if no catch then 0 in catch data
 
 feather_trap_clean <- feather_effort %>%
+  rename(site = site_name) %>%
   # use sample date because this is the date the trap would have been checked
-  select(date)
+  select(date, site)
 
 feather_trap_min <- feather_trap_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -397,7 +395,11 @@ feather_min_date_compare <- full_join(feather_rst_min, feather_trap_min)
 # Assumption is that if date is in environmental data but not catch data there was zero catch
 feather_rst_clean_final <- full_join(feather_rst_clean, 
                                     feather_trap_clean) %>% 
-  mutate(count = ifelse(is.na(count), 0, count))
+  mutate(count = ifelse(is.na(count), 0, count),
+         stream = "feather river",
+         site = tolower(site),
+         adipose_clipped = F,
+         run_method = "unknown")
   
 ```
 
@@ -497,15 +499,7 @@ knights_rst_clean <- knights_landing_rst %>%
          run_method = runMethod,
          lifestage = lifeStage) %>%
   group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
-  mutate(stream = "sacramento river",
-         site = "knights landing",
-         date = as_date(date),
-         adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
-                                     adipose_clipped == "Hatchery" ~ T),
-         run_method = tolower(run_method),
-         species = tolower(species),
-         lifestage = tolower(lifestage)) 
+  summarize(count = sum(count, na.rm = T))
 
 knights_rst_min <- knights_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -533,7 +527,15 @@ knights_min_date_compare <- full_join(knights_rst_min, knights_trap_min)
 # Assumption is that if date is in environmental data but not catch data there was zero catch
 knights_rst_clean_final <- full_join(knights_rst_clean, 
                                     knights_trap_clean) %>% 
-  mutate(count = ifelse(is.na(count), 0, count)) %>% 
+  mutate(count = ifelse(is.na(count), 0, count),
+         stream = "sacramento river",
+         site = "knights landing",
+         date = as_date(date),
+         adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
+                                     adipose_clipped == "Hatchery" ~ T),
+         run_method = tolower(run_method),
+         species = tolower(species),
+         lifestage = tolower(lifestage)) %>% 
   filter(date >= "2006-10-02")
 ```
 
@@ -617,6 +619,7 @@ combined_rst <- combined_rst_raw %>%
 unique(combined_rst$run)
 unique(combined_rst$lifestage)
 unique(combined_rst$site)
+unique(combined_rst$stream)
 ```
 
 ## Data dictionary
