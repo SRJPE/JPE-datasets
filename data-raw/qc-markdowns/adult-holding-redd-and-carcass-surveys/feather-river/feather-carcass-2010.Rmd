@@ -21,7 +21,7 @@ library(knitr)
 
 ```
 
-# [Watershed] [Data type long version]
+# Feather River Carcass Data
 
 ## Description of Monitoring Data
 
@@ -58,8 +58,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 # Google Cloud Set up
 # Sys.setenv("GCS_AUTH_FILE" = "config.json")
 # Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
-# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# 
 # gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopChannelTBL1.xlsx",
 #                bucket = gcs_get_global_bucket(),
 #                saveToDisk = "ChopChannelTBL1.xlsx",
@@ -72,30 +71,46 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 # 
 # gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopRecovTBL.xlsx",
 #                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "Cç",
+#                saveToDisk = "ChopRecovTBL.xlsx",
 #                overwrite = TRUE)
 
 # Read Data
+# from ashley: this is our main data collection table
 ChopChannel_raw <- read_excel("ChopChannelTBL1.xlsx") %>% 
-  rename("ID" = HeaderID)
+  rename("ID" = HeaderID) %>% 
+  glimpse()
+# from ashley: This is a survey info and covariate table
 ChopHeader_raw <- read_excel("ChopHeaderTBL.xlsx") %>% 
-  rename("ID" = headerID)
-ChopRecov_raw <-read_excel("ChopRecovTBL.xlsx")
+  rename("ID" = headerID) %>% 
+  glimpse()
+# from ashley: This is recovery data to be used to determine how many carcasses are being captured
+# We will likely retain this information in another table for clarity
+ChopRecov_raw <-read_excel("ChopRecovTBL.xlsx") %>% 
+  glimpse()
+
+# from ashley: thoughts on how to link chopchannel with choprecovery: don't need to do this, for future reference
+# use chopchannel to count number tagged per day
+# link to chopheader by ID to get tag color
+# link to chopreocv by recovid (= ID) to get the date recovered
+# can summarize the number of each color recovered by date and link to the date applied
 ```
-Read in data from Microsoft Access, glimpse raw data and domain description sheet: 
 
 ```{r}
 # TODO: Attempt, but not needed
-library(Hmisc) 
+# from ashley: this is code to read in tables from Access. Have you figured out 
+# how to get this to work on your machine?
 
-# List of all available tables
-mdb.get("CAMP_Escapement_20210412.mdb")
+# library(Hmisc) 
+# 
+# # List of all available tables
+# mdb.get("CAMP_Escapement_20210412.mdb")
+# 
+# # Code to read in the CatchRaw table
+# carcasschops <- mdb.get("CAMP_DB_for_FlowWest/CAMP_Escapement_20210412.mdb", tables = "CarcassChops")
+# 
 
-# Code to read in the CatchRaw table
-carcasschops <- mdb.get("CAMP_DB_for_FlowWest/CAMP_Escapement_20210412.mdb", tables = "CarcassChops")
-
-feather_camp <- odbcConnectAccess2007("CAMP_Escapement_20210412.mdb")
 ```
+
 ## Data transformations
 
 ```{r}
@@ -104,58 +119,65 @@ feather_camp <- odbcConnectAccess2007("CAMP_Escapement_20210412.mdb")
 # chopTBL_test2 <- full_join(chopTBL_test1, ChopRecov_raw, by = "ChanID")
 
 # Join Tables
-chopTBL <- left_join(ChopChannel_raw, ChopHeader_raw, by = "ID") %>%
-  full_join(ChopRecov_raw, by = "ChanID")
+# chopTBL <- left_join(ChopChannel_raw, ChopHeader_raw, by = "ID") %>%
+#   full_join(ChopRecov_raw, by = "ChanID")
+# 
+# cleaner_chopTBL <- chopTBL %>% 
+#   clean_names() %>% 
+#   glimpse()
+# 
+# # TODO: Any columns to remove? Check in with Ashley on this.
+#  #  select(-sect,chan,crew,week_num) %>%
+#  #  glimpse()
 
-cleaner_chopTBL <- chopTBL %>% 
-  clean_names() %>% 
-  glimpse()
+# from ashley: i changed my mind about joining all these tables together
+# 1. we need to link chopheader and chopchannel to get the dates and tag color applied
+# 2. we need to link chopheader and choprecov to get the dates
 
-# TODO: Any columns to remove? Check in with Ashley on this.
- #  select(-sect,chan,crew,week_num) %>%
- #  glimpse()
+#1. chopchannel table (with dates and tag color)
+
+chop_channel_join <- full_join(ChopHeader_raw %>% 
+                                 select(ID, TagCol, Date, Time),
+                               ChopChannel_raw) %>% 
+  clean_names()
+
+# 2. choprecovery table (with dates)
+
+chop_recovery_join <- full_join(ChopHeader_raw %>% 
+                                  select(ID, Date, Time),
+                                ChopRecov_raw %>% 
+                                  rename(ID = RecovID))  %>% 
+  clean_names()
+
+chop_header <- ChopHeader_raw %>% 
+  clean_names()
 ```
 
-## Data Dictionary
-```{r}
-percent_na <- cleaner_chopTBL %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
-  pivot_longer(cols = everything())
-  
-data_dictionary <- tibble(variables = colnames(cleaner_chopTBL),
-                          description = c("Channel ID", # TODO: Identify linkage, Lat/long?
-                                          "Sec", # TODO: Identify encoding
-                                          "Chan", # TODO: Identify encoding
-                                          "Min", # What exactly?
-                                          "Head ID", # TODO: Rename to head_ID
-                                          "Observed unknown sex chops",
-                                          "Observed unknown sex tags",
-                                          "Observed male chops",
-                                          "Observed female chops",
-                                          "Observed female tags",
-                                          "Observed male tags",
-                                          "Color of tag applied to carcass", # color?
-                                          "Date",
-                                          "Initials of crew conducting survey", 
-                                          "Time of Day",
-                                          "Initials of person recording data",
-                                          "Weather (sunny, cloudy, rainy)",
-                                          "Comments",
-                                          "Week Number",
-                                          "Recovery ID",
-                                          "Recovery color",
-                                          "Recovery count"),
-                          percent_na = round(percent_na$value*100))
-kable(data_dictionary)
-```
+### Counts
+
+The `chop_channel` table contains carcass counts by sex and chop/tagged
+
+### Recovery
+
+The `chop_recovery` table contains recovered carcass counts by color
+
+### Survey
+
+The `chop_header` table contains survey metadata and covariates
+
 
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
 # Filter clean data to show only numeric variables 
-cleaner_chopTBL %>% 
+chop_channel_join %>% 
   select_if(is.numeric) %>%
   colnames()
+```
+### Variable: `id`, `chan_id`, `sect`, `min`
+
+```{r}
+#from ashley: TODO i'd like to at least see the ranges for each of these and the missing values
 ```
 
 ### Variable: `female_chop`, `male_chop`,`unknown_chop`
@@ -163,19 +185,19 @@ cleaner_chopTBL %>%
 **Numeric Summary of `female_chop`, `male_chop`,`unknown_chops` over Period of Record**
 
 ```{r}
-summary(cleaner_chopTBL$female_chop)
+summary(chop_channel_join$female_chop)
 ```
 
 ```{r}
-summary(cleaner_chopTBL$male_chop)
+summary(chop_channel_join$male_chop)
 ```
 
 ```{r}
-summary(cleaner_chopTBL$unknown_chops)
+summary(chop_channel_join$unknown_chops)
 ```
 
 **NA and Unknown Values**
-
+# from ashley: there is some code to calculate the exact percentage. check out other qc markdowns
 Provide a stat on NA or unknown values
 
 NA and Unknown Values
@@ -185,11 +207,11 @@ NA and Unknown Values
 
 **Plotting female_chop over Period of Record**
 
-### TODO: compare Male, female, unknowntogether -> histogram?
+### from ashley: for the dotplots, lets put the date on the x-axis i think it would be easier to read
 
 ```{r}
 # Make whatever plot is appropriate 
-filter(cleaner_chopTBL) %>% 
+filter(chop_channel_join) %>% 
   ggplot(aes(x = female_chop, y = date)) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "Female Chop", 
@@ -202,7 +224,7 @@ filter(cleaner_chopTBL) %>%
 **Plotting male_chop over Period of Record**
 ```{r}
 # Make whatever plot is appropriate 
-filter(cleaner_chopTBL) %>% 
+filter(chop_channel_join) %>% 
   ggplot(aes(x = male_chop, y = date)) +
   geom_point(size = 1.4, alpha = .5, color = "red") + 
   labs(x = "Male Chop", 
@@ -214,7 +236,7 @@ filter(cleaner_chopTBL) %>%
 **Plotting unknown_chops over Period of Record**
 ```{r}
 # Make whatever plot is appropriate 
-filter(cleaner_chopTBL) %>% 
+filter(chop_channel_join) %>% 
   ggplot(aes(x = unknown_chops, y = date)) +
   geom_point(size = 1.4, alpha = .5, color = "black") + 
   labs(x = "Unknown Chops", 
@@ -226,11 +248,11 @@ filter(cleaner_chopTBL) %>%
 **Plotting Total chops over Period of Record**
 
 ```{r}
-cleaner_chopTBL %>% glimpse()
+chop_channel_join %>% glimpse()
 
 # Percentage by Gender of Daily Chops
 # Address NA values for chops
-total_chopsTBL <- cleaner_chopTBL %>%
+total_chops <- chop_channel_join%>%
   mutate(male_chop = ifelse(is.na(male_chop), 0, male_chop), # fill na
          female_chop = ifelse(is.na(female_chop), 0, female_chop),
          unknown_chop = ifelse(is.na(unknown_chops), 0, unknown_chops),
@@ -238,14 +260,14 @@ total_chopsTBL <- cleaner_chopTBL %>%
   select(date, male_chop, female_chop, unknown_chops, total_chops)
 
 # Case check: checking for duplicates
-total_chops_test <- total_chopsTBL %>% # get total chops
+total_chops_test <- total_chops %>% # get total chops
   filter(date == as_date("2010-09-07"))
 
 # Check if NAs introduced in creating total chop columns
 nrow(total_chops_test) == (sum(total_chops_test$total_chops == (total_chops_test$male_chop + total_chops_test$female_chop + total_chops_test$unknown_chops)))
 
 # total number of chops for the day
-total_chopsTBL <- total_chopsTBL %>%
+total_chops_summary <- total_chops %>%
   group_by(date) %>%
   summarise(total_chops = sum(total_chops, na.rm = T),
             male_chops = sum(male_chop, na.rm = T),
@@ -261,17 +283,17 @@ total_chopsTBL <- total_chopsTBL %>%
 A = left_join(ChopChannel_raw, ChopHeader_raw, by = "ID")$ChanID
 B = ChopRecov_raw$ChanID
 sum(B %in% A) # they are
+# from ashley: yes I noticed that. there are some IDs in the chop_channel table that are not in the chop_header table. there are A LOT of IDs in the recovery table that are not in header table. at this point i would assume this is a data entry issue and we can leave as is but clearly document. this is something we may learn more about and then be able to fix
 
-# TODO: Resolve missing dates?
 # Plot to identify proportions by sex for each day
-total_chopsTBL %>% 
+total_chops_summary %>% 
   pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_chops)) %>% 
   ggplot(aes(x = date, y = proportions, fill = sex)) +
   geom_bar(stat = "identity", position = "stack")
 
 # TODO: Check why some plots are above 100%
-proportion_irregularities <- total_chopsTBL %>%
+proportion_irregularities <- total_chops_summary %>%
   pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>%
   mutate(proportions = (count / total_chops)) %>% 
   group_by(date) %>%
@@ -282,14 +304,15 @@ proportion_irregularities <- total_chopsTBL %>%
 
 # Explore the irregularities
 proportion_irregularities_date = proportion_irregularities$date
-proportion_irregularities_date_index = total_chopsTBL$date %in% proportion_irregularities_date
-total_chopsTBL %>% 
+proportion_irregularities_date_index = total_chops_summary$date %in% proportion_irregularities_date
+total_chops_summary %>% 
   filter(proportion_irregularities_date_index) %>% 
   mutate(proportion = (male_chops + female_chops + unknown_chops) / (total_chops))
-# It seems is just significance level
+# It seems is just significance level (# from ashley: what do you mean by that?)
 
 # TODO: Make Graph Prettier
-total_chopsTBL %>% 
+# from ashley: these colors are jarring. maybe take a look at the wesanderson pallete package
+total_chops_summary %>% 
   pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_chops)) %>% 
   ggplot(aes(x = date, y = proportions, fill = sex)) +
@@ -300,16 +323,25 @@ total_chopsTBL %>%
   theme_minimal() + 
   labs(y = "Proportion", x = "Date")
 
-# TODO: Look into chan_id
+# TODO: Look into chan_id (# from ashley: what are you looking into?)
 
 ```
 This plot shows the gender proportion of chops for each day over the the period of 2010-09-07 to 2010-12-22. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. We can also observe some of the proportions exceed 1 which was a result of rounding/significant figure sums, so these can be ignored. Also, it was interesting to see the unknown sex account for most of the chops towards the latter periods.
+
+### Variable: `female_tag`, `male_tag`,`unknown_tag`
+
+**Numeric Summary of `female_tag`, `male_tag`,`unknown_tag` over Period of Record**
+
+```{r}
+# from ashley: please insert NA summaries for the tag variables
+
+```
 
 **Plotting female_tag over Period of Record**
 
 ```{r}
 # Make whatever plot is appropriate 
-filter(cleaner_chopTBL) %>% 
+filter(chop_channel_join) %>% 
   ggplot(aes(x = female_tag, y = date)) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "Female Tag", 
@@ -322,7 +354,7 @@ filter(cleaner_chopTBL) %>%
 
 ```{r}
 # Make whatever plot is appropriate 
-filter(cleaner_chopTBL) %>% 
+filter(chop_channel_join) %>% 
   ggplot(aes(x = male_tag, y = date)) +
   geom_point(size = 1.4, alpha = .5, color = "red") + 
   labs(x = "Male Tag", 
@@ -334,7 +366,7 @@ filter(cleaner_chopTBL) %>%
 **Plotting unknown_tags over Period of Record**
 ```{r}
 # Make whatever plot is appropriate 
-filter(cleaner_chopTBL) %>% 
+filter(chop_channel_join) %>% 
   ggplot(aes(x = unknown_tags, y = date)) +
   geom_point(size = 1.4, alpha = .5, color = "black") + 
   labs(x = "Unknown Tags", 
@@ -342,13 +374,11 @@ filter(cleaner_chopTBL) %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 ```
-
-
 **Plotting Total Tags over Period of Record**
 ```{r}
 # Percentage by Gender of Daily Chops
 # Address NA values for chops
-total_tagsTBL <- cleaner_chopTBL %>%
+total_tags <- chop_channel_join %>%
   mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na
          female_tag = ifelse(is.na(female_tag), 0, female_tag),
          unknown_tags = ifelse(is.na(unknown_tags), 0, unknown_tags),
@@ -356,7 +386,7 @@ total_tagsTBL <- cleaner_chopTBL %>%
   select(date, male_tag, female_tag, unknown_tags, total_tags)
 
 # total number of chops for the day
-total_tagsTBL <- total_tagsTBL %>%
+total_tags_summary <- total_tags %>%
   group_by(date) %>%
   summarise(total_tags = sum(total_tags, na.rm = T),
             male_tags = sum(male_tag, na.rm = T),
@@ -364,14 +394,14 @@ total_tagsTBL <- total_tagsTBL %>%
             unknown_tags = sum(unknown_tags, na.rm = T))
 
 # Plot to identify proportions by sex for each day
-total_tagsTBL %>% 
+total_tags_summary %>% 
   pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_tags)) %>% 
   ggplot(aes(x = date, y = proportions, fill = sex)) +
   geom_bar(stat = "identity", position = "stack")
 
 # Make Graph Prettier
-total_tagsTBL %>% 
+total_tags_summary %>% 
   pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_tags)) %>% 
   ggplot(aes(x = date, y = proportions, fill = sex)) +
@@ -390,23 +420,61 @@ total_tagsTBL %>%
 # cleaner_chopTBL %>% filter(date < "2010-10-01") %>% 
 #   select(date, male_tag, female_tag, unknown_tags)
 ```
-This plot shows the gender proportion of chops for each day over the the period of 2010-09-07 to 2010-12-22. The period appears to be shorter, because the tags recorded during the december period are 0. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. In comparison to the chops, we can see the tags tend to be more identifiable in terms of gender. The observed data gap is a result of reporting to be 0, which we would not expect the case to be. I am thinking they may have had not collected data during this period and the values of 0 might be an indication of missing data. 
+This plot shows the gender proportion of tags for each day over the the period of 2010-09-07 to 2010-12-22. The period appears to be shorter, because the tags recorded during the december period are 0. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. In comparison to the chops, we can see the tags tend to be more identifiable in terms of gender. The observed data gap is a result of reporting to be 0, which we would not expect the case to be. I am thinking they may have had not collected data during this period and the values of 0 might be an indication of missing data. 
 
-# TODO : Male to Female to Unkown (proportion)
+# from ashley: also looks like there was a tag in early september and no chops that early
+
+**Comparing tags and chops**
+
+```{r}
+# from ashley: please improve on this plot I got started, make it look better, describe it, double check that the numbers make sense
+total_carcass <- full_join(total_chops_summary, total_tags_summary) %>% 
+  select(date, total_chops, total_tags) %>% 
+  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+
+ggplot(total_carcass, aes(x = date, y = value, fill= mark)) +
+  geom_col()
+
+```
+```{r}
+# Filter clean data to show only numeric variables 
+chop_recovery_join %>% 
+  select_if(is.numeric) %>%
+  colnames()
+```
+```{r}
+# from ashley: please add summaries for the id, chan_id, and recov_count variables from the
+# recovery table (see above). id and chan_id likely vary between the chop channel and chop recovery
+# table so that is why we are summarizing here again
+
+```
+
+```{r}
+# Filter clean data to show only numeric variables 
+chop_header %>% 
+  select_if(is.numeric) %>%
+  colnames()
+```
+```{r}
+# from ashley: please add summaries for the id, tag_col from the header table.
+# week_num is a derivitive variable and doesn't need to be summarized. i think we can remove it
+```
+
 ## Explore Categorical variables: {.tabset}
 
 General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
 
 ```{r}
 # Filter clean data to show only categorical variables
-cleaner_chopTBL %>% 
+chop_channel_join %>% 
   select_if(is.character) %>%
   colnames()
 ```
 
 
-### Variable: `characters`
+### Variable: `chan`
 ```{r}
+# from ashley: summarize these in separate chunks. it is ok to lump together variables that are similiar like male and female chops but chan and weather are very different. also please update code to reflect the 3 new tables (chop_channel_join, chop_recovery_join, chop_header)
 # Frequencies
 table(cleaner_chopTBL$chan)
 table(cleaner_chopTBL$crew)
@@ -414,21 +482,72 @@ table(cleaner_chopTBL$weather)
 table(cleaner_chopTBL$comment)
 table(cleaner_chopTBL$recov_color)
 ```
+
+
+## Clean data
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
 # Fix any inconsistencies with categorical variables
-cleaner_chopTBL <- cleaner_chopTBL %>% 
-  mutate_if(is.character, str_to_lower)
+# from ashley: here is an example of cleaning for the chop_channel table. please do the same for recovery and header
+chop_channel_clean <- chop_channel_join %>% 
+  mutate_if(is.character, str_to_lower) %>% 
+  mutate(time = as_hms(time),
+         datetime = ymd_hms(paste(date, time))) %>% 
+  select(-c(date, time))
 
+
+# from ashley: what is the code below for?
 # Frequencies
 table(cleaner_chopTBL$chan)
 table(cleaner_chopTBL$crew)
 table(cleaner_chopTBL$weather)
 table(cleaner_chopTBL$comment)
 table(cleaner_chopTBL$recov_color)
+
+
 ```
+
+## Data Dictionaries
+
+### Counts
+
+```{r}
+percent_na <- chop_channel_join %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+counts_data_dictionary <- tibble(variables = colnames(chop_channel_join),
+                          description = c("Head ID", # TODO: Rename to head_ID
+                                          "Color of tag applied to carcass",
+                                          "Date and time of survey",
+                                          "Channel ID", # TODO: Identify linkage, Lat/long?
+                                          "Sec", # TODO: Identify encoding
+                                          "Chan", # TODO: Identify encoding
+                                          "Min", # What exactly?
+                                          "Carcass that were chopped and sex was unknown",
+                                          "Carcass that were tagged and sex was unknown",
+                                          "Carcass that were chopped and male",
+                                          "Carcass that were chopped and female",
+                                          "Carcass that were tagged and female",
+                                          "Carcass that were tagged and male"),
+                          percent_na = round(percent_na$value*100))
+kable(counts_data_dictionary)
+```
+
+### Recovery
+
+```{r}
+# from ashley: please insert data dictionary for cleaned recovery table
+```
+
+### Survey
+
+```{r}
+# from ashley: please insert data dictionary for cleaned survey table
+```
+
 
 ## Save cleaned data back to google cloud 
 
