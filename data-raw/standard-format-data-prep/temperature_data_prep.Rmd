@@ -20,6 +20,7 @@ library(hms)
 library(weathermetrics) # conversion of temperature units
 library(googleCloudStorageR)
 library(purrr)
+library(zoo)
 
 # TODO: Set-up pull from Google Cloud
 ```
@@ -54,6 +55,7 @@ trap_locations <- trap_locations_raw %>%
 trap_locations
   # identify years
 
+# from ashley: where is this coming from? do we need this?
 gage_locations_raw <- read_csv("gage_sites.csv")
 
 # Idenntify which flow gage locations have temperature measures
@@ -84,12 +86,14 @@ cdec_datasets("BAT")
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-# BAT_USGS <- readNWISdv(11376550, "00010") # parameter code 00010: water temperature
-#write.csv(BAT_USGS,"BAT_USGS.csv", row.names = FALSE)
+BAT_USGS <- readNWISdv(11376550, "00010") # parameter code 00010: water temperature
+
+# from ashley: don't need to save this if there is no data.
+# write.csv(BAT_USGS,"BAT_USGS.csv", row.names = FALSE)
 
 # Read created CSV
-BAT_USGS <- read_csv("BAT_USGS.csv")
-BAT_USGS
+# BAT_USGS <- read_csv("BAT_USGS.csv")
+# BAT_USGS
 ```
 
 CDEC and USGS do not provide temperature data for Battle Creek. Temperature data is collected by sensor 25, but CDEC data is not available for this sensor. USGS mapper indicates as well there is no data available for the requested period.
@@ -103,11 +107,12 @@ cdec_datasets("BCK")
 ### CDEC
 ```{r}
 # Check if CDEC data provides temp data for respective location
+# from ashley: this is a repeat of code above. reason why it is here again?
 cdec_datasets("BCK")
 
 # Since this location has sensor that collects temp data, we can make request
-#BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
-#write.csv(BCK_CDEC,"BCK_CDEC.csv", row.names = FALSE)
+BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+write.csv(BCK_CDEC,"BCK_CDEC.csv", row.names = FALSE)
 
 # Read created CSV
 BCK_CDEC <- read_csv("BCK_CDEC.csv")
@@ -145,17 +150,37 @@ BCK_hourly_temps %>%
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 #BCK_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperature
+# from ashley: don't need to save if no data
 #write.csv(BCK_USGS,"BCK_USGS.csv", row.names = FALSE)
 
-# Read created CSV
-BCK_USGS <- read_csv("BCK_USGS.csv")
-BCK_USGS
 # no data available from USGS
 ```
 
+### Clean data and summarize as mean daily 
 ```{r}
-# write_rds(BCK_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/butte_temp.rds")
 
+# 1. Calculate the daily average temperature
+BCK_daily_temps <- BCK_hourly_temps %>% 
+  group_by(date) %>% 
+  summarize(mean_temp_degC = mean(temp_degC)) 
+
+# 2. Check to see if applying rolling mean would help with outliers.
+butte_format <- transform(BCK_daily_temps, rollmean = rollapplyr(mean_temp_degC, 3, mean, partial = T)) %>% 
+  mutate(mean_temp_degC_clean = ifelse(mean_temp_degC > 70, rollmean, mean_temp_degC)) 
+
+butte_format %>%
+  ggplot(aes(x=date)) +
+  geom_line(aes(y = mean_temp_degC_clean), color = "darkred") +
+  labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Buttle Creek", caption = "CDEC")
+# doesn't really seem to help much so for transparency don't apply any transformation
+filter(butte_format, mean_temp_degC > 70)
+```
+
+### Save data
+```{r}
+# save final version of butte data
+# from ashley: erin and i have started using the here package, especially in markdowns because it makes it easier for file path reading
+write_rds(BCK_daily_temps, here::here("data-raw", "standard-format-data-prep","temp_data", "butte_temp.rds"))
 ```
 
 
