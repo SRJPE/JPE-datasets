@@ -75,20 +75,22 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 #                overwrite = TRUE)
 
 # Read Data
-# from ashley: this is our main data collection table
+# this is our main data collection table
 ChopChannel_raw <- read_excel("ChopChannelTBL1.xlsx") %>% 
   rename("ID" = HeaderID) %>% 
   glimpse()
-# from ashley: This is a survey info and covariate table
+
+# This is a survey info and covariate table
 ChopHeader_raw <- read_excel("ChopHeaderTBL.xlsx") %>% 
   rename("ID" = headerID) %>% 
   glimpse()
-# from ashley: This is recovery data to be used to determine how many carcasses are being captured
+
+# this is recovery data to be used to determine how many carcasses are being captured
 # We will likely retain this information in another table for clarity
 ChopRecov_raw <-read_excel("ChopRecovTBL.xlsx") %>% 
   glimpse()
 
-# from ashley: thoughts on how to link chopchannel with choprecovery: don't need to do this, for future reference
+# thoughts on how to link chopchannel with choprecovery: don't need to do this, for future reference
 # use chopchannel to count number tagged per day
 # link to chopheader by ID to get tag color
 # link to chopreocv by recovid (= ID) to get the date recovered
@@ -177,9 +179,18 @@ chop_channel_join %>%
 ### Variable: `id`, `chan_id`, `sect`, `min`
 
 ```{r}
-#from ashley: TODO i'd like to at least see the ranges for each of these and the missing values
+summary(chop_channel_join$id)
+```
+```{r}
+summary(chop_channel_join$chan_id)
+```
+```{r}
+summary(chop_channel_join$sect)
 ```
 
+```{r}
+summary(chop_channel_join$min)
+```
 ### Variable: `female_chop`, `male_chop`,`unknown_chop`
 
 **Numeric Summary of `female_chop`, `male_chop`,`unknown_chops` over Period of Record**
@@ -212,7 +223,7 @@ NA and Unknown Values
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
-  ggplot(aes(x = female_chop, y = date)) +
+  ggplot(aes(x = date, y = female_chop)) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "Female Chop", 
        y = "Date") +
@@ -225,7 +236,7 @@ filter(chop_channel_join) %>%
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
-  ggplot(aes(x = male_chop, y = date)) +
+  ggplot(aes(x = date, y = male_chop)) +
   geom_point(size = 1.4, alpha = .5, color = "red") + 
   labs(x = "Male Chop", 
        y = "Date") +
@@ -237,7 +248,7 @@ filter(chop_channel_join) %>%
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
-  ggplot(aes(x = unknown_chops, y = date)) +
+  ggplot(aes(x = date, y = unknown_chops)) +
   geom_point(size = 1.4, alpha = .5, color = "black") + 
   labs(x = "Unknown Chops", 
        y = "Date") +
@@ -274,7 +285,7 @@ total_chops_summary <- total_chops %>%
             female_chops = sum(female_chop, na.rm = T),
             unknown_chops = sum(unknown_chops, na.rm = T))
 
-# TODO: Look into NA in date. Why are there date gaps?
+# Look into NA in date. Why are there date gaps?
 # Potential issue: Reading in excel can introduce NA (not case here)
 # Potential issue: Joins introduces NA (the case)
 # Potential issue: Could just be missing (not missing, but just periodically collected 2-3 weekdays of the week no specific day)
@@ -283,7 +294,7 @@ total_chops_summary <- total_chops %>%
 A = left_join(ChopChannel_raw, ChopHeader_raw, by = "ID")$ChanID
 B = ChopRecov_raw$ChanID
 sum(B %in% A) # they are
-# from ashley: yes I noticed that. there are some IDs in the chop_channel table that are not in the chop_header table. there are A LOT of IDs in the recovery table that are not in header table. at this point i would assume this is a data entry issue and we can leave as is but clearly document. this is something we may learn more about and then be able to fix
+# yes I noticed that. there are some IDs in the chop_channel table that are not in the chop_header table. there are A LOT of IDs in the recovery table that are not in header table. at this point i would assume this is a data entry issue and we can leave as is but clearly document. this is something we may learn more about and then be able to fix
 
 # Plot to identify proportions by sex for each day
 total_chops_summary %>% 
@@ -292,7 +303,7 @@ total_chops_summary %>%
   ggplot(aes(x = date, y = proportions, fill = sex)) +
   geom_bar(stat = "identity", position = "stack")
 
-# TODO: Check why some plots are above 100%
+# Check why some plots are above 100%
 proportion_irregularities <- total_chops_summary %>%
   pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>%
   mutate(proportions = (count / total_chops)) %>% 
@@ -308,10 +319,9 @@ proportion_irregularities_date_index = total_chops_summary$date %in% proportion_
 total_chops_summary %>% 
   filter(proportion_irregularities_date_index) %>% 
   mutate(proportion = (male_chops + female_chops + unknown_chops) / (total_chops))
-# It seems is just significance level (# from ashley: what do you mean by that?)
+# It is result of significant figure rounding error
 
-# TODO: Make Graph Prettier
-# from ashley: these colors are jarring. maybe take a look at the wesanderson pallete package
+# plot
 total_chops_summary %>% 
   pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_chops)) %>% 
@@ -321,9 +331,8 @@ total_chops_summary %>%
                     name = "Sex", 
                     labels = c("Female", "Male", "Unknown")) +
   theme_minimal() + 
-  labs(y = "Proportion", x = "Date")
-
-# TODO: Look into chan_id (# from ashley: what are you looking into?)
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
 
 ```
 This plot shows the gender proportion of chops for each day over the the period of 2010-09-07 to 2010-12-22. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. We can also observe some of the proportions exceed 1 which was a result of rounding/significant figure sums, so these can be ignored. Also, it was interesting to see the unknown sex account for most of the chops towards the latter periods.
@@ -342,7 +351,7 @@ This plot shows the gender proportion of chops for each day over the the period 
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
-  ggplot(aes(x = female_tag, y = date)) +
+  ggplot(aes(x = date, y = female_tag)) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "Female Tag", 
        y = "Date") +
@@ -355,7 +364,7 @@ filter(chop_channel_join) %>%
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
-  ggplot(aes(x = male_tag, y = date)) +
+  ggplot(aes(x = date, y = male_tag)) +
   geom_point(size = 1.4, alpha = .5, color = "red") + 
   labs(x = "Male Tag", 
        y = "Date") +
@@ -367,7 +376,7 @@ filter(chop_channel_join) %>%
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
-  ggplot(aes(x = unknown_tags, y = date)) +
+  ggplot(aes(x = date, y = unknown_tags)) +
   geom_point(size = 1.4, alpha = .5, color = "black") + 
   labs(x = "Unknown Tags", 
        y = "Date") +
@@ -410,7 +419,8 @@ total_tags_summary %>%
                     name = "Sex", 
                     labels = c("Female", "Male", "Unknown")) +
   theme_minimal() + 
-  labs(y = "Proportion", x = "Date")
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
 
 #check why period of graph is cut short
 # cleaner_chopTBL %>% filter(date > "2010-11-01") %>% 
@@ -432,8 +442,14 @@ total_carcass <- full_join(total_chops_summary, total_tags_summary) %>%
   select(date, total_chops, total_tags) %>% 
   pivot_longer(c(total_chops, total_tags), names_to = "mark")
 
-ggplot(total_carcass, aes(x = date, y = value, fill= mark)) +
-  geom_col()
+full_join(total_chops_summary, total_tags_summary) %>% 
+  select(date, total_chops, total_tags) %>% 
+  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+
+ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
+  geom_col() +
+  theme_minimal() +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
 
 ```
 ```{r}
