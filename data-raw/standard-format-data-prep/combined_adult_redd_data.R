@@ -25,29 +25,26 @@ get_data <- function(path, name, save) {
 # rst data pull ####
 files_battle <- tibble(path = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_redd",
                        name = c(""),
-                       save = "data/redd_carcass_holding/battle_redd")
+                       save = "data/redd-carcass-holding/battle_redd")
 files_clear <- tibble(path = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_redd",
                       name = c(""),
-                      save = "data/redd_carcass_holding/clear_redd")
+                      save = "data/redd-carcass-holding/clear_redd")
 files_feather <- tibble(path = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd",
                      name = c(""),
-                     save = "data/redd_carcass_holding/feather_redd")
+                     save = "data/redd-carcass-holding/feather_redd")
 files_mill <- tibble(path = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey",
                         name = c(""),
-                        save = "data/redd_carcass_holding/mill_redd")
+                        save = "data/redd-carcass-holding/mill_redd")
 
 pmap(files_battle, get_data)
 pmap(files_clear, get_data)
 pmap(files_feather, get_data)
 pmap(files_mill, get_data)
 
-
-
-
 # Read in & Explore 
 # Adult upstream passage data 
 # Battle
-battle_redd <- read_csv("data/redd_carcass_holding/battle_redd.csv", 
+battle_redd <- read_csv("data/redd-carcass-holding/battle_redd.csv", 
                         col_names = TRUE, 
                         col_types = list("n", "n", "D", "c", "n", "c", 
                                          "c", "c", "l", "l", "l", "n", 
@@ -59,7 +56,7 @@ unique(battle_redd$pre_redd_substrate_size)
 unique(battle_redd$flow_meter)
 
 # Clear 
-clear_redd <- read_csv("data/redd_carcass_holding/clear_redd.csv", 
+clear_redd <- read_csv("data/redd-carcass-holding/clear_redd.csv", 
                        col_names = TRUE,
                        col_types = list("c", "n", "n", "n", "n", "n", 
                                         "c", "n", "c", "D", "c", "c", "n", "c", 
@@ -71,7 +68,7 @@ clear_redd <- read_csv("data/redd_carcass_holding/clear_redd.csv",
 unique(clear_redd$method)
 
 # Feather
-feather_redd <- read_csv("data/redd_carcass_holding/feather_redd.csv", 
+feather_redd <- read_csv("data/redd-carcass-holding/feather_redd.csv", 
                          col_names = TRUE, 
                          col_types = list("D", "c", "c", "n",
                                        "n", "n", "n", "n", "n",
@@ -81,7 +78,7 @@ feather_redd <- read_csv("data/redd_carcass_holding/feather_redd.csv",
 summary(feather_redd)
 
 # Mill 
-mill_redd <- read_csv("data/redd_carcass_holding/mill_redd.csv") %>% glimpse()
+mill_redd <- read_csv("data/redd-carcass-holding/mill_redd.csv") %>% glimpse()
 # explore data
 summary(mill_redd)
 
@@ -181,4 +178,4 @@ summary(combined_redd$year)
 summary(combined_redd$date) # 2000 - 2020 
 
 
-saveRDS(combined_redd, "data/redd_carcass_holding/combined_redd.rds")
+# saveRDS(combined_redd, "data/redd-carcass-holding/combined_redd.rds")

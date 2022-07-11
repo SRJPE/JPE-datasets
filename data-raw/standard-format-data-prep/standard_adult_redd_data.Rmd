@@ -1,0 +1,187 @@
+---
+title: "Standardize Adult Redd Datasets"
+author: "Maddee Rubenson (FlowWest)"
+date: '2022-07-11'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(googleCloudStorageR)
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
+```
+
+## Adult Upstream Passage Data Standardization
+
+FlowWest received Adult Upstream Passage data from XXX monitoring programs:
+
+## Standard format for Adult Redd Data
+
+Data dictionary for standard format:
+
+(B - Battle Creek, C - Clear Creek,\
+D - Deer Creek, M - Mill Creek, Y - Yuba River)
+
+| column name | tributary collects | definition |
+|:------------|:-------------------|:-----------|
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+|             |                    |            |
+
+## Read in data {.tabset}
+
+Below we read in the adult upstream passage data for each monitoring program and rename or select columns so that we can join all the monitoring datasets together in the section below.
+
+### Battle Creek
+
+#### Columns Removed
+
+No columns are removed from battle creek upstream passage video data.
+
+```{r}
+# Adult upstream passage data for Battle Creek
+battle_redd <- read_csv("data/redd-carcass-holding/battle_redd.csv", 
+                        col_names = TRUE, 
+                        col_types = list("n", "n", "D", "c", "n", "c", 
+                                         "c", "c", "l", "l", "l", "n", 
+                                         "n", "n", "n", "n", "c", "n", 
+                                         "n", "n", "n", "n", "n", "n", 
+                                         "c")) %>% glimpse()
+```
+
+### Clear Creek
+
+#### Columns Removed
+
+```{r}
+# download file as csv
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/data/clear_passage.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/adult-upstream-passage-monitoring/clear_adult_upstream.csv",
+#                overwrite = TRUE)
+
+
+```
+
+### Deer Creek
+
+#### Columns Removed
+
+```{r}
+# download file as csv
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "../../data/adult-upstream-passage-monitoring/deer_adult_upstream.csv",
+#                overwrite = TRUE)
+
+
+```
+
+### Mill Creek
+
+#### Columns Removed
+
+No columns are removed from battle creek upstream passage video data.
+
+```{r}
+
+# download file as csv
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv",
+#                 bucket = gcs_get_global_bucket(),
+#                 saveToDisk = "../../data/adult-upstream-passage-monitoring/mill_adult_upstream.csv",
+#                 overwrite = TRUE)
+
+
+```
+
+### Yuba River
+
+#### Columns Removed
+
+```{r}
+
+# download file as csv
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/yuba-river/data/yuba_upstream_passage.csv",
+#                 bucket = gcs_get_global_bucket(),
+#                 saveToDisk = "../../data/adult-upstream-passage-monitoring/yuba_adult_upstream.csv",
+#                 overwrite = TRUE)
+
+
+```
+
+## Combine data:
+
+```{r}
+
+```
+
+## Explore Variables {.tabset}
+
+### stream
+
+```{r}
+#unique(combined_upstream_passage$stream)
+```
+
+### date
+
+```{r}
+
+```
+
+### time
+
+```{r}
+
+```
+
+### count
+
+```{r}
+
+```
+
+### run
+
+```{r}
+
+```
+
+```{r}
+
+
+```
+
+
+## Save Cleaned Data to Google Cloud
+
+```{r}
+# clean_passage <- combined_upstream_passage
+# 
+# knitr::kable(clean_passage %>% head)
+```
+
+```{r, eval=FALSE}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+
+# write_csv(clean_passage, "../../data/standard-format-data/standard_adult_upstream_passage.csv")
+# f <- function(input, output) write_csv(input, file = output)
+# gcs_upload(clean_passage,
+#            object_function = f,
+#            type = "csv",
+#            name = "standard-format-data/standard_adult_upstream_passage.csv")
+```
