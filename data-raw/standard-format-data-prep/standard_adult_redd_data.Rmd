@@ -43,7 +43,7 @@ D - Deer Creek, M - Mill Creek, Y - Yuba River)
 
 ## Read in data {.tabset}
 
-Below we read in the adult upstream passage data for each monitoring program and rename or select columns so that we can join all the monitoring datasets together in the section below.
+Below we read in the adult redd data for each monitoring program and rename or select columns so that we can join all the monitoring datasets together in the section below.
 
 ### Battle Creek
 
@@ -53,13 +53,26 @@ No columns are removed from battle creek upstream passage video data.
 
 ```{r}
 # Adult upstream passage data for Battle Creek
-battle_redd <- read_csv("data/redd-carcass-holding/battle_redd.csv", 
+battle_redd <- read_csv("../../data/redd-carcass-holding/battle_redd.csv", 
                         col_names = TRUE, 
                         col_types = list("n", "n", "D", "c", "n", "c", 
                                          "c", "c", "l", "l", "l", "n", 
                                          "n", "n", "n", "n", "c", "n", 
                                          "n", "n", "n", "n", "n", "n", 
-                                         "c")) %>% glimpse()
+                                         "c")) %>% glimpse
+
+names(battle_redd)
+
+clean_battle_redd <- battle_redd %>%
+  select(date, latitude, longitude, 
+         reach, river_mile, fish_guarding, 
+         redd_measured) %>%
+  group_by(date, river_mile) %>%
+  mutate(redd_count = length(redd_measured),
+         watershed_id = NA) %>%  # TODO: get watershed identifier from GIS
+  glimpse
+
+
 ```
 
 ### Clear Creek
