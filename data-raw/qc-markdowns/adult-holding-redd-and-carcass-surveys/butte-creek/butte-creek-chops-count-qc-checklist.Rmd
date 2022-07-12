@@ -1,0 +1,279 @@
+---
+title: "butte-creek-carcass-chopcount-qc-checklist"
+author: "Inigo Peng"
+date: "10/21/2021"
+output: rmarkdown::github_document
+---
+---
+```{r include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+```
+# Butte Creek Carcass Survey Data  
+
+## Description of Monitoring Data
+
+Carcass data provided to us by Jessica Nichols. This carcass data was provided to us in a zipped folder that contained a folder for each year of carcass data. This markdown document is focused on 2014 - 2020 carcass chops data. 
+
+**Timeframe:** 2014-2020
+
+
+**Completeness of Record throughout timeframe:**  
+
+Carcass chops data for every year from 2014 - 2020 
+
+
+**Sampling Location:** Upper Butte Creek. 
+
+
+**Data Contact:** [Jessica Nichols](mailto::Jessica.Nichols@Wildlife.ca.gov)
+
+
+**Additional Info:**  
+
+The carcass data came in 12 documents for each year. We identified the 'SurveyChops' and 'SurveyIndividuals' datasets as the documents with the most complete information and joined them for all of the years.This markdown runs the surveychops QC. 
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+
+# git data and save as xlsx
+read_from_cloud <- function(year){
+  gcs_get_object(object_name = paste0("adult-holding-redd-and-carcass-surveys/butte-creek/data-raw/", year, "_SurveyChops.xlsx"),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = paste0(year,"_raw_surveychops.xlsx"),
+               overwrite = TRUE)
+  data <- readxl::read_excel(paste0(year,"_raw_surveychops.xlsx"))
+  return(data)
+}
+
+open_files <- function(year){
+  data <- readxl::read_excel(paste0(year, "_raw_surveychops.xlsx"))
+  return (data)
+}
+years <- c(2014, 2015, 2016, 2017, 2018, 2019, 2020)
+# years <- 2020
+raw_data <- purrr::map(years, read_from_cloud) %>%
+  reduce(bind_rows)
+write_csv(raw_data, "raw_chops_data.csv")
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean 
+raw_chops_data <- read_csv("raw_chops_data.csv") %>% glimpse
+```
+
+## Data Transformations
+
+
+```{r}
+cleaner_data<- raw_chops_data %>%
+  janitor::clean_names() %>%
+  select(-'week', -'year', -'location_cd',  -'size_class',
+         -'sex', - 'species_code', - 'survey') %>% #could extract week and year from date;all location is the same (upper_cd);\all size class not recorded, all sex is not recorded or unknown, all species_code is spring run chinook
+  mutate(date = as.Date(date)) %>% 
+  glimpse()
+```
+
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Date of sampling",
+                                          "Section code describing area surveyed. View `butte_section_code.rds` for code definitions.",
+                                          "Way Point, TODO get better description of these locations ?",
+                                          "Fish disposition, describes if fish is tagged or not",
+                                          "Total count of chop, TODO get better description of this",
+                                          "Indicates if adipose fin was clipped (TRUE/FALSE).",
+                                          "Condition of fish, TODO get code definitions"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+## Explore `date`
+
+```{r}
+summary(cleaner_data$date)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+
+## Explore Categorical Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.character) %>% colnames()
+```
+
+### Variable:`section_cd`
+
+```{r}
+butte_section_code <- c('A','B','C','COV-OKIE','D', 'E')
+names(butte_section_code) <-c(
+  "Quartz Bowl Pool downstream to Whiskey Flat",
+  "Whiskey Flat downstream to Helltown Bridge",
+  "Helltown Bridge downstream to Quail Run Bridge",
+  "Centerville Covered Brdige to Okie Dam",
+  "Quail Run Bridge downstream to Cable Bridge",
+  "Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream to Centerville Covered Bridge"
+)
+
+tibble(code = butte_section_code,
+       definition = names(butte_section_code))
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$section_cd))/nrow(cleaner_data), 3)*100` % of values in the `section_cd` column are NA.
+
+### Variable: `disposition`
+```{r}
+cleaner_data$disposition <- tolower(cleaner_data$disposition)
+table(cleaner_data$disposition)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$disposition))/nrow(cleaner_data), 3)*100` % of values in the `disposition` column are NA.
+
+### Variable:`way_pt`
+
+```{r}
+cleaner_data <- cleaner_data %>%
+  mutate(way_pt = set_names(toupper(way_pt))) %>% 
+  mutate(way_pt = case_when(
+    way_pt == 'N/A' ~ NA_character_,
+    way_pt == 'N/R' ~ NA_character_, 
+    TRUE ~ as.character(way_pt)
+    
+  ))
+table(cleaner_data$way_pt)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$way_pt))/nrow(cleaner_data), 3)*100` % of values in the `way_pt` column are NA.
+
+### Variable: `condition`
+```{r}
+cleaner_data$condition <- tolower(cleaner_data$condition)
+table(cleaner_data$condition)
+```
+
+### Variable:`ad_fin_clip`
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(ad_fin_clip = tolower(ad_fin_clip),
+         ad_fin_clip =  case_when(
+           ad_fin_clip == 'yes' ~ TRUE,
+           ad_fin_clip == 'no' ~ FALSE
+         ))
+table(cleaner_data$ad_fin_clip)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$ad_fin_clip))/nrow(cleaner_data), 3)*100` % of values in the `ad_fin_clip` column are NA.
+
+## Explore Numerical Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.numeric) %>% colnames()
+```
+
+### Variable:`chop_count`
+```{r}
+
+cleaner_data %>% 
+  group_by(date) %>% 
+  mutate(total_daily_count = sum(chop_count)) %>% 
+  ungroup() %>% 
+  mutate(water_year = if_else(month(date)%in% 10:12, year(date)+1, year(date))) %>% 
+  mutate(years = as.factor(year(date)),
+         fake_year= if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year, "-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = chop_count, color = years))+
+  theme_minimal()+
+  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1900-10-01"), as.Date("1900-11-01")), date_breaks = "1 month")+
+  theme(text = element_text(size = 10),
+        axis.text.x = element_text(angle = 90))+
+  # facet_wrap(~water_year, scales = "free")+
+  geom_point()+
+  labs(title = "Total Daily Chops Count 2014 - 2021",
+       x = 'Date',
+       y = 'Daily Chop Count')
+```
+```{r}
+cleaner_data %>% 
+  group_by(date) %>%
+  summarise(daily_count = sum(chop_count, na.rm = T)) %>%
+  mutate(years = as.factor(year(date))) %>% 
+  ggplot(aes(x=daily_count, y = years))+
+  geom_boxplot()+
+  labs(title = "Daily Chop Count Over the Years")+
+  theme_minimal()
+```
+2019 has significantly higher daily carcass counts collected in comparison to other years sampled. 
+
+```{r}
+summary(cleaner_data$chop_count)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$chop_count))/nrow(cleaner_data), 3)*100` % of values in the `chop_count` column are NA.
+
+**Issues and Notes:**
+
+* No look up table information for way_pt
+
+## Next steps
+
+* Work on data modeling to identify important variables needed for carcass datasets. If we are missing any we can look at the other files provided by Jessica and see if there is additional information we want there. 
+* Work to understand how the carcass chop data varies from the surveyed individuals data. 
+
+## Saved clean data back to google cloud
+
+```{r}
+butte_chops <- cleaner_data %>% 
+  glimpse()
+```
+
+```{r}
+write_csv(butte_chops, "butte_carcass_chops.csv")
+```
+
+```{r, eval = FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(butte_chops,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/butte-creek/butte_carcass_chops.csv")
+```
+
+

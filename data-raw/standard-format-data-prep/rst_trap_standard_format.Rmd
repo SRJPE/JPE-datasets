@@ -1,0 +1,908 @@
+---
+title: "Create standard format for RST trap operations data"
+output: html_document
+---
+
+```{r, include = F}
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+```
+
+Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
+Cleaned data were saved on the jpe-dev-bucket on google cloud with the exception
+of Knights Landing data from CAMP which has not yet been saved to google cloud.
+
+Trap operations data exist for all locations except Sacramento River - Tisdale. We have not yet acquired the CAMP
+database from Tisdale.
+
+```{r, data_pull, include = F}
+# Data pulled in from google cloud in rst_catch_standard_format
+# load in data
+# catch data
+battle_rst <- read_csv("data/rst/battle_rst_catch.csv")
+butte_rst <- read_csv("data/rst/butte_rst.csv") # contains trap data too
+clear_rst <- read_csv("data/rst/clear_rst_catch.csv")
+deer_rst <- read_csv("data/rst/deer_rst.csv") # contains trap data too
+feather_rst <- read_csv("data/rst/feather_rst.csv")
+# knights_rst <- read_csv("data/rst/knights_rst_clean.csv") # contains cpue info
+tisdale_rst <- read_csv("data/rst/tisdale_rst.csv")
+mill_rst <- read_csv("data/rst/mill_rst.csv") # contains trap data too
+yuba_rst <- read_csv("data/rst/yuba_rst.csv")
+
+# sampling effort and environmental
+battle_environmental <- read_csv("data/rst/battle_rst_environmental.csv")
+clear_environmental <- read_csv("data/rst/clear_rst_environmental.csv")
+feather_effort <- read_csv("data/rst/feather_rst_effort.csv")
+knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
+
+# Knights landing data pulled from camp
+# TODO add to cloud (this dataset was shared later and has not yet been added to cloud)
+knights_landing_rst <- read_rds("data/rst/knights_landing_raw_catch.rds")
+```
+
+# Data formatting {.tabset}
+
+## Battle Creek
+
+```{r, battle_clean}
+# counter means number on cone revolution counter at sample_date, sample_time
+battle_environmental %>% str
+unique(battle_environmental$trap_sample_type)
+unique(battle_environmental$fish_properly)
+unique(battle_environmental$partial_sample)
+unique(battle_environmental$debris_tubs)
+unique(battle_environmental$gear_condition_code)
+
+# filter(battle_environmental, start_counter > 0)
+
+# check to see why some dates are NA. I think this is an error
+# because these contain no data. Decided to remove. 
+# filter(battle_trap_clean, is.na(start_date))
+
+battle_trap_clean <- battle_environmental %>%
+  select(-c(baileys_eff, num_released, report_baileys_eff, sub_week, sample_weight,
+            flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
+            weather_code, lunar_phase, diel,
+            habitat, debris_type, start_counter,
+            trap_sample_type)) %>%
+  # sample_date and sample_time are described as the end of 24 hour sampling period
+  # rename to match others
+  rename(trap_visit_id = sample_id,
+         trap_sample_date = sample_date,
+         trap_sample_time = sample_time,
+         sample_period_revolutions = counter,
+         comments = trap_comments,
+         cone_setting = cone) %>%
+  mutate(stream = "battle creek",
+         site = stream,
+         subsite = site,
+         # debris in gallons (1 tub = 10 gallons)
+         debris_volume = debris_tubs*10) %>%
+  select(-debris_tubs) %>%
+  filter(!is.na(trap_start_date)) %>%
+  data.frame() %>%
+  distinct()
+ 
+# check to make sure one row per day/time 
+# battle_trap_clean %>%
+#   group_by(start_date, start_time) %>%
+#   tally() %>%
+#   filter(n < 1)
+
+# battle_trap_clean %>% group_by(trap_sample_type) %>% tally()
+battle_trap_clean %>% glimpse
+```
+
+### Variables removed
+
+- baileys_eff and report_baileys_eff are calculated values
+- num_released included in mark and recapture data
+- sub_week: is related to efficiency and included in efficiency table
+- sample_weight: same as cone variable
+- flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
+weather_code, lunar_phase, diel included in environmental table
+- habitat removed because most data are in "run"
+- debris_type removed because data does not exist for other locations and is treated like a comments field
+- start_counter is always NA or 0. No meaningful data.
+- trap_sample_type - 3666 non-intensive, 57 random. we do not know what encodings mean and almost all are non-intensive
+
+Note that sample_id was renamed to trap_visit_id for clarity and links to catch and environmental data.
+
+partial_sample and cone_setting are both about effort but cone_setting refers to half/full cone and 
+partial_sample is about the amount of time sampled.
+
+## Butte Creek
+
+```{r, butte_clean}
+unique(butte_rst$trap_status)
+unique(butte_rst$gear_id)
+unique(butte_rst$station)
+butte_rst %>%
+  group_by(station, gear_id) %>%
+  tally()
+
+# there are multiple obs per day which i think is a data entry issue.
+# group by date, station, time, gear_id, trap_status then average
+butte_trap_clean <- butte_rst %>%
+  select(-c(dead, count, fork_length, weight, mark_code, lifestage,
+            weather, temperature, turbidity, secchi, velocity, gear_id)) %>%
+  # select(date, station, trap_status, time, gear_id, temperature, turbidity, velocity,
+  #        trap_revolutions, rpms_start, rpms_end) %>%
+  group_by(date, station, trap_status, time) %>%
+  summarize(trap_revolutions = mean(trap_revolutions, na.rm = T),
+            rpms_start = mean(rpms_start, na.rm = T),
+            rpms_end = mean(rpms_end, na.rm = T)) %>%
+  rename(site = station,
+         sample_period_revolutions = trap_revolutions,
+         trap_sample_date = date,
+         trap_sample_time = time) %>%
+  mutate(stream = "butte creek",
+         subsite = tolower(site),
+         site = case_when(grepl("Okie Dam", site) ~ "okie dam",
+                          T ~ tolower(site))) %>%
+  distinct()
+
+unique(butte_trap_clean$site)
+unique(butte_trap_clean$subsite)
+# check to make sure one row per day/time 
+# butte_trap_clean %>%
+#   group_by(date, time, site, gear_id, trap_status) %>%
+#   tally() %>%
+#   filter(n > 1)
+butte_trap_clean %>% glimpse
+```
+
+### Variables removed
+
+All variables removed are included in the catch table or environmental table.
+
+- gear_id removed because the subsite provided information about the gear
+
+## Clear Creek
+
+```{r, clear_clean}
+unique(clear_environmental$gear_condition_code)
+unique(clear_environmental$station_code)
+
+# there are NA start_dates which don't have any data. need to remove.
+
+clear_trap_clean <- clear_environmental %>%
+  select(-c(num_released, baileys_eff, sub_week,
+            flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
+            weather_code, lunar_phase, diel,
+            habitat, debris_type, start_counter,
+            trap_sample_type)) %>%
+  rename(trap_visit_id = sample_id,
+         site = station_code,
+         trap_sample_date = sample_date,
+         trap_sample_time = sample_time,
+         sample_period_revolutions = counter,
+         comments = trap_comments,
+         cone_setting = cone) %>%
+  mutate(stream = "clear creek",
+         # debris in gallons (1 tub = 10 gallons)
+         debris_volume = debris_tubs*10,
+         site = tolower(site),
+         subsite = site) %>%
+  select(-debris_tubs) %>%
+  filter(!is.na(trap_start_date)) %>%
+  distinct()
+
+# check to make sure one row per day/time 
+# clear_trap_clean %>%
+#   group_by(start_date, start_time, site) %>%
+#   tally() %>%
+#   filter(n > 1)
+# clear_trap_clean %>% group_by(trap_sample_type) %>% tally()
+clear_trap_clean %>% glimpse
+```
+
+### Variables removed
+
+- sample_id: doesn't map to data outside of CAMP
+- baileys_eff is a calculated value
+- num_released included in mark and recapture data
+- sub_week: is related to efficiency and included in efficiency table
+- flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
+weather_code, lunar_phase, diel included in environmental table
+- habitat removed because most data are in "run"
+- debris_type removed because data does not exist for other locations and is treated like a comments field
+- start_counter is always NA or 0. No meaningful data.
+- trap_sample_type - 3666 non-intensive, 57 random. we do not know what encodings mean and almost all are non-intensive
+
+
+Note that sample_id was renamed to trap_visit_id for clarity and links to catch and environmental data
+
+## Deer Creek
+
+```{r, deer_clean}
+unique(deer_rst$location)
+
+deer_rst %>%
+  filter(year(date) > 1995) %>%
+  group_by(location) %>%
+  tally()
+unique(deer_rst$trap_condition_code)
+
+deer_trap_clean <- deer_rst %>%
+  select(-c(count, fork_length, weight,
+            flow, turbidity, weather, water_temperature_celsius)) %>%
+  group_by(date, trap_condition_code) %>%
+  summarize(time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T)) %>%
+  rename(gear_condition_code = trap_condition_code,
+         trap_sample_date = date) %>%
+  mutate(stream = "deer creek",
+         site = stream,
+         subsite = site,
+         # transforming to avg_time_per_rev to align with other locations
+         avg_time_per_rev = ifelse(is.na(time_for_10_revolutions), NA_real_, time_for_10_revolutions/10)) %>%
+  select(-time_for_10_revolutions) %>%
+  distinct()
+
+
+# check to make sure one row per day/time 
+# deer_trap_clean %>%
+#   group_by(date,site, trap_condition_code) %>%
+#   tally() %>%
+#   filter(n > 1)
+# 
+# filter(deer_trap_clean, date == "2001-11-10")
+deer_trap_clean %>% glimpse
+```
+
+### Variables removed
+
+All variables removed are included in the catch table or environmental table.
+
+- transformed time_for_10_revolutions to avg_time_per_rev to align with others
+
+## Feather River
+
+```{r, feather_clean}
+unique(feather_effort$trap_functioning)
+unique(feather_effort$sub_site_name)
+unique(feather_effort$fish_processed)
+# date, site_name, visit_time, visit_type, trap_functioning, water_temp_c,
+# turbidity_ntu, latitude, longitude
+feather_trap_clean <- feather_effort %>%
+  select(-c(river_location, river_mile, latitude, longitude,
+            water_temp_c, turbidity_ntu)) %>%
+  rename(site = site_name,
+         subsite = sub_site_name,
+         trap_sample_time = visit_time,
+         trap_sample_date = date,
+         trap_status = visit_type,
+         gear_condition_code = trap_functioning) %>%
+  mutate(trap_sample_time = as_hms(trap_sample_time),
+         stream = "feather river",
+         site = tolower(site),
+         subsite = tolower(subsite)) %>%
+  distinct()
+
+unique(feather_trap_clean$subsite)
+# check to make sure one row per day/time 
+# feather_trap_clean %>%
+#   group_by(date,time, site, subsite) %>%
+#   tally() %>%
+#   filter(n > 1)
+feather_trap_clean %>% glimpse
+```
+
+### Variables removed
+
+All variables removed are included in the location table or environmental table.
+
+## Mill Creek
+
+```{r, mill_clean}
+unique(mill_rst$location)
+unique(mill_rst$trap_condition_code)
+
+mill_trap_clean <- mill_rst %>%
+  select(-c(count, fork_length, weight, location,
+            flow, water_temperature, turbidity, weather)) %>%
+  group_by(date, trap_condition_code) %>%
+  summarize(time_for_10_revolutions = mean(time_for_10_revolutions, na.rm = T)) %>%
+  rename(gear_condition_code = trap_condition_code,
+         trap_sample_date = date) %>%
+  mutate(stream = "mill creek",
+         site = stream,
+         subsite = site,
+         avg_time_per_rev = ifelse(is.na(time_for_10_revolutions), NA_real_, time_for_10_revolutions/10)) %>%
+  select(-time_for_10_revolutions) %>%
+  distinct()
+
+# check to make sure one row per day/time 
+# mill_trap_clean %>%
+#   group_by(date,site, trap_condition_code) %>%
+#   tally() %>%
+#   filter(n > 1)
+# filter(mill_trap_clean, date == "2002-02-07")
+mill_trap_clean %>% glimpse
+```
+
+### Variables removed
+
+- location: all are Mill Creek RSTR
+- flow, water_temperature, turbidity, weather in environmental table
+- transformed time_for_10_revolutions to avg_time_per_rev to align with others
+
+All other removed variables included in the catch table.
+
+
+## Yuba River
+
+```{r, yuba_clean}
+unique(yuba_rst$method)
+unique(yuba_rst$trap_status)
+unique(yuba_rst$location)
+
+ck <- yuba_rst %>%
+  group_by(location, year(date)) %>%
+  tally()
+
+check <- yuba_rst %>%
+  mutate(diff = trap_revolutions - trap_revolutions2)
+
+yuba_trap_clean <- yuba_rst %>%
+  select(-c(organism_code, fork_length, weight, lifestage, count, run,
+            temperature, turbidity, velocity)) %>%
+  rename(site = location,
+         rpms_start = rpms_before,
+         rpms_end = rpms_after,
+         trap_sample_date = date,
+         trap_sample_time = time) %>%
+  mutate(stream = "yuba river",
+         subsite = case_when(site == "Yuba River" ~ "yub",
+                             site == "5 foot RST at Hallwood" ~ "hal3",
+                             site == "RST 1 at Hallwood on Yuba River" ~ "hal",
+                             site == "RST 2 at Hallwood" ~ "hal2"),
+         site = ifelse(subsite == "yub", "yuba river", "hallwood"),
+         sample_period_revolutions = case_when(trap_revolutions == 0 ~ trap_revolutions2,
+                                               T ~ trap_revolutions)) %>%
+  select(-c(trap_revolutions, trap_revolutions2)) %>%
+  distinct()
+
+# check to make sure one row per day/time 
+# yuba_trap_clean %>%
+#   group_by(date,time, site) %>%
+#   tally() %>%
+#   filter(n > 1)
+yuba_trap_clean %>% glimpse
+```
+
+### Variables removed
+
+All variables removed are included in the catch table or environmental table.
+
+TODO: confirm handling of trap_revolutions and trap_revolutions2 
+
+## Lower Sacramento - Knights Landing
+
+```{r, knights_clean}
+unique(knights_effort$gear)
+unique(knights_effort$cone_sampling_effort)
+# date, start_date, stop_date, number_traps, hrs_fished, flow_cfs, turbidity,
+# water_t_f, cone_sampling_effort, cone_id, cone_rpm, total_cone_rev
+knights_trap_clean <- knights_effort %>%
+  select(-c(date, location, gear, sampling_period_hrs, cone_sampling_effort,
+            flow_cfs, secchi_ft, water_t_f, turbidity, turbidity_units,
+            hrs_fished)) %>%
+  # convert temp from F to C
+  mutate(stream = "sacramento river",
+         site = "knights landing",
+         subsite = as.character(cone_id)) %>%
+  select(-cone_id) %>%
+  rename(trap_sample_date = stop_date,
+         trap_sample_time = stop_time,
+         trap_start_date = start_date,
+         trap_start_time = start_time,
+         sample_period_revolutions = total_cone_rev) %>%
+  distinct()
+# 
+# # check to make sure one row per day/time 
+# knights_trap_clean %>%
+#   group_by(start_date,start_time, cone_id, date) %>%
+#   tally() %>%
+#   filter(n > 1)
+knights_trap_clean %>% glimpse
+```
+
+### Variables removed
+
+- date: use start_date and end_date
+- location: all are KL for Knights Landing
+- gear: all are two 8in cones
+- sampling_period_hrs: unclear how this variable is different than hrs_fished
+- turbidity_units: all are NTU except in 2014 when they are FTU
+- cone_sampling_effort: Variable is unclear and is redundant of number of traps and hrs fished
+- flow_cfs, secchi_ft, water_t_f, turbidity, turbidity_units included in environmental table
+- hrs_fished is a derived field and can be calculated
+
+cone_id is used as a subsite (two traps or cones at Knights Landing)
+
+## Lower Sacramento - Tisdale
+
+No effort data is currently available for Tisdale.
+
+# Standard format {.tabset}
+
+```{r, combined}
+combined_trap_raw <- bind_rows(battle_trap_clean,
+                          butte_trap_clean,
+                          clear_trap_clean,
+                          deer_trap_clean,
+                          feather_trap_clean,
+                          mill_trap_clean,
+                          yuba_trap_clean,
+                          knights_trap_clean)
+colnames(combined_trap_raw)
+
+combined_trap <- combined_trap_raw %>%
+  rename(debris_level = debris,
+         gear_condition = gear_condition_code) %>%
+  mutate(debris_level = tolower(debris_level),
+         debris_level = ifelse(debris_level == "veryheavy", "very heavy", debris_level),
+         gear_condition = case_when(gear_condition %in% c("total block", "total blockage", "Trap not in service") ~ "trap not in service",
+                                         gear_condition %in% c("not rotating", "cone stopped", "Trap stopped functioning") ~ "trap stopped functioning",
+                                           gear_condition %in% c("partial block", "partial blockage", "Trap functioning, but not normally") ~ "trap functioning but not normally",
+                                           gear_condition %in% c("normal", "Trap functioning normally") ~ "trap functioning normally"),
+         trap_status = case_when(trap_status %in% c("pull", "End trapping") ~ "end trapping",
+                                   trap_status %in% c("set", "Start trap & begin trapping") ~ "start trapping",
+                                   trap_status %in% c("Drive-by only") ~ "drive by",
+                                   trap_status %in% c("Continue trapping",  "check") ~ "continue trapping",
+                                   trap_status %in% c("Unplanned restart", "breached", "set/pull") ~ "unplanned restart",
+                                   trap_status %in% c("Service/adjust/clean trap") ~ "service trap"),
+         fish_processed = case_when(fish_processed == "Processed fish" ~ "processed fish",
+                                      fish_processed == "No fish were caught" ~ "no fish caught",
+                                      fish_processed == "No catch data; fish released" ~ "no catch data, fish released",
+                                      fish_processed == "No catch data; fish left in live box" ~ "no catch data, fish left in live box"),
+         # convert ft to m and inches to cm
+         river_left_depth = river_left_depth/3.281,
+         river_center_depth = river_center_depth/3.281,
+         river_right_depth = river_right_depth/3.281,
+         depth_adjust = depth_adjust*2.54)
+
+
+unique(combined_trap_raw$cone_setting)
+unique(combined_trap_raw$fish_processed)
+unique(combined_trap_raw$trap_status)
+unique(combined_trap_raw$gear_condition_code)
+unique(combined_trap_raw$habitat)
+unique(combined_trap_raw$debris_type)
+unique(combined_trap_raw$method)
+unique(combined_trap_raw$debris)
+
+```
+
+## Variables to consider removing
+
+- trap_sample_type, method - only applies to one location
+
+TODO check that time per 10 rev is also in seconds
+
+TODO fill in number of traps when missing?
+
+TODO do we need start date/time and end date/time
+change names - > trap_start_data, trap_sample_date (assign date to trap_sample_date, and no trap_start_date)
+
+```{r}
+
+check <- combined_trap %>%
+  filter(!is.na(trap_start_date)) %>%
+  group_by(stream, site, subsite) %>%
+  arrange(trap_start_date) %>%
+  mutate(date_ck = lag(trap_sample_date)) %>%
+  filter(date_ck != trap_start_date) %>%
+  select(trap_start_date, trap_sample_date, date_ck, stream, site, subsite)
+
+```
+
+
+## Data dictionary
+
+```{r, data_dictionary_prep, include = F}
+colnames(combined_trap)
+
+rst_trap_data_dictionary <- tibble(variable_name = colnames(combined_trap),
+                                    description = c("Key variable that links trap operations to catch data and environmental data. Currently not all locations use this key.",
+                                                    "Date when trap was started or restarted.",
+                                                    "Time when trap was started or restarted.",
+                                                    "Date when trap was checked and catch counted. The start date is typically the end date from the previous day.",
+                                                    "Time when trap was checked and catch counted. The start time is typically the end time from the previous day.",
+                                                    "Number of cone revolutions during sampling period.",
+                                                    "Describes if cone was at full or half cone.",
+                                                    "River depth from inside of the river left (units = m)",
+                                                    "River depth from directly in the center of cone (units = m)",
+                                                    "River depth from inside of the river right (units = m)",
+                                                    "Was trap fishing in the thalweg (T/F)",
+                                                    "The depth of the bottom of the cone (units = cm)",
+                                                    "Cone rate measurement - average time for one revolution (units = seconds).",
+                                                    "Was there a problem with the trap (T/F)",
+                                                    "Qualitative comments about sampling event.",
+                                                    "A code for the condition of the trap",
+                                                    "Did the trap fish (T/F)",
+                                                    "Did the trap fish for the entire sample day (T/F)",
+                                                    "Location of monitoring program (e.g. stream or river)",
+                                                    "Site within the location",
+                                                    "Subsite or specific trap location within each site and location. Names are specific to location.",
+                                                    "Volume of debris measured in trap (gallons).",
+                                                    "Status of trap during visit",
+                                                    "Cone rate measurement - revolutions per mintue at the start of trap visit",
+                                                    "Cone rate  measurement - revolutions per minute at the end of the trap visit",
+                                                    "Description of whether fish were processed.",
+                                                    "Method of sampling. Categories: fish screen diversion trap, rotary screw trap",
+                                                    "Categorical level of debris in trap (visual assessment).",
+                                                    "Number of traps operating",
+                                                    "Cone rate measurement - revolutions per mintue"),
+                                    
+                                   encoding = c(NA, NA, NA, NA, NA, NA, 
+                                                "1 = full cone, 0.5 = half cone",
+                                                NA, NA, NA,
+                                                "T/F",
+                                                NA, NA, 
+                                                "T/F",
+                                                NA,
+                                                "trap not in service, trap stopped functioning, trap functioning but not normally, trap functioning normally",
+                                                "T/F",
+                                                "T/F",
+                                                "battle creek, butte creek, clear creek, deer creek, feather river, mill creek, yuba river, sacramento river",
+                                                "insert sites",
+                                                "insert subsites",
+                                                NA,
+                                                "drive by, end trapping, start trapping, continue trapping, unplanned restart, service trap",
+                                                NA, NA,
+                                                "processed fish, no fish caught, no catch data fish released, no catch data fish left in live box",
+                                                "fish screen diversion trap, rotary screw trap",
+                                                "light, medium, heavy, very heavy",
+                                                NA,NA
+                                                ),
+                                   collected = c("Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Butte, Clear, Deer, Feather, Mill, Yuba, Knights",
+                                                 "Battle, Butte, Clear, Feather, Yuba, Knights",
+                                                 "Battle, Butte, Clear, Yuba, Knights",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear", 
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear, Deer, Mill",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear, Yuba, Knights",
+                                                 "Battle, Clear, Deer, Feather Mill",
+                                                 "Battle, Clear",
+                                                 "Battle, Clear",
+                                                 NA, NA, NA,
+                                                 "Battle, Clear",
+                                                 "Butte, Feather, Yuba",
+                                                 "Butte, Yuba",
+                                                 "Butte, Yuba",
+                                                 "Feather",
+                                                 "Yuba",
+                                                 "Yuba",
+                                                 "Knights",
+                                                 "Knights")
+                                    )
+```
+
+```{r, data_dictionary}
+kable(rst_trap_data_dictionary)
+```
+
+## Exploratory plots
+
+# QA/QC {.tabset}
+
+## trap_start_date, trap_sample_date
+
+```{r}
+combined_trap %>% 
+  ggplot(aes(x = trap_sample_date, y = stream, color = stream)) +
+  geom_point()
+
+combined_trap %>% 
+  ggplot(aes(x = trap_start_date, y = stream, color = stream)) +
+  geom_point()
+```
+
+## trap_start_time, trap_sample_time
+
+Does not appear that traps are checked at a specific time
+
+```{r}
+combined_trap %>% 
+  ggplot(aes(x = trap_sample_time, y = stream, color = stream)) +
+  geom_point()
+
+combined_trap %>% 
+  ggplot(aes(x = trap_start_time, y = stream, color = stream)) +
+  geom_point()
+```
+
+## sample_period_revolutions
+
+TODO should we clean up (impute by averages) outlier values
+
+```{r}
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = sample_period_revolutions, color = stream)) +
+  geom_point()
+
+# There are a few Yuba River obs that seem unlikely
+# Leaving as is for now
+filter(combined_trap, sample_period_revolutions > 250000)
+```
+
+## cone_setting
+
+Battle and Clear collect data on cone setting. Battle is almost always at full cone
+and Clear is at half cone more frequently.
+
+```{r}
+combined_trap %>%
+  filter(!is.na(cone_setting)) %>%
+  group_by(stream, cone_setting) %>%
+  tally() %>%
+  kable()
+```
+
+## river_depth
+
+```{r}
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = river_left_depth, color = stream)) +
+  geom_point()
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = river_right_depth, color = stream)) +
+  geom_point()
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = river_center_depth, color = stream)) +
+  geom_point()
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = depth_adjust, color = stream)) +
+  geom_point()
+
+```
+
+## thalweg
+
+Battle and Clear collect information of trap in thalweg and it is almost always TRUE.
+
+```{r}
+combined_trap %>%
+  filter(!is.na(thalweg)) %>%
+  group_by(stream, thalweg) %>%
+  tally() %>%
+  kable()
+```
+
+## avg_time_per_rev
+
+Battle, Clear, Deer, Mill collect this data. Battle has the most variation.
+
+```{r}
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = avg_time_per_rev, color = stream)) +
+  geom_point()
+
+combined_trap %>%
+  ggplot(aes(x = stream, y = avg_time_per_rev)) +
+  geom_boxplot()
+```
+
+
+## fish_properly
+
+Battle and Clear collect this data and almost always TRUE
+```{r}
+combined_trap %>%
+  filter(!is.na(fish_properly)) %>%
+  group_by(stream, fish_properly) %>%
+  tally() %>%
+  kable()
+```
+
+## comments
+
+There is some important information about data accuracy in comments. It would
+take a lot of effort to encode these comments.
+
+```{r}
+select(combined_trap, comments) %>% filter(!is.na(comments)) %>% glimpse
+```
+
+## gear_condition_code
+
+TODO Encode NAs as "not recorded"?
+
+```{r}
+total <-
+  combined_trap %>%
+  group_by(year(trap_sample_date), stream) %>%
+  tally() %>%
+  rename(total = n)
+combined_trap %>%
+  group_by(year(trap_sample_date), stream, gear_condition) %>%
+  tally() %>%
+  left_join(total) %>%
+  mutate(percent = n/total) %>%
+  ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = gear_condition)) +
+  geom_bar(stat = "identity", position = "stack") +
+  facet_wrap(~stream)
+```
+
+## trap_fishing
+
+Battle and Clear collect this data. Based on this decided to remove. All TRUE except 1.
+
+```{r}
+combined_trap %>%
+  filter(!is.na(trap_fishing)) %>%
+  group_by(stream, trap_fishing) %>%
+  tally() %>%
+  kable()
+```
+
+## partial_sample
+
+Battle and Clear collect this data. Based on this decided to remove. Mostly all TRUE and this information can come from calculating hours (start_date compared to sample_date)
+
+```{r}
+combined_trap %>%
+  filter(!is.na(partial_sample)) %>%
+  group_by(stream, partial_sample) %>%
+  tally() %>%
+  kable()
+```
+
+## location, site, subsite
+
+```{r}
+combined_trap %>%
+  group_by(stream, site, subsite) %>%
+  tally()
+```
+
+## debris_volume
+
+```{r}
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = debris_volume, color = stream)) +
+  geom_point()
+
+combined_trap %>%
+  ggplot(aes(x = stream, y = debris_volume)) +
+  geom_boxplot()
+```
+
+## trap_status
+
+This data is really only used by Feather. Majority of Butte and Yuba were encoded as "check" which was mapped to "continue trapping"
+
+```{r}
+combined_trap %>%
+  group_by(year(trap_sample_date), stream, trap_status) %>%
+  tally() %>%
+  left_join(total) %>%
+  mutate(percent = n/total) %>%
+  ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = trap_status)) +
+  geom_bar(stat = "identity", position = "stack") +
+  facet_wrap(~stream)
+
+```
+
+## rpms_start, rpms_end
+
+Butte and Yuba
+
+TODO few outliers do we want to impute?
+
+```{r}
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = rpms_start, color = stream)) +
+  geom_point()
+
+filter(combined_trap, rpms_start < 100) %>%
+  ggplot(aes(x = trap_sample_date, y = rpms_start, color = stream)) +
+  geom_point()
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = rpms_end, color = stream)) +
+  geom_point()
+
+combined_trap %>%
+  ggplot(aes(x = stream, y = rpms_start)) +
+  geom_boxplot()
+combined_trap %>%
+  ggplot(aes(x = stream, y = rpms_end)) +
+  geom_boxplot()
+```
+
+## fish processed
+
+Feather is only location that collects this data.
+
+```{r}
+combined_trap %>%
+  group_by(year(trap_sample_date), stream, fish_processed) %>%
+  tally() %>%
+  left_join(total) %>%
+  mutate(percent = n/total) %>%
+  ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = fish_processed)) +
+  geom_bar(stat = "identity", position = "stack") +
+  facet_wrap(~stream)
+
+```
+
+## method
+
+Yuba is only location that collects this data. Almost always RST. Remove?
+
+```{r}
+combined_trap %>%
+  group_by(year(trap_sample_date), stream, method) %>%
+  tally() %>%
+  left_join(total) %>%
+  mutate(percent = n/total) %>%
+  ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = method)) +
+  geom_bar(stat = "identity", position = "stack") +
+  facet_wrap(~stream)
+```
+
+## debris_level
+
+Yuba only location that collects this data
+
+```{r}
+combined_trap %>%
+  group_by(year(trap_sample_date), stream, debris_level) %>%
+  tally() %>%
+  left_join(total) %>%
+  mutate(percent = n/total) %>%
+  ggplot(aes(x = `year(trap_sample_date)`, y = percent, fill = debris_level)) +
+  geom_bar(stat = "identity", position = "stack") +
+  facet_wrap(~stream)
+```
+
+## number_traps
+
+Knights is only location that collects this data but it is mostly missing data. Remove.
+```{r}
+combined_trap %>%
+  filter(!is.na(number_traps)) %>%
+  group_by(stream, number_traps) %>%
+  tally() %>%
+  kable()
+```
+
+## cone_rpm
+
+Knights is the only location that collects this data. Similar to rpms_start/end but
+not sure when this is collected (start or end)
+
+```{r}
+combined_trap %>%
+  ggplot(aes(x = trap_sample_date, y = cone_rpm, color = stream)) +
+  geom_point()
+```
+
+# Save data
+
+```{r}
+combined_trap_clean <- combined_trap %>%
+  select(-trap_fishing, -partial_sample, -number_traps)
+
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(combined_trap_clean,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_rst_trap.csv",
+           predefinedAcl = "bucketLevel")
+```
+

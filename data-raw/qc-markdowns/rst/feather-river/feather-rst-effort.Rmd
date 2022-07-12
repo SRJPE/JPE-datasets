@@ -1,0 +1,415 @@
+---
+title: "Feather River RST Effort Data QC"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+  
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+```
+
+# Feather River RST Effort Data
+
+## Description of Monitoring Data
+
+This data contains information describing trapping effort, location information, and environmental data that can be used in combination with feather river RST catch data. 
+
+*Notes from xlsx:* 
+
+* A typical sampling year is from November-June sometimes into July/August if water temperatures allowed. There are some years where sampling was continuous throughout the year (i.e SY 1999) so these quereies provide data from, for example, 11/1/1998 to 10/1/1999 to encompass a typical RST sampling year.					
+* In cases where cones are not spinning properly (covered in algae, clogged with debris or some other circumstance) it is marked as 'Functioning, but not normally'					
+* When cones are lowered (marked 'Start trapping') there may be some variations on how the Trap Function and Fish Processed was recorded. Assume all are functioning normal and fish processed is not applicable since no fish had been captured or processed. Cones are simply lowered and left to trap until the next service time.					
+* The Low Flow Channel (LFC) begins at the Fish Barrier Dam and continues until the Thermalito Afterbay Outlet (TAO) which is where the High Flow Channel (HFC) begins					
+
+**Timeframe:** Dec 1997 - May 2021
+
+**Trapping Season:** Typically December - June, looks like it varies quite a bit. 
+
+**Completeness of Record throughout timeframe:** There are trap efficiency measures for every year that we have RST catch data. 
+
+**Data Contact:** 
+[Kassie Hickey](mailto:KHickey@psmfc.org)
+
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = "rst/feather-river/data-raw/Feather River RST Sampling Effort_1998-2021.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_feather_rst_sampling_effort_data.xlsx",
+               overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data and location description sheet: 
+
+**Location Information:** Join onto sampling effort data in `sub_site_name` section. 
+```{r}
+# read in data to clean
+# RST Data
+rst_data_sheets <- readxl::excel_sheets("raw_feather_rst_sampling_effort_data.xlsx")
+location_details  <- readxl::read_excel("raw_feather_rst_sampling_effort_data.xlsx", 
+                                          sheet = "RST Location Details",
+                                          range = "A1:F18") 
+# I will join location details to df in the subsite variable section below
+location_details
+```
+
+**Raw Data** 
+```{r}
+# create function to read in all sheets of a 
+read_sheets <- function(sheet){
+  data <- read_excel("raw_feather_rst_sampling_effort_data.xlsx", sheet = sheet)
+}
+
+raw_effort <- purrr::map(rst_data_sheets[-1], read_sheets) %>%
+  reduce(bind_rows)
+
+raw_effort %>% glimpse()
+```
+
+## Data transformations
+
+```{r}
+# Snake case, 
+# Columns are appropriate types
+# Remove redundant columns
+cleaner_effort_data <- raw_effort %>% 
+  rename("sub_site_name" = subSiteName, "visit_time" = visitTime, 
+         "visit_type" = visitType, "trap_functioning" = trapFunctioning, 
+         "fish_processed" = fishProcessed, "water_temp_c" = `Water Temp (C)`, 
+         "turbidity_ntu" = `Turbidity (NTUs)`) %>% glimpse()
+
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_effort_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_effort_data),
+                          description = c("Site name",
+                                          "Visit time",
+                                          "Visit type",
+                                          "Trap functioning or not",
+                                          "Fish processed",
+                                          "Water temperature",
+                                          "Water turbidity"
+                                          ),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables 
+cleaner_effort_data %>% select_if(is.numeric) %>% colnames()
+```
+
+### Variable: `water_temp_c`
+
+**Plotting water_temp_c over Period of Record**
+  
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+cleaner_effort_data %>% 
+  group_by(date = as.Date(visit_time)) %>%
+  mutate(avg_temp = mean(water_temp_c)) %>%
+  ungroup() %>%
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
+  geom_point(alpha = .25) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily Water Temperature (colored by year)",
+       y = "Average daily temp", 
+       x = "Date")  
+
+
+```
+```{r}
+cleaner_effort_data %>% 
+  mutate(year = as.factor(year(as.Date(visit_time)))) %>%
+  ggplot(aes(x = water_temp_c, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Water Temperature summarized by year",
+       x = "Water Temperature C") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+# All points where water temp = 0 degrees C occur in November or December and happen when trap is not in service or functioning
+zero_values <- cleaner_effort_data %>% filter(water_temp_c == 0)
+```
+
+**Numeric Summary of water_temp_c over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_effort_data$water_temp_c)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_effort_data$water_temp_c))/nrow(cleaner_effort_data), 3) * 100` % of values in the `water_temp_c` column are NA. 
+* 315 of the NA values are in 2008 (maybe a funding issue?). NAs account for `315/nrow(cleaner_effort_data %>% filter(year(visit_time) == 2008)) * 100` % of the 2008 data. 
+* Typically there are around 23 NA values in a year 
+
+```{r, include = FALSE}
+# Table with summary statistics
+cleaner_effort_data %>% 
+  group_by(year <- year(as.Date(visit_time))) %>% 
+  summarise(na_water_temp = sum(is.na(water_temp_c))) %>%
+  summary(na_water_temp)
+```
+  
+### Variable: `turbidity_ntu`
+
+Turbidity is measured in Nephelometric Turbidity unit, i.e. the presence of suspended particles in water. The higher NTU the more solids are suspended in water and the dirtier the water is. 
+
+**Plotting turbidity_ntu over Period of Record**
+  
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2 plots is appropriate
+cleaner_effort_data %>% 
+  group_by(date = as.Date(visit_time)) %>%
+  mutate(avg_turbidity_ntu = mean(turbidity_ntu)) %>%
+  ungroup() %>%
+ mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>%
+  ggplot(aes(x = fake_date, y = avg_turbidity_ntu, color = year)) + 
+  geom_point(alpha = .25) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily Turbidity Measures (colored by year)",
+       x = "Date", 
+       y = "Average Daily Turbidity NTUs")  
+```
+```{r}
+cleaner_effort_data %>% 
+  filter(year(as.Date(visit_time)) > 1999) %>% # Filter because only a few measure before this date
+  mutate(year = as.factor(year(as.Date(visit_time)))) %>%
+  ggplot(aes(x = turbidity_ntu, y = year)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(title = "Water Turbidity measures summarized by year",
+       x = "Turbidity NTUs") + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+Notes: 
+
+* 2006, 2017 were both wet years with low catch (see `feather-rst.md`) and high turbidity. We know that in wet years high flows can increase turbidity and impede trap functionality. 
+
+**Numeric Summary of turbidity_ntu over Period of Record**
+  
+```{r}
+# Table with summary statistics
+summary(cleaner_effort_data$turbidity_ntu)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_effort_data$turbidity_ntu))/nrow(cleaner_effort_data), 3) * 100` % of values in the `turbidity_ntu` column are NA.
+* Early sampling years: 1998, 1999, 2000 have many NA values
+* There are less NA in the most recent years with the exception of 2016
+
+```{r, include = FALSE}
+# Table with summary statistics
+cleaner_effort_data %>% 
+  group_by(year <- year(as.Date(visit_time))) %>% 
+  summarise(na_turbidity = sum(is.na(turbidity_ntu))) %>%
+  summary(na_turbidity)
+```
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+# Filter clean data to show only categorical variables 
+cleaner_effort_data %>% select_if(is.character) %>% colnames()
+```
+
+
+### Variable: `sub_site_name`
+```{r}
+table(cleaner_effort_data$sub_site_name) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+format_site_name <- function(string) {
+  clean <- str_replace_all(string, "[^[:alnum:]]", " ") %>% 
+    trimws() %>% 
+    stringr::str_squish() %>%
+    stringr::str_to_title()
+}
+```
+
+```{r}
+cleaner_effort_data$sub_site_name <- format_site_name(cleaner_effort_data$sub_site_name)
+table(cleaner_effort_data$sub_site_name) 
+```
+
+**NA and Unknown Values**
+  
+No values that do not have an associated site with them. 
+
+
+**Add in latitude and longitude points from location table:**
+```{r}
+# First clean location data
+cleaned_location <- location_details %>% 
+  rename("site_name" = SiteName, "sub_site_name" = subSiteName, 
+         "river_location" = `River location`, "river_mile" = `River Mile`) %>%
+  mutate(degree = OSMscale::degree(Latitude, Longitude),
+         latitude = degree$lat,
+         longitude = degree$long,
+         sub_site_name = format_site_name(sub_site_name)) %>%
+  select(-degree, -Latitude, -Longitude) %>%
+  glimpse()
+```
+
+Check columns `site_name`, `sub_site_name`, and `river_location` to make sure we do not introduce anything funky..
+```{r}
+table(cleaned_location$site_name) # Values consistent with feather catch data
+table(cleaned_location$sub_site_name) # Values consistent with effort data (will join on this column)
+table(cleaned_location$river_location)
+```
+
+```{r}
+# Join location data on sub site name 
+cleaner_effort_data <-  left_join(cleaner_effort_data, cleaned_location) 
+```
+
+Map of Feather River RST: 
+
+```{r, eval = FALSE}
+# TODO Figure out how to get in md
+library(leaflet)
+map <- leaflet(cleaned_location)  %>% 
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
+  addCircleMarkers(data = cleaned_location,  label = cleaned_location$sub_site_name, 
+                   weight = 1.5,
+                   opacity =  1, fillOpacity = .25, 
+                   labelOptions = labelOptions(noHide = F, # Set to F to hide labels
+                                               style = list("font-size" = "14px")), 
+                   popup = cleaned_location$sub_site_name
+  ) %>%
+  addScaleBar()
+```
+  
+### Variable: `visit_type`
+```{r}
+table(cleaner_effort_data$visit_type) 
+```
+
+**NA and Unknown Values**
+  
+No values that do not have an associated visit type with them. 
+  
+### Variable: `trap_functioning`
+```{r}
+table(cleaner_effort_data$trap_functioning) 
+```
+Replace Not Recorded with NA
+```{r}
+cleaner_effort_data$trap_functioning <- ifelse(cleaner_effort_data$trap_functioning == "Not recorded", NA, cleaner_effort_data$trap_functioning)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_effort_data$trap_functioning))/nrow(cleaner_effort_data), 3) * 100` % of values in the `trap_functioning` column are listed as NA.
+
+* `r round(sum(is.na(cleaner_effort_data$trap_functioning), cleaner_effort_data$trap_functioning == "Trap not in service", cleaner_effort_data$trap_functioning == "Trap stopped functioning", cleaner_effort_data$trap_functioning == "Trap functioning, but not normally", na.rm = T)/nrow(cleaner_effort_data), 3) * 100` % of values in the `trap_functioning` column state that the trap is not function at normal capacity. 
+  
+### Variable: `fish_processed`
+```{r}
+table(cleaner_effort_data$fish_processed) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_effort_data$fish_processed <- ifelse(cleaner_effort_data$fish_processed == "Not applicable", NA, cleaner_effort_data$fish_processed)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_effort_data$fish_processed))/nrow(cleaner_effort_data), 3) * 100` % of values in the `fish_processed` column are NA.
+
+
+### Identified issues with this dataset
+
+* Not all the years have the same coverage. 
+  * 2008 data is 66 % NAs. 
+  * 2017 and 2006 are both low catch years. These were wet years with difficult trapping conditions. Low catch may be due to traps not functioning correctly. 
+
+
+### Next Step:
+
+* Identify which one of these environmental variables is useful for generate passage estimate 
+
+### Save cleaned data back to google cloud 
+
+First I am going to add in a date column, we can use this date column to join effort data with catch data. 
+```{r}
+# Create date column so join able 
+feather_rst_effort <- cleaner_effort_data %>% 
+  mutate(date = as.Date(visit_time)) %>%
+  select(date, site_name, sub_site_name, visit_time, # reorder columns 
+         visit_type, trap_functioning, fish_processed, 
+         water_temp_c, turbidity_ntu, river_location, 
+         river_mile, latitude, longitude) %>%
+  glimpse
+```
+
+```{r, eval = FALSE}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_rst_effort,
+           object_function = f,
+           type = "csv",
+           name = "rst/feather-river/data/feather_rst_effort.csv")
+```

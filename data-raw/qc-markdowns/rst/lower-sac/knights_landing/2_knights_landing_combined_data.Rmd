@@ -1,0 +1,238 @@
+---
+title: "Lower Sacramento (Knight's Landing) RST data QC - combine all years"
+author: "Ashley Vizek"
+date: "10/08/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE, fig.width=15, fig.height=10}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(openxlsx)
+# used with clean_names()
+library(janitor)
+# used with japply
+library(taRifx)
+```
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+# git data and save as xlsx
+year <- c(2003:2016, 2019:2021)
+
+get_data <- function(year) {
+gcs_get_object(object_name = paste0("rst/lower-sac-river/data/knights-landing/knl_rst_", year,".csv"),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = paste0("clean_raw_knl_rst_", year, ".csv"),
+               overwrite = TRUE)
+}
+
+map(year, get_data)
+```
+
+```{r, include = F}
+# find list of csvs that i saved down from cloud
+clean_files <- list.files(pattern =  "^clean")
+
+# we want dates to be combined with times to make it easier to work with.
+# times are recorded in military hours, may want to convert to utc?
+rst_combine <- 
+  do.call(bind_rows,
+          lapply(clean_files, read_csv))
+  
+rst_combine_clean <- rst_combine %>%
+  # some years do not have a date so use stop_date
+  mutate(date = case_when(is.na(date) ~ stop_date,
+                          T ~ date),
+         # format as date because we do not need to hms here
+         date = as.Date(date),
+         # steps to combine start/stop_date and start/stop_time
+         start_date = as.Date(start_date),
+         start_time = format(start_time, "%H:%M"),
+         start_date = case_when(is.na(start_date) &!is.na(start_time) ~ paste(date, start_time),
+                                !is.na(start_date) & !is.na(start_time) ~ paste(start_date, start_time),
+                                is.na(start_date) & is.na(start_time) ~ NA_character_,
+                                T ~ paste(start_date, "00:00")),
+         start_date = as.POSIXct(start_date, tz = "America/Los_Angeles"),
+         stop_date = as.Date(stop_date),
+         stop_time = format(stop_time, "%H:%M"),
+         stop_date = case_when(is.na(stop_date) & !is.na(stop_time) ~ paste(date, stop_time),
+                               !is.na(stop_date) & !is.na(stop_time) ~ paste(stop_date, stop_time),
+                               is.na(stop_date) & is.na(stop_time) ~ NA_character_,
+                                T ~ paste(stop_date, "00:00")),
+         stop_date = as.POSIXct(stop_date, tz = "America/Los_Angeles"))
+```
+
+```{r}
+# separate into an effort file and an rst file
+bind_col <- tibble(names = colnames(rst_combine))
+
+effort_vars <- c("date", "start_date", "stop_date", "start_time", "stop_time", "location", "gear", "number_traps", "hrs_fished", "sampling_period_hrs", "flow_cfs", "secchi_ft","turbidity_ftu","turbidity_ntu", "water_t_f", "klci", "cone_rpm_8_3", "cone_rpm_8_4", "total_cone_rev_8_3", "total_cone_rev_8_4", "cone_sampling_effort", "cpue_fall", "cpue_spring", "cpue_late_fall", "cpue_steelhead", "cpue_winter", "comments")
+
+# need to include start_date, start_time, stop_date, stop_time here because there multiple observations per day for some years
+rst_vars <- c("date","start_date",  "stop_date", "location","catch", "fork_length_max_mm", "fork_length_min_mm", "number_marked_cs", "number_marked_sh", "number_fall", "number_late_fall", "number_spring", "number_unmarked_sh", "number_winter", "number_marked_fall", "number_marked_late_fall", "number_marked_spring", "number_marked_winter", "number_older_juv", "species")
+
+
+knights_landing_sampling_effort <- rst_combine_clean %>%
+  select(effort_vars)
+
+glimpse(knights_landing_sampling_effort)
+
+knights_landing_rst <- rst_combine_clean %>%
+  select(rst_vars)
+
+glimpse(knights_landing_rst)
+```
+
+```{r}
+# formatting rst file
+# date, location, run, marked, species, fork_length, fork_length_type, count
+# fork length only applies to marked chinook
+
+# at_capture_run
+# Fall, Late fall, Spring, Winter
+
+# Species
+# Chinook, Steelhead
+
+# Marked
+# TRUE/FALSE
+
+# fork_length_type
+# Min, Max, Raw
+# decided to leave as fork_length_min/max because didn't want duplicate counts
+
+# warning is thrown because i did not specify the timezone in the date formatting
+knights_landing_rst_clean <- select(knights_landing_rst, -catch) %>% # remove catch; this is sum of all unmarked chinook runs, don't need this
+  pivot_longer(starts_with(c("number")), names_to = "type", values_to = "count") %>%
+  # filter out so we don't get duplicates. could also filter NA but this is better in case there are any real NAs
+  # mutate(exclude = case_when(type %in% pre_2018 & year(date) > 2017 ~ "exclude",
+  #                            type %in% post_2018 & year(date) < 2018 ~ "exclude",
+  #                            T ~ "include")) %>%
+  # filter(exclude != "exclude") %>%
+  mutate(at_capture_run = case_when(type %in% c("number_fall", "number_marked_fall") ~ "Fall",
+                                    type %in% c("number_late_fall", "number_marked_late_fall") ~ "Late fall",
+                                    type %in% c("number_spring", "number_marked_spring") ~ "Spring",
+                                    type %in% c("number_winter", "number_marked_winter") ~ "Winter",
+                                    # don't associate a run with steelhead or the older juveniles because no run identified. i wonder if older juveniles means 
+                                    type %in% c("number_marked_cs", "number_unmarked_sh", "number_marked_sh", "number_older_juv") ~ NA_character_,
+                                    T ~ "help"),
+         species = case_when(type %in% c("number_unmarked_sh", "number_marked_sh") ~ "Steelhead",
+                             T ~ "Chinook"),
+         # this is the only lifestage information we have. include here so capture all information in "type"
+         lifestage = case_when(type == "number_older_juv" ~ "older juvenile",
+                               T ~ NA_character_),
+         marked = case_when(type %in% c("number_marked_cs", "number_marked_sh", "number_marked_fall", "number_marked_late_fall", "number_marked_spring", "number_marked_winter") ~ TRUE,
+                            type %in% c("number_fall", "number_late_fall", "number_spring", "number_unmarked_sh", "number_winter", "number_older_juv_cs") ~ FALSE),
+         # fork length is only measured for unmarked chinook
+         fork_length_min_mm = case_when(species == "Chinook" & marked == F ~ fork_length_min_mm,
+                                    T ~ NA_real_),
+         fork_length_max_mm = case_when(species == "Chinook" & marked == F ~ fork_length_max_mm,
+                                    T ~ NA_real_)) %>%
+  select(-type)
+
+# checks
+filter(knights_landing_rst_clean, at_capture_run == "help")
+filter(knights_landing_rst_clean, as.Date(date) == "2013-11-02")
+filter(rst_combine_clean, date == "2013-11-02")
+knights_landing_rst_clean %>%
+  group_by(date, start_date, stop_date, fork_length_min_mm, fork_length_max_mm, species, at_capture_run, lifestage, marked) %>%
+  tally() %>%
+  filter(n > 1)
+
+```
+
+```{r}
+# formatting trap efficiency file
+# date, start_date, start_time, stop_date, stop_time, location, gear, number_of_traps, hrs_fished, sampling_period_hrs, cone_rpm, total_cone_rev, cone_designation, cpue, at_capture_run, marked, species, environmental_covariate_type, environmental_covariate_value, comments
+
+# decided to make one dataset for trap efficiency that can be joined on the RST data
+# removed it from larger sampling effort because the long format with species, marked would prevent sampling effort to be joined to all the RST data if user wasn't careful
+# i.e., if a join between RST and sampling was done without any conditions all the marked data would be empty due to cpue only existing for unmarked.
+knights_landing_sampling_effort_cpue <- select(knights_landing_sampling_effort, c(date, start_date, stop_date, location, contains("cpue"))) %>%
+  pivot_longer(starts_with("cpue"), names_to = "type", values_to = "cpue") %>%
+  mutate(at_capture_run = case_when(type == "cpue_spring" ~ "Spring",
+                                    type == "cpue_winter" ~ "Winter",
+                                    type == "cpue_late_fall" ~ "Late fall",
+                                    type == "cpue_fall" ~ "Fall", 
+                                    T ~ NA_character_),
+         species = case_when(type == "cpue_steelhead" ~ "Steelhead",
+                             T ~ "Chinook"),
+         marked = FALSE) %>%
+  select(-type)
+# checks
+knights_landing_sampling_effort_cpue %>%
+  group_by(date, start_date, stop_date,  species, at_capture_run, marked) %>%
+  tally() %>%
+  filter(n > 1)
+
+```
+
+```{r, include = F}
+# combine rst and cpue
+knights_landing_rst_cpue <- full_join(knights_landing_rst_clean, knights_landing_sampling_effort_cpue)
+
+# checks
+knights_landing_rst_cpue %>%
+  group_by(date, start_date, stop_date,  species, at_capture_run, marked) %>%
+  tally() %>%
+  filter(n > 1)
+```
+
+```{r, include = F}
+# clean sampling effort dataset
+
+# when does turbidity_ftu apply, only the 2014 sampling year
+filter(knights_landing_sampling_effort, !is.na(turbidity_ftu)) %>%
+  mutate(year = year(date)) %>%
+  group_by(year) %>%
+  tally()
+
+knights_landing_sampling_effort_clean <- select(knights_landing_sampling_effort, c(date, start_date, stop_date, start_time, stop_time, location, !contains("cpue"))) %>%
+  mutate(turbidity = case_when(!is.na(turbidity_ftu) ~ turbidity_ftu,
+                               T ~ turbidity_ntu),
+         turbidity_units = case_when(!is.na(turbidity_ftu) ~ "FTU",
+                                     T ~ "NTU")) %>%
+  select(-turbidity_ntu, -turbidity_ftu) %>%
+  pivot_longer(starts_with("cone_rpm"), names_to = "cone_id", values_to = "cone_rpm") %>%
+  mutate(cone_id = case_when(cone_id == "cone_rpm_8_3" ~ "8.3",
+                              T ~ "8.4"),
+         total_cone_rev = case_when(cone_id == "8.3" ~ total_cone_rev_8_3,
+                                    cone_id == "8.4" ~ total_cone_rev_8_4)) %>%
+  select(-total_cone_rev_8_3, -total_cone_rev_8_4)
+
+# check <- knights_landing_sampling_effort_clean %>%
+#   filter(!is.na(cone_rpm)) %>%
+#   select(date, cone_rpm, cone_id, total_cone_rev, total_cone_rev_8_3, total_cone_rev_8_4)
+```
+
+### Save cleaned data back to google cloud 
+
+```{r, include = F}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+upload_data <- function(data, name) {
+gcs_upload(data,
+           object_function = f,
+           type = "csv",
+           name = paste0("rst/lower-sac-river/data/knights-landing/knl_combine_", name, ".csv"),
+           predefinedAcl = "bucketLevel")
+}
+
+upload_data(knights_landing_sampling_effort_clean, "sampling_effort")
+upload_data(knights_landing_rst_cpue, "rst")
+```

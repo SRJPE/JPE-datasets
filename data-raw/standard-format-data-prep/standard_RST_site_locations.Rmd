@@ -1,0 +1,78 @@
+---
+title: "RST trap locations"
+author: "Erin Cain"
+date: "4/21/2022"
+output:
+  html_document:
+     code_folding: hide
+     theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(leaflet)
+library(scales)
+library(tidyverse)
+library(googleCloudStorageR)
+```
+
+
+## RST sites {.tabset}
+
+There are 8 tributaries included in the SR JPE. All 8 of these tributaries have 
+historically had or have ongoing RST monitoring programs. These 8 tributaries 
+have one or more RST running at the following trap locations:
+
+
+### Table of RST site 
+```{r, message=FALSE}
+rst_sites <- read_csv("../../analysis/exploratory-analysis/data-raw/rst_sites.csv") %>% 
+  select(-year) %>%
+  distinct() %>% 
+  rename(stream = tributary, site = site_name, subsite = sub_site_name) %>%
+  mutate(stream = tolower(stream), 
+         site = tolower(site), 
+         subsite = tolower(subsite)) %>%
+  arrange(stream)
+knitr::kable(rst_sites, align = 'c')
+```
+
+### Map of RST sites
+
+```{r}
+jitter_rst_sites <- rst_sites%>%
+  mutate(latitude = jitter(latitude, factor = .5),
+         longitude = jitter(longitude, factor = .07))
+
+leaflet(jitter_rst_sites)  %>% 
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
+  addCircleMarkers(data = jitter_rst_sites,  label = jitter_rst_sites$site, 
+                   weight = 1.5, color = "blue",
+                   opacity =  1, fillOpacity = .25, 
+                   labelOptions = labelOptions(noHide = T, # Set to F to hide labels
+                                               style = list("font-size" = "14px")), 
+                   popup = paste(sep = "<br/>",
+                                 jitter_rst_sites$subsite,
+                                 paste("River Mile:", jitter_rst_sites$river_mile),
+                                 paste("RST Size:", jitter_rst_sites$rst_size),
+                                 paste("RST Season:", jitter_rst_sites$trapping_season))
+  ) %>%
+  addScaleBar()
+
+```
+
+## Save RST_trap_locations.csv to google cloud 
+
+```{r, eval = FALSE}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+f <- function(input, output) write_csv(input, file = output)
+write_csv(rst_sites, "../../data/standard-format-data/rst_trap_locations.csv")
+gcs_upload(rst_sites,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/rst_trap_locations.csv")
+```
+

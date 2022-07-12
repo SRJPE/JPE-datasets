@@ -1,0 +1,1072 @@
+---
+title: "Battle Creek RST QC"
+author: "Erin Cain"
+date: "9/29/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+library(knitr)
+palette <- wesanderson::wes_palette(name = "Moonrise2")
+```
+
+# Battle Creek Rotary Screw Trap Data
+
+## Description of Monitoring Data
+
+These data were collected by the U.S. Fish and Wildlife Service, Red Bluff Fish and Wildlife Office, Battle Creek Monitoring Program. These data represent environmental conditions for Battle Creek RST. 									
+
+**Timeframe:** 2003 - 2021
+
+**Screw Trap Season:** September - June
+
+**Completeness of Record throughout timeframe:** Sample Year tab on excel sheet describes start and end date for trap each year. Sampled every year from 1998 - 2019, some years not fished on weekends or during high flow events. Proxy dates are used when environmental conditions were not measured (see WeekSub column).
+
+**Sampling Location:** Upper Battle Creek (UBC)
+
+**Data Contact:** [Mike Schraml](mailto:mike_schraml@fws.gov)
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = "rst/battle-creek/data-raw/UBC Spring.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_battle_rst_data.xlsx",
+               overwrite = TRUE)
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+sheets <- excel_sheets("raw_battle_rst_data.xlsx")
+sheets
+raw_environmental_1 <- read_excel("raw_battle_rst_data.xlsx", 
+                                  sheet = "UBC Environmental 03-20") %>% glimpse()
+raw_environmental_2 <- read_excel("raw_battle_rst_data.xlsx", 
+                                  sheet = "UBC Environmental 20-21") %>% glimpse()
+```
+
+## Data transformations
+
+```{r}
+raw_rst_environmental <- bind_rows(raw_environmental_1, raw_environmental_2) %>% 
+  glimpse()
+
+cleaner_rst_environmental <- raw_rst_environmental %>%
+  janitor::clean_names() %>%
+  rename() %>%
+  mutate(trap_start_date = as.Date(trap_start_date),
+         trap_start_time = hms::as_hms(trap_start_time),
+         sample_date = as.Date(sample_date),
+         sample_time = hms::as_hms(sample_time)) %>%
+  select(-station_code, -user_name, -user_name2, 
+         -sample_weight) %>% # remove sample weight because it is defined to be the same as cone
+  glimpse
+
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_rst_environmental %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_rst_environmental),
+                          description = c("The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)",
+                                          "The date the trap started sampling (the beginning of the sample period)",
+                                          "The time the trap was started on the TrapStartDate (the beginning of the sample period)",
+                                          "The date the trap was sampled, the end date of the approximately 24-h sampling period",
+                                          "The time the trap was sampled, the end time of the approximately 24-h sampling period",
+                                          "Number on the cone revolution counter at SampleDate and SampleTime",
+                                          "The read out number on the mechanical counter of the flow meter at the start of the velocity test",
+                                          "The read out number on the mechanical counter of the flow meter at the end of the velocity test",
+                                          "How long the General Oceanics mechanical flow meter (Oceanic ® Model 2030)was in the water taking a reading, used to calculate water velocity in front of the cone",
+                                          "Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875. In feet per second",
+                                          "Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime. Measured in NTU",
+                                          "Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting",
+                                          "A code for the weather conditions on the SampleDate and SampleTime (cloudy, clear, fog, partially cloudy, precipitation, windy, clear, windy and clear)",
+                                          "Stage of the Moon on the SampleDate and SampleTime, from: http://aa.usno.navy.mil/data/docs/MoonFraction.php (full, half, new)",
+                                          "River depth from inside of the river left (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "River depth from directly in the center of cone off crossbeam #2 (cone crossbeam)",
+                                          "River depth from inside of the river right (facing down stream) pontoon off crossbeam #2 (cone crossbeam)",
+                                          "The type of sample regime (non-intensive, intensive, sunrise-sunset, random)",
+                                          "The type of flow habitat the trap fished in (plunge pool,run, glide, backwater pool, lateral flood)",
+                                          "Was trap fishing in the thalweg at SampleDate and SampleTime (T/F)",
+                                          "The time of day relative to the sun (pre-sunrise, post-sunrise, pre-sunset, post-sunset, day, night)",
+                                          "The depth of the bottom of the cone. Measured in inches",
+                                          "The type of debris found in the live-box (aquatic vegetation, large woody debris, sticks, veg + wood, veg + sticks, wood + sticks, veg + wood + sticks)",
+                                          "The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically). Measured in 10 gallons",
+                                          "The average time per cone rotation (average of three rotations). Units in seconds",
+                                          "Was there a problem with the trap at SampleDate and SampleTime (T/F)",
+                                          "If sample week has more than one efficiency, which part of week is sample from",
+                                          "Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage",
+                                          "Number of fish released",
+                                          "Qualitative comments about trap",
+                                          "A code for the condition of the trap on the SampleDate and SampleTime (normal, partial block, total block, not rotating)",
+                                          "Beginning cone revolution counter number, usually zero",
+                                          "Did the trap fish on the sample date",
+                                          "Did the trap fish for the entire sample day (T/F)",
+                                          "The Bailey's efficiency used in old reports. Bailey's efficiency has been standardized to only four significant digits"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+cleaner_rst_environmental %>% select_if(is.numeric) %>% colnames 
+```
+
+### Variable: `counter`
+
+Number on the cone revolution counter at SampleDate and SampleTime							
+
+**Plotting distribution of counter**
+
+```{r}
+cleaner_rst_environmental %>% 
+  filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = counter), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = counter, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+
+
+
+**Numeric Summary of counter over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$counter)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$counter))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `counter` column are NA. 
+
+### Variables: `flow_start_meter`, `flow_end_meter`
+
+The read out number on the mechanical counter of the flow meter at the start and end of the velocity test							
+
+
+**Plotting distribution of flow start meter and flow end meter**
+
+```{r}
+
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_histogram(aes(x = flow_start_meter), fill = "blue", alpha = .5) +
+  geom_histogram(aes(x = flow_end_meter), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
+```
+
+Start times and end times appear to have a similar distribution.
+
+**Numeric Summary**
+
+```{r}
+summary(cleaner_rst_environmental$flow_start_meter)
+summary(cleaner_rst_environmental$flow_end_meter)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$flow_start_meter))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `flow_start_meter` column are NA. 
+* `r round(sum(is.na(cleaner_rst_environmental$flow_end_meter))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `flow_end_meter` column are NA. 
+
+
+### Variable: `flow_set_time`
+
+How long the General Oceanics mechanical flow meter (Oceanic ® Model 2030) was in the water taking a reading, used to calculate water velocity in front of the cone
+
+Time is in seconds 
+
+**Plotting distribution of flow set time**
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_histogram(aes(x = flow_set_time)) +
+  theme_minimal() +
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+Flow set times appear mainly between 100 and 1000 with a few values up to almost 4000. 
+
+**Numeric Summary of flow set time over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$flow_set_time)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$counter))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `counter` column are NA. 
+
+
+### Variable: `velocity`
+
+Calculated water velocity in front of the cone using a General Oceanics mechanical flow meter (Oceanic ® Model 2030) = ( (Flowmeter end - flow meter begin)/time in seconds)*.0875							
+
+Since velocity is just a function of flowmeter_end, flowmeter_start, and flowmeter_set_time we probably do not need to include all of these. 
+
+**Plotting distribution of velocity**
+
+```{r}
+cleaner_rst_environmental %>% 
+  filter(velocity < 25) %>% # filter out values greater than 25
+  ggplot() +
+  geom_histogram(aes(x = velocity), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>%
+  mutate(wy = factor(ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(sample_date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(sample_date), day(sample_date)))) %>%
+  ggplot(aes(x = fake_date, y = velocity)) +
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("") +
+  facet_wrap(~wy, scales = "free") + 
+  theme_minimal()
+```
+
+
+
+**Numeric Summary of velocity**
+
+```{r}
+summary(cleaner_rst_environmental$velocity)
+```
+
+A velocity of 155.090 seems out of the range of possibilities. It seems like every velocity greater than 7 is probably a mistake that should be scaled down or filtered out. Most likely these were caused by the outliers in flow_start_time, flow_end_time or flow_set_time since this is a calculatted value. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$velocity))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `velocity` column are NA.
+
+### Variable: `turbidity`
+
+Turbidity result from a grab sample taken at the trap on the SampleDate and SampleTime							
+
+**Plotting distribution of turbidity**
+```{r}
+cleaner_rst_environmental %>% 
+  filter(counter < 200) %>% # filter out values < 200
+  ggplot() +
+  geom_histogram(aes(x = turbidity), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+  
+```{r}
+
+cleaner_rst_environmental %>% 
+  group_by(date = as.Date(sample_date)) %>%
+  mutate(avg_turbidity_ntu = mean(turbidity)) %>%
+  filter(avg_turbidity_ntu < 100) %>%
+  ungroup() %>%
+  ggplot() + 
+  geom_boxplot(aes(x = as.factor(month(date)), y = avg_turbidity_ntu)) + 
+  # facet_wrap(~year(date), scales = "free") + 
+  # scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "none") + 
+  labs(title = "Daily Turbidity Measures sumarized by month",
+       x = "Month", 
+       y = "Average Daily Turbidity NTUs")  
+```
+
+```{r}
+cleaner_rst_environmental %>%
+  mutate(wy = factor(ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))),
+         fake_year = 2000,
+         fake_year = ifelse(month(sample_date) %in% 10:12, fake_year - 1, fake_year),
+         fake_date = ymd(paste(fake_year, month(sample_date), day(sample_date)))) %>%
+  ggplot(aes(x = fake_date, y = turbidity)) +
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") +
+  geom_line(size = 0.5) +
+  xlab("") +
+  facet_wrap(~wy, scales = "free") + theme_minimal()
+```
+
+Most turbidity measures are low but a few outliers going up until 850
+
+**Numeric Summary of turbidity over Period of Record**
+  
+```{r}
+summary(cleaner_rst_environmental$turbidity)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_environmental$turbidity))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `turbidity` column are NA.
+
+
+
+
+### Variables: `cone`
+
+Definition `cone`:
+Was the trap fished at cone full-cone (1.0) or half-cone (0.5) setting				
+(same as `sample_weight` column removed above)
+
+**Plotting distribution of cone**
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_histogram(aes(x = cone), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+All sample weights and cone measures are either .5 or 1. 
+
+**Numeric Summary of cone over Period of Record**
+  
+```{r}
+summary(cleaner_rst_environmental$cone)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_environmental$cone))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `cone` column are NA.
+
+### Variable: `river_left_depth`, `river_right_depth`, `river_center_depth`
+
+Unit for depth is feet, definitions of measurements are: 
+
+* River depth from directly in the center of cone off crossbeam #2 (cone crossbeam)							
+* River depth from inside of the river left (facing down stream) pontoon off crossbeam #2 (cone crossbeam)							
+* River depth from inside of the river right (facing down stream) pontoon off crossbeam #2 (cone crossbeam)					
+
+**Plotting distribution of depth measures**
+```{r}
+depth_1 <- cleaner_rst_environmental %>% 
+  # filter(counter < 200) %>% # filter out values < 200
+  ggplot() +
+  geom_histogram(aes(x = river_left_depth), fill = "blue", alpha = .5) +
+  geom_histogram(aes(x = river_center_depth), fill = "gray", alpha = .75) +
+  geom_histogram(aes(x = river_right_depth), fill = "green", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "River Depth: left (blue), right (green), and center (gray)")
+
+depth_2 <- cleaner_rst_environmental %>% 
+  filter(river_right_depth > 1) %>% # filter out values < 200
+  ggplot() +
+  geom_histogram(aes(x = river_left_depth), fill = "blue", alpha = .5) +
+  geom_histogram(aes(x = river_center_depth), fill = "gray", alpha = .75) +
+  geom_histogram(aes(x = river_right_depth), fill = "green", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "River Depth: left (blue), right (green), and center (gray)",
+       title = "Filtered Depth Distribution")
+gridExtra::grid.arrange(depth_1, depth_2)
+```
+
+
+**Numeric Summary of river depth over Period of Record**
+  
+```{r}
+summary(cleaner_rst_environmental$river_left_depth)
+summary(cleaner_rst_environmental$river_center_depth)
+summary(cleaner_rst_environmental$river_right_depth)
+```
+
+**NA and Unknown Values**
+  
+* `r round(sum(is.na(cleaner_rst_environmental$river_left_depth))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `river_left_depth` column are NA.
+* `r round(sum(is.na(cleaner_rst_environmental$river_center_depth))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `river_center_depth` column are NA.
+* `r round(sum(is.na(cleaner_rst_environmental$river_right_depth))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `river_right_depth` column are NA.
+
+
+### Variable: `depth_adjust`
+
+The depth of the bottom of the cone	(measured in Inches)
+Depth in relation to the cone (not to the surface of the water) - not sure how it is used. 
+
+**Plotting distribution of depth adjustment**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = depth_adjust), fill = "blue", alpha = .5, binwidth = 1) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = depth_adjust, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+Looks like depth adjust varies by year depending on how the trap was positioned. 
+
+
+**Numeric Summary of depth adjustment over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$depth_adjust)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$depth_adjust))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `depth_adjust` column are NA.
+
+### Variable: `debris_tubs`
+
+The number of 10-g tubs of debris removed from the trap during the sample period (volumetrically)							
+
+**Plotting distribution of debris_tubs**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = debris_tubs), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = debris_tubs, y = as.factor(month(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Month")
+```
+
+Debris looks relatively evenly distributed throughout the months. 
+
+**Numeric Summary of debris over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$debris_tubs)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$debris_tubs))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `debris_tubs` column are NA.
+
+### Variable: `avg_time_per_rev`
+
+The average time per cone rotation (average of three rotations)	- units are seconds 					
+
+**Plotting distribution of average time per revolution**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = avg_time_per_rev), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = avg_time_per_rev, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+
+
+
+**Numeric Summary of average time per rev over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$avg_time_per_rev)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$avg_time_per_rev))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `avg_time_per_rev` column are NA.
+
+
+### Variable: `baileys_eff`
+
+Trap Efficiency = (Recaptured+1)/(Released+1); used to calculate daily passage							
+						
+
+**Plotting distribution of counter**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = baileys_eff), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = baileys_eff, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+
+**Numeric Summary of baileys efficency over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$baileys_eff)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$baileys_eff))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `baileys_eff` column are NA.
+
+### Variable: `num_released`
+
+Number fish released					
+
+**Plotting distribution of number released**
+
+```{r}
+cleaner_rst_environmental %>% 
+  # filter(counter < 25000) %>% # filter out 5 values > 25000
+  ggplot() +
+  geom_histogram(aes(x = num_released), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_boxplot(aes(x = num_released, y = as.factor(year(sample_date))), fill = "blue", alpha = .5) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(y = "Year")
+```
+
+
+
+**Numeric Summary of counter over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$num_released)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$num_released))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `num_released` column are NA.
+
+
+### Variable: `start_counter`
+
+Beginning cone revolution counter number, usually zero.							
+							
+
+All values either 0 or NA. 
+
+**Numeric Summary of counter over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$start_counter)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$start_counter))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `start_counter` column are NA.
+
+
+### Variable: `report_baileys_eff`
+
+The Bailey's efficiency used in old reports. Bailey's efficiency has been standardized to only four significant digits.							
+
+**Plotting distribution of counter**
+
+```{r}
+cleaner_rst_environmental %>% 
+  ggplot() +
+  geom_histogram(aes(x = report_baileys_eff), fill = "blue", alpha = .5, binwidth = .01) +
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+**Numeric Summary of baileys efficency measures for reports over Period of Record**
+
+```{r}
+summary(cleaner_rst_environmental$report_baileys_eff)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$report_baileys_eff))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `report_baileys_eff` column are NA.
+
+
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+cleaner_rst_environmental %>% select_if(is.character) %>% colnames
+```
+
+
+### Variable: `sample_id`
+
+The calendar year Julian date and year code for that ~24-h sample period (ddd_yy)	
+
+```{r}
+nrow(cleaner_rst_environmental) == length(unique(cleaner_rst_environmental$sample_id))
+
+```
+There are `r length(unique(cleaner_rst_environmental$sample_id))` unique sample IDs.
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$sample_id))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `sample_id` column are NA. 
+
+
+### Variable: `weather_code`
+
+A code for the weather conditions on the SampleDate and SampleTime. See VariableCodesLookUp table			
+
+| code | description |			
+| ---- | ------------ |
+| CLR |	sunny |
+| RAN |	precipitation |
+| FOG |	foggy |
+| CLD |	overcast |
+
+
+```{r}
+table(cleaner_rst_environmental$weather_code) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$weather_code <- case_when(
+  cleaner_rst_environmental$weather_code %in% c("CLD", "cld", "CLOUDY") ~ "cloudy", 
+  cleaner_rst_environmental$weather_code == "CLR" ~ "clear",
+  cleaner_rst_environmental$weather_code == "FOG" ~ "fog", 
+  cleaner_rst_environmental$weather_code == "PCLD" ~ "partially cloudy", 
+  cleaner_rst_environmental$weather_code == "RAN" ~ "precipitation",
+  cleaner_rst_environmental$weather_code == "WIN/CLR" ~ "windy and clear",
+  cleaner_rst_environmental$weather_code == "WINDY" ~ "windy"
+)
+
+table(cleaner_rst_environmental$weather_code) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$weather_code))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `weather_code` column are NA.
+
+### Variable: `lunar_phase`
+
+Stage of the Moon on the SampleDate and SampleTime, from: http://aa.usno.navy.mil/data/docs/MoonFraction.php. See VariableCodesLookUp table	
+
+```{r}
+table(cleaner_rst_environmental$lunar_phase) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$lunar_phase <- case_when(
+  cleaner_rst_environmental$lunar_phase == "F" ~ "full", 
+  cleaner_rst_environmental$lunar_phase == "H" ~ "half", 
+  cleaner_rst_environmental$lunar_phase == "N" ~ "new"
+)
+
+table(cleaner_rst_environmental$lunar_phase) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$lunar_phase))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `lunar_phase` column are NA.
+
+### Variable: `trap_sample_type`
+
+The type of sample regime, see VariableCodesLookUp table	
+
+| code |  definition  |
+| --- | ------------ | 
+| N |	non-intensive |
+| I | intensive |
+| S | sunrise-sunset |
+| R | random |
+
+
+```{r}
+table(cleaner_rst_environmental$trap_sample_type) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$trap_sample_type <- case_when(
+  cleaner_rst_environmental$trap_sample_type == "N" ~ "non-intensive",
+  cleaner_rst_environmental$trap_sample_type == "R" ~ "random"
+)
+
+table(cleaner_rst_environmental$trap_sample_type) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$trap_sample_type))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `trap_sample_type` column are NA.
+
+### Variable: `habitat`
+
+The type of flow habitat the trap fished in, see VariableCodesLookUp table	
+
+| code | definition |
+| ---- | ---------- |
+| P |	plunge pool |
+| R |	run |
+| G |	glide |
+| B |	backwater pool |
+| L |	lateral flood |
+
+
+```{r}
+table(cleaner_rst_environmental$habitat) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$habitat <- case_when(
+  cleaner_rst_environmental$habitat == "B" ~ "backwater pool",
+  cleaner_rst_environmental$habitat == "R" ~ "run"
+)
+
+table(cleaner_rst_environmental$habitat) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$habitat))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `habitat` column are NA.
+
+### Variable: `thalweg`
+
+Was trap fishing in the thalweg at SampleDate and SampleTime							
+
+```{r}
+table(cleaner_rst_environmental$thalweg) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$thalweg <- case_when(
+  cleaner_rst_environmental$thalweg == "Y" ~ TRUE, 
+  cleaner_rst_environmental$thalweg == "N" ~ FALSE
+)
+
+table(cleaner_rst_environmental$thalweg) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$thalweg))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `thalweg` column are NA.
+
+### Variable: `diel`
+
+The time of day relative to the sun, see VariableCodesLookUp table	
+
+
+| code | definition |
+| ---- | ---------- |
+| C1 |	pre-sunrise |
+| C2 |	post-sunrise |
+| C3 |	pre-sunset |
+| C4 |	post-sunset |
+| D |	day |
+| N |	night |
+
+
+```{r}
+table(cleaner_rst_environmental$diel) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$diel <- case_when(cleaner_rst_environmental$diel == "D" ~ "day", 
+                                            cleaner_rst_environmental$diel == "N" ~ "night", 
+                                            cleaner_rst_environmental$diel == "C1" ~ "pre-sunrise")
+table(cleaner_rst_environmental$diel) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$diel))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `diel` column are NA.
+
+### Variable: `debris_type`
+
+The type of debris found in the live-box, see VariableCodesLookUp table			
+
+
+| code | definition |
+| ----- | -------------- |
+| a |	aquatic vegetation |
+| l |	large woody debris |
+| s |	sticks |
+| al |	veg + wood |
+| as |	veg + sticks |
+| ls |	wood + sticks |
+| als |	veg + wood + sticks |
+
+
+```{r}
+table(cleaner_rst_environmental$debris_type) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$debris_type <- tolower(cleaner_rst_environmental$debris_type)
+table(cleaner_rst_environmental$debris_type) 
+```
+**Create lookup rda for gear debris encoding:** 
+```{r}
+# View description of domain for viewing condition 
+battle_rst_debris_type <- c('a','l','s','al','as','ls','als')
+names(battle_rst_debris_type) <- c(
+  "aquatic vegetation",
+  "large woody debris",
+  "sticks",
+  "veg + wood",
+  "veg + sticks",
+  "wood + sticks",
+  "veg + wood + sticks")
+# write_rds(battle_rst_debris_type, "../../../data/battle_rst_debris_type.rds")
+tibble(code = battle_rst_debris_type, 
+       definitions = names(battle_rst_debris_type))
+```
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$debris_type))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `debris_type` column are NA.
+
+### Variable: `fish_properly`
+
+Was there a problem with the trap at SampleDate and SampleTime							
+
+```{r}
+table(cleaner_rst_environmental$fish_properly) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$fish_properly <- case_when(
+  cleaner_rst_environmental$fish_properly == "Y" ~ TRUE, 
+  cleaner_rst_environmental$fish_properly == "N" ~ FALSE
+)
+
+table(cleaner_rst_environmental$fish_properly) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$fish_properly))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `fish_properly` column are NA.
+
+### Variable: `sub_week`
+
+If sample week has more than one efficiency, which part of week is sample from	
+
+Description from Mike: The sub weeks do not describe specific days of the week, they indicate when a stratum (usually one week) is split into substrata based upon the trap efficiency used for the strata or substrata. If a stratum is not split all days in the stratum will be an A. If it is split the days in the first substratum are A’s, the second are B’s, etc.
+
+```{r}
+table(cleaner_rst_environmental$sub_week) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$sub_week))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `sub_week` column are NA.
+
+### Variable: `trap_comments`
+
+```{r}
+unique(cleaner_rst_environmental$trap_comments)[1:5]
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$trap_comments))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `trap_comments` column are NA.
+
+### Variable: `gear_condition_code`
+
+A code for the condition of the trap on the SampleDate and SampleTime; see VariableCodesLookUp table				
+
+| code | definition  |
+| ---- | ----------- |
+| n	|normal |
+| pb|	partial block |
+| tb|	total block |
+| nr|	not rotating |
+
+
+```{r}
+table(cleaner_rst_environmental$gear_condition_code) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$gear_condition_code <- case_when(
+  cleaner_rst_environmental$gear_condition_code == "BP" ~ "partial block",
+  cleaner_rst_environmental$gear_condition_code == "N" ~ "normal", 
+  cleaner_rst_environmental$gear_condition_code == "NR" ~ "not rotating",
+  cleaner_rst_environmental$gear_condition_code == "TB" ~ "total block"
+)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$gear_condition_code))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `gear_condition_code` column are NA.
+
+### Variable: `trap_fishing`
+
+```{r}
+table(cleaner_rst_environmental$trap_fishing) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$trap_fishing <- case_when(
+  cleaner_rst_environmental$trap_fishing == "Yes" ~ TRUE, 
+  cleaner_rst_environmental$trap_fishing == "No" ~ FALSE
+)
+
+table(cleaner_rst_environmental$trap_fishing) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$trap_fishing))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `trap_fishing` column are NA.
+
+### Variable: `partial_sample`
+
+```{r}
+table(cleaner_rst_environmental$partial_sample) 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+cleaner_rst_environmental$partial_sample <- case_when(
+  cleaner_rst_environmental$partial_sample == "Yes" ~ TRUE, 
+  cleaner_rst_environmental$partial_sample == "No" ~ FALSE
+)
+
+table(cleaner_rst_environmental$partial_sample) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_rst_environmental$partial_sample))/nrow(cleaner_rst_environmental), 3) * 100` % of values in the `partial_sample` column are NA.
+
+
+## Summary of identified issues
+
+* Outliers in some of the numeric variables: 
+  * Velocity (seems like anything greater than 7 needs to be addressed)
+  * Turbidity (everything greater than 100 needs to be addressed)
+  * Counter (one value way larger than the others)
+
+## Next steps
+
+- consider transforming `debris_tubs` to a more transparent volumetric unit.
+
+### Columns to remove
+
+- `report_baileys_eff` may not be needed. This is `baileys_eff` rounded.
+
+
+## Save cleaned data back to google cloud 
+
+```{r}
+# Standardize units #
+battle_rst_environmental <- cleaner_rst_environmental %>% 
+  mutate(river_left_depth = river_left_depth*0.3048,
+         river_center_depth = river_center_depth*0.3048,
+         river_right_depth = river_right_depth*0.3048,
+         depth_adjust = depth_adjust*0.0254) %>%
+  glimpse()
+```
+
+
+```{r, eval=FALSE}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(battle_rst_environmental,
+           object_function = f,
+           type = "csv",
+           name = "rst/battle-creek/data/battle_rst_environmental.csv")
+```

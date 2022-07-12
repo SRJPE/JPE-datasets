@@ -1,0 +1,276 @@
+---
+title: "Mill Creek Adult Upstream Passage Estimate QC"
+author: "Inigo Peng"
+date: "10/19/2021"
+output: rmarkdown::github_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+```
+
+# Mill Creek Adult Upstream Passage Estimate Data 2012 to 2020 
+
+**Description of Monitoring Data**
+
+Adult spring run daily passage estimate is based on data recorded at Ward Dam via video monitoring.
+
+**Timeframe:** 
+
+2012 to 2020
+
+**Completeness of Record throughout timeframe:**
+
+* Few missing values for passage_estimate
+* 10 - 15 % missing values for physical variables
+
+**Sampling Location:** 
+
+* Ward Dam   
+
+**Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data-raw/Mill Creek SRCS Daily Video Passage Estimates 2012-2020.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "mill_creek_passage_estimate_raw.xlsx")
+```
+
+Data for each year is in a separate sheet
+```{r, message=FALSE, warning=FALSE}
+sheets <- readxl::excel_sheets('mill_creek_passage_estimate_raw.xlsx')
+list_all <- lapply(sheets, function(x) readxl::read_excel(path = "mill_creek_passage_estimate_raw.xlsx", sheet = x, col_types = c("text", "numeric", "numeric", "numeric", "text")))
+```
+
+Bind the sheets into one file
+
+```{r, message=FALSE, warning=FALSE}
+raw_data <- dplyr::bind_rows(list_all) %>% 
+  glimpse()
+```
+
+## Data Transformations
+
+```{r}
+cleaner_data <- raw_data %>% 
+  set_names(tolower(colnames(raw_data))) %>% 
+  select(-"...5") %>% #comments describe dates
+  rename("passage_estimate" =  'adult spring-run passing ward dam',
+         "flow" = "avg daily flow below ward dam",
+         "temperature"= "avg daily h2o temp below ward dam") %>% 
+  filter(date != "Totals:", date != "Total:") %>%
+  mutate(date = case_when(
+    str_length(date) == 5 ~ as.Date(as.numeric(date), origin="1899-12-30"),
+    str_detect(date, '[/]') ~ as.Date(date, "%m/%d/%Y"))
+    # TRUE ~ as.Date(date))
+  ) %>% 
+  glimpse()
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Date of sampling",
+                                          "Passage estimate of Spring Run Chinook, TODO get methodlogy for generating passage estimates",
+                                          "Flow in CFS",
+                                          "Temperature (F) we convert to C"),
+                          
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+
+## Explore `date`
+
+Check for outlier and NA values
+
+```{r}
+summary(cleaner_data$date)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+
+## Explore Numerical Values
+
+### Variable:`passage_estimate` 
+```{r}
+cleaner_data %>%
+  filter(date != is.na(date)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  # glimpse()
+  ggplot(aes(x=date, y = passage_estimate))+
+  geom_line()+
+  facet_wrap(~year, scales = "free")+
+  theme_minimal()+
+  labs(title = "Daily Passage Estimate From 2012 - 2020")
+```
+
+
+```{r}
+cleaner_data %>% 
+  filter(date != is.na(date)) %>%
+  mutate(year = as.factor(year(date))) %>%
+  # glimpse()
+  group_by(year) %>% 
+  summarise(total = sum(passage_estimate, na.rm  = TRUE)) %>%
+  # glimpse()
+  ggplot(aes(x = year, y = total, group = 1))+
+  geom_line()+
+  geom_point(aes(x=year, y = total))+
+  theme_minimal()+
+  labs(title = "Total Annual Passage Estimate from 2012 - 2020",
+       y = "Total passage_estimate")
+```
+
+**Numeric Summary of passage_estimate From 2012 to 2020**
+```{r}
+summary(cleaner_data$passage_estimate)
+```
+Note: there is a negative estimate in one of the days - need to remove that
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$passage_estimate))/nrow(cleaner_data), 3)*100` % of values in the `passage_estimate` column are NA.
+
+### Variable:`flow`
+
+Flow in cfs
+
+```{r fig.height=8, fig.width=8}
+cleaner_data %>% 
+  filter(date != is.na(date)) %>%
+  group_by(date) %>%
+  mutate(avg_flow = mean(flow, na.rm = T)) %>%
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = 1900,
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = avg_flow, color = year)) + 
+  scale_color_brewer(palette = "Dark2")+
+  geom_point(alpha = .25) + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Water Flow (colored by year)",
+       y = "Average Daily Flow", 
+       x = "Date")  
+```
+```{r fig.height=8, fig.width=8}
+cleaner_data %>% 
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x=flow, fill = year))+
+  scale_fill_brewer(palette = "Dark2")+
+  geom_histogram()+
+  theme_minimal()+
+  labs(title = "Distribution of Flow")
+```
+
+**Numeric Summary of flow From 2012 to 2020**
+```{r}
+summary(cleaner_data$flow)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$flow))/nrow(cleaner_data), 3)*100` % of values in the `flow` column are NA.
+
+### Variable:`temperature`
+
+Temperature in F, convert to C below 
+
+```{r fig.height=8, fig.width=8}
+cleaner_data %>% 
+  filter(date != is.na(date)) %>%
+  group_by(date) %>%
+  mutate(avg_temp = mean(temperature, na.rm = T)) %>%
+  ungroup() %>% 
+  mutate(year = as.factor(year(date)),
+         fake_year = 1900,
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>% 
+  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
+  scale_color_brewer(palette = "Dark2")+
+  geom_point(alpha = .25) + 
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(title = "Daily Water Temperature (colored by year)",
+       y = "Average Daily Temperature", 
+       x = "Date")  
+```
+
+```{r fig.height=8, fig.width=8}
+cleaner_data %>% 
+  filter(date != is.na(date)) %>%
+  mutate(year = as.factor(year(date))) %>% 
+  ggplot(aes(x=temperature, fill = year))+
+  scale_fill_brewer(palette = "Dark2")+
+  geom_histogram(bins = 10)+
+  theme_minimal()+
+  labs(title = "Distribution of Temperature")
+```
+
+**Numeric Summary of temperature From 2012 to 2020**
+```{r}
+summary(cleaner_data$temperature)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$temperature))/nrow(cleaner_data), 3)*100` % of values in the `temperature` column are NA.
+
+### Notes and Issues
+
+* passage_estimate drops significantly after 2014
+* Only have passage estimates may want to purse raw data
+* Temperature in F, convert to C below 
+
+```{r}
+cleaner_data <- cleaner_data %>%
+  mutate(temperature = (temperature - 32) * (5/9))
+```
+
+
+## Next steps
+
+* See if we need raw data from this video monitoring 
+
+### Add cleaned data back onto google cloud
+
+```{r}
+mill_upstream_estimate <- cleaner_data %>% glimpse()
+```
+
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(mill_upstream_estimate,
+           object_function = f,
+           type = "csv",
+           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv")

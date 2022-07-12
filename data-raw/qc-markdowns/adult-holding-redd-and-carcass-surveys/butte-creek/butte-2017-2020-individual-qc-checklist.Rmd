@@ -1,0 +1,424 @@
+---
+title: "butte-2017-2020-individual-qc-checklist"
+author: "Inigo Peng"
+date: "10/21/2021"
+output: rmarkdown::github_document
+---
+---
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+```
+# Butte Creek Individual Survey Data  
+Carcass data provided to us by Jessica Nichols. This carcass data was provided to us in a zipped folder that contained a folder for each year of carcass data. This markdown document is focused on 2017 - 2020 data. 
+
+## Description of Monitoring Data
+
+**Timeframe:** 2017-2020
+
+**Completeness of Record throughout timeframe:**  
+
+* No dates for 2019 data 
+* More carcasses sampled in 2018 than in 2017 or 2020
+
+
+**Sampling Location:** Various sampling locations on Butte Creek.
+
+
+**Data Contact:** [Jessica Nichols](mailto::Jessica.Nichols@Wildlife.ca.gov)
+
+
+**Additional Info:** 
+
+* The carcass data came in 12 documents for each year. We identified the 'SurveyChops' and 'SurveyIndividuals' datasets as the documents with the most complete information and joined them for all of the years.
+
+* The SurveyIndividual QC files are split into different files to preserve the column types. This file runs 2017-2020 QC
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+
+# git data and save as xlsx
+read_from_cloud <- function(year){
+  gcs_get_object(object_name = paste0("adult-holding-redd-and-carcass-surveys/butte-creek/data-raw/", year, "_SurveyIndividuals.xlsx"),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = paste0(year,"_raw_surveyindividuals.xlsx"),
+               overwrite = TRUE)
+  # data <- readxl::read_excel(paste0(year,"_raw_surveyindividuals.xlsx")) %>% 
+  #   glimpse()
+}
+
+open_files <- function(year){
+  data <- readxl::read_excel(paste0(year, "_raw_surveyindividuals.xlsx"),
+                   col_types = c("numeric","text","numeric","numeric","date","text","text","text","text","numeric","text","numeric","numeric",
+                                 "text","text","text","text","numeric","text","text","text","text","text","text","text","text"))
+  return (data)
+}
+
+#Have to read files separately to keep the column types for each file
+#2019 file is different from all others
+
+later_years <- c(2017, 2018, 2020)
+purrr::map(later_years, read_from_cloud)
+raw_later_data <- purrr::map(later_years, open_files) %>%
+  reduce(bind_rows)
+write_csv(raw_later_data, "raw_2017_to_2020_individuals_data.csv")
+
+year <- 2019
+read_from_cloud(year)
+raw_2019_data <- readxl::read_excel("2019_raw_surveyindividuals.xlsx")
+write_csv(raw_2019_data, "2019_raw_surveyindividuals.csv")
+
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean
+
+raw_later_individuals_data <- read_csv("raw_2017_to_2020_individuals_data.csv")%>% glimpse()
+raw_2019_individuals_data <- read_csv("2019_raw_surveyindividuals.csv") %>% glimpse()
+
+```
+
+## Data Transformations
+
+Transformed 2019 data to join it to the 2017-2020 data.
+
+```{r}
+cleaner_data<- raw_later_individuals_data %>%
+  janitor::clean_names() %>%
+  rename('fork_length_mm' = 'f_lmm',
+         'condition' = 'condition_cd',
+         'spawning_status' = 'spawned_cd') %>% 
+  select(-c('week', 'year', 'f_lcm','location_cd', 'species_code','other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd', 'dn_anu', 'head_nu')) %>% #all location the same,all spring run chinook,  all no ad fin clip, no data for the rest of the dropped columns
+  mutate(date = as.Date(date),
+         scale_nu = as.character(scale_nu),
+         survey = as.character(survey)) %>% #scale_nu is identifier
+  glimpse()
+```
+No dates for 2019, not sure how helpful this data is without dates. 
+
+```{r}
+cleaner_2019_data<- raw_2019_individuals_data %>%
+  janitor::clean_names() %>% 
+  rename(condition = condition_cd, 
+         spawning_status = spawned_cd) %>%
+  mutate(fork_length_mm = f_lcm*10,
+         year = 2019) %>% 
+  select(-c('head_nu','scale_nu','f_lcm','tissue_nu', 'dn_anu', 'otolith_nu','comments', 'other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd')) %>% 
+  glimpse()
+```
+
+Bind 2019 data to the whole data frame
+```{r}
+cleaner_data <- bind_rows(cleaner_data, cleaner_2019_data) %>% glimpse()
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data. 
+
+```{r data_dictionary}
+percent_na <- cleaner_data %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data),
+                          description = c("Unique survey ID number", 
+                                          "Date of sampling",
+                                          "Section code describing area surveyed. View `butte_section_code.rds` for code definitions.",
+                                          "Way Point, TODO get better description of these locations ?",
+                                          "Fish disposition, describes if fish is tagged or not",
+                                          "Unique tag number if tag is applied to fish",
+                                          "Sex of fish",
+                                          "Fork lenght of fish measured in mm",
+                                          "Condition of fish, TODO get code definitions",
+                                          "Spawning status describes if the fish spawned before dying",
+                                          "Indicates if adipose fin was clipped (TRUE/FALSE).",
+                                          "Unique number for scale sampled collected",
+                                          "Unique number for tissue sample collected",
+                                          "Unique number for otolith sample collected",
+                                          "Any comments associated with a specific fish",
+                                          "Sample year for 2019 since no dates for 2019"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+knitr::kable(data_dictionary)
+```
+
+
+## Explore `date`
+
+```{r}
+summary(cleaner_data$date)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+
+## Explore Categorical Variables
+
+```{r}
+cleaner_data %>% 
+  select_if(is.character) %>% colnames()
+```
+
+### Variable: `survey`
+
+
+There are `r length(unique(cleaner_data$survey))` unique individual survey numbers.
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$survey))/nrow(cleaner_data), 3)*100` % of values in the `survey` column are NA.
+
+### Variable:`section_cd`
+
+** Create look up rda for section encoding:**
+
+```{r}
+butte_section_code <- c('A','B','C','COV-OKIE','D', 'E')
+names(butte_section_code) <-c(
+  "Quartz Bowl Pool downstream to Whiskey Flat",
+  "Whiskey Flat downstream to Helltown Bridge",
+  "Helltown Bridge downstream to Quail Run Bridge",
+  "Centerville Covered Brdige to Okie Dam",
+  "Quail Run Bridge downstream to Cable Bridge",
+  "Cable Bridge downstream ot Centerville; sdf Cable Bridge downstream to Centerville Covered Bridge"
+)
+
+tibble(code = butte_section_code,
+       definition = names(butte_section_code))
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$section_cd))/nrow(cleaner_data), 3)*100` % of values in the `section_cd` column are NA.
+
+### Variable:`way_pt`
+
+```{r}
+cleaner_data <- cleaner_data %>%
+  mutate(way_pt = toupper(way_pt),
+         way_pt = case_when(
+           way_pt == "COVER-OKIE" ~ "COV-OKIE",
+           way_pt == "N/R" ~ NA_character_,
+           way_pt == "NR" ~ NA_character_,
+           TRUE ~ as.character(way_pt)    
+  ))
+table(cleaner_data$way_pt)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$way_pt))/nrow(cleaner_data), 3)*100` % of values in the `way_pt` column are NA.
+
+### Variable: `disposition`
+```{r}
+cleaner_data$disposition <- tolower(cleaner_data$disposition)
+table(cleaner_data$disposition)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$disposition))/nrow(cleaner_data), 3)*100` % of values in the `disposition` column are NA.
+
+### Variable:`sex`
+```{r}
+cleaner_data<- cleaner_data %>% 
+  mutate(sex = tolower(sex),
+         sex = case_when(
+           sex == "f" ~ "female",
+           sex == "m"~ "male"
+         ))
+table(cleaner_data$sex)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$sex))/nrow(cleaner_data), 3)*100` % of values in the `sex` column are NA.
+
+### Variable:`condition`
+TODO: need description of the conditions
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(condition = set_names(tolower(condition)),
+         condition = case_when(
+           condition == "n/r" ~ NA_character_,
+           TRUE ~ as.character(condition)
+         ))
+table(cleaner_data$condition)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$condition))/nrow(cleaner_data), 3)*100` % of values in the `condition` column are NA.
+
+### Variable:`spawning_status`
+
+TODO: needs description of spawning_status
+```{r}
+
+cleaner_data <- cleaner_data %>% 
+  mutate(spawning_status = set_names(tolower(spawning_status)),
+         spawning_status = 
+           case_when(spawning_status == "n" ~ "no",
+                     spawning_status == "y" ~ "yes",
+                     spawning_status == "n/r" ~ NA_character_,
+                     spawning_status == "unk" ~ NA_character_,
+                     TRUE ~ as.character(spawning_status)
+  ))
+
+table(cleaner_data$spawning_status)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$spawning_status))/nrow(cleaner_data), 3)*100` % of values in the `spawning_status` column are NA.
+
+### Variable: `ad_fin_clip_cd`
+
+```{r}
+cleaner_data <- cleaner_data %>% 
+  mutate(ad_fin_clip_cd = 
+           case_when(ad_fin_clip_cd == "N" ~ FALSE,
+                     ad_fin_clip_cd == "Y" ~ TRUE))
+table(cleaner_data$ad_fin_clip_cd)
+```
+
+### Variable: `scale_nu`
+
+```{r}
+unique(cleaner_data$scale_nu)[1:5]
+```
+
+There are `r length(unique(cleaner_data$scale_nu))` unique individual scale numbers. 
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$scale_nu))/nrow(cleaner_data), 3)*100` % of values in the `scale_nu` column are NA.
+
+### Variable:`tissue_nu`
+
+```{r}
+unique(cleaner_data$tissue_nu)[1:5]
+```
+
+There are `r length(unique(cleaner_data$tissue_nu))` unique individual tissue numbers. 
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$tissue_nu))/nrow(cleaner_data), 3)*100` % of values in the `tissue_nu` column are NA.
+
+### Variable:`otolith_nu`
+
+```{r}
+unique(cleaner_data$otolith_nu)[1:5]
+```
+
+There are `r length(unique(cleaner_data$otolith_nu))` unique individual otolith numbers. 
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$otolith_nu))/nrow(cleaner_data), 3)*100` % of values in the `otolith_nu` column are NA.
+
+### Variable:`comments`
+```{r}
+unique(cleaner_data$comments)[1:5]
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$comments))/nrow(cleaner_data), 3)*100` % of values in the `comments` column are NA.
+
+## Explore Numerical Variables
+
+
+```{r}
+cleaner_data %>% 
+  select_if(is.numeric) %>% colnames()
+```
+
+
+### Variable:`disc_tag_applied`
+
+```{r}
+cleaner_data %>% 
+  filter(disc_tag_applied < 10000) %>% #filtered out one large value to see the distribution better
+  ggplot(aes(x = disc_tag_applied))+
+  geom_histogram()+
+  labs(title = "Distribution of Disc Tag Applied")+
+  theme_minimal()
+```
+
+
+```{r}
+summary(cleaner_data$disc_tag_applied)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$disc_tag_applied))/nrow(cleaner_data), 3)*100` % of values in the `disc_tag_applied` column are NA.
+
+### Variable:`fork_length_mm`
+
+```{r}
+cleaner_data %>% 
+  # mutate(years = as.factor(year(date))) %>%
+  filter(fork_length_mm < 2000) %>%  #filter out one large value for better view of distribution
+  ggplot(aes(x = fork_length_mm))+
+  geom_histogram(bin = 10)+
+  labs(title = "Distribution of Fork Length")+
+  theme_minimal()
+```
+
+```{r}
+summary(cleaner_data$fork_length_mm)
+```
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data$fork_length_mm))/nrow(cleaner_data), 3)*100` % of values in the `fork_length_mm` column are NA.
+
+## Issues Identified
+
+* Need description and look up table for the majority of the data
+* Some outliers for disc tag applied
+* Are these the appropriate variables?
+* no dates for 2019 data
+
+## Next steps
+
+### Columns to remove
+
+* Work on data modeling to identify important variables needed for carcass datasets. If we are missing any we can look at the other files provided by Jessica and see if there is additional information we want there. 
+* Suggest removing the `section_cd` column if we get additional information on `way_pt`. `way_pt` seems to describe section in the first character and then give additional locations info in the second character. 
+* Suggest removing `scale_nu`, `tissue_nu`, `otolith_nu` and `comments` because there are so few data points. However, if genetic data is really important we should keep these to track the genetic samples. 
+
+## Add cleaned data back to google cloud
+```{r}
+butte_individual_survey_2017_2020 <- cleaner_data %>% glimpse()
+```
+
+```{r}
+write_csv(butte_individual_survey_2017_2020, "butte_carcass_2017-2020.csv")
+```
+
+
+```{r, eval= FALSE}
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(butte_individual_survey_2017_2020,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_carcass_2017-2020.csv")
+
+
+```
