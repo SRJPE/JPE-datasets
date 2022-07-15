@@ -9,37 +9,38 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 library(tidyverse)
 library(googleCloudStorageR)
+library(knitr)
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
 ```
 
-## Adult Upstream Passage Data Standardization
+## Adult Redd Data Standardization
 
-FlowWest received Adult Upstream Passage data from XXX monitoring programs:
+FlowWest received Adult Redd data from XXX monitoring programs:
 
 ## Standard format for Adult Redd Data
 
 Data dictionary for standard format:
 
 (B - Battle Creek, C - Clear Creek,\
-D - Deer Creek, M - Mill Creek, Y - Yuba River)
+F - Feather River, M - Mill Creek)
 
-| column name | tributary collects | definition |
-|:------------|:-------------------|:-----------|
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
-|             |                    |            |
+| column name   | tributary collects | definition                                                 |
+|:--------------|:-------------------|:-----------------------------------------------------------|
+| date          | B, C, F            | Date in which redd data was collected                      |
+| latitude      |                    | Latitude of redd location                                  |
+| longitude     |                    | Longitude of redd location                                 |
+| reach         |                    | Unique name identifer of reach sampled                     |
+| river_mile    |                    | River mile associated with redd measured                   |
+| fish_guarding |                    | Whether or not a fish is guarding redd when measured (T/F) |
+| redd_measured |                    | Whether or not a redd was measured (T/F)                   |
+| age           |                    | ??                                                         |
+| fish_on_redd  |                    | Whether or not a fish is on redd when measured ??          |
+| redd_count    |                    | Amount of redds counted in given reach on given date       |
+| redd_length   |                    | Length of measured redd (m)                                |
+| redd_width    |                    | Width of measured redd (m)                                 |
+|               |                    |                                                            |
+|               |                    |                                                            |
+|               |                    |                                                            |
 
 ## Read in data {.tabset}
 
@@ -49,7 +50,28 @@ Below we read in the adult redd data for each monitoring program and rename or s
 
 #### Columns Removed
 
-No columns are removed from battle creek upstream passage video data.
+-   pre_redd_substrate_size
+-   redd_substrate_size
+-   tail_substrate_size
+-   why_not_measured
+-   flow_meter
+-   flow_fps
+-   start_number_flow_meter
+-   end_number_flow_meter
+-   flow_meter_time
+-   start_number_flow_meter_80
+-   end_number_flow_meter_80
+-   flow_meter_time_80
+-   redd_pit_depth
+-   redd_tail_depth
+-   redd_length -- ??
+-   redd_width -- ??
+-   comments
+
+columns created:
+
+-   `redd_count`: based on the count of `redd_measured` for alike days and reach identifier
+-   `watershed_id`: TODO
 
 ```{r}
 # Adult upstream passage data for Battle Creek
@@ -61,15 +83,14 @@ battle_redd <- read_csv("../../data/redd-carcass-holding/battle_redd.csv",
                                          "n", "n", "n", "n", "n", "n", 
                                          "c")) %>% glimpse
 
-names(battle_redd)
-
 clean_battle_redd <- battle_redd %>%
   select(date, latitude, longitude, 
          reach, river_mile, fish_guarding, 
-         redd_measured) %>%
-  group_by(date, river_mile) %>%
+         redd_measured, redd_width, redd_length) %>%
+  group_by(date, reach) %>%
   mutate(redd_count = length(redd_measured),
-         watershed_id = NA) %>%  # TODO: get watershed identifier from GIS
+         watershed_id = 'Battle Creek', 
+         year = lubridate::year(date)) %>% 
   glimpse
 
 
@@ -79,105 +100,250 @@ clean_battle_redd <- battle_redd %>%
 
 #### Columns Removed
 
+-   survey
+-   X1000ftbreak
+-   ucc_relate
+-   picket_weir_location
+-   picket_weir_relation - this could be used to determine the run type, if needed
+-   redd_id
+-   gravel
+-   pre_redd_substrate_size
+-   redd_substrate_size
+-   tail_substrate_size
+-   fish_on_redd
+-   why_not_measured
+-   date_measured
+-   pre_redd_depth
+-   redd_pit_depth
+-   redd_tail_depth
+-   velocity
+-   start_60
+-   end_60
+-   sec_60
+-   start_80
+-   end_80
+-   sec_80
+-   bomb_vel60
+-   bomb_vel80
+-   comments
+-   run
+-   observation_reach -- Incomplete and matches `surveyed_reach`
+-   observation_date -- Incomplete and matches `date`
+-   observation_age -- Incomplete and matches `age`
+-   survey_observed
+-   redd_length -- ??
+-   redd_width -- ??
+-   method -- ??
+
 ```{r}
-# download file as csv
-# gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/data/clear_passage.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/adult-upstream-passage-monitoring/clear_adult_upstream.csv",
-#                overwrite = TRUE)
+# spring run Chinook Salmon from USFW - Ryan Shaffer 
+clear_redd <- read_csv("../../data/redd-carcass-holding/clear_redd.csv", 
+                       col_names = TRUE,
+                       col_types = list("c", "n", "n", "n", "n", "n", 
+                                        "c", "n", "c", "D", "c", "c", "n", "c", 
+                                        "c", "c", "c", "c", "c", "l", "l", "l", 
+                                        "D", "n", "n", "n", "n", "n", "n", "n", 
+                                        "n", "n", "n", "n", "n", "c", "c", "c",
+                                        "D", "n", "l", "n", "n")) %>% glimpse()
 
 
-```
-
-### Deer Creek
-
-#### Columns Removed
-
-```{r}
-# download file as csv
-# gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/adult-upstream-passage-monitoring/deer_adult_upstream.csv",
-#                overwrite = TRUE)
+clean_clear_redd <- clear_redd %>%
+  select(surveyed_reach, date, river_mile, 
+         latitude, longitude, age, 
+         measured, fish_on_redd,
+         redd_length, redd_width, run) %>%
+  group_by(date, surveyed_reach) %>%
+  mutate(redd_count = length(measured),
+         watershed_id = 'Clear Creek', 
+         year = lubridate::year(date)) %>%  
+  rename(reach = surveyed_reach,
+         redd_measured = measured) %>%
+  glimpse()
 
 
 ```
 
 ### Mill Creek
 
+-   changed `location` to `reach` to align with other datasets
+
 #### Columns Removed
 
-No columns are removed from battle creek upstream passage video data.
+-   starting_elevation_ft
 
 ```{r}
 
-# download file as csv
-# gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv",
-#                 bucket = gcs_get_global_bucket(),
-#                 saveToDisk = "../../data/adult-upstream-passage-monitoring/mill_adult_upstream.csv",
-#                 overwrite = TRUE)
+mill_redd <- read_csv("../../data/redd-carcass-holding/mill_redd.csv") %>% glimpse()
 
-
+clean_mill_redd <- mill_redd %>%
+  rename(reach = location) %>%
+  select(-starting_elevation_ft) %>%
+  mutate(watershed_id = 'Mill Creek') %>%
+  glimpse
 ```
 
-### Yuba River
+### Feather River
+
+-   changed `location` to `reach` to align with other datasets
 
 #### Columns Removed
 
+-   type
+-   salmon_count
+-   pot_depth_m
+-   velocity_m\_per_s
+-   percent_fine_substrate
+-   percent_medium_substrate
+-   percent_large_substrate
+-   percent_boulder
+-   redd_width_m -- ??
+-   redd_length_m -- ??
+-   depth_m -- ??
+
 ```{r}
+feather_redd <- read_csv("../../data/redd-carcass-holding/feather_redd.csv", 
+                         col_names = TRUE, 
+                         col_types = list("D", "c", "c", "n",
+                                       "n", "n", "n", "n", "n",
+                                       "n", "n", "n", "n", "n",
+                                       "n", "n", "n")) %>% glimpse()
 
-# download file as csv
-# gcs_get_object(object_name = "adult-upstream-passage-monitoring/yuba-river/data/yuba_upstream_passage.csv",
-#                 bucket = gcs_get_global_bucket(),
-#                 saveToDisk = "../../data/adult-upstream-passage-monitoring/yuba_adult_upstream.csv",
-#                 overwrite = TRUE)
-
+clean_feather_redd <- feather_redd %>%
+  select(date, location, redd_count, 
+         latitude, longitude, 
+         redd_width_m, redd_length_m) %>% 
+  rename(reach = location,
+         redd_width = redd_width_m, 
+         redd_length = redd_length_m) %>%
+  mutate(watershed_id = "Feather River",
+         year = lubridate::year(date),
+         date = as.Date(date)) %>%
+  glimpse
 
 ```
 
 ## Combine data:
 
 ```{r}
-
+all_redd_data <- bind_rows(clean_battle_redd, 
+                           clean_clear_redd,
+                           clean_feather_redd,
+                           clean_mill_redd)
 ```
 
 ## Explore Variables {.tabset}
 
-### stream
+### watershed
 
 ```{r}
-#unique(combined_upstream_passage$stream)
+table(all_redd_data$watershed_id)
 ```
 
 ### date
 
 ```{r}
+summary(all_redd_data$date)
+
+all_redd_data %>%
+  group_by(watershed_id) %>%
+  summarise(year_range = paste0(min(year, na.rm = TRUE), " : ", max(year, na.rm = TRUE)), 
+            months = paste0(unique(sort(lubridate::month(date))), collapse = ", ")) %>%
+  ungroup() %>%
+  distinct %>% kable()
 
 ```
 
-### time
+### fish_guarding
 
 ```{r}
+table(all_redd_data$fish_guarding, useNA = "ifany")
+```
+
+### redd_measured
+
+```{r}
+table(all_redd_data$redd_measured, useNA = "ifany")
 
 ```
 
-### count
+### redd_width and redd_length
 
 ```{r}
 
+summary(all_redd_data$redd_width)
+
+summary(all_redd_data$redd_length)
+
+ggplot() + 
+  geom_histogram(data = all_redd_data, aes(redd_width)) 
+  
+ggplot() +   
+  geom_histogram(data = all_redd_data, aes(redd_length))
+
+```
+
+### redd_count
+
+```{r}
+summary(all_redd_data$redd_count)
+
+# redd data without Mill Creek
+all_redd_data %>% 
+  ungroup() %>%
+  filter(watershed_id != "Mill Creek") %>% 
+  select(redd_count) %>% 
+  summary()
+
+all_redd_data %>% #filter(watershed_id != "Mill Creek") %>%
+ggplot() + 
+  geom_histogram(aes(redd_count)) 
+
+ggplot() + 
+  geom_point(data = all_redd_data %>% filter(watershed_id != "Mill Creek"), aes(x = date, y = redd_count)) +
+  facet_wrap(~ watershed_id)
+
+# I'm not positive that this is comparing apples-to-apples because Mill Creek is aggregated 
+# by year
+ggplot() + 
+  geom_point(data = all_redd_data , aes(x = (year), y = redd_count)) +
+  facet_wrap(~ watershed_id) +
+  coord_flip()
+```
+
+### age
+
+```{r}
+summary(all_redd_data$age)
+
+ggplot() +
+  geom_histogram(data = all_redd_data, aes(age))
+```
+
+### fish_on_redd
+
+-   Clear Creek is the only dataset containing this variable
+
+```{r}
+summary(all_redd_data$fish_on_redd)
+
+which_streams_included <- all_redd_data %>% 
+  filter(!is.na(fish_on_redd)) 
+unique(which_streams_included$watershed_id)
 ```
 
 ### run
 
+-   TODO: should we filter to spring run?
+-   Clear Creek is the only dataset that contains this metric
+
 ```{r}
+table(all_redd_data$run)
+
+which_streams_included <- all_redd_data %>% 
+  filter(!is.na(run)) 
+unique(which_streams_included$watershed_id)
 
 ```
-
-```{r}
-
-
-```
-
 
 ## Save Cleaned Data to Google Cloud
 
