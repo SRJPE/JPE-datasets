@@ -22,28 +22,55 @@ library(googleCloudStorageR)
 ## Battle
 
 ```{r}
-# TODO have Jonathan find Battle Creek Temp Info from someone
+ucc_temp_raw <- readxl::read_excel(here::here("data-raw", "standard-format-data-prep", "temp_data", "battle_clear_temp.xlsx"), sheet = 2)
+
+ucc_temp <- ucc_temp_raw %>% 
+  rename(date = DT,
+         temp_c = TEMP_C) %>%
+  mutate(stream = "clear creek", 
+         site = "ucc",
+         date = as.Date(date)) %>%
+  glimpse
+
+lcc_temp_raw <- readxl::read_excel(here::here("data-raw", "standard-format-data-prep", "temp_data", "battle_clear_temp.xlsx"), sheet = 3)
+lcc_temp <- lcc_temp_raw %>% 
+  rename(date = DT,
+         temp_c = TEMP_C) %>% 
+  mutate(stream = "clear creek", 
+         site = "lcc",
+         date = as.Date(date)) %>%
+  glimpse
+
+clear_format <- bind_rows(lcc_temp, ucc_temp) %>% 
+  group_by(date, stream, site) %>%
+  summarise(mean_temp_degC = mean(temp_c)) %>% 
+  mutate(source = "FWS") %>% glimpse
+
+clear_format %>% ggplot() + geom_line(aes(x = date, y = mean_temp_degC, color = site))
 ```
 
 ## Butte
 
 ```{r}
 # source CDEC
-butte <- read_rds("../../data-raw/standard-format-data-prep/temp_data/butte_temp.rds")
+butte <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "butte_temp.rds"))
 butte_format <- butte %>%
   mutate(site = "adams dam") %>%
   bind_rows(butte %>%
               mutate(site = "okie dam")) %>%
   mutate(stream = "butte creek",
          source = "CDEC BCK") %>%
+  filter(mean_temp_degC > 0 & mean_temp_degC < 35) %>% # Filter out outliners TODO confirm with ashley that this is an appropriate range
 glimpse()
+
+butte_format %>% ggplot() + geom_line(aes(x = date, y = mean_temp_degC))
 ```
 
 ## Clear
 
 ```{r}
 # source USGS
-clear <- read_rds("../../data-raw/standard-format-data-prep/temp_data/clear_temp.rds")
+clear <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "clear_temp.rds"))
 clear_format <- clear %>%
   mutate(site = "ucc") %>%
   bind_rows(clear %>%
@@ -57,7 +84,7 @@ glimpse()
 
 ```{r}
 # source USGS
-deer <- read_rds("../../data-raw/standard-format-data-prep/temp_data/deer_temp.rds")
+deer <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "deer_temp.rds"))
 deer_format <- deer %>%
   mutate(stream = "deer creek",
          site = stream,
@@ -95,7 +122,7 @@ glimpse()
 
 ```{r}
 # source USGS
-mill <- read_rds("../../data-raw/standard-format-data-prep/temp_data/mill_temp.rds")
+mill <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "mill_temp.rds"))
 mill_format <- mill %>%
   mutate(stream = "mill creek",
          site = stream, 
@@ -145,7 +172,7 @@ combined_temp <- bind_rows(
                            # knights_format,
                            # tisdale_format
                            ) %>%
-  rename(temp_c = temp_degC) %>%
+  rename(mean_daily_temp_c  = mean_temp_degC) %>%
   glimpse()
 ```
 ## QA/QC
