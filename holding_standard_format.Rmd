@@ -14,7 +14,7 @@ Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/confi
 Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
 ```
 
-Data were checked and cleaned in scripts available [here]()
+Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys).
 Cleaned data were saved on the jpe-dev-bucket on google cloud.
 
 ```{r, data_pull, include = F, echo = F}
@@ -210,7 +210,7 @@ combined_holding <- bind_rows(battle_holding_clean,
 
 ```{r, data_dictionary_prep, include = F}
 colnames(combined_holding)
-holding_catch_data_dictionary <- tibble(variable_name = colnames(combined_holding), description = c("Date survey was conducted", "Reach number within watershed", "River mile number", "Number of fish observed", "Number of jacks observed", "Latitude measurement of adult holding", "Longitude measurement of adult holding", "Watershed name", "Reason survey was conducted", "Year survey was conducted"), encoding = c("YYYY-MM-DD", NA,NA,NA,NA,NA,NA,NA,"august index, spawning","YYYY" ), collected = c("All but Deer", "All","Battle and Clear", "All", "Battle and Clear", "Battle and Clear", "Battle and Clear", "All", "Clear", "All"))
+holding_catch_data_dictionary <- tibble(variable_name = colnames(combined_holding), description = c("Date survey was conducted", "Reach number within watershed", "River mile number", "Number of fish observed", "Number of jacks observed", "Latitude measurement of adult holding", "Longitude measurement of adult holding", "Watershed name","Year survey was conducted", "Reason survey was conducted"), encoding = c("YYYY-MM-DD", NA,NA,NA,NA,NA,NA,NA, "YYYY", "august index, spawning" ), collected = c("All but Deer", "All","Battle and Clear", "All", "Battle and Clear", "Battle and Clear", "Battle and Clear", "All", "All","Clear"))
 ```
 ```{r, data_dictionary}
 kable(holding_catch_data_dictionary)
@@ -227,7 +227,7 @@ combined_holding %>%
   geom_col()
 ```
 
-Average count per month. This chart shows only Battle, Butte and Clear as Deer does not have monthly count.
+Average count per month. This chart shows Battle, Butte and Clear as Deer does not have monthly count.
 
 ```{r}
 combined_holding %>% 
@@ -238,7 +238,7 @@ combined_holding %>%
   geom_col()
 ```
 
-Average count of jacks per month. Jacks is only collected at Battle and Clear.
+Average jacks per month. Jacks is only collected at Battle and Clear.
 ```{r}
 combined_holding %>% 
   mutate(month = lubridate::month(date)) %>% 
@@ -246,6 +246,15 @@ combined_holding %>%
   summarize(average_jacks = mean(jacks, na.rm = T)) %>% 
   ggplot(aes(x = month, y = average_jacks, fill = watershed)) + 
   geom_col()
+```
+Rivermile distribution for Battle and Clear
+
+```{r}
+combined_holding %>% 
+  filter(!is.na(river_mile)) %>% 
+  ggplot(aes(x = watershed, y = river_mile)) + 
+  geom_boxplot(
+  )
 ```
 
 # QA/QC {.tabset}
