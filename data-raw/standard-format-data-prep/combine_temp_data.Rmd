@@ -17,9 +17,59 @@ library(tidyverse)
 library(googleCloudStorageR)
 ```
 
+# Combine Temperature Data 
+
+#TODO add a quick description
+#TODO create table with data source for each tributary
+
 # Pull in data and format {.tabset}
 
 ## Battle
+
+```{r}
+ubc_temp_raw <- readxl::read_excel(here::here("data-raw", "standard-format-data-prep", "temp_data", "battle_clear_temp.xlsx"), sheet = 4)
+
+battle_format <- ubc_temp_raw %>% 
+  rename(date = DT,
+         temp_c = TEMP_C) %>%
+  mutate(stream = "battle creek", 
+         site = "ubc",
+         date = as.Date(date),
+         source = "FWS") %>%
+  group_by(date, stream, site, source) %>%
+  summarise(mean_temp_degC = mean(temp_c)) %>% 
+  filter(mean_temp_degC > 0) %>%
+  glimpse
+
+
+battle_format %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC), color = "gray") + 
+  # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
+  theme_minimal()
+
+```
+
+## Butte
+
+```{r}
+# source CDEC
+butte <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "butte_temp.rds"))
+butte_format <- butte %>%
+  mutate(site = "adams dam") %>%
+  bind_rows(butte %>%
+              mutate(site = "okie dam")) %>%
+  mutate(stream = "butte creek",
+         source = "CDEC BCK") %>%
+  filter(mean_temp_degC > 0 & mean_temp_degC < 35) %>% # Filter out outliners TODO confirm with ashley that this is an appropriate range
+glimpse()
+
+butte_format %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC), color = "gray") + 
+  # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
+  theme_minimal()
+```
+
+## Clear
 
 ```{r}
 ucc_temp_raw <- readxl::read_excel(here::here("data-raw", "standard-format-data-prep", "temp_data", "battle_clear_temp.xlsx"), sheet = 2)
@@ -46,38 +96,10 @@ clear_format <- bind_rows(lcc_temp, ucc_temp) %>%
   summarise(mean_temp_degC = mean(temp_c)) %>% 
   mutate(source = "FWS") %>% glimpse
 
-clear_format %>% ggplot() + geom_line(aes(x = date, y = mean_temp_degC, color = site))
-```
-
-## Butte
-
-```{r}
-# source CDEC
-butte <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "butte_temp.rds"))
-butte_format <- butte %>%
-  mutate(site = "adams dam") %>%
-  bind_rows(butte %>%
-              mutate(site = "okie dam")) %>%
-  mutate(stream = "butte creek",
-         source = "CDEC BCK") %>%
-  filter(mean_temp_degC > 0 & mean_temp_degC < 35) %>% # Filter out outliners TODO confirm with ashley that this is an appropriate range
-glimpse()
-
-butte_format %>% ggplot() + geom_line(aes(x = date, y = mean_temp_degC))
-```
-
-## Clear
-
-```{r}
-# source USGS
-clear <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "clear_temp.rds"))
-clear_format <- clear %>%
-  mutate(site = "ucc") %>%
-  bind_rows(clear %>%
-            mutate(site = "lcc")) %>%
-  mutate(stream = "clear creek",
-         source = "CDEC IGO") %>%
-glimpse()
+clear_format %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC, color = site)) + 
+  # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
+  theme_minimal()
 ```
 
 ## Deer
@@ -89,33 +111,21 @@ deer_format <- deer %>%
   mutate(stream = "deer creek",
          site = stream,
          source = "CDEC DCV") %>%
-glimpse()
+  filter(mean_temp_degC > 0 & mean_temp_degC < 35) %>% 
+  glimpse()
+
+deer_format %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC), color = "gray") + 
+  # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
+  theme_minimal()
 ```
 
 ## Feather
 
 ```{r}
-# source CDEC
 # TODO figure out gage to use for hfc and lfc 
-# feather_hfc <- read_rds("../../data-raw/standard-format-data-prep/flow_data/feather_hfc_flow.rds")
-# # There are 4 sites that map to this flow data so set up table to merge
-# feather_hfc_sites <- tibble(stream = c(rep("feather river", 4)),
-#                            site = c("herringer riffle", "live oak", "sunset pumps", "shawns beach"))
-# feather_hfc_format <- feather_hfc %>%
-#   mutate(stream = "feather river",
-#          source = "CDEC GRL") %>%
-#   full_join(feather_hfc_sites) %>%
-# glimpse()
-# # source USGS
-# feather_lfc <- read_rds("../../data-raw/standard-format-data-prep/flow_data/feather_lfc_flow.rds")
-# # There are 3 sites that map to this flow data so set up table to merge
-# feather_lfc_sites <- tibble(stream = c(rep("feather river", 3)),
-#                            site = c("gateway riffle", "eye riffle", "steep riffle"))
-# feather_lfc_format <- feather_lfc %>%
-#   mutate(stream = "feather river",
-#          source = "USGS 11407000") %>%
-#   full_join(feather_lfc_sites) %>%
-# glimpse()
+# use maps of gages and RST (exploratory analysis shiny app) to figure out the best gage for each location
+# We will likely new to do air to water temp modeling for this if no or not enough temp gage data
 ```
 
 ## Mill
@@ -127,41 +137,31 @@ mill_format <- mill %>%
   mutate(stream = "mill creek",
          site = stream, 
          source = "CDEC MLM") %>%
+   filter(mean_temp_degC > 0 & mean_temp_degC < 35) %>% 
 glimpse()
-```
 
-## Yuba
-
-```{r}
-#TODO get jonathan to find temp for this site 
+mill_format %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC), color = "gray") + 
+  # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
+  theme_minimal()
 ```
 
 ## Sacramento
 
 ```{r}
-# source USGS
-# TODO Big data gap for Sacramento. Figure out how to make up for that 
+# TODO Big data gap for Sacramento gage data, need to do air temp modeling, check temperature_data_prep for potential gages (if not there use noaa data)
+```
 
-# knights <- read_rds("../../data-raw/standard-format-data-prep/flow_data/knights_flow.rds")
-# knights_format <- knights %>%
-#   mutate(stream = "sacramento river",
-#          site = "knights landing",
-#          source = "USGS 11390500") %>%
-# glimpse()
-# # source USGS (same as Knights)
-# tisdale <- read_rds("../../data-raw/standard-format-data-prep/flow_data/tisdale_flow.rds")
-# tisdale_format <- tisdale %>%
-#   mutate(stream = "sacramento river",
-#          site = "tisdale",
-#          source = "USGS 11390500") %>%
-# glimpse()
+## Yuba
+
+```{r}
+#TODO need to do air temp modeling, check temperature_data_prep for potential gages (if not there use noaa data)
 ```
 
 # Combine flow data {.tabset}
 
 ```{r}
-combined_temp <- bind_rows(
-                           # battle_format,
+combined_temp <- bind_rows(battle_format,
                            butte_format,
                            clear_format,
                            deer_format,
@@ -180,11 +180,15 @@ combined_temp <- bind_rows(
 ```{r}
 unique(combined_temp$stream)
 unique(combined_temp$site)
-ggplot(combined_temp, aes(x = date, y = temp_c, color = stream)) +
-  geom_line()
+ggplot(combined_temp, aes(x = date, y = mean_daily_temp_c, color = site)) +
+  theme_minimal() +
+  geom_line() +
+  facet_wrap(~stream)
 filter(combined_temp, is.na(date))
 combined_flow_clean <- filter(combined_temp, !is.na(date))
 ```
+
+#TODO save to cloud in standard format data 
 
 ```{r, eval = FALSE}
 # f <- function(input, output) write_csv(input, file = output)
