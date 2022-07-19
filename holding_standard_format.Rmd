@@ -140,6 +140,31 @@ deer_holding_clean <- bind_rows(deer_holding_1986_1996,
 
 ## Butte Creek
 
+```{r}
+# percent_na <- bind_rows(butte_holding_01 %>% select(-comments),
+#                                  butte_holding_02,
+#                                  butte_holding_03,
+#                                  butte_holding_04,
+#                                  butte_holding_05,
+#                                  butte_holding_06,
+#                                  butte_holding_07, 
+#                                  butte_holding_08,
+#                                  butte_holding_09,
+#                                  butte_holding_10,
+#                                  butte_holding_11,
+#                                  butte_holding_12,
+#                                  butte_holding_13,
+#                                  butte_holding_14,
+#                                  butte_holding_15,
+#                                  butte_holding_16,
+#                                  butte_holding_17) %>% 
+#   summarise_all(list(name = ~sum(is.na(.)/length(.)))) %>% 
+#                   pivot_longer(cols = everything())
+
+# butte_data_dictionary <- tibble(variables = colnames(butte_holding_02), description = c("Date of Sampling", "Reach within watershed", "Name of survey person", "Fish count", "Comments why count is NA"), percent_na = round(percent_na$value*100))
+# saveRDS(butte_data_dictionary, file = "butte_holding_data_dictionary.rds")
+```
+
 ```{r, butte_holding_data_dictionary}
 butte_data_dictionary <- read_rds("data/redd-carcass-holding/butte_holding_data_dictionary.rds")
 kable(butte_data_dictionary)
@@ -182,11 +207,6 @@ combined_holding <- bind_rows(battle_holding_clean,
 ```
 
 ## Data dictionary
-<!-- # ```{r} -->
-<!-- # butte_data_dictionary <- tibble(variables = colnames(butte_holding_02), description = c("Date of Sampling", "Reach within watershed", "Name of survey person", "Fish count", "Comments why count is NA"), percent_na = round(percent_na$value*100)) -->
-<!-- # saveRDS(butte_data_dictionary, file = "butte_holding_data_dictionary.rds") -->
-<!-- # ``` -->
-
 
 ```{r, data_dictionary_prep, include = F}
 colnames(combined_holding)
@@ -198,7 +218,7 @@ kable(holding_catch_data_dictionary)
 
 ## Exploratory plots
 
-Total count per year
+Total count per year for each waterbody
 
 ```{r}
 combined_holding %>% 
@@ -207,18 +227,18 @@ combined_holding %>%
   geom_col()
 ```
 
-Average count per month. This only shows Battle, Butte and Clear as Deer does not have monthly data.
+Average count per month. This chart shows only Battle, Butte and Clear as Deer does not have monthly count.
 
 ```{r}
 combined_holding %>% 
   mutate(month = lubridate::month(date)) %>% 
   group_by(month, watershed) %>% 
-  summarize(average = mean(count, na.rm = T)) %>%
-  ggplot(aes(x = month, y = average, fill = watershed)) +
+  summarize(average_count = mean(count, na.rm = T)) %>%
+  ggplot(aes(x = month, y = average_count, fill = watershed)) +
   geom_col()
 ```
 
-Mean number of jacks found per month
+Average count of jacks per month. Jacks is only collected at Battle and Clear.
 ```{r}
 combined_holding %>% 
   mutate(month = lubridate::month(date)) %>% 
@@ -226,5 +246,68 @@ combined_holding %>%
   summarize(average_jacks = mean(jacks, na.rm = T)) %>% 
   ggplot(aes(x = month, y = average_jacks, fill = watershed)) + 
   geom_col()
+```
+
+# QA/QC {.tabset}
+
+# Count
+
+Monthly count is not recorded for Deer.
+
+Figure below shows the percentage count by month for each waterbody except Deer.
+```{r, count_qaqc}
+
+total_count <- combined_holding %>% 
+  mutate(month = month(date)) %>% 
+  group_by(watershed) %>% 
+  summarize(total = sum(count, na.rm = T))
+
+combined_holding %>% 
+  mutate(month = month(date)) %>% 
+  group_by(watershed, month) %>% 
+  summarize(count = sum(count, na.rm = T)) %>% 
+  left_join(total_count) %>% 
+  mutate(percent = (count/total)*100) %>% 
+  ggplot(aes(x= month, y = percent, fill = watershed)) +
+  geom_col() +
+  facet_wrap(~watershed, scales = "free_y")
+```
+
+*  `r round(sum(is.na(combined_holding$count))/nrow(combined_holding), 3)*100` % of values in the `count` column are NA.
+
+## Jacks
+Jacks are not recorded for Deer and Butte
+
+Figure below whos the percentage count by month for Battle and Clear.
+
+```{r, jack_qa_qc}
+total_jacks <- combined_holding %>% 
+  mutate(month = month(date)) %>% 
+  group_by(watershed) %>% 
+  summarize(total = sum(jacks, na.rm = T))
+
+combined_holding %>% 
+  mutate(month = month(date)) %>% 
+  group_by(watershed, month) %>% 
+  summarize(count = sum(jacks, na.rm = T)) %>% 
+  left_join(total_jacks) %>% 
+  mutate(percent = (count/total)*100) %>% 
+  ggplot(aes(x= month, y = percent, fill = watershed)) +
+  geom_col() +
+  facet_wrap(~watershed, scales = "free_y")
+```
+
+*  `r round(sum(is.na(combined_holding$jacks))/nrow(combined_holding), 3)*100` % of values in the `jacks` column are NA.
+
+# Save data
+```{r, save_data}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(combined_holding,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_holding.csv",
+           predefinedAcl = "bucketLevel")
+
 ```
 
