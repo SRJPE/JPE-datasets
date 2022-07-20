@@ -69,8 +69,11 @@ raw_carcass_data <- read_excel("raw_carcass_yuba_river.xlsx",
 # Columns are appropriate types
 # Remove redundant columns
 
-clean_yuba_carcass <- raw_carcass_data %>% janitor::clean_names() %>% glimpse
+clean_yuba_carcass <- raw_carcass_data %>% janitor::clean_names() %>% 
+  rename(river_mile = rm) %>%
+  glimpse
 
+summary(clean_yuba_carcass)
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -79,19 +82,32 @@ clean_yuba_carcass <- raw_carcass_data %>% janitor::clean_names() %>% glimpse
 # Filter clean data to show only numeric variables 
 ```
 
-### Variable: `[name]`
+### `river_mile`
 
-**Plotting [Variable] over Period of Record**
+**Plotting river_mile over Period of Record**
 
 ```{r}
-# Make whatever plot is appropriate 
-# maybe 2+ plots are appropriate
+summary(clean_yuba_carcass$river_mile)
+
+ggplot() + 
+  geom_histogram(data = clean_yuba_carcass, aes(river_mile))
+
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
+### `fork_lengh`
 
 ```{r}
-# Table with summary statistics
+
+summary(clean_yuba_carcass$fork_length)
+
+# histogram
+ggplot() + 
+  geom_histogram(data = clean_yuba_carcass, aes(fork_length))
+
+# boxplot
+ggplot() + 
+  geom_boxplot(data = clean_yuba_carcass, aes(y = fork_length, x = spawned)) +
+  geom_jitter(data = clean_yuba_carcass, aes(y = fork_length, x = spawned), alpha = 0.5)
 ```
 
 **NA and Unknown Values**
@@ -106,8 +122,16 @@ General notes: If there is an opportunity to turn yes no into boolean do so, but
 # Filter clean data to show only categorical variables
 ```
 
+### `survey_id`
 
-### Variable: `[name]`
+### `fresh`
+
+### `adipose_clip`
+
+### `sex`
+
+### `spawned`
+
 ```{r}
 #table() 
 ```
