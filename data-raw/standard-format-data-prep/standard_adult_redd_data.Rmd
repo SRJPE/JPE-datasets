@@ -31,26 +31,26 @@ Data dictionary for standard format:
 (B - Battle Creek, C - Clear Creek,\
 F - Feather River, M - Mill Creek)
 
-| column name             | tributary collects | definition                                                 |
+| column name             | tributary collects | definition                                                                            |
 |:-----------------------|:-----------------------|:-----------------------|
-| date                    | B, C, F            | Date in which redd data was collected                      |
-| latitude                | B, C, F, M         | Latitude of redd location                                  |
-| longitude               | B, C, F, M         | Longitude of redd location                                 |
-| reach                   | B, C, F, M         | Unique name identifer of reach sampled                     |
-| river_mile              | B, C               | River mile associated with redd measured                   |
-| fish_guarding           | B                  | Whether or not a fish is guarding redd when measured (T/F) |
-| redd_measured           | B, C               | Whether or not a redd was measured (T/F)                   |
-| age                     | C                  | ??                                                         |
-| fish_on_redd            | C                  | Whether or not a fish is on redd when measured ??          |
-| redd_count              | B, C, F, M         | Amount of redds counted in given reach on given date       |
-| redd_length             | B, C, F            | Length of measured redd (m)                                |
-| redd_width              | B, C, F            | Width of measured redd (m)                                 |
-| run ??                  | C                  |                                                            |
-| stream                  | B, C, F, M         | Unique stream associated with redd data collected          |
-| redd_substrate_size     | B, C               |                                                            |
-| pre_redd_substrate_size | B, C               |                                                            |
-| tail_substrate_size     | B, C               |                                                            |
-| year                    |                    |                                                            |
+| date                    | B, C, F            | Date in which redd data was collected                                                 |
+| latitude                | B, C, F, M         | Latitude of redd location                                                             |
+| longitude               | B, C, F, M         | Longitude of redd location                                                            |
+| reach                   | B, C, F, M         | Unique name identifer of reach sampled                                                |
+| river_mile              | B, C               | River mile associated with redd measured                                              |
+| redd_measured           | B, C               | Whether or not a redd was measured (T/F)                                              |
+| age                     | C                  | integer ranging from 1 - 5; redd age                                                  |
+| fish_guarding           | B, C               | Whether or not a fish is on redd when measured ??                                     |
+| ~~redd_count~~          | ~~B, C, F, M~~     | ~~Amount of redds counted in given reach on given date~~                              |
+| redd_length             | B, C, F            | Length of measured redd (m)                                                           |
+| redd_width              | B, C, F            | Width of measured redd (m)                                                            |
+| run                     | C                  | `spring`, `fall`, `late-fall`                                                         |
+| stream                  | B, C, F, M         | Unique stream associated with redd data collected                                     |
+| redd_substrate_size     | B, C               |                                                                                       |
+| pre_redd_substrate_size | B, C               |                                                                                       |
+| tail_substrate_size     | B, C               |                                                                                       |
+| year                    | B, C, F, M         | Calendar year sampling occurred                                                       |
+| velocity                | B, C, F            | measured flow --- **unsure units of clear creek. All others are in feet per second.** |
 
 ## Read in data {.tabset}
 
@@ -60,9 +60,8 @@ Below we read in the adult redd data for each monitoring program and rename or s
 
 #### Columns Removed
 
--   `why_not_measured`: all NA
+-   `why_not_measured`: enumerated; `NA`, `fish_on_redd`, `sub sample`, `too deep` Deemed unnecessary.
 -   `flow_meter`: type of flow meter used; deemed unnecessary for final dataset
--   `flow_fps`: measured flow (feet per second); deemed unnecessary for final dataset
 -   `start_number_flow_meter`: deemed unnecessary for final dataset
 -   `end_number_flow_meter`: deemed unnecessary for final dataset
 -   `flow_meter_time`: deemed unnecessary for final dataset
@@ -77,6 +76,7 @@ columns created:
 
 -   `redd_count`: based on the count of `redd_measured` for alike days and reach identifier
 -   `stream`: used Battle Creek
+-   `flow_fps` changed to `velocity`
 
 ```{r}
 # Adult upstream passage data for Battle Creek
@@ -101,11 +101,13 @@ clean_battle_redd <- battle_redd %>%
          reach, river_mile, fish_guarding, 
          redd_measured, redd_width, redd_length, 
          pre_redd_substrate_size, redd_substrate_size, 
-         tail_substrate_size) %>%
+         tail_substrate_size, 
+         flow_fps) %>%
   group_by(date, reach) %>%
   mutate(redd_count = n(),
          stream = 'Battle Creek', 
-         year = lubridate::year(date)) %>% 
+         year = lubridate::year(date)) %>%
+  rename(velocity = flow_fps) %>%
   glimpse
 
 view(clean_battle_redd)
@@ -113,18 +115,23 @@ view(clean_battle_redd)
 
 ### Clear Creek
 
+FlowWest acquired Clear Creek redd data for late fall and spring runs through CVPIA. This data was integrated into this dataset by taking the maximum date of data provided to JPE spring run and filtering the CVPIA-provided spring run to only include newer data. Late fall run data was bound to this dataset.
+
+TODO: confirm velocity in feet per second
+
+TODO: do we want to include O. mykiss redd data? It is currently included but can be filtered out.
+
 #### Columns Removed
 
 -   `survey`: integer ranging from 1 to 12; deemed unnecessary for final dataset
 -   `X1000ftbreak`: deemed unnecessary for final dataset
--   `ucc_relate`: enumerated value of `above` or `below`; deemed unnessary for final dataset
--   `picket_weir_location`: numeric value ranging from 7.4 to 8.2; deemed unnessary for final dataset
+-   `ucc_relate`: enumerated value of `above` or `below`; deemed unnecessary for final dataset
+-   `picket_weir_location`: numeric value ranging from 7.4 to 8.2; deemed unnecessary for final dataset
 -   `picket_weir_relation`: this could be used to determine the run type, if needed; enumerated as `above` or `below`
--   `redd_id`: unique identifier to each redd; deemed unessary for final redd dataset
--   `age`: integer ranging form 1 to 5; deemed unessary for final redd dataset
--   `gravel`: enumerated value of `combination`, `injection`, or `native`; deemed unessary for final redd dataset
+-   `redd_id`: unique identifier to each redd; deemed unnecessary for final redd dataset
+-   `gravel`: enumerated value of `combination`, `injection`, or `native`; deemed unnecessary for final redd dataset
 -   `fish_on_redd`: ??? TRUE/FALSE
--   `why_not_measured`: all NAs
+-   `why_not_measured`: description of why redd was not measured; deemed unnecessary for final redd dataset
 -   `date_measured`: chose to use `date` instead of this column
 -   `pre_redd_depth`: numeric range from 0.13 to 2.24; deemed unnecessary
 -   `redd_pit_depth`: numeric range from 0.15 to 2.41; deemed unnecessary
@@ -170,7 +177,8 @@ clean_clear_redd <- clear_redd %>%
          measured, fish_on_redd,
          redd_length, redd_width, run,
          pre_redd_substrate_size, redd_substrate_size, 
-         tail_substrate_size) %>%
+         tail_substrate_size, 
+         velocity) %>%
   group_by(date, surveyed_reach) %>%
   mutate(redd_count = length(measured),
          stream = 'Clear Creek', 
@@ -180,7 +188,28 @@ clean_clear_redd <- clear_redd %>%
          fish_guarding = fish_on_redd) %>%
   glimpse()
 
+# load in aggregated clear creek data from other runs 
+clear_all_runs <- read_csv('../../../../CVPIA/CVPIA-EDA/jim_data_requests/redd_monitoring_data/all_redd_data_for_clear_creek.csv') %>% glimpse
 
+# TODO: do we want O. mykiss too? 
+# TODO: spring run overlap -- keep all spring run data and fill in with new data to 2021?
+
+max_date <- max(clear_redd$date)
+print(max_date)
+
+spring_filter <- clear_all_runs %>% 
+  filter(run == "spring") %>%
+  filter(date > max_date)
+clear_fall_and_spring <- clear_all_runs %>% 
+  filter(run == "late fall") %>%
+  bind_rows(spring_filter) %>%
+  mutate(stream = "Clear Creek") %>%
+  bind_rows(clean_clear_redd) %>%
+  mutate(run = case_when(run == "late-fall" ~ "late fall",
+                         TRUE ~ as.character(run)))
+
+# replace name 
+clean_clear_redd <- clear_fall_and_spring %>% glimpse
 ```
 
 ### Mill Creek
@@ -207,13 +236,13 @@ clean_mill_redd <- mill_redd %>%
 ### Feather River
 
 -   changed `location` to `reach` to align with other datasets
+-   `velocity_m_per_s` converted to feet per second and named velocity
 
 #### Columns Removed
 
 -   `type`: enumerated as `Area`, `Point`, `Questionable Redds`, or `NA`; deemed unnecessary
 -   `salmon_count`: integer ranging from 0 to 200; deemed unnecessary
 -   `pot_depth_m`: numeric ranging from 0 to 50; deeemd unnecessary
--   `velocity_m_per_s`: numeric ranging from -0.04 to 3.5; mostly `NA` and deemed unnecessary
 -   `percent_fine_substrate`: numeric ranging from 0 to 90; mostly `NA` and deemed unnecessary
 -   `percent_small_substrate`: numeric ranging from 0 to 90; mostly `NA` and deemed unnecessary
 -   `percent_medium_substrate`: numeric ranging from 0 to 95; mostly `NA` and deemed unnecessary
@@ -235,31 +264,35 @@ table(feather_redd$type, useNA = "ifany")
 clean_feather_redd <- feather_redd %>%
   select(date, location, redd_count, 
          latitude, longitude, 
-         redd_width_m, redd_length_m) %>% 
+         redd_width_m, redd_length_m, velocity_m_per_s) %>% 
   rename(reach = location,
          redd_width = redd_width_m, 
          redd_length = redd_length_m) %>%
   mutate(stream = "Feather River",
          year = lubridate::year(date),
-         date = as.Date(date)) %>%
+         date = as.Date(date),
+         velocity = velocity_m_per_s / 0.3048) %>% # convert to feet per second 
+  select(-velocity_m_per_s) %>%
   glimpse
 
 ```
 
 ## Combine data:
 
-TODO: is fish_guarding and fish_on_redd the same metric?
-
 ```{r}
 all_redd_data <- bind_rows(clean_battle_redd, 
                            clean_clear_redd,
                            clean_feather_redd,
-                           clean_mill_redd) %>% glimpse
+                           clean_mill_redd) %>% 
+  select(-redd_count) %>%
+  # remove mill creek
+  filter(stream != "Mill Creek") %>%
+  glimpse
 ```
 
 ## Substrate Size Standardization
 
-Substrate sizes were given names and classes following the Wentworth Scale, created by W.C. Krumbein. This scale is what is commonly used in the United States and is as follows. The substrate size provided for redd data was standardized using this scale. When the size range fell into two categories, they were rounded down.
+Substrate sizes were given names and classes following the Wentworth Scale, created by W.C. Krumbein. This scale is what is commonly used in the United States. The substrate size provided for redd data was standardized using this scale. When the size range fell into two categories, they were rounded down.
 
 | Class              | Size Range (mm) |
 |--------------------|-----------------|
@@ -273,19 +306,10 @@ Substrate sizes were given names and classes following the Wentworth Scale, crea
 | Very coarse sand   | 1-2             |
 | Coarse sand        | 0.5-1           |
 | Medium sand        | 0.25-0.5        |
-| Fine sand          | \<0.25          |
+| Fine sand - clay   | \<0.25          |
 
 ```{r}
-
-unique(all_redd_data$redd_substrate_size)
-
-lookup <- data.frame("size_range" = unique(all_redd_data$redd_substrate_size),
-                     "standardized_size_range" = c(NA, "1-2", "2-4", "1-2", "2-4",
-                                                   "2-4", "1-2", "2-4", "0.25-0.5", 
-                                                   "<0.25", "4-8", "4-8", ">16", "2-4", 
-                                                   "2-4", "1-2", "2-4", "1-2", "2-4",
-                                                   "0.25-0.5", "2-4", "2-4", "4-8", 
-                                                   "4-8", "8-16"))
+# standarized size ranges lookup
 substrate_class = data.frame("standardized_size_range" = c("<0.25", 
                                                            "0.25-0.5",
                                                            "0.5-1",
@@ -297,9 +321,32 @@ substrate_class = data.frame("standardized_size_range" = c("<0.25",
                                                     "very fine gravel", "fine gravel",
                                                     "medium gravel", 
                                                     "coarse gravel to boulder"))
+
+unique(all_redd_data$redd_substrate_size)
+
+redd_substrate_size_lookup <- 
+  data.frame("redd_substrate_size" = unique(all_redd_data$redd_substrate_size),
+                     "standardized_size_range" = c(NA, "1-2", "2-4", "1-2", "2-4",
+                                                   "2-4", "1-2", "2-4", "0.25-0.5", 
+                                                   "<0.25", "4-8", "4-8", ">16", "2-4", 
+                                                   "2-4", "1-2", "2-4", "1-2", "2-4",
+                                                   "0.25-0.5", "2-4", "2-4", "4-8", 
+                                                   "4-8", "8-16"))
+
                     
 
-lookup <- lookup %>% left_join(substrate_class)
+redd_substrate_size_lookup <- redd_substrate_size_lookup %>% left_join(substrate_class)
+
+tail_substrate_size_lookup <- all_redd_data %>% 
+  ungroup() %>%
+  select(tail_substrate_size) %>% 
+  full_join(redd_substrate_size_lookup %>% rename(tail_substrate_size = redd_substrate_size)) %>% distinct() %>%
+  rename(tail_substrate_class = substrate_class)
+
+tmp <- all_redd_data %>% 
+  left_join(redd_substrate_size_lookup) %>%
+  left_join(tail_substrate_size_lookup)
+
 
 ```
 
@@ -323,6 +370,17 @@ all_redd_data %>%
   ungroup() %>%
   distinct %>% kable()
 
+```
+
+### velocity
+
+```{r}
+summary(all_redd_data$velocity)
+
+ggplot() + 
+  geom_point(data = all_redd_data, aes(x = date, y = velocity, color = reach)) + 
+  facet_wrap(~ stream) +
+  theme(legend.position = "none")
 ```
 
 ### fish_guarding
@@ -357,41 +415,29 @@ ggplot() +
 ### redd_count
 
 ```{r}
-summary(all_redd_data$redd_count)
-
-# redd data without Mill Creek
-all_redd_data %>% 
-  ungroup() %>%
- # filter(stream != "Mill Creek") %>% 
-  select(redd_count) %>% 
-  summary()
-
-all_redd_data %>% 
-ggplot() + 
-  geom_histogram(aes(redd_count)) 
-
+# summary(all_redd_data$redd_count)
+# 
+# # redd data without Mill Creek
+# all_redd_data %>% 
+#   ungroup() %>%
+#  # filter(stream != "Mill Creek") %>% 
+#   select(redd_count) %>% 
+#   summary()
+# 
+# all_redd_data %>% 
 # ggplot() + 
-#   geom_point(data = all_redd_data %>% filter(stream != "Mill Creek"), aes(x = date, y = redd_count)) +
-#   facet_wrap(~ stream)
-
-# I'm not positive that this is comparing apples-to-apples because Mill Creek is aggregated 
-# by year
-ggplot() + 
-  geom_point(data = all_redd_data , aes(x = (year), y = redd_count)) +
-  facet_wrap(~ stream) +
-  coord_flip()
-```
-
-### fish_on_redd
-
--   Clear Creek is the only dataset containing this variable
-
-```{r}
-summary(all_redd_data$fish_on_redd)
-
-which_streams_included <- all_redd_data %>% 
-  filter(!is.na(fish_on_redd)) 
-unique(which_streams_included$stream)
+#   geom_histogram(aes(redd_count)) 
+# 
+# # ggplot() + 
+# #   geom_point(data = all_redd_data %>% filter(stream != "Mill Creek"), aes(x = date, y = redd_count)) +
+# #   facet_wrap(~ stream)
+# 
+# # I'm not positive that this is comparing apples-to-apples because Mill Creek is aggregated 
+# # by year
+# ggplot() + 
+#   geom_point(data = all_redd_data , aes(x = (year), y = redd_count)) +
+#   facet_wrap(~ stream) +
+#   coord_flip()
 ```
 
 ### pre_redd_substrate_size
@@ -425,18 +471,36 @@ table(all_redd_data$tail_substrate_size)
 
 ```
 
-### By Year Aggregation
+## By Year Aggregation
 
-This includes Mill Creek
+All redd data was aggregated by sampled reach and date to get a count of redds. In order to not potentially double count, the maximum of a daily count is reported as the yearly redd count. Since Mill Creek is aggregated by year already, this dataset includes Mill Creek.
 
 ```{r}
-#TODO:
-all_redd_data %>%
+
+redd_count_by_year <- bind_rows(clean_battle_redd, 
+                           clean_clear_redd,
+                           clean_feather_redd) %>% 
   group_by(reach, date) %>%
   mutate(sum_redd = n()) %>%
   # how many redds were counted on each day? 
-  group_by(year) %>%
-  mutate(max_redd = max(sum_redd)) %>% glimpse # maximum per year 
+  group_by(year, stream) %>%
+  mutate(max_yearly_redd_count = max(sum_redd)) %>%  # maximum per year 
+  select(-sum_redd) %>%
+  bind_rows(clean_mill_redd %>% 
+              group_by(year) %>%
+              mutate(max_yearly_redd_count = sum(redd_count, na.rm = TRUE))) %>%
+  select(-redd_count) %>%
+  distinct() %>%
+  glimpse
+
+redd_count_by_year %>% 
+  select(year, max_yearly_redd_count, stream) %>%
+  distinct() %>%
+ggplot() + 
+  geom_bar(aes(x = year, y = max_yearly_redd_count, fill = stream), stat = "identity") + 
+  facet_wrap(~stream) +
+  scale_fill_manual(values = color_pal) + 
+  theme_minimal()
 ```
 
 ## Save Cleaned Data to Google Cloud
