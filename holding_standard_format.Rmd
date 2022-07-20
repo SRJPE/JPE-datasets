@@ -95,7 +95,7 @@ kable(battle_data_dictionary)
 ```{r, battle_clean}
 battle_holding_clean <- battle_holding %>%
   select(-notes) %>%
-  mutate(watershed = "Battle Creek",
+  mutate(stream = "battle creek",
          year = lubridate::year(date))
   
 
@@ -112,14 +112,15 @@ kable(clear_data_dictionary)
 ```
 ```{r, clear_clean}
 clear_holding_clean <- clear_holding %>%
-  select(-c(comments, picket_weir_location_rm, picket_weir_relate)) %>%
+  select(-c(comments, picket_weir_location_rm)) %>%
   rename(jacks = jack_count) %>%
-  mutate(watershed = "Clear Creek",
+  mutate(stream = "clear creek",
          year = lubridate::year(date))
 ```
 
 ### Variables removed
-- comments, picket_weir_location_rm, picket_weir_relate
+- comments, picket_weir_location_rm
+- picket_weir_location_rm is the same value for the entire dataset; it will be added to the metadata
 
 ## Deer Creek
 
@@ -132,7 +133,7 @@ kable(deer_data_dictionary)
 deer_holding_clean <- bind_rows(deer_holding_1986_1996,
                                 deer_holding_1997_2020) %>%
   rename(reach = location) %>%
-  mutate(watershed = "Deer Creek")
+  mutate(stream = "deer creek")
 ```
 
 ### Variables removed
@@ -161,7 +162,7 @@ deer_holding_clean <- bind_rows(deer_holding_1986_1996,
 #   summarise_all(list(name = ~sum(is.na(.)/length(.)))) %>% 
 #                   pivot_longer(cols = everything())
 
-# butte_data_dictionary <- tibble(variables = colnames(butte_holding_02), description = c("Date of Sampling", "Reach within watershed", "Name of survey person", "Fish count", "Comments why count is NA"), percent_na = round(percent_na$value*100))
+# butte_data_dictionary <- tibble(variables = colnames(butte_holding_02), description = c("Date of Sampling", "Reach within stream", "Name of survey person", "Fish count", "Comments why count is NA"), percent_na = round(percent_na$value*100))
 # saveRDS(butte_data_dictionary, file = "butte_holding_data_dictionary.rds")
 ```
 
@@ -169,6 +170,8 @@ deer_holding_clean <- bind_rows(deer_holding_1986_1996,
 butte_data_dictionary <- read_rds("data/redd-carcass-holding/butte_holding_data_dictionary.rds")
 kable(butte_data_dictionary)
 ```
+
+
 ```{r, butte_clean}
 butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
                                  butte_holding_02,
@@ -188,15 +191,16 @@ butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
                                  butte_holding_16,
                                  butte_holding_17) %>%
   group_by(date, reach) %>%
-  summarize(avg_count = mean(fish_count, na.rm = T)) %>%
+  summarize(avg_count = round(mean(fish_count, na.rm = T), digits = 0)) %>%
   rename(count = avg_count) %>%
-  mutate(watershed = "Butte Creek",
+  mutate(stream = "butte creek",
          year = lubridate::year(date)) %>% 
   glimpse()
 ```
 
 ### Variables removed
 - comments, personnel removed
+- Butte creek data has multiple observations from different personnels per day - to prevent double counting, the average of each day at each reach is used as the daily fish count
 
 # Standard format {.tabset}
 ```{r, combined}
@@ -210,7 +214,7 @@ combined_holding <- bind_rows(battle_holding_clean,
 
 ```{r, data_dictionary_prep, include = F}
 colnames(combined_holding)
-holding_catch_data_dictionary <- tibble(variable_name = colnames(combined_holding), description = c("Date survey was conducted", "Reach number within watershed", "River mile number", "Number of fish observed", "Number of jacks observed", "Latitude measurement of adult holding", "Longitude measurement of adult holding", "Watershed name","Year survey was conducted", "Reason survey was conducted"), encoding = c("YYYY-MM-DD", NA,NA,NA,NA,NA,NA,NA, "YYYY", "august index, spawning" ), collected = c("All but Deer", "All","Battle and Clear", "All", "Battle and Clear", "Battle and Clear", "Battle and Clear", "All", "All","Clear"))
+holding_catch_data_dictionary <- tibble(variable_name = colnames(combined_holding), description = c("Date survey was conducted", "Reach number within stream", "River mile number", "Number of fish observed", "Number of jacks observed", "Latitude measurement of adult holding", "Longitude measurement of adult holding", "stream name","Year survey was conducted", "Reason survey was conducted", "Fish above or below Picket Weir"), encoding = c("YYYY-MM-DD", NA,NA,NA,NA,NA,NA,NA, "YYYY", "august index, spawning", "above, below" ), collected = c("All but Deer", "All","Battle and Clear", "All", "Battle and Clear", "Battle and Clear", "Battle and Clear", "All", "All","Clear", "Clear"))
 ```
 ```{r, data_dictionary}
 kable(holding_catch_data_dictionary)
@@ -222,8 +226,8 @@ Total count per year for each waterbody
 
 ```{r}
 combined_holding %>% 
-  group_by(year, watershed) %>%
-  ggplot(aes(x = year, y = count, fill = watershed))+
+  group_by(year, stream) %>%
+  ggplot(aes(x = year, y = count, fill = stream))+
   geom_col()
 ```
 
@@ -232,9 +236,9 @@ Average count per month. This chart shows Battle, Butte and Clear as Deer does n
 ```{r}
 combined_holding %>% 
   mutate(month = lubridate::month(date)) %>% 
-  group_by(month, watershed) %>% 
+  group_by(month, stream) %>% 
   summarize(average_count = mean(count, na.rm = T)) %>%
-  ggplot(aes(x = month, y = average_count, fill = watershed)) +
+  ggplot(aes(x = month, y = average_count, fill = stream)) +
   geom_col()
 ```
 
@@ -242,22 +246,32 @@ Average jacks per month. Jacks is only collected at Battle and Clear.
 ```{r}
 combined_holding %>% 
   mutate(month = lubridate::month(date)) %>% 
-  group_by(month, watershed) %>% 
+  group_by(month, stream) %>% 
   summarize(average_jacks = mean(jacks, na.rm = T)) %>% 
-  ggplot(aes(x = month, y = average_jacks, fill = watershed)) + 
+  ggplot(aes(x = month, y = average_jacks, fill = stream)) + 
   geom_col()
 ```
+
 Rivermile distribution for Battle and Clear
 
 ```{r}
 combined_holding %>% 
   filter(!is.na(river_mile)) %>% 
-  ggplot(aes(x = watershed, y = river_mile)) + 
+  ggplot(aes(x = stream, y = river_mile)) + 
   geom_boxplot(
   )
 ```
 
 # QA/QC {.tabset}
+
+# Categorical Variables
+
+```{r, categorical_variables}
+unique(combined_holding$reach)
+unique(combined_holding$stream)
+unique(combined_holding$survey_intent)
+unique(combined_holding$picket_weir_relate)
+```
 
 # Count
 
@@ -268,18 +282,18 @@ Figure below shows the percentage count by month for each waterbody except Deer.
 
 total_count <- combined_holding %>% 
   mutate(month = month(date)) %>% 
-  group_by(watershed) %>% 
+  group_by(stream) %>% 
   summarize(total = sum(count, na.rm = T))
 
 combined_holding %>% 
   mutate(month = month(date)) %>% 
-  group_by(watershed, month) %>% 
+  group_by(stream, month) %>% 
   summarize(count = sum(count, na.rm = T)) %>% 
   left_join(total_count) %>% 
   mutate(percent = (count/total)*100) %>% 
-  ggplot(aes(x= month, y = percent, fill = watershed)) +
+  ggplot(aes(x= month, y = percent, fill = stream)) +
   geom_col() +
-  facet_wrap(~watershed, scales = "free_y")
+  facet_wrap(~stream, scales = "free_y")
 ```
 
 *  `r round(sum(is.na(combined_holding$count))/nrow(combined_holding), 3)*100` % of values in the `count` column are NA.
@@ -292,18 +306,18 @@ Figure below whos the percentage count by month for Battle and Clear.
 ```{r, jack_qa_qc}
 total_jacks <- combined_holding %>% 
   mutate(month = month(date)) %>% 
-  group_by(watershed) %>% 
+  group_by(stream) %>% 
   summarize(total = sum(jacks, na.rm = T))
 
 combined_holding %>% 
   mutate(month = month(date)) %>% 
-  group_by(watershed, month) %>% 
+  group_by(stream, month) %>% 
   summarize(count = sum(jacks, na.rm = T)) %>% 
   left_join(total_jacks) %>% 
   mutate(percent = (count/total)*100) %>% 
-  ggplot(aes(x= month, y = percent, fill = watershed)) +
+  ggplot(aes(x= month, y = percent, fill = stream)) +
   geom_col() +
-  facet_wrap(~watershed, scales = "free_y")
+  facet_wrap(~stream, scales = "free_y")
 ```
 
 *  `r round(sum(is.na(combined_holding$jacks))/nrow(combined_holding), 3)*100` % of values in the `jacks` column are NA.
