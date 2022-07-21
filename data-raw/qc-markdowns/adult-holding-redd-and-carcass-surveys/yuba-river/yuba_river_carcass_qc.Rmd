@@ -109,11 +109,6 @@ ggplot() +
   geom_boxplot(data = clean_yuba_carcass, aes(y = fork_length, x = spawned)) +
   geom_jitter(data = clean_yuba_carcass, aes(y = fork_length, x = spawned), alpha = 0.5)
 ```
-
-**NA and Unknown Values**
-
-Provide a stat on NA or unknown values
-
 ## Explore Categorical variables: {.tabset}
 
 General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
