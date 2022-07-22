@@ -14,44 +14,51 @@ library(ggplot2)
 library(scales)
 library(readxl)
 
+google_cloud_access <- FALSE
+
 ```
 
-# Yuba River Carcass Data 
+# Yuba River Carcass Data
 
 ## Description of Monitoring Data
 
-**Timeframe:** 
+**Timeframe:**
 
-**Video Season:** 
+Min date: `2009-09-08` Max date: `2022-01-26`
 
-**Completeness of Record throughout timeframe:** 
+**Video Season:**
+
+**Completeness of Record throughout timeframe:**
 
 **Sampling Location:**
 
-**Data Contact:** 
+Sampling location is based on river mile.
 
-Any additional info?
+**Data Contact:**
+
+Jessica Nichols [Escapement Protocols](/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/yuba-river/Escapement%20Protocol%202011%20-%20internal%20review%20draft_09-16-2011.docx)
 
 ## Access Cloud Data
 
 ```{r, eval=FALSE}
 # Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
-# getwd() to see how to specify paths 
 # Open object from google cloud storage
-# Set your authentication using gcs_auth
-gcs_auth(json_file = Sys.getenv('GCS_AUTH_FILE'))
-gcs_global_bucket(bucket = Sys.getenv('GCS_DEFAULT_BUCKET'))
 
-gcs_list_objects()
-# git data and save as xlsx
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/data-raw/Carcass_datarequest07122022.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_carcass_yuba_river.xlsx",
-               overwrite = TRUE)
-
+if(google_cloud_access = TRUE) {
+  gcs_auth(json_file = Sys.getenv('GCS_AUTH_FILE'))
+  gcs_global_bucket(bucket = Sys.getenv('GCS_DEFAULT_BUCKET'))
+  
+  gcs_list_objects()
+  # git data and save as xlsx
+  gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/data-raw/Carcass_datarequest07122022.xlsx",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "raw_carcass_yuba_river.xlsx",
+                 overwrite = TRUE)
+}
 ```
 
-Read in data from google cloud, glimpse raw data and domain description sheet: 
+Read in data from google cloud, glimpse raw data and domain description sheet:
+
 ```{r}
 # read in data to clean 
 
@@ -64,6 +71,8 @@ raw_carcass_data <- read_excel("raw_carcass_yuba_river.xlsx",
 
 ## Data transformations
 
+-   modified `survey_id` to `date` and converted to date format
+
 ```{r}
 # Snake case, 
 # Columns are appropriate types
@@ -71,6 +80,8 @@ raw_carcass_data <- read_excel("raw_carcass_yuba_river.xlsx",
 
 clean_yuba_carcass <- raw_carcass_data %>% janitor::clean_names() %>% 
   rename(river_mile = rm) %>%
+  mutate(date = as_date(survey_id)) %>%
+  select(-survey_id) %>%
   glimpse
 
 summary(clean_yuba_carcass)
@@ -109,52 +120,56 @@ ggplot() +
   geom_boxplot(data = clean_yuba_carcass, aes(y = fork_length, x = spawned)) +
   geom_jitter(data = clean_yuba_carcass, aes(y = fork_length, x = spawned), alpha = 0.5)
 ```
+
 ## Explore Categorical variables: {.tabset}
 
-General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
+### `date`
 
 ```{r}
-# Filter clean data to show only categorical variables
+summary(clean_yuba_carcass$date)
 ```
-
-### `survey_id`
 
 ### `fresh`
 
+```{r}
+table(clean_yuba_carcass$fresh, useNA = "ifany")
+```
+
 ### `adipose_clip`
 
+```{r}
+table(clean_yuba_carcass$adipose_clip, useNA = "ifany")
+
+```
+
 ### `sex`
+
+```{r}
+table(clean_yuba_carcass$sex, useNA = "ifany")
+
+```
 
 ### `spawned`
 
 ```{r}
-#table() 
+table(clean_yuba_carcass$spawned, useNA = "ifany")
+
 ```
-
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-# Fix any inconsistencies with categorical variables
-```
-
-**Create lookup rda for [variable] encoding:** 
-```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
-
-**NA and Unknown Values**
-
-Provide a stat on NA or unknown values
 
 ## Summary of identified issues
 
-* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
+-   
 
-## Save cleaned data back to google cloud 
+## Save cleaned data back to google cloud
 
 ```{r}
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+yuba_carcass <- clean_yuba_carcass
+
+# gcs_list_objects()
+f <- function(input, output) write_csv(input, file = output)
+
+# gcs_upload(yuba_carcass,
+#            object_function = f,
+#            type = "csv",
+#            name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_carcass.csv")
 ```
