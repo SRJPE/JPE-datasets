@@ -1,0 +1,185 @@
+---
+title: "Feather Carcass QC 2000"
+author: "Inigo Peng"
+date: '2022-07-21'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+library(janitor)
+library(hms) #?as_hms()
+library(RODBC)
+library(knitr)
+```
+
+# Feather River Carcass Data
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+**Video Season:** 
+
+**Completeness of Record throughout timeframe:** 
+
+**Sampling Location:**
+
+**Data Contact:** 
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
+Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+```
+Read in data from google cloud, glimpse raw data and domain description sheet:
+```{r}
+DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2000.mdb"
+PATH <- paste0(DRIVERINFO, "DBQ=", MDBPATH)
+
+con <- odbcDriverConnect(PATH)
+
+sqlTables(con)$TABLE_NAME
+
+ChopEnv_raw <- sqlFetch(con, "ChopEnvTBL")
+write_csv(ChopEnv_raw, "ChopEnv_2000.csv")
+
+RecovTag_raw <- sqlFetch(con, "ChopRecovTBL")
+write_csv(RecovTag_raw, "RecovTag_2000.csv")
+
+ChopRecov <- sqlFetch(con, "ChopRecovTBL")
+write_csv(ChopRecov, "ChopRecov_2000.csv")
+
+TagCol<- sqlFetch(con, "TagColLU")
+write_csv(TagCol, "TagCol_2000.csv")
+
+TagData <- sqlFetch(con, "TagDataTBL")
+write_csv(TagData, "TagDataTBL_2000.csv")
+
+TagEnv <- sqlFetch(con, "TagEnvTBL")
+write_csv(TagEnv, "TagEnvTBL_2000.csv")
+```
+
+
+```{r}
+# knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+# Google Cloud Set up
+# Sys.setenv("GCS_AUTH_FILE" = "config.json")
+# Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+# 
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2000/ChopEnvTBL_2000.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "ChopEnv_2000.csv",
+#                overwrite = TRUE)
+# 
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2000/ChopRecovTBL_2000.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "ChopRecov_2000.csv",
+#                overwrite = TRUE)
+# 
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2000/RecovTagTBL_2000.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "RecovTag_2000.csv",
+#                overwrite = TRUE)
+# 
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2000/TagColLU_2000.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "TagCol_2000.csv",
+#                overwrite = TRUE)
+# 
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2000/TagDataTBL_2000.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "TagData_2000.csv",
+#                overwrite = TRUE)
+# 
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2000/TagEnvTBL_2000.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "TagEnv_2000.csv",
+#                overwrite = TRUE)
+
+# Read Data
+#Data for Recovered Tags
+RecovTag_raw <- read_csv("RecovTag_2000.csv") %>% 
+  # rename("ID" = HeaderID) %>% 
+  glimpse()
+
+#Heading Info for Chopped Data
+ChopEnv_raw <- read_csv("ChopEnv_2000.csv",col_types = list("d", "c", "T", "c", "T", "c", "c")) %>% 
+  # mutate("Start" = as_hms("Start")) %>%
+  glimpse()
+
+#Data collection for Chopping and Spawning to determine how many carcasses are being captured (link by recovID)
+ChopRecov_raw <-read_csv("ChopRecov_2000.csv") %>% 
+  glimpse()
+
+#tag colour lookup table
+TagCol_raw <- read_csv("TagCol_2000.csv") %>% 
+  glimpse()
+
+#Data for Tagging DataSheet - for some reason when export access table to excel, Tag Number is automatically changed to TagID
+#Link to RecovTag table
+TagData_raw <- read_csv("TagData_2000.csv") %>% 
+  rename("TagNum" = "TagID") %>% 
+  glimpse()
+
+#Heading Infor for Tagging Data Sheet
+TagEnv_raw <- read_csv("TagEnvTBL_2000.csv") %>% 
+  glimpse()
+```
+
+## Data transformations
+
+```{r}
+#1. Link ChopRecov with ChopEnv to get the date
+#2. Link RecovTag to TagData link to ChopRecov
+chop_recovery_join <- full_join(ChopEnv_raw %>% 
+                                  select(ChopEnvID, Date, Start, TagCol), ChopRecov_raw %>% 
+                                  select(-(RecovID))) 
+
+tag_join <- full_join(RecovTag_raw, TagData_raw)
+
+chop_tag_join <- left_join(chop_recovery_join, tag_join) %>% 
+  clean_names()
+
+chop_header <- ChopEnv_raw %>% 
+  clean_names()
+```
+
+# Recovery and Tags
+
+The `chop_tag_join` table contains recovered carcass counts and additional tag information 
+
+### Survey
+
+The `chop_header` table contains survey metadata and covariates
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables 
+chop_tag_join %>% 
+  select_if(is.numeric) %>%
+  colnames()
+```
