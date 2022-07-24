@@ -99,6 +99,17 @@ knights_landing_rst <- read_rds("data/rst/knights_landing_raw_catch.rds")
 
 # Data formatting {.tabset}
 
+We format, check, and clean catch data for each stream individually because their
+raw format varies. After formatting all streams we combine and apply additional
+cleaning and formatting.
+
+Battle, Clear, Feather, and Knights Landing provided trap operations/environmental
+data separate from catch. In some cases, there may be trap operations/environmental
+data but no catch observations for that day. In those cases, we assume that catch was 
+zero and was not recorded. To capture all data (including zero catch) we combine
+dates with trap operations/environmental with catch data and assume zero catch
+if that date did not exist in the catch data.
+
 ```{r, helpers}
 # standard encoding fixes for run
 run_encoding <- function(dat) {
@@ -154,8 +165,37 @@ filter(battle_rst, date == "2003-12-28")
 battle_rst_clean <- battle_rst %>%
   select(-c(sample_id)) %>%
   group_by(date, run, fork_length, lifestage, dead, interpolated) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
-  mutate(stream = "battle creek",
+  summarize(count = sum(count, na.rm = T)) 
+
+battle_rst_min <- battle_rst_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(min = min(date))
+
+# Trap operations and environmental data was captured separately
+# Need to check that if data in environmental it is also in catch data
+# e.g. make sure that if no catch then 0 in catch data
+
+battle_trap_clean <- battle_environmental %>%
+  # use sample date because this is the date the trap would have been checked
+  select(sample_date)
+
+battle_trap_min <- battle_trap_clean %>% 
+  mutate(wy = ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))) %>% 
+  group_by(wy) %>% 
+  summarize(trap_min = min(sample_date))
+
+# when comparing min dates in rst and environmental data, they differ
+# this means that we need to add in zero catch data
+battle_min_date_compare <- full_join(battle_rst_min, battle_trap_min)
+
+# This contains ALL data
+# Assumption is that if date is in environmental data but not catch data there was zero catch
+battle_rst_clean_final <- full_join(battle_rst_clean, 
+                                    battle_trap_clean %>% 
+                                      rename(date = sample_date)) %>% 
+  mutate(count = ifelse(is.na(count), 0, count),
+         stream = "battle creek",
          site = stream,
          adipose_clipped = F,
          run_method = "adjusted length-at-date")
@@ -234,8 +274,38 @@ clear_rst_clean <- clear_rst %>%
   select(-c(sample_id)) %>%
   rename(site = station_code) %>%
   group_by(date, site, run, fork_length, lifestage, dead, interpolated) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
-  mutate(stream = "clear creek",
+  summarize(count = sum(count, na.rm = T)) 
+
+clear_rst_min <- clear_rst_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(min = min(date))
+
+# Trap operations and environmental data was captured separately
+# Need to check that if data in environmental it is also in catch data
+# e.g. make sure that if no catch then 0 in catch data
+
+clear_trap_clean <- clear_environmental %>%
+  rename(site = station_code) %>%
+  # use sample date because this is the date the trap would have been checked
+  select(site, sample_date)
+
+clear_trap_min <- clear_trap_clean %>% 
+  mutate(wy = ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))) %>% 
+  group_by(wy) %>% 
+  summarize(trap_min = min(sample_date))
+
+# when comparing min dates in rst and environmental data, they differ
+# this means that we need to add in zero catch data
+clear_min_date_compare <- full_join(clear_rst_min, clear_trap_min)
+
+# This contains ALL data
+# Assumption is that if date is in environmental data but not catch data there was zero catch
+clear_rst_clean_final <- full_join(clear_rst_clean, 
+                                    clear_trap_clean %>% 
+                                      rename(date = sample_date)) %>% 
+  mutate(count = ifelse(is.na(count), 0, count),
+         stream = "clear creek",
          site = tolower(site),
          adipose_clipped = F,
          run_method = "adjusted length-at-date")
@@ -298,8 +368,37 @@ filter(feather_rst, is.na(run)) %>% tally()
 feather_rst_clean <- feather_rst %>%
   rename(site = site_name) %>%
   group_by(date, site, run, lifestage, fork_length) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
-  mutate(stream = "feather river",
+  summarize(count = sum(count, na.rm = T))
+
+feather_rst_min <- feather_rst_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(min = min(date))
+
+# Trap operations and environmental data was captured separately
+# Need to check that if data in environmental it is also in catch data
+# e.g. make sure that if no catch then 0 in catch data
+
+feather_trap_clean <- feather_effort %>%
+  rename(site = site_name) %>%
+  # use sample date because this is the date the trap would have been checked
+  select(date, site)
+
+feather_trap_min <- feather_trap_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(trap_min = min(date))
+
+# when comparing min dates in rst and environmental data, they differ
+# this means that we need to add in zero catch data
+feather_min_date_compare <- full_join(feather_rst_min, feather_trap_min)
+
+# This contains ALL data
+# Assumption is that if date is in environmental data but not catch data there was zero catch
+feather_rst_clean_final <- full_join(feather_rst_clean, 
+                                    feather_trap_clean) %>% 
+  mutate(count = ifelse(is.na(count), 0, count),
+         stream = "feather river",
          site = tolower(site),
          adipose_clipped = F,
          run_method = "unknown")
@@ -402,15 +501,44 @@ knights_rst_clean <- knights_landing_rst %>%
          run_method = runMethod,
          lifestage = lifeStage) %>%
   group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
-  mutate(stream = "sacramento river",
+  summarize(count = sum(count, na.rm = T))
+
+knights_rst_min <- knights_rst_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(min = min(date))
+
+# Trap operations and environmental data was captured separately
+# Need to check that if data in environmental it is also in catch data
+# e.g. make sure that if no catch then 0 in catch data
+
+knights_trap_clean <- knights_effort %>%
+  # use sample date because this is the date the trap would have been checked
+  select(date)
+
+knights_trap_min <- knights_trap_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(trap_min = min(date))
+
+# when comparing min dates in rst and environmental data, they differ
+# this means that we need to add in zero catch data
+knights_min_date_compare <- full_join(knights_rst_min, knights_trap_min)
+
+# This contains ALL data
+# Assumption is that if date is in environmental data but not catch data there was zero catch
+knights_rst_clean_final <- full_join(knights_rst_clean, 
+                                    knights_trap_clean) %>% 
+  mutate(count = ifelse(is.na(count), 0, count),
+         stream = "sacramento river",
          site = "knights landing",
          date = as_date(date),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          run_method = tolower(run_method),
          species = tolower(species),
-         lifestage = tolower(lifestage)) 
+         lifestage = tolower(lifestage)) %>% 
+  filter(date >= "2006-10-02")
 ```
 
 ### Variables removed
@@ -472,14 +600,14 @@ tisdale_rst_clean <- tisdale_rst %>%
 
 ```{r, combined}
 # TODO fill in run method - this will involve outreach with monitoring programs
-combined_rst_raw <- bind_rows(battle_rst_clean,
+combined_rst_raw <- bind_rows(battle_rst_clean_final,
                           butte_rst_clean,
-                          clear_rst_clean,
+                          clear_rst_clean_final,
                           deer_rst_clean,
-                          feather_rst_clean,
+                          feather_rst_clean_final,
                           mill_rst_clean,
                           yuba_rst_clean,
-                          knights_rst_clean,
+                          knights_rst_clean_final,
                           tisdale_rst_clean) 
 combined_rst <- combined_rst_raw %>%
   run_encoding() %>%
@@ -493,6 +621,7 @@ combined_rst <- combined_rst_raw %>%
 unique(combined_rst$run)
 unique(combined_rst$lifestage)
 unique(combined_rst$site)
+unique(combined_rst$stream)
 ```
 
 ## Data dictionary
