@@ -44,21 +44,22 @@ yearly_counts <- rst_catch_lad %>%
   glimpse
 
 # Create table for battle creek of % catch in rolling 42 day (6 week) windows  
-rst_catch_lad %>% 
-  filter(run == "spring" & stream == "battle creek") %>% 
+battle_rollsum <- rst_catch_lad %>% 
+  filter(run == "spring" & stream == "battle creek" & adipose_clipped != T) %>% 
   group_by(date) %>% 
   summarize(daily_count = sum(count)) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   left_join(yearly_counts) %>% 
+  arrange(date) %>% 
   group_by(water_year) %>% 
   mutate(left_rollsum = rollsum(daily_count, 42, fill = NA, align = "left"),
          right_rollsum = rollsum(daily_count, 42, fill = NA, align = "right"), 
          left_percents = left_rollsum/yearly_count,
-         right_percents = right_rollsum/yearly_count,
-         m = max(left_percents, na.rm = T)) %>%
-  filter()
-  ungroup()
+         right_percents = right_rollsum/yearly_count,  
+         max_left = max(left_percents, na.rm = T),
+         max_right = max(right_percents))
 
+battle_date_range <- battle_rollsum %>% 
 
 
 
