@@ -29,6 +29,33 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 #                saveToDisk = "data/standard-format-data/standard_rst_catch_lad.csv",
 #                overwrite = TRUE)
 
+release_raw <- read_csv(here::here("data","standard-format-data", "standard_release.csv"))
+recapture_raw <- read_csv(here::here("data","standard-format-data", "standard_recapture.csv"))
+
+# Average efficiency ------------------------------------------------------
+
+number_released_flow <- release_raw %>% 
+  select(stream, site, release_id, release_date, number_released, flow_at_release)
+
+number_recaptured <- recapture_raw %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% 
+  group_by(stream, release_id) %>% 
+  summarize(number_recaptured = sum(number_recaptured))
+
+# Use average efficiency by stream for those with historical estimates
+efficiency_stream <- left_join(number_released_flow, number_recaptured) %>% 
+  mutate(efficiency = number_recaptured/number_released) %>% 
+  group_by(stream) %>% 
+  summarize(mean_efficiency = mean(efficiency, na.rm = T))
+
+# Use global mean for those without historical estimates
+efficiency_global <- left_join(number_released_flow, number_recaptured) %>% 
+  mutate(efficiency = number_recaptured/number_released) %>% 
+  summarize(mean_efficiency = mean(efficiency, na.rm = T))
+
+
+# Peak Outmigration -------------------------------------------------------
+
 
 # Glimpse RST datasets 
 mark_recaps <- read_csv("data/standard-format-data/standard_mark_recaptures.csv") %>% glimpse()
@@ -57,7 +84,7 @@ battle_rollsum <- rst_catch_lad %>%
          left_percents = left_rollsum/yearly_count,
          right_percents = right_rollsum/yearly_count,  
          max_left = max(left_percents, na.rm = T),
-         max_right = max(right_percents))
+         max_right = max(right_percents, na.rm = T))
 
 battle_date_range <- battle_rollsum %>% 
 
