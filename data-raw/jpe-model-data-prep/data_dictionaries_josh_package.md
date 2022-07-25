@@ -6,8 +6,8 @@ date: '2022-07-07'
 
 This directory contains the following data files:
 
-- catch: standard_catch_rst.csv (created on July 6 2022)
-- trap operations: standard_trap_rst.csv (added on July 24 2022)
+- catch: standard_catch.csv (created on July 6 2022)
+- trap operations: standard_trap.csv (added on July 24 2022)
 - recapture: standard_recapture.csv (added on July 24 2022)
 - release: standard_release.csv (added on July 24 2022)
 - flow: standard_flow.csv (added on July 24 2022)
