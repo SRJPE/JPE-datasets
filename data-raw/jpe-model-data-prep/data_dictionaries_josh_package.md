@@ -6,11 +6,11 @@ date: '2022-07-07'
 
 This directory contains the following data files:
 
-- standard_catch_rst.csv (created on July 6 2022)
-- standard_trap_rst.csv (added on July 24 2022)
-- standard_recapture.csv (added on July 24 2022)
-- standard_release.csv (added on July 24 2022)
-- standard_flow.csv (added on July 24 2022)
+- catch: standard_catch_rst.csv (created on July 6 2022)
+- trap operations: standard_trap_rst.csv (added on July 24 2022)
+- recapture: standard_recapture.csv (added on July 24 2022)
+- release: standard_release.csv (added on July 24 2022)
+- flow: standard_flow.csv (added on July 24 2022)
 
 Historical RST data was acquired from spring run tributaries for use in the
 SR JPE. FlowWest performed QC and data processing to combine datasets into a 
@@ -36,7 +36,7 @@ standard usable format.
 | weight	| Weight in grams.	| NA	| Butte, Deer, Yuba, Knights, Tisdale
 | species	| Species of fish. | All were filtered to chinook.	| chinook salmon	| Knights
 
-*Trap*
+*Trap Operations*
 
 variable_name | description |	encoding | collected
 | ----------- | ----------- | ----------- | ----------- |
