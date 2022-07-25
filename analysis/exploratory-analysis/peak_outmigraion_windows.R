@@ -46,25 +46,29 @@ number_recaptured <- recapture_raw %>%
 efficiency_stream <- left_join(number_released_flow, number_recaptured) %>% 
   mutate(efficiency = number_recaptured/number_released) %>% 
   group_by(stream) %>% 
-  summarize(mean_efficiency = mean(efficiency, na.rm = T))
+  summarize(mean_efficiency = mean(efficiency, na.rm = T)) %>%  view
 
 # Use global mean for those without historical estimates
 efficiency_global <- left_join(number_released_flow, number_recaptured) %>% 
   mutate(efficiency = number_recaptured/number_released) %>% 
-  summarize(mean_efficiency = mean(efficiency, na.rm = T))
+  summarize(mean_efficiency = mean(efficiency, na.rm = T)) %>% view
 
+
+# Table of number of fish needed for release ------------------------------
+
+# Calculate the number of fish needed for release based on avg efficiency and 0.2 precision
 
 # Peak Outmigration -------------------------------------------------------
-
 
 # Glimpse RST datasets 
 mark_recaps <- read_csv("data/standard-format-data/standard_mark_recaptures.csv") %>% glimpse()
 rst_catch <- read_csv("data/standard-format-data/standard_rst_catch.csv") %>% glimpse()
 rst_catch_lad <- read_csv("data/standard-format-data/standard_rst_catch_lad.csv") %>% glimpse()
 
+date_range <- function(watershed) {
 # Create yearly count table 
-yearly_counts <- rst_catch_lad %>% 
-  filter(run == "spring" & stream == "battle creek") %>% 
+yearly_counts <- rst_catch_lad %>%
+  filter(stream == "mill creek" & run_rivermodel == "spring") %>% 
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>%
   group_by(water_year) %>%
   summarise(yearly_count = sum(count)) %>%
@@ -72,7 +76,7 @@ yearly_counts <- rst_catch_lad %>%
 
 # Create table for battle creek of % catch in rolling 42 day (6 week) windows  
 battle_rollsum <- rst_catch_lad %>% 
-  filter(run == "spring" & stream == "battle creek" & adipose_clipped != T) %>% 
+  filter(stream == "mill creek" & run_rivermodel == "spring" & adipose_clipped != T) %>% 
   group_by(date) %>% 
   summarize(daily_count = sum(count)) %>%
   mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -80,16 +84,62 @@ battle_rollsum <- rst_catch_lad %>%
   arrange(date) %>% 
   group_by(water_year) %>% 
   mutate(left_rollsum = rollsum(daily_count, 42, fill = NA, align = "left"),
-         right_rollsum = rollsum(daily_count, 42, fill = NA, align = "right"), 
+         right_rollsum = rollsum(daily_count, 42, fill = NA, align = "right")), 
          left_percents = left_rollsum/yearly_count,
          right_percents = right_rollsum/yearly_count,  
          max_left = max(left_percents, na.rm = T),
          max_right = max(right_percents, na.rm = T))
+# 
+# battle_date_range <- battle_rollsum %>% 
+#   filter(left_percents == max_left | right_percents == max_right) %>% 
+#   mutate(start_date = case_when(left_percents == max_left ~ as_date(date),
+#                                 right_percents == max_right ~ as_date(date) - 42),
+#          end_date = case_when(left_percents == max_left ~ as_date(date) + 42,
+#                               right_percents == max_right ~ as_date(date)))
 
-battle_date_range <- battle_rollsum %>% 
+battle_date_range_left <- battle_rollsum %>% 
+  filter(left_percents == max_left) %>% 
+  group_by(water_year) %>% 
+  slice_min(date) %>% 
+  mutate(start_date = as_date(date),
+         end_date = as_date(date) + 42) 
+
+battle_date_range_left %>% 
+  select(water_year, start_date, end_date) %>% 
+  pivot_longer(c(start_date, end_date), names_to = "type", values_to = "date") %>% 
+  mutate(year = ifelse(month(date) %in% 10:12, "1999", "2000"),
+          date = as_date(paste(year, month(date), day(date), sep = "-"))) %>% 
+  ggplot(aes(x = date, y = water_year, color = type)) +
+  geom_point()
+}
+
+date_range("mill creek")
+
+
+# Battle: mid Dec - beg Feb
+# Butte: mid Dec - beg Feb
+# Clear: mid-Nov - beg Jan
+# Feather: beg Dec - mid Feb
+# Yuba: mid-Nov - beg Jan
+# Knights Landing: mid Feb - beg Apr
+# Tisdale: mid Jan - Mar *
+# Mill
+# Deer
+
+# * peak outmigration more variable
+# scrap --------------------------------------------------------------------
+
+mill_catch <- filter(rst_catch_lad, stream == "mill creek") %>% 
+  
 
 
 
+battle_average_date_range <- battle_date_range_left %>% 
+  mutate(start_day = yday(start_date),
+         end_day = yday(end_date)) %>% 
+  ungroup() %>% 
+  summarize(avg_start = mean(start_day),
+            avg_end = mean(end_day)) %>%  view
 
 # Visualize left_percents 
 rst_catch_lad %>% 
