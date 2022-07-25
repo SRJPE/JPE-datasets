@@ -1,0 +1,166 @@
+---
+title: "Estimating number of fish needed for efficiency trials"
+output: html_document
+date: '2022-07-25'
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(googleCloudStorageR)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_recapture.csv",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "standard-format-data/standard_release.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_release.csv",
+               overwrite = TRUE)
+
+# gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "data/standard-format-data/standard_rst_catch.csv",
+#                overwrite = TRUE)
+# 
+# gcs_get_object(object_name = "standard-format-data/standard_rst_catch_lad.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "data/standard-format-data/standard_rst_catch_lad.csv",
+#                overwrite = TRUE)
+
+release_raw <- read_csv(here::here("data","standard-format-data", "standard_release.csv"))
+recapture_raw <- read_csv(here::here("data","standard-format-data", "standard_recapture.csv"))
+```
+
+# Number of fish needed per trial
+
+```{r, include = F, echo = F}
+number_released_flow <- release_raw %>% 
+  select(stream, site, release_id, release_date, number_released, flow_at_release)
+
+number_recaptured <- recapture_raw %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% 
+  group_by(stream, release_id) %>% 
+  summarize(number_recaptured = sum(number_recaptured))
+
+# Use average efficiency by stream for those with historical estimates
+efficiency_stream <- left_join(number_released_flow, number_recaptured) %>% 
+  mutate(efficiency = number_recaptured/number_released) %>% 
+  group_by(stream) %>% 
+  summarize(mean_efficiency = mean(efficiency, na.rm = T)) 
+
+# Use global mean for those without historical estimates
+# efficiency_global <- left_join(number_released_flow, number_recaptured) %>% 
+#   mutate(efficiency = number_recaptured/number_released) %>% 
+#   summarize(mean_efficiency = mean(efficiency, na.rm = T),
+#             median_efficiency = median(efficiency, na.rm = T)) %>% 
+#   mutate(stream = "global")
+
+efficiency_global_avg <- efficiency_stream %>% 
+  summarize(mean_efficiency = mean(mean_efficiency)) %>% 
+  mutate(stream = "global")
+
+historic_efficiency <- bind_rows(efficiency_global_avg, efficiency_stream) %>% 
+  mutate(mean_efficiency = round(mean_efficiency, 3))
+```
+
+
+```{r, echo = F}
+# Number of fish needed per trial
+number_released <- function(efficiency) {
+  cv_z <- 0.2
+  p <- efficiency
+  N <- ((1-p)/((cv_z^2)*p))
+  N <- round(N, 0)
+  N
+}
+
+efficiency <- historic_efficiency$mean_efficiency
+streams <- historic_efficiency$stream
+
+number_released_table <- tibble(stream = streams,
+                                historic_efficiency = efficiency,
+                                release_per_trial = c(485, 343, 327, 438, 6225))
+
+kable(number_released_table)
+```
+
+# Peak outmigration window
+
+| stream | start timing	| end timing | 
+| ----------- | ----------- | ----------- | 
+| Battle Creek | mid december | beginning february |
+| Butte Creek | mid december | beginning february |
+| Clear Creek | mid november | beginning january |
+| Deer Creek | mid march | beginning may |
+| Feather River | beginning december | mid february |
+| Mill Creek | mid march | beginning may | 
+| Sacramento - Knights Landing | mid february | beginning april |
+| Sacramento - Tisdale | mid january | beginning march |
+| Yuba River | mid november | beginning january |
+
+# Total estimate of fish needed by month
+
+
+```{r, echo = F}
+
+weeks_month <- tibble(stream = c(rep("battle creek",3),
+                                 rep("butte creek",3),
+                                 rep("clear creek",3),
+                                 rep("deer creek",3),
+                                 rep("feather river",3),
+                                 rep("mill creek",3),
+                                 rep("knights landing",3),
+                                 rep("tisdale",3),
+                                 rep("yuba river", 3)),
+                      month = c("december", "january", "february",
+                                "december", "january", "february",
+                                "november", "december", "january",
+                                "march", "april","may",
+                                "december", "january", "february",
+                                "march", "april","may",
+                                "february","march","april",
+                                "january", "february", "march",
+                                "november", "december", "january"),
+                      weeks = c(2,4,1,
+                                2,4,1,
+                                2,4,1,
+                                2,4,1,
+                                3,4,2,
+                                2,4,1,
+                                2,4,1,
+                                2,4,1,
+                                2,4,1)
+                      )
+
+total_counts <- number_released_table %>% 
+  add_row(stream = c("butte creek",
+                     "deer creek",
+                     "mill creek",
+                     "yuba river",
+                     "knights landing",
+                     "tisdale"),
+          historic_efficiency = c(rep(0.049,4),
+                              rep(0.004, 2)),
+          release_per_trial = c(rep(485, 4),
+                            rep(6225, 2))) %>% 
+  filter(!stream %in% c("global", "sacramento river")) %>% 
+  left_join(weeks_month) %>% 
+  mutate(fish_needed = weeks * release_per_trial) %>% 
+  select(stream, month, fish_needed) %>% 
+  pivot_wider(id_cols = stream, names_from = "month", values_from = "fish_needed", values_fill = 0) %>% 
+  mutate(total = november + december + january + february + march + april + may)
+
+total_counts <- total_counts[,c(1,5,2,3,4,6,7,8,9)]
+
+kable(total_counts)
+```

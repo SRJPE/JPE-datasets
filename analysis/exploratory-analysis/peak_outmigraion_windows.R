@@ -123,8 +123,8 @@ date_range("mill creek")
 # Yuba: mid-Nov - beg Jan
 # Knights Landing: mid Feb - beg Apr
 # Tisdale: mid Jan - Mar *
-# Mill
-# Deer
+# Mill: mid Mar - May
+# Deer: mid Mar - May
 
 # * peak outmigration more variable
 # scrap --------------------------------------------------------------------
