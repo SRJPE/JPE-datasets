@@ -18,6 +18,7 @@ library(janitor)
 library(hms) #?as_hms()
 library(RODBC)
 library(knitr)
+library(wesanderson)
 ```
 
 # Feather River Carcass Data
@@ -65,11 +66,11 @@ sqlTables(con)$TABLE_NAME
 ChopEnv_raw <- sqlFetch(con, "ChopEnvTBL")
 write_csv(ChopEnv_raw, "ChopEnv_2000.csv")
 
-RecovTag_raw <- sqlFetch(con, "ChopRecovTBL")
+RecovTag_raw <- sqlFetch(con, "RecovTagTBL")
 write_csv(RecovTag_raw, "RecovTag_2000.csv")
 
-ChopRecov <- sqlFetch(con, "ChopRecovTBL")
-write_csv(ChopRecov, "ChopRecov_2000.csv")
+ChopRecov_raw <- sqlFetch(con,"ChopRecovTBL")
+write_csv(ChopRecov_raw, "ChopRecov_2000.csv")
 
 TagCol<- sqlFetch(con, "TagColLU")
 write_csv(TagCol, "TagCol_2000.csv")
@@ -153,23 +154,29 @@ TagEnv_raw <- read_csv("TagEnvTBL_2000.csv") %>%
 
 ```{r}
 #1. Link ChopRecov with ChopEnv to get the date
-#2. Link RecovTag to TagData link to ChopRecov
 chop_recovery_join <- full_join(ChopEnv_raw %>% 
-                                  select(ChopEnvID, Date, Start, TagCol), ChopRecov_raw %>% 
-                                  select(-(RecovID))) 
+                                  select(ChopEnvID, Date, Start, TagCol), ChopRecov_raw ) %>% 
+  clean_names() %>% 
+  rename(male_chop = "adult_m",
+         female_chop = "adult_f",
+         grilse_male = "gril_m",
+         grilse_female = "gril_f") 
 
-tag_join <- full_join(RecovTag_raw, TagData_raw)
-
-chop_tag_join <- left_join(chop_recovery_join, tag_join) %>% 
-  clean_names()
+tag_join <- left_join(TagData_raw, RecovTag_raw) %>% 
+  clean_names() %>% 
+  select(c(tag_num, sect, unit, fl, sex, egg_ret, recov_id))
 
 chop_header <- ChopEnv_raw %>% 
   clean_names()
 ```
 
-# Recovery and Tags
+# Recovery 
 
-The `chop_tag_join` table contains recovered carcass counts and additional tag information 
+The `chop_recovery_join` table contains recovered carcass counts 
+
+# Tags
+
+The `tag_join` table contains additional tag information 
 
 ### Survey
 
@@ -179,7 +186,340 @@ The `chop_header` table contains survey metadata and covariates
 
 ```{r}
 # Filter clean data to show only numeric variables 
-chop_tag_join %>% 
+chop_recovery_join %>% 
   select_if(is.numeric) %>%
   colnames()
 ```
+
+### Variable: `chop_env_id`, `sect`, `unit`
+
+```{r}
+summary(chop_recovery_join$chop_env_id)
+```
+```{r}
+summary(chop_recovery_join$sect)
+```
+```{r}
+summary(chop_recovery_join$unit)
+```
+
+
+
+### Variable: `male_chop`, `female_chop`, `grilse_male`, `grilse_female`, `spawn`
+
+```{r}
+summary(chop_recovery_join$male_chop)
+```
+```{r}
+summary(chop_recovery_join$female_chop)
+```
+
+**Plotting male_chop  over Period of Record**
+
+```{r}
+chop_recovery_join %>% 
+  ggplot(aes(x = date, y = male_chop)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "Male Chop") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting female_chop over Period of Record**
+
+```{r}
+chop_recovery_join %>% 
+  ggplot(aes(x = date, y = female_chop)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "Female Chop") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting Total Chops over Period of Record**
+
+```{r}
+total_chops <- chop_recovery_join %>% 
+  mutate(total_chops = male_chop + female_chop,
+         date = as_date(date)) %>% 
+  select(date, male_chop, female_chop, total_chops) %>% glimpse()
+
+total_chops_test <- total_chops %>% 
+  filter(date == as_date("2000-09-05"))
+nrow(total_chops) == (sum(total_chops$total_chops == (total_chops$male_chop + total_chops$female_chop)))
+
+total_chops_summary <- total_chops %>% 
+  group_by(date) %>% 
+  summarise(total_chops = sum(total_chops, na.rm = T),
+            male_chops = sum(male_chop, na.rm = T),
+            female_chops = sum(female_chop, na.rm = T))
+```
+
+```{r}
+total_chops_summary %>% 
+  pivot_longer(cols = c(male_chops, female_chops), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count/total_chops)) %>% 
+  ggplot(aes(x = date, y = proportions, fill = sex)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+This plot shows the gender proportion of chops for each day over the the period of 2000-09-05 to 2000-12-14. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. All of the Chop data have been identified for their sexes.
+
+```{r}
+summary(chop_recovery_join$grilse_male)
+```
+```{r}
+summary(chop_recovery_join$grilse_female)
+```
+```{r}
+summary(chop_recovery_join$spawn)
+```
+* `r round(sum(is.na(chop_recovery_join$spawn))/nrow(chop_recovery_join), 3) * 100` % of values in the `spawn` column are NA.
+
+**Plotting grilse_male  over Period of Record**
+
+```{r}
+chop_recovery_join %>% 
+  ggplot(aes(x = date, y = grilse_male)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "Grisle Male") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting grilse_female  over Period of Record**
+
+```{r}
+chop_recovery_join %>% 
+  ggplot(aes(x = date, y = grilse_female)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "Grisle Male") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+**Plotting Total Grilse Chops  over Period of Record**
+
+```{r}
+total_grilse_chops <- chop_recovery_join %>% 
+  mutate(total_grilse_chops = grilse_male + grilse_female,
+         date = as_date(date)) %>% 
+  select(date, grilse_male, grilse_female, total_grilse_chops) %>% glimpse()
+
+total_grilse_chops_test <- total_grilse_chops %>% 
+  filter(date == as_date("2000-09-05"))
+nrow(total_grilse_chops) == (sum(total_grilse_chops$total_grilse_chops == (total_grilse_chops$grilse_male + total_grilse_chops$grilse_female)))
+
+total_grilse_chops_summary <- total_grilse_chops %>% 
+  group_by(date) %>% 
+  summarise(total_grilse_chops = sum(total_grilse_chops, na.rm = T),
+            grilse_male = sum(grilse_male, na.rm = T),
+            grilse_female = sum(grilse_female, na.rm = T))
+```
+
+```{r}
+total_grilse_chops_summary %>% 
+  pivot_longer(cols = c(grilse_male, grilse_female), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count/total_grilse_chops)) %>% 
+  ggplot(aes(x = date, y = proportions, fill = sex)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+This plot shows the gender proportion of grilse chops for each day over the the period of 2000-09-05 to 2000-12-14. There are more data gap for the grilse data compared to the normal chops data. All of the grilse chop data have been identified for their sexes as well - there is a significant higher proportion of males compared to the females.
+
+**Plotting spawn over a Period of Record**
+
+```{r}
+chop_recovery_join %>% 
+  ggplot(aes(x = date, y = spawn)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "spawn") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+This plot shows the number spawned for each day over the the period of 2000-09-05 to 2000-12-14. 
+```{r}
+# Filter clean data to show only numeric variables 
+tag_join %>% 
+  select_if(is.numeric) %>% 
+  colnames()
+```
+```{r}
+summary(tag_join$tag_num)
+```
+```{r}
+summary(tag_join$sect)
+```
+```{r}
+summary(tag_join$unit)
+```
+```{r}
+summary(tag_join$fl)
+```
+```{r}
+summary(tag_join$recov_id)
+```
+
+```{r}
+all_tags <- tag_join %>% 
+  mutate(tag_count = 1) %>% 
+  pivot_wider(names_from = sex, values_from = tag_count) %>% 
+  rename("unknown_tags" = X,
+         "male_tag" = M,
+         "female_tag" = F) %>% 
+  select(-c(rel_loc, rel_loc2, rel_stat, comment))
+         
+total_tags_summary <- all_tags%>% 
+  mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na
+         female_tag = ifelse(is.na(female_tag), 0, female_tag),
+         unknown_tags = ifelse(is.na(unknown_tags), 0, unknown_tags),
+         total_tags = unknown_tags + male_tag + female_tag) %>% 
+  select(male_tag, female_tag, unknown_tags, total_tags)
+
+total_tags_summary %>% 
+  pivot_longer(cols = c(male_tag, female_tag, unknown_tags), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_tags)) %>% 
+  ggplot(aes(x = sex, y = proportions)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male", "Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+```{r}
+# Add finlength chart
+```
+
+### Variable: `female_tag`, `male_tag`, `unknown_tag`
+
+**Numeric Summary of `female_tag`, `male_tag`,`unknown_tag`**
+
+```{r}
+summary(total_tags$male_tag)
+```
+* `r round(sum(is.na(total_tags$male_tag))/nrow(total_tags), 3) * 100` % of values in the `male_tag` column are NA.
+```{r}
+summary(total_tags$female_tag)
+```
+* `r round(sum(is.na(tag_chop_join$female_tag))/nrow(tag_chop_join), 3) * 100` % of values in the `female_tag` column are NA.
+
+```{r}
+summary(total_tags$unknown_tags)
+```
+
+* `r round(sum(is.na(tag_chop_join$unknown_tags))/nrow(tag_chop_join), 3) * 100` % of values in the `unknown_tags` column are NA.
+
+```{r}
+tags_with_dates <- left_join(tag_join %>% 
+  mutate(tag_count = 1) %>% 
+  pivot_wider(names_from = sex, values_from = tag_count) %>% 
+  rename("unknown_tags" = X,
+         "male_tag" = M,
+         "female_tag" = F) %>% 
+  select(-c(rel_loc, rel_loc2, rel_stat, comment)), chop_recovery_join)%>% 
+  filter(!is.na(date)) %>% glimpse
+
+total_tags_with_dates <- tags_with_dates%>% 
+  mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na
+         female_tag = ifelse(is.na(female_tag), 0, female_tag),
+         unknown_tags = ifelse(is.na(unknown_tags), 0, unknown_tags),
+         total_tags = unknown_tags + male_tag + female_tag) %>% 
+  select(date, male_tag, female_tag, unknown_tags, total_tags)
+
+total_tags_with_dates_summary <- total_tags_with_dates %>%
+  group_by(date) %>%
+  summarise(total_tags = sum(total_tags, na.rm = T),
+            male_tags = sum(male_tag, na.rm = T),
+            female_tags = sum(female_tag, na.rm = T),
+            unknown_tags = sum(unknown_tags, na.rm = T))
+
+total_tags_with_dates_summary %>% 
+  pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_tags)) %>% 
+  ggplot(aes(x = date, y = proportions, fill = sex)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red", "Black"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male", "Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+#Lots of NA Dates - making plots over period of time will not be as informative
+```
+
+
+**Plotting female_tag over Period of Record**
+```{r}
+# Make whatever plot is appropriate 
+total_tags_with_dates_summary %>% 
+  ggplot(aes(x = date, y = female_tags)) +
+  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  labs(x = "Date", 
+       y = "Female Tag") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+```{r}
+total_tags_with_dates_summary %>% 
+  ggplot(aes(x = date, y = female_tags)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "Male Tag") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))
+```
+
+```{r}
+chop_header %>% 
+  select_if(is.numeric) %>% 
+  colnames()
+```
+```{r}
+summary(chop_header$id)
+```
+
+```{r}
+summary(chop_header$tag_col)
+```
+
+```{r}
+summary(chop_header$week_num)
+```
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+chop_recovery_join %>% 
+  select_if(is.character) %>% 
+  colnames()
+```
+## Clean data
+
+Fix inconsistencies with spelling, capitalization, and dates
+```{r}
+# chop_recovery_cleaner <- chop_recovery_join %>% 
+#   mutate(datetime = ymd_hms(paste(date, hms(start))))%>% 
+#   select(-c()) %>% 
+#   glimpse
+```
+
+
