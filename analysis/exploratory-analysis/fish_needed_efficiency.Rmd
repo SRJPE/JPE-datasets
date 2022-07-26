@@ -14,7 +14,9 @@ library(waterYearType)
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
 knitr::opts_chunk$set(echo = TRUE)
+```
 
+```{r}
 # water year type
 sac_wy <- CDECRetrieve::water_year_indices %>% 
   filter(location == "Sacramento Valley") %>% 
