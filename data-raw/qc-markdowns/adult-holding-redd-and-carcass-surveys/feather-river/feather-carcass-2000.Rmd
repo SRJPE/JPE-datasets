@@ -354,6 +354,7 @@ chop_recovery_join %>%
   theme(text = element_text(size = 15)) 
 ```
 This plot shows the number spawned for each day over the the period of 2000-09-05 to 2000-12-14. 
+
 ```{r}
 # Filter clean data to show only numeric variables 
 tag_join %>% 
@@ -382,18 +383,22 @@ all_tags <- tag_join %>%
   pivot_wider(names_from = sex, values_from = tag_count) %>% 
   rename("unknown_tags" = X,
          "male_tag" = M,
-         "female_tag" = F) %>% 
-  select(-c(rel_loc, rel_loc2, rel_stat, comment))
-         
+         "female_tag" = F) 
+
 total_tags_summary <- all_tags%>% 
   mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na
          female_tag = ifelse(is.na(female_tag), 0, female_tag),
          unknown_tags = ifelse(is.na(unknown_tags), 0, unknown_tags),
          total_tags = unknown_tags + male_tag + female_tag) %>% 
-  select(male_tag, female_tag, unknown_tags, total_tags)
+  select(male_tag, female_tag, unknown_tags, total_tags) %>% 
+  summarise(total_tags = sum(total_tags),
+            male_tags = sum(male_tag),
+            female_tags = sum(female_tag),
+            unknown_tags = sum(unknown_tags))
 
+#Unknown tags proportion is very small and is rounded to zero 
 total_tags_summary %>% 
-  pivot_longer(cols = c(male_tag, female_tag, unknown_tags), names_to = "sex", values_to = "count") %>% 
+  pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_tags)) %>% 
   ggplot(aes(x = sex, y = proportions)) +
   geom_bar(stat = "identity", position = "stack") +
@@ -401,7 +406,7 @@ total_tags_summary %>%
                     name = "Sex", 
                     labels = c("Female", "Male", "Unknown")) +
   theme_minimal() + 
-  labs(y = "Proportion", x = "Date") +
+  labs(y = "Proportion", x = "Sex") +
   scale_fill_manual(values = wes_palette("Moonrise2"))
 ```
 
@@ -414,16 +419,16 @@ total_tags_summary %>%
 **Numeric Summary of `female_tag`, `male_tag`,`unknown_tag`**
 
 ```{r}
-summary(total_tags$male_tag)
+summary(all_tags$male_tag)
 ```
 * `r round(sum(is.na(total_tags$male_tag))/nrow(total_tags), 3) * 100` % of values in the `male_tag` column are NA.
 ```{r}
-summary(total_tags$female_tag)
+summary(all_tags$female_tag)
 ```
 * `r round(sum(is.na(tag_chop_join$female_tag))/nrow(tag_chop_join), 3) * 100` % of values in the `female_tag` column are NA.
 
 ```{r}
-summary(total_tags$unknown_tags)
+summary(all_tags$unknown_tags)
 ```
 
 * `r round(sum(is.na(tag_chop_join$unknown_tags))/nrow(tag_chop_join), 3) * 100` % of values in the `unknown_tags` column are NA.
@@ -434,8 +439,7 @@ tags_with_dates <- left_join(tag_join %>%
   pivot_wider(names_from = sex, values_from = tag_count) %>% 
   rename("unknown_tags" = X,
          "male_tag" = M,
-         "female_tag" = F) %>% 
-  select(-c(rel_loc, rel_loc2, rel_stat, comment)), chop_recovery_join)%>% 
+         "female_tag" = F), chop_recovery_join)%>% 
   filter(!is.na(date)) %>% glimpse
 
 total_tags_with_dates <- tags_with_dates%>% 
@@ -516,10 +520,113 @@ chop_recovery_join %>%
 
 Fix inconsistencies with spelling, capitalization, and dates
 ```{r}
-# chop_recovery_cleaner <- chop_recovery_join %>% 
-#   mutate(datetime = ymd_hms(paste(date, hms(start))))%>% 
-#   select(-c()) %>% 
-#   glimpse
+chop_recovery_cleaner <- chop_recovery_join %>%
+  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(start, format = "%Y-%m-%dT%H:%M:%OSZ"))))%>%
+  mutate_if(is.character, str_to_lower) %>% 
+  select(-c(date, start)) %>%
+  glimpse
 ```
+
+```{r}
+chop_header %>% 
+  select_if(is.character) %>% 
+  colnames()
+```
+```{r}
+chop_header_cleaner <- chop_header %>% 
+  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(start, format = "%Y-%m-%dT%H:%M:%OSZ"))))%>% 
+  mutate_if(is.character, str_to_lower) %>% 
+  select(-c(date, start, stop, week, turbot))
+```
+```{r}
+tag_join %>% 
+  select_if(is.character) %>% 
+  colnames()
+```
+```{r}
+tag_join_cleaner <-  tag_join %>% 
+  mutate(sex = ifelse(tag_join$sex == "X", "Unknown", tag_join$sex)) %>% 
+   mutate_if(is.character, str_to_lower) %>%
+  select(-c(sect, unit))
+```
+```{r}
+unique(tag_join_cleaner$sex)
+#Not sure what the value of egg_ret supposed to be
+unique(tag_join_cleaner$egg_ret)
+```
+
+## Data Dictionaries
+
+### Chop Recovery Count
+
+```{r}
+percent_na <- chop_recovery_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+
+
+counts_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
+                          description = c("Environment ID",
+                                          "Colour of tag applied to carcass",
+                                          "Sect", 
+                                          "Unit",
+                                          "Carcass that were chopped and male",
+                                          "Carcass that were chopped and female",
+                                          "Grilse carcass that were chopped and male",
+                                          "Grilse carcass that were chopped and female",
+                                          "Spawn",
+                                          "Recovery ID",
+                                          "Date and time of survey"),
+                          percent_na = round(percent_na$value*100))
+
+kable(counts_data_dictionary)
+```
+###Chop Tag Count
+
+```{r}
+percent_na <- tag_join_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+```
+
+```{r}
+tag_counts_data_dictionary <- tibble(variables = colnames(tag_join_cleaner),
+                          description = c("Tag number",
+                                          "Fin length",
+                                          "Sex", 
+                                          "Egg Retained?",
+                                          "Recovery ID"),
+                          percent_na = round(percent_na$value*100))
+
+kable(tag_counts_data_dictionary)
+```
+
+### Survey
+
+```{r}
+percent_na <- chop_header_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+
+header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
+                          description = c("Chop Environment ID",
+                                          "Tag Colour",
+                                          "Crew memeber initials that collected",
+                                          "Individual of crew member who recorded",
+                                          "Weather",
+                                          "Comments",
+                                          "Date and time of survey"),
+                          percent_na = round(percent_na$value*100,
+                                             digits = 1))
+
+kable(header_data_dictionary)
+```
+
+## Save cleaned data back to google cloud (TBA)
+
+```{r}
+# Name file [watershed]_[data type].csv
+```
+
 
 
