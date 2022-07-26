@@ -202,7 +202,7 @@ feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>%
   glimpse
 
 feather_released <- feather_mark_recap %>% 
-  select(stream, release_id, site, release_date, number_released, median_fork_length_released) %>% 
+  select(stream, release_id, site, release_date, release_time, number_released, median_fork_length_released) %>% 
   distinct() %>% 
   glimpse
   

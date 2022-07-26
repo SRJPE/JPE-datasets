@@ -41,8 +41,8 @@ selected_release <- Release %>%
   full_join(selected_released_fish, by = c("releaseID" = "releaseID")) %>%
   filter(releasePurposeID == 1) %>% 
   select(releaseID, releaseSiteID, nReleased, releaseTime, median_fork_length_released) %>% 
-  mutate(release_date = as_date(releaseTime)) %>% 
-  select(-releaseTime) %>% glimpse
+  mutate(release_date = as_date(releaseTime),
+         release_time = hms::as_hms(releaseTime)) %>% glimpse
 
 # Check catch ID 
 catch_trap_id <- CatchRaw$trapVisitID %>% unique() %>% sort()
@@ -63,6 +63,7 @@ catch_with_date <- selected_catch %>%
   mutate(efficiency = number_recaptured/nReleased) %>% 
   glimpse()
 
+# catch_with_date$release_time %>% unique()
 unique(selected_release$median_fork_length_recaptured)
 unique(catch_with_date$median_fork_length_recaptured)
 
@@ -89,3 +90,5 @@ catch_with_date %>%
 
 # Save data 
 write_rds(catch_with_date, "data/rst/feather_mark_recapture_data.rds")
+
+write_csv(catch_with_date, "data/rst/feather_mark_recapture.csv")
