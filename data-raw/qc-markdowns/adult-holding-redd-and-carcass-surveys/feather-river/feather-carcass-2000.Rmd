@@ -80,6 +80,9 @@ write_csv(TagData, "TagDataTBL_2000.csv")
 
 TagEnv <- sqlFetch(con, "TagEnvTBL")
 write_csv(TagEnv, "TagEnvTBL_2000.csv")
+
+cwt <- sqlFetch(con, "cwtTBL")
+write_csv(cwt, "cwt_2000.csv")
 ```
 
 
@@ -145,9 +148,14 @@ TagData_raw <- read_csv("TagData_2000.csv") %>%
   rename("TagNum" = "TagID") %>% 
   glimpse()
 
-#Heading Infor for Tagging Data Sheet
+#Heading Info for Tagging Data Sheet
 TagEnv_raw <- read_csv("TagEnvTBL_2000.csv") %>% 
   glimpse()
+
+#Coded Wiretag Info
+
+cwt_raw <- read_csv("cwt_2000.csv") %>% 
+  glimpse
 ```
 
 ## Data transformations
@@ -168,6 +176,9 @@ tag_join <- left_join(TagData_raw, RecovTag_raw) %>%
 
 chop_header <- ChopEnv_raw %>% 
   clean_names()
+
+cwt <- cwt_raw %>% 
+  clean_names()
 ```
 
 # Recovery 
@@ -181,6 +192,10 @@ The `tag_join` table contains additional tag information
 ### Survey
 
 The `chop_header` table contains survey metadata and covariates
+
+#CWT
+
+The `cwt` table contains coded wire tag information. It is not joined with the other tables.
 
 ## Explore Numeric Variables: {.tabset}
 
@@ -411,7 +426,10 @@ total_tags_summary %>%
 ```
 
 ```{r}
-# Add finlength chart
+tag_join %>% 
+  mutate(sex = ifelse(tag_join$sex == "X", "Unknown", tag_join$sex)) %>% 
+  ggplot(aes(x = sex, y = fl)) + 
+  geom_boxplot()
 ```
 
 ### Variable: `female_tag`, `male_tag`, `unknown_tag`
@@ -488,8 +506,13 @@ total_tags_with_dates_summary %>%
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "Date", 
        y = "Male Tag") +
-  theme_minimal() + 
+  theme_minimal() +
   theme(text = element_text(size = 15))
+```
+
+
+```{r}
+theme(text = element_text(size = 15))
 ```
 
 ```{r}
@@ -508,6 +531,37 @@ summary(chop_header$tag_col)
 ```{r}
 summary(chop_header$week_num)
 ```
+
+```{r}
+cwt %>% 
+  select_if(is.numeric) %>% 
+  colnames()
+```
+```{r}
+summary(cwt$cwt_id)
+```
+```{r}
+summary(cwt$sect)
+```
+```{r}
+summary(cwt$unit)
+```
+
+```{r}
+summary(cwt$ht_num)
+```
+
+```{r}
+unique(cwt$sex)
+cwt %>% 
+  mutate(sex = ifelse(cwt$sex == "X", "Unknown", cwt$sex)) %>% 
+  ggplot(aes(x = sex, y = fl)) + 
+  geom_boxplot() +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))
+```
+
+
 
 ## Explore Categorical variables: {.tabset}
 
@@ -554,6 +608,22 @@ unique(tag_join_cleaner$sex)
 #Not sure what the value of egg_ret supposed to be
 unique(tag_join_cleaner$egg_ret)
 ```
+
+```{r}
+cwt %>% 
+  select_if(is.character) %>% 
+  colnames()
+```
+```{r}
+cwt_cleaner <- cwt %>% 
+  mutate(sex = ifelse(cwt$sex == "X", "Unknown", cwt$sex)) %>% 
+  mutate_if(is.character, str_to_lower) %>%
+  glimpse
+
+unique(cwt_cleaner$sex)
+unique(cwt_cleaner$egg_ret)
+```
+
 
 ## Data Dictionaries
 
@@ -620,6 +690,29 @@ header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
                                              digits = 1))
 
 kable(header_data_dictionary)
+```
+
+### CWT
+```{r}
+percent_na <- cwt_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+
+cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
+                          description = c("CWT ID",
+                                          "Date of survey",
+                                          "Sect",
+                                          "Unit",
+                                          "Fin length",
+                                          "Sex",
+                                          "Egg retained?",
+                                          "Ht Num?",
+                                          "CWT Code",
+                                          "Comments"),
+                          percent_na = round(percent_na$value*100,
+                                             digits = 1))
+
+kable(cwt_data_dictionary)
 ```
 
 ## Save cleaned data back to google cloud (TBA)
