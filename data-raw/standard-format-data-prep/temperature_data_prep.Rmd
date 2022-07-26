@@ -700,7 +700,9 @@ WLK_daily_temps <- WLK_USGS %>%
   select(Date, temp_degC =  X_00010_00003) %>%
   filter(lubridate::year(Date) >= 1995) %>%
   as_tibble() %>% 
-  rename(date = Date)
+  rename(date = Date) %>% 
+  filter(year(date) > 2000) %>%
+  glimpse
 
 # Date Ranges
 tail(WLK_daily_temps$date, n = 1)
@@ -778,11 +780,11 @@ CDEC and USSGS temperature data is available for Tisdale
 # date must be last 10 years
 # Elevation : 635.5 m 
 # Link https://www.ncdc.noaa.gov/cdo-web/datasets/GHCND/stations/GHCND:USR0000CCOU/detail
-
+NOAA_KEY <- 'IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch'
 
 tisdale_air_gage <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USC00R0000CCOU',
-                         datatypeid = 'TAVG', startdate = '1995-01-01',
-                         enddate = '2007-04-12', token = NOAA_KEY, limit = 130)
+                         datatypeid = 'TAVG', startdate = '2000-01-01',
+                         enddate = '2007-04-12', token = NOAA_KEY, limit = 130) %>% glimpse
 
 tisdale_air_gage1 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CCOU', 
                          datatypeid = 'TAVG', startdate = '2005-01-01', 
