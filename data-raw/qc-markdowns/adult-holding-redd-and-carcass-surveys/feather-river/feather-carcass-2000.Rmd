@@ -53,6 +53,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
 ```
+
 Read in data from google cloud, glimpse raw data and domain description sheet:
 ```{r}
 DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
@@ -306,7 +307,7 @@ chop_recovery_join %>%
   ggplot(aes(x = date, y = grilse_male)) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "Date", 
-       y = "Grisle Male") +
+       y = "Grilse Male") +
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 ```
@@ -318,7 +319,7 @@ chop_recovery_join %>%
   ggplot(aes(x = date, y = grilse_female)) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "Date", 
-       y = "Grisle Male") +
+       y = "Grilse Female") +
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 ```

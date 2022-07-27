@@ -1,0 +1,268 @@
+---
+title: "Feather Carcass QC 2001"
+author: "Inigo Peng"
+date: '2022-07-21'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+library(janitor)
+library(hms) #?as_hms()
+library(RODBC)
+library(knitr)
+```
+
+# Feather River Carcass Data
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+**Video Season:** 
+
+**Completeness of Record throughout timeframe:** 
+
+**Sampling Location:**
+
+**Data Contact:** 
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
+Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+```
+
+```{r}
+DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2001.mdb"
+PATH <- paste0(DRIVERINFO, "DBQ=", MDBPATH)
+
+con <- odbcDriverConnect(PATH)
+
+sqlTables(con)$TABLE_NAME
+
+ChopEnv_raw <- sqlFetch(con, "ChopEnvTBL")
+write_csv(ChopEnv_raw, "ChopEnv_2001.csv")
+
+RecovTag_raw <- sqlFetch(con, "RecovTagTBL")
+write_csv(RecovTag_raw, "RecovTag_2001.csv")
+
+ChopRecov_raw <- sqlFetch(con,"ChopRecovTBL")
+write_csv(ChopRecov_raw, "ChopRecov_2001.csv")
+
+cwt_raw <- sqlFetch(con, "cwtTBL")
+write_csv(cwt_raw, "cwt_2001.csv")
+
+TagData_raw <- sqlFetch(con, "TagDataTBL")
+write_csv(TagData_raw, "TagData_2001.csv")
+
+TagEnv_raw <- sqlFetch(con, "TagEnvTBL")
+write_csv(TagEnv_raw, "TagEnv_2001.csv")
+```
+
+```{r}
+#Heading Info for Chopped Data
+ChopEnv_raw <- read_csv("ChopEnv_2001.csv") %>% 
+  # mutate("Start" = as_hms("Start")) %>%
+  glimpse()
+
+#Data collection for Chopping and Spawning to determine how many carcasses are being captured (link by recovID)
+ChopRecov_raw <-read_csv("ChopRecov_2001.csv") %>% 
+  glimpse()
+
+RecovTag_raw <- read_csv("RecovTag_2001.csv") %>% 
+  # rename("ID" = HeaderID) %>% 
+  glimpse()
+
+#tag colour lookup table
+# TagCol_raw <- read_csv("TagCol_2001.csv") %>% 
+  # glimpse()
+
+#Data for Tagging DataSheet - for some reason when export access table to excel, Tag Number is automatically changed to TagID
+#Link to RecovTag table
+TagData_raw <- read_csv("TagData_2001.csv") %>% 
+  rename("TagNum" = "TagID") %>% 
+  glimpse()
+
+#Heading Info for Tagging Data Sheet
+TagEnv_raw <- read_csv("TagEnv_2001.csv") %>% 
+  glimpse()
+
+#Coded Wiretag Info
+
+cwt_raw <- read_csv("cwt_2001.csv") %>% 
+  glimpse
+```
+
+## Data transformations
+
+```{r}
+#1. Link ChopRecov with ChopEnv to get the date
+chop_recovery_join <- full_join(ChopEnv_raw %>% select(Date, Time, ChopEnvID), ChopRecov_raw ) %>%
+  clean_names() %>%  
+  rename(male_chop = "male",
+         female_chop = "fem",
+         grilse = "gril")
+
+tag_join <- left_join(TagData_raw, RecovTag_raw) %>% 
+  clean_names() %>% 
+  select(c(tag_num, sect, fl, sex, egg_ret, recov_id))
+
+chop_header <- ChopEnv_raw %>% 
+  clean_names()
+
+cwt <- cwt_raw %>% 
+  clean_names()
+```
+
+# Recovery 
+
+The `chop_recovery_join` table contains recovered carcass counts 
+
+# Tags
+
+The `tag_join` table contains additional tag information 
+
+### Survey
+
+The `chop_header` table contains survey metadata and covariates
+
+#CWT
+
+The `cwt` table contains coded wire tag information. It is not joined with the other tables.
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables 
+chop_recovery_join %>% 
+  select_if(is.numeric) %>%
+  colnames()
+```
+### Variable: `chop_env_id`, `sect`, `minute`
+```{r}
+summary(chop_recovery_join$chop_env_id)
+```
+```{r}
+summary(chop_recovery_join$sect)
+```
+```{r}
+summary(chop_recovery_join$minute)
+```
+* `r round(sum(is.na(chop_recovery_join$minute))/nrow(chop_recovery_join), 3) * 100` % of values in the `minute` column are NA.
+
+### Variable: `male_chop`, `female_chop`, `grilse_male`, `grilse_female`, `spawn`
+```{r}
+summary(chop_recovery_join$male_chop)
+```
+```{r}
+summary(chop_recovery_join$female_chop)
+```
+
+**Plotting male_chop  over Period of Record**
+
+```{r}
+chop_recovery_join %>% 
+  ggplot(aes(x = date, y = male_chop)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "Male Chop") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting female_chop over Period of Record**
+
+```{r}
+chop_recovery_join %>% 
+  ggplot(aes(x = date, y = female_chop)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "Female Chop") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+```{r}
+total_chops <- chop_recovery_join %>% 
+  mutate(total_chops = male_chop + female_chop,
+         date = as_date(date)) %>% 
+  select(date, male_chop, female_chop, total_chops) %>% glimpse()
+
+total_chops_test <- total_chops %>% 
+  filter(date == as_date("2001-09-10"))
+nrow(total_chops) == (sum(total_chops$total_chops == (total_chops$male_chop + total_chops$female_chop)))
+
+total_chops_summary <- total_chops %>% 
+  group_by(date) %>% 
+  summarise(total_chops = sum(total_chops, na.rm = T),
+            male_chops = sum(male_chop, na.rm = T),
+            female_chops = sum(female_chop, na.rm = T))
+```
+```{r}
+total_chops_summary %>% 
+  pivot_longer(cols = c(male_chops, female_chops), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count/total_chops)) %>% 
+  ggplot(aes(x = date, y = proportions, fill = sex)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+This plot shows the gender proportion of chops for each day over the the period of 2001-09-10 to 2001-12-13. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. All of the Chop data have been identified for their sexes.
+
+```{r}
+#Assume gril is grilse
+summary(chop_recovery_join$grilse)
+```
+
+**Plotting grilse  over Period of Record**
+
+```{r}
+chop_recovery_join %>% 
+  ggplot(aes(x = date, y = grilse)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "Grilse") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting total daily grilse over Period of Record**
+```{r}
+chop_recovery_join %>% 
+  group_by(date) %>% 
+  summarise(total_grilse_chops = sum(grilse, na.rm = T)) %>% 
+  ggplot(aes(x = date, y = total_grilse_chops)) + 
+  geom_point(size = 1.4, alpha = .5, color = "red") +
+  labs(x = "Date",
+       y = "Total Grilse") +
+  theme_minimal() +
+  theme(text = element_text(size = 15))
+```
+
+
