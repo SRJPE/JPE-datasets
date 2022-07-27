@@ -1,0 +1,79 @@
+---
+title: "Knights Landing Catch Data Pull"
+output: html_document
+date: "2022-07-27"
+---
+
+This document queries the CAMP database provided by Nick Bauer (4/8/2022) to extract
+RST catch data for Knights Landing trap. Previous files QC'd Excel files provided by
+Jeanine Phillips.
+
+*Important to filter releaseID == 0 or releasedID == 255 to exclude recaptures*
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(Hmisc)
+library(lubridate)
+library(googleCloudStorageR)
+
+Sys.getenv("GCS_AUTH_FILE")
+Sys.getenv("GCS_DEFAULT_BUCKET")
+
+# Set up connection with CAMP access database 
+knights_access_db <- "/Users/ashleyvizek/code/CAMP_Knights.mdb"
+mdb.get(knights_access_db, tables = T)
+
+catch_raw <- mdb.get(knights_access_db, tables = "CatchRaw")
+trap_visit <- mdb.get(knights_access_db, tables = "TrapVisit")
+
+# pull lookup tables
+visit_type_lu <- mdb.get(knights_access_db, "luVisitType") %>% 
+  select(-activeID) %>%glimpse
+
+run_lu <- mdb.get(knights_access_db, "luRun") %>% 
+  select(-activeID) %>% glimpse
+
+run_method_lu <- mdb.get(knights_access_db, "luRunMethod") %>% 
+  select(-activeID) %>% glimpse
+
+lifestage_lu <- mdb.get(knights_access_db, "luLifeStage") %>% 
+  select(-activeID) %>% glimpse
+
+taxon_lu <-  mdb.get(knights_access_db, "luTaxon") %>% 
+  mutate(taxonID = as.numeric(taxonID)) %>%
+  select(taxonID, commonName) %>% glimpse
+
+origin_lu <-  mdb.get(knights_access_db, "luFishOrigin") %>% 
+  select(-activeID) %>% glimpse
+
+detach(package:Hmisc)
+# select relevant column
+selected_trap_visit <- trap_visit %>%
+  select(trapVisitID, visitTime, visitTime2) %>%
+  left_join(visit_type_lu, by = c("trapVisitID" = "visitTypeID")) %>%
+  glimpse
+
+selected_catch <- catch_raw %>% 
+  select(catchRawID, taxonID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID) %>% 
+  left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
+  filter(commonName == "Chinook salmon") %>% 
+  left_join(run_lu, by = c("finalRunID" = "runID")) %>%
+  left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
+  left_join(lifestage_lu, by = c("lifeStageID" = "lifeStageID")) %>%
+  left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID) %>%
+  left_join(selected_trap_visit) %>%
+  # filter out marked and recapture fish by selecting for only fish where release trial does not exist
+  filter(releaseID == 0 | releaseID == 255) %>% 
+  glimpse
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_catch,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/knights-landing/knights_catch_camp.csv",
+           predefinedAcl = "bucketLevel")
+
+```
