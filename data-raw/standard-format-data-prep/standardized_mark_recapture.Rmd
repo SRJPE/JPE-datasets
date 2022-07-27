@@ -14,6 +14,9 @@ library(tidyverse)
 library(googleCloudStorageR)
 
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089")
+
+Sys.getenv("GCS_DEFAULT_BUCKET")
+Sys.getenv("GCS_AUTH_FILE")
 ```
 
 ## Mark Recapture Data Standardization 
@@ -88,7 +91,7 @@ number recaptured per day not the total number recaptured
 #                saveToDisk = "../../data/rst/battle_mark_recapture.csv",
 #                overwrite = TRUE)
 
-battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>% 
+battle_mark_recap <- read_csv(here::here("data", "rst", "battle_mark_recapture.csv")) %>% 
   mutate(stream = "battle creek",
          site = "ubc",
          release_id = paste0("BAT", row_number())) %>%
@@ -135,10 +138,10 @@ number recaptured per day not the total number recaptured
 ```{r, message=FALSE, warning=FALSE}
 # gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
 #                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/rst/clear_mark_recapture.csv",
+#                saveToDisk = here::here("data", "rst", "clear_mark_recapture.csv"),
 #                overwrite = TRUE)
 
-clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>% 
+clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv")) %>% 
   mutate(stream = "clear creek",
          release_id = paste0("CLR", row_number()), 
          site = case_when(release_site == "CCRB" ~ "ucc", 
@@ -179,10 +182,10 @@ below that summarized the data by efficiency trial)
 ```{r, message=FALSE, warning=FALSE}
 # gcs_get_object(object_name = "rst/feather-river/data/feather_river_mark_recapture_data.csv",
 #                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/rst/feather_mark_recapture.csv",
+#                saveToDisk = here::here("data", "rst", "feather_mark_recapture.csv"),
 #                overwrite = TRUE)
 
-feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>% 
+feather_mark_recap <- read_csv(here::here("data", "rst", "feather_mark_recapture.csv")) %>% 
   filter(!is.na(releaseSiteID)) %>%
   rename(number_released = nReleased, 
          release_id = releaseID, 
@@ -224,7 +227,7 @@ below that summarized the data by efficiency trial)
 #                saveToDisk = "../../data/rst/knights_landing_mark_recapture.csv",
 #                overwrite = TRUE)
 
-knights_landing_mark_recap <- read_csv("../../data/rst/knights_landing_mark_recapture.csv") %>% 
+knights_landing_mark_recap <- read_csv(here::here("data", "rst", "knights_landing_mark_recapture.csv")) %>% 
   rename(number_released = nReleased, release_id = releaseID) %>% 
   mutate(stream = "sacramento river", 
          site = "knights landing",
