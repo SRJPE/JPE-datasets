@@ -1,5 +1,5 @@
 ---
-title: "combine temp data for trap locations"
+title: "Combine Temperature Data"
 output: 
   html_document:
   theme: flatly
@@ -21,24 +21,32 @@ library(hms)
 library(weathermetrics) 
 ```
 
-# Combine Temperature Data
-
-FlowWest received environmental data for temperature data from XXXX
+FlowWest aggregated environmental data for temperature data from XXXX
 monitoring programs:
 
 -   Feather River (source: RST monitoring data)
+-   Battle Creek (source: FWS)
+-   Butte Creek (source: CDEC)
+-   Clear Creek (source: FWS)
+-   Deer Creek (source: CDEC)
+-   Mill Creek (source: CDEC)
+-   Sacramento River (source for Tisdale: USGS; source for Knights
+    Landing: RST monitoring data)
+-   Yuba River (TODO)
 
 ### Rational for Data Sources:
 
--   Use USGS or CDEC
+The following decision heirarchyu was used to determine which datasets
+were used in the final temperature data aggregation:
 
-    -   Query-able, publicly available, QC'd, pipeline, hourly or daily
-
--   Available through FWS
-
--   If not available, use RST monitoring data
-
--   Otherwise model using air temperature regression
+1.  Is there publicly available data available through USGS or CDEC?
+    This data can easily be built into a data pipeline because it's
+    available through a query and publicly available. The data is also
+    QC'd and available at precise temporal scales like hourly.
+2.  If no, is there data available through Fish and Wildlife?
+3.  If no, is there RST temperature monitoring data available?
+4.  If no, perform linear regression on air temperature to get modeled
+    stream temperature for site
 
 ## Standard format for Temperature Data
 
@@ -56,7 +64,7 @@ Y - Yuba River)
 | source            | B, Bu, C, D, M, F | data source                                         |
 | location          | F                 | differentiates between `high flow` and `low flow`   |
 | mean_daily_temp_c | B, Bu, C, D, M, F | average daily temperature (degrees Celsius)         |
-| max_daily_temp_c  | TODO              | maximum daily temperature (degrees Celsius)         |
+| max_daily_temp_c  | B, C              | maximum daily temperature (degrees Celsius)         |
 
 # Pull in data and format {.tabset}
 
