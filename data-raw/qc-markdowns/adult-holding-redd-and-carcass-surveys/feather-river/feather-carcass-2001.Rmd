@@ -54,14 +54,18 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 ```{r}
+#Connect to microsoft access through RODBC
+#Use 
 DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
 MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2001.mdb"
 PATH <- paste0(DRIVERINFO, "DBQ=", MDBPATH)
 
 con <- odbcDriverConnect(PATH)
 
+# Show the different table names 
 sqlTables(con)$TABLE_NAME
 
+#Download table and write csv
 ChopEnv_raw <- sqlFetch(con, "ChopEnvTBL")
 write_csv(ChopEnv_raw, "ChopEnv_2001.csv")
 
@@ -83,14 +87,20 @@ write_csv(TagEnv_raw, "TagEnv_2001.csv")
 
 ```{r}
 #Heading Info for Chopped Data
+#Columns that were not in ChopEnv 2000: Flow and vis
 ChopEnv_raw <- read_csv("ChopEnv_2001.csv") %>% 
   # mutate("Start" = as_hms("Start")) %>%
   glimpse()
 
-#Data collection for Chopping and Spawning to determine how many carcasses are being captured (link by recovID)
+#Data collection for Chopping and Spawning to determine how many carcasses are being captured (link to the ChopEnv table using ChopEnvID)
+
 ChopRecov_raw <-read_csv("ChopRecov_2001.csv") %>% 
   glimpse()
 
+#There is Tag1 and Tag2- what is the difference?
+# In 2000 Carcass data, RecovTag table was joined to TagData table via TagNum; in this table, there are Tag1 and Tag2 - Join using these two columns?
+#What is TagComp?
+#Could join to ChopRecov_Raw using RecovID
 RecovTag_raw <- read_csv("RecovTag_2001.csv") %>% 
   # rename("ID" = HeaderID) %>% 
   glimpse()
@@ -102,10 +112,11 @@ RecovTag_raw <- read_csv("RecovTag_2001.csv") %>%
 #Data for Tagging DataSheet - for some reason when export access table to excel, Tag Number is automatically changed to TagID
 #Link to RecovTag table
 TagData_raw <- read_csv("TagData_2001.csv") %>% 
-  rename("TagNum" = "TagID") %>% 
+  rename("TagNum" = "TagID") %>%
   glimpse()
 
 #Heading Info for Tagging Data Sheet
+# Join via TagEnvID
 TagEnv_raw <- read_csv("TagEnv_2001.csv") %>% 
   glimpse()
 
@@ -123,11 +134,16 @@ chop_recovery_join <- full_join(ChopEnv_raw %>% select(Date, Time, ChopEnvID), C
   clean_names() %>%  
   rename(male_chop = "male",
          female_chop = "fem",
-         grilse = "gril")
+         grilse = "gril") %>% glimpse
 
 tag_join <- left_join(TagData_raw, RecovTag_raw) %>% 
   clean_names() %>% 
-  select(c(tag_num, sect, fl, sex, egg_ret, recov_id))
+  select(c(tag_num, sect, fl, sex, egg_ret, recov_id)) %>% 
+  glimpse
+
+#Not sure if joining chop_recovery table and tag table add any more insights
+chop_tag_join <- left_join(chop_recovery_join, tag_join) %>% 
+  glimpse
 
 chop_header <- ChopEnv_raw %>% 
   clean_names()
@@ -172,7 +188,7 @@ summary(chop_recovery_join$minute)
 ```
 * `r round(sum(is.na(chop_recovery_join$minute))/nrow(chop_recovery_join), 3) * 100` % of values in the `minute` column are NA.
 
-### Variable: `male_chop`, `female_chop`, `grilse_male`, `grilse_female`, `spawn`
+### Variable: `male_chop`, `female_chop`, `grilse`
 ```{r}
 summary(chop_recovery_join$male_chop)
 ```
@@ -264,5 +280,119 @@ chop_recovery_join %>%
   theme_minimal() +
   theme(text = element_text(size = 15))
 ```
+```{r}
+summary(chop_recovery_join$spawn)
+```
 
+```{r}
+tag_join %>% 
+  select_if(is.numeric) %>% 
+  colnames()
+```
 
+```{r}
+summary(tag_join$tag_num)
+```
+```{r}
+summary(tag_join$sect)
+```
+
+```{r}
+summary(tag_join$recov_id)
+```
+* `r round(sum(is.na(tag_join$recov_id))/nrow(tag_join), 3) * 100` % of values in the `recov_id` column are NA.
+
+**Plotting total count of each sex  over Period of Record**
+```{r}
+unique(tag_join$sex)
+#Since each row of tag_join is one count of the tag, a new column count with value of 1 is created. This value is assigned to the count of each sex
+#Pivot table to expand sex column to female_tag, male_tag, and unknown_tags file
+
+all_tags <- tag_join %>% 
+  mutate(tag_count = 1) %>% 
+  pivot_wider(names_from = sex, values_from = tag_count, values_fill = 0) %>% 
+  rename("unknown_tags" = X,
+         "male_tag" = M,
+         "female_tag" = F) 
+total_tags_summary <- all_tags%>% 
+  mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na
+         female_tag = ifelse(is.na(female_tag), 0, female_tag),
+         unknown_tags = ifelse(is.na(unknown_tags), 0, unknown_tags),
+         total_tags = unknown_tags + male_tag + female_tag) %>% 
+  select(male_tag, female_tag, unknown_tags, total_tags) %>% 
+  summarise(total_tags = sum(total_tags),
+            male_tags = sum(male_tag),
+            female_tags = sum(female_tag),
+            unknown_tags = sum(unknown_tags))
+```
+```{r}
+total_tags_summary %>% 
+  pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_tags)) %>% 
+  ggplot(aes(x = sex, y = proportions)) +
+  geom_col() +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Sex") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+```{r}
+tag_join %>% 
+  mutate(sex = ifelse(tag_join$sex == "X", "Unknown Tags", tag_join$sex)) %>% 
+  ggplot(aes(x = sex, y = fl)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(y = "FL", x = "Sex")
+```
+### Variable: `female_tag`, `male_tag`, `unknown_tag`
+
+**Numeric Summary of `female_tag`, `male_tag`,`unknown_tag`**
+
+```{r}
+summary(all_tags$male_tag)
+```
+* `r round(sum(is.na(total_tags$male_tag))/nrow(total_tags), 3) * 100` % of values in the `male_tag` column are NA.
+
+```{r}
+summary(all_tags$female_tag)
+```
+* `r round(sum(is.na(tag_chop_join$female_tag))/nrow(tag_chop_join), 3) * 100` % of values in the `female_tag` column are NA.
+
+```{r}
+summary(all_tags$unknown_tags)
+```
+
+* `r round(sum(is.na(tag_chop_join$unknown_tags))/nrow(tag_chop_join), 3) * 100` % of values in the `unknown_tags` column are NA.
+
+```{r}
+#Join tags data with chop recovery to visualize tags applied
+
+tags_with_dates <- left_join(all_tags, chop_recovery_join)%>% glimpse
+  # filter(!is.na(date)) %>% glimpse
+
+total_tags_with_dates <- tags_with_dates%>% 
+  mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na
+         female_tag = ifelse(is.na(female_tag), 0, female_tag),
+         unknown_tags = ifelse(is.na(unknown_tags), 0, unknown_tags),
+         total_tags = unknown_tags + male_tag + female_tag) %>% 
+  select(date, male_tag, female_tag, unknown_tags, total_tags)
+
+total_tags_with_dates_summary <- total_tags_with_dates %>%
+  group_by(date) %>%
+  summarise(total_tags = sum(total_tags, na.rm = T),
+            male_tags = sum(male_tag, na.rm = T),
+            female_tags = sum(female_tag, na.rm = T),
+            unknown_tags = sum(unknown_tags, na.rm = T))
+
+total_tags_with_dates_summary %>% 
+  pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_tags)) %>% 
+  ggplot(aes(x = date, y = proportions, fill = sex)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red", "Black"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male", "Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+#Lots of NA Dates - making plots over period of time will not be as informative
+```
