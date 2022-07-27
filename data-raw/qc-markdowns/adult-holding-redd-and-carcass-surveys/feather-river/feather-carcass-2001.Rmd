@@ -18,7 +18,9 @@ library(janitor)
 library(hms) #?as_hms()
 library(RODBC)
 library(knitr)
+library(wesanderson)
 ```
+
 
 # Feather River Carcass Data
 
@@ -141,10 +143,6 @@ tag_join <- left_join(TagData_raw, RecovTag_raw) %>%
   select(c(tag_num, sect, fl, sex, egg_ret, recov_id)) %>% 
   glimpse
 
-#Not sure if joining chop_recovery table and tag table add any more insights
-chop_tag_join <- left_join(chop_recovery_join, tag_join) %>% 
-  glimpse
-
 chop_header <- ChopEnv_raw %>% 
   clean_names()
 
@@ -219,6 +217,9 @@ chop_recovery_join %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 ```
+**Plotting total_chops over Period of Record**
+
+
 ```{r}
 total_chops <- chop_recovery_join %>% 
   mutate(total_chops = male_chop + female_chop,
@@ -235,6 +236,13 @@ total_chops_summary <- total_chops %>%
             male_chops = sum(male_chop, na.rm = T),
             female_chops = sum(female_chop, na.rm = T))
 ```
+```{r}
+total_chops_summary %>% 
+  ggplot(aes(x = date, y = total_chops)) +
+  geom_col() + 
+  theme_minimal()
+```
+**Plotting daily proportions of male and female chop**
 ```{r}
 total_chops_summary %>% 
   pivot_longer(cols = c(male_chops, female_chops), names_to = "sex", values_to = "count") %>% 
@@ -363,6 +371,8 @@ summary(all_tags$unknown_tags)
 
 * `r round(sum(is.na(tag_chop_join$unknown_tags))/nrow(tag_chop_join), 3) * 100` % of values in the `unknown_tags` column are NA.
 
+**Plotting tags sex proportion with dates over Period of Record**
+
 ```{r}
 #Join tags data with chop recovery to visualize tags applied
 
@@ -395,4 +405,146 @@ total_tags_with_dates_summary %>%
   labs(y = "Proportion", x = "Date") +
   scale_fill_manual(values = wes_palette("Moonrise2"))
 #Lots of NA Dates - making plots over period of time will not be as informative
+```
+
+**Plotting total tags over Period of Record**
+
+```{r}
+total_tags_with_dates_summary %>% 
+  ggplot(aes(x = date, y = total_tags)) +
+  geom_col() +
+  theme_minimal()
+```
+```{r}
+total_carcass <- full_join(total_chops_summary, total_tags_with_dates_summary) %>% 
+  select(date, total_chops, total_tags) %>% 
+  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+
+full_join(total_chops_summary, total_tags_with_dates_summary) %>% 
+  select(date, total_chops, total_tags) %>% 
+  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+
+ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
+  geom_col() +
+  theme_minimal() +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+There are significantly number of tags versus chops. However a large amount of tags do not have dates to them.
+
+```{r}
+chop_header %>% 
+  select_if(is.numeric) %>% 
+  colnames()
+```
+
+```{r}
+summary(chop_header$chop_env_id)
+```
+```{r}
+summary(chop_header$week)
+```
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+chop_recovery_join %>% 
+  select_if(is.character) %>%
+  colnames()
+```
+## Clean data
+
+Fix inconsistencies with spelling, capitalization, and dates
+
+```{r}
+chop_recovery_cleaner <- chop_recovery_join %>%
+  # mutate(time = ifelse(is.na(chop_recovery_join$time), as.POSIXlt(strptime("07:00:00", format = "%H:%M:%S")), chop_recovery_join$time)) %>% glimpse
+  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>% 
+  mutate_if(is.character, str_to_lower) %>%
+  select(-c(date, time))
+  glimpse
+```
+
+```{r} 
+chop_header_cleaner <- chop_header %>% 
+  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>% 
+  mutate_if(is.character, str_to_lower) %>%
+  #rmoved flow and vis as we have not seen these columns in other datasets
+  select(-c(date, time, flow, vis)) %>% glimpse
+
+```
+```{r}
+tag_cleaner <- tag_join %>% 
+    mutate_if(is.character, str_to_lower) %>%
+  glimpse
+```
+
+## Data Dictionaries
+
+### Chops Data
+```{r}
+percent_na <- chop_recovery_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+
+
+chop_counts_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
+                          description = c("ID",
+                                          "Sect",
+                                          "Chan", 
+                                          "Minute",
+                                          "Carcass that were chopped and sex was male",
+                                          "Carcass that were chopped and sex was female",
+                                          "Carcass that were chopped and grilse",
+                                          "Recovery ID",
+                                          "Date and time of survey"),
+                          percent_na = round(percent_na$value*100))
+
+kable(chop_counts_data_dictionary)
+
+```
+### Tags Data
+```{r}
+percent_na <- tag_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+
+
+tags_counts_data_dictionary <- tibble(variables = colnames(tag_cleaner),
+                          description = c("Tag number",
+                                          "Sect",
+                                          "Fin lenght", 
+                                          "Sex",
+                                          "Egg retained",
+                                          "Recovery ID"),
+                          percent_na = round(percent_na$value*100))
+
+kable(tags_counts_data_dictionary)
+
+```
+
+### Survey
+```{r}
+
+percent_na <- chop_header_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+
+chop_header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
+                          description = c("ID",
+                                          "Crew memeber initials that collected",
+                                          "Individual of crew member who recorded",
+                                          "Colour of tag carcass",
+                                          "Weather",
+                                          "Comments",
+                                          "Week Number",
+                                          "Datetime"),
+                          percent_na = round(percent_na$value*100))
+
+kable(chop_header_data_dictionary)
+```
+
+## Save cleaned data back to google cloud (TBA)
+
+```{r}
+# Name file [watershed]_[data type].csv
 ```

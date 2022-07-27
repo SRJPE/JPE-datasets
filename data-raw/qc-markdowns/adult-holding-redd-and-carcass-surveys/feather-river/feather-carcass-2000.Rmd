@@ -506,6 +506,7 @@ total_tags_with_dates_summary %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 ```
+**Plotting male_tag over Period of Record**
 ```{r}
 total_tags_with_dates_summary %>% 
   ggplot(aes(x = date, y = female_tags)) +
@@ -516,9 +517,27 @@ total_tags_with_dates_summary %>%
   theme(text = element_text(size = 15))
 ```
 
+**Plotting total tags over Period of Record**
 
 ```{r}
-theme(text = element_text(size = 15))
+total_tags_with_dates_summary %>% 
+  ggplot(aes(x = date, y = total_tags)) +
+  geom_col() +
+  theme_minimal()
+```
+```{r}
+total_carcass <- full_join(total_chops_summary, total_tags_with_dates_summary) %>% 
+  select(date, total_chops, total_tags) %>% 
+  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+
+full_join(total_chops_summary, total_tags_with_dates_summary) %>% 
+  select(date, total_chops, total_tags) %>% 
+  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+
+ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
+  geom_col() +
+  theme_minimal() +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
 ```
 
 ```{r}
