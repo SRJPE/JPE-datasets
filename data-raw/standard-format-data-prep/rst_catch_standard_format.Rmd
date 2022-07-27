@@ -92,9 +92,14 @@ clear_environmental <- read_csv("data/rst/clear_rst_environmental.csv")
 feather_effort <- read_csv("data/rst/feather_rst_effort.csv")
 knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
 
-# Knights landing data pulled from camp
-# TODO add to cloud (this dataset was shared later and has not yet been added to cloud)
-knights_landing_rst <- read_rds("data/rst/knights_landing_raw_catch.rds")
+# Knights landing data pulled from camp (knights_camp_catch_data.Rmd)
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/knights_catch_camp.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/knights_catch.csv",
+               overwrite = TRUE)
+
+knights_landing_rst <- read_csv("data/rst/knights_catch.csv")
+
 ```
 
 # Data formatting {.tabset}
@@ -178,7 +183,8 @@ battle_rst_min <- battle_rst_clean %>%
 
 battle_trap_clean <- battle_environmental %>%
   # use sample date because this is the date the trap would have been checked
-  select(sample_date)
+  select(sample_date) %>% 
+  distinct()
 
 battle_trap_min <- battle_trap_clean %>% 
   mutate(wy = ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))) %>% 
@@ -288,7 +294,8 @@ clear_rst_min <- clear_rst_clean %>%
 clear_trap_clean <- clear_environmental %>%
   rename(site = station_code) %>%
   # use sample date because this is the date the trap would have been checked
-  select(site, sample_date)
+  select(site, sample_date) %>% 
+  distinct()
 
 clear_trap_min <- clear_trap_clean %>% 
   mutate(wy = ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))) %>% 
@@ -382,7 +389,8 @@ feather_rst_min <- feather_rst_clean %>%
 feather_trap_clean <- feather_effort %>%
   rename(site = site_name) %>%
   # use sample date because this is the date the trap would have been checked
-  select(date, site)
+  select(date, site) %>% 
+  distinct()
 
 feather_trap_min <- feather_trap_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -492,7 +500,7 @@ unique(knights_landing_rst$lifeStage)
 filter(knights_landing_rst, fishOrigin == "Unknown") %>% tally()
 
 knights_rst_clean <- knights_landing_rst %>%
-  select(-c(catchRawID, trapVisitID, lifeStageCAMPID, visitTime2, visitType)) %>%
+  select(-c(catchRawID, trapVisitID, lifeStageCAMPID, visitTime2, visitType, releaseID)) %>%
   rename(count = n,
          date = visitTime,
          fork_length = forkLength,
@@ -514,7 +522,8 @@ knights_rst_min <- knights_rst_clean %>%
 
 knights_trap_clean <- knights_effort %>%
   # use sample date because this is the date the trap would have been checked
-  select(date)
+  select(date) %>% 
+  distinct()
 
 knights_trap_min <- knights_trap_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
