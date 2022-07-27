@@ -92,6 +92,13 @@ catch_with_date %>%
   geom_point()
 
 # Save data 
-write_rds(catch_with_date, "data/rst/feather_mark_recapture_data.rds")
+# write_rds(catch_with_date, "data/rst/feather_mark_recapture_data.rds")
+# 
+# write_csv(catch_with_date, "data/rst/feather_mark_recapture.csv")
 
-write_csv(catch_with_date, "data/rst/feather_mark_recapture.csv")
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(combined_release,
+           object_function = f,
+           type = "csv",
+           name = "rst/feather-river/data/feather_mark_recapture_data.csv")
