@@ -1,0 +1,137 @@
+---
+title: "Feather Carcass QC 2002"
+author: "Inigo Peng"
+date: '2022-07-25'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+library(janitor)
+library(hms) #?as_hms()
+library(RODBC)
+library(knitr)
+library(wesanderson)
+```
+
+
+# Feather River Carcass Data
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+**Video Season:** 
+
+**Completeness of Record throughout timeframe:** 
+
+**Sampling Location:**
+
+**Data Contact:** 
+
+Any additional info?
+
+## Access Cloud Data
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
+Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+```
+
+```{r}
+#Connect to microsoft access through RODBC
+#Use 
+DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2002.mdb"
+PATH <- paste0(DRIVERINFO, "DBQ=", MDBPATH)
+
+con <- odbcDriverConnect(PATH)
+
+# Show the different table names 
+sqlTables(con)$TABLE_NAME
+
+#Download table and write csv
+ChopChannel_1 <- sqlFetch(con, "ChopChannelTBL")
+ChopChannel_2 <- sqlFetch(con, "ChopChannelTBL2")
+ChopChannel_raw <- bind_rows(ChopChannel_1, ChopChannel_2)
+write_csv(ChopChannel_raw, "ChopChannel_2002.csv")
+
+ChopRecov_1 <- sqlFetch(con,"ChopRecovTBL")
+ChopRecov_2 <- sqlFetch(con, "ChopRecovTBL2")
+ChopRecov_raw <- bind_rows(ChopRecov_1, ChopRecov_2)
+write_csv(ChopRecov_raw, "ChopRecov_2002.csv")
+
+ChopHeader_1 <- sqlFetch(con,"ChopHeaderTBL")
+ChopHeader_2 <- sqlFetch(con, "ChopHeaderTBL2")
+ChopHeader_raw <- bind_rows(ChopHeader_1, ChopHeader_2)
+write_csv(ChopHeader_raw, "ChopHeader_2002.csv")
+
+
+cwt_1 <- sqlFetch(con, "CWTTagTBL") %>% 
+  select(-WeekNum)
+cwt_2 <- sqlFetch(con, "CWTTagTBL1") %>% 
+  mutate(SampNum = as.character(SampNum))
+cwt_raw <- bind_rows(cwt_1, cwt_2)
+write_csv(cwt_raw, "cwt_2002.csv")
+
+cwt_header_1 <- sqlFetch(con, "CWTHeaderTBL")
+cwt_header_2 <- sqlFetch(con, "CWTHeaderTBL1")
+cwt_header_raw <-  bind_rows(cwt_header_1, cwt_header_2)
+write_csv(cwt_header_raw, "CWTHeader_2002.csv")
+
+#Other tables include Steelhead Data and TagColLu
+```
+
+```{r}
+ChopChannel_raw <- read_csv("ChopChannel_2002.csv") %>% 
+  rename("ID" = HeaderID) %>% 
+  glimpse()
+
+ChopRecov_raw <- read_csv("ChopRecov_2002.csv") %>% glimpse
+
+ChopHeader_raw <- read_csv("ChopHeader_2002.csv") %>% 
+  rename("ID" = headerID) %>%
+  glimpse()
+
+cwt_raw <- read_csv("cwt_2002.csv") %>% glimpse()
+
+cwt_header_raw <- read_csv("CWTHeader_2002.csv")
+```
+## Data transformations
+
+```{r}
+#1. chopchannel table (with dates and tag color)
+chop_channel_join <- full_join(ChopHeader_raw %>% 
+                                 select(ID, TagCol, Date, Time),
+                               ChopChannel_raw) %>% 
+  clean_names() %>% 
+  rename("male_chop" = male,
+         "female_chop" = fem,
+         "grilse" = gril) %>% glimpse()
+
+chop_recovery_join <- full_join(ChopHeader_raw %>% 
+                                  select(ID, Date, Time),
+                                ChopRecov_raw %>% 
+                                  rename(ID = RecovID))  %>% 
+  clean_names()
+
+chop_header <- ChopHeader_raw %>% 
+  clean_names()
+```
+
