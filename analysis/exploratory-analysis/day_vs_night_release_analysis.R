@@ -4,6 +4,7 @@ library(googleCloudStorageR)
 library(knitr)
 library(hms)
 library(zoo)
+library(suncalc)
 
 
 # Input google cloud bucket information 
@@ -42,13 +43,23 @@ release_raw %>%
   #           max = as_datetime(as.numeric(max(release_time, na.rm = T)))
   #           )
 
-
+watershed <- "battle creek"
+sites = "ubc"
 plot_day_or_night <- function(watershed, sites) {
 night_releases <- release_raw %>% 
+  mutate(release_date = as_date(release_date), 
+         night_end = hms::as_hms(suncalc::getSunlightTimes(date = release_date, 
+                                            lat = 38.575764, 
+                                            lon = -121.478851, tz = "UTC", keep = "nightEnd") %>% 
+           pull(nightEnd) - hours(7)),
+         night = hms::as_hms(suncalc::getSunlightTimes(date = release_date, 
+                                            lat = 38.575764, 
+                                            lon = -121.478851, tz = "UTC", keep = "night") %>% 
+           pull(night) - hours(7))) %>% 
   left_join(recapture_raw, 
             by = c("release_id" = "release_id", "stream" = "stream")) %>% 
-  filter(release_time < hms::as_hms('04:00:00') | 
-           release_time >= hms::as_hms('18:00:00'), 
+  filter(release_time < night_end | 
+           release_time >= night, 
          stream == watershed & site == sites) %>% 
   group_by(stream, site, release_id, release_time, release_date, number_released) %>%
   summarise(total_fish_recaptured = sum(number_recaptured, na.rm = TRUE),
@@ -59,6 +70,15 @@ print(paste("There are", nrow(night_releases), "night releases"))
 # 208 
 
 day_releases <- release_raw %>% 
+  mutate(release_date = as_date(release_date), 
+         day = hms::as_hms(suncalc::getSunlightTimes(date = release_date, 
+                                                           lat = 38.575764, 
+                                                           lon = -121.478851, tz = "UTC", keep = "goldenHourEnd") %>% 
+                                   pull(goldenHourEnd) - hours(7)),
+         day_end = hms::as_hms(suncalc::getSunlightTimes(date = release_date, 
+                                                       lat = 38.575764, 
+                                                       lon = -121.478851, tz = "UTC", keep = "goldenHour") %>% 
+                               pull(goldenHour) - hours(7))) %>% 
   left_join(recapture_raw, 
             by = c("release_id" = "release_id", "stream" = "stream")) %>% 
   filter(release_time < hms::as_hms('18:00:00') & 
@@ -71,21 +91,23 @@ day_releases <- release_raw %>%
 
 print(paste("There are", nrow(day_releases), "day releases"))
 
-# ttest
-# t.test(day_releases %>% pull(day_efficiency), night_releases %>% pull(night_efficiency))
+
 
 # boxplot 
-# bind_rows(night_releases, day_releases) %>% 
-#   pivot_longer(cols = c(night_efficiency, day_efficiency), 
-#                names_to = "timing", 
-#                values_to = "efficiency") %>%
-#   filter(efficiency < 1) %>% 
-#   ggplot() + 
-#   geom_boxplot(aes(x = efficiency, y = timing)) + 
-#   theme_minimal() + 
-#   labs(title = paste0("Day vs Night Efficiency (", watershed, ", ", sites, ")"), 
-#        y = " ", 
-#        x = "Efficiency") 
+bind_rows(night_releases, day_releases) %>%
+  pivot_longer(cols = c(night_efficiency, day_efficiency),
+               names_to = "timing",
+               values_to = "efficiency") %>%
+  filter(efficiency < 1) %>%
+  ggplot() +
+  geom_boxplot(aes(x = efficiency, y = timing)) +
+  theme_minimal() +
+  labs(title = paste0("Day vs Night Efficiency (", watershed, ", ", sites, ")"),
+       y = " ",
+       x = "Efficiency")
+
+# t test
+# t.test(day_releases %>% pull(day_efficiency), night_releases %>% pull(night_efficiency))
 
 # tibble(stream = watershed,
 #        site = sites,
