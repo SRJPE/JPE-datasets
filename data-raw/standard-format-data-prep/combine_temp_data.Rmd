@@ -19,6 +19,7 @@ library(CDECRetrieve)
 library(lubridate)
 library(hms)
 library(weathermetrics) 
+library(forecast)
 ```
 
 FlowWest aggregated environmental data for temperature data from XXXX
@@ -213,10 +214,11 @@ deer_format %>% ggplot() +
 # Two gages according to RST shiny app: 
 # - CDEC GRL
 # - CDEC FRA
+#cdec_datasets("GRL")
+#GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
 
-cdec_datasets("GRL")
-
-GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+#save(GRL_CDEC, file = "temp_data/GRL_cdec.Rdata")
+load('temp_data/GRL_cdec.Rdata')
 
 feather_river_temp_GRL <- GRL_CDEC %>%
   mutate(date = as_date(datetime),
@@ -237,9 +239,12 @@ feather_river_temp_GRL <- GRL_CDEC %>%
 # summary(feather_river_temp_GRL$date)
 
 # FRA
-cdec_datasets("FRA")
+#cdec_datasets("FRA")
 
-FRA_CDEC <- cdec_query(station = "FRA", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+# FRA_CDEC <- cdec_query(station = "FRA", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+
+#save(FRA_CDEC, file = "temp_data/FRA_cdec.Rdata")
+load('temp_data/FRA_cdec.Rdata')
 
 feather_river_temp_FRA <- FRA_CDEC %>%
   mutate(date = as_date(datetime),
@@ -406,7 +411,9 @@ ggplot() +
 
 ## Yuba
 
-```{r}
+In progress... 
+
+```{r eval=FALSE, include=FALSE}
 #TODO need to do air temp modeling, check temperature_data_prep for potential gages (if not there use noaa data)
 # TODO: pull temperature from RST data 
 
@@ -423,16 +430,151 @@ ggplot() +
   geom_line(data = yuba_rst_format, aes(x = date, y = mean_temp_degC))
 ```
 
-#### Compare to Air Data Linear Regression
+<!-- #### Other data available? -->
 
-```{r}
+<!-- * CDEC YRS - spatially far away from RST -->
 
-yuba_air <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp_air.rds"))
+```{r, eval=FALSE, include=FALSE}
+# limited USGS gage data 
+# USGS 11417500 S YUBA R A JONES BAR NR GRASS VALLEY CA
+# site_no=11417500
+
+#cdec_datasets('YRS')
+cdec_yrs <- cdec_query(station = "YRS", dur_code = "H", sensor_num = "25", start_date = "1996-01-01") 
+
+## TODO: convert to C from F
+cdec_yrs_format <- cdec_yrs %>% 
+  rename(source = agency_cd,
+         site = location_id, 
+         temperature_c = parameter_value,
+         date = datetime) %>%
+  mutate(date = as_date(date),
+         temperature_c = (temperature_c-32 * 5/9)) %>%
+  group_by(date) %>%
+  mutate(mean_temp_degC = mean(temperature_c, na.rm = TRUE),
+         max_temp_degC = max(temperature_c, na.rm = TRUE)) %>%
+  filter(mean_temp_degC > 0) %>%
+  glimpse
+  
+summary(cdec_yrs_format)
+#save(cdec_yrs_format, file = "temp_data/yrs_cdec.Rdata")
+load('temp_data/yrs_cdec.Rdata')
+
+
+ggplot() +
+  geom_line(data = cdec_yrs_format, aes(x = date, y = mean_temp_degC))
+```
+
+<!-- #### Compare to Air Data Linear Regression -->
+
+```{r, eval=FALSE, include=FALSE}
+
+yuba_monthly_agg <- yuba_rst_format %>% 
+  mutate(year = year(date), month = month(date)) %>%
+  group_by(year, month) %>%
+  summarise(mean_temp_degC = mean(mean_temp_degC, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(date = ymd(paste(year, month, '01', sep = '-'))) %>%
+  filter(!is.na(date)) %>%
+  select(date, mean_temp_degC) %>% glimpse
+
+yuba_air <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp_air.rds")) %>% 
+  mutate(year = year(date), month = month(date)) %>%
+  group_by(year, month) %>%
+  summarise(air_tempC = mean(air_tempC, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(date = ymd(paste(year, month, '01', sep = '-'))) %>%
+  filter(!is.na(date)) %>%
+  select(date, air_tempC) %>%
+  glimpse
 
 ggplot(yuba_air, aes(x=date, y = air_tempC)) +
   geom_line(color = "darkred") +
   labs(y = "Air temperature (deg C)") +
   theme(axis.text = element_text(size = 12))
+
+# combine water and air
+
+yuba_air_water <- yuba_monthly_agg %>%
+  left_join(yuba_air) %>%
+  filter(!is.na(air_tempC)) %>% glimpse()
+
+yuba_air_water %>%
+  ggplot(aes(x = air_tempC, y = mean_temp_degC)) +
+  geom_point() +
+  geom_smooth(method = 'lm', se = FALSE)
+
+yuba_temp_model <- lm(mean_temp_degC ~ air_tempC, data = yuba_air_water)
+summary(yuba_temp_model)
+
+yuba_temp_model$coefficients
+
+# air temp thresholds
+# MR: I don't really understand this section 
+y <- c(13, 14)
+air_temp_thresholds <- (y - yuba_temp_model$coefficients[[1]]) / yuba_temp_model$coefficients[[2]]
+
+yuba_air_water %>%
+  ggplot(aes(x = air_tempC, y = mean_temp_degC)) +
+  geom_point() +
+  geom_smooth(method = 'lm', se = FALSE) +
+  geom_vline(xintercept = air_temp_thresholds[1], alpha = .2) +
+  geom_vline(xintercept = air_temp_thresholds[2], alpha = .2) +
+  geom_hline(yintercept = 13) +
+  geom_hline(yintercept = 14)
+
+pred <- broom::augment(yuba_temp_model) %>% pull(.fitted)
+truth <- yuba_monthly_agg$mean_temp_degC
+#xtab <- table(pred > 11, truth > 11)
+#xtab <- table(pred > 12, truth > 12)
+
+# new stuff
+yuba_air_more_time <- yuba_air %>%
+  bind_rows(
+    tibble(date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
+           air_tempC = 0)
+  ) %>%
+  group_by(date) %>%
+  summarise(air_tempC = max(air_tempC, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(air_tempC = ifelse(air_tempC == 0, NA, air_tempC)) %>% glimpse
+
+
+ts_yuba <- ts(yuba_air_more_time$air_tempC, start = c(2000, 1), end = c(2020, 12), frequency = 12)
+
+na.interp(ts_yuba) %>% autoplot(series = 'Interpolated') +
+  forecast::autolayer(ts_yuba, series = 'Original')
+
+yuba_air_temp_c <- tibble(
+  date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
+  air_tempC = as.numeric(na.interp(ts_yuba)))
+
+
+yuba_air_temp_c %>%
+  ggplot(aes(x = date, y = air_tempC)) +
+  geom_col(fill = 'darkgoldenrod2') +
+  geom_col(data = yuba_air_temp_c, aes(x = date, y = air_tempC)) +
+  theme_minimal() +
+  labs(y = 'monthly mean air temperature (°C)')
+
+yuba_pred_water_temp <- predict(yuba_temp_model, yuba_air_temp_c)
+
+yuba_water_temp_c <- tibble(
+  date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
+  stream = 'yuba river',
+  mean_temp_degC = yuba_pred_water_temp) %>% 
+  mutate(source = "predicted water temperature") %>%
+  glimpse
+
+yuba_water_temp_c %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = mean_temp_degC), color = 'red') +
+  geom_line(data = yuba_air_temp_c, aes(y = air_tempC))
+
+summary(yuba_water_temp_c)
+
+yuba_format <-  yuba_water_temp_c
+
 ```
 
 # Combine temperature data {.tabset}
@@ -443,13 +585,10 @@ combined_temp <- bind_rows(battle_format,
                            clear_format,
                            deer_format,
                            feather_rst,
-                           # feather_hfc_format,
-                           # feather_lfc_format,
                            mill_format,
-                           sac_format
-                           # yuba_format,
-                           # knights_format,
-                           # tisdale_format
+                           sac_format,
+                           #yuba_format,
+                           #yuba_rst_format
                            ) %>%
   rename(mean_daily_temp_c  = mean_temp_degC) %>%
   glimpse()
