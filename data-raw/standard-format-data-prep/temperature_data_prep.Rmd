@@ -184,7 +184,8 @@ BCK_hourly_temps %>%
 # 1. Calculate the daily average temperature
 BCK_daily_temps <- BCK_hourly_temps %>% 
   group_by(date) %>% 
-  summarize(mean_temp_degC = mean(temp_degC)) 
+  summarize(mean_temp_degC = mean(temp_degC, na.rm = T),
+            max_temp_degC = max(temp_degC, na.rm = T)) 
 
 # 2. Check to see if applying rolling mean would help with outliers.
 butte_format <- transform(BCK_daily_temps, rollmean = rollapplyr(mean_temp_degC, 3, mean, partial = T)) %>% 
@@ -348,7 +349,7 @@ CDEC Temperature Data for Deer Creek ranges from 1998-10-01 to 2022-06-16.
 ```{r}
 # Plot without outliers
 DCV_hourly_temps %>%
-    filter(temp_degC < 37, temp_degC > -18) %>%
+    filter(temp_degC < 37, temp_degC > 0) %>%
   ggplot(aes(x=date)) +
   geom_line(aes(y = temp_degC), color ="darkred") +
   labs(x = "Year",y = "Temperature (deg C)", title = "CDEC Water Temperature at Buttle Creek", caption = "CDEC")
@@ -408,8 +409,10 @@ The plot below shows the daily average to allow for comparison between CDEC and 
 
 # 1. Calculate the daily average temperature
 DCV_daily_temps <- DCV_hourly_temps %>% 
+  filter(!is.na(temp_degC)) %>%
   group_by(date) %>% 
-  summarize(mean_temp_degC = mean(temp_degC)) 
+  summarize(mean_temp_degC = mean(temp_degC, na.rm = T),
+            max_temp_degC = max(temp_degC, na.rm = T)) 
 ```
 
 ```{r}
@@ -578,7 +581,8 @@ I would recommend using the CDEC data for Mill Creek due to the significant data
 # 1. Calculate the daily average temperature
 MLM_daily_temps <- MLM_hourly_temps %>% 
   group_by(date) %>% 
-  summarize(mean_temp_degC = mean(temp_degC)) 
+  summarize(mean_temp_degC = mean(temp_degC),
+            max_temp_degC = max(temp_degC)) 
 ```
 
 ```{r}

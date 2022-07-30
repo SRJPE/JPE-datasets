@@ -37,14 +37,14 @@ monitoring programs:
 
 ### Rational for Data Sources:
 
-The following decision heirarchyu was used to determine which datasets
+The following decision hierarchy was used to determine which datasets
 were used in the final temperature data aggregation:
 
 1.  Is there publicly available data available through USGS or CDEC?
     This data can easily be built into a data pipeline because it's
     available through a query and publicly available. The data is also
     QC'd and available at precise temporal scales like hourly.
-2.  If no, is there data available through Fish and Wildlife?
+2.  If no, is there data available through gages opperated by Fish and Wildlife?
 3.  If no, is there RST temperature monitoring data available?
 4.  If no, perform linear regression on air temperature to get modeled
     stream temperature for site
@@ -96,8 +96,8 @@ battle_format <- ubc_temp_raw %>%
          date = as.Date(date),
          source = "FWS") %>%
   group_by(date, stream, site, source) %>%
-  summarise(mean_temp_degC = mean(temp_c),
-            max_temp_degC = max(temp_c)) %>% 
+  summarise(mean_temp_degC = mean(temp_c, na.rm = T),
+            max_temp_degC = max(temp_c, na.rm = T)) %>% 
   filter(mean_temp_degC > 0) %>%
   glimpse
 
@@ -114,8 +114,6 @@ battle_format %>% ggplot() +
 
 -   The CDEC gage `BCK` was used to aggregate temperature for sites
     `adams dam` and `okie dam` from `1998-09-16` to `2022-06-30`.
-
--   TODO: add max temp value
 
 ```{r}
 # source CDEC
@@ -164,8 +162,8 @@ lcc_temp <- lcc_temp_raw %>%
 
 clear_format <- bind_rows(lcc_temp, ucc_temp) %>% 
   group_by(date, stream, site) %>%
-  summarise(mean_temp_degC = mean(temp_c),
-            max_temp_degC = max(temp_c)) %>% 
+  summarise(mean_temp_degC = mean(temp_c, na.rm = T),
+            max_temp_degC = max(temp_c, na.rm = T)) %>% 
   mutate(source = "FWS") %>% glimpse
 
 summary(clear_format$date)
@@ -184,19 +182,24 @@ clear_format %>% ggplot() +
 -   TODO: add max temperature
 
 ```{r}
-# source USGS
-deer <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "deer_temp.rds"))
+# source 
+deer <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "deer_temp.rds")) %>% glimpse
 deer_format <- deer %>%
   mutate(stream = "deer creek",
          site = stream,
          source = "CDEC DCV") %>%
-  filter(mean_temp_degC > 0 & mean_temp_degC < 35) %>% 
+  filter(mean_temp_degC > 0 & mean_temp_degC < 35,
+         max_temp_degC > 0 & max_temp_degC < 35) %>% 
   glimpse()
 
 summary(deer_format$date)
 
 deer_format %>% ggplot() + 
   geom_line(aes(x = date, y = mean_temp_degC), color = "gray") + 
+  theme_minimal()
+
+deer_format %>% ggplot() + 
+  geom_line(aes(x = date, y = max_temp_degC), color = "gray") + 
   theme_minimal()
 ```
 
@@ -226,11 +229,13 @@ feather_river_temp_GRL <- GRL_CDEC %>%
          temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
   select(date,time,temp_degC) %>%
   group_by(date) %>%
-  summarise(mean_temp_degC = mean(temp_degC, na.rm = TRUE)) %>% 
+  summarise(mean_temp_degC = mean(temp_degC, na.rm = TRUE),
+            max_temp_degC = max(temp_degC, na.rm = TRUE)) %>% 
   mutate(stream = "feather river", 
          site = "GRL", 
          source = "CDEC") %>%
-  filter(mean_temp_degC < 23 & mean_temp_degC > 2) # remove outlier
+  filter(mean_temp_degC < 23 & mean_temp_degC > 2,
+         max_temp_degC < 35 & max_temp_degC > 2) # remove outlier
 
 # ggplot() + 
 #   geom_line(data = feather_river_temp_GRL, aes(x = date, y = mean_temp_degC)) +
@@ -252,7 +257,8 @@ feather_river_temp_FRA <- FRA_CDEC %>%
          temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
   select(date,time,temp_degC) %>%
   group_by(date) %>%
-  summarise(mean_temp_degC = mean(temp_degC, na.rm = TRUE)) %>% 
+  summarise(mean_temp_degC = mean(temp_degC, na.rm = TRUE),
+            max_temp_degC = max(temp_degC, na.rm = TRUE)) %>% 
   mutate(stream = "feather river", 
          site = "FRA", 
          source = "CDEC") 
@@ -320,7 +326,8 @@ mill_format <- mill %>%
   mutate(stream = "mill creek",
          site = stream, 
          source = "CDEC MLM") %>%
-   filter(mean_temp_degC > 0 & mean_temp_degC < 35) %>% 
+   filter(mean_temp_degC > 0 & mean_temp_degC < 35,
+          max_temp_degC > 0 & max_temp_degC < 35) %>% 
 glimpse()
 
 summary(mill_format$date)
@@ -355,8 +362,8 @@ sac_tisdale_usgs_format <- sac_tisdale_usgs %>%
   rename(date = Date,
          mean_temp_degC = temp_degC) %>% 
   mutate(stream = "sacramento river", 
-         site = "USGS 11390500", 
-         source = "USGS") %>%
+         site = "tisdale", 
+         source = "USGS 11390500") %>%
   #filter(year(date) > 2000) %>% # filter to greater than 2000
   glimpse
 
@@ -590,33 +597,47 @@ combined_temp <- bind_rows(battle_format,
                            #yuba_format,
                            #yuba_rst_format
                            ) %>%
-  rename(mean_daily_temp_c  = mean_temp_degC) %>%
+  rename(mean_daily_temp_c  = mean_temp_degC,
+         max_daily_temp_c = max_temp_degC) %>%
   glimpse()
 ```
 
 ## QA/QC
 
 ```{r}
+summary(combined_temp)
 unique(combined_temp$stream)
 unique(combined_temp$site)
 ggplot(combined_temp, aes(x = date, y = mean_daily_temp_c, color = site)) +
   theme_minimal() +
   geom_line() +
   facet_wrap(~stream)
-filter(combined_temp, is.na(date))
-combined_flow_clean <- filter(combined_temp, !is.na(date))
+filter(combined_temp, is.na(date)) 
+filter(combined_temp, mean_daily_temp_c == "NaN") 
+filter(combined_temp, max_daily_temp_c == "-Inf") 
+filter(combined_temp, is.na(max_daily_temp_c)) %>% pull(stream) %>% unique
+combined_temp_clean <- filter(combined_temp, !is.na(date)) %>% 
+  mutate(mean_daily_temp_c = ifelse(is.nan(mean_daily_temp_c), NA, mean_daily_temp_c),
+         max_daily_temp_c = ifelse(max_daily_temp_c == "-Inf", NA, max_daily_temp_c)) %>% glimpse
+
+summary(combined_temp_clean)
+
+filter(combined_temp_clean, mean_daily_temp_c == "NaN") 
+filter(combined_temp_clean, max_daily_temp_c == "-Inf") 
+unique(combined_temp_clean$stream)
+unique(combined_temp_clean$source)
 ```
 
 #TODO save to cloud in standard format data
 
 ```{r, eval = FALSE}
-# f <- function(input, output) write_csv(input, file = output)
-# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-# gcs_upload(combined_flow_clean,
-#            object_function = f,
-#            type = "csv",
-#            name = "standard-format-data/standard_temp.csv",
-#            predefinedAcl = "bucketLevel")
-# write_csv(combined_flow_clean, "../../data/standard-format-data/standard_temp.csv")
+f <- function(input, output) write_csv(input, file = output)
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_upload(combined_temp_clean,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_temperature.csv.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(combined_temp_clean, "../../data/standard-format-data/standard_temperature.csv")
 ```
