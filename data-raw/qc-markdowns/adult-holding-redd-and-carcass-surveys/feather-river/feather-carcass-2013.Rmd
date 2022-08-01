@@ -1,0 +1,281 @@
+---
+title: "Feather Carcass QC 2013"
+author: "Inigo Peng"
+date: '2022-07-21'
+output: html_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+library(janitor)
+library(hms) #?as_hms()
+library(RODBC)
+library(knitr)
+library(wesanderson)
+```
+
+
+# Feather River Carcass Data
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+  
+**Video Season:** 
+  
+**Completeness of Record throughout timeframe:** 
+  
+**Sampling Location:**
+  
+**Data Contact:** 
+  
+Any additional info?
+  
+## Access Cloud Data
+  
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
+Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+
+```
+```{r}
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2013/Chops_2013.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "Chops_2013.xlsx",
+               overwrite = TRUE)
+#
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2013/ChopHeader_2013.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "ChopHeader_2013.xlsx",
+               overwrite = TRUE)
+
+# 
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2013/CWTHeader_2013.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "CWTHeader_2013.xlsx",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2013/CWT_2013.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "CWT_2013.xlsx",
+               overwrite = TRUE)
+# 
+Chops_raw <- read_excel("Chops_2013.xlsx") %>% 
+  rename("ID" = `Chop Header ID`) %>%
+  select(-`Chop ID`) %>% 
+  glimpse()
+
+
+ChopHeader_raw <- read_excel("ChopHeader_2013.xlsx") %>% 
+  rename("ID" = `Chop Header ID`) %>%
+  glimpse()
+
+
+#Coded Wiretag Info
+
+cwt_raw <- read_excel("CWT_2013.xlsx") %>% 
+  rename("ID" = `CWT Header ID`) %>% 
+  glimpse
+
+cwt_header_raw <- read_excel("CWTHeader_2013.xlsx") %>% 
+  rename("ID" = `CWT Header ID` ) %>% 
+  glimpse
+```
+
+## Data transformations
+
+```{r}
+
+#1. chop table (with dates and tag color)
+#2. Header has no time
+chop_join <- full_join(ChopHeader_raw %>% 
+                                 select(ID, Date, Time),
+                               Chops_raw) %>% 
+  clean_names() %>% 
+  rename(sec = "section",
+         min = "minutes",
+         count = "total_count") %>% glimpse
+
+chop_header <- ChopHeader_raw %>% 
+  clean_names()%>%  glimpse
+
+cwt_join <- full_join(cwt_header_raw, cwt_raw) %>% 
+  glimpse()
+```
+
+### Counts
+
+The `chop_join` table contains carcass counts 
+
+### Survey
+
+The `chop_header` table contains survey metadata and covariates
+
+### CWT
+
+The `cwt_join` table contains coded wire tag data
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+chop_join %>% 
+  select_if(is.numeric) %>%
+  colnames()
+```
+
+### Variable: `id`, `min`
+
+```{r}
+summary(chop_join$id)
+```
+
+```{r}
+summary(chop_join$min)
+```
+
+**NA and Unknown Values**
+Provide a stat on NA or unknown values.
+
+```{r}
+round(sum(is.na(chop_join$id))/nrow(chop_join), 3) * 100
+round(sum(is.na(chop_join$min))/nrow(chop_join), 3) * 100
+```
+
+* `r round(sum(is.na(chop_join$id))/nrow(chop_join), 3) * 100` % of values in the `id` column are NA.
+* `r round(sum(is.na(chop_join$min))/nrow(chop_join), 3) * 100` % of values in the `min` column are NA.
+
+### Variable: `count`
+```{r}
+summary(chop_join$count)
+```
+
+* `r round(sum(is.na(chop_join$count))/nrow(chop_join), 3) * 100` % of values in the `count` column are NA.
+
+**Plotting total_count over Period of Record**
+
+```{r}
+chop_join %>% 
+  ggplot(aes(x = date, y = count)) + 
+  geom_point() +
+  theme_minimal()
+```
+```{r}
+chop_join %>%
+  group_by(date) %>%
+  summarise(total_count = sum(count, na.rm = T)) %>%
+  ggplot(aes(x = date, y = total_count)) +
+  geom_col() +
+  theme_minimal()
+```
+```{r}
+cwt_join %>% 
+  select_if(is.numeric) %>% 
+  colnames()
+```
+
+## Explore Categorical variables: {.tabset}
+
+```{r}
+chop_join %>% 
+  select_if(is.character) %>%
+  colnames()
+```
+```{r}
+chop_header %>% 
+  select_if(is.character) %>% 
+  colnames()
+```
+```{r}
+cwt_join %>% 
+  select_if(is.character) %>% 
+  colnames()
+```
+
+## Clean data
+
+Fix inconsistencies with spelling, capitalization, and dates
+
+```{r}
+chop_cleaner <- chop_join %>%
+  mutate(datetime = paste(as_date(date), time)) %>%
+  mutate_if(is.character, str_to_lower) %>%  
+  select(-c(date, time))
+
+chop_cleaner
+```
+```{r}
+chop_header_cleaner <- chop_header %>%
+  mutate(datetime = paste(as_date(date), time)) %>%
+  mutate_if(is.character, str_to_lower) %>% 
+  mutate(crew = str_replace_all(crew, "/", ","),
+         crew = str_replace_all(crew, " ","")) %>% 
+  select(-c(date, time))
+
+chop_header_cleaner
+```
+
+```{r}
+cwt_cleaner
+```
+
+## Data Dictionaries
+
+# Count
+```{r}
+percent_na <- chop_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+
+
+counts_data_dictionary <- tibble(variables = colnames(chop_cleaner),
+                          description = c("ID",
+                                          "Sect", 
+                                          "Min", 
+                                          "Count",
+                                          "Date and Time of Survey"),
+                          percent_na = round(percent_na$value*100))
+
+kable(counts_data_dictionary)
+```
+### Survey
+
+```{r}
+
+percent_na <- chop_header_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+# 
+counts_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
+                          description = c("ID",
+                                          "Week Number",
+                                          "Weather",
+                                          "Crew memeber initials that collected",
+                                          "Comments",
+                                          "Date and time of survey"),
+                          percent_na = round(percent_na$value*100))
+# 
+kable(counts_data_dictionary)
+```
+
+### CWT
+```{r}
+cwt_clean
+```
+
