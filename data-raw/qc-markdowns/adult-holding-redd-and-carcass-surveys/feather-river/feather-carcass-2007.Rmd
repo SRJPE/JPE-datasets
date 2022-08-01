@@ -415,7 +415,6 @@ total_tags_summary %>%
 **Comparing tags and chops**
 
 ```{r}
-# from ashley: please improve on this plot I got started, make it look better, describe it, double check that the numbers make sense
 total_carcass <- full_join(total_chops_summary, total_tags_summary) %>% 
   select(date, total_chops, total_tags) %>% 
   pivot_longer(c(total_chops, total_tags), names_to = "mark")
@@ -454,9 +453,6 @@ ggplot(chop_recovery_join, aes(x = date, y = recov_count)) +
   theme_minimal() +
   scale_fill_manual(values = wes_palette("Moonrise2"))
 ```
-
-
-Note: There are no values for recov_count in 2005
 
 ```{r}
 chop_header %>% 
