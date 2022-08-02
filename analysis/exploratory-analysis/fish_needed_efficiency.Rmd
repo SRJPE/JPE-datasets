@@ -71,6 +71,7 @@ number_recaptured <- recapture_raw %>%
 # Use average efficiency by stream for those with historical estimates
 efficiency_stream <- left_join(number_released_flow, number_recaptured) %>% 
   mutate(efficiency = number_recaptured/number_released) %>% 
+  # filter(efficiency > 0, efficiency < 1) %>% 
   group_by(stream) %>% 
   summarize(mean_efficiency = mean(efficiency, na.rm = T)) 
 
@@ -238,5 +239,124 @@ total_counts <- total_counts[,c(1,5,2,3,4,6,7,8,9)]
 kable(total_counts)
 
 kable(total_hatchery_counts)
+```
 
+
+
+
+```{r}
+efficiency_dat <- left_join(number_released_flow, number_recaptured) %>% 
+    left_join(standard_flow %>% 
+                rename(release_date = date)) %>% 
+  mutate(efficiency = number_recaptured/number_released)
+
+effic_release_plot <- function(stream_name) {
+  efficiency_dat %>% 
+  filter(stream == stream_name, efficiency < 1) %>% 
+    ggplot(aes(x = number_released, y = efficiency, color = flow_cfs)) +
+    geom_point() +
+    labs(x = "number fish released",
+         y = "efficiency estimate") +
+    theme_minimal()
+}
+
+flow_efficiency_plot <- function(stream_name) {
+  efficiency_dat %>% 
+  filter(stream == stream_name, efficiency < 1, number_released < 5000) %>% 
+    ggplot(aes(x = flow_cfs, y = efficiency, color = number_released)) +
+    geom_point() +
+    labs(x = "flow (cfs)",
+         y = "efficiency estimate") +
+    theme_minimal()
+}
+
+flow_efficiency_plot("sacramento river")
+effic_release_plot("sacramento river")
+effic_release_plot("feather river")
+effic_release_plot("battle creek")
+effic_release_plot("clear creek")
+```
+
+```{r}
+# release_group_effic <- function(stream_name) {
+#   left_join(number_released_flow, number_recaptured) %>% 
+#   mutate(efficiency = number_recaptured/number_released,
+#          release_group = case_when(number_released <= 100 ~ "0-100",
+#                                    number_released > 100 & number_released <= 200 ~ "101-200",
+#                                    number_released > 200 & number_released <= 300 ~ "201-300",
+#                                    number_released > 300 & number_released <= 400 ~ "301-400",
+#                                    number_released > 400 & number_released <= 500 ~ "401-500",
+#                                    number_released > 500 & number_released <= 600 ~ "501-600",
+#                                    number_released > 600 & number_released <= 700 ~ "601-700",
+#                                    number_released > 700 & number_released <= 800 ~ "701-800",
+#                                    number_released > 800 & number_released <= 900 ~ "801-900",
+#                                    number_released > 900 & number_released <= 1000 ~ "901-1000",
+#                                    number_released > 1000 ~ ">1000"),
+#          release_group = factor(release_group, levels = c("0-100", "101-200", "201-300", "301-400", "401-500", "501-600", "601-700","701-800","801-900","901-1000",">1000"))) %>% 
+#   #filter(stream == stream_name) %>% 
+#     filter(efficiency < 1) %>% 
+#     ggplot(aes(x = release_group, y = efficiency)) +
+#     geom_boxplot() +
+#     labs(x = "number fish released",
+#          y = "efficiency estimate") +
+#     theme(axis.text.x = element_text(angle = 0.45)) +
+#     theme_minimal() +
+#     facet_wrap(~stream, scales = "free")
+# }
+# under_1000_effic("sacramento river")
+# under_1000_effic("feather river")
+```
+
+```{r}
+n_yrs <- number_released_flow %>% 
+  mutate(year = year(release_date)) %>% 
+  group_by(stream) %>% 
+  distinct(year) %>% 
+  tally()
+n_obs <- number_recaptured %>% 
+  group_by(stream) %>% 
+  distinct(release_id) %>% 
+  tally()
+
+n_recaptured_sac <- number_recaptured %>% 
+  filter(stream == "sacramento river")
+n_released_sac <- number_released_flow %>% 
+  filter(stream == "sacramento river") %>% 
+  summarize(mean = mean(number_released),
+            median = median(number_released),
+            min = min(number_released),
+            max = max(number_released))
+
+sac_flow <- filter(standard_flow, stream == "sacramento river", site == "knights landing") 
+
+ck <- sac_flow %>% 
+  mutate(year = year(date),
+         month = month(date)) %>% 
+  filter(month %in% 2:4) %>% 
+  group_by(year) %>% 
+  summarize(min = min(flow_cfs),
+            mean = mean(flow_cfs),
+            max = max(flow_cfs))
+
+sac_efficiency <- filter(efficiency_dat, stream == "sacramento river")
+
+filter(sac_efficiency, efficiency == 0) %>% tally()
+filter(sac_efficiency, efficiency == 0) %>% summarize(mean_released = mean(number_released),
+                                                      median_released = median(number_released))
+filter(sac_efficiency, efficiency > 0) %>% summarize(mean_released = mean(number_released),
+                                                      median_released = median(number_released))
+
+sac_compare <- sac_efficiency %>% 
+  mutate(efficiency_zero = ifelse(efficiency == 0, "0% efficiency", "greater than 0% efficiency"))
+
+sac_compare %>% 
+  ggplot(aes(x = efficiency_zero, y = number_released)) +
+  geom_boxplot() +
+  labs(x ="", 
+       y = "number of fish released") +
+  theme_minimal()
+
+ggsave("knights_efficiency_boxplot.png", width = 8, height = 4)
+
+t.test(number_released~efficiency_zero, data= sac_compare)
 ```
