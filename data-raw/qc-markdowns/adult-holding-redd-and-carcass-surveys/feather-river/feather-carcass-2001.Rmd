@@ -86,6 +86,9 @@ write_csv(TagData_raw, "TagData_2001.csv")
 TagEnv_raw <- sqlFetch(con, "TagEnvTBL")
 write_csv(TagEnv_raw, "TagEnv_2001.csv")
 ```
+## Raw Data Glimpse: {.tabset}
+
+### ChopEnv_Raw
 
 ```{r}
 #Heading Info for Chopped Data
@@ -93,18 +96,27 @@ write_csv(TagEnv_raw, "TagEnv_2001.csv")
 ChopEnv_raw <- read_csv("ChopEnv_2001.csv") %>% 
   # mutate("Start" = as_hms("Start")) %>%
   glimpse()
+```
 
+### ChopRecov_raw
+```{r}
 #Data collection for Chopping and Spawning to determine how many carcasses are being captured (link to the ChopEnv table using ChopEnvID)
 
 ChopRecov_raw <-read_csv("ChopRecov_2001.csv") %>% 
   glimpse()
+```
 
+### RecovTag_Raw
+```{r}
 #There is Tag1 and Tag2- what is the difference?
 #What is TagComp?
 RecovTag_raw <- read_csv("RecovTag_2001.csv") %>% 
   # rename("ID" = HeaderID) %>% 
   glimpse()
+```
 
+### TagData_raw
+```{r}
 #tag colour lookup table
 # TagCol_raw <- read_csv("TagCol_2001.csv") %>% 
   # glimpse()
@@ -114,18 +126,29 @@ RecovTag_raw <- read_csv("RecovTag_2001.csv") %>%
 TagData_raw <- read_csv("TagData_2001.csv") %>% 
   rename("TagNum" = "TagID") %>%
   glimpse()
+```
 
+### TagEnv_raw
+```{r}
 #Heading Info for Tagging Data Sheet
 # Join via TagEnvID
 TagEnv_raw <- read_csv("TagEnv_2001.csv") %>% 
   glimpse()
+```
 
+### cwt_raw
+
+```{r}
 #Coded Wiretag Info
 cwt_raw <- read_csv("cwt_2001.csv", col_types = c("d","T","d","d","c","d","c","c")) %>% 
   glimpse
 ```
 
-## Data transformations
+## Data transformations: {.tabset}
+
+### Recovery 
+
+The `chop_recovery_join` table contains recovered carcass counts 
 
 ```{r}
 #1. Link ChopRecov with ChopEnv to get the date
@@ -135,38 +158,40 @@ chop_recovery_join <- full_join(ChopEnv_raw %>% select(Date, Time, ChopEnvID), C
          female_chop = "fem",
          grilse = "gril",
          min = "minute") %>% glimpse
+```
 
+### Tags
+
+The `tag_join` table contains additional tag information 
+
+```{r}
 tag_join <- left_join(TagData_raw, RecovTag_raw) %>% 
   clean_names() %>% 
   select(c(tag_num, sect, fl, sex, egg_ret, recov_id)) %>% 
   glimpse
+```
 
+### Survey
+
+The `chop_header` table contains survey metadata and covariates
+
+```{r}
 chop_header <- ChopEnv_raw %>% 
   clean_names() %>% 
   glimpse
+```
 
+### CWT
+
+The `cwt` table contains coded wire tag information. It is not joined with the other tables.
+
+```{r}
 cwt <- cwt_raw %>% 
   clean_names() %>% 
   select(-egg_ret) %>% 
   glimpse
 
 ```
-### Recovery 
-
-The `chop_recovery_join` table contains recovered carcass counts 
-
-#### Tags
-
-The `tag_join` table contains additional tag information 
-
-### Survey
-
-The `chop_header` table contains survey metadata and covariates
-
-### CWT
-
-The `cwt` table contains coded wire tag information. It is not joined with the other tables.
-
 
 ## Explore Numeric Variables: {.tabset}
 
@@ -507,48 +532,28 @@ total_cwt_summary %>%
 **Plotting fork length of each sex**
 
 ```{r}
-tag_join %>% 
-  mutate(sex = ifelse(tag_join$sex == "X", "Unknown cwt", tag_join$sex)) %>% 
+cwt %>% 
+  mutate(sex = ifelse(cwt$sex == "X", "Unknown cwt", cwt$sex)) %>% 
   ggplot(aes(x = sex, y = fl)) + 
   geom_boxplot() + 
   theme_minimal() + 
   labs(y = "FL", x = "Sex")
 ```
+
 ## Explore Categorical variables: {.tabset}
+
+### Chop Recovery Clean Data
+
+Fix inconsistencies with spelling, capitalization, and dates
 
 ```{r}
 chop_recovery_join %>% 
   select_if(is.character) %>%
-  colnames()
+  colnames() 
 ```
 ```{r}
 unique(chop_recovery_join$chan)
 ```
-
-```{r}
-tag_join %>% 
-  select_if(is.character) %>% 
-  colnames()
-```
-```{r}
-#X is unknown?
-unique(tag_join$egg_ret)
-```
-```{r}
-chop_header %>% 
-  select_if(is.character) %>% 
-  colnames
-```
-```{r}
-cwt %>% 
-  select_if(is.character) %>% 
-  colnames
-```
-
-
-## Clean data
-
-Fix inconsistencies with spelling, capitalization, and dates
 
 ```{r}
 chop_recovery_cleaner <- chop_recovery_join %>%
@@ -556,6 +561,32 @@ chop_recovery_cleaner <- chop_recovery_join %>%
   mutate_if(is.character, str_to_lower) %>%
   select(-c(date, time)) %>% 
   glimpse
+```
+
+### Tag Join Clean Data
+```{r}
+tag_join %>% 
+  select_if(is.character) %>% 
+  colnames()
+```
+
+```{r}
+#X is unknown?
+unique(tag_join$egg_ret)
+```
+
+```{r}
+tag_cleaner <- tag_join %>% 
+    mutate_if(is.character, str_to_lower) %>%
+  glimpse
+```
+
+### Chop Header Clean Data
+
+```{r}
+chop_header %>% 
+  select_if(is.character) %>% 
+  colnames
 ```
 
 ```{r} 
@@ -568,10 +599,13 @@ chop_header_cleaner <- chop_header %>%
   select(-c(date, time, flow, vis)) %>% glimpse
 
 ```
+
+### CWT Clean Data
+
 ```{r}
-tag_cleaner <- tag_join %>% 
-    mutate_if(is.character, str_to_lower) %>%
-  glimpse
+cwt %>% 
+  select_if(is.character) %>% 
+  colnames
 ```
 ```{r}
 cwt_cleaner <- cwt %>% 
