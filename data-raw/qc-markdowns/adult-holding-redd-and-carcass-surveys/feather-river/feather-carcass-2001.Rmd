@@ -526,10 +526,13 @@ total_cwt_summary <- cwt_count %>%
 total_cwt_summary %>% 
   pivot_longer(cols = c(male_cwt, female_cwt, unknown_cwt), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_cwt)) %>% 
-  ggplot(aes(x = month(date), y = proportions, fill = sex)) +
-  geom_() +
+  ggplot(aes(x = `month(date)`, y = proportions, fill = sex)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(name = "chops", 
+                    labels = c("CWT Male", "CWT Female", "CWT Unknown")) +
   theme_minimal() + 
-  labs(y = "Proportion", x = "Sex")
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
 ```
 
 **Plotting fork length of each sex**
@@ -574,7 +577,7 @@ tag_join %>%
 ```
 
 ```{r}
-#X is unknown?
+#X is unknown? Need lookup table
 unique(tag_join$egg_ret)
 ```
 
