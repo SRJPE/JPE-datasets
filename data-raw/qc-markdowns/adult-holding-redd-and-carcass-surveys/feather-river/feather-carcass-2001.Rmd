@@ -466,6 +466,8 @@ ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
 
 There are significantly less number of tags versus chops. However a large amount of tags do not have dates to them.
 
+### Chop Header Variable: `chop_env_id`, `flow`
+
 ```{r}
 chop_header %>% 
   select_if(is.numeric) %>% 
@@ -501,19 +503,20 @@ summary(cwt$fl)
 ```{r}
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
-
+#Is this graph helpful?
 unique(cwt$sex)
 cwt_count <- cwt %>% 
   mutate(cwt_count = 1) %>% 
   pivot_wider(names_from = sex, values_from = cwt_count, values_fill = 0) %>% 
   rename("unknown_cwt" = X,
          "male_cwt" = M,
-         "female_cwt" = F)
+         "female_cwt" = F) 
 total_cwt_summary <- cwt_count %>% 
   mutate(male_cwt = ifelse(is.na(male_cwt), 0, male_cwt), # fill na
          female_cwt = ifelse(is.na(female_cwt), 0, female_cwt),
          unknown_cwt = ifelse(is.na(unknown_cwt), 0, unknown_cwt),
          total_cwt = unknown_cwt + male_cwt + female_cwt) %>% 
+  group_by(month(date)) %>% 
   summarise(total_cwt = sum(total_cwt),
             male_cwt = sum(male_cwt),
             female_cwt = sum(female_cwt),
@@ -523,8 +526,8 @@ total_cwt_summary <- cwt_count %>%
 total_cwt_summary %>% 
   pivot_longer(cols = c(male_cwt, female_cwt, unknown_cwt), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_cwt)) %>% 
-  ggplot(aes(x = sex, y = proportions)) +
-  geom_col() +
+  ggplot(aes(x = month(date), y = proportions, fill = sex)) +
+  geom_() +
   theme_minimal() + 
   labs(y = "Proportion", x = "Sex")
 ```
