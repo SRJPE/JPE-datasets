@@ -595,7 +595,7 @@ cwt_cleaner <- cwt %>%
   glimpse
 ```
 
-##Comments
+## Comments
 
 * CWT data has a many new columns - have not thoroughly cleaned all of it (not sure if we need all of them)
 * Theres no Tag data tble 

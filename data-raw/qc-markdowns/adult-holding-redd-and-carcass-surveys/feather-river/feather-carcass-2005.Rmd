@@ -58,17 +58,17 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 ```{r}
 #Connect to microsoft access through RODBC
-# #Use 
+#Use
 # DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
-# MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2006.mdb"
+# MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2009.mdb"
 # PATH <- paste0(DRIVERINFO, "DBQ=", MDBPATH)
 # 
 # con <- odbcDriverConnect(PATH)
-# 
-# # Show the different table names 
+# # 
+# # # Show the different table names 
 # sqlTables(con)$TABLE_NAME
-# 
-# #Download table and write csv
+# # 
+# # #Download table and write csv
 # ChopChannel_raw <- sqlFetch(con, "ChopChannelTBL1")
 # write_csv(ChopChannel_raw, "ChopChannel_2006.csv")
 # 
@@ -87,7 +87,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 #Other tables include Fish Data_sr_Database, Steelhead Data, TagColLu
 ```
 
-```{r}
+```{r, eval=FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2005/ChopChannelTBL1_2005.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "ChopChannel_2005.xlsx",
@@ -112,43 +112,47 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-riv
                bucket = gcs_get_global_bucket(),
                saveToDisk = "CWTTag_2005.xlsx",
                overwrite = TRUE)
-# 
+```
+## Raw Data Glimpse: {.tabset}
+
+### ChopChannel_raw
+```{r}
 ChopChannel_raw <- read_excel("ChopChannel_2005.xlsx") %>% 
   rename("ID" = HeaderID) %>%
   glimpse()
+```
 
-
+### ChopHeader_raw
+```{r}
 ChopHeader_raw <- read_excel("ChopHeader_2005.xlsx") %>% 
   rename("ID" = headerID) %>%
   glimpse()
+```
 
+### ChopRecov_raw
+```{r}
 ChopRecov_raw <- read_excel("ChopRecov_2005.xlsx") %>% 
   glimpse()
+```
 
-#Coded Wiretag Info
-
+### cwt_raw
+```{r}
 cwt_raw <- read_excel("CWTTag_2005.xlsx") %>% 
   glimpse
 ```
 
+### cwt_header_raw
 
 ```{r}
-ChopChannel_raw <- read_excel("ChopChannel_2005.xlsx") %>% 
-  rename("ID" = HeaderID) %>% 
-  glimpse()
-
-ChopRecov_raw <- read_excel("ChopRecov_2005.xlsx") %>% glimpse
-
-ChopHeader_raw <- read_excel("ChopHeader_2005.xlsx") %>% 
-  rename("ID" = headerID) %>%
-  glimpse()
-
-cwt_raw <- read_excel("CWTTag_2005.xlsx") %>% glimpse()
-
-cwt_header_raw <- read_csv("CWTHeader_2005.xlsx")
+cwt_header_raw <- read_excel("CWTHeader_2005.xlsx")
 ```
 
-## Data transformations
+## Data transformations: {.tabset}
+
+### Counts
+
+The `chop_channel` table contains carcass counts by sex, grilise and chop/tagged
+
 
 ```{r}
 
@@ -160,6 +164,12 @@ chop_channel_join <- full_join(ChopHeader_raw %>%
   clean_names() %>% 
   mutate(date = as_date(date)) %>%
   filter(year(date) == 2005)  %>% glimpse
+```
+### Recovery
+
+The `chop_recovery` table contains recovered carcass counts by color
+
+```{r}
 # 2. choprecovery table (with dates)
 
 chop_recovery_join <- full_join(ChopHeader_raw %>% 
@@ -169,35 +179,37 @@ chop_recovery_join <- full_join(ChopHeader_raw %>%
   clean_names()%>% 
   mutate(date = as_date(date)) %>%
   filter(year(date) == 2005)  %>% glimpse
+```
 
+### Survey
+
+The `chop_header` table contains survey metadata and covariates 
+
+```{r}
 chop_header <- ChopHeader_raw %>% 
   clean_names()%>% 
   mutate(date = as_date(date)) %>%
   filter(year(date) == 2005)  %>% glimpse
 ```
 
-### Counts
+### CWT
+The `cwt` table contains coded wire tag information. 
 
-The `chop_channel` table contains carcass counts by sex and chop/tagged
-
-### Recovery
-
-The `chop_recovery` table contains recovered carcass counts by color
-
-### Survey
-
-The `chop_header` table contains survey metadata and covariates
+```{r}
+cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names()) %>%  
+  glimpse
+```
 
 
 ## Explore Numeric Variables: {.tabset}
 
+#### Chop Channel Variable:`id`, `chan_id`, `sect`, `min`
 ```{r}
 # Filter clean data to show only numeric variables 
 chop_channel_join %>% 
   select_if(is.numeric) %>%
   colnames()
 ```
-### Variable: `id`, `chan_id`, `sect`, `min`
 
 ```{r}
 summary(chop_channel_join$id)
@@ -213,16 +225,12 @@ summary(chop_channel_join$sect)
 summary(chop_channel_join$min)
 ```
 
-### Variable: `chop_clip`, `chop_n_clip`,`chop_uncheck`
+### Chop Channel Variable: `chop_clip`, `chop_n_clip`,`chop_uncheck`
 
 **Numeric Summary of `chop_clip`, `chop_n_clip`,`chop_uncheck` over Period of Record**
 
 ```{r}
 summary(chop_channel_join$chop_clip)
-```
-
-```{r}
-summary(chop_channel_join$chop_n_clip)
 ```
 
 ```{r}
@@ -325,7 +333,7 @@ total_chops_summary %>%
   ggplot(aes(x = date, y = proportions, fill = clip)) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = c("Blue","Red", "Black"), 
-                    name = "Sex", 
+                    name = "Clip", 
                     labels = c("Clip", "No Clip", "Not Checked")) +
   theme_minimal() + 
   labs(y = "Proportion", x = "Date") +
@@ -336,7 +344,7 @@ total_chops_summary %>%
 The dataset from 2006 did not record for sex and instead, recorded for clip(?) or not.This plot shows the  proportion of chops with, without clips and unchecked for each day over the the period of 2006-09-05 to 2006-12-22. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. We see that the majority of the chops were unchecked for clips.
 
 
-###Variable: `tag_count`, `tag_clip`, `tag_n_clip`, `tag_unk`
+### Chop Channel Variable: `tag_count`, `tag_clip`, `tag_n_clip`, `tag_unk`
 
 **Numeric Summary of `tag_clip`, `tag_n_clip`, `tag_unk` over Period of Record**
 
@@ -427,7 +435,7 @@ total_tags_summary %>%
   ggplot(aes(x = date, y = proportions, fill = tags)) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = c("Blue","Red", "Black"), 
-                    name = "Sex", 
+                    name = "Clips", 
                     labels = c("Tags Without Clips", "Tags With Clips", "Tags Unknown")) +
   theme_minimal() + 
   labs(y = "Proportion", x = "Date") +
@@ -455,6 +463,8 @@ ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
 
 Tags appear to be less commonly applied compared to chops.
 
+### Chop Recovery Variable: `id`, `chan_id`, `recov_count`
+
 ```{r}
 # Filter clean data to show only numeric variables 
 chop_recovery_join %>% 
@@ -462,7 +472,18 @@ chop_recovery_join %>%
   colnames()
 ```
 
+```{r}
+summary(chop_recovery_join$id)
+```
+
+```{r}
+summary(chop_recovery_join$chan_id)
+```
+
+
 Note: There are no values for recov_count in 2005
+
+### Chop Header Variable: `id`
 
 ```{r}
 chop_header %>% 
@@ -473,8 +494,83 @@ chop_header %>%
 summary(chop_header$id)
 ```
 
+### CWT Variable: `tag_id`, `sect`, `fl`, `header_id`, `week_num`
+```{r}
+cwt %>% 
+  select_if(is.numeric) %>% 
+  colnames()
+```
+
+```{r}
+summary(cwt$tag_id)
+```
+```{r}
+summary(cwt$sect)
+```
+```{r}
+summary(cwt$fl)
+```
+* `r round(sum(is.na(cwt$tag_id))/nrow(cwt), 3) * 100` % of values in the `tag_id` column are NA.
+* `r round(sum(is.na(cwt$sect))/nrow(cwt), 3) * 100` % of values in the `sect` column are NA.
+* `r round(sum(is.na(cwt$fl))/nrow(cwt), 3) * 100` % of values in the `fl` column are NA.
+
+```{r}
+#Create a cwt_count column
+#Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
+#Is this graph helpful?
+unique(cwt$sex)
+cwt_count <- cwt %>% 
+  mutate(count = 1) %>%
+  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
+                         TRUE ~ sex)) %>% 
+  pivot_wider(names_from = sex, values_from = count, values_fill = 0) %>% 
+  # unnest() %>% 
+  rename("male_cwt" = M,
+         "female_cwt" = F,
+         "unknown_cwt" = U) %>% glimpse
+
+total_cwt_summary <- cwt_count %>% 
+  mutate(male_cwt = ifelse(is.na(male_cwt), 0, male_cwt), # fill na
+         female_cwt = ifelse(is.na(female_cwt), 0, female_cwt),
+         unknown_cwt = ifelse(is.na(unknown_cwt), 0, unknown_cwt),
+         total_cwt = unknown_cwt + male_cwt + female_cwt) %>% 
+  group_by(month(date)) %>% 
+  summarise(total_cwt = sum(total_cwt),
+            male_cwt = sum(male_cwt),
+            female_cwt = sum(female_cwt),
+            unknown_cwt = sum(unknown_cwt))
+```
+
+```{r}
+total_cwt_summary %>% 
+  pivot_longer(cols = c(male_cwt, female_cwt, unknown_cwt), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_cwt)) %>% 
+  ggplot(aes(x = `month(date)`, y = proportions, fill = sex)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(name = "chops", 
+                    labels = c("CWT Male", "CWT Female", "CWT Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+**Plotting fork length of each sex**
+
+```{r}
+cwt %>% 
+  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
+                         TRUE ~ sex))%>% 
+  ggplot(aes(x = sex, y = fl)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(y = "FL", x = "Sex")
+```
+
 ## Explore Categorical variables: {.tabset}
 
+### Chop Channel Clean Data
+
+Fix inconsistencies with spelling, capitalization, and dates
 ```{r}
 # Filter clean data to show only categorical variables
 chop_channel_join %>% 
@@ -482,48 +578,115 @@ chop_channel_join %>%
   colnames()
 ```
 ```{r}
+unique(chop_channel_join$tag_col)
+```
+
+```{r}
+#Remove 5?
+unique(chop_channel_join$chan)
+```
+
+```{r}
+chop_channel_cleaner <- chop_channel_join %>%
+  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>%
+  mutate_if(is.character, str_to_lower) %>% 
+  select(-c(date, time, male, fem, gril, tag_count))
+
+
+chop_channel_cleaner
+```
+
+### Chop Recovery Clean Data
+
+Fix inconsistencies with spelling, capitalization, and dates
+
+```{r}
 chop_recovery_join %>% 
   select_if(is.character) %>% 
   colnames()
 ```
 
 ```{r}
-chop_header %>% 
-  select_if(is.character) %>% 
-  colnames()
+unique(chop_recovery_join$recov_color)
 ```
-
-## Clean data
-
-Fix inconsistencies with spelling, capitalization, and dates
-
-```{r}
-#Dropping male, female and gril columns - all empty
-chop_channel_cleaner <- chop_channel_join %>%
-  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>%
-  mutate_if(is.character, str_to_lower) %>% 
-  select(-c(date, time, male, fem, gril, tag_count))
-
-chop_channel_cleaner
-```
-
 ```{r}
 chop_recovery_cleaner <- chop_recovery_join %>% 
   mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>%
   mutate_if(is.character, str_to_lower) %>% 
-  select(-c(date, time))
+  select(-c(date,time))
 
 chop_recovery_cleaner
 ```
+
+### Chop Header Clean Data
+
+```{r}
+chop_header %>% 
+  select_if(is.character) %>% 
+  colnames()
+```
+```{r}
+unique(chop_header$crew)
+```
+```{r}
+unique(chop_header$recorder)
+```
+```{r}
+unique(chop_header$weather)
+```
+
+
 
 ```{r}
 chop_header_cleaner <- chop_header %>%
   mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>%
   mutate_if(is.character, str_to_lower) %>% 
+  mutate(crew = str_replace_all(crew, " ", ","),
+         crew = str_replace_all(crew, ",,", ",")) %>% 
   select(-c(date, time))
 
-chop_header_cleaner
+chop_header_cleaner$crew
 ```
+
+### CWT Clean Data
+
+```{r}
+cwt %>% 
+  select_if(is.character) %>% 
+  colnames
+```
+```{r}
+unique(cwt$rel_loc)
+```
+```{r}
+unique(cwt$spawn)
+unique(cwt$clip)
+unique(cwt$samp_type)
+unique(cwt$carc_stat)
+```
+
+
+```{r}
+cwt_cleaner <- cwt %>% 
+  mutate_if(is.character, str_to_lower) %>% 
+  rename(datetime = "date") %>% 
+  mutate(crew = str_replace_all(crew, " ", ","),
+         crew = str_replace_all(crew, ",,", ","),
+         sex = case_when(sex == "nd"|is.na(sex) ~ "U",
+                         TRUE ~ sex),
+         rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),  
+         spawn = ifelse(spawn == "no data", NA, spawn),
+         clip = ifelse(clip == "no data", NA, clip),
+         samp_type = ifelse(samp_type == "no data", NA, samp_type),
+         carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) %>% 
+  glimpse
+```
+
+## Comments
+
+* Instead of keeping track of carcasses based on grilse and sex like the previous data sets, this one tracks the carcasses using clipped or unclipped. Same for tags
+* The dataset is also joined with 2004 data - need to filter for only 2005
+* No recovery count
 
 ## Data Dictionaries
 
