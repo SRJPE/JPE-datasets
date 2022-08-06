@@ -55,7 +55,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # git data and save as xlsx
 
 ```
-```{r}
+```{r, eval = FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2012/Chops_2012.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "Chops_2012.xlsx",
@@ -76,71 +76,92 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-riv
                bucket = gcs_get_global_bucket(),
                saveToDisk = "CWT_2012.xlsx",
                overwrite = TRUE)
-# 
+
+```
+## Raw Data Glimpse: {.tabset}
+
+### Chop_raw
+```{r}
 Chops_raw <- read_excel("Chops_2012.xlsx") %>% 
   rename("ID" = `Chop Header ID`) %>%
   select(-`Chop ID`) %>% 
   glimpse()
+```
 
+### ChopHeader_raw
 
+```{r}
 ChopHeader_raw <- read_excel("ChopHeader_2012.xlsx") %>% 
   rename("ID" = `Chop Header ID`) %>%
   glimpse()
+```
 
-
-#Coded Wiretag Info
-
+### cwt_raw
+```{r}
 cwt_raw <- read_excel("CWT_2012.xlsx") %>% 
   rename("ID" = `CWT Header ID`) %>% 
   glimpse
 
+```
+
+### cwt_header_raw
+
+```{r}
 cwt_header_raw <- read_excel("CWTHeader_2012.xlsx") %>% 
   rename("ID" = `CWT Header ID` ) %>% 
   glimpse
 ```
 
-## Data transformations
+
+
+## Data transformations: {.tabset}
+
+### Counts
+
+The `chop` table contains carcass counts by chop/tagged based on clips
+
 
 ```{r}
 
 #1. chop table (with dates and tag color)
-#2. Header has no time
 chop_join <- full_join(ChopHeader_raw %>% 
                                  select(ID, Date),
                                Chops_raw) %>% 
   clean_names() %>% 
   rename(sec = "section",
          min = "minutes",
-         count = "total_count") %>% glimpse
-
-chop_header <- ChopHeader_raw %>% 
-  clean_names()%>%  glimpse
-
-cwt_join <- full_join(cwt_header_raw, cwt_raw) %>% 
-  glimpse()
+         count = "total_count") %>% 
+  mutate(sec = as.numeric(sec)) %>% glimpse
 ```
-
-### Counts
-
-The `chop_join` table contains carcass counts 
 
 ### Survey
 
 The `chop_header` table contains survey metadata and covariates
 
-### CWT
+```{r}
+chop_header <- ChopHeader_raw %>% 
+  clean_names() %>% glimpse
+```
 
-The `cwt_join` table contains coded wire tag data
+### CWT
+The `cwt` table contains coded wire tag information. 
+
+```{r}
+cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names()) %>%  
+  rename(fl = "fork_length") %>% 
+  glimpse
+```
+
 
 ## Explore Numeric Variables: {.tabset}
 
+### Chop Join Variable: `id`, `min`
 ```{r}
 chop_join %>% 
   select_if(is.numeric) %>%
   colnames()
 ```
 
-### Variable: `id`, `min`
 
 ```{r}
 summary(chop_join$id)
@@ -161,7 +182,7 @@ round(sum(is.na(chop_join$min))/nrow(chop_join), 3) * 100
 * `r round(sum(is.na(chop_join$id))/nrow(chop_join), 3) * 100` % of values in the `id` column are NA.
 * `r round(sum(is.na(chop_join$min))/nrow(chop_join), 3) * 100` % of values in the `min` column are NA.
 
-### Variable: `count`
+### Chop Join Variable: `count`
 ```{r}
 summary(chop_join$count)
 ```
@@ -184,56 +205,176 @@ chop_join %>%
   geom_col() +
   theme_minimal()
 ```
+### Chop Header Variable: `id`
+
 ```{r}
-cwt_join %>% 
+chop_header %>% 
   select_if(is.numeric) %>% 
   colnames()
 ```
+```{r}
+summary(chop_header$id)
+```
+
+### CWT Variable: `ID`, `sect`, `fl`, `header_id`, `week_num`
+```{r}
+cwt %>% 
+  select_if(is.numeric) %>% 
+  colnames()
+```
+```{r}
+summary(cwt$fl)
+```
+```{r}
+summary(cwt$river_section)
+```
+
+* `r round(sum(is.na(cwt$fl))/nrow(cwt), 3) * 100` % of values in the `fl` column are NA.
+* `r round(sum(is.na(cwt$river_section))/nrow(cwt), 3) * 100` % of values in the `sect` column are NA.
+
+```{r}
+#Create a cwt_count column
+#Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
+#Is this graph helpful?
+unique(cwt$sex)
+cwt_count <- cwt %>% 
+  mutate(count = 1) %>%
+  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
+                         TRUE ~ sex)) %>% 
+  pivot_wider(names_from = sex, values_from = count, values_fill = 0) %>% 
+  # unnest() %>% 
+  rename("male_cwt" = M,
+         "female_cwt" = F,
+         "unknown_cwt" = U) %>% glimpse
+
+total_cwt_summary <- cwt_count %>% 
+  mutate(male_cwt = ifelse(is.na(male_cwt), 0, male_cwt), # fill na
+         female_cwt = ifelse(is.na(female_cwt), 0, female_cwt),
+         unknown_cwt = ifelse(is.na(unknown_cwt), 0, unknown_cwt),
+         total_cwt = unknown_cwt + male_cwt + female_cwt) %>% 
+  group_by(month(date)) %>% 
+  summarise(total_cwt = sum(total_cwt),
+            male_cwt = sum(male_cwt),
+            female_cwt = sum(female_cwt),
+            unknown_cwt = sum(unknown_cwt))
+```
+
+```{r}
+total_cwt_summary %>% 
+  pivot_longer(cols = c(male_cwt, female_cwt, unknown_cwt), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_cwt)) %>% 
+  ggplot(aes(x = `month(date)`, y = proportions, fill = sex)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(name = "chops", 
+                    labels = c("CWT Male", "CWT Female", "CWT Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Month") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+
+**Plotting fork length of each sex**
+
+```{r}
+cwt %>% 
+  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
+                         TRUE ~ sex))%>% 
+  ggplot(aes(x = sex, y = fl)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(y = "FL", x = "Sex")
+```
+
 
 ## Explore Categorical variables: {.tabset}
+## Explore Categorical variables: {.tabset}
+
+### Chop Clean Data
+
+Fix inconsistencies with spelling, capitalization, and dates
 
 ```{r}
 chop_join %>% 
   select_if(is.character) %>%
   colnames()
 ```
+
+```{r}
+chop_cleaner <- chop_join %>%
+  mutate(datetime = as_date(date)) %>%
+  mutate_if(is.character, str_to_lower) %>% 
+  select(-c(date))
+
+chop_cleaner
+
+```
+### Chop Header Clean Data
+
 ```{r}
 chop_header %>% 
   select_if(is.character) %>% 
   colnames()
 ```
 ```{r}
-cwt_join %>% 
-  select_if(is.character) %>% 
-  colnames()
+unique(chop_header$crew)
 ```
-
-## Clean data
-
-Fix inconsistencies with spelling, capitalization, and dates
-
 ```{r}
-chop_cleaner <- chop_join %>%
-  # mutate(datetime = paste(as_date(date), time)) %>%
-  mutate_if(is.character, str_to_lower) 
-  # select(-c(date, time))
-
-chop_cleaner
+unique(chop_header$weather)
 ```
+
+
+
 ```{r}
 chop_header_cleaner <- chop_header %>%
-  # mutate(datetime = paste(as_date(date), time)) %>%
   mutate_if(is.character, str_to_lower) %>% 
-  mutate(crew = str_replace_all(crew, "/", ","))
-         # crew = str_replace_all(crew, " ",","))
-  # select(-c(date, time))
+  mutate(crew = str_replace_all(crew, " ", ","),
+         crew = str_replace_all(crew, ",,", ","),
+         weather = ifelse(weather == "cld", "cloudy", weather),
+         weather = ifelse(weather == "ran", "rain", weather),
+         weather = str_replace_all(weather, " ", ""),
+         weather = str_replace_all(weather, "/", ","),
+         weather = str_replace_all(weather, ".",",")) 
 
 chop_header_cleaner
 ```
 
+### CWT Clean Data
+
 ```{r}
-cwt_cleaner
+cwt %>% 
+  select_if(is.character) %>% 
+  colnames
 ```
+
+```{r}
+unique(cwt$spawning_condition)
+```
+
+```{r}
+unique(cwt$adipose_fin_clipped)
+```
+
+```{r}
+unique(cwt$crew)
+```
+
+```{r}
+unique(cwt$tag_color)
+```
+
+```{r}
+#Dropping sectiongroup and morale
+cwt_cleaner <- cwt %>% 
+  mutate_if(is.character, str_to_lower) %>% 
+  rename(datetime = "date") %>% 
+  mutate(crew = str_replace_all(crew, " ", ","),
+         crew = str_replace_all(crew, ",,", ","),
+         sex = case_when(sex == "nd"|is.na(sex) ~ "Unknown",
+                         TRUE ~ sex)) %>% 
+  select(-morale) %>% 
+  glimpse
+```
+
 
 ## Data Dictionaries
 
@@ -277,6 +418,42 @@ kable(counts_data_dictionary)
 
 ### CWT
 ```{r}
-cwt_clean
-```
+percent_na <- cwt_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
 
+chop_header_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
+                          description = c("CWT ID",
+                                          "ID",
+                                          "River section",
+                                          "Tag ID number",
+                                          "Fork length",
+                                          "Sex",
+                                          "Recap 1 ID number",
+                                          "Recap 2 ID number",
+                                          "Recap 3 ID number",
+                                          "Chop ID number",
+                                          "Spawning condition",
+                                          "Adipose fin clipped",
+                                          "Head tag number",
+                                          "Scales",
+                                          "Otoliths",
+                                          "Hallprint color",
+                                          "Hallprint number",
+                                          "Radio tag ID",
+                                          "Comments",
+                                          "Date",
+                                          "Crew",
+                                          "Week number",
+                                          "Tag colour",
+                                          "LFC",
+                                          "HFC"),
+                          percent_na = round(percent_na$value*100))
+
+kable(chop_header_data_dictionary)
+```
+## Save cleaned data back to google cloud (TBA)
+
+```{r}
+# Name file [watershed]_[data type].csv
+```
