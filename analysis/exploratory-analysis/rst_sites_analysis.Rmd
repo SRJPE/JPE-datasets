@@ -1,0 +1,262 @@
+---
+title: "RST Trapping Sites To Use"
+author: "Erin Cain"
+date: '2022-06-10'
+output: 
+  html_document:
+    code_folding: hide
+    theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(leaflet)
+library(rgdal)
+library(tidyverse)
+library(readxl)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=11, fig.height=10)
+library(tidyverse)
+library(googleCloudStorageR)
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
+```
+
+## JPE RST Trapping Sites 
+
+Using the CVPIA SIT spawning and rearing extents figure out % of spawning habitat above and below the traps.
+
+### Load Data
+```{r}
+trap_sites <- read_csv(here::here("data", "standard-format-data", "rst_trap_locations.csv")) %>% glimpse
+
+
+
+salmonid_extents <- readOGR(here::here("analysis", "exploratory-analysis", 
+                                       "data-raw", "salmonid_habitat_extents", "salmonid_habitat_extents.shp"), 
+                            stringsAsFactors = FALSE, verbose = FALSE) %>%
+  spTransform(CRS("+proj=longlat +datum=WGS84 +no_defs"))
+
+sps <- subset(salmonid_extents, Species == 'Spring Run Chinook' & Habitat == 'spawning')
+spr <- subset(salmonid_extents, Species == 'Spring Run Chinook' & Habitat == 'rearing')
+```
+
+
+### Map Spring Habitat Extents and RST Sites: 
+
+
+```{r}
+make_label <- function(data) {
+  labels <- sprintf("<strong>%s</strong> <br/> %s: %s miles",
+                  data$River, 
+                  data$Habitat,
+                  round(data$miles, 1)) %>% lapply(htmltools::HTML)
+}
+
+leaflet() %>% 
+      addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
+      addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+      addPolylines(data = spr, group = 'Spring Run Rearing', label = make_label(spr),
+                   color = '#5e3c99', opacity = .8, weight = 3) %>% 
+      addPolylines(data = sps, group = 'Spring Run Spawning', label = make_label(sps),
+                   color = '#e66101', opacity = 1, weight = 3) %>% 
+      addCircleMarkers(data = trap_sites,  label = trap_sites$site, 
+                   weight = 1.5, color = "blue",
+                   opacity =  1, fillOpacity = .25, 
+                   group = "Rotary Screw Traps",
+                   labelOptions = labelOptions(noHide = T, # Set to F to hide labels
+                                               style = list("font-size" = "14px")), 
+                   popup = paste(sep = "<br/>",
+                                 trap_sites$subsite,
+                                 paste("River Mile:", trap_sites$river_mile),
+                                 paste("RST Size:", trap_sites$rst_size),
+                                 paste("RST Season:", trap_sites$trapping_season))) %>%
+      addLayersControl(
+        baseGroups = c("Map", "Satellite"),
+        overlayGroups = c('Spring Run Rearing','Spring Run Spawning', "Rotary Screw Traps")) %>% 
+      addLegend(colors = c('#5e3c99', '#e66101'), labels = c('rearing', 'spawning'),
+                position = 'topleft', title = 'Habitat Type') %>% 
+      setView(lat = 38.85, lng = -121.49, zoom = 7.5)
+```
+
+
+The above map shows RST spring run habitat extents and RST on each tributary. We can use this to visualize how much spawning habitat is captured by each RST to determine which RST to use 
+
+
+```{r}
+rst_catch <- read_csv(here::here("data", "standard-format-data", "standard_rst_catch.csv"))
+
+catch_per_site_per_year <- rst_catch %>% group_by(stream, site, year = year(date)) %>% 
+  summarize(total_catch = sum(count, na.rm = T))
+
+```
+
+## Sites per Stream {.tabset}
+
+### Battle Creek 
+
+Number of Sites: 1
+
+Site Location: This site is located on the bottom end of the spawning extent but does not appear to capture 100% of the spawning grounds. 
+
+```{r}
+catch_per_site_per_year %>% 
+  filter(stream == "battle creek")
+```
+
+### Butte Creek 
+
+Number of Sites: 2
+
+Site Location in relation of SR spawning habitat: 
+
+* Okie Dam: Okie Dam is located at the bottom of the spawning extent for spring run salmon. 100% of the Spring Run spawning grounds lie upstream of Adams Dam. 
+* Adams Dam: Adams Dam is located downstream of Okie Dam. 100% of the Spring Run spawning grounds lie upstream of Adams Dam. 
+
+```{r}
+catch_per_site_per_year %>% 
+  filter(stream == "butte creek") %>% 
+  pivot_wider(values_from = total_catch, names_from = site)
+```
+
+### Clear Creek 
+
+Number of Sites: 2
+
+Site Location in relation to SR spawning habitat: 
+
+* UCC: Most but not all of the spring run spawning grounds on Clear creek lie above the UCC site. 
+* LCC: 100% of spring run spawning grounds lie above LCC site. 
+
+```{r}
+catch_per_site_per_year %>% 
+  filter(stream == "clear creek") %>% 
+  pivot_wider(values_from = total_catch, names_from = site)
+```
+
+
+### Feather River 
+
+Number of Sites:  7 sites 
+
+Site Location in relation to SR spawning habitat: 
+
+LFC - Low flow channel sites are located in the middle of Spring Run Spawning habitat
+
+* Gateway Riffle
+* Eye Riffle
+* Steep Riffle
+
+HFC - 100% of the Spring Run Spwaning habitat lies upstream of the high flow channel sites. 
+
+* Herringer Riffle
+* Live Oak
+* Sunset Pumps
+* Shawns Beach 
+
+```{r}
+catch_per_site_per_year %>% 
+  filter(stream == "feather river") %>% 
+  pivot_wider(values_from = total_catch, names_from = site)
+```
+
+
+### Mill Creek 
+
+Number of Sites: 1
+
+Site Location in relation to SR spawning habitat: 
+
+The mill creek RST is located near the canyon mouth. 100% of the spawning grounds fall upstream of the mill creek trap. 
+
+
+```{r}
+catch_per_site_per_year %>% 
+  filter(stream == "mill creek") %>% 
+  pivot_wider(values_from = total_catch, names_from = site)
+```
+
+### Yuba River 
+
+Number of Sites: 2
+
+Site Location in relation to SR spawning habitat: 
+
+* Hallwood site has 3 rst and is located in the middle of the SR spawning extent. 
+* YUB? TBD #TODO find lat and long for yuba river site 
+
+
+```{r}
+catch_per_site_per_year %>% 
+  filter(stream == "yuba river") %>% 
+  pivot_wider(values_from = total_catch, names_from = site)
+```
+
+## Proposals  {.tabset} 
+
+### Use lowest trap in stream  
+
+Pros: Get all spawning extent in every case, prespawn mortality in system is accounted for 
+
+Cons: Data loss 
+
+One route forward is to just use the lowest trap on the system if there are multipule traps. using the lower trap catches more spawning habitat so includes more of the total population of Juveniles. However, by just using one trap we limit the total data that we have. The following visual looks at how much data we loose by not using both traps. 
+
+```{r}
+# Total days sampled for each site and then table with % of data lost with just using one site 
+upper_lower <- tibble(site = unique(rst_catch$site), 
+                      lowest_site = c(TRUE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE, 
+                                     FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, TRUE, TRUE))
+
+rst_catch %>% left_join(upper_lower) %>% 
+  filter(stream != "sacramento river") %>%
+  group_by(date, site, stream, lowest_site) %>% 
+  summarize(days_fished = n()) %>%
+  ggplot(aes(x = site, y = days_fished, fill = lowest_site)) +
+  scale_fill_manual(values = c(color_pal[1], color_pal[4])) +
+  geom_col() + 
+  labs(x = "Site", y = "Total Days Fished") + 
+  facet_wrap(~stream, scales = "free")+ 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+```
+
+Blue sites below are the lowest traps on a stream. Taking just blue traps would loose a lot of total days fished. Some lower sites were only fished a few monitoring seasons. 
+
+### Use All Sites {.tabset} 
+
+#### Mean of all sites with scaling factor applied 
+
+Pros: Get all spawning extent in every case, prespawn mortality in system is accounted for, data loss 
+
+Cons: ? 
+
+Butte, Clear, Feather, Sacramento, & Yuba all have more than one RST located at different sites on the stream. The table below explains how we would combine sites: 
+
+
+| Stream | Number of Sites | Recommendation for Combining | 
+| :------ | :------------------ | :-----------------------------------------------| 
+| Butte | 2 | When both Okie and Adam dam are running we should use both traps. Both should capture 100% of the spawning grounds so we would not need to scale for upstream spawning habitat. Use the mean catch and add additional extrapolation (efficiency trials or other effort measures) to calculate weekly or yearly passage estimates. Using mean catch will help us capture juvenile mortality between upper and lower traps. |
+| Clear | 2 | Use both UCC and LCC to maximize data. UCC site add a percentage of juveniles to account for the proportion of spawning grounds below the RST. Apply efficiency trials to both sites to get expanded catch and then take the mean of passage estimates for each week or year. |
+| Feather | 7 | Use all sites to maximize data. LFC sites add a percentage of juveniles to account for the proportion of spawning grounds below the RST. Apply efficiency trials to get expanded catch for each site and then take the mean of passage estimates for each week or year. | 
+| Yuba | 2 | Use both sites. For both sites will need to add a percentage of juveniles to account for the proportion of spawning grounds below the RSTs. The side by side traps at hallwood should be summed. Apply efficiency trials to both sites to get expanded catch and then take the mean of passage estimates for each week or year. 
+
+#### Max of all sites with scaling factor applied 
+
+Pros: Get all spawning extent in every case, data loss 
+
+Cons: does not account for prespawn mortality in system 
+
+Butte, Clear, Feather, Sacramento, & Yuba all have more than one RST located at different sites on the stream. The table below explains how we would combine sites: 
+
+
+| Stream | Number of Sites | Recommendation for Combining | 
+| :------ | :------------------ | :-----------------------------------------------| 
+| Butte | 2 | When both Okie and Adam dam are running we should use both traps. Both should capture 100% of the spawning grounds so we would not need to scale for upstream spawning habitat. Use the max catch and add additional extrapolation (efficiency trials or other effort measures) to calculate weekly or yearly passage estimates.  |
+| Clear | 2 | Use both UCC and LCC to maximize data. UCC site add a percentage of juveniles to account for the proportion of spawning grounds below the RST. Apply efficiency trials to both sites to get expanded catch and then take the max of passage estimates for each week or year. |
+| Feather | 7 | Use all sites to maximize data. LFC sites add a percentage of juveniles to account for the proportion of spawning grounds below the RST. Apply efficiency trials to get expanded catch for each site and then take the max of passage estimates for each week or year. | 
+| Yuba | 2 | Use both sites. For both sites will need to add a percentage of juveniles to account for the proportion of spawning grounds below the RSTs. The side by side traps at hallwood should be summed. Apply efficiency trials to both sites to get expanded catch and then take the max of passage estimates for each week or year. 
+
