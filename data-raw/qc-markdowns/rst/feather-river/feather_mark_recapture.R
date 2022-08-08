@@ -11,7 +11,7 @@ CatchRaw <- sqlFetch(feather_camp, "CatchRaw")
 TrapVisit <- sqlFetch(feather_camp, "TrapVisit") %>% glimpse
 Release <- sqlFetch(feather_camp, "Release")
 ReleaseFish <- sqlFetch(feather_camp, "ReleaseFish") %>% glimpse
-
+fish_origin_lu <- sqlFetch(feather_camp, "luFishOrigin") %>% glimpse
 # select relevant column
 selected_trap_visit <- TrapVisit %>% 
   select(trapVisitID, visitTime) %>% 
@@ -39,10 +39,13 @@ unique(selected_released_fish$median_fork_length_released)
 
 selected_release <- Release %>% 
   full_join(selected_released_fish, by = c("releaseID" = "releaseID")) %>%
+  left_join(fish_origin_lu, by = c("markedFishOriginID" = "fishOriginID")) %>%
   filter(releasePurposeID == 1) %>% 
-  select(releaseID, releaseSiteID, nReleased, releaseTime, median_fork_length_released) %>% 
-  mutate(release_date = as_date(releaseTime)) %>% 
-  select(-releaseTime) %>% glimpse
+  select(releaseID, releaseSiteID, nReleased, releaseTime, median_fork_length_released, fishOrigin) %>% 
+  mutate(release_date = as_date(releaseTime),
+         release_time = hms::as_hms(releaseTime),
+         fish_origin = tolower(fishOrigin)) %>% 
+  select(-releaseTime, -fishOrigin) %>% glimpse
 
 # Check catch ID 
 catch_trap_id <- CatchRaw$trapVisitID %>% unique() %>% sort()
@@ -63,6 +66,7 @@ catch_with_date <- selected_catch %>%
   mutate(efficiency = number_recaptured/nReleased) %>% 
   glimpse()
 
+# catch_with_date$release_time %>% unique()
 unique(selected_release$median_fork_length_recaptured)
 unique(catch_with_date$median_fork_length_recaptured)
 
@@ -88,4 +92,13 @@ catch_with_date %>%
   geom_point()
 
 # Save data 
-write_rds(catch_with_date, "data/rst/feather_mark_recapture_data.rds")
+# write_rds(catch_with_date, "data/rst/feather_mark_recapture_data.rds")
+# 
+# write_csv(catch_with_date, "data/rst/feather_mark_recapture.csv")
+
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(combined_release,
+           object_function = f,
+           type = "csv",
+           name = "rst/feather-river/data/feather_mark_recapture_data.csv")

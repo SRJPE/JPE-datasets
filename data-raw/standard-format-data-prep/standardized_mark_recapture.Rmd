@@ -14,6 +14,9 @@ library(tidyverse)
 library(googleCloudStorageR)
 
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089")
+
+Sys.getenv("GCS_DEFAULT_BUCKET")
+Sys.getenv("GCS_AUTH_FILE")
 ```
 
 ## Mark Recapture Data Standardization 
@@ -40,18 +43,16 @@ Data dictionary for standard format:
 | stream | B, C, F, KL | stream that the data is from |
 | release_id | B, C, F, KL | the unique identifier for each release trial | 
 | date_released | B, C, F, KL | date that marked fish are released |
-| time_released | B, C | time that marked fish are released |
+| time_released | B, C, F, KL | time that marked fish are released |
 | site | F, KL | site on stream where fish are released |
 | number_released | B, C, F, KL | count of fish released |
 | median_fork_length_released | B, C, KL | median fork length of group of fish released |
-| night_release |B, C, F, KL | TRUE if the release is at night|
+| night_release |B, C | TRUE if the release is at night, preassigned in Battle and Clear, refer to release_time column for more complete information|
 | days_held_post_mark | B, C | number of days marked fish are held before released |
 | flow_at_release | B, C | flow measure at time and stream of release |
 | temperature_at_release | B, C | temperature measure at time and stream of release |
 | turbidity_at_release | B, C | turbidity measure at time and stream of release |
-| adipose_clipped | B | TRUE is adipose fin clipped |
-
-
+| origin | B, F, KL | fish origin (natural, hatchery, mixed, unknown, not recorded, or NA) |
 
 **Recapture Table:**
 
@@ -90,7 +91,7 @@ number recaptured per day not the total number recaptured
 #                saveToDisk = "../../data/rst/battle_mark_recapture.csv",
 #                overwrite = TRUE)
 
-battle_mark_recap <- read_csv("../../data/rst/battle_mark_recapture.csv") %>% 
+battle_mark_recap <- read_csv(here::here("data", "rst", "battle_mark_recapture.csv")) %>% 
   mutate(stream = "battle creek",
          site = "ubc",
          release_id = paste0("BAT", row_number())) %>%
@@ -137,10 +138,10 @@ number recaptured per day not the total number recaptured
 ```{r, message=FALSE, warning=FALSE}
 # gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
 #                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/rst/clear_mark_recapture.csv",
+#                saveToDisk = here::here("data", "rst", "clear_mark_recapture.csv"),
 #                overwrite = TRUE)
 
-clear_mark_recap <- read_csv("../../data/rst/clear_mark_recapture.csv") %>% 
+clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv")) %>% 
   mutate(stream = "clear creek",
          release_id = paste0("CLR", row_number()), 
          site = case_when(release_site == "CCRB" ~ "ucc", 
@@ -181,10 +182,10 @@ below that summarized the data by efficiency trial)
 ```{r, message=FALSE, warning=FALSE}
 # gcs_get_object(object_name = "rst/feather-river/data/feather_river_mark_recapture_data.csv",
 #                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/rst/feather_mark_recapture.csv",
+#                saveToDisk = here::here("data", "rst", "feather_mark_recapture.csv"),
 #                overwrite = TRUE)
 
-feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>% 
+feather_mark_recap <- read_csv(here::here("data", "rst", "feather_mark_recapture.csv")) %>% 
   filter(!is.na(releaseSiteID)) %>%
   rename(number_released = nReleased, 
          release_id = releaseID, 
@@ -202,7 +203,7 @@ feather_mark_recap <- read_csv("../../data/rst/feather_mark_recapture.csv") %>%
   glimpse
 
 feather_released <- feather_mark_recap %>% 
-  select(stream, release_id, site, release_date, number_released, median_fork_length_released) %>% 
+  select(stream, release_id, site, release_date, release_time, number_released, median_fork_length_released, origin = fish_origin) %>% 
   distinct() %>% 
   glimpse
   
@@ -226,7 +227,7 @@ below that summarized the data by efficiency trial)
 #                saveToDisk = "../../data/rst/knights_landing_mark_recapture.csv",
 #                overwrite = TRUE)
 
-knights_landing_mark_recap <- read_csv("../../data/rst/knights_landing_mark_recapture.csv") %>% 
+knights_landing_mark_recap <- read_csv(here::here("data", "rst", "knights_landing_mark_recapture.csv")) %>% 
   rename(number_released = nReleased, release_id = releaseID) %>% 
   mutate(stream = "sacramento river", 
          site = "knights landing",
@@ -235,7 +236,7 @@ knights_landing_mark_recap <- read_csv("../../data/rst/knights_landing_mark_reca
   glimpse
 
 knights_landing_released <- knights_landing_mark_recap %>% 
-  select(stream, release_id, site, release_date, number_released, median_fork_length_released) %>% 
+  select(stream, release_id, site, release_date, release_time, number_released, median_fork_length_released, origin = fish_origin) %>% 
   distinct() %>% 
   glimpse
   
@@ -331,7 +332,7 @@ combined_release %>% ggplot() +
 
 ### median_fork_length_released
 Individual fork lengths for released fish are not provided by Battle Creek, Clear Creek, or Feather River. 
-Kights Landing does provide some of this data but it is very sparse, so was not included here since we are standizing historical data. For future data we would want to be able to have a seperate table that includes individual release fork lengths for every fish released. 
+Kights Landing does provide some of this data but it is very sparse, so was not included here since we are standardizing historical data. For future data we would want to be able to have a separate table that includes individual release fork lengths for every fish released. 
 
 All fork length values are summarized to just show medium fork length. Feather data does not
 provide data on the fork length of released fish. Knights Landing, Battle Creek, and 
@@ -429,23 +430,16 @@ combined_release %>%
         text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
-### origin/adipose_clipped   
-Only battle creek provides origin
-We converted origin to adipose clipped to be consistant with other datasets
+
+### origin   
+Only battle, knights landing, and feather provide origin
 ```{r}
-table(combined_release$origin)
-
-combined_release <- combined_release %>% 
-  mutate(adipose_clipped = case_when(origin == "hatchery" ~ TRUE, 
-                                     origin == "natural" ~ FALSE)) %>%
-  select(-origin) 
-
-table(combined_release$adipose_clipped)
+table(combined_release$origin, useNA = "ifany")
 ```
 
 
 ```{r}
-filter(combined_release, stream %in% c("sacramento river", "feather river", "clear creek")) %>% pull(adipose_clipped) %>% unique()
+filter(combined_release, stream %in% c("sacramento river", "feather river", "clear creek")) %>% pull(origin) %>% unique()
 ```
 
 
@@ -635,6 +629,7 @@ summarized_mark_recapture %>%
 ```{r}
 knitr::kable(align = 'c', head(combined_release, 5))
 combined_release$site %>% unique
+combined_release %>% View
 
 knitr::kable(align = 'c', head(combined_recapture, 5))
 ```
