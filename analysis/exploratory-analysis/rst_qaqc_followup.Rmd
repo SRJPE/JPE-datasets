@@ -1,0 +1,96 @@
+---
+title: "Historical RST data QA/QC follow up"
+author: "Ashley Vizek"
+date: "5/19/2022"
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# Background information about the issue from Josh
+
+There is one issue. For example,  for records 4:17 (Battle Creek, 2003) there were marked fish released (r1) and recaptured (m1) but no unmarked catch (u1). This can’t be right. At a minimum u1=r1. That is, they had to catch unmarked fish to mark and release. And likely u1>>r1 (they don’t mark all the fish they catch). There may be an error in the way the unmarked catch data are compiled.
+
+What we should see in the file I created is some records where u1, r1, and m1 are all NA (no sampling in that strata), where u1!NA but r1 and m1=NA (no mark-recaptured), or where u1, r1, and m1 are all !=NA.
+
+This may help:
+
+- r: the number of fish marked and released over the week (must be alive to release it)
+
+- m: the number of marked fish recaptured over the week (dead or alive)
+
+- u: the number of unmarked fish captured over the week (dead or alive)
+
+ 
+If an unmarked fish was captured and marked, then it contributes to r, not u.
+
+If an unmarked fish was captured and not marked, then it contributes to u
+
+Theoretically it is possible for u to be zero with r>0 but very unlikely. Say they marked all unmarked fish captured on day 1 and then released them, and some marked fish were recaptured on later days in the week. You would have non-zero values for r and m. The only way for u to be zero in this scenario is if no unmarked fish were captured on days 2:7 and instead only marked fish were recaptured.
+
+# Data pull
+
+```{r}
+# weekly mark and recapture
+mark_recapture <- read_csv("data/datasets_for_josh/jpe_weekly_releases_and_recaptures.csv") %>%
+  glimpse()
+# weekly catch (unmarked)
+catch <- read_csv("data/datasets_for_josh/jpe_weekly_unmarked_catch.csv") %>% 
+  glimpse()
+```
+
+## Data join
+
+```{r}
+u1_m1 <- full_join(select(mark_recapture, tributary, yr, Jwk, r1, m1, m2, m3),
+                   select(catch, tributary, site, yr = Yr, Jwk, run, origin, u1))
+
+# summarize catch then join
+catch_summary <- catch %>%
+  group_by(tributary, site, Yr, Jwk) %>%
+  summarize(u1 = sum(u1))
+
+u1summary_m1 <- full_join(select(mark_recapture, tributary, yr, Jwk, r1, m1, m2, m3),
+                          select(catch_summary, tributary, site, yr = Yr, Jwk, u1))
+
+mismatch <- filter(u1summary_m1, r1 > 0 & (is.na(u1)))
+
+battle_catch <- read_csv("data/rst/battle_rst_catch.csv")
+# Battle - 2003 - wk 4-17
+filter(catch_summary, tributary == "Battle Creek", Yr == 2003) 
+# trapping does not start until week 44.
+# the efficiency tests may have been conducted prior to the start of the monitoring
+# period as a test to make sure the trap was working as expected
+
+# Clear - 2003 - wk 4-20
+filter(catch_summary, tributary == "Clear Creek", Yr == 2003) 
+# trapping does not start until week 40. according to other sources
+# the trap may have been running since 1998 but we don't have that data. (https://www.waterboards.ca.gov/waterrights/water_issues/programs/bay_delta/california_waterfix/exhibits/docs/PCFFA&IGFR/part2rebuttal/pcffa_208.pdf)
+
+# Battle 2006 - wk 6-8, 12
+filter(catch_summary, tributary == "Battle Creek", Yr == 2006)
+# There is a big gap in the catch data between week 5 and 17 (February to April)
+# Found a note in the data that: "The passage index was not calculated for the period October 1, 2005 to September 30, 2006 because high flows severely limited our ability to operate the traps."
+# My guess is that catch data was not recorded February through April but a few efficiency tests were run as
+# a test to check how the trap was working
+
+# Battle 2016 - wk 53
+# fish released on 12/31/2016 but no catch data after 12/26/2016. are we missing some data? was this data filtered for spring only (didn't think so because some fall, winter included but the file is labeled UBC_spring). Have environmental data for these dates and
+# trap is "fishing properly"
+filter(catch_summary, tributary == "Battle Creek", Yr == 2016)
+
+# Battle 2018 - wk 5
+# same situation as above. fished released on 02/01/2018 but don't have catch data between 1/25/18 and 2/7/18
+filter(catch_summary, tributary == "Battle Creek", Yr == 2018)
+
+# Battle 2020 - wk 45-46
+# fish released 03/02/20 and 03/08/20 but no catch between 02/27 and 03/10
+filter(catch_summary, tributary == "Battle Creek", Yr == 2020)
+```
+
+# Conclusion
+
+The mismatch in 2003 for both Clear and Battle is due to catch data beginning in September 2003 whereas the trap may have been operating before that. In follow up with data contact from Battle/Clear (Mike Schraml), he provided guidance that 2003 data should not be used. Additionally, he confirmed that data for ALL runs for Battle and Clear were provided to FlowWest. Additional follow up is needed to determine rationale for catch/efficiency mismatches for Battle in 2006, 2016, 2018, and 2020.
