@@ -93,6 +93,4 @@ filter(catch_summary, tributary == "Battle Creek", Yr == 2020)
 
 # Conclusion
 
-The majority of Battle Creek catch data is for spring run salmon (depending on which race designation use there are also some from fall). I don't think we were given the complete catch data, just data filtered to spring run which explains why unmarked catch doesn't line up with marked catch. 
-
-The mismatch in 2003 for both Clear and Battle is due to catch data beginning in September 2003 whereas the trap may have been operating before that.
+The mismatch in 2003 for both Clear and Battle is due to catch data beginning in September 2003 whereas the trap may have been operating before that. In follow up with data contact from Battle/Clear (Mike Schraml), he provided guidance that 2003 data should not be used. Additionally, he confirmed that data for ALL runs for Battle and Clear were provided to FlowWest. Additional follow up is needed to determine rationale for catch/efficiency mismatches for Battle in 2006, 2016, 2018, and 2020.
