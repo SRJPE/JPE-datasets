@@ -1,0 +1,77 @@
+---
+title: "checking date format"
+output: html_document
+date: "2022-08-09"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Checking date format between standard_catch and standard_flow
+
+# QC Checks {.tabset}
+
+## Standard flow
+
+Date is formatted as a date without hms.
+
+```{r}
+flow_raw <- read_csv(here::here("data","standard-format-data", "standard_flow.csv")) %>% glimpse
+```
+
+
+## Standard catch
+
+Date is formatted as POSIXct
+
+```{r}
+catch_raw <- read_csv(here::here("data","standard-format-data", "standard_catch.csv")) %>% glimpse
+```
+
+## Standard trap
+
+Date is formatted as POSIXct
+```{r}
+trap_raw <- read_csv(here::here("data","standard-format-data", "standard_trap.csv")) %>% glimpse
+```
+## Standard environmental
+
+Date formatted as date.
+
+```{r}
+environment_raw <- read_csv(here::here("data","standard-format-data", "standard_environmental.csv")) %>% glimpse
+```
+## Standard recapture
+
+Date formatted as POSIXct.
+
+```{r}
+recapture_raw <- read_csv(here::here("data","standard-format-data", "standard_recapture.csv")) %>% glimpse
+```
+## Standard release
+
+Date formatted as POSIXct.
+
+```{r}
+release_raw <- read_csv(here::here("data","standard-format-data", "standard_release.csv")) %>% glimpse
+```
+
+# Fix
+
+Identified fix is to format standard_catch date as date rather than POSIXct. This
+will be done in the rst_catch_standard_format.Rmd. This is the Rmd that generates
+the standard format date so best to keep all fixes in one place.
+
+Additionally check standard_trap. Decided to format trap_start_date and trap_stop_date
+as date rather than POSIXct. 
+
+Checked standard recapture. Format recaptured_date to date rather than POSIXct.
+
+Checked standard release. Format release_date to date rather than POSIXct.
