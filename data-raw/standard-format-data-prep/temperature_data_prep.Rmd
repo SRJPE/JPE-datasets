@@ -31,48 +31,13 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
-# Trap location and flow gage lookup
-
-```{r}
-# We need temperature data for each of the sites included in the trap_locations table
-# for all of the years listed.
-# We do not need to go to subsite scale of resolution.
-# For now this table is for reference to find the years that data is needed.
-# This table is also helpful for understanding years where we need flow data for each location:
-# https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/rst
-
-trap_locations_raw <- read_csv("rst_sites.csv")
-
-trap_locations <- trap_locations_raw %>%
-  select(stream, site, subsite, river_location, latitude, longitude, start_date) %>%
-  distinct()
-
-trap_locations
-  # identify years
-
-# from ashley: where is this coming from? do we need this?
-gage_locations_raw <- read_csv("gage_sites.csv")
-
-# Idenntify which flow gage locations have temperature measures
-
-gage_locations <- gage_locations_raw %>%
-  filter(flow_gage == T) %>%
-  select(tributary, site_name, agency, latitude, longitude, identifier) %>%
-  distinct() %>%
-  rename(gage_latitude = latitude,
-         gage_longitude = longitude)
-  # get codes
-
-gage_locations
-```
-
 # Pull in temperature data {.tabset}
 
 ## Battle Creek
 
 ```{r}
 # Check if CDEC data provides temp data for respective location
-cdec_datasets("BAT") 
+# cdec_datasets("BAT") 
 # CDEC has no temperature data available
 ```
 
@@ -114,6 +79,7 @@ ggplot(battle_temp, aes(x=date, y = temp_degC)) +
   geom_line(color = "darkred") +
   labs(y = "Temperature (deg C)")
 ```
+
 ### Save data
 
 ```{r}
@@ -121,23 +87,15 @@ write_rds(battle_temp, here::here("data-raw", "standard-format-data-prep","temp_
 ```
 
 ## Butte Creek
-```{r}
-# Check if CDEC data provides temp data for respective location
-cdec_datasets("BCK")
-```
 
 ### CDEC
 ```{r}
 # Check if CDEC data provides temp data for respective location
 # from ashley: this is a repeat of code above. reason why it is here again?
-cdec_datasets("BCK")
+# cdec_datasets("BCK")
 
 # Since this location has sensor that collects temp data, we can make request
 BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
-write.csv(BCK_CDEC,"BCK_CDEC.csv", row.names = FALSE)
-
-# Read created CSV
-BCK_CDEC <- read_csv("BCK_CDEC.csv")
 
 BCK_hourly_temps <- BCK_CDEC %>%
   mutate(date = as_date(datetime),
@@ -213,14 +171,10 @@ USGS provides no temperature data for Butte Creek. This was confirmed with mappe
 ### CDEC
 ```{r}
 # Check if CDEC data provides temp data for respective location
-cdec_datasets("IGO")
+# cdec_datasets("IGO")
 
 # Since this location has sensor that collects temp data, we can make request
 IGO_CDEC <- cdec_query(station = "IGO", dur_code = "H", sensor_num = "25", start_date = "2003-01-01")
-write_csv(IGO_CDEC,"IGO_CDEC.csv")
-
-# Read created CSV
-IGO_CDEC <- read_csv("IGO_CDEC.csv")
 
 IGO_hourly_temps <- IGO_CDEC %>%
   mutate(date = as_date(datetime),
@@ -320,13 +274,9 @@ write_rds(lcc_temp, here::here("data-raw", "standard-format-data-prep","temp_dat
 ### CDEC
 ```{r}
 
-cdec_datasets("DCV")
+# cdec_datasets("DCV")
 
 DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
-write_csv(DCV_CDEC,"DCV_CDEC.csv")
-
-# Read created CSV
-DCV_CDEC <- read_csv("DCV_CDEC.csv")
 
 DCV_hourly_temps <- DCV_CDEC %>%
   mutate(date = as_date(datetime),
@@ -361,10 +311,6 @@ DCV_hourly_temps %>%
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 DCV_USGS <- readNWISdv(11383500, "00010") # parameter code 00010: water temperature
-write_csv(DCV_USGS,"DCV_USGS.csv")
-
-# Read created CSV
-DCV_USGS <- read_csv("DCV_USGS.csv")
 
 # Format to make tidier
 DCV_daily_temps <- DCV_USGS %>%
@@ -426,13 +372,9 @@ write_rds(DCV_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 ### CDEC
 ```{r}
 
-cdec_datasets("GRL")
+# cdec_datasets("GRL")
 
 GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
-write_csv(GRL_CDEC,"GRL_CDEC.csv")
-
-# Read created CSV
-GRL_CDEC <- read_csv("GRL_CDEC.csv")
 
 GRL_hourly_temps <- GRL_CDEC %>%
   mutate(date = as_date(datetime),
@@ -467,11 +409,11 @@ GRL_hourly_temps %>%
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 # GRL_USGS <- readNWISdv(11407000, "00010") # parameter code 00010: water temperature
-# write.csv(GRL_USGS,"GRL_USGS.csv", row.names = FALSE)
-
-# Read created CSV
-GRL_USGS <- read_csv("GRL_USGS.csv")
-GRL_USGS
+# # write.csv(GRL_USGS,"GRL_USGS.csv", row.names = FALSE)
+# 
+# # Read created CSV
+# GRL_USGS <- read_csv("GRL_USGS.csv")
+# GRL_USGS
 ```
 
 USGS does not provide temperature data for Feather River. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
@@ -486,13 +428,10 @@ The CDEC data does not cover the extent of the monitoring period for Feather Riv
 ### CDEC
 ```{r}
 
-cdec_datasets("MLM") 
+# cdec_datasets("MLM") 
 
 MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
-write_csv(MLM_CDEC,"MLM_CDEC.csv")
 
-# Read created CSV
-MLM_CDEC <- read_csv("MLM_CDEC.csv")
 
 MLM_hourly_temps <- MLM_CDEC %>%
   mutate(date = as_date(datetime),
@@ -527,10 +466,6 @@ MLM_hourly_temps %>%
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 MLM_USGS <- readNWISdv(11381500, "00010") # parameter code 00010: water temperature temperature
-write_csv(MLM_USGS,"MLM_USGS.csv")
-
-# Read created CSV
-MLM_USGS <- read_csv("MLM_USGS.csv")
 
 # Format to make tidier
 MLM_daily_temps <- MLM_USGS %>%
@@ -652,13 +587,9 @@ write_rds(yuba_air, here::here("data-raw", "standard-format-data-prep","temp_dat
 
 ## Sacramento River - Knights Landing
 ```{r}
-cdec_datasets("WLK")
+# cdec_datasets("WLK")
 
 WLK_CDEC <- cdec_query(station = "WLK", dur_code = "E", sensor_num = "25", start_date = "1995-01-01")
-write_csv(WLK_CDEC,"WLK_CDEC.csv")
-
-# Read created CSV
-WLK_CDEC <- read_csv("WLK_CDEC.csv")
 
 WLK_hourly_temps <- WLK_CDEC %>%
   mutate(date = as_date(datetime),
@@ -694,10 +625,6 @@ WLK_hourly_temps %>%
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 WLK_USGS <- readNWISdv(11390500, "00010") # parameter code 00010: water temperature temperature
-write_csv(WLK_USGS,"WLK_USGS.csv")
-
-# Read created CSV
-WLK_USGS <- read_csv("WLK_USGS.csv")
 
 # Format to make tidier
 WLK_daily_temps <- WLK_USGS %>%
@@ -770,61 +697,5 @@ WLK_combined %>%
   geom_line(aes(y = temp_USGS), color = "blue", linetype ="twodash") +
   labs(y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
-
-## Sacramento River - Tisdale
-### CDEC data
-
-CDEC and USSGS temperature data is available for Tisdale
-
-
-```{r}
-
-# from ashley - i am confused what is going on here - is this a station for clear lake?
-
-# date must be last 10 years
-# Elevation : 635.5 m 
-# Link https://www.ncdc.noaa.gov/cdo-web/datasets/GHCND/stations/GHCND:USR0000CCOU/detail
-NOAA_KEY <- 'IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch'
-
-tisdale_air_gage <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USC00R0000CCOU',
-                         datatypeid = 'TAVG', startdate = '2000-01-01',
-                         enddate = '2007-04-12', token = NOAA_KEY, limit = 130) %>% glimpse
-
-tisdale_air_gage1 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CCOU', 
-                         datatypeid = 'TAVG', startdate = '2005-01-01', 
-                         enddate = '2014-12-31', token = NOAA_KEY, limit = 130)
-tisdale_air_gage1 <- tisdale_air_gage1$data %>% 
-  select(date, value) %>% 
-  mutate(date = as.Date(date))
-
-tisdale_air_gage2 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CCOU', 
-                         datatypeid = 'TAVG', startdate = '2015-01-01', 
-                         enddate = '2022-12-31', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
-tisdale_air_gage2 <- tisdale_air_gage2$data %>% 
-  select(date,value) %>% 
-  mutate(date = as.Date(date))
-
-tisdale_air_gage3 <- rnoaa::ncdc(datasetid = 'GSOM', stationid = 'GHCND:USR0000CCOU', 
-                         datatypeid = 'TAVG', startdate = '2013-01-01', 
-                         enddate = '2022-06-29', token = "IsRvscvYWFkXtEhLZAEIEyUlMXMCNIch", limit = 130)
-tisdale_air_gage3 <- tisdale_air_gage3$data %>% 
-  select(date,value) %>% 
-  mutate(date = as.Date(date))
-
-# Combine Gage ranges spans
-rbind(as.data.frame(tisdale_air_gage1), as.data.frame(tisdale_air_gage2))
-tisdale_air_gage12 = rbind(as.data.frame(tisdale_air_gage1), as.data.frame(tisdale_air_gage2))`tisdale_air_gage123 = rbind(tisdale_air_gage12, as.data.frame(tisdale_air_gage3))
-tisdale_air_gage123
-```
-
-
-
-
-
-
-
-
-
-
 
 
