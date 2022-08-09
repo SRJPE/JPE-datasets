@@ -1,10 +1,10 @@
 ---
-title: "Feather Carcass QC 2015"
+title: "Feather Carcass QC 2016"
 author: "Inigo Peng"
 date: '2022-07-21'
 output: html_document
 ---
-  
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 
@@ -18,28 +18,26 @@ library(janitor)
 library(hms) #?as_hms()
 library(RODBC)
 library(knitr)
-library(wesanderson)
 ```
-
 
 # Feather River Carcass Data
 
 ## Description of Monitoring Data
 
 **Timeframe:** 
-  
+
 **Video Season:** 
-  
+
 **Completeness of Record throughout timeframe:** 
-  
+
 **Sampling Location:**
-  
+
 **Data Contact:** 
-  
+
 Any additional info?
-  
+
 ## Access Cloud Data
-  
+
 ```{r, eval=FALSE}
 # Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
 # getwd() to see how to specify paths 
@@ -53,52 +51,55 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
-
 ```
-```{r, eval=FALSE}
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2015/Chops_2015.xlsx",
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+
+```{r,eval=FALSE}
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2016/Chops_2016.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "Chops_2015.xlsx",
+               saveToDisk = "Chops_2016.xlsx",
                overwrite = TRUE)
 #
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2015/ChopHeader_2015.xlsx",
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2016/ChopHeader_2016.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopHeader_2015.xlsx",
+               saveToDisk = "ChopHeader_2016.xlsx",
                overwrite = TRUE)
 
 # 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2015/CWTHeader_2015.xlsx",
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2016/CWTHeader_2016.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTHeader_2015.xlsx",
+               saveToDisk = "CWTHeader_2016.xlsx",
                overwrite = TRUE)
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2015/CWT_2015.xlsx",
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2016/CWT_2016.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWT_2015.xlsx",
+               saveToDisk = "CWT_2016.xlsx",
                overwrite = TRUE)
-
 ```
 ## Raw Data Glimpse: {.tabset}
 
 ### Chop_raw
 ```{r}
-Chops_raw <- read_excel("Chops_2015.xlsx") %>% 
-  rename("ID" = `Chop Header ID`) %>%
-  select(-`Chop ID`) %>% 
+Chop_raw <- read_excel("Chops_2016.xlsx") %>%
+  rename("ID" = `Chop Header ID`,
+         "Count" = `Total Count`) %>%
   glimpse()
+
 ```
 
 ### ChopHeader_raw
 
 ```{r}
-  ChopHeader_raw <- read_excel("ChopHeader_2015.xlsx") %>% 
-  rename("ID" = `Chop Header ID`) %>%
+ChopHeader_raw <- read_excel("ChopHeader_2016.xlsx") %>% 
+  rename(ID = `Chop Header ID`,
+         week_number = `Week #`) %>%
   glimpse()
 ```
 
 ### cwt_raw
 ```{r}
-cwt_raw <- read_excel("CWT_2015.xlsx") %>% 
+cwt_raw <- read_excel("CWT_2016.xlsx") %>% 
   rename("ID" = `CWT Header ID`) %>% 
   glimpse
 
@@ -107,7 +108,7 @@ cwt_raw <- read_excel("CWT_2015.xlsx") %>%
 ### cwt_header_raw
 
 ```{r}
-cwt_header_raw <- read_excel("CWTHeader_2015.xlsx") %>% 
+cwt_header_raw <- read_excel("CWTHeader_2016.xlsx") %>% 
   rename("ID" = `CWT Header ID` ) %>% 
   glimpse
 ```
@@ -157,75 +158,66 @@ cwt <- full_join(cwt_header_raw, cwt_raw) %>%
 
 ## Explore Numeric Variables: {.tabset}
 
-### Chop Variable: `id`, `min`, `sec`
-
 ```{r}
+# Filter clean data to show only numeric variables 
 chop_join %>% 
   select_if(is.numeric) %>%
   colnames()
 ```
 
+### Chop Join Variable: `id`, `section`, `min`
 
 ```{r}
 summary(chop_join$id)
+```
+```{r}
+summary(chop_join$sec)
 ```
 
 ```{r}
 summary(chop_join$min)
 ```
 
-```{r}
-summary(chop_join$sec)
-```
 
-**NA and Unknown Values**
-Provide a stat on NA or unknown values.
+### Chop Join Variable: `count`
 
-```{r}
-round(sum(is.na(chop_join$id))/nrow(chop_join), 3) * 100
-round(sum(is.na(chop_join$min))/nrow(chop_join), 3) * 100
-round(sum(is.na(chop_join$sec))/nrow(chop_join), 3) * 100
+**Numeric Summary of `count` over Period of Record**
 
-```
 
-* `r round(sum(is.na(chop_join$id))/nrow(chop_join), 3) * 100` % of values in the `id` column are NA.
-* `r round(sum(is.na(chop_join$min))/nrow(chop_join), 3) * 100` % of values in the `min` column are NA.
-* `r round(sum(is.na(chop_join$sec))/nrow(chop_join), 3) * 100` % of values in the `sec` column are NA.
-
-### Chop Variable: `count`
 ```{r}
 summary(chop_join$count)
 ```
+
+**NA and Unknown Values**
 
 * `r round(sum(is.na(chop_join$count))/nrow(chop_join), 3) * 100` % of values in the `count` column are NA.
 
 **Plotting count over Period of Record**
 
 ```{r}
+
+# daily chop count over time
 chop_join %>% 
-  ggplot(aes(x = date, y = count)) + 
-  geom_point() +
+  ggplot(aes(x = date, y = count)) +
+  geom_point() + 
+  theme_minimal() +
+  theme(text = element_text(size = 15))
+```
+
+This plot shows the daily chops collected each day from August to December 2016. The data from 2016 does not contain tags information - it only has count.
+
+**Plotting total chops over Period of Record**
+
+```{r}
+chop_join %>% 
+  group_by(date) %>% 
+  summarize(total_chops = sum(count, na.rm = T)) %>% 
+  ggplot(aes(x = date, y = total_chops)) + 
+  geom_col() + 
   theme_minimal()
 ```
-```{r}
-chop_join %>%
-  group_by(date) %>%
-  summarise(total_count = sum(count, na.rm = T)) %>%
-  ggplot(aes(x = date, y = total_count)) +
-  geom_col() +
-  theme_minimal()
-```
-```{r}
-chop_header %>% 
-  select_if(is.numeric) %>% 
-  colnames()
 
-```
-```{r}
-summary(chop_header$id)
-```
-
-
+This plot shows the daily total chops collected between August and December.
 ### Chop Header Variable: `id`
 
 ```{r}
@@ -306,7 +298,6 @@ cwt %>%
   labs(y = "FL", x = "Sex")
 ```
 
-
 ## Explore Categorical variables: {.tabset}
 
 ### Chop Clean Data
@@ -339,7 +330,6 @@ chop_header %>%
 unique(chop_header$crew)
 ```
 ```{r}
-#clr = clear? or cloud
 unique(chop_header$weather)
 ```
 
@@ -352,9 +342,9 @@ chop_header_cleaner <- chop_header %>%
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          weather = case_when(weather == "cld" ~ "cloudy",
-                             weather == "cld ran" ~ "cloudy, rain",
-                             weather == "ran" ~ "rain",
-                             weather == "sun/cld" ~ "sun, cloud",
+                             weather == "cld/rain" ~ "cloudy, rain",
+                             weather == "sun/cld" ~ "sun, cloudy",
+                             weather == "sun/cld/ran" ~ "sun, cloudy, rain",
                              TRUE ~ weather),
          weather = str_replace_all(weather, " ", ""),
          weather = str_replace_all(weather, "/", ",")) %>% 
@@ -392,6 +382,10 @@ unique(cwt$samples_collected)
 ```{r}
 unique(cwt$tag_color)
 ```
+```{r}
+unique(cwt$hallprint_color)
+```
+
 
 ```{r}
 #Dropping sectiongroup and morale
@@ -413,15 +407,16 @@ cwt_cleaner <- cwt %>%
          hallprint_color = case_when(hallprint_color == "grey" ~ "G",
                                      TRUE ~ hallprint_color),
          spawning_condition = case_when(spawning_condition == "UK" ~ "unknown",
-                                        TRUE ~ spawning_condition),
-         tag_color = ifelse(is.na(tag_color), NA, "Blue")) %>% 
+                                        TRUE ~ spawning_condition)) %>% 
   select(-c(morale, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38)) %>% 
   glimpse
 ```
 
+
 ## Data Dictionaries
 
-# Count
+### Chop Count
+
 ```{r}
 percent_na <- chop_cleaner %>%
   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
@@ -430,34 +425,35 @@ percent_na <- chop_cleaner %>%
 
 counts_data_dictionary <- tibble(variables = colnames(chop_cleaner),
                           description = c("ID",
-                                          "Sect", 
+                                          "Sect",
                                           "Min", 
-                                          "Count",
-                                          "Date and Time of Survey"),
-                          percent_na = round(percent_na$value*100))
+                                          "Carcass chopped count",
+                                          "Datetime of the survey"),
+                          percent_na = round(percent_na$value*100,
+                                             digits = 1))
 
 kable(counts_data_dictionary)
 ```
+
 ### Survey
 
 ```{r}
-
 percent_na <- chop_header_cleaner %>%
   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
   pivot_longer(cols = everything())
-# 
+
 chop_header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
-                          description = c("ID",
-                                          "Week Number",
+                          description = c("week_number",
                                           "Weather",
                                           "Crew memeber initials that collected",
                                           "Comments",
+                                          "ID",
                                           "Date and time of survey"),
-                          percent_na = round(percent_na$value*100))
-# 
+                          percent_na = round(percent_na$value*100,
+                                             digits = 1))
+
 kable(chop_header_data_dictionary)
 ```
-
 ### CWT
 ```{r}
 percent_na <- cwt_cleaner %>%
@@ -466,27 +462,35 @@ percent_na <- cwt_cleaner %>%
 
 cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
                           description = c("ID",
-                                          "Date and time of the survey",
-                                          "Crew memeber initials that collected",
+                                          "Date and time of survey",
+                                          "Crew",
                                           "Week number",
                                           "Tag colour",
                                           "CWT ID",
                                           "River section",
-                                          "Tag ID Number",
-                                          "Carcass tagged, recaptured, or chopped",
-                                          "Sex of the carcass",
+                                          "Tag ID number",
+                                          "Tag recapture or chop",
+                                          "Sex",
                                           "Spawning condition",
-                                          "Adipose fin clipped or not",
-                                          "Sample collected",
+                                          "Adipose fin clipped",
+                                          "Samples collected",
                                           "Fork length",
                                           "Head tag number",
                                           "Scales",
                                           "Otoliths",
-                                          "Hallprint colour",
+                                          "Hallprint color",
                                           "Hallprint",
                                           "Comments"),
                           percent_na = round(percent_na$value*100))
-# 
+
 kable(cwt_data_dictionary)
 ```
+## Save cleaned data back to google cloud (TBA)
+
+```{r}
+# Name file [watershed]_[data type].csv
+```
+
+
+
 

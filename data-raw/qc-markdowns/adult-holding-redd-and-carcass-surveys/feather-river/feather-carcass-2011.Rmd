@@ -400,10 +400,27 @@ cwt_cleaner <- cwt %>%
   rename(datetime = "date") %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "Unknown",
-                         TRUE ~ sex)) %>% 
-  select(-c(section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38, morale)) %>% 
+         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+                         TRUE ~ sex),
+         tag_recapture_or_chop = case_when(tag_recapture_or_chop == "T" ~ "tagged",
+                                         tag_recapture_or_chop == "R" ~ "recapture",
+                                         tag_recapture_or_chop == "C" ~ "chop",
+                                         TRUE ~ tag_recapture_or_chop),
+         adipose_fin_clipped = case_when(adipose_fin_clipped == "UK" ~ "unknown",
+                                         adipose_fin_clipped == "Y" ~ "yes",
+                                         adipose_fin_clipped == "N" ~ "no",
+                                         TRUE ~ adipose_fin_clipped),
+         hallprint_color = case_when(hallprint_color == "grey" ~ "G",
+                                     TRUE ~ hallprint_color),
+         spawning_condition = case_when(spawning_condition == "UK" ~ "unknown",
+                                        TRUE ~ spawning_condition),
+         tag_color = case_when(tag_color == "b" ~ "blue",
+                               tag_color == "s" ~ "silver",
+                               tag_color == "no tag" ~ NA_character_,
+                               TRUE ~ tag_color)) %>% 
+  select(-c(morale, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38)) %>% 
   glimpse
+
 ```
 
 ## Comments

@@ -155,7 +155,7 @@ cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names()) %>
 
 ## Explore Numeric Variables: {.tabset}
 
-### Chop Join Variable: `id`, `min`
+### Chop Join Variable: `id`, `min`, `sec`
 ```{r}
 chop_join %>% 
   select_if(is.numeric) %>%
@@ -170,6 +170,9 @@ summary(chop_join$id)
 ```{r}
 summary(chop_join$min)
 ```
+```{r}
+summary(chop_join$sec)
+```
 
 **NA and Unknown Values**
 Provide a stat on NA or unknown values.
@@ -177,10 +180,12 @@ Provide a stat on NA or unknown values.
 ```{r}
 round(sum(is.na(chop_join$id))/nrow(chop_join), 3) * 100
 round(sum(is.na(chop_join$min))/nrow(chop_join), 3) * 100
+round(sum(is.na(chop_join$sec))/nrow(chop_join), 3) * 100
 ```
 
 * `r round(sum(is.na(chop_join$id))/nrow(chop_join), 3) * 100` % of values in the `id` column are NA.
 * `r round(sum(is.na(chop_join$min))/nrow(chop_join), 3) * 100` % of values in the `min` column are NA.
+* `r round(sum(is.na(chop_join$sec))/nrow(chop_join), 3) * 100` % of values in the `sec` column are NA.
 
 ### Chop Join Variable: `count`
 ```{r}
@@ -285,8 +290,6 @@ cwt %>%
   labs(y = "FL", x = "Sex")
 ```
 
-
-## Explore Categorical variables: {.tabset}
 ## Explore Categorical variables: {.tabset}
 
 ### Chop Clean Data

@@ -17,6 +17,7 @@ library(readxl)
 library(janitor)
 library(hms) #?as_hms()
 library(RODBC)
+library(wesanderson)
 library(knitr)
 
 ```
@@ -44,6 +45,9 @@ Any additional info?
 # getwd() to see how to specify paths 
 # Open object from google cloud storage
 # Set your authentication using gcs_auth
+Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
+Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
@@ -54,26 +58,26 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 Read in data from google cloud, glimpse raw data and domain description sheet: 
 
 ```{r}
-knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+# knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
 # Google Cloud Set up
 # Sys.setenv("GCS_AUTH_FILE" = "config.json")
 # Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
 # 
-# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopChannelTBL1.xlsx",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "ChopChannelTBL1.xlsx",
-#                overwrite = TRUE)
-# 
-# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopHeaderTBL.xlsx",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "ChopHeaderTBL.xlsx",
-#                overwrite = TRUE)
-# 
-# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopRecovTBL.xlsx",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "ChopRecovTBL.xlsx",
-#                overwrite = TRUE)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopChannelTBL1.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "ChopChannelTBL1.xlsx",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopHeaderTBL.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "ChopHeaderTBL.xlsx",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopRecovTBL.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "ChopRecovTBL.xlsx",
+               overwrite = TRUE)
 
 # Read Data
 # this is our main data collection table
@@ -346,7 +350,7 @@ round(sum(is.na(chop_channel_join$unknown_tags))/nrow(chop_channel_join), 3) * 1
 
 * `r round(sum(is.na(chop_channel_join$male_chop))/nrow(chop_channel_join), 3) * 100` % of values in the `male_chop` column are NA.
 * `r round(sum(is.na(chop_channel_join$female_chop))/nrow(chop_channel_join), 3) * 100` % of values in the `female_tag` column are NA.
-* `r round(sum(is.na(chop_channel_join$unknown_chops))/nrow(chop_channel_join), 3) * 100` % of values in the `unknown_tags` column are NA.
+  * `r round(sum(is.na(chop_channel_join$unknown_chops))/nrow(chop_channel_join), 3) * 100` % of values in the `unknown_tags` column are NA.
 
 **Plotting female_tag over Period of Record**
 ```{r}
@@ -368,7 +372,7 @@ filter(chop_channel_join) %>%
   ggplot(aes(x = date, y = male_tag)) +
   geom_point(size = 1.4, alpha = .5, color = "red") + 
   labs(x = "Date", 
-       y = "Mael Tag") +
+       y = "Male Tag") +
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 ```
@@ -587,22 +591,22 @@ kable(counts_data_dictionary)
 ### Survey
 
 ```{r}
-
-percent_na <- chop_header_cleaner %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
-  pivot_longer(cols = everything())
-
-counts_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
-                          description = c("ID",
-                                          "Color of tag of carcass",
-                                          "Crew memeber initials that collected",
-                                          "Individual of crew member who recorded",
-                                          "Weather", 
-                                          "Comments", 
-                                          "Datetime",
-                          percent_na = round(percent_na$value*100)))
-
-kable(counts_data_dictionary)
+# 
+# percent_na <- chop_header_cleaner %>%
+#   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+#   pivot_longer(cols = everything())
+# 
+# counts_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
+#                           description = c("ID",
+#                                           "Color of tag of carcass",
+#                                           "Crew memeber initials that collected",
+#                                           "Individual of crew member who recorded",
+#                                           "Weather", 
+#                                           "Comments", 
+#                                           "Datetime",
+#                           percent_na = round(percent_na$value*100)))
+# 
+# kable(counts_data_dictionary)
 ```
 
 ## Save cleaned data back to google cloud (TBA)
