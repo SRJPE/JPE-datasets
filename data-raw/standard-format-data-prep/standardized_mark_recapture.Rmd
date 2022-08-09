@@ -83,13 +83,13 @@ if we need more information. There are no environmental variables for Feather Ri
 number recaptured per day not the total number recaptured
 
 ```{r, message=FALSE, warning=FALSE}
-# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# # Set global bucket 
-# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-# gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/rst/battle_mark_recapture.csv",
-#                overwrite = TRUE)
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "battle_mark_recapture.csv"),
+               overwrite = TRUE)
 
 battle_mark_recap <- read_csv(here::here("data", "rst", "battle_mark_recapture.csv")) %>% 
   mutate(stream = "battle creek",
@@ -136,10 +136,10 @@ if we need more information. There are no environmental variables for Feather Ri
 number recaptured per day not the total number recaptured 
 
 ```{r, message=FALSE, warning=FALSE}
-# gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "rst", "clear_mark_recapture.csv"),
-#                overwrite = TRUE)
+gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "clear_mark_recapture.csv"),
+               overwrite = TRUE)
 
 clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv")) %>% 
   mutate(stream = "clear creek",
@@ -160,6 +160,7 @@ clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv
 clear_released <- clear_mark_recap %>% 
   select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
          days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity) %>% 
+  mutate(release_date = as_date(release_date)) %>% 
   distinct() %>% 
   glimpse
   
@@ -167,6 +168,7 @@ clear_released <- clear_mark_recap %>%
 clear_recaptured <-  clear_mark_recap %>% 
   select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured, 
          cone_status) %>% 
+  mutate(recaptured_date = as_date(recaptured_date)) %>% 
   glimpse
   
 ```
@@ -180,10 +182,10 @@ vary depending on how the data is aggregated (see efficiency data in the section
 below that summarized the data by efficiency trial)
 
 ```{r, message=FALSE, warning=FALSE}
-# gcs_get_object(object_name = "rst/feather-river/data/feather_river_mark_recapture_data.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "rst", "feather_mark_recapture.csv"),
-#                overwrite = TRUE)
+gcs_get_object(object_name = "rst/feather-river/data/feather_river_mark_recapture_data.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "feather_mark_recapture.csv"),
+               overwrite = TRUE)
 
 feather_mark_recap <- read_csv(here::here("data", "rst", "feather_mark_recapture.csv")) %>% 
   filter(!is.na(releaseSiteID)) %>%
@@ -222,10 +224,10 @@ vary depending on how the data is aggregated (see efficiency data in the section
 below that summarized the data by efficiency trial)
 
 ```{r, message=FALSE, warning=FALSE}
-# gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knights_landing_mark_recapture_data.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/rst/knights_landing_mark_recapture.csv",
-#                overwrite = TRUE)
+gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knights_landing_mark_recapture_data.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "knights_landing_mark_recapture.csv"),
+               overwrite = TRUE)
 
 knights_landing_mark_recap <- read_csv(here::here("data", "rst", "knights_landing_mark_recapture.csv")) %>% 
   rename(number_released = nReleased, release_id = releaseID) %>% 
