@@ -470,7 +470,8 @@ filter(yuba_rst, run == "unknown") %>% glimpse
 
 yuba_rst_clean<- yuba_rst %>%
   select(date, fork_length, weight, lifestage, count, run, location) %>%
-  mutate(site = ifelse(location == "Yuba River", "yuba river", "hallwood")) %>%
+  mutate(site = ifelse(location == "Yuba River", "yuba river", "hallwood"),
+         date = as_date(date)) %>%
   group_by(date, fork_length, weight, lifestage, run, site) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(stream = "yuba river",

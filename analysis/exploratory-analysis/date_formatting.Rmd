@@ -8,10 +8,16 @@ date: "2022-08-09"
 library(tidyverse)
 library(knitr)
 library(lubridate)
+library(googleCloudStorageR)
+library(tidyverse)
 
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
 knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 Checking date format between standard_catch and standard_flow
@@ -68,6 +74,17 @@ release_raw <- read_csv(here::here("data","standard-format-data", "standard_rele
 Identified fix is to format standard_catch date as date rather than POSIXct. This
 will be done in the rst_catch_standard_format.Rmd. This is the Rmd that generates
 the standard format date so best to keep all fixes in one place.
+
+Check to make sure fix worked.
+```{r}
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_catch.csv",
+               overwrite = TRUE)
+
+catch_raw <- read_csv(here::here("data","standard-format-data", "standard_catch.csv")) %>% glimpse
+```
+
 
 Additionally check standard_trap. Decided to format trap_start_date and trap_stop_date
 as date rather than POSIXct. 
