@@ -1,0 +1,202 @@
+---
+title: "Grand Tab and Adult Weir Counts"
+author: "Erin Cain"
+date: '2022-05-24'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
+```
+
+## Load in Datasets {.tabset}
+
+### Grandtab
+
+
+```{r}
+# remotes::install_github("CVPIA-OSC/DSMcalibrationData")
+
+grand_tab <- DSMCalibrationData::grandtab_observed$spring %>%
+  as_data_frame() %>% 
+  mutate(stream = tolower(DSMCalibrationData::grandtab_observed$spring[, 1] %>% names())) %>%
+  pivot_longer("1998":"2017", names_to = "year", values_to = "grand_tab_escapement_value") %>% 
+  mutate(year = as.numeric(year)) %>%glimpse
+```
+
+### Weir Counts
+
+```{r}
+weir_counts <- read_csv("../../data/standard-format-data/standard_adult_upstream_passage.csv") %>% 
+  select(stream = location, date, count, passage_direction, origin, run) %>%
+  filter(run %in% c("spring", "unknown", NA_character_)) %>%
+  mutate(year = lubridate::year(date),
+         stream = tolower(stream)) %>% 
+  group_by(stream, year, passage_direction) %>%
+  summarize(weir_count = sum(count, na.rm = T)) %>%
+  ungroup %>% 
+  pivot_wider(names_from = passage_direction, values_from = weir_count) %>% 
+  mutate(up = ifelse(is.na(up), 0, up), 
+         down = ifelse(is.na(down), 0, down), 
+         weir_count = ifelse(!is.na(`NA`), `NA`, up - down), # Mill and deer do not give passage direction, assume passage is up
+         ) %>% 
+  select(-up, -down, -`NA`) %>% glimpse
+
+```
+
+## Combine Weir and Grandtab 
+
+```{r}
+passage_data <- grand_tab %>% 
+  filter(stream %in% c("battle creek", "clear creek", "deer creek", "mill creek", "yuba river")) %>%
+  full_join(weir_counts) %>% 
+  pivot_longer(cols = grand_tab_escapement_value:weir_count)
+
+```
+
+
+## Compare Grand Tab to Weir Data {.tabset}
+
+### Battle Creek 
+
+```{r}
+passage_data %>% filter(stream == "battle creek") %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = value, color = name)) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+
+passage_data %>% filter(stream == "battle creek") %>% 
+  ggplot() + 
+  geom_col(aes(x = year, y = value, fill = name), position = "dodge") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+```
+
+### Clear Creek
+
+```{r}
+passage_data %>% filter(stream == "clear creek") %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = value, color = name)) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+
+passage_data %>% filter(stream == "clear creek") %>% 
+  ggplot() + 
+  geom_col(aes(x = year, y = value, fill = name), position = "dodge") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+```
+
+### Deer Creek
+```{r}
+passage_data %>% filter(stream == "deer creek") %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = value, color = name)) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+
+passage_data %>% filter(stream == "deer creek") %>% 
+  ggplot() + 
+  geom_col(aes(x = year, y = value, fill = name), position = "dodge") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+```
+
+
+### Mill Creek 
+```{r}
+passage_data %>% filter(stream == "mill creek") %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = value, color = name)) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+
+passage_data %>% filter(stream == "mill creek") %>% 
+  ggplot() + 
+  geom_col(aes(x = year, y = value, fill = name), position = "dodge") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+```
+
+### Yuba River
+
+Yuba Weir data is not filtered to Spring run values. This is likely part of the reason that Yuba Weir counts are higher than grand tab values. 
+```{r}
+passage_data %>% filter(stream == "yuba river") %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = value, color = name)) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+
+passage_data %>% filter(stream == "yuba river") %>% 
+  ggplot() + 
+  geom_col(aes(x = year, y = value, fill = name), position = "dodge") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) + 
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  labs(title = "Grand Tab vs Weir Count Passage Values", 
+       x = "Year", 
+       y = "Escapement Value")
+
+```
