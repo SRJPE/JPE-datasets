@@ -332,13 +332,19 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = ifelse(weather == "cld", "cloudy", weather),
-         weather = ifelse(weather == "ran", "rain", weather),
+         weather = case_when(weather == "cloudy" ~ "cld",
+                             weather == "ran" ~ "rain",
+                             weather == "sun/cld/ran" ~ "sun,cld,rain",
+                             weather == "sun.cld" ~ "sun,cld",
+                             weather == "cld.rain" | weather =="cld.ran" | weather == "cld,ran" ~ "cld,rain",
+                             weather == "blue" ~ NA_character_,
+                             TRUE ~ weather),
          weather = str_replace_all(weather, " ", ""),
-         weather = str_replace_all(weather, "/", ","),
-         weather = str_replace_all(weather, ".",",")) 
+         weather = str_replace_all(weather, "/", ","))
+         # weather = str_replace_all(weather, ".",","))
 
-chop_header_cleaner
+
+unique(chop_header_cleaner$weather)
 ```
 
 ### CWT Clean Data
@@ -372,8 +378,12 @@ cwt_cleaner <- cwt %>%
   rename(datetime = "date") %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "Unknown",
-                         TRUE ~ sex)) %>% 
+         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+                         TRUE ~ sex),
+         adipose_fin_clipped = case_when(adipose_fin_clipped == "uk" ~ "unknown",
+                                         adipose_fin_clipped == "y" ~ "yes",
+                                         adipose_fin_clipped == "n" ~ "no",
+                                         TRUE ~ adipose_fin_clipped),) %>% 
   select(-morale) %>% 
   glimpse
 ```
@@ -407,7 +417,7 @@ percent_na <- chop_header_cleaner %>%
   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
   pivot_longer(cols = everything())
 # 
-counts_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
+header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
                           description = c("Date of survey",
                                           "Week Number",
                                           "Weather",
@@ -416,7 +426,7 @@ counts_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
                                           "ID"),
                           percent_na = round(percent_na$value*100))
 # 
-kable(counts_data_dictionary)
+kable(header_data_dictionary)
 ```
 
 ### CWT
@@ -425,7 +435,7 @@ percent_na <- cwt_cleaner %>%
   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
   pivot_longer(cols = everything())
 
-chop_header_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
+cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
                           description = c("CWT ID",
                                           "ID",
                                           "River section",
@@ -453,7 +463,7 @@ chop_header_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
                                           "HFC"),
                           percent_na = round(percent_na$value*100))
 
-kable(chop_header_data_dictionary)
+kable(cwt_data_dictionary)
 ```
 ## Save cleaned data back to google cloud (TBA)
 

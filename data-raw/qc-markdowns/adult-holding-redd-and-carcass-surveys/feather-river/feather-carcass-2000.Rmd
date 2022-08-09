@@ -55,7 +55,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet:
-```{r}
+```{r, eval=FALSE}
 DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
 MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2000.mdb"
 PATH <- paste0(DRIVERINFO, "DBQ=", MDBPATH)
@@ -698,6 +698,10 @@ unique(chop_header$recorder)
 ```{r}
 unique(chop_header$weather)
 ```
+```{r}
+#Not sure what turbot is
+unique(chop_header$turbot)
+```
 
 ```{r}
 chop_header_cleaner <- chop_header %>% 
@@ -705,7 +709,10 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ""),
          crew = str_replace_all(crew, "/", ","),
-         crew = str_replace_all(crew, "&", ",")) %>% 
+         crew = str_replace_all(crew, "&", ","),
+         weather = case_when(weather == "ran" ~ "rain",
+                             weather == "unk" ~ NA_character_,
+                             TRUE ~ weather)) %>% 
   select(-c(date, start, stop, week, turbot))
 
 ```
@@ -717,8 +724,12 @@ cwt %>%
   colnames()
 ```
 ```{r}
+unique(cwt$egg_ret)
+```
+
+```{r}
 cwt_cleaner <- cwt %>% 
-  mutate(sex = ifelse(cwt$sex == "X", "Unknown", cwt$sex)) %>% 
+  mutate(sex = ifelse(cwt$sex == "X", "unknown", cwt$sex)) %>% 
   mutate_if(is.character, str_to_lower) %>%
   glimpse
 ```
@@ -731,8 +742,9 @@ cwt_cleaner <- cwt %>%
 * Could remove some of the ID columns for standardization
 * Grilse count in chop_recovery_join is calculated as a part of the total_chops (see total_chops plot)
 * Not sure what is ht_number in cwt table
-* Did not reacd in tag color - not sure if it's necessary
+* Did not read in tag color - not sure if it's necessary
 * Did not clean all of the recorder and crew entries - lots of variations
+# not sureegg_ret and turbot in cwt and chop header table
 
 ## Data Dictionaries
 
@@ -760,7 +772,7 @@ counts_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
 kable(counts_data_dictionary)
 ```
 
-###Tag Data
+### Tag Data
 
 ```{r}
 percent_na <- tag_join_cleaner %>%

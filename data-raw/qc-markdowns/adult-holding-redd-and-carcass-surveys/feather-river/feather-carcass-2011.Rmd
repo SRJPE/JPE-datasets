@@ -151,33 +151,6 @@ cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names()) %>
   glimpse
 ```
 
-
-
-## Data transformations
-
-```{r}
-
-#1. chop table (with dates and tag color)
-
-chop_header <- ChopHeader_raw %>% 
-  clean_names()%>%  glimpse
-
-cwt_join <- full_join(cwt_header_raw, cwt_raw) %>% 
-  clean_names() %>%   glimpse()
-```
-
-### Counts
-
-The `chop_join` table contains carcass counts 
-
-### Survey
-
-The `chop_header` table contains survey metadata and covariates
-
-### CWT
-
-The `cwt_join` table contains coded wire tag data
-
 ## Explore Numeric Variables: {.tabset}
 
 ### Chop Join Variable: `id`, `min`
@@ -354,7 +327,9 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = ifelse(weather == "cld", "cloudy", weather)) %>% 
+         weather = ifelse(weather == "cloudy", "cld", weather),
+         weather = ifelse(weather == "sun/cloudy", "sun, cld", weather)
+         ) %>% 
   select(-c(date, time))
 
 chop_header_cleaner
@@ -402,17 +377,15 @@ cwt_cleaner <- cwt %>%
          crew = str_replace_all(crew, ",,", ","),
          sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
                          TRUE ~ sex),
-         tag_recapture_or_chop = case_when(tag_recapture_or_chop == "T" ~ "tagged",
-                                         tag_recapture_or_chop == "R" ~ "recapture",
-                                         tag_recapture_or_chop == "C" ~ "chop",
+         tag_recapture_or_chop = case_when(tag_recapture_or_chop == "t" ~ "tagged",
+                                         tag_recapture_or_chop == "r" ~ "recapture",
+                                         tag_recapture_or_chop == "c" ~ "chop",
                                          TRUE ~ tag_recapture_or_chop),
-         adipose_fin_clipped = case_when(adipose_fin_clipped == "UK" ~ "unknown",
-                                         adipose_fin_clipped == "Y" ~ "yes",
-                                         adipose_fin_clipped == "N" ~ "no",
+         adipose_fin_clipped = case_when(adipose_fin_clipped == "uk" ~ "unknown",
+                                         adipose_fin_clipped == "y" ~ "yes",
+                                         adipose_fin_clipped == "n" ~ "no",
                                          TRUE ~ adipose_fin_clipped),
-         hallprint_color = case_when(hallprint_color == "grey" ~ "G",
-                                     TRUE ~ hallprint_color),
-         spawning_condition = case_when(spawning_condition == "UK" ~ "unknown",
+         spawning_condition = case_when(spawning_condition == "uk" ~ "unknown",
                                         TRUE ~ spawning_condition),
          tag_color = case_when(tag_color == "b" ~ "blue",
                                tag_color == "s" ~ "silver",

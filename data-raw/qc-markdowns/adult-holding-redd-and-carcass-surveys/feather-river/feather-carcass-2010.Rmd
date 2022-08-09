@@ -571,13 +571,12 @@ kable(counts_data_dictionary)
 ### Recovery
 
 ```{r}
-# from ashley: please insert data dictionary for cleaned recovery table
 percent_na <- chop_recovery_cleaner %>%
   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
   pivot_longer(cols = everything())
 
 
-counts_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
+recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                           description = c("ID",
                                           "Color of tag recovered from carcass",
                                           "Count of recovery",
@@ -585,7 +584,7 @@ counts_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                                           "Datetime"),
                           percent_na = round(percent_na$value*100))
 
-kable(counts_data_dictionary)
+kable(recovery_data_dictionary)
 ```
 
 ### Survey

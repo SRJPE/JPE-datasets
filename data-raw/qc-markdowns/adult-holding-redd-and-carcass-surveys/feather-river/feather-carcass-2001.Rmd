@@ -627,7 +627,7 @@ cwt_cleaner <- cwt %>%
 * Grilse count in chop_recovery_join is calculated as a part of the total_chops (see total_chops plot)
 * Not sure what is ht_number in cwt table
 * Current format for datetime contains NA for time. Format becomes "YYYY-mm-dd na". 
-* Did not read in look up table containing tag colour
+
 
 ## Data Dictionaries
 

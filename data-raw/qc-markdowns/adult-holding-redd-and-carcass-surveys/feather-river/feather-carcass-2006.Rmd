@@ -615,7 +615,8 @@ chop_header_cleaner <- chop_header %>%
   mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
-         crew = str_replace_all(crew, ",,", ",")) %>% 
+         crew = str_replace_all(crew, ",,", ","),
+         weather = ifelse(weather == "ran", "rain", weather)) %>% 
   select(-c(date, time))
 
 chop_header_cleaner$crew
@@ -645,11 +646,14 @@ cwt_cleaner <- cwt %>%
   rename(datetime = "date") %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "U",
+         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
                          TRUE ~ sex),
          rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),  
          spawn = ifelse(spawn == "no data", NA, spawn),
-         clip = ifelse(clip == "no data", NA, clip),
+         clip = case_when(clip == "no data" ~ NA_character_,
+                          clip == "y" ~ "yes",
+                          clip == "n" ~ "no",
+                          TRUE ~ clip),
          samp_type = ifelse(samp_type == "no data", NA, samp_type),
          carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) %>% 
   glimpse
@@ -697,7 +701,7 @@ percent_na <- chop_recovery_cleaner %>%
   pivot_longer(cols = everything())
 
 
-counts_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
+recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                           description = c("ID",
                                           "Color of tag recovered from carcass",
                                           "Count of recovery",
@@ -705,7 +709,7 @@ counts_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                                           "Date and time of survey"),
                           percent_na = round(percent_na$value*100))
 
-kable(counts_data_dictionary)
+kable(recovery_data_dictionary)
 ```
 
 ### Survey
@@ -716,7 +720,7 @@ percent_na <- chop_header_cleaner %>%
   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
   pivot_longer(cols = everything())
 # 
-counts_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
+header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
                           description = c("ID",
                                           "Color of tag of carcass",
                                           "Crew memeber initials that collected",
@@ -727,7 +731,7 @@ counts_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
                                           "Date and time of survey"),
                           percent_na = round(percent_na$value*100))
 # 
-kable(counts_data_dictionary)
+kable(header_data_dictionary)
 ```
 
 ### CWT
@@ -737,7 +741,7 @@ percent_na <- cwt_cleaner %>%
   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
   pivot_longer(cols = everything())
 
-chop_header_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
+cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
                           description = c("ID",
                                           "Sect",
                                           "Release Location",
@@ -759,7 +763,7 @@ chop_header_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
                                           "Week number"),
                           percent_na = round(percent_na$value*100))
 
-kable(chop_header_data_dictionary)
+kable(cwt_data_dictionary)
 ```
 ## Save cleaned data back to google cloud (TBA)
 
