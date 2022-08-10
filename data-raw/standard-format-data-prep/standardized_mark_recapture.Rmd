@@ -106,6 +106,7 @@ battle_released <- battle_mark_recap %>%
   select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
          days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity, 
          origin) %>% 
+  filter(release_date >= as_date("2003-10-01")) %>%
   distinct() %>% 
   glimpse
   
@@ -113,6 +114,7 @@ battle_released <- battle_mark_recap %>%
 battle_recaptured <-  battle_mark_recap %>% 
   select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured, 
          cone_status) %>% 
+  filter(recaptured_date >= as_date("2003-10-01")) %>%
   glimpse
   
 ```
@@ -200,6 +202,7 @@ feather_released <- feather_mark_recap %>%
   
 feather_recaptured <- feather_mark_recap %>% 
   select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% # REplace NA with 0 when there are no records of recaptures for a release iD
   glimpse
 
 ```
@@ -231,6 +234,7 @@ knights_landing_released <- knights_landing_mark_recap %>%
   
 knights_landing_recaptured <- knights_landing_mark_recap %>% 
   select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% # REplace NA with 0 when there are no records of recaptures for a release iD
   glimpse
 ```
 
@@ -634,6 +638,21 @@ summarized_mark_recapture %>%
 ```
 
 ## Save unsumarized data to google cloud
+
+# QC 
+- fix NA fork length on released if fish are release, change to not recorded 
+- remove release trials with NA fish released 
+```{r}
+combined_release %>% 
+  mutate(release_date = as_date(release_date),
+         median_fork_length_released = ifelse(is.na(median_fork_length_released), "not recorded", median_fork_length_released)) %>% # clarify that these values are not recorded in the raw data,there should be values here 
+  filter(!is.na(number_released)) %>% # filter 3 values that have na in raw data for number released
+  glimpse
+
+combined_recapture %>% 
+  mutate(recaptured_date = as_date(recaptured_date)) %>% glimpse 
+
+```
 
 ```{r}
 knitr::kable(align = 'c', head(combined_release, 5))
