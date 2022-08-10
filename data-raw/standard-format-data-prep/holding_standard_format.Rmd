@@ -108,15 +108,15 @@ kable(clear_data_dictionary)
 ```
 ```{r, clear_clean}
 clear_holding_clean <- clear_holding %>%
-  select(-c(comments, picket_weir_location_rm)) %>%
+  select(-comments) %>%
   rename(jacks = jack_count) %>%
   mutate(stream = "clear creek",
          year = lubridate::year(date))
 ```
 
 ### Variables removed
-- comments, picket_weir_location_rm
-- picket_weir_location_rm is the same value for the entire dataset; it will be added to the metadata
+- comments
+
 
 ## Deer Creek
 
@@ -210,7 +210,7 @@ combined_holding <- bind_rows(battle_holding_clean,
 
 ```{r, data_dictionary_prep, include = F}
 colnames(combined_holding)
-holding_catch_data_dictionary <- tibble(variable_name = colnames(combined_holding), description = c("Date survey was conducted", "Reach number within stream", "River mile number", "Number of fish observed: Butte creek data has multiple observations from different personnels per day - to prevent double counting, the average of each day at each reach is used as the daily fish count", "Number of jacks observed", "Latitude measurement of adult holding", "Longitude measurement of adult holding", "stream name","Year survey was conducted", "Reason survey was conducted", "Fish above or below Picket Weir"), encoding = c("YYYY-MM-DD", NA,NA,NA,NA,NA,NA,NA, "YYYY", "august index, spawning", "above, below" ), collected = c("All but Deer", "All","Battle and Clear", "All", "Battle and Clear", "Battle and Clear", "Battle and Clear", "All", "All","Clear", "Clear"))
+holding_catch_data_dictionary <- tibble(variable_name = colnames(combined_holding), description = c("Date survey was conducted", "Reach number within stream", "River mile number", "Number of fish observed: Butte Creek data has multiple observations from different personnels per day - to prevent double counting, the average of each day at each reach is used as the daily fish count", "Number of jacks observed", "Latitude measurement of adult holding", "Longitude measurement of adult holding", "Stream name","Year survey was conducted", "Reason survey was conducted", " Location of the Picket Weir - this is unique to Clear Creek and it has the same value for the entire dataset","Fish above or below Picket Weir"), encoding = c("YYYY-MM-DD", NA,NA,NA,NA,NA,NA,NA, "YYYY", "august index, spawning", NA, "above, below" ), collected = c("All but Deer", "All","Battle and Clear", "All", "Battle and Clear", "Battle and Clear", "Battle and Clear", "All", "All","Clear", "Clear", "Clear"))
 ```
 ```{r, data_dictionary}
 kable(holding_catch_data_dictionary)
