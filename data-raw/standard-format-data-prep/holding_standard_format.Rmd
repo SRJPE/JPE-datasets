@@ -8,10 +8,6 @@ library(lubridate)
 library(googleCloudStorageR)
 library(knitr)
 library(hms)
-
-
-Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
-Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
 ```
 
 Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys).
@@ -214,7 +210,7 @@ combined_holding <- bind_rows(battle_holding_clean,
 
 ```{r, data_dictionary_prep, include = F}
 colnames(combined_holding)
-holding_catch_data_dictionary <- tibble(variable_name = colnames(combined_holding), description = c("Date survey was conducted", "Reach number within stream", "River mile number", "Number of fish observed", "Number of jacks observed", "Latitude measurement of adult holding", "Longitude measurement of adult holding", "stream name","Year survey was conducted", "Reason survey was conducted", "Fish above or below Picket Weir"), encoding = c("YYYY-MM-DD", NA,NA,NA,NA,NA,NA,NA, "YYYY", "august index, spawning", "above, below" ), collected = c("All but Deer", "All","Battle and Clear", "All", "Battle and Clear", "Battle and Clear", "Battle and Clear", "All", "All","Clear", "Clear"))
+holding_catch_data_dictionary <- tibble(variable_name = colnames(combined_holding), description = c("Date survey was conducted", "Reach number within stream", "River mile number", "Number of fish observed: Butte creek data has multiple observations from different personnels per day - to prevent double counting, the average of each day at each reach is used as the daily fish count", "Number of jacks observed", "Latitude measurement of adult holding", "Longitude measurement of adult holding", "stream name","Year survey was conducted", "Reason survey was conducted", "Fish above or below Picket Weir"), encoding = c("YYYY-MM-DD", NA,NA,NA,NA,NA,NA,NA, "YYYY", "august index, spawning", "above, below" ), collected = c("All but Deer", "All","Battle and Clear", "All", "Battle and Clear", "Battle and Clear", "Battle and Clear", "All", "All","Clear", "Clear"))
 ```
 ```{r, data_dictionary}
 kable(holding_catch_data_dictionary)
