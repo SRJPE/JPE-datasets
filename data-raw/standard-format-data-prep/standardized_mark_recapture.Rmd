@@ -496,7 +496,7 @@ combined_recapture %>%
   filter(number_recaptured > 250)
 ```
 
-Manually update battle value of 1180:
+Manually update battle value of 1180 - We used the totals column in the raw data to update this outlier data point. The totals column reported 11 when the catch-by-day columns had an error of 1180.
 ```{r}
 combined_recapture <- combined_recapture %>% 
   mutate(number_recaptured = ifelse(number_recaptured == 1180 & stream == "battle creek", 11, number_recaptured))
