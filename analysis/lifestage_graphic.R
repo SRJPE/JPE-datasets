@@ -2,6 +2,9 @@
 library(tidyverse)
 library(lubridate)
 library(ggplot2)
+
+# graphic used in data strategy document
+
 # data prep
 
 # Life stage categories: Adult upstream migration, Adult holding, Spawning,
@@ -299,7 +302,7 @@ ggplot(life_stage_dat, aes(x = Date, y = Lifestage)) +
   theme(legend.position = "none")
 
 
-ggsave("analysis/lifestage_plot_updated.png", width = 8.50, height = 2, units = "in")
+ggsave("analysis/figures/lifestage_plot_updated.png", width = 8.50, height = 2, units = "in")
 
 
 ### scrap code below ####
