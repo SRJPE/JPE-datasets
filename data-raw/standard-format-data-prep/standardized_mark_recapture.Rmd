@@ -646,13 +646,13 @@ summarized_mark_recapture %>%
 - fix NA fork length on released if fish are release, change to not recorded 
 - remove release trials with NA fish released 
 ```{r}
-combined_release %>% 
+combined_release <- combined_release %>% 
   mutate(release_date = as_date(release_date),
          median_fork_length_released = ifelse(is.na(median_fork_length_released), "not recorded", median_fork_length_released)) %>% # clarify that these values are not recorded in the raw data,there should be values here 
   filter(!is.na(number_released)) %>% # filter 3 values that have na in raw data for number released
   glimpse
 
-combined_recapture %>% 
+combined_recapture <- combined_recapture %>% 
   mutate(recaptured_date = as_date(recaptured_date)) %>% glimpse 
 
 ```
@@ -672,11 +672,11 @@ gcs_upload(combined_release,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_release.csv")
-write_csv(combined_release, "../../data/standard-format-data/standard_release.csv")
+write_csv(combined_release, here::here("data", "standard-format-data", "standard_release.csv"))
 
 gcs_upload(combined_recapture,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_recapture.csv")
-write_csv(combined_recapture, "../../data/standard-format-data/standard_recapture.csv")
+write_csv(combined_recapture, here::here("data", "standard-format-data", "standard_recapture.csv"))
 ```

@@ -37,6 +37,8 @@ flow_raw <- read_csv(here::here("data","standard-format-data", "standard_flow.cs
 
 Date is formatted as POSIXct
 
+Fixed!
+
 ```{r}
 catch_raw <- read_csv(here::here("data","standard-format-data", "standard_catch.csv")) %>% glimpse
 ```
@@ -44,6 +46,9 @@ catch_raw <- read_csv(here::here("data","standard-format-data", "standard_catch.
 ## Standard trap
 
 Date is formatted as POSIXct
+
+Fixed!
+
 ```{r}
 trap_raw <- read_csv(here::here("data","standard-format-data", "standard_trap.csv")) %>% glimpse
 ```
@@ -58,12 +63,16 @@ environment_raw <- read_csv(here::here("data","standard-format-data", "standard_
 
 Date formatted as POSIXct.
 
+Fixed!
+
 ```{r}
 recapture_raw <- read_csv(here::here("data","standard-format-data", "standard_recapture.csv")) %>% glimpse
 ```
 ## Standard release
 
 Date formatted as POSIXct.
+
+Fixed!
 
 ```{r}
 release_raw <- read_csv(here::here("data","standard-format-data", "standard_release.csv")) %>% glimpse
@@ -99,7 +108,6 @@ gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
 trap_raw <- read_csv(here::here("data","standard-format-data", "standard_trap.csv")) %>% glimpse
 ```
 
-NOT FIXED YET
 Checked standard recapture. Format recaptured_date to date rather than POSIXct.
 
 Check to make sure fix worked.
@@ -112,7 +120,6 @@ gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
 recapture_raw <- read_csv(here::here("data","standard-format-data", "standard_recapture.csv")) %>% glimpse
 ```
 
-NOT FIXED YET
 Checked standard release. Format release_date to date rather than POSIXct.
 
 Check to make sure fix worked.
