@@ -77,15 +77,9 @@ All released and recaptured fish are chinook salmon.
 -   **number_recaptured:** Number recaptured is removed since we are interested in the number recaptured per day not the total number recaptured
 
 ```{r, message=FALSE, warning=FALSE}
-<<<<<<< HEAD
-gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# Set global bucket
-gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-=======
 # gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # # Set global bucket
 # gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
->>>>>>> 4b5706e9c99d83664e5603b8bd46364f7c8de36f
 gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "rst", "battle_mark_recapture.csv"),
@@ -185,11 +179,8 @@ clear_recaptured <-  clear_mark_recap %>%
 -   **efficiency:** Efficiency is removed since it is a calculated value and will vary depending on how the data is aggregated (see efficiency data in the section below that summarized the data by efficiency trial)
 
 ```{r, message=FALSE, warning=FALSE}
-<<<<<<< HEAD
-gcs_get_object(object_name = "rst/feather-river/data/feather_river_mark_recapture_data.csv",
-=======
 gcs_get_object(object_name = "rst/feather-river/data/feather_mark_recapture_data.csv",
->>>>>>> 4b5706e9c99d83664e5603b8bd46364f7c8de36f
+
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "rst", "feather_mark_recapture.csv"),
                overwrite = TRUE)
@@ -659,7 +650,6 @@ summarized_mark_recapture %>%
 - fix NA fork length on released if fish are release, change to not recorded 
 
 ```{r}
-  
 is.na(combined_release$number_released) %>% unique() # removed all NA for number released when reading in Clear and Battle
 
 combined_release <- combined_release %>%  
@@ -687,11 +677,11 @@ gcs_upload(combined_release,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_release.csv")
-write_csv(combined_release, "../../data/standard-format-data/standard_release.csv")
+write_csv(combined_release, here::here("data", "standard-format-data", "standard_release.csv"))
 
 gcs_upload(combined_recapture,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_recapture.csv")
-write_csv(combined_recapture, "../../data/standard-format-data/standard_recapture.csv")
+write_csv(combined_recapture, here::here("data", "standard-format-data", "standard_recapture.csv"))
 ```
