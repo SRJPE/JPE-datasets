@@ -35,8 +35,7 @@ trap_sites <- read_csv(here::here("data", "standard-format-data", "rst_trap_loca
 
 
 
-salmonid_extents <- readOGR(here::here("analysis", "exploratory-analysis", 
-                                       "data-raw", "salmonid_habitat_extents", "salmonid_habitat_extents.shp"), 
+salmonid_extents <- readOGR(here::here("analysis", "salmonid_habitat_extents", "salmonid_habitat_extents.shp"), 
                             stringsAsFactors = FALSE, verbose = FALSE) %>%
   spTransform(CRS("+proj=longlat +datum=WGS84 +no_defs"))
 
@@ -87,7 +86,7 @@ The above map shows RST spring run habitat extents and RST on each tributary. We
 
 
 ```{r}
-rst_catch <- read_csv(here::here("data", "standard-format-data", "standard_rst_catch.csv"))
+rst_catch <- read_csv(here::here("data", "standard-format-data", "standard_catch.csv"))
 
 catch_per_site_per_year <- rst_catch %>% group_by(stream, site, year = year(date)) %>% 
   summarize(total_catch = sum(count, na.rm = T))
