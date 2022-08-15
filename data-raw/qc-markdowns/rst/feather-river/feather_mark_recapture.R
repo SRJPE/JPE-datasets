@@ -98,7 +98,7 @@ catch_with_date %>%
 
 f <- function(input, output) write_csv(input, file = output)
 
-gcs_upload(combined_release,
+gcs_upload(catch_with_date,
            object_function = f,
            type = "csv",
            name = "rst/feather-river/data/feather_mark_recapture_data.csv")

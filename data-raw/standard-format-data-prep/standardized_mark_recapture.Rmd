@@ -5,13 +5,13 @@ date: "4/20/2022"
 output: 
   html_document:
     theme: flatly
-
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 library(tidyverse)
 library(googleCloudStorageR)
+library(lubridate)
 
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089")
 
@@ -19,77 +19,71 @@ Sys.getenv("GCS_DEFAULT_BUCKET")
 Sys.getenv("GCS_AUTH_FILE")
 ```
 
-## Mark Recapture Data Standardization 
+## Mark Recapture Data Standardization
 
-FlowWest received mark recapture data from 4 monitoring programs: 
+FlowWest received mark recapture data from 4 monitoring programs:
 
-* Battle Creek 
-* Clear Creek 
-* Feather River
-* Knights Landing 
+-   Battle Creek
+-   Clear Creek
+-   Feather River
+-   Knights Landing
 
-Tisdale has conducted efficiency tests but these are in paper format. 
-Mill and Deer did not historically conduct efficiency tests but will do so moving forward. 
+Tisdale has conducted efficiency tests but these are in paper format. Mill and Deer did not historically conduct efficiency tests but will do so moving forward.
 
 ## Standard format for Mark Recapture Data
 
-Data dictionary for standard format: 
-(B - Battle Creek, C - Clear Creek, F - Feather River, K - Knights Landing)
+Data dictionary for standard format: (B - Battle Creek, C - Clear Creek, F - Feather River, K - Knights Landing)
 
 **Release Table:**
 
-| column name | tributary collects | definition | 
-| :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
-| stream | B, C, F, KL | stream that the data is from |
-| release_id | B, C, F, KL | the unique identifier for each release trial | 
-| date_released | B, C, F, KL | date that marked fish are released |
-| time_released | B, C, F, KL | time that marked fish are released |
-| site | F, KL | site on stream where fish are released |
-| number_released | B, C, F, KL | count of fish released |
-| median_fork_length_released | B, C, KL | median fork length of group of fish released |
-| night_release |B, C | TRUE if the release is at night, preassigned in Battle and Clear, refer to release_time column for more complete information|
-| days_held_post_mark | B, C | number of days marked fish are held before released |
-| flow_at_release | B, C | flow measure at time and stream of release |
-| temperature_at_release | B, C | temperature measure at time and stream of release |
-| turbidity_at_release | B, C | turbidity measure at time and stream of release |
-| origin | B, F, KL | fish origin (natural, hatchery, mixed, unknown, not recorded, or NA) |
+| column name                 | tributary collects | definition                                                                                                                   |
+|:-------------------|:--------------|:------------------------------------|
+| stream                      | B, C, F, KL        | stream that the data is from                                                                                                 |
+| release_id                  | B, C, F, KL        | the unique identifier for each release trial                                                                                 |
+| date_released               | B, C, F, KL        | date that marked fish are released                                                                                           |
+| time_released               | B, C, F, KL        | time that marked fish are released                                                                                           |
+| site                        | F, KL              | site on stream where fish are released                                                                                       |
+| number_released             | B, C, F, KL        | count of fish released                                                                                                       |
+| median_fork_length_released | B, C, KL           | median fork length of group of fish released                                                                                 |
+| night_release               | B, C               | TRUE if the release is at night, preassigned in Battle and Clear, refer to release_time column for more complete information |
+| days_held_post_mark         | B, C               | number of days marked fish are held before released                                                                          |
+| flow_at_release             | B, C               | flow measure at time and stream of release                                                                                   |
+| temperature_at_release      | B, C               | temperature measure at time and stream of release                                                                            |
+| turbidity_at_release        | B, C               | turbidity measure at time and stream of release                                                                              |
+| origin                      | B, F, KL           | fish origin (natural, hatchery, mixed, unknown, not recorded, or NA)                                                         |
 
 **Recapture Table:**
 
-| column name | tributary collects | definition | 
-| :------------------------------------ | :------------ |  :---------------------------------------------------------------- | 
-| stream | B, C, F, KL | stream that the data is from |
-| release_id | B, C, F, KL | the unique identifier for each release trial | 
-| date_recaptured | B, C, F, KL | date that fish were recaptured |
-| number_recaptured | B, C, F, KL | count of fish recaptured in RST on a specific recapture date |
-| median_fork_length_recaptured | B, C, F, KL | median fork length of group of fish recaptured |
-| cone_status | B, C | if RST cone is fishing half or full |
+| column name                   | tributary collects | definition                                                   |
+|:-------------------|:--------------|:------------------------------------|
+| stream                        | B, C, F, KL        | stream that the data is from                                 |
+| release_id                    | B, C, F, KL        | the unique identifier for each release trial                 |
+| date_recaptured               | B, C, F, KL        | date that fish were recaptured                               |
+| number_recaptured             | B, C, F, KL        | count of fish recaptured in RST on a specific recapture date, when NA trap is not fished |
+| median_fork_length_recaptured | B, C, F, KL        | median fork length of group of fish recaptured               |
+| cone_status                   | B, C               | if RST cone is fishing half or full                          |
 
-All released and recaptured fish are chinook salmon. 
+All released and recaptured fish are chinook salmon.
 
-## Read in data {.tabset} 
+## Read in data {.tabset}
 
-### Battle Creek  
+### Battle Creek
 
-#### Columns Removed 
+#### Columns Removed
 
-* **no_marked:** Number of fish marked was removed since we are focused on fish released not the fish marked. no_marked = no_released + mortality. We keep no_released as the total number released durring a mark recapture trial
-* **mortality:** Fish who died are removed since we are using number of fish released not number of fish marked 
-* **mean_flow_day_of_rel, mean_temp_day_of_rel:** Other environmental variables kept 
-(flow_at_release, temperature_at_release, and turbidity_at_release). Additional 
-environmental variables can be added back in based on gage data or trap_environmentals.csv
-if we need more information. There are no environmental variables for Feather River and Knights Landing. 
-* **number_recaptured:** Number recaptured is removed since we are interested in the 
-number recaptured per day not the total number recaptured
+-   **no_marked:** Number of fish marked was removed since we are focused on fish released not the fish marked. no_marked = no_released + mortality. We keep no_released as the total number released durring a mark recapture trial
+-   **mortality:** Fish who died are removed since we are using number of fish released not number of fish marked
+-   **mean_flow_day_of_rel, mean_temp_day_of_rel:** Other environmental variables kept (flow_at_release, temperature_at_release, and turbidity_at_release). Additional environmental variables can be added back in based on gage data or trap_environmentals.csv if we need more information. There are no environmental variables for Feather River and Knights Landing.
+-   **number_recaptured:** Number recaptured is removed since we are interested in the number recaptured per day not the total number recaptured
 
 ```{r, message=FALSE, warning=FALSE}
 # gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# # Set global bucket 
+# # Set global bucket
 # gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-# gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/rst/battle_mark_recapture.csv",
-#                overwrite = TRUE)
+gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "battle_mark_recapture.csv"),
+               overwrite = TRUE)
 
 battle_mark_recap <- read_csv(here::here("data", "rst", "battle_mark_recapture.csv")) %>% 
   mutate(stream = "battle creek",
@@ -104,13 +98,18 @@ battle_mark_recap <- read_csv(here::here("data", "rst", "battle_mark_recapture.c
                                     recaptured_date == "caught_day_2" ~ release_date + 2,
                                     recaptured_date == "caught_day_3" ~ release_date + 3,
                                     recaptured_date == "caught_day_4" ~ release_date + 4,
-                                    recaptured_date == "caught_day_5" ~ release_date + 5,)) 
+                                    recaptured_date == "caught_day_5" ~ release_date + 5,),
+         median_fork_length_recaptured = ifelse(number_recaptured == 0 | is.na(number_recaptured), 
+                                                NA, as.numeric(median_fork_length_recaptured))) %>% 
+    filter(!is.na(number_released)) # filter 1 value that have na in raw data for number released
+  
 
 
 battle_released <- battle_mark_recap %>% 
   select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
          days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity, 
          origin) %>% 
+  filter(release_date >= as_date("2003-10-01")) %>%
   distinct() %>% 
   glimpse
   
@@ -118,28 +117,25 @@ battle_released <- battle_mark_recap %>%
 battle_recaptured <-  battle_mark_recap %>% 
   select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured, 
          cone_status) %>% 
+  filter(recaptured_date >= as_date("2003-10-01")) %>%
   glimpse
   
 ```
 
-### Clear Creek 
+### Clear Creek
 
-#### Columns Removed 
+#### Columns Removed
 
-* **no_marked:** Number of fish marked was removed since we are focused on fish released not the fish marked. no_marked = no_released + mortality. We keep no_released as the total number released durring a mark recapture trial
-* **mortality:** Fish who died are removed since we are using number of fish relelased not number of fish marked 
-* **mean_flow_day_of_rel, mean_temp_day_of_rel:** Other environmental variables kept 
-(flow_at_release, temperature_at_release, and turbidity_at_release). Additional 
-environmental variables can be added back in based on gage data or trap_environmentals.csv
-if we need more information. There are no environmental variables for Feather River and Knights Landing. 
-* **number_recaptured:** Number recaptured is removed since we are interested in the 
-number recaptured per day not the total number recaptured 
+-   **no_marked:** Number of fish marked was removed since we are focused on fish released not the fish marked. no_marked = no_released + mortality. We keep no_released as the total number released durring a mark recapture trial
+-   **mortality:** Fish who died are removed since we are using number of fish relelased not number of fish marked
+-   **mean_flow_day_of_rel, mean_temp_day_of_rel:** Other environmental variables kept (flow_at_release, temperature_at_release, and turbidity_at_release). Additional environmental variables can be added back in based on gage data or trap_environmentals.csv if we need more information. There are no environmental variables for Feather River and Knights Landing.
+-   **number_recaptured:** Number recaptured is removed since we are interested in the number recaptured per day not the total number recaptured
 
 ```{r, message=FALSE, warning=FALSE}
-# gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "rst", "clear_mark_recapture.csv"),
-#                overwrite = TRUE)
+gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "clear_mark_recapture.csv"),
+               overwrite = TRUE)
 
 clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv")) %>% 
   mutate(stream = "clear creek",
@@ -155,7 +151,10 @@ clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv
                                     recaptured_date == "caught_day_2" ~ release_date + 2,
                                     recaptured_date == "caught_day_3" ~ release_date + 3,
                                     recaptured_date == "caught_day_4" ~ release_date + 4,
-                                    recaptured_date == "caught_day_5" ~ release_date + 5,)) 
+                                    recaptured_date == "caught_day_5" ~ release_date + 5,), 
+         median_fork_length_recaptured = ifelse(number_recaptured == 0 | is.na(number_recaptured), 
+                                                NA, as.numeric(median_fork_length_recaptured))) %>%
+    filter(!is.na(number_released)) # filter 2 values that have na in raw data for number released
 
 clear_released <- clear_mark_recap %>% 
   select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
@@ -173,17 +172,15 @@ clear_recaptured <-  clear_mark_recap %>%
 
 ### Feather River
 
-#### Columns Removed 
+#### Columns Removed
 
-* **efficiency:** Efficiency is removed since it is a calculated value and will 
-vary depending on how the data is aggregated (see efficiency data in the section
-below that summarized the data by efficiency trial)
+-   **efficiency:** Efficiency is removed since it is a calculated value and will vary depending on how the data is aggregated (see efficiency data in the section below that summarized the data by efficiency trial)
 
 ```{r, message=FALSE, warning=FALSE}
-# gcs_get_object(object_name = "rst/feather-river/data/feather_river_mark_recapture_data.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "rst", "feather_mark_recapture.csv"),
-#                overwrite = TRUE)
+gcs_get_object(object_name = "rst/feather-river/data/feather_mark_recapture_data.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "feather_mark_recapture.csv"),
+               overwrite = TRUE)
 
 feather_mark_recap <- read_csv(here::here("data", "rst", "feather_mark_recapture.csv")) %>% 
   filter(!is.na(releaseSiteID)) %>%
@@ -209,23 +206,22 @@ feather_released <- feather_mark_recap %>%
   
 feather_recaptured <- feather_mark_recap %>% 
   select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% # REplace NA with 0 when there are no records of recaptures for a release iD
   glimpse
 
 ```
 
 ### Knights Landing
 
-#### Columns Removed 
+#### Columns Removed
 
-* **efficiency:** Efficiency is removed since it is a calculated value and will 
-vary depending on how the data is aggregated (see efficiency data in the section
-below that summarized the data by efficiency trial)
+-   **efficiency:** Efficiency is removed since it is a calculated value and will vary depending on how the data is aggregated (see efficiency data in the section below that summarized the data by efficiency trial)
 
 ```{r, message=FALSE, warning=FALSE}
-# gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knights_landing_mark_recapture_data.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/rst/knights_landing_mark_recapture.csv",
-#                overwrite = TRUE)
+gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knights_landing_mark_recapture_data.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "knights_landing_mark_recapture.csv"),
+               overwrite = TRUE)
 
 knights_landing_mark_recap <- read_csv(here::here("data", "rst", "knights_landing_mark_recapture.csv")) %>% 
   rename(number_released = nReleased, release_id = releaseID) %>% 
@@ -242,10 +238,12 @@ knights_landing_released <- knights_landing_mark_recap %>%
   
 knights_landing_recaptured <- knights_landing_mark_recap %>% 
   select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% # REplace NA with 0 when there are no records of recaptures for a release iD
   glimpse
 ```
 
-## Combine datasets: 
+## Combine datasets:
+
 ```{r}
 combined_release <- bind_rows(battle_released, clear_released, feather_released, knights_landing_released) %>% 
   relocate(stream, site, release_id, release_date, release_time, number_released, 
@@ -259,9 +257,9 @@ combined_recapture <- bind_rows(battle_recaptured, clear_recaptured, feather_rec
            recaptured_date, number_recaptured, median_fork_length_recaptured, cone_status) %>% glimpse
 ```
 
-## Explore Varibles Release{.tabset} 
+## Explore Varibles Release{.tabset}
 
-### stream 
+### stream
 
 ```{r}
 table(combined_release$stream)
@@ -270,27 +268,28 @@ table(combined_release$stream)
 ### site
 
 Site ids can be joined to additional locational data using RST_trap_streams.rds
+
 ```{r}
 table(combined_release$site)
 ```
 
-Battle and Clear Creek do not provide a site id 
+Battle and Clear Creek do not provide a site id
+
 ```{r}
 filter(combined_release, stream %in% c("battle creek", "cear creek")) %>% pull(site) %>% unique()
 ```
 
-### release_id 
+### release_id
 
-Release id are unique identifiers for an efficiency trial on a specific tributary. There are 843 unique release IDs  
+Release id are unique identifiers for an efficiency trial on a specific tributary. There are 843 unique release IDs
+
 ```{r}
 length(unique(combined_release$release_id))
 ```
 
-Battle and Clear Creek do not provide a site id so we generated above. 
+Battle and Clear Creek do not provide a site id so we generated above.
 
-
-### release_date     
-
+### release_date
 
 ```{r}
 combined_release %>% ggplot() + 
@@ -302,8 +301,7 @@ combined_release %>% ggplot() +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-
-### release_time      
+### release_time
 
 ```{r}
 combined_release %>% ggplot() + 
@@ -316,10 +314,10 @@ combined_release %>% ggplot() +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
+### number_released
 
-### number_released                
+Most release trials release less than 2000 fish.
 
-Most release trials release less than 2000 fish. 
 ```{r}
 combined_release %>% ggplot() + 
   geom_histogram(aes(x = number_released, fill = stream), alpha = .5) + 
@@ -331,12 +329,10 @@ combined_release %>% ggplot() +
 ```
 
 ### median_fork_length_released
-Individual fork lengths for released fish are not provided by Battle Creek, Clear Creek, or Feather River. 
-Kights Landing does provide some of this data but it is very sparse, so was not included here since we are standardizing historical data. For future data we would want to be able to have a separate table that includes individual release fork lengths for every fish released. 
 
-All fork length values are summarized to just show medium fork length. Feather data does not
-provide data on the fork length of released fish. Knights Landing, Battle Creek, and 
-Clear Creek only show median fork length per efficiency trial.
+Individual fork lengths for released fish are not provided by Battle Creek, Clear Creek, or Feather River. Kights Landing does provide some of this data but it is very sparse, so was not included here since we are standardizing historical data. For future data we would want to be able to have a separate table that includes individual release fork lengths for every fish released.
+
+All fork length values are summarized to just show medium fork length. Feather data does not provide data on the fork length of released fish. Knights Landing, Battle Creek, and Clear Creek only show median fork length per efficiency trial.
 
 ```{r}
 combined_release %>% 
@@ -364,8 +360,10 @@ combined_release %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### night_release           
+### night_release
+
 Only battle and clear provide timing of release (day or night), convert to TRUE FALSE
+
 ```{r}
 table(combined_release$day_or_night_release)
 
@@ -379,8 +377,10 @@ combined_release <- combined_release %>%
 filter(combined_release, stream %in% c("sacramento river", "feather river")) %>% pull(night_release) %>% unique()
 ```
 
-### days_held_post_mark    
+### days_held_post_mark
+
 Only battle and clear provide the days held post mark (pre release), most fish are held one day at most before release
+
 ```{r}
 combined_release %>% 
   ggplot() + 
@@ -392,8 +392,10 @@ combined_release %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### flow_at_release                      
+### flow_at_release
+
 Only battle and clear provide flow at release
+
 ```{r}
 combined_release %>% 
   ggplot() + 
@@ -405,8 +407,10 @@ combined_release %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### temperature_at_release  
+### temperature_at_release
+
 Only battle and clear provide temperature at release, temperature values mostly fall between 40 and 60 degrees C
+
 ```{r}
 combined_release %>% 
   ggplot() + 
@@ -419,7 +423,9 @@ combined_release %>%
 ```
 
 ### turbidity_at_release
-Only battle and clear provide turbidity measures, most turbidity measures fall below 25 NTU 
+
+Only battle and clear provide turbidity measures, most turbidity measures fall below 25 NTU
+
 ```{r}
 combined_release %>% 
   ggplot() + 
@@ -431,38 +437,38 @@ combined_release %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### origin   
+### origin
+
 Only battle, knights landing, and feather provide origin
+
 ```{r}
 table(combined_release$origin, useNA = "ifany")
 ```
-
 
 ```{r}
 filter(combined_release, stream %in% c("sacramento river", "feather river", "clear creek")) %>% pull(origin) %>% unique()
 ```
 
+## Explore Varibles Recapture{.tabset}
 
-## Explore Varibles Recapture{.tabset} 
-
-### stream 
+### stream
 
 ```{r}
 
 table(combined_recapture$stream)
 ```
 
+### release_id
 
-### release_id 
+Release id are unique identifiers for an efficiency trial on a specific tributary. There are 843 unique release IDs
 
-Release id are unique identifiers for an efficiency trial on a specific tributary. There are 843 unique release IDs  
 ```{r}
 length(unique(combined_recapture$release_id))
 ```
 
-Battle and Clear Creek do not provide a site id so we generated above. 
+Battle and Clear Creek do not provide a site id so we generated above.
 
-### recaptured_date  
+### recaptured_date
 
 ```{r}
 combined_recapture %>% ggplot() + 
@@ -474,9 +480,9 @@ combined_recapture %>% ggplot() +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### number_recaptured     
+### number_recaptured
 
-Most trials only recapture less than 400 fish. 
+Most trials only recapture less than 400 fish.
 
 ```{r}
 combined_recapture %>% 
@@ -492,19 +498,26 @@ combined_recapture %>%
 ```
 
 There are 10 values where number_recaptured is greater than 250
+
 ```{r}
 combined_recapture %>% 
   filter(number_recaptured > 250)
 ```
 
+Manually update battle value of 1180 - We used the totals column in the raw data to update this outlier data point. The totals column reported 11 when the catch-by-day columns had an error of 1180.
+```{r}
+combined_recapture <- combined_recapture %>% 
+  mutate(number_recaptured = ifelse(number_recaptured == 1180 & stream == "battle creek", 11, number_recaptured))
+
+combined_recapture %>% 
+  filter(number_recaptured > 250)
+```
 
 ### median_fork_length_recaptured
-Individual fork lengths for recaptured fish are not provided by Battle Creek or Clear Creek. 
-Kights Landing and Feather River do provide some of this data but it is sparse, so was not included here since we are standardizing historical data. For future data we would want to be able to include fork lengths for every fish recaptured (likeley from a catch raw table).
 
-All fork length values are summarized to just show medium fork length. Feather and 
-Knights Landing are summarized to show median fork length per recapture day. Battle and 
-Clear Creek only show median fork length per efficiency trial. 
+Individual fork lengths for recaptured fish are not provided by Battle Creek or Clear Creek. Kights Landing and Feather River do provide some of this data but it is sparse, so was not included here since we are standardizing historical data. For future data we would want to be able to include fork lengths for every fish recaptured (likeley from a catch raw table).
+
+All fork length values are summarized to just show medium fork length. Feather and Knights Landing are summarized to show median fork length per recapture day. Battle and Clear Creek only show median fork length per efficiency trial.
 
 ```{r}
 combined_recapture %>% 
@@ -533,7 +546,9 @@ combined_recapture %>%
 ```
 
 ### cone_status
+
 Only battle and clear provide a cone_status
+
 ```{r}
 table(combined_recapture$cone_status)
 ```
@@ -544,7 +559,8 @@ filter(combined_recapture, stream %in% c("sacramento river", "feather river")) %
 
 ## Summarize data by mark recapture data {.tabset}
 
-To calculate the efficiency of each mark recapture trial the data is now summarized by trial and total fish recaptured per trial is calculated below. 
+To calculate the efficiency of each mark recapture trial the data is now summarized by trial and total fish recaptured per trial is calculated below.
+
 ```{r}
 summarized_mark_recapture <- combined_release %>% 
   left_join(combined_recapture, by = c("release_id" = "release_id", "stream" = "stream")) %>%
@@ -559,7 +575,8 @@ summarized_mark_recapture <- combined_release %>%
 
 ```
 
-### Efficiency Measures 
+### Efficiency Measures
+
 ```{r}
 summarized_mark_recapture %>% 
   filter(efficiency < 1) %>% 
@@ -573,7 +590,8 @@ summarized_mark_recapture %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### Flow vs Efficiency 
+### Flow vs Efficiency
+
 No points for knights landing and feather since we do not have flow
 
 ```{r}
@@ -589,13 +607,13 @@ summarized_mark_recapture %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-### Temperature vs Efficiency 
+### Temperature vs Efficiency
 
 No points for knights landing and feather since we do not have temp
 
 ```{r}
 summarized_mark_recapture %>% 
-  filter(efficiency < 1, stream %in% c("battle creek", "clear creek")) %>% # one efficiency outlier (TODO check and remove)
+  filter(stream %in% c("battle creek", "clear creek")) %>% 
   ggplot() + 
   geom_point(aes(x = temperature_at_release, y = efficiency, color = stream), alpha = .5) + 
   facet_wrap(~stream) +
@@ -606,13 +624,13 @@ summarized_mark_recapture %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
+### Turbidity vs Efficiency
 
-### Turbidity vs Efficiency 
 No points for knights landing and feather since we do not have turbidity
 
 ```{r}
 summarized_mark_recapture %>% 
-  filter(efficiency < 1, stream %in% c("battle creek", "clear creek")) %>%
+  filter(stream %in% c("battle creek", "clear creek")) %>%
   ggplot() + 
   geom_point(aes(x = turbidity_at_release, y = efficiency, color = stream), alpha = .5) + 
   facet_wrap(~stream) +
@@ -625,6 +643,22 @@ summarized_mark_recapture %>%
 
 ## Save unsumarized data to google cloud
 
+# QC 
+- fix NA fork length on released if fish are release, change to not recorded 
+
+```{r}
+  
+is.na(combined_release$number_released) %>% unique() # removed all NA for number released when reading in Clear and Battle
+
+combined_release <- combined_release %>%  
+  mutate(release_date = as_date(release_date),
+         median_fork_length_released = ifelse(is.na(median_fork_length_released), "not recorded", median_fork_length_released)) %>% # clarify that these values are not recorded in the raw data,there should be values here 
+  glimpse
+
+combined_recapture <- combined_recapture %>% 
+  mutate(recaptured_date = as_date(recaptured_date)) %>% glimpse 
+
+```
 
 ```{r}
 knitr::kable(align = 'c', head(combined_release, 5))
@@ -633,7 +667,6 @@ combined_release %>% View
 
 knitr::kable(align = 'c', head(combined_recapture, 5))
 ```
-
 
 ```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
