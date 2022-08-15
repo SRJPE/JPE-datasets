@@ -1,19 +1,18 @@
----
-title: "README"
-output: html_document
----
+# Standard Format Dataset Overview
 
-This directory contains the following data files:
+Within the standard format dataset directory we combine preliminary QCd datasets from all streams in the SR JPE into "standard" format datasets. We update encodings and column types to match across streams. We join the data, reformat the data, and conduct additional QC and exploratory analysis of the combined data in Rmd documents located within this directory. Markdown documents containing original QC can be found in `data-raw/QC-markdowns`.
 
--   catch: standard_catch.csv (created on July 6 2022)
--   trap operations: standard_trap.csv (added on July 24 2022)
--   recapture: standard_recapture.csv (added on July 24 2022)
--   release: standard_release.csv (added on July 24 2022)
--   flow: standard_flow.csv (added on July 24 2022)
+This directory contains the following Rmd documents:
+
+-   `rst_catch_standard_format.Rmd` contains the code used to generate `standard_catch.csv`
+-   `rst_trap_standard_format.Rmd` contains the code used to generate `standard_trap.csv`
+-   `standardize_mark_recapture.Rmd` contains the code used to generate `standard_recaptures.csv` & `standard_release.csv`
+-   `flow_data_prep.Rmd` contains the code used to generate `standard_flow.csv`
+-   TODO add adult
+
+## RST Datasets:
 
 Historical RST data was acquired from spring run tributaries for use in the SR JPE. FlowWest performed QC and data processing to combine datasets into a standard usable format. We collected data from the 8 streams that have historical or ongoing RST monitoring programs: battle creek (B), butte creek (Bu), clear creek (C), deer creek (D), feather river (F), mill creek (M), yuba river (Y), Sacramento river. Datasets for 2 sites on the Sacramento river, Tisdale and knights landing, are managed separately so Tisdale (T) and knights landing (KL) are marked separately in the "Variable Collected By" columns in the data dictionaries below. For all other streams, data has historically been managed by one monitoring program per stream and the variables collected are consistent throughout the sites on that stream.
-
-Markdown documents containing code and QC for combining datasets across streams are found in data-raw/standard-format-data. Markdown documents containing original QC can be found in data-raw/QC-markdowns.
 
 ### Joins:
 
@@ -22,25 +21,30 @@ To combine datasets together use the following joins:
 -   Standard catch can be joined to standard trap on date, stream, and site
 
     ```{r}
-
+    catch_and_trap <- full_join(standard_catch, 
+                                standard_trap, 
+                                by = c("date" = "trap_stop_date", 
+                                       "site" = "site", 
+                                       "stream" = "stream"))
     ```
 
 -   Standard catch can be joined to standard flow or standard temp by date, stream, site
 
     ```{r}
-
-    ```
-
--   Stanard catch can be joined to standard releases or standard recaptures by date, stream and site
-
-    ```{r}
-
+    catch_and_flow <- full_join(standard_catch, 
+                                standard_flow, 
+                                by = c("date" = "date",
+                                       "site" = "site", 
+                                       "stream" = "stream"))
     ```
 
 -   Standard releases and standard recaptures can be joined together on stream and release id
 
     ```{r}
-
+    releases_and_recaptures <- left_join(standard_release, 
+                                standard_recaptures, 
+                                by = c("release_id" = "release_id", 
+                                       "stream" = "stream"))
     ```
 
 ### Unknown or NA value handling:
@@ -299,3 +303,11 @@ Flow data was pulled from CDEC and USGS gages. 
 | site              | site associated with flow measurement            |
 | stream            | stream location associated with flow measurement |
 | source            | source of flow data                              |
+
+## Adult Upstream Passage:
+
+## Adult Holding:
+
+## Adult Redd:
+
+## Adult Carcass:
