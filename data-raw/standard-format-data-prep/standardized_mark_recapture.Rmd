@@ -77,9 +77,9 @@ All released and recaptured fish are chinook salmon.
 -   **number_recaptured:** Number recaptured is removed since we are interested in the number recaptured per day not the total number recaptured
 
 ```{r, message=FALSE, warning=FALSE}
-gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# Set global bucket
-gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# # Set global bucket
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "rst", "battle_mark_recapture.csv"),
@@ -100,7 +100,9 @@ battle_mark_recap <- read_csv(here::here("data", "rst", "battle_mark_recapture.c
                                     recaptured_date == "caught_day_4" ~ release_date + 4,
                                     recaptured_date == "caught_day_5" ~ release_date + 5,),
          median_fork_length_recaptured = ifelse(number_recaptured == 0 | is.na(number_recaptured), 
-                                                NA, as.numeric(median_fork_length_recaptured)))
+                                                NA, as.numeric(median_fork_length_recaptured))) %>% 
+    filter(!is.na(number_released)) # filter 1 value that have na in raw data for number released
+  
 
 
 battle_released <- battle_mark_recap %>% 
@@ -151,7 +153,8 @@ clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv
                                     recaptured_date == "caught_day_4" ~ release_date + 4,
                                     recaptured_date == "caught_day_5" ~ release_date + 5,), 
          median_fork_length_recaptured = ifelse(number_recaptured == 0 | is.na(number_recaptured), 
-                                                NA, as.numeric(median_fork_length_recaptured)))
+                                                NA, as.numeric(median_fork_length_recaptured))) %>%
+    filter(!is.na(number_released)) # filter 2 values that have na in raw data for number released
 
 clear_released <- clear_mark_recap %>% 
   select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
@@ -642,15 +645,17 @@ summarized_mark_recapture %>%
 
 # QC 
 - fix NA fork length on released if fish are release, change to not recorded 
-- remove release trials with NA fish released 
+
 ```{r}
-combined_release %>% 
+  
+is.na(combined_release$number_released) %>% unique() # removed all NA for number released when reading in Clear and Battle
+
+combined_release <- combined_release %>%  
   mutate(release_date = as_date(release_date),
          median_fork_length_released = ifelse(is.na(median_fork_length_released), "not recorded", median_fork_length_released)) %>% # clarify that these values are not recorded in the raw data,there should be values here 
-  filter(!is.na(number_released)) %>% # filter 3 values that have na in raw data for number released
   glimpse
 
-combined_recapture %>% 
+combined_recapture <- combined_recapture %>% 
   mutate(recaptured_date = as_date(recaptured_date)) %>% glimpse 
 
 ```
