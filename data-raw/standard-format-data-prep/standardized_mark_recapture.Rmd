@@ -176,11 +176,7 @@ clear_recaptured <-  clear_mark_recap %>%
 -   **efficiency:** Efficiency is removed since it is a calculated value and will vary depending on how the data is aggregated (see efficiency data in the section below that summarized the data by efficiency trial)
 
 ```{r, message=FALSE, warning=FALSE}
-<<<<<<< HEAD
-gcs_get_object(object_name = "rst/feather-river/data/feather_river_mark_recapture_data.csv",
-=======
 gcs_get_object(object_name = "rst/feather-river/data/feather_mark_recapture_data.csv",
->>>>>>> main
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "rst", "feather_mark_recapture.csv"),
                overwrite = TRUE)
