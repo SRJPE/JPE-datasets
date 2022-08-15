@@ -8,7 +8,8 @@ This directory contains the following Rmd documents:
 -   `rst_trap_standard_format.Rmd` contains the code used to generate `standard_trap.csv`
 -   `standardize_mark_recapture.Rmd` contains the code used to generate `standard_recaptures.csv` & `standard_release.csv`
 -   `flow_data_prep.Rmd` contains the code used to generate `standard_flow.csv`
--   TODO add adult
+-   `standard_adult_upstream_passage.Rmd` contains the code used to generate `standard_adult_upstream_passage.csv`
+-   TODO add adult holding, redd, carcass
 
 ## RST Datasets:
 
@@ -64,7 +65,7 @@ Throughout the RST datasets we use NA, not recorded and unknown values to descri
 The following table describes all of the variables contained within the standard catch dataset. All data was shared by stream teams and compiled into a standard format by FlowWest. Any date that a trap was operating will be included in the catch dataset even if no salmon were caught. This dataset is the most complete catch dataset that we have access to. We will continue outreach and communication with stream teams to ensure we have all the data. This dataset can be joined to trap operations, flow,  temperature, releases, or recaptures data by date, stream and site.
 
 | **Variable Name** | **Variable Collected By** | **Description**                                                                                                    | **Encoding**                                                                                                                                                                                                          |
-|-------------------|---------------------------|--------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|------------|------------|----------------|---------------------------------|
 | date              | All                       | Date trap checked                                                                                                  | \-                                                                                                                                                                                                                    |
 | run               | B, Bu, C, F, KL, T, Y     | Designated run of fish using method in run_method. Some locations did not designated a run. NA when count is 0.    | late fall, spring, fall, winter, not recorded, unknown, NA                                                                                                                                                            |
 | fork_length       | All                       | Fork length of fish in mm.                                                                                         | \-                                                                                                                                                                                                                    |
@@ -264,7 +265,7 @@ The following table describes all of the variables contained within the standard
 The following release table provides details on all the marked fish used in release trials. Median fork length is given instread of mean fork length because Battle and Clear creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard recapture using the release ID and stream. All fish in this table are chinook salmon. The only streams that we have historical mark recapture data for are Battle, Clear, Feather, and Knights Landing.
 
 | **Variable Name**           | **Variable Collected By** | **Description**                                                                                                                                                       |
-|-----------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-------------|-------------|-----------------------------------------------|
 | stream                      | B, C, F, KL               | stream that the data is from                                                                                                                                          |
 | release_id                  | B, C, F, KL               | the unique identifier for each release trial                                                                                                                          |
 | date_released               | B, C, F, KL               | date that marked fish are released                                                                                                                                    |
@@ -284,7 +285,7 @@ The following release table provides details on all the marked fish used in rele
 The following recapture table provides details on all the recaptured fish used in release trials. Median fork length is given instread of mean fork length because Battle and Clear creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard release using the release ID and stream. All fish in this table are chinook salmon. The only streams that we have historical mark-recapture data for are Battle, Clear, Feather, and Knights Landing. 
 
 | **Variable Name**             | **Variable Collected By** | **Description**                                              |
-|-------------------------------|---------------------------|--------------------------------------------------------------|
+|------------------|------------------|------------------------------------|
 | stream                        | B, C, F, KL               | stream that the data is from                                 |
 | release_id                    | B, C, F, KL               | the unique identifier for each release trial                 |
 | date_recaptured               | B, C, F, KL               | date that fish were recaptured                               |
@@ -305,6 +306,32 @@ Flow data was pulled from CDEC and USGS gages. 
 | source            | source of flow data                              |
 
 ## Adult Upstream Passage:
+
+Historical Weir data was acquired from spring run tributaries for use in the SR JPE. FlowWest performed QC and data processing to combine datasets into a standard usable format. We collected data from the 5 streams that have historical or ongoing weir monitoring programs: battle creek (B), clear creek (C), deer creek (D), mill creek (M), yuba river (Y).
+
+### Data Dictionary: 
+
+#### Standard Upstream Passage Data
+
+The following weir passage dataset contains data describing fish migrating upstream through the video weir. Weir footage should capture 100% of the upstream migration period but there can be outages in equipment or limitations in viewing footage that cause data gaps. Yuba is the only stream that provides an hours viewed by day to describe the % of time that we have data for.
+
+| column name        | tributary collects | definition                                                                                             |
+|:------------------|:------------------|:---------------------------------|
+| stream             | **B, C, D, M, Y**  | which Spring Run JPE stream is the data from                                                           |
+| date               | **B, C, D, M, Y**  | date of video footage                                                                                  |
+| time               | **B, C, Y**        | time of video footage                                                                                  |
+| count              | **B, C, D, M, Y**  | number of fish observed                                                                                |
+| adipose_clipped    | **B, C, Y**        | if adipose fin is clipped (TRUE/FALSE)                                                                 |
+| run                | **B, C, D, M**     | run designation                                                                                        |
+| passage_direction  | **B, C, Y**        | direction of fish passage                                                                              |
+| sex                | **C**              | sex of fish observed                                                                                   |
+| viewing_condition  | **C**              | direction of fish observed (normal, readable, not readable, weir is flooded)                           |
+| spawning_condition | **C**              | description of spawning status based on coloration (none, energetic, spawning colors, fungus, unknown) |
+| jack_size          | **C**              | If the fish is jack sized or not                                                                       |
+| ladder             | **Y**              | describes which ladder the fish was seen traveling up                                                  |
+| hours              | **Y**              | number of hours viewed by day                                                                          |
+| flow               | **D, M**           | flow in cfs at the weir                                                                                |
+| temperature        | **D, M**           | temperature in C at the weir                                                                           |
 
 ## Adult Holding:
 
