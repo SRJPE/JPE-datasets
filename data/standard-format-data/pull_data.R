@@ -23,9 +23,9 @@ gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
                saveToDisk = "data/standard-format-data/standard_catch.csv",
                overwrite = TRUE)
 # standard rst trap data table
-gcs_get_object(object_name = "standard-format-data/rst_trap_locations.csv",
+gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/standard-format-data/rst_trap_locations.csv",
+               saveToDisk = "data/standard-format-data/standard_trap.csv",
                overwrite = TRUE)
 # standard environmental covariate data collected during RST monitoring
 gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
@@ -33,9 +33,9 @@ gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.cs
                saveToDisk = "data/standard-format-data/standard_environmental.csv",
                overwrite = TRUE)
 # rst site data
-gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
+gcs_get_object(object_name = "standard-format-data/rst_trap_locations.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/standard-format-data/standard_environmental.csv",
+               saveToDisk = "data/standard-format-data/rst_trap_locations.csv",
                overwrite = TRUE)
 
 # Standard Environmental Covariate Data

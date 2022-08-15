@@ -1,5 +1,5 @@
 ---
-title: "RST trap locations"
+title: "Cumulative catch for spring run"
 author: "Ashley Vizek"
 date: "6/22/2022"
 output:
@@ -7,6 +7,8 @@ output:
      code_folding: hide
      theme: flatly
 ---
+
+Quick analyses in preparation for the RST efficiency workshop.
 
 ```{r setup, include = T}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
@@ -138,34 +140,5 @@ cum_catch_date <- ggplot(left_join(spring_run_cumulative_filtered, mean_day_5), 
   theme(legend.position = "bottom") +
   labs(color="First spring catch after first sample date")
 
-ggsave("cumulative_catch_spring.png", width = 8, height = 5)
+ggsave("analysis/figures/cumulative_catch_spring.png", width = 8, height = 5)
 ```
-
-## Flow and trap efficiency
-
-There is a slight inverse relationship between flow and efficiency. Trap efficiency
-is generally higher at lower flows. There is not much of a trend for the Sacramento
-likely because we do not have enough data points and all efficiencies are less than
-0.02.
-
-```{r}
-number_released_flow <- release_raw %>% 
-  select(stream, site, release_id, release_date, number_released, flow_at_release)
-
-number_recaptured <- recapture_raw %>% 
-  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% 
-  group_by(stream, release_id) %>% 
-  summarize(number_recaptured = sum(number_recaptured))
-
-efficiency <- left_join(number_released_flow, number_recaptured) %>% 
-  mutate(efficiency = number_recaptured/number_released) %>% 
-  left_join(flow_raw %>% 
-              select(date, flow_cfs, stream, site) %>% 
-              rename(release_date = date)) %>% 
-  mutate(flow_at_release = ifelse(is.na(flow_at_release), flow_cfs, flow_at_release))
-
-ggplot(filter(efficiency, efficiency < 0.4), aes(x = efficiency, y = log(flow_at_release))) +
-  geom_point() +
-  facet_wrap(~stream, scales = "free_x")
-```
-
