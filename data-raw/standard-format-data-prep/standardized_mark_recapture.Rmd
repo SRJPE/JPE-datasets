@@ -159,6 +159,7 @@ clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv
 clear_released <- clear_mark_recap %>% 
   select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
          days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity) %>% 
+  mutate(release_date = as_date(release_date)) %>% 
   distinct() %>% 
   glimpse
   
@@ -166,6 +167,7 @@ clear_released <- clear_mark_recap %>%
 clear_recaptured <-  clear_mark_recap %>% 
   select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured, 
          cone_status) %>% 
+  mutate(recaptured_date = as_date(recaptured_date)) %>% 
   glimpse
   
 ```
@@ -178,6 +180,7 @@ clear_recaptured <-  clear_mark_recap %>%
 
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "rst/feather-river/data/feather_mark_recapture_data.csv",
+
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "rst", "feather_mark_recapture.csv"),
                overwrite = TRUE)
@@ -647,7 +650,6 @@ summarized_mark_recapture %>%
 - fix NA fork length on released if fish are release, change to not recorded 
 
 ```{r}
-  
 is.na(combined_release$number_released) %>% unique() # removed all NA for number released when reading in Clear and Battle
 
 combined_release <- combined_release %>%  
@@ -675,11 +677,11 @@ gcs_upload(combined_release,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_release.csv")
-write_csv(combined_release, "../../data/standard-format-data/standard_release.csv")
+write_csv(combined_release, here::here("data", "standard-format-data", "standard_release.csv"))
 
 gcs_upload(combined_recapture,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_recapture.csv")
-write_csv(combined_recapture, "../../data/standard-format-data/standard_recapture.csv")
+write_csv(combined_recapture, here::here("data", "standard-format-data", "standard_recapture.csv"))
 ```
