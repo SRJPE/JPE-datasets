@@ -1,0 +1,127 @@
+---
+title: "investigate catch and trap mismatch"
+output: html_document
+date: "2022-08-16"
+---
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(googleCloudStorageR)
+library(tidyverse)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+
+# Catch
+
+```{r}
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_catch.csv",
+               overwrite = TRUE)
+
+catch_raw <- read_csv(here::here("data","standard-format-data", "standard_catch.csv")) %>% glimpse
+
+unique(catch_raw$stream)
+```
+# Trap
+
+```{r}
+gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_trap.csv",
+               overwrite = TRUE)
+
+trap_raw <- read_csv(here::here("data","standard-format-data", "standard_trap.csv")) %>% glimpse
+
+unique(trap_raw$stream)
+unique(trap_raw$site)
+```
+
+# Join 
+```{r}
+catch_and_trap <- dplyr::left_join(catch_raw,
+                                   trap_raw,
+                                   by = c("date" = "trap_stop_date",
+                                          "site" = "site",
+                                          "stream" = "stream")) %>% glimpse
+```
+
+Mismatches in the number of days for each stream/site. 
+
+- There are some cases where trap data does not exist for a particular day and should be filled
+in as NA in the trap data.
+- For Battle and Clear Creek, days when there is catch data and no trap data is because catch data were interpolated.
+- Feather is only off by one when comparing catch/trap so not big issue
+
+
+```{r}
+catch_raw %>% 
+  distinct(date, stream, site) %>% 
+  group_by(stream, site) %>% 
+  tally() %>% 
+  rename(catch = n) %>% 
+  full_join(trap_raw %>% 
+  distinct(trap_stop_date, stream, site) %>% 
+  group_by(stream, site) %>% 
+  tally() %>% 
+    rename(trap = n))
+```
+
+
+```{r}
+catch_raw %>% 
+  distinct(date, stream, site) %>% 
+  group_by(stream, site) %>% 
+  tally() %>% 
+  rename(catch = n) %>% 
+  full_join(trap_raw %>% 
+  distinct(trap_stop_date, stream, site) %>% 
+  group_by(stream, site) %>% 
+  tally() %>% 
+    rename(trap = n)) %>% 
+  filter(catch > trap)
+```
+
+```{r}
+# every year battle creek has more data in the catch dataset
+catch_raw %>% 
+  filter(stream == "battle creek") %>% 
+  distinct(date) %>% 
+  group_by(year = year(date)) %>% 
+  tally() %>% 
+  rename(catch = n) %>% 
+  full_join(filter(trap_raw, stream == "battle creek") %>% 
+  distinct(trap_stop_date) %>% 
+  group_by(year = year(trap_stop_date)) %>% 
+  tally() %>% 
+    rename(trap = n)) 
+
+catch_and_trap <- catch_raw %>% 
+  distinct(date, stream, site, interpolated) %>% 
+  full_join(trap_raw %>% 
+              rename(date = trap_stop_date) %>% 
+              distinct(date, stream, site) %>% 
+              mutate(trap = "trap"))
+            
+battle <- filter(catch_and_trap,
+       stream == "battle creek")  
+
+clear <- filter(catch_and_trap,
+                stream == "clear creek")
+```
+
+- For Knights Landing, catch is available starting in 2006 but trap data exists from 2002. This is because CAMP is used to pull catch data but CAMP was not used prior to 2006. The standard format rmd will be updated to include catch data prior to 2006.
+
+```{r}
+filter(trap_raw, site == "knights landing") %>% summarize(min = min(trap_stop_date))
+```
