@@ -10,9 +10,9 @@ library(googleCloudStorageR)
 library(knitr)
 library(hms)
 
-
-Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
-Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
@@ -44,9 +44,9 @@ files_deer <- tibble(path = "rst/deer-creek/data/deer_rst",
 files_feather <- tibble(path = rep("rst/feather-river/data/feather_rst",2),
                         name = c("","_effort"),
                         save = rep("data/rst/feather_rst",2))
-# files_knights <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/knl_combine_",2),
-#                         name = c("rst_clean","sampling_effort_clean"),
-#                         save = rep("data/rst/knights_",2))
+files_knights <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/knl_combine_",2),
+                        name = c("rst_clean","sampling_effort_clean"),
+                        save = rep("data/rst/knights_",2))
 files_tisdale <- tibble(path = "rst/lower-sac-river/data/tisdale/rst_clean",
                         name = c(""),
                         save = "data/rst/tisdale_rst")
@@ -69,7 +69,7 @@ pmap(files_butte, get_data)
 pmap(files_clear, get_data)
 pmap(files_deer, get_data)
 pmap(files_feather, get_data)
-# pmap(files_knights, get_data)
+pmap(files_knights, get_data)
 pmap(files_tisdale, get_data)
 pmap(files_mill, get_data)
 pmap(files_yuba, get_data)
@@ -144,7 +144,7 @@ lifestage_encoding <- function(dat) {
 ## Battle Creek
 
 ```{r, battle_data_dictionary}
-battle_data_dictionary <- read_rds("data/rst/battle_rst_data_dictionary.rds")
+battle_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/battle_rst_data_dictionary.rds")
 kable(battle_data_dictionary)
 ```
 
@@ -215,7 +215,7 @@ to include
 
 ## Butte Creek
 ```{r, butte_data_dictionary}
-butte_data_dictionary <- read_rds("data/rst/butte_rst_data_dictionary.rds")
+butte_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/butte_rst_data_dictionary.rds")
 kable(butte_data_dictionary)
 ```
 
@@ -258,7 +258,7 @@ butte_rst_clean <- butte_rst %>%
 ## Clear Creek
 
 ```{r, clear_data_dictionary}
-clear_data_dictionary <- read_rds("data/rst/clear_rst_data_dictionary.rds")
+clear_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/clear_rst_data_dictionary.rds")
 kable(clear_data_dictionary)
 ```
 
@@ -328,7 +328,7 @@ to include
 ## Deer Creek
 
 ```{r, deer_data_dictionary}
-deer_data_dictionary <- read_rds("data/rst/deer_rst_data_dictionary.rds")
+deer_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/deer_rst_data_dictionary.rds")
 kable(deer_data_dictionary)
 ```
 
@@ -357,7 +357,7 @@ deer_rst_clean <- deer_rst %>%
 ## Feather River
 
 ```{r, feather_data_dictionary}
-feather_data_dictionary <- read_rds("data/rst/feather_rst_data_dictionary.rds")
+feather_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/feather_rst_data_dictionary.rds")
 kable(feather_data_dictionary)
 ```
 
@@ -416,7 +416,7 @@ feather_rst_clean_final <- full_join(feather_rst_clean,
 ## Mill Creek
 
 ```{r, mill_data_dictionary}
-mill_data_dictionary <- read_rds("data/rst/mill_rst_data_dictionary.rds")
+mill_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/mill_rst_data_dictionary.rds")
 kable(mill_data_dictionary)
 ```
 
@@ -448,7 +448,7 @@ mill_rst_clean <- mill_rst %>%
 ## Yuba River
 
 ```{r, yuba_data_dictionary}
-yuba_data_dictionary <- read_rds("data/rst/yuba_rst_data_dictionary.rds")
+yuba_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/yuba_rst_data_dictionary.rds")
 kable(yuba_data_dictionary)
 ```
 
@@ -470,7 +470,8 @@ filter(yuba_rst, run == "unknown") %>% glimpse
 
 yuba_rst_clean<- yuba_rst %>%
   select(date, fork_length, weight, lifestage, count, run, location) %>%
-  mutate(site = ifelse(location == "Yuba River", "yuba river", "hallwood")) %>%
+  mutate(site = ifelse(location == "Yuba River", "yuba river", "hallwood"),
+         date = as_date(date)) %>%
   group_by(date, fork_length, weight, lifestage, run, site) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(stream = "yuba river",
@@ -560,7 +561,7 @@ knights_rst_clean_final <- full_join(knights_rst_clean,
 ## Lower Sacramento - Tisdale
 
 ```{r, tisdale_data_dictionary}
-tisdale_data_dictionary <- read_rds("data/rst/lower_sac_tisdale_rst_data_dictionary.rds")
+tisdale_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/lower_sac_tisdale_rst_data_dictionary.rds")
 kable(tisdale_data_dictionary)
 ```
 
