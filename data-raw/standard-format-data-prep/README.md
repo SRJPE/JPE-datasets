@@ -1,14 +1,34 @@
 # Standard Format Dataset Overview
 
-Within the standard format dataset directory we combine preliminary QCd datasets from all streams in the SR JPE into "standard" format datasets. We update encodings and column types to match across streams. We join the data, reformat the data, and conduct additional QC and exploratory analysis of the combined data in Rmd documents located within this directory. Markdown documents containing original QC can be found in `data-raw/QC-markdowns`.
+Within the standard format dataset directory FlowWest combines datasets from all SR JPE streams into "standard" format datasets for all monitoring types:
 
-This directory contains the following Rmd documents:
+-   Juvenile
 
--   `rst_catch_standard_format.Rmd` contains the code used to generate `standard_catch.csv`
--   `rst_trap_standard_format.Rmd` contains the code used to generate `standard_trap.csv`
--   `standardize_mark_recapture.Rmd` contains the code used to generate `standard_recaptures.csv` & `standard_release.csv`
--   `flow_data_prep.Rmd` contains the code used to generate `standard_flow.csv`
--   `standard_adult_upstream_passage.Rmd` contains the code used to generate `standard_adult_upstream_passage.csv`
+    -   RST catch
+
+    -   RST trap operations
+
+    -   RST efficiency trial
+
+    -   Flow at RST sites
+
+-   Adult
+
+    -   Upstream Passage Data
+
+    -   Holding
+
+    -   Redd
+
+    -   Carcass
+
+FlowWest standardized encodings and column types to match across streams. We joined the data, reformatted the data, and conducted additional QC and exploratory analysis of the combined data in Rmd documents located within this directory. Markdown documents containing original QC or raw datasets for each stream can be found in [`data-raw/QC-markdowns`](https://github.com/FlowWest/JPE-datasets/tree/documentation/data-raw/qc-markdowns). This directory contains the following Rmd documents:
+
+-   [`rst_catch_standard_format.Rmd`](https://github.com/FlowWest/JPE-datasets/blob/documentation/data-raw/standard-format-data-prep/rst_catch_standard_format.Rmd) contains the code used to generate `standard_catch.csv`
+-   [`rst_trap_standard_format.Rmd`](https://github.com/FlowWest/JPE-datasets/blob/documentation/data-raw/standard-format-data-prep/rst_trap_standard_format.Rmd) contains the code used to generate `standard_trap.csv`
+-   [`mark_recapture_standard_format.Rmd`](https://github.com/FlowWest/JPE-datasets/blob/documentation/data-raw/standard-format-data-prep/mark_recapture_standard_format.Rmd) contains the code used to generate `standard_recaptures.csv` & `standard_release.csv`
+-   [`flow_standard_format.Rmd`](https://github.com/FlowWest/JPE-datasets/blob/documentation/data-raw/standard-format-data-prep/flow_standard_format.Rmd) contains the code used to generate `standard_flow.csv`
+-   [`adult_upstream_passage_standard_format.Rmd`](https://github.com/FlowWest/JPE-datasets/blob/documentation/data-raw/standard-format-data-prep/adult_upstream_passage_standard_format.Rmd) contains the code used to generate `standard_adult_upstream_passage.csv`
 -   In Progress: adult holding, redd, carcass
 
 ## RST Datasets:
@@ -95,7 +115,7 @@ Throughout the RST datasets we use NA, not recorded and unknown values to descri
 The following table describes all of the variables contained within the standard catch dataset. All data was shared by stream teams and compiled into a standard format by FlowWest. Any date that a trap was operating will be included in the catch dataset even if no salmon were caught. This dataset is the most complete catch dataset that we have access to. We will continue outreach and communication with stream teams to ensure we have all the data. This dataset can be joined to trap operations, flow,  temperature, releases, or recaptures data by date, stream and site.
 
 | **Variable Name** | **Variable Collected By** | **Description**                                                                                                    | **Encoding**                                                                                                                                                                                                 |
-|------------------|------------------|------------------|-------------------|
+|-------------------|---------------------------|--------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | date              | All                       | Date trap checked                                                                                                  | \-                                                                                                                                                                                                           |
 | run               | B, Bu, C, F, KL, T, Y     | Designated run of fish using method in run_method. Some locations did not designated a run. NA when count is 0.    | late fall, spring, fall, winter, not recorded, unknown, NA                                                                                                                                                   |
 | fork_length       | All                       | Fork length of fish in millimeters.                                                                                | \-                                                                                                                                                                                                           |
@@ -295,7 +315,7 @@ The following table describes all of the variables contained within the standard
 The following release table provides details on all the marked fish used in release trials. Median fork length is given instead of mean fork length because Battle and Clear creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard recapture using the release ID and stream. All fish in this table are chinook salmon. The only streams that we have historical mark recapture data for are Battle, Clear, Feather, and Knights Landing.
 
 | **Variable Name**           | **Variable Collected By** | **Description**                                                                                                                                                       |
-|-------------------|-------------------|----------------------------------|
+|-----------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | stream                      | B, C, F, KL               | stream that the data is from                                                                                                                                          |
 | release_id                  | B, C, F, KL               | the unique identifier for each release trial                                                                                                                          |
 | date_released               | B, C, F, KL               | date that marked fish are released                                                                                                                                    |
@@ -315,7 +335,7 @@ The following release table provides details on all the marked fish used in rele
 The following recapture table provides details on all the recaptured fish used in release trials. Median fork length is given instread of mean fork length because Battle and Clear creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard release using the release ID and stream. All fish in this table are chinook salmon. The only streams that we have historical mark-recapture data for are Battle, Clear, Feather, and Knights Landing. 
 
 | **Variable Name**             | **Variable Collected By** | **Description**                                              |
-|-------------------|-------------------|----------------------------------|
+|-------------------------------|---------------------------|--------------------------------------------------------------|
 | stream                        | B, C, F, KL               | stream that the data is from                                 |
 | release_id                    | B, C, F, KL               | the unique identifier for each release trial                 |
 | date_recaptured               | B, C, F, KL               | date that fish were recaptured                               |
@@ -356,7 +376,7 @@ Historical Weir data was acquired from spring run tributaries for use in the SR 
 The following weir passage dataset contains data describing fish migrating upstream through the video weir. Weir footage should capture 100% of the upstream migration period but there can be outages in equipment or limitations in viewing footage that cause data gaps. Yuba is the only stream that provides an hours viewed by day to describe the % of time that we have data for.
 
 | column name        | tributary collects | definition                                                                                             |
-|:------------------|:------------------|:---------------------------------|
+|:-------------------|:-------------------|:-------------------------------------------------------------------------------------------------------|
 | stream             | **B, C, D, M, Y**  | which Spring Run JPE stream is the data from                                                           |
 | date               | **B, C, D, M, Y**  | date of video footage                                                                                  |
 | time               | **B, C, Y**        | time of video footage                                                                                  |
