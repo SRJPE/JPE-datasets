@@ -33,14 +33,22 @@ Historical RST data was acquired from spring run tributaries for use in the SR J
 
 Datasets for 2 sites on the Sacramento river, Tisdale and knights landing, are managed separately so Tisdale (T) and knights landing (KL) are marked separately in the "Variable Collected By" columns in the data dictionaries below. For all other streams, data has historically been managed by one monitoring program per stream and the variables collected are consistent throughout the sites on that stream.
 
+### Entity Relationship Diagram:
+
+Below is an entity relationship diagram (ERD) of the standard format RST datasets. This diagram describes how distinct RST datasets are related to each other. Arrows indicate if the relationships are one to one (one record in one table corresponds to one record in another table) or one to many (one record in one table can correspond to many records in another table). Stanard realease and standard recaptures can be joined to the standard catch, standard trap, or standard flow but it may make sense to apply weekly efficiency values to catch data that has been summarized by week (see weekly summary section below).
+
+![](images/ERD%20standard%20format%20datasets%20-%20Page%203.png)
+
 ### Joins:
 
-To combine datasets together use the following joins:
+To combine datasets together use left joins on the columns listed within the by argument. A left join keeps all of table A and the parts of table B that intersect with table A (visualized in the diagram below).
 
-Standard catch can be joined to standard trap on date, stream, and site
+<img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Left_JOIN.png" width="410"/>
+
+Standard catch can be joined to standard trap on date, stream, and site. Note that there are a few cases where catch data is interpolated and there is no trap data associated with those dates.
 
 ```{r}
-catch_and_trap <- dplyr::full_join(standard_catch, 
+catch_and_trap <- dplyr::left_join(standard_catch, 
                                    standard_trap, 
                                    by = c("date" = "trap_stop_date", 
                                           "site" = "site", 
@@ -66,6 +74,10 @@ releases_and_recaptures <- dplyr::left_join(standard_release,
                                    "stream" = "stream"))
 ```
 
+### Weekly Summary:
+
+TODO add weekly summary code here
+
 ### Unknown or NA value handling:
 
 Throughout the RST datasets we use NA, not recorded and unknown values to describe areas where data there are data gaps. These all have a unique meaning:
@@ -83,7 +95,7 @@ Throughout the RST datasets we use NA, not recorded and unknown values to descri
 The following table describes all of the variables contained within the standard catch dataset. All data was shared by stream teams and compiled into a standard format by FlowWest. Any date that a trap was operating will be included in the catch dataset even if no salmon were caught. This dataset is the most complete catch dataset that we have access to. We will continue outreach and communication with stream teams to ensure we have all the data. This dataset can be joined to trap operations, flow,  temperature, releases, or recaptures data by date, stream and site.
 
 | **Variable Name** | **Variable Collected By** | **Description**                                                                                                    | **Encoding**                                                                                                                                                                                                 |
-|---------------|---------------|---------------|----------------------------|
+|-------------------|---------------------------|--------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | date              | All                       | Date trap checked                                                                                                  | \-                                                                                                                                                                                                           |
 | run               | B, Bu, C, F, KL, T, Y     | Designated run of fish using method in run_method. Some locations did not designated a run. NA when count is 0.    | late fall, spring, fall, winter, not recorded, unknown, NA                                                                                                                                                   |
 | fork_length       | All                       | Fork length of fish in millimeters.                                                                                | \-                                                                                                                                                                                                           |
@@ -283,7 +295,7 @@ The following table describes all of the variables contained within the standard
 The following release table provides details on all the marked fish used in release trials. Median fork length is given instead of mean fork length because Battle and Clear creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard recapture using the release ID and stream. All fish in this table are chinook salmon. The only streams that we have historical mark recapture data for are Battle, Clear, Feather, and Knights Landing.
 
 | **Variable Name**           | **Variable Collected By** | **Description**                                                                                                                                                       |
-|---------------|---------------|------------------------------------------|
+|-----------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | stream                      | B, C, F, KL               | stream that the data is from                                                                                                                                          |
 | release_id                  | B, C, F, KL               | the unique identifier for each release trial                                                                                                                          |
 | date_released               | B, C, F, KL               | date that marked fish are released                                                                                                                                    |
@@ -303,7 +315,7 @@ The following release table provides details on all the marked fish used in rele
 The following recapture table provides details on all the recaptured fish used in release trials. Median fork length is given instread of mean fork length because Battle and Clear creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard release using the release ID and stream. All fish in this table are chinook salmon. The only streams that we have historical mark-recapture data for are Battle, Clear, Feather, and Knights Landing. 
 
 | **Variable Name**             | **Variable Collected By** | **Description**                                              |
-|------------------|------------------|-----------------------------------|
+|-------------------------------|---------------------------|--------------------------------------------------------------|
 | stream                        | B, C, F, KL               | stream that the data is from                                 |
 | release_id                    | B, C, F, KL               | the unique identifier for each release trial                 |
 | date_recaptured               | B, C, F, KL               | date that fish were recaptured                               |
@@ -344,7 +356,7 @@ Historical Weir data was acquired from spring run tributaries for use in the SR 
 The following weir passage dataset contains data describing fish migrating upstream through the video weir. Weir footage should capture 100% of the upstream migration period but there can be outages in equipment or limitations in viewing footage that cause data gaps. Yuba is the only stream that provides an hours viewed by day to describe the % of time that we have data for.
 
 | column name        | tributary collects | definition                                                                                             |
-|:--------------|:--------------|:-----------------------------------------|
+|:-------------------|:-------------------|:-------------------------------------------------------------------------------------------------------|
 | stream             | **B, C, D, M, Y**  | which Spring Run JPE stream is the data from                                                           |
 | date               | **B, C, D, M, Y**  | date of video footage                                                                                  |
 | time               | **B, C, Y**        | time of video footage                                                                                  |
