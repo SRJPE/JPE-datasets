@@ -16,7 +16,7 @@ Ad-hoc analysis and QC in response to data questions or QC issues
 
 ### highlights
 
--   qc-checks (TODO insert link) contains scripts focused on ad-hoc QC checks for datasets
+-   [qc-checks](https://github.com/FlowWest/JPE-datasets/tree/main/analysis/qc-checks) contains scripts focused on ad-hoc QC checks for datasets.
 
 -   [fish_needed_efficiency.Rmd](https://github.com/FlowWest/JPE-datasets/blob/main/analysis/fish_needed_efficiency.Rmd) generates estimates of the number of fish (hatchery and wild) needed for efficiency trials based on historic data.
 
@@ -31,8 +31,6 @@ Ad-hoc analysis and QC in response to data questions or QC issues
 Contains script to pull standard format data from Google Cloud.
 
 *Google Cloud is currently be used for internal workflow purposes.*
-
-TODO remove archive folder when moved away from original versions of model data
 
 ## [data-raw](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw)
 
@@ -66,11 +64,11 @@ The [README.md file](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw
 
     -   [trap](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/rst_trap_standard_format.Rmd)
 
-    -   [mark-recapture](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/standardized_mark_recapture.Rmd)
+    -   [mark-recapture](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/mark_recapture_standard_format.Rmd)
 
-    -   [environmental](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/standardize_RST_environmental_data.Rmd)
+    -   [environmental](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/rst_environmental_standard_format.Rmd)
 
--   [adult upstream passage](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/standard_adult_upstream_passage.Rmd)
+-   [adult upstream passage](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/adult_upstream_passage_standard_format.Rmd)
 
 -   [adult holding](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/holding_standard_format.Rmd)
 
@@ -80,8 +78,6 @@ The [README.md file](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw
 
 -   standard environmental data
 
-    -   [flow](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/flow_data_prep.Rmd)
+    -   [flow](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/flow_standard_format.Rmd)
 
     -   water temperature (in development)
-
-TODO remove archive folder after moved away from original versions of data for model
