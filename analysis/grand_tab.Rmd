@@ -31,8 +31,8 @@ grand_tab <- DSMCalibrationData::grandtab_observed$spring %>%
 ### Weir Counts
 
 ```{r}
-weir_counts <- read_csv("../../data/standard-format-data/standard_adult_upstream_passage.csv") %>% 
-  select(stream = location, date, count, passage_direction, origin, run) %>%
+weir_counts <- read_csv(here::here("data", "standard-format-data", "standard_adult_upstream_passage.csv")) %>% 
+  select(stream, date, count, passage_direction, adipose_clipped, run) %>%
   filter(run %in% c("spring", "unknown", NA_character_)) %>%
   mutate(year = lubridate::year(date),
          stream = tolower(stream)) %>% 

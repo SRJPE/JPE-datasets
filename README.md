@@ -1,24 +1,40 @@
 # JPE-datasets
 
-Repository for cleaning all SR JPE monitoring data
+Repository for cleaning all SR JPE monitoring data. This repository contains 3 folders:
 
-TODO add Table of Contents
+-   [**analysis**](https://github.com/FlowWest/JPE-datasets/tree/main/analysis)- ad-hoc analysis and QC in response to data questions or QC issues
 
-## analysis
+-   [**data**](https://github.com/FlowWest/JPE-datasets/tree/main/data) - script for pulling standard format data from Google Cloud
 
-Collection analyses and QC.
+-   [**data-raw**](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw) - data cleaning and formatting scripts
 
-TODO insert more description after folder is cleaned.
+The contents of this repository are described in more detail below.
 
-## data
+## [analysis](https://github.com/FlowWest/JPE-datasets/tree/main/analysis)
+
+Ad-hoc analysis and QC in response to data questions or QC issues
+
+### highlights
+
+-   qc-checks (TODO insert link) contains scripts focused on ad-hoc QC checks for datasets
+
+-   [fish_needed_efficiency.Rmd](https://github.com/FlowWest/JPE-datasets/blob/main/analysis/fish_needed_efficiency.Rmd) generates estimates of the number of fish (hatchery and wild) needed for efficiency trials based on historic data.
+
+-   [day_vs_nights_release_analysis.R](https://github.com/FlowWest/JPE-datasets/blob/main/analysis/day_vs_night_release_analysis.R) compares trap efficiency estimates for day and night releases.
+
+-   [rst_standard_length_at_date.Rmd](https://github.com/FlowWest/JPE-datasets/blob/main/analysis/rst_standard_length_at_date.Rmd) compares recorded run and run calculated by the length-at-date river model.
+
+## [data](https://github.com/FlowWest/JPE-datasets/tree/main/data)
 
 ### [standard-format-data](https://github.com/FlowWest/JPE-datasets/tree/main/data/standard-format-data)
 
 Contains script to pull standard format data from Google Cloud.
 
+*Google Cloud is currently be used for internal workflow purposes.*
+
 TODO remove archive folder when moved away from original versions of model data
 
-## data-raw
+## [data-raw](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw)
 
 ### [qc-markdowns](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns)
 
@@ -42,32 +58,30 @@ Historical monitoring data across Stream Teams varies in terms of protocols and 
 
 TODO insert link after merge.
 
-The `README.md` file contains descriptions of the standard format data.
-
-TODO include links after renaming.
+The [README.md file](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/README.md) contains detailed descriptions of the standard format data.
 
 -   juvenile rotary screw trap standard format files
 
-    -   catch
+    -   [catch](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/rst_catch_standard_format.Rmd)
 
-    -   trap
+    -   [trap](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/rst_trap_standard_format.Rmd)
 
-    -   mark-recapture
+    -   [mark-recapture](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/standardized_mark_recapture.Rmd)
 
-    -   environmental
+    -   [environmental](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/standardize_RST_environmental_data.Rmd)
 
--   adult upstream passage
+-   [adult upstream passage](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/standard_adult_upstream_passage.Rmd)
 
--   adult holding
+-   [adult holding](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/holding_standard_format.Rmd)
 
--   adult redd
+-   adult redd (in development)
 
--   adult carcass
+-   adult carcass (in development)
 
 -   standard environmental data
 
-    -   flow
+    -   [flow](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/flow_data_prep.Rmd)
 
-    -   water temperature
+    -   water temperature (in development)
 
 TODO remove archive folder after moved away from original versions of data for model

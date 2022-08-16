@@ -61,9 +61,9 @@ efficiency_global <- left_join(number_released_flow, number_recaptured) %>%
 # Peak Outmigration -------------------------------------------------------
 
 # Glimpse RST datasets 
-mark_recaps <- read_csv("data/standard-format-data/standard_mark_recaptures.csv") %>% glimpse()
-rst_catch <- read_csv("data/standard-format-data/standard_rst_catch.csv") %>% glimpse()
-rst_catch_lad <- read_csv("data/standard-format-data/standard_rst_catch_lad.csv") %>% glimpse()
+mark_recaps <- read_csv(here::here("data", "standard-format-data", "standard_mark_recaptures.csv")) %>% glimpse()
+rst_catch <- read_csv(here::here("data", "standard-format-data", "standard_catch.csv")) %>% glimpse()
+rst_catch_lad <- read_csv(here::here("data", "standard-format-data", "standard_rst_catch_lad.csv")) %>% glimpse()
 
 date_range <- function(watershed) {
 # Create yearly count table 
@@ -84,7 +84,7 @@ battle_rollsum <- rst_catch_lad %>%
   arrange(date) %>% 
   group_by(water_year) %>% 
   mutate(left_rollsum = rollsum(daily_count, 42, fill = NA, align = "left"),
-         right_rollsum = rollsum(daily_count, 42, fill = NA, align = "right")), 
+         right_rollsum = rollsum(daily_count, 42, fill = NA, align = "right"), 
          left_percents = left_rollsum/yearly_count,
          right_percents = right_rollsum/yearly_count,  
          max_left = max(left_percents, na.rm = T),
@@ -156,3 +156,4 @@ rst_catch_lad %>%
   ggplot() + 
   geom_histogram(aes(x = left_percents)) + 
   facet_wrap(~water_year)
+
