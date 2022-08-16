@@ -19,14 +19,18 @@ library(googleCloudStorageR)
 
 Sys.getenv("GCS_AUTH_FILE")
 Sys.getenv("GCS_DEFAULT_BUCKET")
+```
 
+```{r}
 # Set up connection with CAMP access database 
 knights_access_db <- "/Users/ashleyvizek/code/CAMP_Knights.mdb"
 mdb.get(knights_access_db, tables = T)
 
 catch_raw <- mdb.get(knights_access_db, tables = "CatchRaw")
 trap_visit <- mdb.get(knights_access_db, tables = "TrapVisit")
+```
 
+```{r}
 # pull lookup tables
 visit_type_lu <- mdb.get(knights_access_db, "luVisitType") %>% 
   select(-activeID) %>%glimpse
@@ -47,6 +51,29 @@ taxon_lu <-  mdb.get(knights_access_db, "luTaxon") %>%
 origin_lu <-  mdb.get(knights_access_db, "luFishOrigin") %>% 
   select(-activeID) %>% glimpse
 
+debris_volume_lu <- mdb.get(knights_access_db,  "luDebrisVolumeCat") %>% 
+  select(-activeID) %>% 
+  glimpse
+
+
+trap_function_lu <- mdb.get(knights_access_db, "luTrapFunctioning") %>%
+  select(-activeID) %>% 
+  glimpse
+
+processed_lu <- mdb.get(knights_access_db, "luFishProcessed") %>%
+  select(-activeID) %>% 
+  glimpse
+
+
+subsite_lu <- mdb.get(knights_access_db, "SubSite") %>% 
+  select(subSiteName, subSiteID) %>% 
+  filter(subSiteName != "N/A")
+
+
+```
+
+# Catch
+```{r}
 detach(package:Hmisc)
 # select relevant column
 selected_trap_visit <- trap_visit %>%
@@ -76,4 +103,35 @@ gcs_upload(selected_catch,
            name = "rst/lower-sac-river/data-raw/knights-landing/knights_catch_camp.csv",
            predefinedAcl = "bucketLevel")
 
+```
+
+# Trap
+```{r}
+# all NA
+filter(trap_visit, !is.na(timeSampleStarted))
+filter(trap_visit, !is.na(timeSampleEnded))
+filter(trap_visit, !is.na(inThalwegID))
+filter(trap_visit, !is.na(sampleGearID))
+filter(trap_visit, !is.na(coneDepthAtStart))
+filter(trap_visit, !is.na(coneDepthAtEnd))
+filter(trap_visit, !is.na(debrisVolume))
+
+# select relevant variables from trapvisit table
+trap_visit_format <- trap_visit %>% 
+  select(trapVisitID, trapPositionID, visitTime, visitTime2, visitTypeID, fishProcessedID, trapFunctioningID, counterAtStart, counterAtEnd, rpmRevolutionsAtStart, rpmRevolutionsAtStart, halfConeID, debrisVolumeCatID, comments) %>% 
+  left_join(subsite_lu, by = c("trapPositionID" = "subSiteID")) %>% 
+  left_join(visit_type_lu) %>% 
+  left_join(processed_lu) %>% 
+  left_join(trap_function_lu) %>% 
+  left_join(debris_volume_lu) %>% 
+  mutate(halfCone = ifelse(halfConeID == 1, T, F)) %>% 
+  select(-c(trapPositionID, visitTypeID, fishProcessedID, trapFunctioningID, debrisVolumeCatID, halfConeID))
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(trap_visit_format,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/knights-landing/knights_trap_camp.csv",
+           predefinedAcl = "bucketLevel")
 ```
