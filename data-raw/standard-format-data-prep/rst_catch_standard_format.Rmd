@@ -99,6 +99,7 @@ gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/knigh
                overwrite = TRUE)
 
 knights_landing_rst <- read_csv("data/rst/knights_catch.csv")
+knights_landing_rst_excel <- read_csv("data/rst/knights_rst_clean.csv")
 
 ```
 
@@ -137,7 +138,7 @@ lifestage_encoding <- function(dat) {
                                  lifestage %in% c("fry", "button-up fry", "fry (button-up)") ~ "fry",
                                  lifestage == "smolt" ~ "smolt",
                                  lifestage == "adult" ~ "adult",
-                                 lifestage == "yearling" ~ "yearling"))
+                                 lifestage %in% c("yearling", "older juvenile") ~ "yearling"))
 }
 ```
 
@@ -204,7 +205,9 @@ battle_rst_clean_final <- full_join(battle_rst_clean,
          stream = "battle creek",
          site = stream,
          adipose_clipped = F,
-         run_method = "adjusted length-at-date")
+         run_method = "adjusted length-at-date") %>% 
+  run_encoding() %>% 
+  lifestage_encoding()
 ```
 
 ### Variables removed
@@ -246,7 +249,9 @@ butte_rst_clean <- butte_rst %>%
                             adipose_clipped == "adclipped" ~ T),
          run_method = "unknown") %>%
   group_by(date, site, dead, fork_length, weight, adipose_clipped, lifestage, stream, run, run_method) %>%
-  summarize(count = sum(count, na.rm = T))
+  summarize(count = sum(count, na.rm = T)) %>% 
+  run_encoding() %>% 
+  lifestage_encoding()
 ```
 
 ### Variables removed
@@ -315,7 +320,9 @@ clear_rst_clean_final <- full_join(clear_rst_clean,
          stream = "clear creek",
          site = tolower(site),
          adipose_clipped = F,
-         run_method = "adjusted length-at-date")
+         run_method = "adjusted length-at-date") %>% 
+  run_encoding() %>% 
+  lifestage_encoding()
   
 ```
 
@@ -409,7 +416,9 @@ feather_rst_clean_final <- full_join(feather_rst_clean,
          stream = "feather river",
          site = tolower(site),
          adipose_clipped = F,
-         run_method = "unknown")
+         run_method = "unknown") %>% 
+  run_encoding() %>% 
+  lifestage_encoding()
   
 ```
 
@@ -476,7 +485,9 @@ yuba_rst_clean<- yuba_rst %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(stream = "yuba river",
          adipose_clipped = F,
-         run_method = "unknown")
+         run_method = "unknown") %>% 
+  run_encoding() %>% 
+  lifestage_encoding()
 ```
 
 ### Variables removed
@@ -500,7 +511,7 @@ unique(knights_landing_rst$lifeStage)
 # 1,603 unknown, 2 not recorded
 filter(knights_landing_rst, fishOrigin == "Unknown") %>% tally()
 
-knights_rst_clean <- knights_landing_rst %>%
+knights_rst_clean_camp <- knights_landing_rst %>%
   select(-c(catchRawID, trapVisitID, lifeStageCAMPID, visitTime2, visitType, releaseID)) %>%
   rename(count = n,
          date = visitTime,
@@ -511,6 +522,28 @@ knights_rst_clean <- knights_landing_rst %>%
          lifestage = lifeStage) %>%
   group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date) %>%
   summarize(count = sum(count, na.rm = T))
+
+knights_rst_clean_pre2006 <- knights_landing_rst_excel %>% 
+  # filter to only include data before 2006 (CAMP stores data 2006 to present)
+  filter(date < "2006-10-02") %>% 
+  select(-c(start_date, stop_date, location, fork_length_max_mm, fork_length_min_mm, cpue)) %>% 
+  rename(run = at_capture_run,
+         adipose_clipped = marked) %>% 
+  mutate(adipose_clipped = case_when(adipose_clipped == T ~ "Natural",
+                                     adipose_clipped == F ~ "Hatchery",
+                                     T ~ "Unknown"),
+         count = ifelse(is.na(count), 0, count),
+         # this likely happened from reshaping of data
+         remove = case_when(is.na(run) & species != "Steelhead" ~ "remove",
+                            species == "Steelhead" ~ "remove",
+                            T ~ "keep")) %>% 
+  filter(remove != "remove") %>% 
+  select(-remove) %>% 
+  group_by(date, species, run, lifestage, adipose_clipped) %>% 
+  summarise(count = sum(count))
+
+knights_rst_clean <- bind_rows(knights_rst_clean_camp,
+                           knights_rst_clean_pre2006) 
 
 knights_rst_min <- knights_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -547,8 +580,10 @@ knights_rst_clean_final <- full_join(knights_rst_clean,
                                      adipose_clipped == "Hatchery" ~ T),
          run_method = tolower(run_method),
          species = tolower(species),
+         species = ifelse(species == "chinook", "chinook salmon", species),
          lifestage = tolower(lifestage)) %>% 
-  filter(date >= "2006-10-02")
+  run_encoding() %>% 
+  lifestage_encoding()
 ```
 
 ### Variables removed
@@ -596,7 +631,9 @@ tisdale_rst_clean <- tisdale_rst %>%
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
          species = tolower(species),
-         run_method = "unknown") 
+         run_method = "unknown") %>% 
+  run_encoding() %>% 
+  lifestage_encoding()
 ```
 
 ### Variables removed
@@ -610,6 +647,7 @@ tisdale_rst_clean <- tisdale_rst %>%
 
 ```{r, combined}
 # TODO fill in run method - this will involve outreach with monitoring programs
+# improve performance by using data.table
 combined_rst_raw <- bind_rows(battle_rst_clean_final,
                           butte_rst_clean,
                           clear_rst_clean_final,
@@ -620,8 +658,6 @@ combined_rst_raw <- bind_rows(battle_rst_clean_final,
                           knights_rst_clean_final,
                           tisdale_rst_clean) 
 combined_rst <- combined_rst_raw %>%
-  run_encoding() %>%
-  lifestage_encoding() %>%
   # all should be chinook salmon
   mutate(species = ifelse(is.na(species), "chinook salmon", species),
          run_method = case_when(is.na(run_method) ~ "not recorded",
