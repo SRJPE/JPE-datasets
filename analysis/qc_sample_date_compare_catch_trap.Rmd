@@ -120,6 +120,18 @@ clear <- filter(catch_and_trap,
                 stream == "clear creek")
 ```
 
+```{r}
+catch_and_trap <- catch_raw %>% 
+  group_by(date, stream, site) %>% 
+  summarize(count = sum(count)) %>% 
+  full_join(trap_raw %>% 
+              rename(date = trap_stop_date) %>% 
+              distinct(date, stream, site) %>% 
+              mutate(trap = "trap"))
+knights <- filter(catch_and_trap,
+                  site == "knights landing")
+```
+
 - For Knights Landing, catch is available starting in 2006 but trap data exists from 2002. This is because CAMP is used to pull catch data but CAMP was not used prior to 2006. The standard format rmd will be updated to include catch data prior to 2006.
 
 ```{r}
