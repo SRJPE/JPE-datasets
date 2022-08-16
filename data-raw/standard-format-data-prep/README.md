@@ -9,44 +9,62 @@ This directory contains the following Rmd documents:
 -   `standardize_mark_recapture.Rmd` contains the code used to generate `standard_recaptures.csv` & `standard_release.csv`
 -   `flow_data_prep.Rmd` contains the code used to generate `standard_flow.csv`
 -   `standard_adult_upstream_passage.Rmd` contains the code used to generate `standard_adult_upstream_passage.csv`
--   TODO add adult holding, redd, carcass
+-   In Progress: adult holding, redd, carcass
 
 ## RST Datasets:
 
-Historical RST data was acquired from spring run tributaries for use in the SR JPE. FlowWest performed QC and data processing to combine datasets into a standard usable format. We collected data from the 8 streams that have historical or ongoing RST monitoring programs: battle creek (B), butte creek (Bu), clear creek (C), deer creek (D), feather river (F), mill creek (M), yuba river (Y), Sacramento river. Datasets for 2 sites on the Sacramento river, Tisdale and knights landing, are managed separately so Tisdale (T) and knights landing (KL) are marked separately in the "Variable Collected By" columns in the data dictionaries below. For all other streams, data has historically been managed by one monitoring program per stream and the variables collected are consistent throughout the sites on that stream.
+Historical RST data was acquired from spring run tributaries for use in the SR JPE. FlowWest performed QC and data processing to combine datasets into a standard usable format. We collected data from the 8 streams that have historical or ongoing RST monitoring programs:
+
+-   battle creek (B)
+
+-   butte creek (Bu)
+
+-   clear creek (C)
+
+-   deer creek (D)
+
+-   feather river (F)
+
+-   mill creek (M)
+
+-   yuba river (Y)
+
+-   Sacramento river.
+
+Datasets for 2 sites on the Sacramento river, Tisdale and knights landing, are managed separately so Tisdale (T) and knights landing (KL) are marked separately in the "Variable Collected By" columns in the data dictionaries below. For all other streams, data has historically been managed by one monitoring program per stream and the variables collected are consistent throughout the sites on that stream.
 
 ### Joins:
 
 To combine datasets together use the following joins:
 
--   Standard catch can be joined to standard trap on date, stream, and site
+Standard catch can be joined to standard trap on date, stream, and site
 
-    ```{r}
-    catch_and_trap <- full_join(standard_catch, 
-                                standard_trap, 
-                                by = c("date" = "trap_stop_date", 
-                                       "site" = "site", 
-                                       "stream" = "stream"))
-    ```
+```{r}
+catch_and_trap <- dplyr::full_join(standard_catch, 
+                                   standard_trap, 
+                                   by = c("date" = "trap_stop_date", 
+                                          "site" = "site", 
+                                          "stream" = "stream"))
+```
 
--   Standard catch can be joined to standard flow or standard temp by date, stream, site
+Standard catch can be joined to standard flow or standard temp by date, stream, site
 
-    ```{r}
-    catch_and_flow <- full_join(standard_catch, 
-                                standard_flow, 
-                                by = c("date" = "date",
-                                       "site" = "site", 
-                                       "stream" = "stream"))
-    ```
+```{r}
+catch_and_flow <- dplyr::left_join(standard_catch, 
+                                   standard_flow, 
+                                   by = c("date" = "date",
+                                          "site" = "site", 
+                                          "stream" = "stream"))
+```
 
--   Standard releases and standard recaptures can be joined together on stream and release id
+Standard releases and standard recaptures can be joined together on stream and release id
 
-    ```{r}
-    releases_and_recaptures <- left_join(standard_release, 
-                                standard_recaptures, 
-                                by = c("release_id" = "release_id", 
-                                       "stream" = "stream"))
-    ```
+```{r}
+releases_and_recaptures <- dplyr::left_join(standard_release, 
+                                            standard_recaptures, 
+                            by = c("release_id" = "release_id", 
+                                   "stream" = "stream"))
+```
 
 ### Unknown or NA value handling:
 
@@ -64,21 +82,21 @@ Throughout the RST datasets we use NA, not recorded and unknown values to descri
 
 The following table describes all of the variables contained within the standard catch dataset. All data was shared by stream teams and compiled into a standard format by FlowWest. Any date that a trap was operating will be included in the catch dataset even if no salmon were caught. This dataset is the most complete catch dataset that we have access to. We will continue outreach and communication with stream teams to ensure we have all the data. This dataset can be joined to trap operations, flow,  temperature, releases, or recaptures data by date, stream and site.
 
-| **Variable Name** | **Variable Collected By** | **Description**                                                                                                    | **Encoding**                                                                                                                                                                                                          |
-|-------------------|---------------------------|--------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| date              | All                       | Date trap checked                                                                                                  | \-                                                                                                                                                                                                                    |
-| run               | B, Bu, C, F, KL, T, Y     | Designated run of fish using method in run_method. Some locations did not designated a run. NA when count is 0.    | late fall, spring, fall, winter, not recorded, unknown, NA                                                                                                                                                            |
-| fork_length       | All                       | Fork length of fish in mm.                                                                                         | \-                                                                                                                                                                                                                    |
-| lifestage         | B, Bu, C, F, KL, T, Y     | Life stage of fish. NA when fish count is 0.                                                                       | smolt, fry, yolk sac fry, not recorded, parr, silvery parr, adult, unknown, yearling, NA                                                                                                                              |
-| dead              | B, Bu, C, T               | Describes if fish were dead when observed (T/F).                                                                   | TRUE, FALSE                                                                                                                                                                                                           |
-| interpolated      | B, C                      | Describes if data were interpolated (T/F).                                                                         | TRUE, FALSE                                                                                                                                                                                                           |
-| count             | All                       | Number of fish caught.                                                                                             | \-                                                                                                                                                                                                                    |
-| stream            | All                       | Mainstem/tributary location of trap.                                                                               | battle creek, butte creek, clear creek, deer creek, feather river, mill creek, yuba river, sacramento river                                                                                                           |
-| site              | All                       | Site of trap within location. Some locations do not have multiple sites in a stream In these cases stream = site.  | battle creek, okie dam, adams dam, lcc, ucc, deer creek, eye riffle, live oak, herringer riffle, steep riffle, sunset pumps, shawns beach, gateway riffle, mill creek, yuba river, hallwood, knights landing, tisdale |
-| adipose_clipped   |                           | Describes if adipose fin is clipped (T/F).                                                                         | TRUE, FALSE                                                                                                                                                                                                           |
-| run_method        | Bu                        | Method used to designate run.                                                                                      | NA if count is 0. not recorded, length-at-date criteria, appearance, hatchery attribute                                                                                                                               |
-| weight            | Bu, D, Y, KL, T           | Weight in grams.                                                                                                   | NA                                                                                                                                                                                                                    |
-| species           | All                       | Species of fish. All were filtered to chinook.                                                                     | Chinook salmon                                                                                                                                                                                                        |
+| **Variable Name** | **Variable Collected By** | **Description**                                                                                                    | **Encoding**                                                                                                                                                                                                 |
+|---------------|---------------|---------------|----------------------------|
+| date              | All                       | Date trap checked                                                                                                  | \-                                                                                                                                                                                                           |
+| run               | B, Bu, C, F, KL, T, Y     | Designated run of fish using method in run_method. Some locations did not designated a run. NA when count is 0.    | late fall, spring, fall, winter, not recorded, unknown, NA                                                                                                                                                   |
+| fork_length       | All                       | Fork length of fish in millimeters.                                                                                | \-                                                                                                                                                                                                           |
+| lifestage         | B, Bu, C, F, KL, T, Y     | Life stage of fish. NA when fish count is 0.                                                                       | smolt, fry, yolk sac fry, not recorded, parr, silvery parr, adult, unknown, yearling, NA                                                                                                                     |
+| dead              | B, Bu, C, T               | Describes if fish were dead when observed                                                                          | TRUE/FALSE                                                                                                                                                                                                   |
+| interpolated      | B, C                      | Describes if data were interpolated                                                                                | TRUE/FALSE                                                                                                                                                                                                   |
+| count             | All                       | Number of fish caught.                                                                                             | \-                                                                                                                                                                                                           |
+| stream            | All                       | Mainstem/tributary location of trap.                                                                               | battle creek, butte creek, clear creek, deer creek, feather river, mill creek, yuba river, sacramento river                                                                                                  |
+| site              | All                       | Site of trap within location. Some locations do not have multiple sites in a stream In these cases stream = site.  | ubc, okie dam, adams dam, lcc, ucc, deer creek, eye riffle, live oak, herringer riffle, steep riffle, sunset pumps, shawns beach, gateway riffle, mill creek, yuba river, hallwood, knights landing, tisdale |
+| adipose_clipped   |                           | Describes if adipose fin is clipped                                                                                | TRUE/FALSE                                                                                                                                                                                                   |
+| run_method        | Bu                        | Method used to designate run.                                                                                      | NA if count is 0. not recorded, length-at-date criteria, appearance, hatchery attribute                                                                                                                      |
+| weight            | Bu, D, Y, KL, T           | Weight in grams.                                                                                                   | \-                                                                                                                                                                                                           |
+| species           | All                       | Species of fish. All were filtered to chinook.                                                                     | Chinook salmon                                                                                                                                                                                               |
 
 #### Standard Trap (Trap Operations Dataset)
 
@@ -139,31 +157,31 @@ The following table describes all of the variables contained within the standard
 <tr class="even">
 <td><p>river_left_depth</p></td>
 <td><p>B, C</p></td>
-<td><p>River depth from inside of the river left (units = m)</p></td>
+<td><p>River depth from inside of the river left (units = meters)</p></td>
 <td><p>-</p></td>
 </tr>
 <tr class="odd">
 <td><p>river_center_depth</p></td>
 <td><p>B, C</p></td>
-<td><p>River depth from directly in the center of cone (units = m)</p></td>
+<td><p>River depth from directly in the center of cone (units = meters)</p></td>
 <td><p>-</p></td>
 </tr>
 <tr class="even">
 <td><p>river_right_depth</p></td>
 <td><p>B, C</p></td>
-<td><p>River depth from inside of the river right (units = m)</p></td>
+<td><p>River depth from inside of the river right (units = meters)</p></td>
 <td><p>-</p></td>
 </tr>
 <tr class="odd">
 <td><p>thalweg</p></td>
 <td><p>B, C</p></td>
-<td><p>Was trap fishing in the thalweg (T/F)</p></td>
-<td><p>T/F</p></td>
+<td><p>Was trap fishing in the thalweg</p></td>
+<td><p>TRUE/FALSE</p></td>
 </tr>
 <tr class="even">
 <td><p>depth_adjust</p></td>
 <td><p>B, C</p></td>
-<td><p>The depth of the bottom of the cone (units = cm)</p></td>
+<td><p>The depth of the bottom of the cone (units = centimeters)</p></td>
 <td><p>-</p></td>
 </tr>
 <tr class="odd">
@@ -175,8 +193,8 @@ The following table describes all of the variables contained within the standard
 <tr class="even">
 <td><p>fish_properly</p></td>
 <td><p>B, C</p></td>
-<td><p>Was there a problem with the trap (T/F)</p></td>
-<td><p>T/F</p></td>
+<td><p>Was there a problem with the trap</p></td>
+<td><p>TRUE/FALSE</p></td>
 </tr>
 <tr class="odd">
 <td><p>comments</p></td>
@@ -200,7 +218,7 @@ The following table describes all of the variables contained within the standard
 <td><p>site</p></td>
 <td><p>All </p></td>
 <td><p>Site within the location</p></td>
-<td><p>battle creek, okie dam, adams dam, lcc, ucc, deer creek, eye riffle, live oak, herringer riffle, steep riffle, sunset pumps, shawns beach, gateway riffle, mill creek, yuba river, hallwood, knights landing, tisdale</p></td>
+<td><p>ubc, okie dam, adams dam, lcc, ucc, deer creek, eye riffle, live oak, herringer riffle, steep riffle, sunset pumps, shawns beach, gateway riffle, mill creek, yuba river, hallwood, knights landing, tisdale</p></td>
 </tr>
 <tr class="odd">
 <td><p>subsite</p></td>
@@ -262,10 +280,10 @@ The following table describes all of the variables contained within the standard
 
 #### Release
 
-The following release table provides details on all the marked fish used in release trials. Median fork length is given instread of mean fork length because Battle and Clear creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard recapture using the release ID and stream. All fish in this table are chinook salmon. The only streams that we have historical mark recapture data for are Battle, Clear, Feather, and Knights Landing.
+The following release table provides details on all the marked fish used in release trials. Median fork length is given instead of mean fork length because Battle and Clear creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard recapture using the release ID and stream. All fish in this table are chinook salmon. The only streams that we have historical mark recapture data for are Battle, Clear, Feather, and Knights Landing.
 
 | **Variable Name**           | **Variable Collected By** | **Description**                                                                                                                                                       |
-|-----------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|---------------|---------------|------------------------------------------|
 | stream                      | B, C, F, KL               | stream that the data is from                                                                                                                                          |
 | release_id                  | B, C, F, KL               | the unique identifier for each release trial                                                                                                                          |
 | date_released               | B, C, F, KL               | date that marked fish are released                                                                                                                                    |
@@ -275,8 +293,8 @@ The following release table provides details on all the marked fish used in rele
 | median_fork_length_released | B, C, KL                  | median fork length of group of fish released                                                                                                                          |
 | night_release               | B, C, F, KL               | TRUE if the release is at night                                                                                                                                       |
 | days_held_post_mark         | B, C                      | number of days marked fish are held before released                                                                                                                   |
-| flow_at_release             | B, C                      | flow measure at time and stream of release (cfs)                                                                                                                      |
-| temperature_at_release      | B, C                      | temperature measure at time and stream of release (degrees C)                                                                                                         |
+| flow_at_release             | B, C                      | flow measure at time and stream of release (cubic feet per second)                                                                                                    |
+| temperature_at_release      | B, C                      | temperature measure at time and stream of release (degrees Celsius)                                                                                                   |
 | turbidity_at_release        | B, C                      | turbidity measure at time and stream of release (NTU)                                                                                                                 |
 | origin                      | B, F, KL                  | fish origin (natural, hatchery, mixed, unknown, not recorded, or NA). Origin comes directly from \# of fish acquired from a hatchery and not from adipose fin status. |
 
@@ -285,7 +303,7 @@ The following release table provides details on all the marked fish used in rele
 The following recapture table provides details on all the recaptured fish used in release trials. Median fork length is given instread of mean fork length because Battle and Clear creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard release using the release ID and stream. All fish in this table are chinook salmon. The only streams that we have historical mark-recapture data for are Battle, Clear, Feather, and Knights Landing. 
 
 | **Variable Name**             | **Variable Collected By** | **Description**                                              |
-|-------------------------------|---------------------------|--------------------------------------------------------------|
+|------------------|------------------|-----------------------------------|
 | stream                        | B, C, F, KL               | stream that the data is from                                 |
 | release_id                    | B, C, F, KL               | the unique identifier for each release trial                 |
 | date_recaptured               | B, C, F, KL               | date that fish were recaptured                               |
@@ -307,7 +325,17 @@ Flow data was pulled from CDEC and USGS gages. 
 
 ## Adult Upstream Passage:
 
-Historical Weir data was acquired from spring run tributaries for use in the SR JPE. FlowWest performed QC and data processing to combine datasets into a standard usable format. We collected data from the 5 streams that have historical or ongoing weir monitoring programs: battle creek (B), clear creek (C), deer creek (D), mill creek (M), yuba river (Y).
+Historical Weir data was acquired from spring run tributaries for use in the SR JPE. FlowWest performed QC and data processing to combine datasets into a standard usable format. We collected data from the 5 streams that have historical or ongoing weir monitoring programs:
+
+-   battle creek (B)
+
+-   clear creek (C)
+
+-   deer creek (D)
+
+-   mill creek (M)
+
+-   yuba river (Y)
 
 ### Data Dictionary:
 
@@ -316,7 +344,7 @@ Historical Weir data was acquired from spring run tributaries for use in the SR 
 The following weir passage dataset contains data describing fish migrating upstream through the video weir. Weir footage should capture 100% of the upstream migration period but there can be outages in equipment or limitations in viewing footage that cause data gaps. Yuba is the only stream that provides an hours viewed by day to describe the % of time that we have data for.
 
 | column name        | tributary collects | definition                                                                                             |
-|:-------------------|:-------------------|:-------------------------------------------------------------------------------------------------------|
+|:--------------|:--------------|:-----------------------------------------|
 | stream             | **B, C, D, M, Y**  | which Spring Run JPE stream is the data from                                                           |
 | date               | **B, C, D, M, Y**  | date of video footage                                                                                  |
 | time               | **B, C, Y**        | time of video footage                                                                                  |
@@ -330,11 +358,17 @@ The following weir passage dataset contains data describing fish migrating upstr
 | jack_size          | **C**              | If the fish is jack sized or not                                                                       |
 | ladder             | **Y**              | describes which ladder the fish was seen traveling up                                                  |
 | hours              | **Y**              | number of hours viewed by day                                                                          |
-| flow               | **D, M**           | flow in cfs at the weir                                                                                |
-| temperature        | **D, M**           | temperature in C at the weir                                                                           |
+| flow               | **D, M**           | flow in cubic feet per seccond at the weir                                                             |
+| temperature        | **D, M**           | temperature in Celsius at the weir                                                                     |
 
 ## Adult Holding:
 
+In Progress
+
 ## Adult Redd:
 
+In Progress
+
 ## Adult Carcass:
+
+In Progress
