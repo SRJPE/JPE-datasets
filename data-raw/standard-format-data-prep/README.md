@@ -3,7 +3,7 @@
 Within the standard format dataset directory FlowWest combines datasets from all SR JPE streams into "standard" format datasets for all monitoring types:
 
 | **Juvenile**                                                                                                                                     | Adult                                                                                                                                                |
-|--------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-----------------------------------|------------------------------------|
 | [RST catch](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/rst_catch_standard_format.Rmd)                 | [Upstream passage](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/adult_upstream_passage_standard_format.Rmd) |
 | [RST trap operations](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/rst_trap_standard_format.Rmd)        | [Holding](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/holding_standard_format.Rmd)                         |
 | [RST efficiency trial](https://github.com/FlowWest/JPE-datasets/blob/main/data-raw/standard-format-data-prep/mark_recapture_standard_format.Rmd) | Redd (in progress)                                                                                                                                   |
@@ -56,7 +56,7 @@ Below is an entity relationship diagram (ERD) of the standard format RST dataset
 
 Standard release and standard recaptures can also be joined to the standard catch, standard trap, or standard flow though standard catch should first be summarized by week (see weekly summary section below).
 
-![](images/ERD%20standard%20format%20datasets%20-%20Page%203.png)
+![](images/ERD%20standard%20format%20datasets%20-%20Page%203%20(1)-01.png)
 
 ### Joins:
 
@@ -149,7 +149,6 @@ weekly_summary <- left_join(catch_week, release_recapture_week,
                                    "site"))
 ```
 
-
 ### Unknown or NA value handling:
 
 Throughout the RST datasets NA, not recorded and unknown values are used to describe areas where there are data gaps. These all have a unique meaning:
@@ -169,7 +168,7 @@ The following table describes all the variables contained within the standard ca
 This dataset can be joined to trap operations, flow, temperature, releases, or recaptures data by date, stream and site.
 
 | **Variable Name** | **Variable Collected By** | **Description**                                                                            | **Encoding**                                                                                                                                                                                                 |
-|-------------------|---------------------------|--------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|------------|------------|-------------|-----------------------------------|
 | date              | All                       | Date trap checked                                                                          | \-                                                                                                                                                                                                           |
 | run               | B, Bu, C, F, KL, T, Y     | Designated run of fish using method in run_method. Some locations did not designate a run. |                                                                                                                                                                                                              |
 | fork_length       | All                       | Fork length of fish in millimeters.                                                        | \-                                                                                                                                                                                                           |
@@ -189,7 +188,7 @@ This dataset can be joined to trap operations, flow, temperature, releases, or r
 The following table describes all of the variables contained within the standard trap operations dataset. This data was shared by stream teams and compiled into a standard format. Trap operations data should be collected at every trap visit for each RST sampling. In some cases, there are multiple traps at one site. Traps at a given site are referred to as subsites. There should be a row for each subsite contained within this dataset.
 
 | **Variable Name**          | **Variable Collected By** | **Description**                                                                                          | **Encoding**                                                                                                                                                                                                 |
-|----------------------------|---------------------------|----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|------------|------------|---------------|---------------------------------|
 | trap_visit_id              | B, C                      | Key for linking trap operations to catch data. Currently, not all locations use this key.                | \-                                                                                                                                                                                                           |
 | trap_start_date            | B, C, KL                  | Date when trap was started or restarted. The start date is typically the end date from the previous day. | \-                                                                                                                                                                                                           |
 | trap_start_time            | B, C, KL                  | Time when trap was started or restarted. The start time is typically the end time from the previous day. | \-                                                                                                                                                                                                           |
@@ -223,7 +222,7 @@ The following table describes all of the variables contained within the standard
 The following release table provides details on all the marked fish used in release trials. Median fork length is given instead of mean fork length because Battle Creek and Clear Creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard recapture using the release ID and stream. All fish in this table are Chinook salmon. The only streams with historical mark recapture data are Battle, Clear, Feather, and Knights Landing.
 
 | **Variable Name**           | **Variable Collected By** | **Description**                                                                                                                                                       |
-|-----------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-------------|-------------|-----------------------------------------------|
 | stream                      | B, C, F, KL               | stream that the data is from                                                                                                                                          |
 | release_id                  | B, C, F, KL               | the unique identifier for each release trial                                                                                                                          |
 | date_released               | B, C, F, KL               | date that marked fish are released                                                                                                                                    |
@@ -243,7 +242,7 @@ The following release table provides details on all the marked fish used in rele
 The following recapture table provides details on all the recaptured fish used in release trials. Median fork length is given instead of mean fork length because Battle Creek and Clear Creek only provided aggregated data giving median fork length for each efficiency trial. This table can be joined to standard release using the release ID and stream. All fish in this table are Chinook salmon. The only streams with historical mark recapture data are Battle, Clear, Feather, and Knights Landing.
 
 | **Variable Name**             | **Variable Collected By** | **Description**                                                     |
-|-------------------------------|---------------------------|---------------------------------------------------------------------|
+|-----------------|-----------------|-------------------------------------|
 | stream                        | B, C, F, KL               | stream that the data is from                                        |
 | release_id                    | B, C, F, KL               | the unique identifier for each release trial                        |
 | date_recaptured               | B, C, F, KL               | date that fish were recaptured                                      |
@@ -256,7 +255,7 @@ The following recapture table provides details on all the recaptured fish used i
 Flow data was pulled from [CDEC](https://cdec.water.ca.gov/webgis/?appid=cdecstation) and [USGS](https://maps.waterdata.usgs.gov/mapper/index.html) gages for consistency.
 
 | **Variable Name** | **Description**                                                         |
-|-------------------|-------------------------------------------------------------------------|
+|-----------------|-------------------------------------------------------|
 | date              | date of flow measurement                                                |
 | flow_cfs          | mean daily flow in cubic feet per second (unit = cubic feet per second) |
 | site              | site associated with flow measurement                                   |
@@ -284,7 +283,7 @@ Historical weir data was acquired from spring run tributaries for use in the SR 
 The following weir passage dataset contains data describing fish migrating upstream through the video weir. Weir footage should capture 100% of the upstream migration period but there can be outages in equipment or limitations in viewing footage that cause data gaps. Yuba is the only stream that provides the number of hours viewed by day to describe the percent of time captured in data.
 
 | column name        | tributary collects | definition                                                                                             |
-|:-------------------|:-------------------|:-------------------------------------------------------------------------------------------------------|
+|:------------|:------------|:---------------------------------------------|
 | stream             | **B, C, D, M, Y**  | stream data is from                                                                                    |
 | date               | **B, C, D, M, Y**  | date of video footage                                                                                  |
 | time               | **B, C, Y**        | time of video footage                                                                                  |
