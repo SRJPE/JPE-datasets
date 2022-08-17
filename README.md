@@ -8,7 +8,7 @@ Repository for cleaning all SR JPE monitoring data. This repository contains 3 f
 
 -   [**data-raw**](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw) - data cleaning and formatting scripts
 
-The contents of this repository are described in more detail below.
+The contents of this repository are described in more detail below. Click on links to navigate directly to a directory or script. Additional README documents within each directory give more in depth details on the contents of that directory.   
 
 ## [analysis](https://github.com/FlowWest/JPE-datasets/tree/main/analysis)
 
@@ -30,7 +30,7 @@ Ad-hoc analysis and QC in response to data questions or QC issues
 
 Contains script to pull standard format data from Google Cloud.
 
-*Google Cloud is currently be used for internal workflow purposes.*
+*Google Cloud is currently used in internal workflows - all SR JPE data is stored in a Google cloud bucket*
 
 ## [data-raw](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw)
 
