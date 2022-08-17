@@ -2,7 +2,7 @@
 
 The analysis folder contains ad-hoc analysis scripts created by FlowWest in response to data questions or QC issues.
 
--   qc-checks (TODO insert link) contains scripts focused on ad-hoc QC checks for datasets
+-   [qc-checks](https://github.com/FlowWest/JPE-datasets/tree/main/analysis/qc-checks) contains scripts focused on ad-hoc QC checks for datasets.
 
 -   [salmonid_habitat_extents](https://github.com/FlowWest/JPE-datasets/tree/main/analysis/salmonid_habitat_extents) contains data files needed to map salmon habitat
 
