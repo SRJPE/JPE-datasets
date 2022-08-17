@@ -48,8 +48,6 @@ QC files for each monitoring type can be accessed using the links below:
 
 -   [juvenile rotary screw trap](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/rst)
 
--   juvenile seine and snorkel (currently not fully processed or used)
-
 ### [standard-format-data-prep](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/standard-format-data-prep)
 
 Historical monitoring data across Stream Teams varies in terms of protocols and data format. Based on feedback from iterative meetings with the SR JPE Data Management Team and Stream Teams, data across Stream Teams was combined according to a standard format. These datasets are referred to as standard format data and were generated using RMarkdown for full transparency. Standard format data are stored on Google Cloud and can be downloaded using the [`pull_data.R`](https://github.com/FlowWest/JPE-datasets/blob/main/data/standard-format-data/pull_data.R) script. Currently Google Cloud bucket access is private. Standard format data will be moved in the near future to the [Environmental Data Initiative (EDI)](https://portal.edirepository.org/nis/home.jsp) repository for ongoing access and transparency.
