@@ -16,6 +16,7 @@ root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 ```{r}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
@@ -120,7 +121,23 @@ clear <- filter(catch_and_trap,
                 stream == "clear creek")
 ```
 
+- For Knights Landing, catch is available starting in 2006 but trap data exists from 2002. This is because CAMP is used to pull catch data but CAMP was not used prior to 2006. The standard format rmd will be updated to include catch data prior to 2006.
+
 ```{r}
+filter(trap_raw, site == "knights landing") %>% summarize(min = min(trap_stop_date))
+```
+
+# Check Fixes
+
+
+```{r}
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_catch.csv",
+               overwrite = TRUE)
+
+catch_raw <- read_csv(here::here("data","standard-format-data", "standard_catch.csv")) %>% glimpse
+
 catch_and_trap <- catch_raw %>% 
   group_by(date, stream, site) %>% 
   summarize(count = sum(count)) %>% 
@@ -128,12 +145,12 @@ catch_and_trap <- catch_raw %>%
               rename(date = trap_stop_date) %>% 
               distinct(date, stream, site) %>% 
               mutate(trap = "trap"))
-knights <- filter(catch_and_trap,
-                  site == "knights landing")
-```
 
-- For Knights Landing, catch is available starting in 2006 but trap data exists from 2002. This is because CAMP is used to pull catch data but CAMP was not used prior to 2006. The standard format rmd will be updated to include catch data prior to 2006.
+filter(catch_and_trap,
+                  site == "knights landing") %>%
+  filter(date < "2006-10-02", is.na(trap))
 
-```{r}
-filter(trap_raw, site == "knights landing") %>% summarize(min = min(trap_stop_date))
+filter(catch_and_trap,
+                  site == "knights landing") %>%
+  filter(date >= "2006-10-02", is.na(trap))
 ```
