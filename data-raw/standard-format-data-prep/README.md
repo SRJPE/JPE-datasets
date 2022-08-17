@@ -101,7 +101,60 @@ releases_and_recaptures <- dplyr::left_join(standard_release,
 
 ### Weekly Summary
 
-TODO add weekly summary code here
+The code below is an example of how standard datasets can be summarized by week and joined.
+
+Load required packages:
+
+```{r}
+library(dplyr)
+library(lubridate)
+```
+
+Summarize the standard catch dataset to find weekly catch by water year, stream, site, run, and adipose clip:
+
+```{r}
+catch_week <- standard_catch %>% 
+  # create week and water year 
+  mutate(week = week(date),
+         water_year = case_when(month(date) %in% 10:12 ~ year(date) + 1,
+                        T ~ year(date))) %>% 
+  # calculate weekly counts
+  group_by(week, water_year, stream, site, adipose_clipped, run) %>% 
+  summarize(count = sum(count))
+```
+
+Summarize the standard release and standard recaptures to find the weekly number of releases and recaptures by water year, stream, and site:
+
+```{r}
+release_recapture_week <- standard_release %>% 
+  # calculate total number of fish released by efficiency trial
+  group_by(stream, site, release_id, release_date) %>% 
+  summarize(number_released = sum(number_released)) %>% 
+  # join with total number of recaptures by efficiency trial
+  left_join(standard_recaptures %>% 
+              group_by(stream, release_id) %>% 
+              summarize(number_recaptured = sum(number_recaptured)),
+               by = c("stream", "release_id")) %>% 
+  # create week and water year 
+  mutate(week = week(release_date),
+         water_year = case_when(month(release_date) %in% 10:12 ~ year(release_date) + 1,
+                                T ~ year(release_date))) %>% 
+  # calculate weekly number released and recaptured
+  group_by(stream, site, week, water_year) %>% 
+  summarize(number_released = sum(number_released),
+            number_recaptured = sum(number_recaptured))
+```
+
+Join the weekly catch summary with the weekly release and recaptures summary:
+
+```{r}
+weekly_summary <- left_join(catch_week, release_recapture_week,
+                            by = c("week",
+                                   "water_year",
+                                   "stream",
+                                   "site"))
+```
+
 
 ### Unknown or NA value handling:
 
