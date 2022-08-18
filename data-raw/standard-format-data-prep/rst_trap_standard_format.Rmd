@@ -15,9 +15,9 @@ Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
 
 # Set your authentication using gcs_auth
 
-gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# Set global bucket
-gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# # Set global bucket
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
@@ -31,25 +31,25 @@ database from Tisdale.
 # Data pulled in from google cloud in rst_catch_standard_format
 # load in data
 # catch data
-battle_rst <- read_csv("data/rst/battle_rst_catch.csv")
-butte_rst <- read_csv("data/rst/butte_rst.csv") # contains trap data too
-clear_rst <- read_csv("data/rst/clear_rst_catch.csv")
-deer_rst <- read_csv("data/rst/deer_rst.csv") # contains trap data too
-feather_rst <- read_csv("data/rst/feather_rst.csv")
+battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"))
+butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains trap data too
+clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"))
+deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv")) # contains trap data too
+feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
 # knights_rst <- read_csv("data/rst/knights_rst_clean.csv") # contains cpue info
-tisdale_rst <- read_csv("data/rst/tisdale_rst.csv")
-mill_rst <- read_csv("data/rst/mill_rst.csv") # contains trap data too
-yuba_rst <- read_csv("data/rst/yuba_rst.csv")
+tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"))
+mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv")) # contains trap data too
+yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 
 # sampling effort and environmental
-battle_environmental <- read_csv("data/rst/battle_rst_environmental.csv")
-clear_environmental <- read_csv("data/rst/clear_rst_environmental.csv")
-feather_effort <- read_csv("data/rst/feather_rst_effort.csv")
-knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
+battle_environmental <- read_csv(here::here("data", "rst", "battle_rst_environmental.csv"))
+clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
+feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
+knights_effort <- read_csv(here::here("data", "rst", "knights_sampling_effort_clean.csv"))
 
 # Knights landing data pulled from camp
 # TODO add to cloud (this dataset was shared later and has not yet been added to cloud)
-knights_landing_rst <- read_rds("data/rst/knights_landing_raw_catch.rds")
+knights_landing_rst <- read_rds(here::here("data-raw", "qc-markdowns", "rst", "data-dictionaries",  "knights_landing_raw_catch.rds"))
 ```
 
 # Data formatting {.tabset}
@@ -87,7 +87,7 @@ battle_trap_clean <- battle_environmental %>%
          cone_setting = cone,
          in_thalweg = thalweg) %>%
   mutate(stream = "battle creek",
-         site = stream,
+         site = "ubc",
          subsite = site,
          # debris in gallons (1 tub = 10 gallons)
          debris_volume = debris_tubs*10) %>%
