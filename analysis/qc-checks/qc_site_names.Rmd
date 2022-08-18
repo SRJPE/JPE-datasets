@@ -1,0 +1,104 @@
+---
+title: "QC Site Names"
+author: "Erin Cain"
+date: "2022-08-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(googleCloudStorageR)
+library(tidyverse)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, eval = F}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+
+# QC Checks {.tabset}
+
+This markdown goes through all standard format datasets to QC and review site names to ensure that all names are consistant across datasets. 
+
+## Standard flow
+
+Updated yub to yuba river. yub is a subsite of yuba river not a site.
+
+```{r}
+flow_raw <- read_csv(here::here("data","standard-format-data", "standard_flow.csv")) %>% glimpse
+
+flow_raw  %>%  pull(site)  %>%  unique()
+```
+
+
+## Standard catch
+
+Updated standard catch battle site to "ubc"
+
+```{r}
+catch_raw <- read_csv(here::here("data","standard-format-data", "standard_catch.csv")) %>% glimpse
+
+catch_raw  %>%  pull(site)  %>%  unique()
+```
+
+Catch data is only reported at the site level not subsite. 
+
+## Standard trap
+
+Updated standard trap battle site to "ubc"
+No tisdale site for standard trap  
+All other sites are consistant with standard catch
+
+```{r}
+trap_raw <- read_csv(here::here("data","standard-format-data", "standard_trap.csv")) %>% glimpse
+
+trap_raw  %>%  pull(site)  %>%  unique()
+```
+
+Trap data is collected at the sub site level: 
+```{r}
+trap_raw  %>%  pull(subsite)  %>%  unique()
+
+```
+
+## Standard environmental
+
+No tisdale site for environmental. 
+
+```{r}
+environment_raw <- read_csv(here::here("data","standard-format-data", "standard_environmental.csv")) %>% glimpse
+
+environment_raw  %>%  pull(site)  %>%  unique()
+```
+
+Environmental data is collected at the sub site level: 
+```{r}
+environment_raw  %>%  pull(subsite)  %>%  unique()
+```
+
+## Standard recapture
+
+No site for recapture - must join with release 
+
+```{r}
+recapture_raw <- read_csv(here::here("data","standard-format-data", "standard_recapture.csv")) %>% glimpse
+
+```
+## Standard release
+
+There are 2 NA values for site in the standard release table - otherwise sites match up with sites used in standard catch 
+
+```{r}
+release_raw <- read_csv(here::here("data","standard-format-data", "standard_release.csv")) %>% glimpse
+
+release_raw  %>%  pull(site)  %>%  unique()
+
+# 2 NA values for site in release raw
+filter(release_raw, is.na(site))
+```
+
