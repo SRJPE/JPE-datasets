@@ -1,0 +1,470 @@
+---
+title: "Feather Carcass QC "
+author: "Inigo Peng"
+date: '2022-08-18'
+output: rmarkdown::github_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+library(janitor)
+library(hms) #?as_hms()
+library(RODBC)
+library(knitr)
+library(wesanderson)
+```
+
+
+# Feather River Carcass Data
+
+## Description of Monitoring Data
+
+**Timeframe:** 2000 to 2016
+  
+**Video Season:** 
+  
+**Completeness of Record throughout timeframe:** 
+
+* Data collected varies between different seasons. Cwt has the highest variability. Stop collecting "Chops Recovery" after (2011?); earlier years have more detailed chops data and had separate table for tags data; later chops data and tags data combines into one.
+  
+**Sampling Location:** Various sampling locations on Feather River
+  
+**Data Contact:** 
+  
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+```
+
+
+```{r}
+read_from_cloud <- function(carcass_data_type, year){
+  gcs_get_object(object_name = paste0("adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_",carcass_data_type, "_",year, ".csv"),
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = paste0("feather_carcass_",carcass_data_type,"_",year, ".csv"),
+               overwrite = TRUE)
+  data <- read.csv(paste0("feather_carcass_",carcass_data_type, "_", year, ".csv"))  
+}
+```
+
+### 2000 Chops and Tags
+*2000 and 2001 chops and tags are in different tables
+*2000 grilse has sex information
+
+```{r}
+feather_carcass_chops_2000 <- read_from_cloud("chops", 2000) %>%
+  rename(adult_male = "male_chop",
+         adult_female = "female_chop",
+         sec = "sect") %>%
+  pivot_longer(cols = c("adult_male", "adult_female", "grilse_male", "grilse_female"),
+               names_to = c("lifestage", "sex"),
+               names_sep ="_",
+               values_to = "chop_count") %>% 
+  mutate(chop_clip_status = "unknown",
+           tag_clip_status = "unknown") %>% glimpse
+
+feather_carcass_tags_2000 <- read_from_cloud("tags", 2000) %>% 
+  mutate(tag_count = 1) %>% glimpse()
+unique(feather_carcass_tags_2000$sex)
+feather_carcass_chops_and_tags_2000 <- full_join(feather_carcass_chops_2000, feather_carcass_tags_2000 ) %>%
+  select(-c(chop_env_id, egg_ret, fl, tag_num)) %>%  
+  mutate(sex = case_when(
+    sex == "m" ~ "male",
+    sex == "f" ~ "female", 
+    TRUE ~ sex
+  )) %>% 
+  rename(id = "recov_id") %>% glimpse
+```
+
+### 2001 Chops and Tags
+```{r}
+feather_carcass_chops_2001 <- read_from_cloud("chops", 2001) %>%
+  rename(adult_male = "male_chop",
+         adult_female = "female_chop",
+         grilse_unknown = "grilse",
+         sec = "sect") %>%
+  pivot_longer(cols = c("adult_male", "adult_female", "grilse_unknown"),
+               names_to = c("lifestage", "sex"),
+               names_sep ="_",
+               values_to = "chop_count") %>% 
+  mutate(chop_clip_status = "unknown",
+           tag_clip_status = "unknown") %>% glimpse
+
+feather_carcass_tags_2001 <- read_from_cloud("tags", 2001) %>% 
+  mutate(tag_count = 1) %>% glimpse()
+unique(feather_carcass_tags_2001$sex)
+
+feather_carcass_chops_and_tags_2001 <- full_join(feather_carcass_chops_2001, feather_carcass_tags_2001 ) %>%
+  select(-c(chop_env_id, egg_ret, fl, tag_num, sect)) %>%  
+  rename(id = recov_id) %>% 
+  mutate(sex = case_when(
+    sex == "m" ~ "male",
+    sex == "f" ~ "female", 
+    sex == "x" ~ "unknown",
+    TRUE ~ sex
+  )) %>% glimpse()
+
+```
+
+### 2002 Chops and Tags
+* 2002 - 2004 dataset contains columns contains sex (m or f) and lifestage (grilse) 
+```{r}
+# assuming all male and female are adults
+# assuming grilse was not double counted ontop of male and female
+feather_carcass_chops_and_tags_2002 <- read_from_cloud("chops_and_tags", 2002) %>%
+  rename(adult_male = "male_chop",
+         adult_female = "female_chop",
+         grilse_unknown = "grilse",
+         sec = "sect") %>%
+  pivot_longer(cols = c("adult_male", "adult_female", "grilse_unknown"),
+               names_to = c("lifestage", "sex"),
+               names_sep ="_",
+               values_to = "chop_count") %>% 
+  mutate(chop_clip_status = "unknown",
+           tag_clip_status = "unknown") %>% glimpse
+```
+### 2003 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2003 <- read_from_cloud("chops_and_tags",2003) %>% 
+  rename(adult_male = "male_chop",
+         adult_female = "female_chop",
+         grilse_unknown = "grilse",
+         sec = "sect") %>%
+  pivot_longer(cols = c("adult_male", "adult_female", "grilse_unknown"),
+               names_to = c("lifestage", "sex"),
+               names_sep ="_",
+               values_to = "chop_count") %>% 
+  mutate(chop_clip_status = "unknown",
+           tag_clip_status = "unknown") %>% glimpse
+```
+### 2004 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2004 <- read_from_cloud("chops_and_tags",2004) %>% 
+  rename(adult_male = "male_chop",
+         adult_female = "female_chop",
+         grilse_unknown = "grilse",
+         sec = "sect") %>%
+  pivot_longer(cols = c("adult_male", "adult_female", "grilse_unknown"),
+               names_to = c("lifestage", "sex"),
+               names_sep ="_",
+               values_to = "chop_count") %>% 
+    mutate(chop_clip_status = "unknown",
+           tag_clip_status = "unknown") %>% glimpse
+```
+
+### 2005 Chops and Tags
+* 2005 - 2007 data set dropped sex and lifestage and instead contains clip status
+
+```{r}
+feather_carcass_chops_and_tags_2005 <- read_from_cloud("chops_and_tags",2005) %>% 
+  pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
+               names_to = "chop_clip_status",
+               values_to = "chop_count") %>% 
+  mutate(chop_clip_status = case_when(
+    chop_clip_status == "chop_clip" ~ "yes",
+    chop_clip_status == "chop_n_clip" ~ "no",
+    chop_clip_status == "chop_uncheck" ~ "unknown")) %>% 
+  pivot_longer(cols = c("tag_clip", "tag_n_clip", "tag_unk"),
+               names_to = "tag_clip_status",
+               values_to = "tag_count") %>% 
+  mutate(tag_clip_status = case_when(
+    tag_clip_status == "tag_clip" ~ "yes",
+    tag_clip_status == "tag_n_clip" ~ "no",
+    tag_clip_status == "tag_unk" ~ "unknown")) %>%
+  mutate(sex = "unknown",
+         lifestage = "unknown") %>%
+  rename(sec = "sect") %>% 
+  glimpse()
+```
+### 2006 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2006 <- read_from_cloud("chops_and_tags",2006) %>% 
+  pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
+               names_to = "chop_clip_status",
+               values_to = "chop_count") %>% 
+  mutate(chop_clip_status = case_when(
+    chop_clip_status == "chop_clip" ~ "yes",
+    chop_clip_status == "chop_n_clip" ~ "no",
+    chop_clip_status == "chop_uncheck" ~ "unknown")) %>% 
+  pivot_longer(cols = c("tag_clip", "tag_n_clip", "tag_unk"),
+               names_to = "tag_clip_status",
+               values_to = "tag_count") %>% 
+  mutate(tag_clip_status = case_when(
+    tag_clip_status == "tag_clip" ~ "yes",
+    tag_clip_status == "tag_n_clip" ~ "no",
+    tag_clip_status == "tag_unk" ~ "unknown")) %>%
+  mutate(sex = "unknown",
+         lifestage = "unknown") %>% 
+  rename(sec = "sect") %>% 
+  glimpse()
+```
+### 2007 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>% 
+  pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
+               names_to = "chop_clip_status",
+               values_to = "chop_count") %>% 
+  mutate(chop_clip_status = case_when(
+    chop_clip_status == "chop_clip" ~ "yes",
+    chop_clip_status == "chop_n_clip" ~ "no",
+    chop_clip_status == "chop_uncheck" ~ "unknown")) %>% 
+  pivot_longer(cols = c("tag_clip", "tag_n_clip", "tag_unk"),
+               names_to = "tag_clip_status",
+               values_to = "tag_count") %>% 
+  mutate(tag_clip_status = case_when(
+    tag_clip_status == "tag_clip" ~ "yes",
+    tag_clip_status == "tag_n_clip" ~ "no",
+    tag_clip_status == "tag_unk" ~ "unknown")) %>%
+  mutate(sex = "unknown",
+         lifestage = "unknown") %>% 
+  rename(sec = "sect") %>% 
+  glimpse()
+```
+### 2008 Chops and Tags
+```{r}
+# years <- c(2008:2016)
+# chops_and_tags <- rep(c("chops_and_tags"), times = 8)
+# combined_data <- purrr::map(chops_and_tags,years,read_from_cloud) %>% 
+#   reduce(bind_rows)
+```
+
+* 2008 - 2016 (except for 2010) dataset dropped clip status and only has chop count and tag count
+```{r}
+feather_carcass_chops_and_tags_2008 <- read_from_cloud("chops_and_tags",2008) %>% 
+  rename(chop_count = "chops",
+         tag_count = "tags") %>% 
+  mutate(chop_clip_status = "unknown",
+         tag_clip_status = "unknown",
+         sex = "unknown",
+         lifestage = "unknown") %>% 
+  rename(sec = "sect") %>% 
+glimpse
+```
+### 2009 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2009 <- read_from_cloud("chops_and_tags",2009) %>% 
+  rename(chop_count = "chops",
+         tag_count = "tags") %>% 
+  mutate(chop_clip_status = "unknown",
+         tag_clip_status = "unknown",
+         sex = "unknown",
+         lifestage = "unknown") %>% 
+  rename(sec = "sect") %>% 
+glimpse()
+```
+### 2010 Chops and Tags
+* 2010 has sex in dataset
+```{r}
+# feather_carcass_chops_and_tags_2010 <- read_from_cloud("chops_and_tags",2010) %>% 
+#   pivot_longer(cols = c("male_chop", "female_chop", "unknown_chops"),
+#                names_to = "sex",
+#                values_to = "chop_count") %>% 
+#   mutate(sex = case_when(
+#     sex == "male_chop" ~ "male",
+#     sex == "female_chop" ~ "female",
+#     sex == "unknown_chops" ~ "unknown")) %>% 
+#   pivot_longer(cols = c("male_tag", "female_tag", "unknown_tags"),
+#                names_to = "sex",
+#                values_to = "tag_count") %>% 
+#   mutate(sex = case_when(
+#     sex == "male_tag" ~ "male",
+#     sex == "female_tag" ~ "female",
+#     sex == "unknown_tags" ~ "unknown")) %>%
+#   mutate(chop_clip_status = "unknown",
+#          tag_clip_status = "unknown",
+#          lifestage = "unknown") %>% 
+#   glimpse()
+```
+
+
+### 2011 Chops and Tags
+*2011-2016 does not have Tags count
+
+```{r}
+feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>% 
+  rename(chop_count = "count") %>% 
+  mutate(tag_count = NA,
+         chop_clip_status = "unknown",
+         tag_clip_status = "unknown",
+         sex = "unknown",
+         lifestage = "unknown") %>% glimpse
+```
+### 2012 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>% 
+    rename(chop_count = "count") %>% 
+  mutate(tag_count = NA,
+         chop_clip_status = "unknown",
+         tag_clip_status = "unknown",
+         sex = "unknown",
+         lifestage = "unknown") %>% glimpse()
+```
+
+### 2013 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>% 
+    rename(chop_count = "count") %>% 
+  mutate(tag_count = NA,
+         chop_clip_status = "unknown",
+         tag_clip_status = "unknown",
+         sex = "unknown",
+         lifestage = "unknown") %>% glimpse
+```
+### 2014 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>% 
+    rename(chop_count = "count") %>% 
+  mutate(tag_count = NA,
+         chop_clip_status = "unknown",
+         tag_clip_status = "unknown",
+         sex = "unknown",
+         lifestage = "unknown") %>% glimpse
+
+```
+### 2015 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>% 
+    rename(chop_count = "count") %>% 
+  mutate(tag_count = NA,
+         chop_clip_status = "unknown",
+         tag_clip_status = "unknown",
+         sex = "unknown",
+         lifestage = "unknown") %>% glimpse
+
+```
+### 2016 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>% 
+    rename(chop_count = "count") %>% 
+  mutate(tag_count = NA,
+         chop_clip_status = "unknown",
+         tag_clip_status = "unknown",
+         sex = "unknown",
+         lifestage = "unknown") %>% glimpse
+
+```
+## Combined chops and tags
+```{r}
+feather_carcass_chops_and_tags_combined <- bind_rows(feather_carcass_chops_and_tags_2000, 
+          feather_carcass_chops_and_tags_2001, 
+          feather_carcass_chops_and_tags_2002, 
+          feather_carcass_chops_and_tags_2003,
+          feather_carcass_chops_and_tags_2004,
+          feather_carcass_chops_and_tags_2005,
+          feather_carcass_chops_and_tags_2006,
+          feather_carcass_chops_and_tags_2007,
+          feather_carcass_chops_and_tags_2008,
+          feather_carcass_chops_and_tags_2009,
+          # feather_carcass_chops_and_tags_2010,
+          feather_carcass_chops_and_tags_2011,
+          feather_carcass_chops_and_tags_2012,
+          feather_carcass_chops_and_tags_2013,
+          feather_carcass_chops_and_tags_2014,
+          feather_carcass_chops_and_tags_2015,
+          feather_carcass_chops_and_tags_2016)
+```
+### Data Transformation
+```{r}
+# feather_carcass_chops_and_tags_combined <- feather_carcass_chops_and_tags_combined %>% 
+#   rename(sec = "sect")
+```
+
+### Counts
+
+The `feather_carcass_chops_and_tags_combined` table contains carcass counts by chop/tagged based on clips
+
+## Explore Numeric Variables: {.tabset}
+
+### Variable: `id`, `chan_id`, `sect`, `min`
+
+```{r}
+feather_carcass_chops_and_tags_combined %>% 
+  select_if(is.numeric) %>%
+  colnames()
+```
+
+```{r}
+summary(feather_carcass_chops_and_tags_combined$id)
+```
+```{r}
+summary(feather_carcass_chops_and_tags_combined$chan_id)
+```
+```{r}
+summary(feather_carcass_chops_and_tags_combined$sec)
+```
+
+```{r}
+summary(feather_carcass_chops_and_tags_combined$min)
+```
+
+### Chop Channel Variable: `chop_count`, `tag_count`
+
+
+```{r}
+summary(feather_carcass_chops_and_tags_combined$chop_count)
+```
+
+```{r}
+summary(feather_carcass_chops_and_tags_combined$tag_count)
+```
+
+**NA and Unknown Values**
+Provide a stat on NA or unknown values.
+
+```{r}
+round(sum(is.na(feather_carcass_chops_and_tags_combined$chop_count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
+round(sum(is.na(feather_carcass_chops_and_tags_combined$tag_count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
+```
+* `r round(sum(is.na(feather_carcass_chops_and_tags_combined$chops))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100` % of values in the `chops` column are NA.
+* `r round(sum(is.na(feather_carcass_chops_and_tags_combined$tags))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100` % of values in the `tags` column are NA.
+
+**Plotting chops over Period of Record**
+
+```{r}
+feather_carcass_chops_and_tags_combined %>% 
+  mutate(date = as_date(date)) %>% 
+  ggplot(aes(x = date, y = chop_count)) +
+  geom_col() +
+  facet_wrap(~year(date), scales = "free") +
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
+  theme(axis.text.y = element_text(size = 8))+
+  labs(title = "Daily Chop Count From 2000 to 2016")
+```
+
+
+**Plotting tags over Period of Record**
+
+```{r}
+feather_carcass_chops_and_tags_combined %>% 
+  mutate(date = as_date(date),
+         tag_count = as.numeric(tag_count)) %>%
+  ggplot(aes(x = date, y = tag_count)) +
+  geom_col() +
+  facet_wrap(~year(date), scales = "free") +
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
+  theme(axis.text.y = element_text(size = 8))+
+  labs(title = "Daily Tag Count From 2000 to 2016")
+```
+

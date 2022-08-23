@@ -2,7 +2,7 @@
 title: "Feather Carcass QC 2013"
 author: "Inigo Peng"
 date: '2022-07-21'
-output: html_document
+output: rmarkdown::github_document
 ---
   
 ```{r setup, include=FALSE}
@@ -45,8 +45,6 @@ Any additional info?
 # getwd() to see how to specify paths 
 # Open object from google cloud storage
 # Set your authentication using gcs_auth
-Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
-Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
 
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
@@ -327,13 +325,13 @@ unique(chop_header$weather)
 
 ```{r}
 chop_header_cleaner <- chop_header %>%
-  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%H:%M")))) %>%
+  mutate(date = as_date(date)) %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          weather = ifelse(weather == "cld", "cloudy", weather),
          weather = str_replace_all(weather, " ", "")) %>% 
-  select(-c(date, time)) %>% glimpse
+  select(-c(time)) %>% glimpse
 
 chop_header_cleaner
 ```
@@ -362,7 +360,6 @@ unique(cwt$tag_color)
 #Dropping sectiongroup and morale
 cwt_cleaner <- cwt %>% 
   mutate_if(is.character, str_to_lower) %>% 
-  rename(datetime = "date") %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
@@ -395,10 +392,10 @@ percent_na <- chop_cleaner %>%
 
 counts_data_dictionary <- tibble(variables = colnames(chop_cleaner),
                           description = c("ID",
+                                          "Date of the survey",
                                           "Sec", 
                                           "Min", 
-                                          "Count",
-                                          "Date and time of the survey"),
+                                          "Count"),
                           percent_na = round(percent_na$value*100))
 
 kable(counts_data_dictionary)
@@ -412,12 +409,12 @@ percent_na <- chop_header_cleaner %>%
   pivot_longer(cols = everything())
 # 
 chop_header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
-                          description = c("ID",
+                          description = c("Date",
+                                          "ID",
                                           "Week Number",
                                           "Weather",
                                           "Crew memeber initials that collected",
-                                          "Comments",
-                                          "Date and time that the survey was conducted"),
+                                          "Comments"),
                           percent_na = round(percent_na$value*100))
 # 
 kable(chop_header_data_dictionary)
@@ -446,7 +443,7 @@ cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
                                           "Hallprint color",
                                           "Hallprint",
                                           "Comments",
-                                          "Date and time of survey",
+                                          "Date",
                                           "Crew",
                                           "Week number",
                                           "Tag colour"),
@@ -457,5 +454,23 @@ kable(cwt_data_dictionary)
 ## Save cleaned data back to google cloud (TBA)
 
 ```{r}
-# Name file [watershed]_[data type].csv
+feather_carcass_chops_2013 <- chop_cleaner %>% glimpse()
+feather_carcass_cwt_2013 <- cwt_cleaner %>% glimpse()
+feather_carcass_chop_header_2013 <- chop_header_cleaner %>% glimpse()
+```
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_carcass_chops_2013,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2013.csv")
+gcs_upload(feather_carcass_cwt_2013,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2013.csv")
+gcs_upload(feather_carcass_chop_header_2013,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2013.csv")
 ```

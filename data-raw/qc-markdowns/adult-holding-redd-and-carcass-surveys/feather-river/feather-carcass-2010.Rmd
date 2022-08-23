@@ -45,9 +45,6 @@ Any additional info?
 # getwd() to see how to specify paths 
 # Open object from google cloud storage
 # Set your authentication using gcs_auth
-Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
-Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
-
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
@@ -64,59 +61,69 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 # Sys.setenv("GCS_AUTH_FILE" = "config.json")
 # Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
 # 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopChannelTBL1.xlsx",
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/ChopChannelTBL_2010.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopChannelTBL1.xlsx",
+               saveToDisk = "ChopChannelTBL_2010.xlsx",
                overwrite = TRUE)
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopHeaderTBL.xlsx",
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/ChopHeaderTBL_2010.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopHeaderTBL.xlsx",
+               saveToDisk = "ChopHeaderTBL_2010.xlsx",
                overwrite = TRUE)
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/ChopRecovTBL.xlsx",
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/ChopRecovTBL_2010.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopRecovTBL.xlsx",
+               saveToDisk = "ChopRecovTBL_2010.xlsx",
+               overwrite = TRUE)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/CWTHeaderTBL_2010.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "CWTHeader_2010.xlsx",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/CWTTagTBL_2010.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "CWTTag_2010.xlsx",
                overwrite = TRUE)
 
 # Read Data
 # this is our main data collection table
-ChopChannel_raw <- read_excel("ChopChannelTBL1.xlsx") %>% 
-  rename("ID" = HeaderID) %>% 
-  glimpse()
-
-# This is a survey info and covariate table
-ChopHeader_raw <- read_excel("ChopHeaderTBL.xlsx") %>% 
-  rename("ID" = headerID) %>% 
-  glimpse()
-
-# this is recovery data to be used to determine how many carcasses are being captured
-# We will likely retain this information in another table for clarity
-ChopRecov_raw <-read_excel("ChopRecovTBL.xlsx") %>% 
-  glimpse()
-
-# thoughts on how to link chopchannel with choprecovery: don't need to do this, for future reference
-# use chopchannel to count number tagged per day
-# link to chopheader by ID to get tag color
-# link to chopreocv by recovid (= ID) to get the date recovered
-# can summarize the number of each color recovered by date and link to the date applied
 ```
+```{r}
+## Raw Data Glimpse: {.tabset}
+
+### ChopChannel_raw
+ChopChannel_raw <- read_excel("ChopChannel_2010.xlsx") %>% 
+  rename("ID" = HeaderID) %>%
+  glimpse()
+```
+
+### ChopHeader_raw
 
 ```{r}
-# TODO: Attempt, but not needed
-# from ashley: this is code to read in tables from Access. Have you figured out 
-# how to get this to work on your machine?
-
-# library(Hmisc) 
-# 
-# # List of all available tables
-# mdb.get("CAMP_Escapement_20210412.mdb")
-# 
-# # Code to read in the CatchRaw table
-# carcasschops <- mdb.get("CAMP_DB_for_FlowWest/CAMP_Escapement_20210412.mdb", tables = "CarcassChops")
-# 
-
+ChopHeader_raw <- read_excel("ChopHeader_2010.xlsx") %>% 
+  rename("ID" = headerID) %>%
+  glimpse()
 ```
+
+### ChopRecov_raw
+```{r}
+ChopRecov_raw <- read_excel("ChopRecov_2010.xlsx") %>% 
+  glimpse()
+```
+### cwt_raw
+```{r}
+cwt_raw <- read_excel("CWTTag_2010.xlsx") %>% 
+  glimpse
+```
+
+### cwt_header_raw
+
+```{r}
+cwt_header_raw <- read_excel("CWTHeader_2010.xlsx") %>% 
+  glimpse
+```
+
+
 
 ## Data transformations
 
@@ -496,6 +503,78 @@ summary(chop_header$id)
 summary(chop_header$tag_col)
 ```
 
+### CWT Variable: `tag_id`, `sect`, `fl`, `header_id`, `week_num`
+```{r}
+cwt %>% 
+  select_if(is.numeric) %>% 
+  colnames()
+```
+```{r}
+summary(cwt$tag_id)
+```
+```{r}
+summary(cwt$sect)
+```
+```{r}
+summary(cwt$fl)
+```
+* `r round(sum(is.na(cwt$tag_id))/nrow(cwt), 3) * 100` % of values in the `tag_id` column are NA.
+* `r round(sum(is.na(cwt$sect))/nrow(cwt), 3) * 100` % of values in the `sect` column are NA.
+* `r round(sum(is.na(cwt$fl))/nrow(cwt), 3) * 100` % of values in the `fl` column are NA.
+
+```{r}
+#Create a cwt_count column
+#Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
+#Is this graph helpful?
+unique(cwt$sex)
+cwt_count <- cwt %>% 
+  mutate(count = 1) %>%
+  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
+                         TRUE ~ sex)) %>% 
+  pivot_wider(names_from = sex, values_from = count, values_fill = 0) %>% 
+  # unnest() %>% 
+  rename("male_cwt" = M,
+         "female_cwt" = F,
+         "unknown_cwt" = U) %>% glimpse
+
+total_cwt_summary <- cwt_count %>% 
+  mutate(male_cwt = ifelse(is.na(male_cwt), 0, male_cwt), # fill na
+         female_cwt = ifelse(is.na(female_cwt), 0, female_cwt),
+         unknown_cwt = ifelse(is.na(unknown_cwt), 0, unknown_cwt),
+         total_cwt = unknown_cwt + male_cwt + female_cwt) %>% 
+  group_by(month(date)) %>% 
+  summarise(total_cwt = sum(total_cwt),
+            male_cwt = sum(male_cwt),
+            female_cwt = sum(female_cwt),
+            unknown_cwt = sum(unknown_cwt))
+```
+
+```{r}
+total_cwt_summary %>% 
+  pivot_longer(cols = c(male_cwt, female_cwt, unknown_cwt), names_to = "sex", values_to = "count") %>% 
+  mutate(proportions = (count / total_cwt)) %>% 
+  ggplot(aes(x = `month(date)`, y = proportions, fill = sex)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(name = "chops", 
+                    labels = c("CWT Male", "CWT Female", "CWT Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Month") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+**Plotting fork length of each sex**
+
+```{r}
+cwt %>% 
+  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
+                         TRUE ~ sex))%>% 
+  ggplot(aes(x = sex, y = fl)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(y = "FL", x = "Sex")
+```
+
+
 ## Explore Categorical variables: {.tabset}
 
 ```{r}
@@ -512,9 +591,8 @@ Fix inconsistencies with spelling, capitalization, and dates
 ```{r}
 chop_channel_cleaner <- chop_channel_join %>% 
   mutate_if(is.character, str_to_lower) %>% 
-  mutate(time = as_hms(time),
-         datetime = ifelse((is.na(date) | is.na(time)), NA, ymd_hms(paste(date, time)))) %>% 
-  select(-c(date, time))
+  mutate(date = as_date(date)) %>% 
+  select(-time)
 
 chop_channel_cleaner
 ```
@@ -522,9 +600,8 @@ chop_channel_cleaner
 ```{r}
 chop_recovery_cleaner <- chop_recovery_join %>% 
   mutate_if(is.character, str_to_lower) %>% 
-  mutate(time = as_hms(time),
-         datetime = ymd_hms(paste(date, time))) %>% 
-  select(-c(date, time))
+  mutate(date = as_date(date)) %>% 
+  select(-time)
 
 chop_recovery_cleaner
 ```
@@ -532,11 +609,41 @@ chop_recovery_cleaner
 ```{r}
 chop_header_cleaner <- chop_header %>% 
   mutate_if(is.character, str_to_lower) %>% 
-  mutate(time = as_hms(time),
-         datetime = ymd_hms(paste(date, time)),
+  mutate(date = as_date(date),
          crew = str_replace(crew, " ", ",")) %>% 
-  select(-c(date, time, week_num))
+  select(-c(time, week_num))
 chop_header_cleaner
+```
+
+### CWT Clean Data
+
+```{r}
+cwt %>% 
+  select_if(is.character) %>% 
+  colnames
+```
+```{r}
+unique(cwt$spawn)
+unique(cwt$clip)
+unique(cwt$samp_type)
+```
+
+
+```{r}
+cwt_cleaner <- cwt %>% 
+  mutate_if(is.character, str_to_lower) %>% 
+  mutate(crew = str_replace_all(crew, " ", ","),
+         crew = str_replace_all(crew, ",,", ","),
+         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+                         TRUE ~ sex),
+         spawn = ifelse(spawn == "no data", NA, spawn),
+         clip = case_when(clip == "no data" ~ NA_character_,
+                          clip == "y" ~ "yes",
+                          clip == "n" ~ "no",
+                          TRUE ~ clip),
+         samp_type = ifelse(samp_type == "no data", NA, samp_type)) %>% 
+  select(-comments)%>%glimpse
+
 ```
 
 ## Data Dictionaries
@@ -552,7 +659,7 @@ percent_na <- chop_channel_cleaner %>%
 counts_data_dictionary <- tibble(variables = colnames(chop_channel_cleaner),
                           description = c("ID",
                                           "Color of tag applied to carcass",
-                                          "Date and time of survey",
+                                          "Date of survey",
                                           "Channel ID",
                                           "Sect", 
                                           "Chan", 
@@ -578,10 +685,10 @@ percent_na <- chop_recovery_cleaner %>%
 
 recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                           description = c("ID",
+                                          "Date",
                                           "Color of tag recovered from carcass",
                                           "Count of recovery",
-                                          "Channel ID",
-                                          "Datetime"),
+                                          "Channel ID"),
                           percent_na = round(percent_na$value*100))
 
 kable(recovery_data_dictionary)
@@ -590,23 +697,81 @@ kable(recovery_data_dictionary)
 ### Survey
 
 ```{r}
-# 
-# percent_na <- chop_header_cleaner %>%
-#   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
-#   pivot_longer(cols = everything())
-# 
-# counts_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
-#                           description = c("ID",
-#                                           "Color of tag of carcass",
-#                                           "Crew memeber initials that collected",
-#                                           "Individual of crew member who recorded",
-#                                           "Weather", 
-#                                           "Comments", 
-#                                           "Datetime",
-#                           percent_na = round(percent_na$value*100)))
-# 
-# kable(counts_data_dictionary)
+
+percent_na <- chop_header_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+
+counts_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
+                          description = c("ID",
+                                          "Color of tag of carcass",
+                                          "Date of survey",
+                                          "Crew memeber initials that collected",
+                                          "Individual of crew member who recorded",
+                                          "Weather",
+                                          "Comments"),
+                          percent_na = round(percent_na$value*100))
+
+kable(counts_data_dictionary)
 ```
+
+### CWT
+```{r}
+percent_na <- cwt_cleaner %>%
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+  pivot_longer(cols = everything())
+
+cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
+                          description = c("ID",
+                                          "Sect",
+                                          "Fork length",
+                                          "Sex",
+                                          "Spawn",
+                                          "Clip",
+                                          "Sample type",
+                                          "Sample number",
+                                          "Head tag",
+                                          "Comment",
+                                          "Header ID",
+                                          "Hall print 1",
+                                          "Hall print 2",
+                                          "Scale sample",
+                                          "Run",
+                                          "Date",
+                                          "Tag colour",
+                                          "Crew",
+                                          "Week number"),
+                          percent_na = round(percent_na$value*100))
+
+kable(cwt_data_dictionary)
+```
+## Save cleaned data back to google cloud (TBA)
+
+## Save cleaned data back to google cloud (TBA)
+
+```{r}
+#Ignore chop recovery as its 100% NA
+feather_carcass_chops_and_tags_2010 <- chop_channel_cleaner %>% glimpse()
+feather_carcass_cwt_2010 <- cwt_cleaner %>% glimpse()
+feather_carcass_chop_header_2010 <- chop_header_cleaner %>% glimpse()
+```
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_carcass_chops_and_tags_2010,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2010.csv")
+gcs_upload(feather_carcass_cwt_2010,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2010.csv")
+gcs_upload(feather_carcass_chop_header_2010,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2010.csv")
+```
+
 
 ## Save cleaned data back to google cloud (TBA)
 

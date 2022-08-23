@@ -2,7 +2,7 @@
 title: "Feather Carcass QC 2006"
 author: "Inigo Peng"
 date: '2022-07-21'
-output: html_document
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -47,8 +47,6 @@ Any additional info?
 # getwd() to see how to specify paths 
 # Open object from google cloud storage
 # Set your authentication using gcs_auth
-Sys.setenv("GCS_AUTH_FILE" = "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/config.json")
-Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
 
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
@@ -563,9 +561,9 @@ unique(chop_channel_join$chan)
 ```
 ```{r}
 chop_channel_cleaner <- chop_channel_join %>%
-  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>%
+  mutate(date = as_date(date)) %>%
   mutate_if(is.character, str_to_lower) %>% 
-  select(-c(date, time))
+  select(-c(time))
 
 chop_channel_cleaner
 ```
@@ -584,9 +582,9 @@ unique(chop_recovery_join$recov_color)
 ```
 ```{r}
 chop_recovery_cleaner <- chop_recovery_join %>% 
-  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>%
+  mutate(date = as_date(date)) %>%
   mutate_if(is.character, str_to_lower) %>% 
-  select(-c(date,time))
+  select(-c(time))
 
 chop_recovery_cleaner
 ```
@@ -612,12 +610,12 @@ unique(chop_header$weather)
 
 ```{r}
 chop_header_cleaner <- chop_header %>%
-  mutate(datetime = paste(as_date(date), as_hms(as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%OSZ")))) %>%
+  mutate(date = as_date(date)) %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          weather = ifelse(weather == "ran", "rain", weather)) %>% 
-  select(-c(date, time))
+  select(-c(time))
 
 chop_header_cleaner$crew
 ```
@@ -677,6 +675,7 @@ counts_data_dictionary <- tibble(variables = colnames(chop_channel_cleaner),
                           description = c("ID",
                                           "Color of tag applied to carcass",
                                           "Channel ID",
+                                          "Date of survey",
                                           "Sect", 
                                           "Chan", 
                                           "Min", 
@@ -685,8 +684,7 @@ counts_data_dictionary <- tibble(variables = colnames(chop_channel_cleaner),
                                           "Carcass that were chopped and not checked for clip",
                                           "Carcass that were tagged and has clip",
                                           "Carcass that were tagged and has no clip",
-                                          "Carcass that were tagged and unknown",
-                                          "Date and time of survey"),
+                                          "Carcass that were tagged and unknown"),
                           percent_na = round(percent_na$value*100))
 
 kable(counts_data_dictionary)
@@ -695,7 +693,6 @@ kable(counts_data_dictionary)
 ### Recovery
 
 ```{r}
-# from ashley: please insert data dictionary for cleaned recovery table
 percent_na <- chop_recovery_cleaner %>%
   summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
   pivot_longer(cols = everything())
@@ -703,10 +700,10 @@ percent_na <- chop_recovery_cleaner %>%
 
 recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                           description = c("ID",
+                                          "Date of survey",
                                           "Color of tag recovered from carcass",
                                           "Count of recovery",
-                                          "Channel ID",
-                                          "Date and time of survey"),
+                                          "Channel ID"),
                           percent_na = round(percent_na$value*100))
 
 kable(recovery_data_dictionary)
@@ -723,12 +720,12 @@ percent_na <- chop_header_cleaner %>%
 header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
                           description = c("ID",
                                           "Color of tag of carcass",
+                                          "Date of survey",
                                           "Crew memeber initials that collected",
                                           "Individual of crew member who recorded",
                                           "Weather",
                                           "Comments",
-                                          "Week Number",
-                                          "Date and time of survey"),
+                                          "Week Number"),
                           percent_na = round(percent_na$value*100))
 # 
 kable(header_data_dictionary)
@@ -757,7 +754,7 @@ cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
                                           "Header ID",
                                           "Hall print 1",
                                           "Hall print 2",
-                                          "Datetime",
+                                          "Date",
                                           "Tag colour",
                                           "Crew",
                                           "Week number"),
@@ -766,7 +763,30 @@ cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
 kable(cwt_data_dictionary)
 ```
 ## Save cleaned data back to google cloud (TBA)
-
 ```{r}
-# Name file [watershed]_[data type].csv
+feather_carcass_chops_and_tags_2006 <- chop_channel_cleaner %>% glimpse()
+feather_carcass_chop_recovery_2006 <- chop_recovery_cleaner %>% glimpse()
+feather_carcass_cwt_2006 <- cwt_cleaner %>% glimpse()
+feather_carcass_chop_header_2006 <- chop_header_cleaner %>% glimpse()
+```
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_carcass_chops_and_tags_2006,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2006.csv")
+
+gcs_upload(feather_carcass_chop_recovery_2006,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2006.csv")
+gcs_upload(feather_carcass_cwt_2006,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2006.csv")
+gcs_upload(feather_carcass_chop_header_2006,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2006.csv")
 ```
