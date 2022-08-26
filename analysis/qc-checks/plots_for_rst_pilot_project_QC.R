@@ -1,6 +1,10 @@
 library(tidyverse)
 library(lubridate)
 catch_data <- read_csv("data/standard-format-data/standard_catch.csv")  |>  glimpse()
+env_data <- read_csv("data/standard-format-data/standard_environmental.csv")
+ops_data <- read_csv("data/standard-format-data/standard_trap.csv")
+
+# FORK LENGTH ------------------------------------------------------------------
 
 # Initial plot describing fork length and lifestage for fork length QC 
 catch_data  |>  
@@ -53,9 +57,6 @@ catch_data  |>
        y = " ") +
   theme(axis.text.y = element_blank())
 
-
-
-
 # LAST 5 year density lines in gray 
 qc_day <- catch_data  |>  
   filter(site == "lcc") |> 
@@ -83,3 +84,126 @@ catch_data  |>
        ) +
   theme(axis.text.y = element_blank(),
         legend.position = c(0.8, 0.8))
+
+
+# WEIGHT -----------------------------------------------------------------------
+# Data is very sparse, plots are not that helpful
+qc_day <- catch_data  |>  
+  filter(site == "tisdale") |> 
+  # group_by(date) |>
+  # summarise(total_count = sum(count, na.rm = T),
+  #           num_na_weight = sum(is.na(weight))) |>
+  # filter(total_count > 50) |> View()
+  filter(date == as.Date("2011-03-07")) |> glimpse()
+
+
+catch_data  |>  
+  filter(site == "tisdale") |> 
+  mutate(year = year(date), day = day(date), month = month(date),
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_water_year = max(water_year)) |> 
+  filter(water_year > max_water_year - 5) |> 
+  mutate(year = as.character(year(date))) |> 
+  ggplot() +
+  geom_density(aes(x = weight, group = water_year), color = "gray", size = 1.05, na.rm = T) +
+  geom_point(data = qc_day, aes(x = weight, y = 0, color = lifestage), size = 2) +
+  theme_minimal() + 
+  labs(x = "Weight (g)", 
+       y = " ",
+       # title = "Today's Fork Length values with historical data", 
+       # subtitle = "Point Plot of today's fork length data with desity curves of fork length dirstibution for the last five years."
+  ) +
+  theme(axis.text.y = element_blank(),
+        legend.position = c(0.8, 0.8))
+
+
+catch_data %>% group_by(stream, site) %>% 
+  summarise(na_count = sum(is.na(weight)),
+            percent_na = na_count/n())
+
+
+# Env conditions ---------------------------------------------------------------
+# flow
+qc_day <- env_data  |>  
+  filter(site == "mill creek") |> 
+  mutate(max_date = max(date, na.rm = T)) |> 
+  filter(date == max_date) |>  glimpse()
+
+env_data |> 
+  filter(site == "mill creek") |> 
+  mutate(year = year(date), 
+         month = month(date), 
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_year = max(water_year, na.rm = T)) |>  
+  filter(water_year > max_year - 2) |> 
+ggplot() +
+  geom_line(aes(x = date, y = flow)) +
+geom_point(data = qc_day, aes(x = date, y = flow), color = "red", size = 3) +
+  theme_minimal() + 
+  labs(x = "Date", 
+       y = "Flow (cfs)")
+
+# temp
+qc_day <- env_data  |>  
+  filter(site == "mill creek") |> 
+  mutate(max_date = max(date, na.rm = T)) |> 
+  filter(date == max_date) |>  glimpse()
+
+env_data |> 
+  filter(site == "mill creek") |> 
+  mutate(year = year(date), 
+         month = month(date), 
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_year = max(water_year, na.rm = T)) |>  
+  filter(water_year > max_year - 2) |> 
+  ggplot() +
+  geom_line(aes(x = date, y = temperature)) +
+  geom_point(data = qc_day, aes(x = date, y = temperature), color = "red", size = 3) +
+  theme_minimal() + 
+  labs(x = "Date", 
+       y = "Temperature (°C)")
+
+# turbidity
+qc_day <- env_data  |>  
+  filter(site == "mill creek") |> 
+  mutate(max_date = max(date, na.rm = T)) |> 
+  filter(date == max_date) |>  glimpse()
+
+env_data |> 
+  filter(site == "mill creek") |> 
+  mutate(year = year(date), 
+         month = month(date), 
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_year = max(water_year, na.rm = T)) |>  
+  filter(water_year > max_year - 2) |> 
+  ggplot() +
+  geom_line(aes(x = date, y = turbidity)) +
+  geom_point(data = qc_day, aes(x = date, y = turbidity), color = "red", size = 3) +
+  theme_minimal() + 
+  labs(x = "Date", 
+       y = "Turbidity (NTU)")
+
+# Trap operations --------------------------------------------------------------
+qc_day <- ops_data  |>  
+  filter(site == "hallwood") |> 
+  mutate(max_date = max(trap_stop_date, na.rm = T)) |> 
+  filter(trap_stop_date == max_date) |>  glimpse()
+
+
+ops_data |> 
+  filter(site == "hallwood", rpms_start < 1000) |> 
+  mutate(year = year(trap_stop_date), 
+         month = month(trap_stop_date), 
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_year = max(water_year, na.rm = T)) |>  
+  filter(water_year > max_year - 1) |> 
+  ggplot() +
+  geom_density(aes(x = rpms_start), alpha = .5) +
+  geom_density(aes(x = rpms_end), color = "blue", alpha = .5) +
+  geom_point(data = qc_day, aes(y = 0, x = rpms_start), color = "red", size = 3) +
+  geom_point(data = qc_day, aes(y = 0, x = rpms_end), color = "red", size = 3) +
+  theme_minimal() + 
+  labs(x = "RPM", 
+       y = "")
+
+ops_data |> filter(!is.na(debris_volume)) |> View()
