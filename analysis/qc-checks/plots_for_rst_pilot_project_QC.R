@@ -4,10 +4,12 @@ catch_data <- read_csv("data/standard-format-data/standard_catch.csv")  |>  glim
 env_data <- read_csv("data/standard-format-data/standard_environmental.csv")
 ops_data <- read_csv("data/standard-format-data/standard_trap.csv")
 
+padded_env_dates <- tibble(date = seq.Date(from = min(env_data$date, na.rm = T), 
+         to = max(env_data$date, na.rm = T), by = "day"))
 # FORK LENGTH ------------------------------------------------------------------
 
 # Initial plot describing fork length and lifestage for fork length QC 
-catch_data  |>  
+catch_data  |>
   filter(site == "knights landing") |> 
   filter(date == as.Date("2016-02-24")) |> 
   ggplot(aes(x = fork_length, fill = lifestage)) + 
@@ -57,7 +59,9 @@ catch_data  |>
        y = " ") +
   theme(axis.text.y = element_blank())
 
-# LAST 5 year density lines in gray 
+### Plots for QC interface -----------------------------------------------------
+# measures & associated variables ----------------------------------------------
+# fork length
 qc_day <- catch_data  |>  
   filter(site == "lcc") |> 
   # group_by(date) |>
@@ -78,12 +82,11 @@ catch_data  |>
   geom_point(data = qc_day, aes(x = fork_length, y = 0, color = lifestage), size = 2) +
   theme_minimal() + 
   labs(x = "Fork Length (mm)", 
-       y = " ",
+       y = "Density",
        # title = "Today's Fork Length values with historical data", 
        # subtitle = "Point Plot of today's fork length data with desity curves of fork length dirstibution for the last five years."
        ) +
-  theme(axis.text.y = element_blank(),
-        legend.position = c(0.8, 0.8))
+  theme(legend.position = c(0.8, 0.8))
 
 
 # WEIGHT -----------------------------------------------------------------------
@@ -130,15 +133,35 @@ qc_day <- env_data  |>
   filter(date == max_date) |>  glimpse()
 
 env_data |> 
+  full_join(padded_env_dates) |> 
+  filter(site == "deer creek") |> 
+  mutate(year = year(date), 
+         month = month(date), 
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_year = max(water_year, na.rm = T),
+         color_NA = ifelse(is.na(flow), TRUE, FALSE)) |>  
+  filter(water_year > max_year - 2) |> 
+ggplot() +
+  geom_point(aes(x = date, y = flow)) +
+  geom_line(aes(x = date, y = flow), linetype = "dashed", color = "gray") +
+geom_point(data = qc_day, aes(x = date, y = flow), color = "red", size = 3) +
+  # geom_ribbon(aes(x = date, ymin = 0, ymax = flow, fill = color_NA)) +
+  theme_minimal() + 
+  labs(x = "Date", 
+       y = "Flow (cfs)")
+
+# flow lolipop
+env_data |> 
   filter(site == "mill creek") |> 
   mutate(year = year(date), 
          month = month(date), 
          water_year = ifelse(month %in% 10:12, year + 1, year),
          max_year = max(water_year, na.rm = T)) |>  
   filter(water_year > max_year - 2) |> 
-ggplot() +
-  geom_line(aes(x = date, y = flow)) +
-geom_point(data = qc_day, aes(x = date, y = flow), color = "red", size = 3) +
+  ggplot() +
+  geom_point(aes(x = date, y = flow)) +
+  geom_segment(aes(x = date, y = flow, xend = date, yend = 0)) +
+  geom_point(data = qc_day, aes(x = date, y = flow), color = "red", size = 4) +
   theme_minimal() + 
   labs(x = "Date", 
        y = "Flow (cfs)")
@@ -184,6 +207,7 @@ env_data |>
        y = "Turbidity (NTU)")
 
 # Trap operations --------------------------------------------------------------
+# TODO figure out best way to visualize this one density plot? 
 qc_day <- ops_data  |>  
   filter(site == "hallwood") |> 
   mutate(max_date = max(trap_stop_date, na.rm = T)) |> 
@@ -207,3 +231,51 @@ ops_data |>
        y = "")
 
 ops_data |> filter(!is.na(debris_volume)) |> View()
+
+
+# categorical variables --------------------------------------------------------
+# adipose clipped 
+catch_data  |>  
+  filter(site == "deer creek") |> 
+  mutate(year = year(date), day = day(date), month = month(date),
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_water_year = max(water_year),
+         time = ifelse(date == max(date, na.rm = T), "today", "historical")) |> 
+  filter(water_year > max_water_year - 5) |>
+  group_by(time) |> 
+  summarise("Clipped" = sum(adipose_clipped == TRUE)/n(),
+            "Not Clipped" = sum(adipose_clipped == FALSE)/n()) |> 
+  pivot_longer(c("Clipped", "Not Clipped"), 
+               names_to = "Adipose Clipped", 
+               values_to = "Percent Clipped") |> 
+  ggplot() +
+  geom_col(aes(x = `Adipose Clipped`, y = `Percent Clipped`, 
+               fill = time), position = 'dodge') +
+  theme_minimal() + 
+  labs(x = "", 
+       y = "Percent") +
+  theme(legend.position = c(0.2, 0.8))
+
+
+# existing marks
+catch_data  |>  
+  filter(site == "mill creek") |> 
+  mutate(year = year(date), day = day(date), month = month(date),
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_water_year = max(water_year),
+         time = ifelse(date == max(date, na.rm = T), "today", "historical")) |> 
+  filter(water_year > max_water_year - 5) |> 
+  group_by(time) |> 
+  summarise("Chinook" = sum(species == "chinook salmon")/n(),
+            "Steelhead" = sum(species == "steelhead")/n(),
+            "Other" = 1 - Chinook - Steelhead) |> 
+  pivot_longer(c("Chinook", "Steelhead", "Other"), 
+               names_to = "Species", 
+               values_to = "Percent") |> 
+  ggplot() +
+  geom_col(aes(x = Species, y = Percent, 
+               fill = time), position = 'dodge') +
+  theme_minimal() + 
+  labs(x = "", 
+       y = "Percent") +
+  theme(legend.position = c(0.2, 0.8))
