@@ -2,8 +2,8 @@ library(tidyverse)
 library(leaflet)
 library(sp)
 
-# TODO decide on information to show in popups and improve readability of map
-gage_sites <- read_csv("scripts/exploratory-analysis/data/gage_sites.csv") %>%
+
+gage_sites <- read_csv("data-raw/standard-format-data-prep/flow_data_prep_files/gage_sites.csv") %>%
   mutate(latitude = jitter(latitude, factor = .07),
          longitude = jitter(longitude, factor = .07)) 
 
@@ -13,7 +13,7 @@ cdec_sites <- gage_sites %>%
 usgs_sites <- gage_sites %>% 
   filter(agency == "USGS")  
 
-rst_sites <- read_csv("scripts/exploratory-analysis/data/rst_sites.csv") %>%
+rst_sites <- read_csv("data-raw/standard-format-data-prep/flow_data_prep_files/rst_sites.csv") %>%
   mutate(latitude = jitter(latitude, factor = .07),
          longitude = jitter(longitude, factor = .07))
 
@@ -59,4 +59,5 @@ leaflet(gage_sites)  %>%
                                  paste("RST Season:", rst_sites$trapping_season))
   ) %>%
   addScaleBar()
+
 

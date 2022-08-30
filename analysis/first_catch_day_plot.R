@@ -33,24 +33,24 @@ View(gcs_list_objects())
 # catch <- read_csv("data/standard-format-data/standard_rst_catch.csv") %>% glimpse()
 catch <- read_csv("data/standard-format-data/standard_rst_catch_lad.csv") %>% glimpse()
 
-trap_operations <- read_csv("data/standard-format-data/standard_rst_trap.csv") %>% glimpse()
+trap_operations <- read_csv("data/standard-format-data/standard_trap.csv") %>% glimpse()
 
 catch$stream %>% unique()
 catch$site %>% unique()
 
 trap_operations$stream %>% unique()
 
-trap_and_catch <- catch %>% 
-  full_join(trap_operations, by = c("date" = "trap_start_date", 
-                                            "stream" = "stream", 
-                                            "site" = "site"))
-
-first_catch_days <- catch %>% 
-  mutate(monitoring_year = ifelse(month(date) %in% c(9, 10, 11, 12), year(date), year(date) - 1)) %>% 
-  group_by(monitoring_year, stream, site, run_rivermodel) %>% 
+# trap_and_catch <- catch %>% 
+#   full_join(trap_operations, by = c("date" = "trap_start_date", 
+#                                             "stream" = "stream", 
+#                                             "site" = "site"))
+# 
+first_catch_days <- catch %>%
+  mutate(monitoring_year = ifelse(month(date) %in% c(9, 10, 11, 12), year(date), year(date) - 1)) %>%
+  group_by(monitoring_year, stream, site, run_rivermodel) %>%
   summarise(first_spring_catch_date = as.Date(min(date, na.rm = T)),
-            count = sum(count, na.rm = T)) %>% 
-  filter((run_rivermodel == "spring") & count > 0) %>% 
+            count = sum(count, na.rm = T)) %>%
+  filter((run_rivermodel == "spring") & count > 0) %>%
   select(-count, -run_rivermodel) %>%
   glimpse
 
@@ -61,23 +61,19 @@ first_trap_days <- trap_operations %>%
   group_by(monitoring_year, stream, site) %>% 
   summarise(first_trap_date = as.Date(min(valid_date, na.rm = T))) %>% glimpse
 
-
+# Join together first catch days and first trap days 
 catch_trap_days <- first_catch_days %>% 
   inner_join(first_trap_days)
 
 # 30 % of the time fish caught on first trap day 
 mean(catch_trap_days$first_spring_catch_date == catch_trap_days$first_trap_date, na.rm = T)
 
-
-# distribution of first day caught facetted
+# distribution of first day caught faceted
 catch_trap_days %>% 
   mutate(days_since = first_spring_catch_date - first_trap_date) %>% 
   filter(stream != "sacramento river") %>% #filter out one -300 value TODO investigate
   ggplot() + 
-  # geom_histogram(aes(x = days_since, y =..density.., fill = stream), 
-                 # alpha = .5, position = "identity") + 
   geom_density(aes(x = days_since, color = stream), adjust = 4, size = 1) +
-  # scale_fill_manual(values = color_pal) +
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   labs(title = "Days Since Trapping Started and First Spring Run Fish Caught",
@@ -87,8 +83,6 @@ catch_trap_days %>%
   mutate(days_since = first_spring_catch_date - first_trap_date) %>% 
   filter(stream != "sacramento river") %>% #filter out one -300 value TODO investigate
   ggplot() + 
-  # geom_histogram(aes(x = days_since, y =..density.., fill = stream), 
-  # alpha = .5, position = "identity") + 
   geom_boxplot(aes(x = days_since, y = stream,  fill = stream), alpha = .7) +
   scale_fill_manual(values = color_pal) +
   scale_color_manual(values = color_pal) +
@@ -96,7 +90,6 @@ catch_trap_days %>%
   labs(title = "Days Since Trapping Started and First Spring Run Fish Caught",
        x = "Days after trapping started",
        y = "")
-
 
 #distribution first days caught overlayed 
 catch_trap_days %>% 
@@ -110,7 +103,7 @@ catch_trap_days %>%
   labs(title = "Days Since Trapping Started and First Spring Run Fish Caught",
        x = "Days after trapping started")
 
-
+# Create function to plot barbell plot of first catch day vs first trap day 
 plot_barbell_catch <- function(selected_site) {
   selected_site
   catch_trap_days_barbell <- catch_trap_days %>% 
@@ -172,14 +165,8 @@ plot_barbell_catch("shawns beach")
 # mill creek 
 plot_barbell_catch("mill creek")
 
-# tisdale 
-#TODO no tisdale since we do not have trap operations data 
+# tisdale - no tisdale since we do not have trap operations data 
 
 # yuba 
 plot_barbell_catch("hallwood")
 plot_barbell_catch("yuba river")
-
-
-catch_trap_days$site %>% unique()
-
-# other summary plot 
