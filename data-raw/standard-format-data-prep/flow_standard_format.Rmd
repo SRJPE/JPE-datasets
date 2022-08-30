@@ -27,7 +27,7 @@ library(googleCloudStorageR)
 # Format data as date, flow_cfs, stream, site, source
 
 # source USGS
-battle <- read_rds("../../data-raw/standard-format-data-prep/flow_data/battle_flow.rds")
+battle <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data", "battle_flow.rds"))
 
 battle_format <- battle %>%
   mutate(site = "ubc") %>%
@@ -40,7 +40,7 @@ battle_format <- battle %>%
 
 ```{r}
 # source CDEC
-butte <- read_rds("../../data-raw/standard-format-data-prep/flow_data/butte_flow.rds")
+butte <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data", "butte_flow.rds"))
 
 butte_format <- butte %>%
   mutate(site = "adams dam") %>%
@@ -55,7 +55,7 @@ glimpse()
 
 ```{r}
 # source USGS
-clear <- read_rds("../../data-raw/standard-format-data-prep/flow_data/clear_flow.rds")
+clear <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data", "clear_flow.rds"))
 
 clear_format <- clear %>%
   mutate(site = "ucc") %>%
@@ -70,7 +70,7 @@ glimpse()
 
 ```{r}
 # source USGS
-deer <- read_rds("../../data-raw/standard-format-data-prep/flow_data/deer_flow.rds")
+deer <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data", "deer_flow.rds"))
 
 deer_format <- deer %>%
   mutate(stream = "deer creek",
@@ -83,7 +83,8 @@ glimpse()
 
 ```{r}
 # source CDEC
-feather_hfc <- read_rds("../../data-raw/standard-format-data-prep/flow_data/feather_hfc_flow.rds")
+feather_hfc <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", 
+                                   "flow_data", "feather_hfc_flow.rds"))
 
 # There are 4 sites that map to this flow data so set up table to merge
 feather_hfc_sites <- tibble(stream = c(rep("feather river", 4)),
@@ -95,7 +96,8 @@ feather_hfc_format <- feather_hfc %>%
 glimpse()
 
 # source USGS
-feather_lfc <- read_rds("../../data-raw/standard-format-data-prep/flow_data/feather_lfc_flow.rds")
+feather_lfc <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", 
+                                   "flow_data", "feather_lfc_flow.rds"))
 
 # There are 3 sites that map to this flow data so set up table to merge
 feather_lfc_sites <- tibble(stream = c(rep("feather river", 3)),
@@ -111,7 +113,7 @@ glimpse()
 
 ```{r}
 # source USGS
-mill <- read_rds("../../data-raw/standard-format-data-prep/flow_data/mill_flow.rds")
+mill <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data", "mill_flow.rds"))
 
 mill_format <- mill %>%
   mutate(stream = "mill creek",
@@ -124,10 +126,10 @@ glimpse()
 
 ```{r}
 # source USGS
-yuba <- read_rds("../../data-raw/standard-format-data-prep/flow_data/yuba_flow.rds")
+yuba <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data", "yuba_flow.rds"))
 
 yuba_format <- yuba %>%
-  mutate(site = "yub") %>%
+  mutate(site = "yuba river") %>%
   bind_rows(yuba %>%
               mutate(site = "hallwood")) %>%
   mutate(stream = "yuba river",
@@ -139,7 +141,7 @@ glimpse()
 
 ```{r}
 # source USGS
-knights <- read_rds("../../data-raw/standard-format-data-prep/flow_data/knights_flow.rds")
+knights <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data", "knights_flow.rds"))
 
 knights_format <- knights %>%
   mutate(stream = "sacramento river",
@@ -148,7 +150,7 @@ knights_format <- knights %>%
 glimpse()
 
 # source USGS (same as Knights)
-tisdale <- read_rds("../../data-raw/standard-format-data-prep/flow_data/tisdale_flow.rds")
+tisdale <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data", "tisdale_flow.rds"))
 
 tisdale_format <- tisdale %>%
   mutate(stream = "sacramento river",
@@ -198,5 +200,5 @@ gcs_upload(combined_flow_clean,
            name = "standard-format-data/standard_flow.csv",
            predefinedAcl = "bucketLevel")
 
-write_csv(combined_flow_clean, "../../data/standard-format-data/standard_flow.csv")
+write_csv(combined_flow_clean, here::here("data", "standard-format-data", "standard_flow.csv"))
 ```

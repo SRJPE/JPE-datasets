@@ -208,14 +208,16 @@ columns for environmental data are selected.
 #                overwrite = TRUE)
 
 knights_landing_env <- read_csv("../../data/rst/knights_landing_rst_environmental.csv") %>% 
-  select(date, location, flow = flow_cfs, secchi = secchi_ft, temperature = water_t_f, turbidity) %>%
+  select(date, location, flow = flow_cfs, secchi = secchi_ft, temperature = water_t_f, turbidity, cone_id) %>%
   mutate(temperature = round((temperature - 32) * (5/9), 1), 
          site = "knights landing", 
-         subsite = NA, 
+         subsite = as.character(cone_id), 
          stream = "sacramento river") %>%
-  select(-location) %>%
+  select(-location, -cone_id) %>%
   distinct() %>%
   glimpse
+
+unique(knights_landing_env$subsite)
 
 ```
 
@@ -269,12 +271,13 @@ yuba_env <- read_csv("../../data/rst/yuba_rst_environmental.csv",
                              site == "RST 1 at Hallwood on Yuba River" ~ "hal",
                              site == "RST 2 at Hallwood" ~ "hal2",
                              site == "5 foot RST at Hallwood" ~ "hal3"),
-         site = ifelse(subsite == "yub", "yub", "hallwood"),
+         site = ifelse(subsite == "yub", "yuba river", "hallwood"),
          temperature = ifelse(temperature > 40, round((temperature - 32) * (5/9), 1), temperature)) %>% # appears to be F and C temps at yuba 
   distinct() %>%
   glimpse
 
 unique(yuba_env$subsite)
+unique(yuba_env$site)
 ```
 
 ## Combine data:

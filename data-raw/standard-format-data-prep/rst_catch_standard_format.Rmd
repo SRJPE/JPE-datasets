@@ -19,43 +19,43 @@ Data were checked and cleaned in scripts available [here](https://github.com/Flo
 Cleaned data were saved on the jpe-dev-bucket on google cloud with the exception
 of Knights Landing data from CAMP which has not yet been saved to google cloud.
 
-```{r, data_pull, include = F, echo = F}
+```{r, data_pull, include = F, echo = F, eval = F}
 # # Data pull ---------------------------------------------------------------
 
 # Set your authentication using gcs_auth
-gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# Set global bucket
-gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# # Set global bucket
+# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # define files to pull in (in some cases there is just one catch file while others
 # have sample and environmental data)
 files_battle <- tibble(path = rep("rst/battle-creek/data/battle_rst_",3),
                        name = c("catch","environmental","passage_estimates"),
-                       save = rep("data/rst/battle_rst_",3))
+                       save = rep(here::here("data","rst", "battle_rst_"), 3))
 files_butte <- tibble(path = "rst/butte-creek/data/butte_rst",
                       name = c(""),
-                      save = "data/rst/butte_rst")
+                      save = here::here("data","rst", "butte_rst"))
 files_clear <- tibble(path = rep("rst/clear-creek/data/clear_rst_",3),
                       name = c("catch","environmental","passage_estimates"),
-                      save = rep("data/rst/clear_rst_",3))
+                      save = rep(here::here("data", "rst", "clear_rst_"), 3))
 files_deer <- tibble(path = "rst/deer-creek/data/deer_rst",
                      name = c(""),
-                     save = "data/rst/deer_rst")
+                     save = here::here("data","rst", "deer_rst"))
 files_feather <- tibble(path = rep("rst/feather-river/data/feather_rst",2),
                         name = c("","_effort"),
-                        save = rep("data/rst/feather_rst",2))
+                        save = rep(here::here("data","rst", "feather_rst"), 2))
 files_knights <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/knl_combine_",2),
                         name = c("rst_clean","sampling_effort_clean"),
-                        save = rep("data/rst/knights_",2))
+                        save = rep(here::here("data","rst", "knights_"), 2))
 files_tisdale <- tibble(path = "rst/lower-sac-river/data/tisdale/rst_clean",
                         name = c(""),
-                        save = "data/rst/tisdale_rst")
+                        save = here::here("data","rst", "tisdale_rst"))
 files_mill <- tibble(path = "rst/mill-creek/data/mill_rst",
                      name = c(""),
-                     save = "data/rst/mill_rst")
+                     save = here::here("data","rst", "mill_rst"))
 files_yuba <- tibble(path = "rst/yuba-river/data/yuba_rst",
                      name = c(""),
-                     save = "data/rst/yuba_rst")
+                     save = here::here("data","rst", "yuba_rst"))
 # function to save file to disk
 get_data <- function(path, name, save) {
   gcs_get_object(object_name = paste0(path, name, ".csv"),
@@ -76,15 +76,15 @@ pmap(files_yuba, get_data)
 
 # load in data
 # catch data
-battle_rst <- read_csv("data/rst/battle_rst_catch.csv")
-butte_rst <- read_csv("data/rst/butte_rst.csv") # contains trap data too
-clear_rst <- read_csv("data/rst/clear_rst_catch.csv")
-deer_rst <- read_csv("data/rst/deer_rst.csv") # contains trap data too
-feather_rst <- read_csv("data/rst/feather_rst.csv")
-# knights_rst <- read_csv("data/rst/knights_rst_clean.csv") # contains cpue info
-tisdale_rst <- read_csv("data/rst/tisdale_rst.csv")
-mill_rst <- read_csv("data/rst/mill_rst.csv") # contains trap data too
-yuba_rst <- read_csv("data/rst/yuba_rst.csv")
+battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"))
+butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains trap data too
+clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"))
+deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv")) # contains trap data too
+feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
+# knights_rst <- read_csv(here::here("data", "rst", "knights_rst_clean.csv")) # contains cpue info
+tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"))
+mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv")) # contains trap data too
+yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 
 # sampling effort and environmental
 battle_environmental <- read_csv("data/rst/battle_rst_environmental.csv")
@@ -95,10 +95,10 @@ knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
 # Knights landing data pulled from camp (knights_camp_catch_data.Rmd)
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/knights_catch_camp.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/rst/knights_catch.csv",
+               saveToDisk = here::here("data", "rst", "knights_catch.csv"),
                overwrite = TRUE)
 
-knights_landing_rst <- read_csv("data/rst/knights_catch.csv")
+knights_landing_rst <- read_csv(here::here("data/rst/knights_catch.csv"))
 
 ```
 
@@ -144,7 +144,8 @@ lifestage_encoding <- function(dat) {
 ## Battle Creek
 
 ```{r, battle_data_dictionary}
-battle_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/battle_rst_data_dictionary.rds")
+battle_data_dictionary <- read_rds(here::here("data-raw", 
+                                              "qc-markdowns", "rst", "data-dictionaries", "battle_rst_data_dictionary.rds"))
 kable(battle_data_dictionary)
 ```
 
@@ -202,7 +203,7 @@ battle_rst_clean_final <- full_join(battle_rst_clean,
                                       rename(date = sample_date)) %>% 
   mutate(count = ifelse(is.na(count), 0, count),
          stream = "battle creek",
-         site = stream,
+         site = "ubc",
          adipose_clipped = F,
          run_method = "adjusted length-at-date")
 ```
@@ -215,7 +216,8 @@ to include
 
 ## Butte Creek
 ```{r, butte_data_dictionary}
-butte_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/butte_rst_data_dictionary.rds")
+butte_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst", 
+                                             "data-dictionaries", "butte_rst_data_dictionary.rds"))
 kable(butte_data_dictionary)
 ```
 
@@ -258,7 +260,8 @@ butte_rst_clean <- butte_rst %>%
 ## Clear Creek
 
 ```{r, clear_data_dictionary}
-clear_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/clear_rst_data_dictionary.rds")
+clear_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst",
+                                             "data-dictionaries", "clear_rst_data_dictionary.rds"))
 kable(clear_data_dictionary)
 ```
 
@@ -328,7 +331,8 @@ to include
 ## Deer Creek
 
 ```{r, deer_data_dictionary}
-deer_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/deer_rst_data_dictionary.rds")
+deer_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst", 
+                                            "data-dictionaries", "deer_rst_data_dictionary.rds"))
 kable(deer_data_dictionary)
 ```
 
@@ -357,7 +361,8 @@ deer_rst_clean <- deer_rst %>%
 ## Feather River
 
 ```{r, feather_data_dictionary}
-feather_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/feather_rst_data_dictionary.rds")
+feather_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst", 
+                                               "data-dictionaries", "feather_rst_data_dictionary.rds"))
 kable(feather_data_dictionary)
 ```
 
@@ -416,7 +421,8 @@ feather_rst_clean_final <- full_join(feather_rst_clean,
 ## Mill Creek
 
 ```{r, mill_data_dictionary}
-mill_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/mill_rst_data_dictionary.rds")
+mill_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst", 
+                                            "data-dictionaries", "mill_rst_data_dictionary.rds"))
 kable(mill_data_dictionary)
 ```
 
@@ -448,7 +454,8 @@ mill_rst_clean <- mill_rst %>%
 ## Yuba River
 
 ```{r, yuba_data_dictionary}
-yuba_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/yuba_rst_data_dictionary.rds")
+yuba_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst", 
+                                            "data-dictionaries", "yuba_rst_data_dictionary.rds"))
 kable(yuba_data_dictionary)
 ```
 
@@ -561,7 +568,8 @@ knights_rst_clean_final <- full_join(knights_rst_clean,
 ## Lower Sacramento - Tisdale
 
 ```{r, tisdale_data_dictionary}
-tisdale_data_dictionary <- read_rds("data-raw/qc-markdowns/rst/data-dictionaries/lower_sac_tisdale_rst_data_dictionary.rds")
+tisdale_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst", 
+                                               "data-dictionaries", "lower_sac_tisdale_rst_data_dictionary.rds"))
 kable(tisdale_data_dictionary)
 ```
 
@@ -620,7 +628,7 @@ combined_rst_raw <- bind_rows(battle_rst_clean_final,
                           knights_rst_clean_final,
                           tisdale_rst_clean) 
 combined_rst <- combined_rst_raw %>%
-  run_encoding() %>%
+  run_encoding() %>% 
   lifestage_encoding() %>%
   # all should be chinook salmon
   mutate(species = ifelse(is.na(species), "chinook salmon", species),
