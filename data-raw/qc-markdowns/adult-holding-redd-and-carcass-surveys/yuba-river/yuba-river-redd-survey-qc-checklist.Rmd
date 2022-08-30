@@ -1,0 +1,173 @@
+---
+title: "Yuba River Redd Survey QC"
+author: "Maddee Rubenson"
+date: "08/30/2022"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+```
+
+# [Watershed] [Data type long version]
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+**Video Season:** 
+
+**Completeness of Record throughout timeframe:** 
+* 2017 data is missing redd_id
+
+**Sampling Location:**
+
+**Data Contact:** 
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+Sys.setenv('GCS_AUTH_FILE' = 'config.json')
+Sys.setenv('GCS_DEFAULT_BUCKET'= 'jpe-dev-bucket')
+
+
+gcs_auth(json_file = Sys.getenv('GCS_AUTH_FILE'))
+gcs_global_bucket(bucket = Sys.getenv('GCS_DEFAULT_BUCKET'))
+
+# # git data and save as xlsx
+# get_data <- function(path, name, save) {
+#   gcs_get_object(object_name = paste0(path, name, ".xlsx"),
+#                  bucket = gcs_get_global_bucket(),
+#                  saveToDisk = paste0(save, name, ".xlsx"),
+#                  overwrite = TRUE)
+# }
+# 
+# # data pull ####
+# yuba_redd_files <- tibble(path = "adult-holding-redd-and-carcass-surveys/yuba-river/data-raw/yuba_Redd data request Aug2022",
+#                        name = c(""),
+#                        save = "data/redd-carcass-holding/yuba_redd")
+# 
+# pmap(yuba_redd_files, get_data)
+
+sheets <- readxl::excel_sheets('yuba_Redd data request Aug2022.xlsx')
+raw_yuba_redd <- readxl::read_excel('yuba_Redd data request Aug2022.xlsx')
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean 
+
+sheets %>%
+  purrr::map(function(sheet){ # iterate through each sheet name
+  assign(x = paste0('redd_',sheet),
+         value = readxl::read_xlsx(path = 'yuba_Redd data request Aug2022.xlsx', sheet = sheet) %>% janitor::clean_names(),
+         envir = .GlobalEnv)
+})
+```
+
+## Data transformations
+
+```{r}
+
+clean_redd_2008 <- redd_2008 %>% 
+  mutate(across(where(is.character), str_remove_all, pattern = fixed(" "))) %>%
+  mutate(latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude),
+         latitude = latitude/10000,
+         longitude = longitude/10000 * -1,
+         year = 2008) %>%
+  glimpse
+
+clean_redd_2009 <- redd_2009 %>% 
+  mutate(year = 2009) %>%
+  glimpse
+
+clean_redd_2010 <- redd_2010 %>% 
+  select(-(pl:x80_percent_depth)) %>%
+  rename(redd_id = redd_i_d) %>%
+  mutate(year = 2010) %>%
+  glimpse
+
+redd_2011 %>% glimpse
+
+```
+
+```{r}
+# Snake case, 
+# Columns are appropriate types
+# Remove redundant columns
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables 
+```
+
+### Variable: `[name]`
+
+**Plotting [Variable] over Period of Record**
+
+```{r}
+# Make whatever plot is appropriate 
+# maybe 2+ plots are appropriate
+```
+
+**Numeric Summary of [Variable] over Period of Record**
+
+```{r}
+# Table with summary statistics
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+## Explore Categorical variables: {.tabset}
+
+General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
+
+```{r}
+# Filter clean data to show only categorical variables
+```
+
+
+### Variable: `[name]`
+```{r}
+#table() 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+# Fix any inconsistencies with categorical variables
+```
+
+**Create lookup rda for [variable] encoding:** 
+```{r}
+# Create named lookup vector
+# Name rda [watershed]_[data type]_[variable_name].rda
+# save rda to data/ 
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+## Summary of identified issues
+
+* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
+
+## Save cleaned data back to google cloud 
+
+```{r}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+```
