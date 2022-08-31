@@ -71,9 +71,9 @@ environmental |>
 
 Flow ranges vary by watershed: 
   
-  #### Mill & Deer 
+#### Mill & Deer 
   
-  ```{r}
+```{r}
 environmental |> 
   filter(stream %in% c("mill creek", "deer creek")) |> 
   ggplot(aes(flow, color = stream)) +
