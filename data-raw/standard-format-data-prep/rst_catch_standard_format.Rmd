@@ -21,11 +21,8 @@ of Knights Landing data from CAMP which has not yet been saved to google cloud.
 
 ```{r, data_pull, include = F, echo = F, eval = F}
 # # Data pull ---------------------------------------------------------------
-
-# Set your authentication using gcs_auth
-# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# # Set global bucket
-# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # define files to pull in (in some cases there is just one catch file while others
 # have sample and environmental data)
@@ -44,8 +41,11 @@ files_deer <- tibble(path = "rst/deer-creek/data/deer_rst",
 files_feather <- tibble(path = rep("rst/feather-river/data/feather_rst",2),
                         name = c("","_effort"),
                         save = rep(here::here("data","rst", "feather_rst"), 2))
-files_knights <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/knl_combine_",2),
-                        name = c("rst_clean","sampling_effort_clean"),
+files_knights <- tibble(path = rep("rst/lower-sac-river/data-raw/knights-landing/knights_",2),
+                        name = c("catch_camp", "trap_camp"),
+                        save = rep(here::here("data","rst", "knights_"), 2))
+files_knights_pre2006 <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/knl_",2),
+                        name = c("combine_rst_clean", "combine_sampling_effort_clean"),
                         save = rep(here::here("data","rst", "knights_"), 2))
 files_tisdale <- tibble(path = "rst/lower-sac-river/data/tisdale/rst_clean",
                         name = c(""),
@@ -70,10 +70,13 @@ pmap(files_clear, get_data)
 pmap(files_deer, get_data)
 pmap(files_feather, get_data)
 pmap(files_knights, get_data)
+pmap(files_knights_pre2006, get_data)
 pmap(files_tisdale, get_data)
 pmap(files_mill, get_data)
 pmap(files_yuba, get_data)
+```
 
+```{r, read_csv}
 # load in data
 # catch data
 battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"))
@@ -81,26 +84,18 @@ butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains tra
 clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"))
 deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv")) # contains trap data too
 feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
-# knights_rst <- read_csv(here::here("data", "rst", "knights_rst_clean.csv")) # contains cpue info
+knights_landing_rst <- read_csv(here::here("data", "rst", "knights_catch_camp.csv"))
+knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_rst_clean.csv"))
 tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"))
 mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv")) # contains trap data too
 yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 
 # sampling effort and environmental
-battle_environmental <- read_csv("data/rst/battle_rst_environmental.csv")
-clear_environmental <- read_csv("data/rst/clear_rst_environmental.csv")
-feather_effort <- read_csv("data/rst/feather_rst_effort.csv")
-knights_effort <- read_csv("data/rst/knights_sampling_effort_clean.csv")
-
-# Knights landing data pulled from camp (knights_camp_catch_data.Rmd)
-gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/knights_catch_camp.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data", "rst", "knights_catch.csv"),
-               overwrite = TRUE)
-
-knights_landing_rst <- read_csv(here::here("data/rst/knights_catch.csv"))
-
-
+battle_environmental <- read_csv(here::here("data","rst", "battle_rst_environmental.csv"))
+clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
+feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
+knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
+knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
 ```
 
 # Data formatting {.tabset}
@@ -172,7 +167,7 @@ filter(battle_rst, date == "2003-12-28")
 battle_rst_clean <- battle_rst %>%
   select(-c(sample_id)) %>%
   group_by(date, run, fork_length, lifestage, dead, interpolated) %>%
-  summarize(count = sum(count, na.rm = T)) 
+  summarize(count = sum(count, na.rm = T))
 
 battle_rst_min <- battle_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -515,6 +510,9 @@ filter(knights_landing_rst, is.na(forkLength), n > 0) %>% glimpse
 unique(knights_landing_rst$runMethod)
 unique(knights_landing_rst$lifeStage)
 
+# check missing trap days
+filter(knights_effort, visitTime == "2014-02-15")
+
 # 1,603 unknown, 2 not recorded
 filter(knights_landing_rst, fishOrigin == "Unknown") %>% tally()
 
@@ -530,7 +528,7 @@ knights_rst_clean_camp <- knights_landing_rst %>%
   group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date) %>%
   summarize(count = sum(count, na.rm = T))
 
-knights_rst_clean_pre2006 <- knights_landing_rst_excel %>% 
+knights_rst_clean_pre2006 <- knights_landing_pre2006 %>% 
   # filter to only include data before 2006 (CAMP stores data 2006 to present)
   filter(date < "2006-10-02") %>% 
   select(-c(start_date, stop_date, location, fork_length_max_mm, fork_length_min_mm, cpue)) %>% 
@@ -561,10 +559,22 @@ knights_rst_min <- knights_rst_clean %>%
 # Need to check that if data in environmental it is also in catch data
 # e.g. make sure that if no catch then 0 in catch data
 
-knights_trap_clean <- knights_effort %>%
+# visitTime = visitTime2
+filter(knights_effort, visitTime != visitTime2)
+
+knights_trap_clean_camp <- knights_effort %>%
   # use sample date because this is the date the trap would have been checked
+  select(visitTime) %>% 
+  rename(date = visitTime) %>% 
+  distinct()
+
+knights_trap_pre2006 <- knights_effort_pre2006 %>% 
+  # filter to only include data before 2006 (CAMP stores data 2006 to present)
+  filter(date < "2006-10-02") %>% 
   select(date) %>% 
   distinct()
+
+knights_trap_clean <- bind_rows(knights_trap_clean_camp, knights_trap_pre2006)
 
 knights_trap_min <- knights_trap_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -666,11 +676,8 @@ combined_rst_raw <- bind_rows(battle_rst_clean_final,
                           knights_rst_clean_final,
                           tisdale_rst_clean) 
 combined_rst <- combined_rst_raw %>%
-<<<<<<< HEAD
-=======
   run_encoding() %>% 
   lifestage_encoding() %>%
->>>>>>> main
   # all should be chinook salmon
   mutate(species = ifelse(is.na(species), "chinook salmon", species),
          run_method = case_when(is.na(run_method) ~ "not recorded",
