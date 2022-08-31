@@ -19,32 +19,25 @@ library(googleCloudStorageR)
 ## Load in standard RST Datasets
 
 ```{r, include=F}
-# Access Data from Google Cloud (Download and Import)
-# Link : <https://console.cloud.google.com/storage/browser/jpe-dev-bucket/standard-format-data;tab=[…]iew=project&prefix=&forceOnObjectsSortingFiltering=false>
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-# Google Cloud Set up
-# Sys.setenv("GCS_AUTH_FILE" = "config.json")
-# Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
-# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-# 
-# gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "standard_RST_environmental.csv",
-#                overwrite = TRUE)
-# gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "standard_rst_trap.csv",
-#                overwrite = TRUE)
-# gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "standard_rst_catch.csv",
-#                overwrite = TRUE)
-# gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "standard_recapture.csv",
-#                overwrite = TRUE)
-
+gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "standard_RST_environmental.csv",
+               overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "standard_rst_trap.csv",
+               overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "standard_rst_catch.csv",
+               overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "standard_recapture.csv",
+               overwrite = TRUE)
 ```
 ```{r,message=F, warning=F}
 environmental <- read_csv(here::here("data", "standard-format-data", "standard_RST_environmental.csv"))
@@ -116,10 +109,9 @@ environmental |>
 
 #### Max Ranges for QA Recomendations
 
-Sacramento River: 200 - 35000 or 40000 (TODO pick upper range)
+Sacramento River: 200 - 35000 
 
-Mill & Deer Creeks: 0 - 2000 (TODO confirm that 0 values are real)
-Others? TODO 
+Mill & Deer Creeks: 50 - 2000 (min value informed by CDEC ranges)
 
 
 ### Temperature
@@ -335,14 +327,14 @@ catch |>
 
 #### Max Range for QA Recomendations
 
-Adult: 
-Other: 
+Adult: 80 - 1000
+Juv: >0 - 100 (is this too restrictive or are all the outliers errors)
 
 ### Weight
 
 Numeric Summary: 
 - shows lots of NAs
-- Max much highter than 3rd quartile (likely some outliers)
+- Max much higher than 3rd quartile (likely some outliers)
 
 ```{r}
 summary(catch$weight)
@@ -355,14 +347,14 @@ catch %>%
   filter(weight < 1000) |>  # Filter out 2 values above 1000
   ggplot(aes(weight, color = lifestage)) +
   geom_boxplot() +
-  labs(title="Weight") + 
+  labs(title = "Weight") + 
   theme_minimal()
 ```
 
 
 #### Max Range for QA Recomendations
 
-Weight Range: 0 - 500 grams 
+Weight Range: 0 - 400 grams 
 
 Most will fall below 50 grams but adult fish can be bigger
 
