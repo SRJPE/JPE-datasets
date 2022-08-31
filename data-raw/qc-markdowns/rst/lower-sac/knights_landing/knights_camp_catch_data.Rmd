@@ -17,12 +17,13 @@ library(Hmisc)
 library(lubridate)
 library(googleCloudStorageR)
 
-Sys.getenv("GCS_AUTH_FILE")
-Sys.getenv("GCS_DEFAULT_BUCKET")
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 ```{r}
-# Set up connection with CAMP access database 
+# TODO
+# Set up non-local connection with CAMP access database 
 knights_access_db <- "/Users/ashleyvizek/code/CAMP_Knights.mdb"
 mdb.get(knights_access_db, tables = T)
 
@@ -55,7 +56,6 @@ debris_volume_lu <- mdb.get(knights_access_db,  "luDebrisVolumeCat") %>%
   select(-activeID) %>% 
   glimpse
 
-
 trap_function_lu <- mdb.get(knights_access_db, "luTrapFunctioning") %>%
   select(-activeID) %>% 
   glimpse
@@ -64,12 +64,9 @@ processed_lu <- mdb.get(knights_access_db, "luFishProcessed") %>%
   select(-activeID) %>% 
   glimpse
 
-
 subsite_lu <- mdb.get(knights_access_db, "SubSite") %>% 
   select(subSiteName, subSiteID) %>% 
   filter(subSiteName != "N/A")
-
-
 ```
 
 # Catch
