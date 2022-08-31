@@ -125,6 +125,34 @@ clear <- filter(catch_and_trap,
 
 ```{r}
 filter(trap_raw, site == "knights landing") %>% summarize(min = min(trap_stop_date))
+
+filter(catch_raw, site == "knights landing") %>% summarize(min = min(date))
+
+# every year battle creek has more data in the catch dataset
+catch_raw %>% 
+  filter(site == "knights landing") %>% 
+  distinct(date) %>% 
+  group_by(year = year(date)) %>% 
+  tally() %>% 
+  rename(catch = n) %>% 
+  full_join(filter(trap_raw, site == "knights landing") %>% 
+  distinct(trap_stop_date) %>% 
+  group_by(year = year(trap_stop_date)) %>% 
+  tally() %>% 
+    rename(trap = n)) 
+
+catch_ck <- catch_raw %>% 
+  filter(site == "knights landing", year(date) > 2013) %>% 
+  distinct(date) %>% 
+  mutate(type = "catch")
+
+trap_ck <- trap_raw %>% 
+  filter(site == "knights landing", year(trap_stop_date) > 2013) %>% 
+  distinct(trap_stop_date) %>% 
+  mutate(trap = "trap") %>% 
+  rename(date = trap_stop_date)
+
+compare <- full_join(catch_ck, trap_ck)
 ```
 
 # Check Fixes
