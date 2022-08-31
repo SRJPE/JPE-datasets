@@ -1,0 +1,360 @@
+---
+title: "RST QA Ranges"
+author: "Erin Cain"
+date: "4/29/2022"
+output: html_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(googleCloudStorageR)
+```
+
+
+## RST QA/QC
+
+## Load in standard RST Datasets
+
+```{r, include=F}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "standard_RST_environmental.csv",
+               overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "standard_rst_trap.csv",
+               overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "standard_rst_catch.csv",
+               overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "standard_recapture.csv",
+               overwrite = TRUE)
+```
+```{r,message=F, warning=F}
+environmental <- read_csv(here::here("data", "standard-format-data", "standard_RST_environmental.csv"))
+trap_operation <- read_csv(here::here("data", "standard-format-data", "standard_trap.csv"))
+catch <- read_csv(here::here("data", "standard-format-data", "standard_catch.csv"))
+mark_recapture <- read_csv(here::here("data", "standard-format-data", "standard_recapture.csv"))
+```
+
+## Explore Environmental Variables {.tabset}
+* `flow`-  flow in cfs  
+* `temperature` - temperature in degrees C
+* `turbidity` - turbidity measure in NTU 
+
+### Flow
+
+Numeric Summary: 
+  - shows lots of NAs
+- Max much higher than 3rd quartile (likely some outliers)
+
+```{r}
+summary(environmental$flow)
+```
+Box Plot
+```{r}
+environmental |>
+  ggplot(aes(flow, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+```
+
+Flow ranges vary by watershed: 
+  
+  #### Mill & Deer 
+  
+  ```{r}
+environmental |> 
+  filter(stream %in% c("mill creek", "deer creek")) |> 
+  ggplot(aes(flow, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+
+environmental |> 
+  filter(stream %in% c("mill creek", "deer creek")) |> 
+  ggplot(aes(flow, fill = stream)) +
+  geom_histogram(position = "identity") +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+```
+
+#### Sacramento  
+
+```{r}
+environmental |> 
+  filter(stream == "sacramento river") |> 
+  ggplot(aes(flow, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+
+environmental |> 
+  filter(stream == "sacramento river") |> 
+  ggplot(aes(flow, fill = stream)) +
+  geom_histogram(position = "identity") +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+```
+
+#### Max Ranges for QA Recomendations
+
+Sacramento River: 200 - 35000 
+
+Mill & Deer Creeks: 50 - 2000 (min value informed by CDEC ranges)
+
+
+### Temperature
+
+Numeric Summary: 
+  - shows lots of NAs
+
+```{r}
+summary(environmental$temperature)
+```
+Box Plot
+```{r}
+environmental |>
+  ggplot(aes(temperature, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Temperature (C)") + 
+  theme_minimal() 
+```
+
+All streams fall within a much more reasonable range of each other 
+
+#### Max Range for QA Recomendations
+
+Temperature Range All Streams: > 0 - 30
+
+### Turbidity
+
+Numeric Summary: 
+  - shows lots of NAs
+- Max much higher than 3rd quartile (likely some outliers)
+
+```{r}
+summary(environmental$turbidity)
+```
+
+Box Plot
+
+```{r}
+environmental |>
+  ggplot(aes(turbidity, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Turbidity (NTU)") + 
+  theme_minimal() 
+```
+
+```{r}
+environmental |>
+  filter(turbidity < 1000) |> 
+  ggplot(aes(turbidity, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Turbidity (NTU)") + 
+  theme_minimal() 
+```
+
+#### Max Range for QA Recomendations
+
+Turbidity Range All Streams: 0 - 1000 
+
+(only expect values greater than 25 in runoff events, put 1000 as the upper end of the turbidy measure because most turbidity sensors only accuratly go to 1000)
+
+We may want to end up linking turbidity check with flow (You don't usually get this high of a turbidity with x flow...)
+
+## Explore Trap Operation Variables {.tabset}
+
+* `sample_period_revolutions` - total number of revolutions durring a sample period
+* `debris_volume` - volume of debris
+* `rpms_start`- revolutions per minute at start
+* `rpms_end` - revolutions per minute at end
+
+
+### Total Revolutions 
+
+Numeric Summary: 
+- shows lots of NAs
+- Max much higher than 3rd quartile (likely some outliers)
+
+```{r}
+summary(trap_operation$sample_period_revolutions)
+```
+
+Box Plot
+
+```{r}
+trap_operation |>
+  ggplot(aes(sample_period_revolutions, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Total Revolutions") + 
+  theme_minimal() 
+```
+
+There are a few big outliers on Yuba. 
+
+Let's narrow down the range a bit
+
+```{r}
+trap_operation |>
+  filter(sample_period_revolutions < 25000) |># filters out high counter values on clear, battle, and yuba river - comments for these instances describe that counters were tampered with and not accurate on these days or that the were not reset the day before
+  ggplot(aes(sample_period_revolutions, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Total Revolutions") + 
+  theme_minimal() 
+```
+
+#### Max Range for QA Recomendations
+
+Total Revolutions max range should be >0 - 25000, if 0 something must be wrong with trap. 
+
+Most revolutions we would expect < 12500 but can get bigger ones especially if it took longer than 24 hours to check the trap                                                             
+
+
+### RPMs (start and end)
+
+Numeric Summary: 
+  - shows lots of NAs
+- Max much higher than 3rd quartile (likely some outliers)
+
+```{r}
+summary(trap_operation$rpms_start)
+summary(trap_operation$rpms_end)
+```
+
+Box Plot
+
+```{r}
+trap_operation |>
+  filter(rpms_start < 3000) |> # filter out 2 values above 3000 on butte
+  ggplot(aes(rpms_start, color = stream)) +
+  geom_boxplot() +
+  labs(title = "RPMs Start") + 
+  theme_minimal() 
+```
+
+Still a couple of outliers on Butte Creek 
+
+Let's look at RPM End - we are seeing similar distributions 
+
+```{r}
+trap_operation |>
+  filter(rpms_end < 1000) |>  # filter out 3 values above 1000
+  ggplot(aes(rpms_end, color = stream)) +
+  geom_boxplot() +
+  labs(title = "RPMs end") + 
+  theme_minimal() 
+```
+
+#### Max Range for QA Recomendations
+
+RPM Start: 0 - 30
+
+RPM End: 0 - 30
+
+### Debris Volumne  
+
+Numeric Summary: 
+- shows lots of NAs
+- Max much higher than 3rd quartile (likely some outliers)
+
+```{r}
+summary(trap_operation$debris_volume)
+```
+
+Box Plot
+
+```{r}
+trap_operation |>
+  ggplot(aes(debris_volume, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Debris Volumne") + 
+  theme_minimal() 
+```
+
+#### Max Range for QA Recomendations
+
+Debris Volumne 0 - 500 (tubs...this one will be a little trickier if people are not using consistanly sized tubs)
+
+
+## Explore Catch Variables {.tabset}
+* `fork_length` - fork length (mm)
+* `weight`- observed fish weight
+
+### Fork Length
+
+Numeric Summary: 
+- shows lots of NAs
+- Max much highter than 3rd quartile (likely some outliers)
+
+```{r}
+summary(catch$fork_length)
+```
+
+Box Plot
+
+```{r}
+catch %>%
+  ggplot(aes(fork_length, color = lifestage)) +
+  geom_boxplot() +
+  labs(title="Fork Lengths") + 
+  theme_minimal()
+```
+
+It is clear that adult fish are much larger than Juveniles and can be over 1000 milimeters long. We will want to distinguish between lifestages when applying QA to data entry. 
+
+Lets look at summaries of the data by lifestage: 
+
+```{r}
+catch |> 
+  group_by(lifestage) |> 
+  summarize(min = min(fork_length, na.rm = T),
+            max = max(fork_length, na.rm = T),
+            mean = mean(fork_length, na.rm = T),
+            median = median(fork_length, na.rm = T))
+```
+
+#### Max Range for QA Recomendations
+
+Adult: 80 - 1000
+Juv: >0 - 100 (is this too restrictive or are all the outliers errors)
+
+### Weight
+
+Numeric Summary: 
+- shows lots of NAs
+- Max much higher than 3rd quartile (likely some outliers)
+
+```{r}
+summary(catch$weight)
+```
+
+Box Plot
+
+```{r}
+catch %>%
+  filter(weight < 1000) |>  # Filter out 2 values above 1000
+  ggplot(aes(weight, color = lifestage)) +
+  geom_boxplot() +
+  labs(title = "Weight") + 
+  theme_minimal()
+```
+
+
+#### Max Range for QA Recomendations
+
+Weight Range: 0 - 400 grams 
+
+Most will fall below 50 grams but adult fish can be bigger
+
