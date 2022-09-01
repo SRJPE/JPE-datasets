@@ -1,8 +1,10 @@
 library(tidyverse)
 library(lubridate)
+library(googleCloudStorageR)
 catch_data <- read_csv("data/standard-format-data/standard_catch.csv")  |>  glimpse()
 env_data <- read_csv("data/standard-format-data/standard_environmental.csv")
 ops_data <- read_csv("data/standard-format-data/standard_trap.csv")
+
 
 padded_env_dates <- tibble(date = seq.Date(from = min(env_data$date, na.rm = T), 
          to = max(env_data$date, na.rm = T), by = "day"))
@@ -236,7 +238,7 @@ ops_data |> filter(!is.na(debris_volume)) |> View()
 # categorical variables --------------------------------------------------------
 # adipose clipped 
 catch_data  |>  
-  filter(site == "deer creek") |> 
+  filter(site == "tisdale") |> 
   mutate(year = year(date), day = day(date), month = month(date),
          water_year = ifelse(month %in% 10:12, year + 1, year),
          max_water_year = max(water_year),
@@ -257,7 +259,7 @@ catch_data  |>
   theme(legend.position = c(0.2, 0.8))
 
 
-# existing marks
+# species
 catch_data  |>  
   filter(site == "mill creek") |> 
   mutate(year = year(date), day = day(date), month = month(date),
