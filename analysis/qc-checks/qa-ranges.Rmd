@@ -38,12 +38,17 @@ gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "standard_recapture.csv",
                overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "standard_flow.csv",
+               overwrite = TRUE)
 ```
 ```{r,message=F, warning=F}
 environmental <- read_csv(here::here("data", "standard-format-data", "standard_RST_environmental.csv"))
 trap_operation <- read_csv(here::here("data", "standard-format-data", "standard_trap.csv"))
 catch <- read_csv(here::here("data", "standard-format-data", "standard_catch.csv"))
 mark_recapture <- read_csv(here::here("data", "standard-format-data", "standard_recapture.csv"))
+flow <- read_csv(here::here("data", "standard-format-data", "standard_flow.csv"))
 ```
 
 ## Explore Environmental Variables {.tabset}
@@ -52,6 +57,8 @@ mark_recapture <- read_csv(here::here("data", "standard-format-data", "standard_
 * `turbidity` - turbidity measure in NTU 
 
 ### Flow
+
+#TODO pull in standard flow
 
 Numeric Summary: 
   - shows lots of NAs
@@ -62,56 +69,157 @@ summary(environmental$flow)
 ```
 Box Plot
 ```{r}
-environmental |>
-  ggplot(aes(flow, color = stream)) +
+flow |> 
+  ggplot(aes(flow_cfs, color = stream)) +
   geom_boxplot() +
   labs(title = "Flow (cfs)") + 
   theme_minimal() 
 ```
 
-Flow ranges vary by watershed: 
+#### Flow ranges vary by watershed {.tabset}: 
   
-#### Mill & Deer 
+##### Mill & Deer 
   
 ```{r}
-environmental |> 
+flow |> 
   filter(stream %in% c("mill creek", "deer creek")) |> 
-  ggplot(aes(flow, color = stream)) +
+  ggplot(aes(flow_cfs, color = stream)) +
   geom_boxplot() +
   labs(title = "Flow (cfs)") + 
   theme_minimal() 
 
-environmental |> 
+flow |> 
   filter(stream %in% c("mill creek", "deer creek")) |> 
-  ggplot(aes(flow, fill = stream)) +
+  ggplot(aes(flow_cfs, fill = stream)) +
   geom_histogram(position = "identity") +
   labs(title = "Flow (cfs)") + 
   theme_minimal() 
 ```
 
-#### Sacramento  
+##### Sacramento  
 
 ```{r}
-environmental |> 
+flow |> 
   filter(stream == "sacramento river") |> 
-  ggplot(aes(flow, color = stream)) +
+  ggplot(aes(flow_cfs, color = stream)) +
   geom_boxplot() +
   labs(title = "Flow (cfs)") + 
   theme_minimal() 
 
-environmental |> 
+flow |> 
   filter(stream == "sacramento river") |> 
-  ggplot(aes(flow, fill = stream)) +
+  ggplot(aes(flow_cfs, fill = stream)) +
   geom_histogram(position = "identity") +
   labs(title = "Flow (cfs)") + 
   theme_minimal() 
 ```
+
+##### Battle 
+```{r}
+flow |> 
+  filter(stream == "battle creek") |> 
+  ggplot(aes(flow_cfs, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+
+flow |> 
+  filter(stream == "battle creek") |> 
+  ggplot(aes(flow_cfs, fill = stream)) +
+  geom_histogram(position = "identity") +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+```
+##### Butte
+
+```{r}
+flow |> 
+  filter(stream == "butte creek") |> 
+  ggplot(aes(flow_cfs, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+
+flow |> 
+  filter(stream == "butte creek") |> 
+  ggplot(aes(flow_cfs, fill = stream)) +
+  geom_histogram(position = "identity") +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+```
+
+##### Clear 
+
+```{r}
+flow |> 
+  filter(stream == "clear creek") |> 
+  ggplot(aes(flow_cfs, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+
+flow |> 
+  filter(stream == "clear creek") |> 
+  ggplot(aes(flow_cfs, fill = stream)) +
+  geom_histogram(position = "identity") +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+```
+
+##### Feather
+
+```{r}
+flow |> 
+  filter(stream == "feather river") |> 
+  ggplot(aes(flow_cfs, color = site)) +
+  geom_boxplot() +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+
+flow |> 
+  filter(stream == "feather river") |> 
+  ggplot(aes(flow_cfs, fill = site)) +
+  geom_histogram(position = "identity", alpha = .5) +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+```
+
+##### Yuba
+
+```{r}
+flow |> 
+  filter(stream == "yuba river") |> 
+  ggplot(aes(flow_cfs, color = stream)) +
+  geom_boxplot() +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+
+flow |> 
+  filter(stream == "yuba river") |> 
+  ggplot(aes(flow_cfs, fill = stream)) +
+  geom_histogram(position = "identity") +
+  labs(title = "Flow (cfs)") + 
+  theme_minimal() 
+```
+
 
 #### Max Ranges for QA Recomendations
 
 Sacramento River: 200 - 35000 
 
 Mill & Deer Creeks: 50 - 2000 (min value informed by CDEC ranges)
+
+Battle Creek: 50 - 2500
+
+Butte Creek: 50 - 5000
+
+Clear Creek: 50 - 2000
+
+Feather River: 
+HFC:300 - 5000
+LFC:500 - 1000 (tightly regulated so should be a fairly small range)
+
+Yuba River: 50 - 3500 (values informed by plots and USGS statistics)
 
 
 ### Temperature
@@ -140,7 +248,7 @@ Temperature Range All Streams: > 0 - 30
 ### Turbidity
 
 Numeric Summary: 
-  - shows lots of NAs
+- shows lots of NAs
 - Max much higher than 3rd quartile (likely some outliers)
 
 ```{r}
@@ -170,13 +278,13 @@ environmental |>
 
 Turbidity Range All Streams: 0 - 1000 
 
-(only expect values greater than 25 in runoff events, put 1000 as the upper end of the turbidy measure because most turbidity sensors only accuratly go to 1000)
+(only expect values greater than 25 in runoff events, put 1000 as the upper end of the turbidy measure because most turbidity sensors only accurately go to 1000)
 
 We may want to end up linking turbidity check with flow (You don't usually get this high of a turbidity with x flow...)
 
 ## Explore Trap Operation Variables {.tabset}
 
-* `sample_period_revolutions` - total number of revolutions durring a sample period
+* `sample_period_revolutions` - total number of revolutions during a sample period
 * `debris_volume` - volume of debris
 * `rpms_start`- revolutions per minute at start
 * `rpms_end` - revolutions per minute at end
@@ -285,7 +393,7 @@ trap_operation |>
 
 #### Max Range for QA Recomendations
 
-Debris Volumne 0 - 500 (tubs...this one will be a little trickier if people are not using consistanly sized tubs)
+Debris Volume 0 - 500 (gallons, will likely convert to L)
 
 
 ## Explore Catch Variables {.tabset}
@@ -296,7 +404,7 @@ Debris Volumne 0 - 500 (tubs...this one will be a little trickier if people are 
 
 Numeric Summary: 
 - shows lots of NAs
-- Max much highter than 3rd quartile (likely some outliers)
+- Max much higher than 3rd quartile (likely some outliers)
 
 ```{r}
 summary(catch$fork_length)
@@ -312,7 +420,7 @@ catch %>%
   theme_minimal()
 ```
 
-It is clear that adult fish are much larger than Juveniles and can be over 1000 milimeters long. We will want to distinguish between lifestages when applying QA to data entry. 
+It is clear that adult fish are much larger than Juveniles and can be over 1000 millimeter long. We will want to distinguish between lifestages when applying QA to data entry. 
 
 Lets look at summaries of the data by lifestage: 
 
@@ -354,7 +462,7 @@ catch %>%
 
 #### Max Range for QA Recomendations
 
-Weight Range: 0 - 400 grams 
-
+Adult Range: 50 - 400 grams 
+Juvenile: 0 - 50 grams
 Most will fall below 50 grams but adult fish can be bigger
 
