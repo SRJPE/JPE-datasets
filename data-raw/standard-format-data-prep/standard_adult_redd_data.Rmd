@@ -39,7 +39,6 @@ F - Feather River, M - Mill Creek)
 | redd_measured            | B, C               | Whether or not a redd was measured (T/F)                           |
 | age                      | C                  | integer ranging from 1 - 5; redd age                               |
 | fish_guarding            | B, C               | Whether or not a fish is on redd when measured ??                  |
-| ~~redd_count~~           | ~~B, C, F, M~~     | ~~Amount of redds counted in given reach on given date~~           |
 | redd_length              | B, C, F            | Length of measured redd (m)                                        |
 | redd_width               | B, C, F            | Width of measured redd (m)                                         |
 | run                      | C                  | `spring`, `fall`, `late-fall`                                      |

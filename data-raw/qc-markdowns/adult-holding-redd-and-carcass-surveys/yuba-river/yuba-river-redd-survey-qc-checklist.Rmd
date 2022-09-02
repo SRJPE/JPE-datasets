@@ -90,12 +90,89 @@ clean_redd_2009 <- redd_2009 %>%
   glimpse
 
 clean_redd_2010 <- redd_2010 %>% 
-  select(-(pl:x80_percent_depth)) %>%
+  select(-c(pl:x80_percent_depth, imposition_potential:percent_silt_clay_1, morphological_unit)) %>%
   rename(redd_id = redd_i_d) %>%
   mutate(year = 2010) %>%
   glimpse
 
-redd_2011 %>% glimpse
+clean_redd_2011 <- redd_2011 %>% 
+  rename(redd_id = redd_i_d) %>%
+  select(-c(imposition_potential, distance_to_cover, cover_type, 
+           comments:tail_spill_width_2, nose_velocity_0_15m)) %>%
+  mutate(year = 2011) %>%
+  glimpse
+
+clean_redd_2012 <- redd_2012 %>% 
+  rename(redd_id = redd_i_d) %>%
+  select(-c(crew_a_or, num_of_fis:tail_spi_2, adcp_veloc:comments2)) %>%
+  mutate(year = 2012) %>%
+  glimpse
+
+clean_redd_2013 <- redd_2013 %>% 
+  rename(redd_id = redd_i_d) %>%
+  select(-c(imposition_potential:tail_spill_width_2)) %>%
+  mutate(year = 2013) %>%
+  glimpse
+
+clean_redd_2014 <- redd_2014 %>% 
+  rename(redd_id = redd_i_d) %>%
+  select(-c(imposition_potential:tail_spill_width_2)) %>%
+  glimpse
+
+clean_redd_2015 <- redd_2015 %>% 
+  rename(redd_id = redd_i_d,
+         depth_m = depth) %>%
+  select(names(clean_redd_2014)) %>%
+  mutate(year = 2015) %>%
+  glimpse
+
+clean_redd_2016 <- redd_2016 %>% 
+  rename(redd_id = redd_i_d,
+         depth_m = depth) %>%
+  select(names(clean_redd_2014)) %>%
+  mutate(year = 2016) %>%
+  glimpse
+
+# skipping 2017
+
+clean_redd_2018 <- redd_2018 %>% 
+  rename(redd_id = redd_i_d,
+         depth_m = depth) %>%
+  select(names(clean_redd_2014)) %>%
+  mutate(year = 2018) %>%
+  glimpse
+
+clean_redd_2019 <- redd_2019 %>% 
+  rename(redd_id = redd_i_d,
+         depth_m = depth) %>%
+  select(names(clean_redd_2014)) %>%
+  mutate(year = 2019) %>%
+  glimpse
+
+clean_redd_2020 <- redd_2020 %>% 
+  rename(redd_id = redd_i_d,
+         depth_m = depth) %>%
+  select(names(clean_redd_2014)) %>%
+  mutate(year = 2020) %>%
+  glimpse
+
+all_yuba_redd <- bind_rows(clean_redd_2008, 
+                           clean_redd_2009,
+                           clean_redd_2010, 
+                           clean_redd_2011, 
+                           clean_redd_2012, 
+                           clean_redd_2013, 
+                           clean_redd_2014, 
+                           clean_redd_2015, 
+                           clean_redd_2016, 
+                           clean_redd_2018, 
+                           clean_redd_2019, 
+                           clean_redd_2020) %>%
+  # take average velocity 
+  mutate(mean_velocity = rowMeans(.[grep("^vel", names(.))], na.rm = TRUE)) %>% 
+  select(-c(velocity_20_depth:velocity_80_percent_depth)) %>% 
+  rename(velocity = mean_velocity) %>% 
+  glimpse
 
 ```
 
