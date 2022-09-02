@@ -10,14 +10,9 @@ library(googleCloudStorageR)
 library(knitr)
 library(hms)
 
-Sys.setenv("GCS_AUTH_FILE" = "config.json")
-Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
-
-# Set your authentication using gcs_auth
-
-# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# # Set global bucket
-# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+# Store authentication in .Renviron file
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
@@ -36,7 +31,8 @@ butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains tra
 clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"))
 deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv")) # contains trap data too
 feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
-# knights_rst <- read_csv("data/rst/knights_rst_clean.csv") # contains cpue info
+knights_landing_rst <- read_csv(here::here("data", "rst", "knights_catch_camp.csv"))
+knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_rst_clean.csv"))
 tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"))
 mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv")) # contains trap data too
 yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
@@ -45,11 +41,8 @@ yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 battle_environmental <- read_csv(here::here("data", "rst", "battle_rst_environmental.csv"))
 clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
-knights_effort <- read_csv(here::here("data", "rst", "knights_sampling_effort_clean.csv"))
-
-# Knights landing data pulled from camp
-# TODO add to cloud (this dataset was shared later and has not yet been added to cloud)
-knights_landing_rst <- read_rds(here::here("data-raw", "qc-markdowns", "rst", "data-dictionaries",  "knights_landing_raw_catch.rds"))
+knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
+knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
 ```
 
 # Data formatting {.tabset}
@@ -71,7 +64,7 @@ unique(battle_environmental$gear_condition_code)
 # because these contain no data. Decided to remove. 
 # filter(battle_trap_clean, is.na(start_date))
 
-battle_trap_clean <- battle_environmental %>%
+battle_trap_clean <- battle_environmental %>% 
   select(-c(baileys_eff, num_released, report_baileys_eff, sub_week, sample_weight,
             flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
             weather_code, lunar_phase, diel,
@@ -84,13 +77,14 @@ battle_trap_clean <- battle_environmental %>%
          trap_stop_time = sample_time,
          sample_period_revolutions = counter,
          comments = trap_comments,
-         cone_setting = cone,
+         is_half_cone_configuration = cone,
          in_thalweg = thalweg) %>%
   mutate(stream = "battle creek",
          site = "ubc",
          subsite = site,
          # debris in gallons (1 tub = 10 gallons)
-         debris_volume = debris_tubs*10) %>%
+         debris_volume = debris_tubs*10,
+         is_half_cone_configuration = ifelse(is_half_cone_configuration == 0.5, T, F)) %>%
   select(-debris_tubs) %>%
   filter(!is.na(trap_start_date)) %>%
   data.frame() %>%
@@ -136,7 +130,7 @@ butte_rst %>%
 
 # there are multiple obs per day which i think is a data entry issue.
 # group by date, station, time, gear_id, trap_status then average
-butte_trap_clean <- butte_rst %>%
+butte_trap_clean <- butte_rst %>% 
   select(-c(dead, count, fork_length, weight, mark_code, lifestage,
             weather, temperature, turbidity, secchi, velocity, gear_id)) %>%
   # select(date, station, trap_status, time, gear_id, temperature, turbidity, velocity,
@@ -191,13 +185,14 @@ clear_trap_clean <- clear_environmental %>%
          trap_stop_time = sample_time,
          sample_period_revolutions = counter,
          comments = trap_comments,
-         cone_setting = cone,
+         is_half_cone_configuration = cone,
          in_thalweg = thalweg) %>%
   mutate(stream = "clear creek",
          # debris in gallons (1 tub = 10 gallons)
          debris_volume = debris_tubs*10,
          site = tolower(site),
-         subsite = site) %>%
+         subsite = site,
+         is_half_cone_configuration = ifelse(is_half_cone_configuration == 0.5, T, F)) %>%
   select(-debris_tubs) %>%
   filter(!is.na(trap_start_date)) %>%
   distinct()
@@ -238,7 +233,7 @@ deer_rst %>%
   tally()
 unique(deer_rst$trap_condition_code)
 
-deer_trap_clean <- deer_rst %>%
+deer_trap_clean <- deer_rst %>% 
   select(-c(count, fork_length, weight,
             flow, turbidity, weather, water_temperature_celsius)) %>%
   group_by(date, trap_condition_code) %>%
@@ -278,7 +273,7 @@ unique(feather_effort$sub_site_name)
 unique(feather_effort$fish_processed)
 # date, site_name, visit_time, visit_type, trap_functioning, water_temp_c,
 # turbidity_ntu, latitude, longitude
-feather_trap_clean <- feather_effort %>%
+feather_trap_clean <- feather_effort %>% 
   select(-c(river_location, river_mile, latitude, longitude,
             water_temp_c, turbidity_ntu)) %>%
   rename(site = site_name,
@@ -358,7 +353,7 @@ ck <- yuba_rst %>%
 check <- yuba_rst %>%
   mutate(diff = trap_revolutions - trap_revolutions2)
 
-yuba_trap_clean <- yuba_rst %>%
+yuba_trap_clean <- yuba_rst %>% 
   select(-c(organism_code, fork_length, weight, lifestage, count, run,
             temperature, turbidity, velocity)) %>%
   rename(site = location,
@@ -399,7 +394,27 @@ unique(knights_effort$gear)
 unique(knights_effort$cone_sampling_effort)
 # date, start_date, stop_date, number_traps, hrs_fished, flow_cfs, turbidity,
 # water_t_f, cone_sampling_effort, cone_id, cone_rpm, total_cone_rev
-knights_trap_clean <- knights_effort %>%
+
+# trap_visit_id, trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, sample_period_revolutions, is_half_cone_configuration, river_left_depth, river_center_depth, river_right_depth, in_thalweg, depth_adjust, avg_time_per_rev, fish_properly, comments, gear_condition, stream, site, subsite
+knights_trap_clean_2006 <- knights_effort %>%
+  select(-c(counterAtStart, counterAtEnd, visitTime2)) %>%
+  # convert temp from F to C
+  mutate(stream = "sacramento river",
+         site = "knights landing",
+         subsite = as.character(subSiteName)) %>%
+  rename(trap_visit_id = trapVisitID,
+         trap_stop_date = visitTime,
+         rpms_start = rpmRevolutionsAtStart,
+         trap_status = visitType,
+         fish_processed = fishProcessed,
+         gear_condition_code = trapFunctioning,
+         debris = debrisVolumeCat,
+         is_half_cone_configuration = halfCone) %>%
+  select(-subSiteName) %>% 
+  mutate(trap_visit_id = as.character(trap_visit_id)) %>% 
+  distinct()
+
+knights_trap_clean_pre2006 <- knights_effort_pre2006 %>% 
   select(-c(location, gear, sampling_period_hrs, cone_sampling_effort,
             flow_cfs, secchi_ft, water_t_f, turbidity, turbidity_units,
             hrs_fished)) %>%
@@ -419,11 +434,19 @@ knights_trap_clean <- knights_effort %>%
                                     T ~ trap_stop_date)) %>%
   select(-date) %>% 
   distinct()
-# 
+
+knights_trap_clean <- bind_rows(knights_trap_clean_2006, knights_trap_clean_pre2006)
+
 # # check to make sure one row per day/time 
-# ck <- knights_trap_clean %>%
-#   group_by(trap_stop_date, trap_stop_time, subsite) %>%
-#   tally() 
+# there are multiple rows because time is not captured but trap may be checked multiple times a day
+ck <- knights_trap_clean %>%
+  group_by(trap_stop_date, subsite, trap_status) %>%
+  tally()
+filter(knights_trap_clean, trap_stop_date == "2007-12-07")
+
+ck <- knights_trap_clean_pre2006 %>%
+  group_by(trap_stop_date,  subsite) %>%
+  tally()
 knights_trap_clean %>% glimpse
 ```
 
@@ -459,10 +482,8 @@ colnames(combined_trap_raw)
 
 combined_trap <- combined_trap_raw %>%
   rename(debris_level = debris,
-         gear_condition = gear_condition_code,
-         is_half_cone_configuration = cone_setting) %>%
-  mutate(is_half_cone_configuration = ifelse(is_half_cone_configuration == 0.5, T, F),
-         debris_level = tolower(debris_level),
+         gear_condition = gear_condition_code) %>%
+  mutate(debris_level = tolower(debris_level),
          debris_level = ifelse(debris_level == "veryheavy", "very heavy", debris_level),
          gear_condition = case_when(gear_condition %in% c("total block", "total blockage", "Trap not in service") ~ "trap not in service",
                                          gear_condition %in% c("not rotating", "cone stopped", "Trap stopped functioning") ~ "trap stopped functioning",
@@ -485,10 +506,10 @@ combined_trap <- combined_trap_raw %>%
          depth_adjust = depth_adjust*2.54)
 
 
-unique(combined_trap_raw$cone_setting)
-unique(combined_trap_raw$fish_processed)
-unique(combined_trap_raw$trap_status)
-unique(combined_trap_raw$gear_condition_code)
+unique(combined_trap_raw$is_half_cone_configuration)
+unique(combined_trap$fish_processed)
+unique(combined_trap$trap_status)
+unique(combined_trap$gear_condition)
 unique(combined_trap_raw$habitat)
 unique(combined_trap_raw$debris_type)
 unique(combined_trap_raw$method)
@@ -578,33 +599,35 @@ rst_trap_data_dictionary <- tibble(variable_name = colnames(combined_trap),
                                                 "light, medium, heavy, very heavy",
                                                 NA,NA
                                                 ),
-                                   collected = c("Battle, Clear",
-                                                 "Battle, Clear",
-                                                 "Battle, Clear",
-                                                 "Battle, Butte, Clear, Deer, Feather, Mill, Yuba, Knights",
-                                                 "Battle, Butte, Clear, Feather, Yuba, Knights",
-                                                 "Battle, Butte, Clear, Yuba, Knights",
-                                                 "Battle, Clear",
-                                                 "Battle, Clear",
-                                                 "Battle, Clear", 
-                                                 "Battle, Clear",
-                                                 "Battle, Clear",
-                                                 "Battle, Clear",
-                                                 "Battle, Clear, Deer, Mill",
-                                                 "Battle, Clear",
-                                                 "Battle, Clear, Yuba, Knights",
-                                                 "Battle, Clear, Deer, Feather Mill",
-                                                 "Battle, Clear",
-                                                 "Battle, Clear",
-                                                 NA, NA, NA,
-                                                 "Battle, Clear",
-                                                 "Butte, Feather, Yuba",
-                                                 "Butte, Yuba",
-                                                 "Butte, Yuba",
-                                                 "Feather",
-                                                 "Yuba",
-                                                 "Yuba",
-                                                 "Knights",
+                                   collected = c("Battle, Clear, Knights", #1
+                                                 "Battle, Clear", #2
+                                                 "Battle, Clear", #3
+                                                 "Battle, Butte, Clear, Deer, Feather, Mill, Yuba, Knights", #4
+                                                 "Battle, Butte, Clear, Feather, Yuba, Knights",#5
+                                                 "Battle, Butte, Clear, Yuba, Knights",#6
+                                                 "Battle, Clear, Knights",#7
+                                                 "Battle, Clear",#8
+                                                 "Battle, Clear", #9
+                                                 "Battle, Clear",#10
+                                                 "Battle, Clear, Knights",#11
+                                                 "Battle, Clear",#12
+                                                 "Battle, Clear, Deer, Mill",#13
+                                                 "Battle, Clear",#14
+                                                 "Battle, Clear, Yuba, Knights",#15
+                                                 "Battle, Clear, Deer, Feather, Mill, Knights",#16
+                                                 "Battle, Clear",#17
+                                                 "Battle, Clear",#18
+                                                 NA, NA, NA,#19
+                                                 "Battle, Clear",#20
+                                                 "Butte, Feather, Yuba, Knights",#21
+                                                 "Butte, Yuba",#22
+                                                 "Butte, Yuba, Knights",#23
+                                                 "Feather, Knights",#24
+                                                 "Yuba, Knights",#25
+                                                 "Yuba, Knights",#26
+                                                 "Yuba",#27
+                                                 "Yuba, Knights",#28
+                                                 "Knights", #29
                                                  "Knights")
                                     )
 ```
