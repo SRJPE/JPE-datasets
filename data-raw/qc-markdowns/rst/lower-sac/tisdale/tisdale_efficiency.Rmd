@@ -56,7 +56,7 @@ TODO ask Drew if there he has fork lengths of released fish.
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
-
+### Data from excel
 ```{r}
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_trap_efficiency_format.csv",
                  bucket = gcs_get_global_bucket(),
@@ -67,13 +67,84 @@ gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_trap_
 tisdale_efficiency_raw <- read_csv(here::here("data-raw", "qc-markdowns", "rst", "tisdale_trap_efficiency.csv"))
 ```
 
-## Cleaning and formatting
+### Data from CAMP
 ```{r}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_releases_camp.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "tisdale_releases_camp.csv"),
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_recaptures_camp.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "tisdale_recaptures_camp.csv"),
+                 overwrite = TRUE)
+```
+```{r}
+tisdale_releases_raw <- read_csv(here::here("data-raw", "qc-markdowns", "rst", "tisdale_releases_camp.csv"))
+tisdale_recaptures_raw <- read_csv(here::here("data-raw", "qc-markdowns", "rst", "tisdale_recaptures_camp.csv"))
+```
+
+## Cleaning and formatting
+
+Data from CAMP has more information for recaptures so use that instead of the
+excel data where available.
+
+```{r}
+# excel data
 tisdale_efficiency_clean <- tisdale_efficiency_raw %>% 
-  rename(release_date = `Release Date`,
+  rename(date_released = `Release Date`,
          number_released = `Number Released`,
          number_recaptured = `Number Recaptured`) %>% 
-  mutate(release_date = as.Date(release_date, "%m/%d/%y"))
+  mutate(date_released = as.Date(date_released, "%m/%d/%y"))
+
+# CAMP data
+tisdale_releases_camp <- tisdale_releases_raw %>% 
+  select(releaseID, nReleased, releaseTime, run, fishOrigin, lightCondition, release_site) %>% 
+  rename(release_id = releaseID,
+         number_released = nReleased,
+         date_released = releaseTime,
+         run_released = run,
+         release_origin = fishOrigin,
+         light_condition = lightCondition)
+
+tisdale_recaptures_camp <- tisdale_recaptures_raw %>% 
+  select(catchRawID, forkLength, weight, n, releaseID, run, fishOrigin, dead, visitTime, halfCone) %>% 
+  rename(release_id = releaseID,
+         fork_length = forkLength,
+         number_recaptured = n,
+         recapture_origin = fishOrigin,
+         date_recaptured = visitTime,
+         half_cone = halfCone)
+
+# checking full data
+tisdale_efficiency_camp <- tisdale_releases_camp %>% 
+  left_join(tisdale_recaptures_camp %>% 
+              group_by(release_id) %>% 
+              summarize(number_recaptured = sum(number_recaptured),
+                        median_fork_length = median(fork_length, na.rm = T)))
+
+# combining excel and CAMP data
+tisdale_releases <- tisdale_efficiency_clean %>% 
+  select(date_released, number_released) %>% 
+  full_join(tisdale_releases_camp %>% 
+              select(release_id, date_released, number_released, run_released, release_origin, light_condition, release_site))
+
+# check that no duplicates
+tisdale_releases %>% 
+  group_by(date_released) %>% 
+  tally()
+
+tisdale_recaptures <- tisdale_efficiency_clean %>% 
+  rename(number_recaptured_excel = number_recaptured) %>% 
+  full_join(tisdale_releases_camp %>% 
+              select(date_released, number_released, release_id)) %>% 
+  full_join(tisdale_recaptures_camp) %>% 
+  select(release_id, number_recaptured_excel, number_recaptured, fork_length, weight, run, recapture_origin, dead, date_recaptured, half_cone) %>% 
+  mutate(number_recaptured = case_when(is.na(number_recaptured) & !is.na(number_recaptured_excel) ~ number_recaptured_excel,
+                                       T ~ number_recaptured),
+         number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% 
+  select(-number_recaptured_excel) 
+  
 ```
 
 ## Exploratory plots
@@ -111,9 +182,15 @@ tisdale_efficiency_clean %>%
 ```{r}
 f <- function(input, output) write_csv(input, file = output)
 
-gcs_upload(tisdale_efficiency_clean,
+gcs_upload(tisdale_releases,
            object_function = f,
            type = "csv",
-           name = "rst/lower-sac-river/data/tisdale/tisdale_trap_efficiency.csv",
+           name = "rst/lower-sac-river/data/tisdale/tisdale_releases.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(tisdale_recaptures,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/tisdale/tisdale_recaptures.csv",
            predefinedAcl = "bucketLevel")
 ```
