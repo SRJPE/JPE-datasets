@@ -50,6 +50,9 @@ files_knights_pre2006 <- tibble(path = rep("rst/lower-sac-river/data/knights-lan
 files_tisdale <- tibble(path = "rst/lower-sac-river/data/tisdale/rst_clean",
                         name = c(""),
                         save = here::here("data","rst", "tisdale_rst"))
+files_tisdale_camp <- tibble(path = "rst/lower-sac-river/data-raw/tisdale/tisdale_",
+                        name = c("catch_camp", "trap_camp"),
+                        save = here::here("data","rst", "tisdale_rst_"))
 files_mill <- tibble(path = "rst/mill-creek/data/mill_rst",
                      name = c(""),
                      save = here::here("data","rst", "mill_rst"))
@@ -72,6 +75,7 @@ pmap(files_feather, get_data)
 pmap(files_knights, get_data)
 pmap(files_knights_pre2006, get_data)
 pmap(files_tisdale, get_data)
+pmap(files_tisdale_camp, get_data)
 pmap(files_mill, get_data)
 pmap(files_yuba, get_data)
 ```
@@ -87,6 +91,7 @@ feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
 knights_landing_rst <- read_csv(here::here("data", "rst", "knights_catch_camp.csv"))
 knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_rst_clean.csv"))
 tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"))
+tisdale_rst_camp <- read_csv(here::here("data", "rst", "tisdale_rst_catch_camp.csv"))
 mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv")) # contains trap data too
 yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 
@@ -96,6 +101,7 @@ clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environment
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
 knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
+tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
 ```
 
 # Data formatting {.tabset}
