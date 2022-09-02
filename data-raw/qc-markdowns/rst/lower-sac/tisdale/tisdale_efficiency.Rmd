@@ -1,0 +1,119 @@
+---
+title: "tisdale efficiency data"
+output: html_document
+date: "2022-09-02"
+---
+
+```{r, include = F}
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Lower Sacramento (Tisdale) Rotary Screw Trap Data - Efficiency Trials
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+Efficiency trials conducted:
+2012, 2015-2019, 2021-2022
+
+**Completeness of Record throughout timeframe:** 
+
+No trials conducted before 2012; no trials in 2013, 2014 and 2020
+
+**Sampling Location:**
+
+Tisdale
+
+**Data Contact:** 
+
+[Drew Huneycutt](mailto::andrew.huneycutt@wildlife.ca.gov)
+
+Drew provided the data in an excel spreadsheet that was slightly modified to make
+reading the file easier. The original is saved on the google cloud here: 
+"rst/lower-sac-river/data-raw/tisdale/tisdale_trap_efficiency.xlsx"
+
+Tisdale efficiency trials may have been originally recorded on paper and then
+transferred to this spreadsheet.
+
+No information about fork length of released or recaptured fish or days after release
+were provided. Information about the fork length of recaptured fish may be included in
+CAMP.
+
+TODO ask Drew if there he has fork lengths of released fish.
+
+## Data pull
+```{r}
+# # Data pull ---------------------------------------------------------------
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+
+```{r}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_trap_efficiency_format.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "tisdale_trap_efficiency.csv"),
+                 overwrite = TRUE)
+```
+```{r}
+tisdale_efficiency_raw <- read_csv(here::here("data-raw", "qc-markdowns", "rst", "tisdale_trap_efficiency.csv"))
+```
+
+## Cleaning and formatting
+```{r}
+tisdale_efficiency_clean <- tisdale_efficiency_raw %>% 
+  rename(release_date = `Release Date`,
+         number_released = `Number Released`,
+         number_recaptured = `Number Recaptured`) %>% 
+  mutate(release_date = as.Date(release_date, "%m/%d/%y"))
+```
+
+## Exploratory plots
+```{r}
+tisdale_efficiency_clean %>% 
+  mutate(efficiency = number_recaptured/number_released) %>% 
+  ggplot(aes(x = release_date, y = efficiency)) +
+  geom_point()
+
+```
+
+```{r}
+tisdale_efficiency_clean %>% 
+  mutate(efficiency = number_recaptured/number_released,
+         wy = ifelse(month(release_date) %in% 10:12, year(release_date) + 1, year(release_date)),
+         wy = as.factor(wy)) %>% 
+  ggplot(aes(x = wy, y = efficiency)) +
+  geom_boxplot()
+```
+
+```{r}
+tisdale_efficiency_clean %>% 
+  mutate(efficiency = number_recaptured/number_released,
+         wy = ifelse(month(release_date) %in% 10:12, year(release_date) + 1, year(release_date)),
+         wy = as.factor(wy)) %>% 
+  group_by(wy) %>% 
+  summarise(n = length(unique(release_date)),
+            mean_efficiency = mean(efficiency)) %>%  
+  ggplot(aes(x = wy, y = mean_efficiency, fill = n)) +
+  geom_col()
+```
+
+## Save data
+
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(tisdale_efficiency_clean,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/tisdale/tisdale_trap_efficiency.csv",
+           predefinedAcl = "bucketLevel")
+```
