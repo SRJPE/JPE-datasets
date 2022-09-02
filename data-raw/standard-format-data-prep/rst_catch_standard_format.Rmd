@@ -122,6 +122,10 @@ run_encoding <- function(dat) {
 }
 
 # note that there is only one "yoy (young of the year)"
+# Older juveniles only existed in the excel spreadsheets provided by Knights Landing
+# We only use the spreadsheets for sampling before 2006 because the rest is in CAMP
+# There are no older juveniles before 2006
+
 lifestage_encoding <- function(dat) {
   dat %>%
     mutate(lifestage = case_when(count == 0 ~ NA_character_,
@@ -509,7 +513,8 @@ filter(knights_landing_rst, run == "Not applicable (n/a)") %>% glimpse
 filter(knights_landing_rst, is.na(forkLength), n > 0) %>% glimpse
 unique(knights_landing_rst$runMethod)
 unique(knights_landing_rst$lifeStage)
-
+unique(knights_landing_pre2006$lifestage)
+filter(knights_landing_pre2006, lifestage == "older juvenile") %>% tally()
 # check missing trap days
 filter(knights_effort, visitTime == "2014-02-15")
 
@@ -528,6 +533,10 @@ knights_rst_clean_camp <- knights_landing_rst %>%
   group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date) %>%
   summarize(count = sum(count, na.rm = T))
 
+filter(knights_landing_pre2006, species == "Steelhead", count > 0)
+filter(knights_landing_pre2006, species == "Chinook", is.na(at_capture_run), count > 0)
+filter(knights_landing_pre2006, date < "2006-10-02", lifestage == "older juvenile", count > 0)
+
 knights_rst_clean_pre2006 <- knights_landing_pre2006 %>% 
   # filter to only include data before 2006 (CAMP stores data 2006 to present)
   filter(date < "2006-10-02") %>% 
@@ -539,8 +548,7 @@ knights_rst_clean_pre2006 <- knights_landing_pre2006 %>%
                                      T ~ "Unknown"),
          count = ifelse(is.na(count), 0, count),
          # this likely happened from reshaping of data
-         remove = case_when(is.na(run) & species != "Steelhead" ~ "remove",
-                            species == "Steelhead" ~ "remove",
+         remove = case_when(is.na(run) & species == "Chinook" & count == 0 ~ "remove",
                             T ~ "keep")) %>% 
   filter(remove != "remove") %>% 
   select(-remove) %>% 

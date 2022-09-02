@@ -81,7 +81,7 @@ selected_trap_visit <- trap_visit %>%
 selected_catch <- catch_raw %>% 
   select(catchRawID, taxonID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID) %>% 
   left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
-  filter(commonName == "Chinook salmon") %>% 
+  # filter(commonName == "Chinook salmon") %>% 
   left_join(run_lu, by = c("finalRunID" = "runID")) %>%
   left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
   left_join(lifestage_lu, by = c("lifeStageID" = "lifeStageID")) %>%
