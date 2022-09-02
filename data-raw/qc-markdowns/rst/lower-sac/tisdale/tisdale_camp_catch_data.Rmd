@@ -130,7 +130,9 @@ selected_catch <- catch_raw %>%
   left_join(lifestage_lu %>% 
               select(-lifeStageCAMPID), by = c("lifeStageID" = "lifeStageID")) %>%
   left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
-  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID) %>%
+  left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
+  rename(dead = noYes) %>% 
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID, - mortID) %>%
   # add existing mark data
   left_join(selected_mark_existing, by = c("catchRawID" = "catchRawID")) %>% 
   left_join(selected_trap_visit) %>%
@@ -150,6 +152,12 @@ gcs_upload(selected_catch,
 # Recaptures
 
 ```{r}
+trap_visit_recaptures <- trap_visit %>%
+  select(trapVisitID, visitTime, visitTime2, visitTypeID, halfConeID) %>%
+  left_join(visit_type_lu, by = c("visitTypeID" = "visitTypeID")) %>% 
+  mutate(halfCone = ifelse(halfConeID == 1, T, F)) %>% 
+  select(-visitTypeID, -halfConeID)
+
 selected_recaptured <- catch_raw %>% 
   select(catchRawID, taxonID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
   left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
@@ -159,8 +167,10 @@ selected_recaptured <- catch_raw %>%
   left_join(lifestage_lu %>% 
               select(-lifeStageCAMPID), by = c("lifeStageID" = "lifeStageID")) %>%
   left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
-  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID) %>%
-  left_join(selected_trap_visit) %>%
+  left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
+  rename(dead = noYes) %>% 
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID, - mortID) %>%
+  left_join(trap_visit_recaptures) %>%
   # filter out marked and recapture fish by selecting for only fish where release trial does not exist
   filter(releaseID != 0 & releaseID != 255) %>% 
   glimpse
