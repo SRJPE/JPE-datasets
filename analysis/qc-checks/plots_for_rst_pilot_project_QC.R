@@ -4,7 +4,19 @@ library(googleCloudStorageR)
 catch_data <- read_csv("data/standard-format-data/standard_catch.csv")  |>  glimpse()
 env_data <- read_csv("data/standard-format-data/standard_environmental.csv")
 ops_data <- read_csv("data/standard-format-data/standard_trap.csv")
+recapture_data <- read_csv("data/standard-format-data/standard_recapture.csv")
+release <- read_csv("data/standard-format-data/standard_release.csv")
 
+mark_recapture <- left_join(recapture_data, release, 
+                            by = c("release_id" = "release_id", "stream" = "stream")) |> 
+  group_by(stream, site, release_id, release_date, number_released) |> 
+  summarize(total_fish_recaptured = sum(number_recaptured, na.rm = T), 
+            median_fork_length_released = median(as.numeric(median_fork_length_released), na.rm = T),
+            median_fork_length_recaptured = median(as.numeric(median_fork_length_recaptured), na.rm = T),
+            flow_at_release = mean(flow_at_release, na.rm = T),
+            temperature_at_release = mean(temperature_at_release, na.rm = T),
+            turbidity_at_release = mean(turbidity_at_release, na.rm = T),
+            efficiency = (total_fish_recaptured + 1)/(number_released + 1))  |>  glimpse()
 
 padded_env_dates <- tibble(date = seq.Date(from = min(env_data$date, na.rm = T), 
          to = max(env_data$date, na.rm = T), by = "day"))
@@ -126,6 +138,38 @@ catch_data %>% group_by(stream, site) %>%
   summarise(na_count = sum(is.na(weight)),
             percent_na = na_count/n())
 
+
+qc_day <- catch_data  |>  
+  filter(site == "mill creek") |> 
+  group_by(stream, site, date)  |> 
+  summarize(total_count = sum(count, na.rm = T)) |> 
+  mutate(max_date = max(date, na.rm = T),
+         fk_year = 1900,
+         water_year = ifelse(month(date) %in% 10:12, fk_year - 1, fk_year),
+         fake_date = as_date(paste(fk_year,"-", month(date), "-", day(date)))) |> 
+  filter(date == max_date) |>  glimpse()
+
+# TOTAL count
+catch_data %>% 
+  filter(site == "mill creek") |> 
+  mutate(fk_year = 1900,
+         water_year = ifelse(month(date) %in% 10:12, year(date) - 1, year(date)), 
+         fk_water_year = ifelse(month(date) %in% 10:12, fk_year - 1, fk_year),
+         max_water_year = max(water_year)) |> 
+  filter(water_year > max_water_year - 5) |> 
+  group_by(stream, site, date, water_year, fk_water_year) |> 
+  summarize(total_count = sum(count, na.rm = T)) |> 
+  mutate(year = as.character(year(date)), 
+         fake_date = as_date(paste(fk_water_year,"-", month(date), "-", day(date))),
+         water_year = as.character(water_year)) |> 
+  ggplot(aes(x = fake_date, y = total_count, group = water_year)) +
+  geom_line(color = "gray", size = 1) +
+  geom_point(data = qc_day, aes(x = fake_date, y = total_count), color = "red", size = 3) + 
+  scale_x_date(date_breaks = "1 month", date_labels = "%B") + 
+  theme_minimal() + 
+  labs(x = "Date", 
+       y = "Total Daily Catch")
+  
 
 # Env conditions ---------------------------------------------------------------
 # flow
@@ -256,7 +300,8 @@ catch_data  |>
   theme_minimal() + 
   labs(x = "", 
        y = "Percent") +
-  theme(legend.position = c(0.2, 0.8))
+  theme(legend.position = c(0.1, 0.9),
+        legend.title = element_blank())
 
 
 # species
@@ -281,3 +326,26 @@ catch_data  |>
   labs(x = "", 
        y = "Percent") +
   theme(legend.position = c(0.2, 0.8))
+
+## Efficiency trial plots ------------------------------------------------------
+
+qc_day <- mark_recapture  |>  
+  filter(site == "ubc") |> 
+  # group_by(date) |>
+  filter(release_date == as.Date("2021-03-08")) |> distinct() |> glimpse()
+
+mark_recapture |> 
+  filter(site == "ubc") |> 
+  mutate(year = year(release_date), 
+         month = month(release_date), 
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_year = 2021) |>  
+  filter(water_year > max_year - 5) |>
+  mutate(year = as.character(year(release_date))) |> 
+  ggplot() +
+  geom_density(aes(x = efficiency, group = year), color = "gray", size = 1.05, na.rm = T) +
+  geom_point(data = qc_day, aes(x = efficiency, y = 0, size = number_released)) +
+  theme_minimal() + 
+  labs(x = "Efficiency", 
+       y = " ") +
+  theme(legend.position = c(0.8, 0.8))
