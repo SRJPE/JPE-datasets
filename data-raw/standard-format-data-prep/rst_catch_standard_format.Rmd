@@ -4,6 +4,8 @@ output: html_document
 ---
 
 ```{r, include = F}
+library(dtplyr)
+library(data.table)
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
@@ -119,12 +121,17 @@ if that date did not exist in the catch data.
 
 ```{r, helpers}
 # standard encoding fixes for run
-run_encoding <- function(dat) {
-  dat %>%
-    mutate(run = case_when(is.na(run) | run == "Not recorded" |  run == "Not applicable (n/a)" ~ "not recorded",
-                           run == "outlier salmon" ~ "unknown",
-                         count == 0  ~ NA_character_,
-                         T ~ tolower(run)))
+# These functions use data.table because it performs faster
+run_encoding_dt <- function(dat) {
+  dat[, run := fcase(
+    count == 0, NA_character_,
+    (count > 0 & is.na(run)) | run == "not recorded" |  run == "not applicable (n/a)" | run == "unknown", "not recorded",
+    run == "outlier salmon", "unknown",
+    run == "fall", "fall",
+    run == "winter", "winter",
+    run == "spring", "spring",
+    run == "late fall", "late fall")
+    ]
 }
 
 # note that there is only one "yoy (young of the year)"
@@ -132,18 +139,20 @@ run_encoding <- function(dat) {
 # We only use the spreadsheets for sampling before 2006 because the rest is in CAMP
 # There are no older juveniles before 2006
 
-lifestage_encoding <- function(dat) {
-  dat %>%
-    mutate(lifestage = case_when(count == 0 ~ NA_character_,
-                                 lifestage %in% c("yolk-sac fry", "yolk sac fry (alevin)", "yolk sac fry") ~ "yolk sac fry",
-                                 lifestage %in% c("silvery parr", "fingerling", "pre-smolt") ~ "silvery parr",
-                                 lifestage %in% c("unknown", "yoy (young of the year)", "juvenile") ~ "unknown",
-                                 lifestage %in% c("not recorded", "not provided") | is.na(lifestage) ~ "not recorded",
-                                 lifestage == "parr" ~ "parr",
-                                 lifestage %in% c("fry", "button-up fry", "fry (button-up)") ~ "fry",
-                                 lifestage == "smolt" ~ "smolt",
-                                 lifestage == "adult" ~ "adult",
-                                 lifestage %in% c("yearling", "older juvenile") ~ "yearling"))
+lifestage_encoding_dt <- function(dat) {
+  dat[, lifestage := fcase(
+  count == 0, NA_character_,
+  lifestage %in% c("not recorded", "not provided") | (count != 0 & is.na(lifestage)), "not recorded",
+  lifestage %in% c("yolk-sac fry", "yolk sac fry (alevin)", "yolk sac fry"), "yolk sac fry",
+  lifestage %in% c("silvery parr", "fingerling", "pre-smolt"), "silvery parr",
+  lifestage %in% c("unknown", "yoy (young of the year)", "juvenile"), "unknown",
+  
+  lifestage == "parr", "parr",
+  lifestage %in% c("fry", "button-up fry", "fry (button-up)"), "fry",
+  lifestage == "smolt", "smolt",
+  lifestage == "adult", "adult",
+  lifestage %in% c("yearling", "older juvenile"), "yearling"
+ )]
 }
 ```
 
@@ -211,9 +220,15 @@ battle_rst_clean_final <- full_join(battle_rst_clean,
          stream = "battle creek",
          site = "ubc",
          adipose_clipped = F,
-         run_method = "adjusted length-at-date") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "adjusted length-at-date")
+
+# convert to data table for faster mutation
+setDT(battle_rst_clean_final)
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+battle_rst_clean_final %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -256,9 +271,14 @@ butte_rst_clean <- butte_rst %>%
                             adipose_clipped == "adclipped" ~ T),
          run_method = "unknown") %>%
   group_by(date, site, dead, fork_length, weight, adipose_clipped, lifestage, stream, run, run_method) %>%
-  summarize(count = sum(count, na.rm = T)) %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+  summarize(count = sum(count, na.rm = T)) 
+
+setDT(butte_rst_clean)
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+butte_rst_clean %>% 
+  # run mutate not applied because all spring
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -328,9 +348,14 @@ clear_rst_clean_final <- full_join(clear_rst_clean,
          stream = "clear creek",
          site = tolower(site),
          adipose_clipped = F,
-         run_method = "adjusted length-at-date") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "adjusted length-at-date") 
+
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+setDT(clear_rst_clean_final)
+clear_rst_clean_final %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
   
 ```
 
@@ -426,9 +451,14 @@ feather_rst_clean_final <- full_join(feather_rst_clean,
          stream = "feather river",
          site = tolower(site),
          adipose_clipped = F,
-         run_method = "unknown") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "unknown") 
+
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+setDT(feather_rst_clean_final)
+feather_rst_clean_final %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
   
 ```
 
@@ -497,9 +527,13 @@ yuba_rst_clean<- yuba_rst %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(stream = "yuba river",
          adipose_clipped = F,
-         run_method = "unknown") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "unknown") 
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+setDT(yuba_rst_clean)
+yuba_rst_clean %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -612,9 +646,14 @@ knights_rst_clean_final <- full_join(knights_rst_clean,
          run_method = tolower(run_method),
          species = tolower(species),
          species = ifelse(species == "chinook", "chinook salmon", species),
-         lifestage = tolower(lifestage)) %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         lifestage = tolower(lifestage),
+         run = tolower(run)) 
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+setDT(knights_rst_clean_final)
+knights_rst_clean_final %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -663,9 +702,12 @@ tisdale_rst_clean <- tisdale_rst %>%
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
          species = tolower(species),
-         run_method = "unknown") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "unknown",
+         run = tolower(run)) 
+setDT(tisdale_rst_clean)
+tisdale_rst_clean %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -688,15 +730,14 @@ combined_rst_raw <- bind_rows(battle_rst_clean_final,
                           mill_rst_clean,
                           yuba_rst_clean,
                           knights_rst_clean_final,
-                          tisdale_rst_clean) 
+                          tisdale_rst_clean) %>% 
+  as_tibble()
 combined_rst <- combined_rst_raw %>%
-  run_encoding() %>% 
-  lifestage_encoding() %>%
   # all should be chinook salmon
   mutate(species = ifelse(is.na(species), "chinook salmon", species),
          run_method = case_when(is.na(run_method) ~ "not recorded",
                                 run == "not recorded" | count == 0 ~ NA_character_,
-                                T ~ tolower(run_method)))
+                                T ~ tolower(run_method))) 
 
 unique(combined_rst$run)
 unique(combined_rst$lifestage)
