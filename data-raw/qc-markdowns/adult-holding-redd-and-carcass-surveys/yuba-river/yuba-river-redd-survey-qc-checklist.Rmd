@@ -70,6 +70,8 @@ sheets %>%
          value = readxl::read_xlsx(path = 'yuba_Redd data request Aug2022.xlsx', sheet = sheet) %>% janitor::clean_names(),
          envir = .GlobalEnv)
 })
+
+redd_2017 <- readxl::read_xlsx('2017Redd data request Aug2022.xlsx') %>% janitor::clean_names()
 ```
 
 ## Data transformations
@@ -134,6 +136,13 @@ clean_redd_2016 <- redd_2016 %>%
   glimpse
 
 # skipping 2017
+clean_redd_2017 <- redd_2017 %>% 
+  rename(redd_id = redd_i_d,
+         depth_m = depth) %>%
+  select(names(clean_redd_2014)) %>%
+  mutate(year = 2017) %>%
+  glimpse
+  
 
 clean_redd_2018 <- redd_2018 %>% 
   rename(redd_id = redd_i_d,
@@ -165,6 +174,7 @@ all_yuba_redd <- bind_rows(clean_redd_2008,
                            clean_redd_2014, 
                            clean_redd_2015, 
                            clean_redd_2016, 
+                           clean_redd_2017,
                            clean_redd_2018, 
                            clean_redd_2019, 
                            clean_redd_2020) %>%
@@ -172,6 +182,7 @@ all_yuba_redd <- bind_rows(clean_redd_2008,
   mutate(mean_velocity = rowMeans(.[grep("^vel", names(.))], na.rm = TRUE)) %>% 
   select(-c(velocity_20_depth:velocity_80_percent_depth)) %>% 
   rename(velocity = mean_velocity) %>% 
+  mutate_if(is.numeric, funs(ifelse(is.nan(.), NA, .))) %>%
   glimpse
 
 ```
