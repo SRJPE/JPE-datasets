@@ -39,6 +39,7 @@ mark <-  mdb.get(tisdale_access_db, tables = "MarkExisting")
 release <- mdb.get(tisdale_access_db, tables = "Release")
 # no helpful information in this table
 release_fish <- mdb.get(tisdale_access_db, tables = "ReleaseFish")
+environmental <- mdb.get(tisdale_access_db, tables = "EnvDataRaw")
 ```
 # Lookup tables
 ```{r}
@@ -102,6 +103,10 @@ release_purpose_lu <- mdb.get(tisdale_access_db, "luReleasePurpose") %>%
 
 light_condition_lu <- mdb.get(tisdale_access_db, "luLightCondition") %>% 
    select(-activeID) %>% glimpse()
+
+unit_lu <- mdb.get(tisdale_access_db, "luUnit") %>% 
+   select(-activeID) %>% glimpse()
+
 ```
 
 # Catch (not including recaptures)
@@ -242,5 +247,125 @@ gcs_upload(trap_visit_format,
            object_function = f,
            type = "csv",
            name = "rst/lower-sac-river/data-raw/tisdale/tisdale_trap_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
+
+# Environmental
+
+```{r}
+# all NA
+filter(environmental, !is.na(waterVelReadingStart))
+filter(environmental, !is.na(waterVelReadingEnd))
+filter(environmental, !is.na(waterVelTime))
+filter(environmental, !is.na(airTemp))
+filter(environmental, !is.na(cloudCover))
+filter(environmental, !is.na(weather))
+
+# contains data
+filter(environmental, !is.na(discharge))
+filter(environmental, !is.na(dischargeUnitID))
+filter(environmental, !is.na(dischargeSampleGearID))
+filter(environmental, !is.na(waterDepth))
+filter(environmental, !is.na(waterVel))
+filter(environmental, !is.na(waterTemp))
+filter(environmental, !is.na(lightPenetration))
+filter(environmental, !is.na(turbidity))
+filter(environmental, !is.na(dissolvedOxygen))
+filter(environmental, !is.na(conductivity))
+filter(environmental, !is.na(barometer))
+
+# select relevant variables from envDataRaw table
+
+discharge <- environmental %>% 
+  select(trapVisitID, envDataRawID, discharge, dischargeUnitID, dischargeSampleGearID) %>% 
+  rename(value = discharge,
+         unitID = dischargeUnitID,
+         sampleGearID = dischargeSampleGearID) %>% 
+  mutate(parameter = "discharge")
+
+depth <- environmental %>% 
+  select(trapVisitID, envDataRawID, waterDepth, waterDepthUnitID, waterDepthSampleGearID) %>% 
+  rename(value = waterDepth,
+         unitID = waterDepthUnitID,
+         sampleGearID = waterDepthSampleGearID) %>% 
+  mutate(parameter = "water depth")
+
+velocity <- environmental %>% 
+  select(trapVisitID, envDataRawID, waterVel, waterVelUnitID, waterVelSampleGearID) %>% 
+  rename(value = waterVel,
+         unitID = waterVelUnitID,
+         sampleGearID = waterVelSampleGearID) %>% 
+  mutate(parameter = "velocity")
+
+temperature <- environmental %>% 
+  select(trapVisitID, envDataRawID, waterTemp, waterTempUnitID, waterTempSampleGearID) %>% 
+  rename(value = waterTemp,
+         unitID = waterTempUnitID,
+         sampleGearID = waterTempSampleGearID) %>% 
+  mutate(parameter = "temperature")
+
+light <- environmental %>% 
+  select(trapVisitID, envDataRawID,  lightPenetration, lightPenetrationUnitID, lightPenetrationSampleGearID) %>% 
+  rename(value = lightPenetration,
+         unitID = lightPenetrationUnitID,
+         sampleGearID = lightPenetrationSampleGearID) %>% 
+  mutate(parameter = "light penetration")
+
+turbidity <- environmental %>% 
+  select(trapVisitID, envDataRawID,  turbidity, turbidityUnitID, turbiditySampleGearID) %>% 
+  rename(value = turbidity,
+         unitID = turbidityUnitID,
+         sampleGearID = turbiditySampleGearID) %>% 
+  mutate(parameter = "turbidity")
+
+oxygen <- environmental %>% 
+  select(trapVisitID, envDataRawID,  dissolvedOxygen, dissolvedOxygenUnitID, dissolvedOxygenSampleGearID) %>% 
+  rename(value = dissolvedOxygen,
+         unitID = dissolvedOxygenUnitID,
+         sampleGearID = dissolvedOxygenSampleGearID) %>% 
+  mutate(parameter = "dissolved oxygen")
+
+conductivity <- environmental %>% 
+  select(trapVisitID, envDataRawID,  conductivity, conductivityUnitID, conductivitySampleGearID) %>% 
+  rename(value = conductivity,
+         unitID = conductivityUnitID,
+         sampleGearID = conductivitySampleGearID) %>% 
+  mutate(parameter = "conductivity")
+
+barometer <- environmental %>% 
+  select(trapVisitID, envDataRawID,  barometer, barometerUnitID, barometerSampleGearID) %>% 
+  rename(value = barometer,
+         unitID = barometerUnitID,
+         sampleGearID = barometerSampleGearID) %>% 
+  mutate(parameter = "barometer")
+
+environmental_format <- bind_rows(discharge,
+                                  depth,
+                                  velocity,
+                                  temperature,
+                                  light,
+                                  turbidity,
+                                  oxygen,
+                                  conductivity,
+                                  barometer) %>% 
+  left_join(selected_trap_visit) %>% 
+  left_join(unit_lu) %>% 
+  left_join(sample_gear_lu) %>% 
+  select(-c(unitID, sampleGearID, visitTime2, visitType)) %>% 
+  rename(date = visitTime,
+         sample_gear = sampleGear) %>% 
+  mutate(unit = case_when(is.na(unit) & !is.na(value) ~ "not recorded", 
+                          is.na(unit) & is.na(value) ~ NA_character_,
+                          T ~ unit),
+         sample_gear = case_when(is.na(sample_gear) & !is.na(value) ~ "not recorded", 
+                          is.na(sample_gear) & is.na(value) ~ NA_character_,
+                          T ~ sample_gear))
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(environmental_format,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/tisdale/tisdale_environmental_camp.csv",
            predefinedAcl = "bucketLevel")
 ```
