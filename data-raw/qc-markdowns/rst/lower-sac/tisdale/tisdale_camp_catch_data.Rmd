@@ -339,6 +339,11 @@ barometer <- environmental %>%
          sampleGearID = barometerSampleGearID) %>% 
   mutate(parameter = "barometer")
 
+trap_visit_subsite <- trap_visit %>%
+  select(trapVisitID, visitTime, visitTime2, trapPositionID) %>%
+  left_join(subsite_lu, by = c("trapPositionID" = "subSiteID")) %>% 
+  select(-trapPositionID)
+
 environmental_format <- bind_rows(discharge,
                                   depth,
                                   velocity,
@@ -348,12 +353,13 @@ environmental_format <- bind_rows(discharge,
                                   oxygen,
                                   conductivity,
                                   barometer) %>% 
-  left_join(selected_trap_visit) %>% 
+  left_join(trap_visit_subsite) %>% 
   left_join(unit_lu) %>% 
   left_join(sample_gear_lu) %>% 
-  select(-c(unitID, sampleGearID, visitTime2, visitType)) %>% 
+  select(-c(unitID, sampleGearID, visitTime2)) %>% 
   rename(date = visitTime,
-         sample_gear = sampleGear) %>% 
+         sample_gear = sampleGear,
+         subsite = subSiteName) %>% 
   mutate(unit = case_when(is.na(unit) & !is.na(value) ~ "not recorded", 
                           is.na(unit) & is.na(value) ~ NA_character_,
                           T ~ unit),
