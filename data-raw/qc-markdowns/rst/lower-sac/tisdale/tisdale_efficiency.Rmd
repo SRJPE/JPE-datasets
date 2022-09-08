@@ -151,7 +151,7 @@ tisdale_recaptures <- tisdale_efficiency_clean %>%
 ```{r}
 tisdale_efficiency_clean %>% 
   mutate(efficiency = number_recaptured/number_released) %>% 
-  ggplot(aes(x = release_date, y = efficiency)) +
+  ggplot(aes(x = date_released, y = efficiency)) +
   geom_point()
 
 ```
@@ -159,7 +159,7 @@ tisdale_efficiency_clean %>%
 ```{r}
 tisdale_efficiency_clean %>% 
   mutate(efficiency = number_recaptured/number_released,
-         wy = ifelse(month(release_date) %in% 10:12, year(release_date) + 1, year(release_date)),
+         wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released)),
          wy = as.factor(wy)) %>% 
   ggplot(aes(x = wy, y = efficiency)) +
   geom_boxplot()
@@ -168,10 +168,10 @@ tisdale_efficiency_clean %>%
 ```{r}
 tisdale_efficiency_clean %>% 
   mutate(efficiency = number_recaptured/number_released,
-         wy = ifelse(month(release_date) %in% 10:12, year(release_date) + 1, year(release_date)),
+         wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released)),
          wy = as.factor(wy)) %>% 
   group_by(wy) %>% 
-  summarise(n = length(unique(release_date)),
+  summarise(n = length(unique(date_released)),
             mean_efficiency = mean(efficiency)) %>%  
   ggplot(aes(x = wy, y = mean_efficiency, fill = n)) +
   geom_col()

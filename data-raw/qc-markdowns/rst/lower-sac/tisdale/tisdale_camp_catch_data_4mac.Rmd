@@ -126,6 +126,8 @@ selected_mark_existing <- mark %>%
   left_join(body_part_lu, by = c("markPositionID" = "bodyPartID")) %>% 
   select(-c(markTypeID, markColorID, markPositionID))
 
+# pull in both atcapturerun and finalrun to make sure all information is captured
+# and finalrun is not mostly NA
 selected_catch <- catch_raw %>% 
   select(catchRawID, taxonID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
   left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
@@ -163,6 +165,7 @@ trap_visit_recaptures <- trap_visit %>%
   mutate(halfCone = ifelse(halfConeID == 1, T, F)) %>% 
   select(-visitTypeID, -halfConeID)
 
+# add atcapturerun
 selected_recaptured <- catch_raw %>% 
   select(catchRawID, taxonID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
   left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
@@ -191,6 +194,7 @@ gcs_upload(selected_recaptured,
 
 ```{r}
 # removed releasepurposeID because they are all trap efficiency tests
+# think about summing the nmort columns
 selected_release <- release %>% 
   filter(releaseID != 255 & releaseID  != 0) %>% 
   select(releaseID, markedTaxonID, markedRunID, markedFishOriginID, sourceOfFishSiteID, releaseSiteID, releaseSubSiteID, nMortWhileHandling, nMortAtCheck, nReleased, releaseTime, releaseLightConditionID, testDays) %>% 
