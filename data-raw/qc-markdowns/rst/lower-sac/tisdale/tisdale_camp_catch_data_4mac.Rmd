@@ -8,6 +8,9 @@ This document queries the CAMP database provided by Drew Honeycutt (09/01/2022) 
 RST catch data for Tisdale trap. Previous files QC'd Excel files provided by
 Drew Honeycutt.
 
+This document will only work on Mac OS. Currently there is a local file path which
+will be updated in future updates.
+
 *Important to filter releaseID == 0 or releasedID == 255 to exclude recaptures*
 
 ```{r}
@@ -129,17 +132,21 @@ selected_mark_existing <- mark %>%
 # pull in both atcapturerun and finalrun to make sure all information is captured
 # and finalrun is not mostly NA
 selected_catch <- catch_raw %>% 
-  select(catchRawID, taxonID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
+  select(catchRawID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
   left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
   # filter(commonName == "Chinook salmon") %>% 
   left_join(run_lu, by = c("finalRunID" = "runID")) %>%
+  rename(final_run = run) %>% 
+  left_join(run_lu, by = c("atCaptureRunID" = "runID")) %>%
   left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
+  rename(final_run_method = runMethod) %>% 
+  left_join(run_method_lu, by = c("atCaptureRunMethodID" = "runMethodID")) %>%
   left_join(lifestage_lu %>% 
               select(-lifeStageCAMPID), by = c("lifeStageID" = "lifeStageID")) %>%
   left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
   left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
   rename(dead = noYes) %>% 
-  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID, - mortID) %>%
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -atCaptureRunMethodID, -atCaptureRunID, -taxonID, -fishOriginID, - mortID) %>%
   # add existing mark data
   left_join(selected_mark_existing, by = c("catchRawID" = "catchRawID")) %>% 
   left_join(selected_trap_visit) %>%
@@ -156,6 +163,7 @@ gcs_upload(selected_catch,
            predefinedAcl = "bucketLevel")
 
 ```
+
 # Recaptures
 
 ```{r}
@@ -167,17 +175,21 @@ trap_visit_recaptures <- trap_visit %>%
 
 # add atcapturerun
 selected_recaptured <- catch_raw %>% 
-  select(catchRawID, taxonID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
+  select(catchRawID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
   left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
   # filter(commonName == "Chinook salmon") %>% 
   left_join(run_lu, by = c("finalRunID" = "runID")) %>%
+  rename(final_run = run) %>% 
+  left_join(run_lu, by = c("atCaptureRunID" = "runID")) %>%
   left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
+  rename(final_run_method = runMethod) %>% 
+  left_join(run_method_lu, by = c("atCaptureRunMethodID" = "runMethodID")) %>%
   left_join(lifestage_lu %>% 
               select(-lifeStageCAMPID), by = c("lifeStageID" = "lifeStageID")) %>%
   left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
   left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
   rename(dead = noYes) %>% 
-  select(-lifeStageID, -finalRunMethodID, -finalRunID, -taxonID, -fishOriginID, - mortID) %>%
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -atCaptureRunMethodID, -atCaptureRunID, -taxonID, -fishOriginID, - mortID) %>%
   left_join(trap_visit_recaptures) %>%
   # filter out marked and recapture fish by selecting for only fish where release trial does not exist
   filter(releaseID != 0 & releaseID != 255) %>% 
