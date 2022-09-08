@@ -705,6 +705,10 @@ filter(tisdale_rst_camp, visitTime != visitTime2)
 tisdale_rst_clean <- tisdale_rst_camp %>%
   # removing existing mark for now. will add all those in later
   select(-c(catchRawID, trapVisitID, releaseID, visitTime2, markType, color, bodyPart, visitType)) %>%
+  # combine atcapture and final run
+  mutate(run = ifelse(!is.na(final_run), final_run, run),
+         runMethod = ifelse(!is.na(final_run_method), final_run_method, runMethod)) %>% 
+  select(-c(final_run, final_run_method)) %>% 
   rename(fork_length = forkLength,
          adipose_clipped = fishOrigin,
          species = commonName,

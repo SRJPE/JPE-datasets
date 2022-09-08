@@ -108,7 +108,9 @@ tisdale_releases_camp <- tisdale_releases_raw %>%
          light_condition = lightCondition)
 
 tisdale_recaptures_camp <- tisdale_recaptures_raw %>% 
-  select(catchRawID, forkLength, weight, n, releaseID, run, fishOrigin, dead, visitTime, halfCone) %>% 
+  select(catchRawID, forkLength, weight, n, releaseID, run, final_run, fishOrigin, dead, visitTime, halfCone) %>% 
+  mutate(run = ifelse(!is.na(final_run), final_run, run)) %>% 
+  select(-final_run) %>% 
   rename(release_id = releaseID,
          fork_length = forkLength,
          number_recaptured = n,
