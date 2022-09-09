@@ -12,7 +12,11 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 library(tidyverse)
 library(googleCloudStorageR)
 library(lubridate)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+```
 
+```{r, include = FALSE}
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089")
 
 Sys.getenv("GCS_DEFAULT_BUCKET")
@@ -21,47 +25,50 @@ Sys.getenv("GCS_AUTH_FILE")
 
 ## Mark Recapture Data Standardization
 
-FlowWest received mark recapture data from 4 monitoring programs:
+FlowWest received mark recapture data from 5 monitoring programs:
 
 -   Battle Creek
 -   Clear Creek
 -   Feather River
 -   Knights Landing
+-   Tisdale
 
-Tisdale has conducted efficiency tests but these are in paper format. Mill and Deer did not historically conduct efficiency tests but will do so moving forward.
+Mill and Deer did not historically conduct efficiency tests but will do so moving forward.
 
 ## Standard format for Mark Recapture Data
 
-Data dictionary for standard format: (B - Battle Creek, C - Clear Creek, F - Feather River, K - Knights Landing)
+Data dictionary for standard format: (B - Battle Creek, C - Clear Creek, F - Feather River, K - Knights Landing, T - Tisdale)
 
 **Release Table:**
 
 | column name                 | tributary collects | definition                                                                                                                   |
 |:-------------------|:--------------|:------------------------------------|
-| stream                      | B, C, F, KL        | stream that the data is from                                                                                                 |
-| release_id                  | B, C, F, KL        | the unique identifier for each release trial                                                                                 |
-| date_released               | B, C, F, KL        | date that marked fish are released                                                                                           |
+| stream                      | B, C, F, KL, T        | stream that the data is from                                                                                                 |
+| release_id                  | B, C, F, KL, T        | the unique identifier for each release trial                                                                                 |
+| date_released               | B, C, F, KL, T        | date that marked fish are released                                                                                           |
 | time_released               | B, C, F, KL        | time that marked fish are released                                                                                           |
-| site                        | F, KL              | site on stream where fish are released                                                                                       |
-| number_released             | B, C, F, KL        | count of fish released                                                                                                       |
+| site                        | F, KL, T              | site on stream where fish are released                                                                                       |
+| number_released             | B, C, F, KL, T        | count of fish released                                                                                                       |
 | median_fork_length_released | B, C, KL           | median fork length of group of fish released                                                                                 |
-| night_release               | B, C               | TRUE if the release is at night, preassigned in Battle and Clear, refer to release_time column for more complete information |
+| night_release               | B, C, T               | TRUE if the release is at night, preassigned in Battle and Clear, refer to release_time column for more complete information |
 | days_held_post_mark         | B, C               | number of days marked fish are held before released                                                                          |
 | flow_at_release             | B, C               | flow measure at time and stream of release                                                                                   |
 | temperature_at_release      | B, C               | temperature measure at time and stream of release                                                                            |
 | turbidity_at_release        | B, C               | turbidity measure at time and stream of release                                                                              |
-| origin                      | B, F, KL           | fish origin (natural, hatchery, mixed, unknown, not recorded, or NA)                                                         |
+| release_origin                      | B, F, KL, T           | fish origin (natural, hatchery, mixed, unknown, not recorded, or NA)                                                         |
+| release_run                         | T                   | run of fish released
+        |
 
 **Recapture Table:**
 
 | column name                   | tributary collects | definition                                                   |
 |:-------------------|:--------------|:------------------------------------|
-| stream                        | B, C, F, KL        | stream that the data is from                                 |
-| release_id                    | B, C, F, KL        | the unique identifier for each release trial                 |
-| date_recaptured               | B, C, F, KL        | date that fish were recaptured                               |
-| number_recaptured             | B, C, F, KL        | count of fish recaptured in RST on a specific recapture date, when NA trap is not fished |
-| median_fork_length_recaptured | B, C, F, KL        | median fork length of group of fish recaptured               |
-| cone_status                   | B, C               | if RST cone is fishing half or full                          |
+| stream                        | B, C, F, KL, T        | stream that the data is from                                 |
+| release_id                    | B, C, F, KL, T        | the unique identifier for each release trial                 |
+| date_recaptured               | B, C, F, KL, T        | date that fish were recaptured                               |
+| number_recaptured             | B, C, F, KL, T        | count of fish recaptured in RST on a specific recapture date, when NA trap is not fished |
+| median_fork_length_recaptured | B, C, F, KL, T        | median fork length of group of fish recaptured               |
+| cone_status                   | B, C, T               | if RST cone is fishing half or full                          |
 
 All released and recaptured fish are chinook salmon.
 
@@ -93,12 +100,12 @@ battle_mark_recap <- read_csv(here::here("data", "rst", "battle_mark_recapture.c
          median_fork_length_recaptured = recap_med_fork_length_mm, 
          median_fork_length_released = mark_med_fork_length_mm) %>%
   select(-no_marked, -mortality, -mean_flow_day_of_rel, -mean_temp_day_of_rel, -number_recaptured) %>% 
-  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "recaptured_date", values_to = "number_recaptured") %>%
-  mutate(recaptured_date = case_when(recaptured_date == "caught_day_1" ~ release_date + 1, 
-                                    recaptured_date == "caught_day_2" ~ release_date + 2,
-                                    recaptured_date == "caught_day_3" ~ release_date + 3,
-                                    recaptured_date == "caught_day_4" ~ release_date + 4,
-                                    recaptured_date == "caught_day_5" ~ release_date + 5,),
+  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "date_recaptured", values_to = "number_recaptured") %>%
+  mutate(date_recaptured = case_when(date_recaptured == "caught_day_1" ~ release_date + 1, 
+                                    date_recaptured == "caught_day_2" ~ release_date + 2,
+                                    date_recaptured == "caught_day_3" ~ release_date + 3,
+                                    date_recaptured == "caught_day_4" ~ release_date + 4,
+                                    date_recaptured == "caught_day_5" ~ release_date + 5,),
          median_fork_length_recaptured = ifelse(number_recaptured == 0 | is.na(number_recaptured), 
                                                 NA, as.numeric(median_fork_length_recaptured))) %>% 
     filter(!is.na(number_released)) # filter 1 value that have na in raw data for number released
@@ -107,17 +114,19 @@ battle_mark_recap <- read_csv(here::here("data", "rst", "battle_mark_recapture.c
 
 battle_released <- battle_mark_recap %>% 
   select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
-         days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity, 
+         days_held_post_mark, day_or_night_release, release_temp, release_flow = flow_release, release_turbidity, 
          origin) %>% 
   filter(release_date >= as_date("2003-10-01")) %>%
+  rename(date_released = release_date,
+         release_origin = origin) %>% 
   distinct() %>% 
   glimpse
   
   
 battle_recaptured <-  battle_mark_recap %>% 
-  select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured, 
+  select(stream, site, release_id, date_recaptured, number_recaptured, median_fork_length_recaptured, 
          cone_status) %>% 
-  filter(recaptured_date >= as_date("2003-10-01")) %>%
+  filter(date_recaptured >= as_date("2003-10-01")) %>%
   glimpse
   
 ```
@@ -146,28 +155,29 @@ clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv
          median_fork_length_recaptured = recap_med_fork_length_mm, 
          median_fork_length_released = mark_med_fork_length_mm) %>%
   select(-no_marked, -mean_flow_day_of_rel, -mean_temp_day_of_rel, -number_recaptured, -release_site) %>% 
-  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "recaptured_date", values_to = "number_recaptured") %>%
-  mutate(recaptured_date = case_when(recaptured_date == "caught_day_1" ~ release_date + 1, 
-                                    recaptured_date == "caught_day_2" ~ release_date + 2,
-                                    recaptured_date == "caught_day_3" ~ release_date + 3,
-                                    recaptured_date == "caught_day_4" ~ release_date + 4,
-                                    recaptured_date == "caught_day_5" ~ release_date + 5,), 
+  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "date_recaptured", values_to = "number_recaptured") %>%
+  mutate(date_recaptured = case_when(date_recaptured == "caught_day_1" ~ release_date + 1, 
+                                    date_recaptured == "caught_day_2" ~ release_date + 2,
+                                    date_recaptured == "caught_day_3" ~ release_date + 3,
+                                    date_recaptured == "caught_day_4" ~ release_date + 4,
+                                    date_recaptured == "caught_day_5" ~ release_date + 5,),
          median_fork_length_recaptured = ifelse(number_recaptured == 0 | is.na(number_recaptured), 
                                                 NA, as.numeric(median_fork_length_recaptured))) %>%
     filter(!is.na(number_released)) # filter 2 values that have na in raw data for number released
 
 clear_released <- clear_mark_recap %>% 
   select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
-         days_held_post_mark, day_or_night_release, release_temp, flow_release, release_turbidity) %>% 
+         days_held_post_mark, day_or_night_release, release_temp, release_flow = flow_release, release_turbidity) %>% 
   mutate(release_date = as_date(release_date)) %>% 
+  rename(date_released = release_date) %>% 
   distinct() %>% 
   glimpse
   
   
 clear_recaptured <-  clear_mark_recap %>% 
-  select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured, 
+  select(stream, site, release_id, date_recaptured, number_recaptured, median_fork_length_recaptured, 
          cone_status) %>% 
-  mutate(recaptured_date = as_date(recaptured_date)) %>% 
+  mutate(date_recaptured = as_date(date_recaptured)) %>% 
   glimpse
   
 ```
@@ -203,12 +213,14 @@ feather_mark_recap <- read_csv(here::here("data", "rst", "feather_mark_recapture
   glimpse
 
 feather_released <- feather_mark_recap %>% 
-  select(stream, release_id, site, release_date, release_time, number_released, median_fork_length_released, origin = fish_origin) %>% 
+  select(stream, release_id, site, release_date, release_time, number_released, median_fork_length_released, release_origin = fish_origin) %>% 
+  rename(date_released = release_date) %>% 
   distinct() %>% 
   glimpse
   
 feather_recaptured <- feather_mark_recap %>% 
-  select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
+  select(stream, site, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
+  rename(date_recaptured = recaptured_date) %>% 
   mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% # REplace NA with 0 when there are no records of recaptures for a release iD
   glimpse
 
@@ -235,29 +247,70 @@ knights_landing_mark_recap <- read_csv(here::here("data", "rst", "knights_landin
   glimpse
 
 knights_landing_released <- knights_landing_mark_recap %>% 
-  select(stream, release_id, site, release_date, release_time, number_released, median_fork_length_released, origin = fish_origin) %>% 
+  select(stream, release_id, site, release_date, release_time, number_released, median_fork_length_released, release_origin = fish_origin) %>% 
+  rename(date_released = release_date) %>% 
   distinct() %>% 
   glimpse
   
 knights_landing_recaptured <- knights_landing_mark_recap %>% 
-  select(stream, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
+  select(stream, site, release_id, recaptured_date, number_recaptured, median_fork_length_recaptured) %>% 
+  rename(date_recaptured = recaptured_date) %>% 
   mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% # REplace NA with 0 when there are no records of recaptures for a release iD
   glimpse
 ```
 
+### Tisdale
+
+#### Columns Removed
+
+```{r, message=FALSE, warning=FALSE}
+gcs_get_object(object_name = "rst/lower-sac-river/data/tisdale/tisdale_releases.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "tisdale_releases.csv"),
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data/tisdale/tisdale_recaptures.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "tisdale_recaptures.csv"),
+               overwrite = TRUE)
+
+tisdale_released <- read_csv(here::here("data", "rst", "tisdale_releases.csv")) %>% 
+  mutate(stream = "sacramento river",
+         site = "tisdale",
+         release_site = tolower(release_site),
+         release_id = ifelse(is.na(release_id), paste0("TIS", row_number()), release_id),
+         day_or_night_release = ifelse(light_condition %in% c("Twilight / dusk", "Night, dark", "Night, moonlit"), "night", "day")) %>% 
+  rename(release_run = run_released) %>% 
+  select(-light_condition) %>%  glimpse
+
+tisdale_recaptured <- read_csv(here::here("data", "rst", "tisdale_recaptures.csv")) %>% 
+  mutate(stream = "sacramento river",
+         site = "tisdale",
+         release_id = ifelse(is.na(release_id), paste0("TIS", row_number()), release_id)) %>% 
+  group_by(stream, site, release_id, date_recaptured, half_cone) %>% 
+  summarize(number_recaptured = sum(number_recaptured),
+            median_fork_length = median(fork_length, na.rm = T)) %>%
+  mutate(cone_status = ifelse(half_cone == T, "half", "full")) %>% 
+  select(-half_cone)
+```
+
+
 ## Combine datasets:
 
 ```{r}
-combined_release <- bind_rows(battle_released, clear_released, feather_released, knights_landing_released) %>% 
-  relocate(stream, site, release_id, release_date, release_time, number_released, 
+combined_release <- bind_rows(battle_released, clear_released, feather_released, knights_landing_released, tisdale_released) %>% 
+  relocate(stream, site, release_id, date_released, release_time, number_released, 
            median_fork_length_released, day_or_night_release, 
-           days_held_post_mark, flow_at_release = flow_release, temperature_at_release = release_temp, turbidity_at_release = release_turbidity, 
-           origin) %>% 
+           days_held_post_mark, flow_at_release = release_flow, temperature_at_release = release_temp, turbidity_at_release = release_turbidity, 
+           release_origin, release_run) %>% 
+  mutate(release_origin = tolower(release_origin),
+         release_origin = ifelse(is.na(release_origin), "not recorded", release_origin),
+         release_run = tolower(release_run)) %>% 
   distinct() %>%glimpse
 
-combined_recapture <- bind_rows(battle_recaptured, clear_recaptured, feather_recaptured, knights_landing_recaptured) %>% 
+combined_recapture <- bind_rows(battle_recaptured, clear_recaptured, feather_recaptured, knights_landing_recaptured, tisdale_recaptured) %>% 
   relocate(stream, release_id,
-           recaptured_date, number_recaptured, median_fork_length_recaptured, cone_status) %>% glimpse
+           date_recaptured, number_recaptured, median_fork_length_recaptured, cone_status) %>% glimpse
 ```
 
 ## Explore Varibles Release{.tabset}
@@ -276,27 +329,40 @@ Site ids can be joined to additional locational data using RST_trap_streams.rds
 table(combined_release$site)
 ```
 
-Battle and Clear Creek do not provide a site id
+There are two cases where site is NA. Change this to not recorded
 
 ```{r}
-filter(combined_release, stream %in% c("battle creek", "cear creek")) %>% pull(site) %>% unique()
+filter(combined_release, is.na(site))
+```
+
+### release_site
+
+currently only tisdale varies release_site. kept this variable because it may be important 
+in future if release sites are varied.
+
+```{r}
+table(combined_release$release_site)
 ```
 
 ### release_id
 
-Release id are unique identifiers for an efficiency trial on a specific tributary. There are 843 unique release IDs
+Release id are unique identifiers for an efficiency trial on a specific tributary. There are 1794 unique release IDs
 
 ```{r}
-length(unique(combined_release$release_id))
+combined_release %>% 
+  group_by(site) %>% 
+  summarize(n = length(unique(release_id))) %>% 
+  ungroup() %>% 
+  summarize(n = sum(n))
 ```
 
-Battle and Clear Creek do not provide a site id so we generated above.
+Battle and Clear Creek do not provide a release id so we generated above. In some cases Tisdale does not provide a release id so we generated similar to Clear and Battle
 
 ### release_date
 
 ```{r}
 combined_release %>% ggplot() + 
-  geom_point(aes(x = release_date, y = stream, color = stream), alpha = .1) + 
+  geom_point(aes(x = date_released, y = stream, color = stream), alpha = .1) + 
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -333,7 +399,7 @@ combined_release %>% ggplot() +
 
 ### median_fork_length_released
 
-Individual fork lengths for released fish are not provided by Battle Creek, Clear Creek, or Feather River. Kights Landing does provide some of this data but it is very sparse, so was not included here since we are standardizing historical data. For future data we would want to be able to have a separate table that includes individual release fork lengths for every fish released.
+Individual fork lengths for released fish are not provided by Battle Creek, Clear Creek, or Feather River. Knights Landing does provide some of this data but it is very sparse, so was not included here since we are standardizing historical data. For future data we would want to be able to have a separate table that includes individual release fork lengths for every fish released.
 
 All fork length values are summarized to just show medium fork length. Feather data does not provide data on the fork length of released fish. Knights Landing, Battle Creek, and Clear Creek only show median fork length per efficiency trial.
 
@@ -352,7 +418,7 @@ combined_release %>%
 
 ```{r}
 combined_release %>% 
-  mutate(year = as.factor(lubridate::year(release_date))) %>%
+  mutate(year = as.factor(lubridate::year(date_released))) %>%
   ggplot(aes(x = median_fork_length_released, y = year, fill = stream)) + 
   geom_boxplot() + 
   scale_fill_manual(values = color_pal) +
@@ -367,6 +433,8 @@ combined_release %>%
 
 Only battle and clear provide timing of release (day or night), convert to TRUE FALSE
 
+Tisdale also provides light condition.
+
 ```{r}
 table(combined_release$day_or_night_release)
 
@@ -377,7 +445,7 @@ combined_release <- combined_release %>%
 ```
 
 ```{r}
-filter(combined_release, stream %in% c("sacramento river", "feather river")) %>% pull(night_release) %>% unique()
+filter(combined_release, stream %in% c("feather river")) %>% pull(night_release) %>% unique()
 ```
 
 ### days_held_post_mark
@@ -445,11 +513,19 @@ combined_release %>%
 Only battle, knights landing, and feather provide origin
 
 ```{r}
-table(combined_release$origin, useNA = "ifany")
+table(combined_release$release_origin, useNA = "ifany")
 ```
 
 ```{r}
-filter(combined_release, stream %in% c("sacramento river", "feather river", "clear creek")) %>% pull(origin) %>% unique()
+filter(combined_release, stream %in% c("sacramento river", "feather river", "clear creek")) %>% pull(release_origin) %>% unique()
+```
+
+### run
+
+Tisdale includes run. Including because this information has been requested for model.
+
+```{r}
+table(combined_release$release_run)
 ```
 
 ## Explore Varibles Recapture{.tabset}
@@ -461,21 +537,30 @@ filter(combined_release, stream %in% c("sacramento river", "feather river", "cle
 table(combined_recapture$stream)
 ```
 
-### release_id
-
-Release id are unique identifiers for an efficiency trial on a specific tributary. There are 843 unique release IDs
+### site
 
 ```{r}
-length(unique(combined_recapture$release_id))
+table(combined_recapture$site)
+```
+### release_id
+
+Release id are unique identifiers for an efficiency trial on a specific tributary. There are 1794 unique release IDs
+
+```{r}
+combined_recapture %>% 
+  group_by(site) %>% 
+  summarize(n = length(unique(release_id))) %>% 
+  ungroup() %>% 
+  summarize(n = sum(n))
 ```
 
-Battle and Clear Creek do not provide a site id so we generated above.
+Battle and Clear Creek do not provide a release id so we generated above. In some cases Tisdale does not have a release id.
 
 ### recaptured_date
 
 ```{r}
 combined_recapture %>% ggplot() + 
-  geom_point(aes(x = recaptured_date, y = stream, color = stream), alpha = .1) + 
+  geom_point(aes(x = date_recaptured, y = stream, color = stream), alpha = .1) + 
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
   theme(legend.position = "bottom", 
@@ -537,7 +622,7 @@ combined_recapture %>%
 
 ```{r}
 combined_recapture %>% 
-  mutate(year = as.factor(lubridate::year(recaptured_date))) %>%
+  mutate(year = as.factor(lubridate::year(date_recaptured))) %>%
   ggplot(aes(x = median_fork_length_recaptured, y = year, fill = stream)) + 
   geom_boxplot() + 
   scale_fill_manual(values = color_pal) +
@@ -550,7 +635,7 @@ combined_recapture %>%
 
 ### cone_status
 
-Only battle and clear provide a cone_status
+Only battle and clear and tisdale provide a cone_status
 
 ```{r}
 table(combined_recapture$cone_status)
@@ -566,8 +651,8 @@ To calculate the efficiency of each mark recapture trial the data is now summari
 
 ```{r}
 summarized_mark_recapture <- combined_release %>% 
-  left_join(combined_recapture, by = c("release_id" = "release_id", "stream" = "stream")) %>%
-  group_by(stream, site, release_id, release_date, number_released) %>%
+  left_join(combined_recapture, by = c("release_id" = "release_id", "stream" = "stream", "site" = "site")) %>%
+  group_by(stream, site, release_id, date_released, number_released) %>%
   summarize(total_fish_recaptured = sum(number_recaptured, na.rm = T), 
             median_fork_length_released = median(median_fork_length_released, na.rm = T),
             median_fork_length_recaptured = median(median_fork_length_recaptured, na.rm = T),
@@ -653,12 +738,13 @@ summarized_mark_recapture %>%
 is.na(combined_release$number_released) %>% unique() # removed all NA for number released when reading in Clear and Battle
 
 combined_release <- combined_release %>%  
-  mutate(release_date = as_date(release_date),
+  mutate(site = ifelse(is.na(site), "not recorded", site),
+         date_released = as_date(date_released),
          median_fork_length_released = ifelse(is.na(median_fork_length_released), "not recorded", median_fork_length_released)) %>% # clarify that these values are not recorded in the raw data,there should be values here 
   glimpse
 
 combined_recapture <- combined_recapture %>% 
-  mutate(recaptured_date = as_date(recaptured_date)) %>% glimpse 
+  mutate(date_recaptured = as_date(date_recaptured)) %>% glimpse 
 
 ```
 

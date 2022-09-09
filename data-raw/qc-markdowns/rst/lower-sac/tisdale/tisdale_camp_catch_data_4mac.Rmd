@@ -1,0 +1,393 @@
+---
+title: "Tisdale Catch Data Pull"
+output: html_document
+date: "2022-09-02"
+---
+
+This document queries the CAMP database provided by Drew Honeycutt (09/01/2022) to extract
+RST catch data for Tisdale trap. Previous files QC'd Excel files provided by
+Drew Honeycutt.
+
+This document will only work on Mac OS. Currently there is a local file path which
+will be updated in future updates.
+
+*Important to filter releaseID == 0 or releasedID == 255 to exclude recaptures*
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(Hmisc)
+library(lubridate)
+library(googleCloudStorageR)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+```
+
+```{r}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+# Pull in data tables
+
+```{r}
+# TODO
+# Set up non-local connection with CAMP access database 
+tisdale_access_db <- "/Users/ashleyvizek/code/tisdale_CAMP.mdb"
+mdb.get(tisdale_access_db, tables = T)
+
+catch_raw <- mdb.get(tisdale_access_db, tables = "CatchRaw")
+trap_visit <- mdb.get(tisdale_access_db, tables = "TrapVisit")
+mark <-  mdb.get(tisdale_access_db, tables = "MarkExisting")
+# might be able to pull some information from 2016, 2021, 2022
+release <- mdb.get(tisdale_access_db, tables = "Release")
+# no helpful information in this table
+release_fish <- mdb.get(tisdale_access_db, tables = "ReleaseFish")
+environmental <- mdb.get(tisdale_access_db, tables = "EnvDataRaw")
+```
+# Lookup tables
+```{r}
+# pull lookup tables
+visit_type_lu <- mdb.get(tisdale_access_db, "luVisitType") %>% 
+  select(-activeID) %>%glimpse
+
+run_lu <- mdb.get(tisdale_access_db, "luRun") %>% 
+  select(-activeID) %>% glimpse
+
+run_method_lu <- mdb.get(tisdale_access_db, "luRunMethod") %>% 
+  select(-activeID) %>% glimpse
+
+lifestage_lu <- mdb.get(tisdale_access_db, "luLifeStage") %>% 
+  select(-activeID) %>% glimpse
+
+taxon_lu <-  mdb.get(tisdale_access_db, "luTaxon") %>% 
+  mutate(taxonID = as.numeric(taxonID)) %>%
+  select(taxonID, commonName) %>% glimpse
+
+origin_lu <-  mdb.get(tisdale_access_db, "luFishOrigin") %>% 
+  select(-activeID) %>% glimpse
+
+debris_volume_lu <- mdb.get(tisdale_access_db,  "luDebrisVolumeCat") %>% 
+  select(-activeID) %>% 
+  glimpse
+
+trap_function_lu <- mdb.get(tisdale_access_db, "luTrapFunctioning") %>%
+  select(-activeID) %>% 
+  glimpse
+
+processed_lu <- mdb.get(tisdale_access_db, "luFishProcessed") %>%
+  select(-activeID) %>% 
+  glimpse
+
+subsite_lu <- mdb.get(tisdale_access_db, "SubSite") %>% 
+  select(subSiteName, subSiteID) %>% 
+  filter(subSiteName != "N/A")
+
+site_lu <- mdb.get(tisdale_access_db, "Site") %>% 
+  select(siteName, siteID)
+
+sample_gear_lu <- mdb.get(tisdale_access_db, "luSampleGear") %>% 
+  select(-activeID) %>% glimpse()
+
+no_yes_lu <- mdb.get(tisdale_access_db, "luNoYes")
+
+# lookups for existing mark
+color_lu <- mdb.get(tisdale_access_db, "luColor") %>%
+  select(-activeID) %>% glimpse()
+
+mark_type_lu <- mdb.get(tisdale_access_db, "luMarkType") %>%
+  select(-activeID) %>% glimpse()
+
+body_part_lu <- mdb.get(tisdale_access_db, "luBodyPart") %>%
+  select(-activeID) %>% glimpse()
+
+# lookups for releases
+release_purpose_lu <- mdb.get(tisdale_access_db, "luReleasePurpose") %>% 
+   select(-activeID) %>% glimpse()
+
+light_condition_lu <- mdb.get(tisdale_access_db, "luLightCondition") %>% 
+   select(-activeID) %>% glimpse()
+
+unit_lu <- mdb.get(tisdale_access_db, "luUnit") %>% 
+   select(-activeID) %>% glimpse()
+
+```
+
+# Catch (not including recaptures)
+
+```{r}
+detach(package:Hmisc)
+# select relevant column
+selected_trap_visit <- trap_visit %>%
+  select(trapVisitID, visitTime, visitTime2, visitTypeID) %>%
+  left_join(visit_type_lu, by = c("visitTypeID" = "visitTypeID")) %>% 
+  select(-visitTypeID)
+
+selected_mark_existing <- mark %>% 
+  select(catchRawID, markTypeID, markColorID, markPositionID) %>% 
+  left_join(mark_type_lu, by = c("markTypeID" = "markTypeID")) %>% 
+  left_join(color_lu, by = c("markColorID" = "colorID")) %>% 
+  left_join(body_part_lu, by = c("markPositionID" = "bodyPartID")) %>% 
+  select(-c(markTypeID, markColorID, markPositionID))
+
+# pull in both atcapturerun and finalrun to make sure all information is captured
+# and finalrun is not mostly NA
+selected_catch <- catch_raw %>% 
+  select(catchRawID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
+  left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
+  # filter(commonName == "Chinook salmon") %>% 
+  left_join(run_lu, by = c("finalRunID" = "runID")) %>%
+  rename(final_run = run) %>% 
+  left_join(run_lu, by = c("atCaptureRunID" = "runID")) %>%
+  left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
+  rename(final_run_method = runMethod) %>% 
+  left_join(run_method_lu, by = c("atCaptureRunMethodID" = "runMethodID")) %>%
+  left_join(lifestage_lu %>% 
+              select(-lifeStageCAMPID), by = c("lifeStageID" = "lifeStageID")) %>%
+  left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
+  left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
+  rename(dead = noYes) %>% 
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -atCaptureRunMethodID, -atCaptureRunID, -taxonID, -fishOriginID, - mortID) %>%
+  # add existing mark data
+  left_join(selected_mark_existing, by = c("catchRawID" = "catchRawID")) %>% 
+  left_join(selected_trap_visit) %>%
+  # filter out marked and recapture fish by selecting for only fish where release trial does not exist
+  filter(releaseID == 0 | releaseID == 255) %>% 
+  glimpse
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_catch,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/tisdale/tisdale_catch_camp.csv",
+           predefinedAcl = "bucketLevel")
+
+```
+
+# Recaptures
+
+```{r}
+trap_visit_recaptures <- trap_visit %>%
+  select(trapVisitID, visitTime, visitTime2, visitTypeID, halfConeID) %>%
+  left_join(visit_type_lu, by = c("visitTypeID" = "visitTypeID")) %>% 
+  mutate(halfCone = ifelse(halfConeID == 1, T, F)) %>% 
+  select(-visitTypeID, -halfConeID)
+
+# add atcapturerun
+selected_recaptured <- catch_raw %>% 
+  select(catchRawID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
+  left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
+  # filter(commonName == "Chinook salmon") %>% 
+  left_join(run_lu, by = c("finalRunID" = "runID")) %>%
+  rename(final_run = run) %>% 
+  left_join(run_lu, by = c("atCaptureRunID" = "runID")) %>%
+  left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
+  rename(final_run_method = runMethod) %>% 
+  left_join(run_method_lu, by = c("atCaptureRunMethodID" = "runMethodID")) %>%
+  left_join(lifestage_lu %>% 
+              select(-lifeStageCAMPID), by = c("lifeStageID" = "lifeStageID")) %>%
+  left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
+  left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
+  rename(dead = noYes) %>% 
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -atCaptureRunMethodID, -atCaptureRunID, -taxonID, -fishOriginID, - mortID) %>%
+  left_join(trap_visit_recaptures) %>%
+  # filter out marked and recapture fish by selecting for only fish where release trial does not exist
+  filter(releaseID != 0 & releaseID != 255) %>% 
+  glimpse
+
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_recaptured,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/tisdale/tisdale_recaptures_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
+# Releases
+
+```{r}
+# removed releasepurposeID because they are all trap efficiency tests
+# think about summing the nmort columns
+selected_release <- release %>% 
+  filter(releaseID != 255 & releaseID  != 0) %>% 
+  select(releaseID, markedTaxonID, markedRunID, markedFishOriginID, sourceOfFishSiteID, releaseSiteID, releaseSubSiteID, nMortWhileHandling, nMortAtCheck, nReleased, releaseTime, releaseLightConditionID, testDays) %>% 
+  left_join(taxon_lu, by = c("markedTaxonID" = "taxonID")) %>%
+  # filter(commonName == "Chinook salmon") %>% 
+  left_join(run_lu, by = c("markedRunID" = "runID")) %>%
+  left_join(origin_lu, by = c("markedFishOriginID" = "fishOriginID")) %>%
+  left_join(site_lu, by = c("sourceOfFishSiteID" = "siteID")) %>% 
+  rename(site_fish_source = siteName) %>% 
+  left_join(site_lu, by = c("releaseSiteID" = "siteID")) %>% 
+  rename(release_site = siteName) %>% 
+  left_join(subsite_lu, by = c("releaseSubSiteID" = "subSiteID")) %>% 
+  left_join(light_condition_lu, by = c("releaseLightConditionID" = "lightConditionID")) %>% 
+  select(-c(markedTaxonID, markedRunID, markedFishOriginID, sourceOfFishSiteID, releaseSiteID, releaseSubSiteID, releaseLightConditionID))
+  
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_release,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/tisdale/tisdale_releases_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
+
+# Trap
+```{r}
+# all NA
+filter(trap_visit, !is.na(timeSampleStarted))
+filter(trap_visit, !is.na(timeSampleEnded))
+filter(trap_visit, !is.na(coneDepthAtStart))
+filter(trap_visit, !is.na(coneDepthAtEnd))
+filter(trap_visit, !is.na(debrisVolume))
+
+# not NA
+filter(trap_visit, !is.na(inThalwegID))
+filter(trap_visit, !is.na(sampleGearID))
+
+# select relevant variables from trapvisit table
+trap_visit_format <- trap_visit %>% 
+  select(trapVisitID, trapPositionID, visitTime, visitTime2, visitTypeID, fishProcessedID, sampleGearID, inThalwegID, trapFunctioningID, counterAtStart, counterAtEnd, rpmRevolutionsAtStart, rpmRevolutionsAtEnd, halfConeID, debrisVolumeCatID, comments) %>% 
+  left_join(subsite_lu, by = c("trapPositionID" = "subSiteID")) %>% 
+  left_join(visit_type_lu) %>% 
+  left_join(processed_lu) %>% 
+  left_join(sample_gear_lu) %>% 
+  left_join(no_yes_lu, by = c("inThalwegID" = "noYesID")) %>% 
+  rename(inThalweg = noYes) %>% 
+  left_join(trap_function_lu) %>% 
+  left_join(debris_volume_lu) %>% 
+  mutate(halfCone = ifelse(halfConeID == 1, T, F)) %>% 
+  select(-c(trapPositionID, visitTypeID, fishProcessedID, sampleGearID, inThalwegID, trapFunctioningID, debrisVolumeCatID, halfConeID))
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(trap_visit_format,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/tisdale/tisdale_trap_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
+
+# Environmental
+
+```{r}
+# all NA
+filter(environmental, !is.na(waterVelReadingStart))
+filter(environmental, !is.na(waterVelReadingEnd))
+filter(environmental, !is.na(waterVelTime))
+filter(environmental, !is.na(airTemp))
+filter(environmental, !is.na(cloudCover))
+filter(environmental, !is.na(weather))
+
+# contains data
+filter(environmental, !is.na(discharge))
+filter(environmental, !is.na(dischargeUnitID))
+filter(environmental, !is.na(dischargeSampleGearID))
+filter(environmental, !is.na(waterDepth))
+filter(environmental, !is.na(waterVel))
+filter(environmental, !is.na(waterTemp))
+filter(environmental, !is.na(lightPenetration))
+filter(environmental, !is.na(turbidity))
+filter(environmental, !is.na(dissolvedOxygen))
+filter(environmental, !is.na(conductivity))
+filter(environmental, !is.na(barometer))
+
+# select relevant variables from envDataRaw table
+
+discharge <- environmental %>% 
+  select(trapVisitID, envDataRawID, discharge, dischargeUnitID, dischargeSampleGearID) %>% 
+  rename(value = discharge,
+         unitID = dischargeUnitID,
+         sampleGearID = dischargeSampleGearID) %>% 
+  mutate(parameter = "discharge")
+
+depth <- environmental %>% 
+  select(trapVisitID, envDataRawID, waterDepth, waterDepthUnitID, waterDepthSampleGearID) %>% 
+  rename(value = waterDepth,
+         unitID = waterDepthUnitID,
+         sampleGearID = waterDepthSampleGearID) %>% 
+  mutate(parameter = "water depth")
+
+velocity <- environmental %>% 
+  select(trapVisitID, envDataRawID, waterVel, waterVelUnitID, waterVelSampleGearID) %>% 
+  rename(value = waterVel,
+         unitID = waterVelUnitID,
+         sampleGearID = waterVelSampleGearID) %>% 
+  mutate(parameter = "velocity")
+
+temperature <- environmental %>% 
+  select(trapVisitID, envDataRawID, waterTemp, waterTempUnitID, waterTempSampleGearID) %>% 
+  rename(value = waterTemp,
+         unitID = waterTempUnitID,
+         sampleGearID = waterTempSampleGearID) %>% 
+  mutate(parameter = "temperature")
+
+light <- environmental %>% 
+  select(trapVisitID, envDataRawID,  lightPenetration, lightPenetrationUnitID, lightPenetrationSampleGearID) %>% 
+  rename(value = lightPenetration,
+         unitID = lightPenetrationUnitID,
+         sampleGearID = lightPenetrationSampleGearID) %>% 
+  mutate(parameter = "light penetration")
+
+turbidity <- environmental %>% 
+  select(trapVisitID, envDataRawID,  turbidity, turbidityUnitID, turbiditySampleGearID) %>% 
+  rename(value = turbidity,
+         unitID = turbidityUnitID,
+         sampleGearID = turbiditySampleGearID) %>% 
+  mutate(parameter = "turbidity")
+
+oxygen <- environmental %>% 
+  select(trapVisitID, envDataRawID,  dissolvedOxygen, dissolvedOxygenUnitID, dissolvedOxygenSampleGearID) %>% 
+  rename(value = dissolvedOxygen,
+         unitID = dissolvedOxygenUnitID,
+         sampleGearID = dissolvedOxygenSampleGearID) %>% 
+  mutate(parameter = "dissolved oxygen")
+
+conductivity <- environmental %>% 
+  select(trapVisitID, envDataRawID,  conductivity, conductivityUnitID, conductivitySampleGearID) %>% 
+  rename(value = conductivity,
+         unitID = conductivityUnitID,
+         sampleGearID = conductivitySampleGearID) %>% 
+  mutate(parameter = "conductivity")
+
+barometer <- environmental %>% 
+  select(trapVisitID, envDataRawID,  barometer, barometerUnitID, barometerSampleGearID) %>% 
+  rename(value = barometer,
+         unitID = barometerUnitID,
+         sampleGearID = barometerSampleGearID) %>% 
+  mutate(parameter = "barometer")
+
+trap_visit_subsite <- trap_visit %>%
+  select(trapVisitID, visitTime, visitTime2, trapPositionID) %>%
+  left_join(subsite_lu, by = c("trapPositionID" = "subSiteID")) %>% 
+  select(-trapPositionID)
+
+environmental_format <- bind_rows(discharge,
+                                  depth,
+                                  velocity,
+                                  temperature,
+                                  light,
+                                  turbidity,
+                                  oxygen,
+                                  conductivity,
+                                  barometer) %>% 
+  left_join(trap_visit_subsite) %>% 
+  left_join(unit_lu) %>% 
+  left_join(sample_gear_lu) %>% 
+  select(-c(unitID, sampleGearID, visitTime2)) %>% 
+  rename(date = visitTime,
+         sample_gear = sampleGear,
+         subsite = subSiteName) %>% 
+  mutate(unit = case_when(is.na(unit) & !is.na(value) ~ "not recorded", 
+                          is.na(unit) & is.na(value) ~ NA_character_,
+                          T ~ unit),
+         sample_gear = case_when(is.na(sample_gear) & !is.na(value) ~ "not recorded", 
+                          is.na(sample_gear) & is.na(value) ~ NA_character_,
+                          T ~ sample_gear))
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(environmental_format,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/tisdale/tisdale_environmental_camp.csv",
+           predefinedAcl = "bucketLevel")
+```

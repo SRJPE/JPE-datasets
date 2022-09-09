@@ -4,6 +4,8 @@ output: html_document
 ---
 
 ```{r, include = F}
+library(dtplyr)
+library(data.table)
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
@@ -50,6 +52,9 @@ files_knights_pre2006 <- tibble(path = rep("rst/lower-sac-river/data/knights-lan
 files_tisdale <- tibble(path = "rst/lower-sac-river/data/tisdale/rst_clean",
                         name = c(""),
                         save = here::here("data","rst", "tisdale_rst"))
+files_tisdale_camp <- tibble(path = "rst/lower-sac-river/data-raw/tisdale/tisdale_",
+                        name = c("catch_camp", "trap_camp"),
+                        save = here::here("data","rst", "tisdale_rst_"))
 files_mill <- tibble(path = "rst/mill-creek/data/mill_rst",
                      name = c(""),
                      save = here::here("data","rst", "mill_rst"))
@@ -72,6 +77,7 @@ pmap(files_feather, get_data)
 pmap(files_knights, get_data)
 pmap(files_knights_pre2006, get_data)
 pmap(files_tisdale, get_data)
+pmap(files_tisdale_camp, get_data)
 pmap(files_mill, get_data)
 pmap(files_yuba, get_data)
 ```
@@ -87,6 +93,7 @@ feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
 knights_landing_rst <- read_csv(here::here("data", "rst", "knights_catch_camp.csv"))
 knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_rst_clean.csv"))
 tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"))
+tisdale_rst_camp <- read_csv(here::here("data", "rst", "tisdale_rst_catch_camp.csv"))
 mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv")) # contains trap data too
 yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 
@@ -96,6 +103,7 @@ clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environment
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
 knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
+tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
 ```
 
 # Data formatting {.tabset}
@@ -113,12 +121,27 @@ if that date did not exist in the catch data.
 
 ```{r, helpers}
 # standard encoding fixes for run
-run_encoding <- function(dat) {
-  dat %>%
-    mutate(run = case_when(is.na(run) | run == "Not recorded" |  run == "Not applicable (n/a)" ~ "not recorded",
-                           run == "outlier salmon" ~ "unknown",
-                         count == 0  ~ NA_character_,
-                         T ~ tolower(run)))
+# These functions use data.table because it performs faster
+run_encoding_dt <- function(dat) {
+  dat[, run := fcase(
+    count == 0, NA_character_,
+    (count > 0 & is.na(run)) | run == "not recorded" |  run == "not applicable (n/a)" | run == "unknown", "not recorded",
+    run == "outlier salmon", "unknown",
+    run == "fall", "fall",
+    run == "winter", "winter",
+    run == "spring", "spring",
+    run == "late fall", "late fall")
+    ]
+}
+
+run_method_encoding_dt <- function(dat) {
+  dat[, run_method := fcase(
+    count == 0, NA_character_,
+    (count > 0 & is.na(run_method)) | run_method == "not recorded", "not recorded",
+    run_method == "length-at-date criteria", "length-at-date criteria",
+    run_method == "hatchery attribute", "hatchery attribute",
+    run_method == "appearance", "appearance")
+    ]
 }
 
 # note that there is only one "yoy (young of the year)"
@@ -126,18 +149,20 @@ run_encoding <- function(dat) {
 # We only use the spreadsheets for sampling before 2006 because the rest is in CAMP
 # There are no older juveniles before 2006
 
-lifestage_encoding <- function(dat) {
-  dat %>%
-    mutate(lifestage = case_when(count == 0 ~ NA_character_,
-                                 lifestage %in% c("yolk-sac fry", "yolk sac fry (alevin)", "yolk sac fry") ~ "yolk sac fry",
-                                 lifestage %in% c("silvery parr", "fingerling", "pre-smolt") ~ "silvery parr",
-                                 lifestage %in% c("unknown", "yoy (young of the year)", "juvenile") ~ "unknown",
-                                 lifestage %in% c("not recorded", "not provided") | is.na(lifestage) ~ "not recorded",
-                                 lifestage == "parr" ~ "parr",
-                                 lifestage %in% c("fry", "button-up fry", "fry (button-up)") ~ "fry",
-                                 lifestage == "smolt" ~ "smolt",
-                                 lifestage == "adult" ~ "adult",
-                                 lifestage %in% c("yearling", "older juvenile") ~ "yearling"))
+lifestage_encoding_dt <- function(dat) {
+  dat[, lifestage := fcase(
+  count == 0, NA_character_,
+  lifestage %in% c("not recorded", "not provided") | (count != 0 & is.na(lifestage)), "not recorded",
+  lifestage %in% c("yolk-sac fry", "yolk sac fry (alevin)", "yolk sac fry"), "yolk sac fry",
+  lifestage %in% c("silvery parr", "fingerling", "pre-smolt"), "silvery parr",
+  lifestage %in% c("unknown", "yoy (young of the year)", "juvenile"), "unknown",
+  
+  lifestage == "parr", "parr",
+  lifestage %in% c("fry", "button-up fry", "fry (button-up)"), "fry",
+  lifestage == "smolt", "smolt",
+  lifestage == "adult", "adult",
+  lifestage %in% c("yearling", "older juvenile"), "yearling"
+ )]
 }
 ```
 
@@ -205,9 +230,16 @@ battle_rst_clean_final <- full_join(battle_rst_clean,
          stream = "battle creek",
          site = "ubc",
          adipose_clipped = F,
-         run_method = "adjusted length-at-date") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "adjusted length-at-date",
+         species = "chinook salmon")
+
+# convert to data table for faster mutation
+setDT(battle_rst_clean_final)
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+battle_rst_clean_final %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -248,11 +280,17 @@ butte_rst_clean <- butte_rst %>%
          run = "spring",
          adipose_clipped = case_when(adipose_clipped == "none" ~ F,
                             adipose_clipped == "adclipped" ~ T),
-         run_method = "unknown") %>%
-  group_by(date, site, dead, fork_length, weight, adipose_clipped, lifestage, stream, run, run_method) %>%
-  summarize(count = sum(count, na.rm = T)) %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "not recorded",
+         species = "chinook salmon") %>%
+  group_by(date, site, dead, fork_length, weight, adipose_clipped, lifestage, stream, run, run_method, species) %>%
+  summarize(count = sum(count, na.rm = T)) 
+
+setDT(butte_rst_clean)
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+butte_rst_clean %>% 
+  # run mutate not applied because all spring
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -322,9 +360,15 @@ clear_rst_clean_final <- full_join(clear_rst_clean,
          stream = "clear creek",
          site = tolower(site),
          adipose_clipped = F,
-         run_method = "adjusted length-at-date") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "adjusted length-at-date",
+         species = "chinook salmon") 
+
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+setDT(clear_rst_clean_final)
+clear_rst_clean_final %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
   
 ```
 
@@ -354,9 +398,10 @@ deer_rst_clean <- deer_rst %>%
   mutate(stream = "deer creek",
          site = stream,
          run = "not recorded",
-         run_method = NA_character_,
+         run_method = "not recorded",
          adipose_clipped = F,
-         lifestage = "not recorded")
+         lifestage = "not recorded",
+         species = "chinook salmon")
 ```
 
 ### Variables removed
@@ -420,9 +465,15 @@ feather_rst_clean_final <- full_join(feather_rst_clean,
          stream = "feather river",
          site = tolower(site),
          adipose_clipped = F,
-         run_method = "unknown") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "not recorded",
+         species = "chinook salmon") 
+
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+setDT(feather_rst_clean_final)
+feather_rst_clean_final %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
   
 ```
 
@@ -449,9 +500,10 @@ mill_rst_clean <- mill_rst %>%
   mutate(stream = "mill creek",
          site = stream,
          run = "not recorded",
-         run_method = NA_character_,
+         run_method = "not recorded",
          adipose_clipped = F,
-         lifestage = "not recorded")
+         lifestage = "not recorded",
+         species = "chinook salmon")
 ```
 
 ### Variables removed
@@ -491,9 +543,14 @@ yuba_rst_clean<- yuba_rst %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(stream = "yuba river",
          adipose_clipped = F,
-         run_method = "unknown") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = "not recorded",
+         species = "chinook salmon") 
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+setDT(yuba_rst_clean)
+yuba_rst_clean %>% 
+  run_encoding_dt() %>% 
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -606,9 +663,15 @@ knights_rst_clean_final <- full_join(knights_rst_clean,
          run_method = tolower(run_method),
          species = tolower(species),
          species = ifelse(species == "chinook", "chinook salmon", species),
-         lifestage = tolower(lifestage)) %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         lifestage = tolower(lifestage),
+         run = tolower(run)) 
+# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# mutate using data.table package
+setDT(knights_rst_clean_final)
+knights_rst_clean_final %>% 
+  run_encoding_dt() %>% 
+  run_method_encoding_dt() %>% 
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -628,38 +691,66 @@ kable(tisdale_data_dictionary)
 
 ```{r, tisdale_clean}
 tisdale_rst %>% glimpse
-# 15 obs where run is not recorded, 9 where run is NA
-unique(tisdale_rst$run)
-unique(tisdale_rst$species)
-unique(tisdale_rst$rearing)
-unique(tisdale_rst$mark_type)
-# 18 rows with mark type pigment
-filter(tisdale_rst, mark_type == "Pigment") %>% glimpse
-# 17 rows with mark type elastomer
-filter(tisdale_rst, mark_type == "Elastomer") %>% glimpse
-filter(tisdale_rst, is.na(run)) %>% glimpse
-filter(tisdale_rst, is.na(fork_length_mm), count > 0) %>% glimpse
-filter(tisdale_rst, run == "unknown") %>% glimpse
-unique(tisdale_rst$life_stage)
-filter(tisdale_rst, random == F, count > 0)
-
-tisdale_rst_clean <- tisdale_rst %>%
-  select(-c(fish_processed, at_capture_run, final_run, release_id, mark_position, mark_color, trap_visit_comment)) %>%
-  rename(fork_length = fork_length_mm,
-         adipose_clipped = rearing,
-         lifestage = life_stage,
-         dead = mortality) %>%
-  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped) %>%
-  summarize(count = sum(count, na.rm = T)) %>%
+tisdale_rst_camp %>% glimpse
+# same dates for the excel sheets vs CAMP so use CAMP
+min(tisdale_rst$date)
+min(tisdale_rst_camp$visitTime)
+# many obs where run is NA
+unique(tisdale_rst_camp$run)
+filter(tisdale_rst_camp, is.na(run), commonName == "Chinook salmon", n >0)
+unique(tisdale_rst_camp$commonName)
+unique(tisdale_rst_camp$fishOrigin)
+unique(tisdale_rst_camp$markType)
+filter(tisdale_rst_camp, visitTime != visitTime2)
+tisdale_rst_clean <- tisdale_rst_camp %>%
+  # removing existing mark for now. will add all those in later
+  select(-c(catchRawID, trapVisitID, releaseID, visitTime2, markType, color, bodyPart, visitType)) %>%
+  # combine atcapture and final run
+  mutate(run = ifelse(!is.na(final_run), final_run, run),
+         runMethod = ifelse(!is.na(final_run_method), final_run_method, runMethod)) %>% 
+  select(-c(final_run, final_run_method)) %>% 
+  rename(fork_length = forkLength,
+         adipose_clipped = fishOrigin,
+         species = commonName,
+         lifestage = lifeStage,
+         date = visitTime,
+         run_method = runMethod) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method) %>%
+  summarize(count = sum(n, na.rm = T)) %>%
   mutate(stream = "sacramento river",
          site = "tisdale",
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
          species = tolower(species),
-         run_method = "unknown") %>% 
-  run_encoding() %>% 
-  lifestage_encoding()
+         run_method = tolower(run_method),
+         run = tolower(run),
+         dead = ifelse(dead == "Yes", T, F)) 
+
+tisdale_rst_min <- tisdale_rst_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(min = min(date))
+
+tisdale_trap_clean <- tisdale_trap_camp %>%
+  rename(date = visitTime) %>%
+  distinct()
+
+tisdale_trap_min <- tisdale_trap_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(trap_min = min(date))
+
+# when comparing min dates in rst and environmental data, they differ
+# this means that we need to add in zero catch data
+# no difference for tisdale
+tisdale_min_date_compare <- full_join(tisdale_rst_min, tisdale_trap_min)
+
+setDT(tisdale_rst_clean)
+tisdale_rst_clean %>% 
+  run_encoding_dt() %>% 
+  run_method_encoding_dt() %>% 
+  lifestage_encoding_dt()
 ```
 
 ### Variables removed
@@ -674,7 +765,7 @@ tisdale_rst_clean <- tisdale_rst %>%
 ```{r, combined}
 # TODO fill in run method - this will involve outreach with monitoring programs
 # improve performance by using data.table
-combined_rst_raw <- bind_rows(battle_rst_clean_final,
+combined_rst <- bind_rows(battle_rst_clean_final,
                           butte_rst_clean,
                           clear_rst_clean_final,
                           deer_rst_clean,
@@ -682,15 +773,8 @@ combined_rst_raw <- bind_rows(battle_rst_clean_final,
                           mill_rst_clean,
                           yuba_rst_clean,
                           knights_rst_clean_final,
-                          tisdale_rst_clean) 
-combined_rst <- combined_rst_raw %>%
-  run_encoding() %>% 
-  lifestage_encoding() %>%
-  # all should be chinook salmon
-  mutate(species = ifelse(is.na(species), "chinook salmon", species),
-         run_method = case_when(is.na(run_method) ~ "not recorded",
-                                run == "not recorded" | count == 0 ~ NA_character_,
-                                T ~ tolower(run_method)))
+                          tisdale_rst_clean) %>% 
+  as_tibble()
 
 unique(combined_rst$run)
 unique(combined_rst$lifestage)
@@ -756,7 +840,7 @@ kable(rst_catch_data_dictionary)
 Boxplots of lifestage and fork length to verify lifestage encodings
 
 ```{r}
-ggplot(combined_rst_raw, aes(x = lifestage, y = fork_length)) +
+ggplot(combined_rst, aes(x = lifestage, y = fork_length)) +
   geom_boxplot() +
   theme(axis.text.x = element_text(angle = 45))
 ```
@@ -766,7 +850,7 @@ Yolk sac fry categories
 ```{r}
 # check category mappings
 # yolk sac fry
-ggplot(filter(combined_rst_raw, lifestage %in% c("yolk-sac fry", "yolk sac fry (alevin)", "yolk sac fry")), aes(x = lifestage, y = fork_length)) +
+ggplot(filter(combined_rst, lifestage %in% c("yolk-sac fry", "yolk sac fry (alevin)", "yolk sac fry")), aes(x = lifestage, y = fork_length)) +
   geom_boxplot() +
   theme(axis.text.x = element_text(angle = 45))
 ```
@@ -777,7 +861,7 @@ Fingerling and pre-smolt added to silvery parr because of similar fork lengths.
 
 ```{r}
 # silvery parr
-ggplot(filter(combined_rst_raw, lifestage %in% c("silvery parr", "fingerling", "pre-smolt")), aes(x = lifestage, y = fork_length)) +
+ggplot(filter(combined_rst, lifestage %in% c("silvery parr", "fingerling", "pre-smolt")), aes(x = lifestage, y = fork_length)) +
   geom_boxplot() +
   theme(axis.text.x = element_text(angle = 45))
 ```
@@ -788,13 +872,13 @@ Only one "yoy (young of the year)" and two juvenile. These are added to unknown 
 
 ```{r}
 # unknown
-ggplot(filter(combined_rst_raw, lifestage %in% c("unknown", "yoy (young of the year)", "juvenile")), aes(x = lifestage, y = fork_length)) +
+ggplot(filter(combined_rst, lifestage %in% c("unknown", "yoy (young of the year)", "juvenile")), aes(x = lifestage, y = fork_length)) +
   geom_boxplot() +
   theme(axis.text.x = element_text(angle = 45))
 
-filter(combined_rst_raw, lifestage == "yoy (young of the year)") %>% tally()
-filter(combined_rst_raw, lifestage == "juvenile") %>% tally()
-filter(combined_rst_raw, lifestage == "unknown") %>% tally()
+filter(combined_rst, lifestage == "yoy (young of the year)") %>% tally()
+filter(combined_rst, lifestage == "juvenile") %>% tally()
+filter(combined_rst, lifestage == "unknown") %>% tally()
 ```
 
 Parr
@@ -803,7 +887,7 @@ Pre-smolt fits better with silvery parr
 
 ```{r}
 # parr
-ggplot(filter(combined_rst_raw, lifestage %in% c("parr", "pre-smolt")), aes(x = lifestage, y = fork_length)) +
+ggplot(filter(combined_rst, lifestage %in% c("parr", "pre-smolt")), aes(x = lifestage, y = fork_length)) +
   geom_boxplot() +
   theme(axis.text.x = element_text(angle = 45))
 ```
@@ -814,7 +898,7 @@ Button up fry and fry are similar fork lengths
 
 ```{r}
 # fry
-ggplot(filter(combined_rst_raw,  lifestage %in% c("fry", "button-up fry", "fry (button-up)")), aes(x = lifestage, y = fork_length)) +
+ggplot(filter(combined_rst,  lifestage %in% c("fry", "button-up fry", "fry (button-up)")), aes(x = lifestage, y = fork_length)) +
   geom_boxplot() +
   theme(axis.text.x = element_text(angle = 45))
 ```

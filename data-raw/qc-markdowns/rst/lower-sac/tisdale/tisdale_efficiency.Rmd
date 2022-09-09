@@ -1,0 +1,198 @@
+---
+title: "tisdale efficiency data"
+output: html_document
+date: "2022-09-02"
+---
+
+```{r, include = F}
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Lower Sacramento (Tisdale) Rotary Screw Trap Data - Efficiency Trials
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+Efficiency trials conducted:
+2012, 2015-2019, 2021-2022
+
+**Completeness of Record throughout timeframe:** 
+
+No trials conducted before 2012; no trials in 2013, 2014 and 2020
+
+**Sampling Location:**
+
+Tisdale
+
+**Data Contact:** 
+
+[Drew Huneycutt](mailto::andrew.huneycutt@wildlife.ca.gov)
+
+Drew provided the data in an excel spreadsheet that was slightly modified to make
+reading the file easier. The original is saved on the google cloud here: 
+"rst/lower-sac-river/data-raw/tisdale/tisdale_trap_efficiency.xlsx"
+
+Tisdale efficiency trials may have been originally recorded on paper and then
+transferred to this spreadsheet.
+
+No information about fork length of released or recaptured fish or days after release
+were provided. Information about the fork length of recaptured fish may be included in
+CAMP.
+
+TODO ask Drew if there he has fork lengths of released fish.
+
+## Data pull
+```{r}
+# # Data pull ---------------------------------------------------------------
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+### Data from excel
+```{r}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_trap_efficiency_format.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "tisdale_trap_efficiency.csv"),
+                 overwrite = TRUE)
+```
+```{r}
+tisdale_efficiency_raw <- read_csv(here::here("data-raw", "qc-markdowns", "rst", "tisdale_trap_efficiency.csv"))
+```
+
+### Data from CAMP
+```{r}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_releases_camp.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "tisdale_releases_camp.csv"),
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_recaptures_camp.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "tisdale_recaptures_camp.csv"),
+                 overwrite = TRUE)
+```
+```{r}
+tisdale_releases_raw <- read_csv(here::here("data-raw", "qc-markdowns", "rst", "tisdale_releases_camp.csv"))
+tisdale_recaptures_raw <- read_csv(here::here("data-raw", "qc-markdowns", "rst", "tisdale_recaptures_camp.csv"))
+```
+
+## Cleaning and formatting
+
+Data from CAMP has more information for recaptures so use that instead of the
+excel data where available.
+
+```{r}
+# excel data
+tisdale_efficiency_clean <- tisdale_efficiency_raw %>% 
+  rename(date_released = `Release Date`,
+         number_released = `Number Released`,
+         number_recaptured = `Number Recaptured`) %>% 
+  mutate(date_released = as.Date(date_released, "%m/%d/%y"))
+
+# CAMP data
+tisdale_releases_camp <- tisdale_releases_raw %>% 
+  select(releaseID, nReleased, releaseTime, run, fishOrigin, lightCondition, release_site) %>% 
+  rename(release_id = releaseID,
+         number_released = nReleased,
+         date_released = releaseTime,
+         run_released = run,
+         release_origin = fishOrigin,
+         light_condition = lightCondition)
+
+tisdale_recaptures_camp <- tisdale_recaptures_raw %>% 
+  select(catchRawID, forkLength, weight, n, releaseID, run, final_run, fishOrigin, dead, visitTime, halfCone) %>% 
+  mutate(run = ifelse(!is.na(final_run), final_run, run)) %>% 
+  select(-final_run) %>% 
+  rename(release_id = releaseID,
+         fork_length = forkLength,
+         number_recaptured = n,
+         recapture_origin = fishOrigin,
+         date_recaptured = visitTime,
+         half_cone = halfCone)
+
+# checking full data
+tisdale_efficiency_camp <- tisdale_releases_camp %>% 
+  left_join(tisdale_recaptures_camp %>% 
+              group_by(release_id) %>% 
+              summarize(number_recaptured = sum(number_recaptured),
+                        median_fork_length = median(fork_length, na.rm = T)))
+
+# combining excel and CAMP data
+tisdale_releases <- tisdale_efficiency_clean %>% 
+  select(date_released, number_released) %>% 
+  full_join(tisdale_releases_camp %>% 
+              select(release_id, date_released, number_released, run_released, release_origin, light_condition, release_site))
+
+# check that no duplicates
+tisdale_releases %>% 
+  group_by(date_released) %>% 
+  tally()
+
+tisdale_recaptures <- tisdale_efficiency_clean %>% 
+  rename(number_recaptured_excel = number_recaptured) %>% 
+  full_join(tisdale_releases_camp %>% 
+              select(date_released, number_released, release_id)) %>% 
+  full_join(tisdale_recaptures_camp) %>% 
+  select(release_id, number_recaptured_excel, number_recaptured, fork_length, weight, run, recapture_origin, dead, date_recaptured, half_cone) %>% 
+  mutate(number_recaptured = case_when(is.na(number_recaptured) & !is.na(number_recaptured_excel) ~ number_recaptured_excel,
+                                       T ~ number_recaptured),
+         number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% 
+  select(-number_recaptured_excel) 
+  
+```
+
+## Exploratory plots
+```{r}
+tisdale_efficiency_clean %>% 
+  mutate(efficiency = number_recaptured/number_released) %>% 
+  ggplot(aes(x = date_released, y = efficiency)) +
+  geom_point()
+
+```
+
+```{r}
+tisdale_efficiency_clean %>% 
+  mutate(efficiency = number_recaptured/number_released,
+         wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released)),
+         wy = as.factor(wy)) %>% 
+  ggplot(aes(x = wy, y = efficiency)) +
+  geom_boxplot()
+```
+
+```{r}
+tisdale_efficiency_clean %>% 
+  mutate(efficiency = number_recaptured/number_released,
+         wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released)),
+         wy = as.factor(wy)) %>% 
+  group_by(wy) %>% 
+  summarise(n = length(unique(date_released)),
+            mean_efficiency = mean(efficiency)) %>%  
+  ggplot(aes(x = wy, y = mean_efficiency, fill = n)) +
+  geom_col()
+```
+
+## Save data
+
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(tisdale_releases,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/tisdale/tisdale_releases.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(tisdale_recaptures,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/tisdale/tisdale_recaptures.csv",
+           predefinedAcl = "bucketLevel")
+```
