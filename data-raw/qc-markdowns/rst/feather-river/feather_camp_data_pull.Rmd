@@ -306,27 +306,26 @@ turbidity <- environmental %>%
 #          sampleGearID = barometerSampleGearID) %>% 
 #   mutate(parameter = "barometer")
 
-weather <- environmental %>% 
-  select(trapVisitID, envDataRawID, weather)
-
 trap_visit_subsite <- trap_visit %>%
   select(trapVisitID, visitTime, visitTime2, trapPositionID) %>%
-  left_join(subsite_lu, by = c("trapPositionID" = "subSiteID")) %>% 
-  select(-trapPositionID)
+  left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
+  select(-trapPositionID, -siteID) %>% 
+  rename(site = siteName,
+         subsite = subSiteName) %>% 
+  mutate(site = tolower(site),
+         subsite = tolower(subsite))
 
 environmental_format <- bind_rows(discharge,
                                   velocity,
                                   temperature,
                                   light,
-                                  turbidity,
-                                  weather) %>% 
+                                  turbidity) %>% 
   left_join(trap_visit_subsite) %>% 
   left_join(unit_lu) %>% 
   left_join(sample_gear_lu) %>% 
   select(-c(unitID, sampleGearID, visitTime2)) %>% 
   rename(date = visitTime,
-         sample_gear = sampleGear,
-         subsite = subSiteName) %>% 
+         sample_gear = sampleGear) %>% 
   mutate(unit = case_when(is.na(unit) & !is.na(value) ~ "not recorded", 
                           is.na(unit) & is.na(value) ~ NA_character_,
                           T ~ unit),
