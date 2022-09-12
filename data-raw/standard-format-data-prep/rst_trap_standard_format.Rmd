@@ -9,18 +9,16 @@ library(lubridate)
 library(googleCloudStorageR)
 library(knitr)
 library(hms)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+```
 
-# Store authentication in .Renviron file
+```{r}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
-Cleaned data were saved on the jpe-dev-bucket on google cloud with the exception
-of Knights Landing data from CAMP which has not yet been saved to google cloud.
-
-Trap operations data exist for all locations except Sacramento River - Tisdale. We have not yet acquired the CAMP
-database from Tisdale.
 
 ```{r, data_pull, include = F}
 # Data pulled in from google cloud in rst_catch_standard_format
@@ -31,6 +29,7 @@ butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains tra
 clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"))
 deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv")) # contains trap data too
 feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
+feather_rst_camp <- read_csv(here::here("data", "rst", "feather_catch_camp.csv"))
 knights_landing_rst <- read_csv(here::here("data", "rst", "knights_catch_camp.csv"))
 knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_rst_clean.csv"))
 tisdale_rst_camp <- read_csv(here::here("data", "rst", "tisdale_rst_catch_camp.csv"))
@@ -41,6 +40,7 @@ yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 battle_environmental <- read_csv(here::here("data", "rst", "battle_rst_environmental.csv"))
 clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
+feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"))
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
 knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
 tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
@@ -269,33 +269,45 @@ All variables removed are included in the catch table or environmental table.
 ## Feather River
 
 ```{r, feather_clean}
-unique(feather_effort$trap_functioning)
-unique(feather_effort$sub_site_name)
-unique(feather_effort$fish_processed)
-# date, site_name, visit_time, visit_type, trap_functioning, water_temp_c,
-# turbidity_ntu, latitude, longitude
-feather_trap_clean <- feather_effort %>% 
-  select(-c(river_location, river_mile, latitude, longitude,
-            water_temp_c, turbidity_ntu)) %>%
-  rename(site = site_name,
-         subsite = sub_site_name,
-         trap_stop_time = visit_time,
-         trap_stop_date = date,
-         trap_status = visit_type,
-         gear_condition_code = trap_functioning) %>%
-  mutate(trap_stop_time = as_hms(trap_stop_time),
-         stream = "feather river",
-         site = tolower(site),
-         subsite = tolower(subsite)) %>%
+filter(feather_trap_camp, !is.na(counterAtStart))
+filter(feather_trap_camp, !is.na(counterAtEnd))
+filter(feather_trap_camp, !is.na(rpmRevolutionsAtStart))
+filter(feather_trap_camp, !is.na(rpmRevolutionsAtEnd))
+filter(feather_trap_camp, inThalweg == "Yes")
+filter(feather_trap_camp, !is.na(debrisVolumeCat))
+# only a few cases where visitTime != visitTime2
+filter(feather_trap_camp, visitTime != visitTime2)
+
+feather_trap_clean <- feather_trap_camp %>%
+  select(-c(sampleGear, visitTime2, debrisVolumeCat)) %>%
+  mutate(stream = "feather river",
+         site = tolower(siteName),
+         subsite = tolower(subSiteName)) %>%
+  rename(trap_visit_id = trapVisitID,
+         trap_stop_date = visitTime,
+         rpms_start = rpmRevolutionsAtStart,
+         rpms_end = rpmRevolutionsAtEnd,
+         counter_start = counterAtStart,
+         counter_end = counterAtEnd,
+         trap_status = visitType,
+         fish_processed = fishProcessed,
+         gear_condition_code = trapFunctioning,
+         is_half_cone_configuration = halfCone,
+         in_thalweg = inThalweg) %>%
+  select(-c(subSiteName, siteName)) %>% 
+  mutate(trap_visit_id = as.character(trap_visit_id),
+         in_thalweg = case_when(in_thalweg == "Yes" ~ T, 
+                                in_thalweg == "No" ~ F,
+                                T ~ NA)) %>% 
   distinct()
 
-unique(feather_trap_clean$subsite)
-# check to make sure one row per day/time 
-# feather_trap_clean %>%
-#   group_by(date,time, site, subsite) %>%
-#   tally() %>%
-#   filter(n > 1)
-feather_trap_clean %>% glimpse
+# # check to make sure one row per day/time 
+# there are multiple rows because time is not captured but trap may be checked multiple times a day
+ck <- feather_trap_clean %>%
+  group_by(trap_stop_date, subsite, trap_status) %>%
+  tally()
+filter(ck, n > 1)
+filter(feather_trap_clean, trap_stop_date == "2000-03-13")
 ```
 
 ### Variables removed
