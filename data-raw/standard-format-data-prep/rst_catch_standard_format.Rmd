@@ -18,8 +18,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
-Cleaned data were saved on the jpe-dev-bucket on google cloud with the exception
-of Knights Landing data from CAMP which has not yet been saved to google cloud.
 
 ```{r, data_pull, include = F, echo = F, eval = F}
 # # Data pull ---------------------------------------------------------------
@@ -43,6 +41,9 @@ files_deer <- tibble(path = "rst/deer-creek/data/deer_rst",
 files_feather <- tibble(path = rep("rst/feather-river/data/feather_rst",2),
                         name = c("","_effort"),
                         save = rep(here::here("data","rst", "feather_rst"), 2))
+files_feather_camp <- tibble(path = rep("rst/feather-river/data-raw/feather_",3),
+                        name = c("catch_camp","trap_camp", "environmental_camp"),
+                        save = rep(here::here("data","rst", "feather_"), 3))
 files_knights <- tibble(path = rep("rst/lower-sac-river/data-raw/knights-landing/knights_",2),
                         name = c("catch_camp", "trap_camp"),
                         save = rep(here::here("data","rst", "knights_"), 2))
@@ -74,6 +75,7 @@ pmap(files_butte, get_data)
 pmap(files_clear, get_data)
 pmap(files_deer, get_data)
 pmap(files_feather, get_data)
+pmap(files_feather_camp, get_data)
 pmap(files_knights, get_data)
 pmap(files_knights_pre2006, get_data)
 pmap(files_tisdale, get_data)
@@ -90,6 +92,7 @@ butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains tra
 clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"))
 deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv")) # contains trap data too
 feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
+feather_rst_camp <- read_csv(here::here("data", "rst", "feather_catch_camp.csv"))
 knights_landing_rst <- read_csv(here::here("data", "rst", "knights_catch_camp.csv"))
 knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_rst_clean.csv"))
 tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"))
@@ -101,6 +104,7 @@ yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 battle_environmental <- read_csv(here::here("data","rst", "battle_rst_environmental.csv"))
 clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
+feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"))
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
 knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
 tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
@@ -417,36 +421,96 @@ feather_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst"
 kable(feather_data_dictionary)
 ```
 
+There are differences between the original excel spreadsheet provided and the
+CAMP database. There are 400+ cases where there are small discrepancies between
+count when grouped by date, site and run.
+
+There are many cases where run is "not recorded" in CAMP and few cases in the
+original excel files. Decided to use the run recorded in CAMP because no information
+how run was being assigned in the excel files. Run can be filled in using the
+standard length at date model.
+
+To the best of our knowledge, Feather uses CAMP to store their data so CAMP
+should be the most reliable data source.
+
+```{r, compare_feather}
+feather_excel_test <- feather_rst %>% 
+  group_by(date, site_name, run) %>% 
+  summarize(count = sum(count, na.rm = T)) %>% 
+  rename(site = site_name,
+         excel = count) 
+  
+
+feather_camp_test <- feather_rst_camp %>% 
+  select(-c(catchRawID, trapVisitID, releaseID, visitTime2, markType, color, bodyPart)) %>%
+  #combine atcapture and final run
+  mutate(run = ifelse(!is.na(final_run) & final_run != "Not recorded", final_run, run),
+         runMethod = ifelse(!is.na(final_run_method), final_run_method, runMethod)) %>%
+  select(-c(final_run, final_run_method)) %>%
+  filter(commonName == "Chinook salmon") %>% 
+  rename(fork_length = forkLength,
+         lifestage = lifeStage,
+         date = visitTime,
+         site = siteName) %>%
+  group_by(date, site, run) %>%
+  summarize(count = sum(n, na.rm = T)) %>% 
+  rename(camp = count) %>% 
+  mutate(run = tolower(run))
+
+compare <- full_join(feather_excel_test, feather_camp_test)
+filter(compare, excel != camp)
+filter(compare, run == "not recorded") %>% group_by(year(date)) %>% tally()
+filter(feather_excel_test, is.na(run)) %>% group_by(year(date)) %>% tally()
+```
+
 ```{r, feather_clean}
 feather_rst %>% glimpse
-unique(feather_rst$run)
-unique(feather_rst$lifestage)
-# 127 out of 180871 where run is not designated
-# data are for all natural salmon
-filter(feather_rst, is.na(run)) %>% tally()
-# notes - sites are unique locations
-# origin is all natural
-# TODO method for designating run?
+feather_rst_camp %>% glimpse
+# same dates for the excel sheets vs CAMP so use CAMP
+min(feather_rst$date)
+min(feather_rst_camp$visitTime)
+# many obs where run is NA
+unique(feather_rst_camp$run)
+filter(feather_rst_camp, is.na(run), commonName == "Chinook salmon", n >0)
+unique(feather_rst_camp$commonName)
+unique(feather_rst_camp$fishOrigin)
+unique(feather_rst_camp$markType)
+filter(feather_rst_camp, visitTime != visitTime2)
 
-feather_rst_clean <- feather_rst %>%
-  rename(site = site_name) %>%
-  group_by(date, site, run, lifestage, fork_length) %>%
-  summarize(count = sum(count, na.rm = T))
+feather_rst_clean <- feather_rst_camp %>%
+  # removing existing mark for now. will add all those in later
+  select(-c(catchRawID, trapVisitID, releaseID, visitTime2, markType, color, bodyPart)) %>%
+  # combine atcapture and final run
+  mutate(run = ifelse(!is.na(final_run), final_run, run),
+         runMethod = ifelse(!is.na(final_run_method), final_run_method, runMethod)) %>% 
+  select(-c(final_run, final_run_method)) %>% 
+  rename(fork_length = forkLength,
+         adipose_clipped = fishOrigin,
+         species = commonName,
+         lifestage = lifeStage,
+         date = visitTime,
+         run_method = runMethod,
+         site = siteName) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site) %>%
+  summarize(count = sum(n, na.rm = T)) %>%
+  mutate(stream = "feather river",
+         site = tolower(site),
+         adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
+                                     adipose_clipped == "Hatchery" ~ T),
+         lifestage = tolower(lifestage),
+         species = tolower(species),
+         run_method = tolower(run_method),
+         run = tolower(run),
+         dead = ifelse(dead == "Yes", T, F)) 
 
 feather_rst_min <- feather_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   group_by(wy) %>% 
   summarize(min = min(date))
 
-# Trap operations and environmental data was captured separately
-# Need to check that if data in environmental it is also in catch data
-# e.g. make sure that if no catch then 0 in catch data
-
-feather_trap_clean <- feather_effort %>%
-  rename(site = site_name) %>%
-  # use sample date because this is the date the trap would have been checked
-  select(date, site) %>% 
-  distinct()
+feather_trap_clean <- feather_trap_camp %>%
+  rename(date = visitTime) %>%
+  distinct(date, siteName)
 
 feather_trap_min <- feather_trap_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -455,26 +519,14 @@ feather_trap_min <- feather_trap_clean %>%
 
 # when comparing min dates in rst and environmental data, they differ
 # this means that we need to add in zero catch data
+# no difference for feather
 feather_min_date_compare <- full_join(feather_rst_min, feather_trap_min)
 
-# This contains ALL data
-# Assumption is that if date is in environmental data but not catch data there was zero catch
-feather_rst_clean_final <- full_join(feather_rst_clean, 
-                                    feather_trap_clean) %>% 
-  mutate(count = ifelse(is.na(count), 0, count),
-         stream = "feather river",
-         site = tolower(site),
-         adipose_clipped = F,
-         run_method = "not recorded",
-         species = "chinook salmon") 
-
-# THIS CODE MODIFIES battle_rst_clean_final using functions that
-# mutate using data.table package
-setDT(feather_rst_clean_final)
-feather_rst_clean_final %>% 
+setDT(feather_rst_clean)
+feather_rst_clean %>% 
   run_encoding_dt() %>% 
+  run_method_encoding_dt() %>% 
   lifestage_encoding_dt()
-  
 ```
 
 ## Mill Creek
@@ -769,7 +821,7 @@ combined_rst <- bind_rows(battle_rst_clean_final,
                           butte_rst_clean,
                           clear_rst_clean_final,
                           deer_rst_clean,
-                          feather_rst_clean_final,
+                          feather_rst_clean,
                           mill_rst_clean,
                           yuba_rst_clean,
                           knights_rst_clean_final,
