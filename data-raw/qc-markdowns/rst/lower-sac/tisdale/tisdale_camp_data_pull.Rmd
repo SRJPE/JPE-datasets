@@ -1,22 +1,22 @@
 ---
-title: "Tisdale Catch Data Pull"
+title: "Tisdale CAMP Data Pull"
 output: html_document
 date: "2022-09-02"
 ---
 
 This document queries the CAMP database provided by Drew Honeycutt (09/01/2022) to extract
 RST catch data for Tisdale trap. Previous files QC'd Excel files provided by
-Drew Honeycutt.
+Drew Honeycutt. This script updates the data originally provided.
 
-This document will only work on Mac OS. Currently there is a local file path which
-will be updated in future updates.
+If this file doesn't run, make sure operating system is being set correctly. 
+Depending on the operating system this script will run either the query_tisdale_camp 
+'4pc' or '4mac'
 
 *Important to filter releaseID == 0 or releasedID == 255 to exclude recaptures*
 
 ```{r}
 library(tidyverse)
 library(knitr)
-library(Hmisc)
 library(lubridate)
 library(googleCloudStorageR)
 root.dir <- rprojroot::find_rstudio_root_file()
@@ -27,89 +27,35 @@ knitr::opts_knit$set(root.dir)
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
-# Pull in data tables
+
+# Pull in Access db from Google Cloud
 
 ```{r}
-# TODO
-# Set up non-local connection with CAMP access database 
-tisdale_access_db <- "/Users/ashleyvizek/code/tisdale_CAMP.mdb"
-mdb.get(tisdale_access_db, tables = T)
-
-catch_raw <- mdb.get(tisdale_access_db, tables = "CatchRaw")
-trap_visit <- mdb.get(tisdale_access_db, tables = "TrapVisit")
-mark <-  mdb.get(tisdale_access_db, tables = "MarkExisting")
-# might be able to pull some information from 2016, 2021, 2022
-release <- mdb.get(tisdale_access_db, tables = "Release")
-# no helpful information in this table
-release_fish <- mdb.get(tisdale_access_db, tables = "ReleaseFish")
-environmental <- mdb.get(tisdale_access_db, tables = "EnvDataRaw")
+gcs_get_object(object_name = "rst/CAMP/tisdale/tisdale_CAMP.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "tisdale", "CAMP.mdb"),
+               overwrite = TRUE)
 ```
-# Lookup tables
+
+# Query data tables
+
 ```{r}
-# pull lookup tables
-visit_type_lu <- mdb.get(tisdale_access_db, "luVisitType") %>% 
-  select(-activeID) %>%glimpse
+# runs the mac or pc version of the query tables file depending on operating system
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']), "mac", "pc")
 
-run_lu <- mdb.get(tisdale_access_db, "luRun") %>% 
-  select(-activeID) %>% glimpse
+if(operating_system == "pc") {
+  source(here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "tisdale", "query_tisdale_camp_4pc.R"))
+  } else{
+    source(here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "tisdale", "query_tisdale_camp_4mac.R"))
+  }
+```
 
-run_method_lu <- mdb.get(tisdale_access_db, "luRunMethod") %>% 
-  select(-activeID) %>% glimpse
+# Site
 
-lifestage_lu <- mdb.get(tisdale_access_db, "luLifeStage") %>% 
-  select(-activeID) %>% glimpse
+Joins site and subsite table
 
-taxon_lu <-  mdb.get(tisdale_access_db, "luTaxon") %>% 
-  mutate(taxonID = as.numeric(taxonID)) %>%
-  select(taxonID, commonName) %>% glimpse
-
-origin_lu <-  mdb.get(tisdale_access_db, "luFishOrigin") %>% 
-  select(-activeID) %>% glimpse
-
-debris_volume_lu <- mdb.get(tisdale_access_db,  "luDebrisVolumeCat") %>% 
-  select(-activeID) %>% 
-  glimpse
-
-trap_function_lu <- mdb.get(tisdale_access_db, "luTrapFunctioning") %>%
-  select(-activeID) %>% 
-  glimpse
-
-processed_lu <- mdb.get(tisdale_access_db, "luFishProcessed") %>%
-  select(-activeID) %>% 
-  glimpse
-
-subsite_lu <- mdb.get(tisdale_access_db, "SubSite") %>% 
-  select(subSiteName, subSiteID) %>% 
-  filter(subSiteName != "N/A")
-
-site_lu <- mdb.get(tisdale_access_db, "Site") %>% 
-  select(siteName, siteID)
-
-sample_gear_lu <- mdb.get(tisdale_access_db, "luSampleGear") %>% 
-  select(-activeID) %>% glimpse()
-
-no_yes_lu <- mdb.get(tisdale_access_db, "luNoYes")
-
-# lookups for existing mark
-color_lu <- mdb.get(tisdale_access_db, "luColor") %>%
-  select(-activeID) %>% glimpse()
-
-mark_type_lu <- mdb.get(tisdale_access_db, "luMarkType") %>%
-  select(-activeID) %>% glimpse()
-
-body_part_lu <- mdb.get(tisdale_access_db, "luBodyPart") %>%
-  select(-activeID) %>% glimpse()
-
-# lookups for releases
-release_purpose_lu <- mdb.get(tisdale_access_db, "luReleasePurpose") %>% 
-   select(-activeID) %>% glimpse()
-
-light_condition_lu <- mdb.get(tisdale_access_db, "luLightCondition") %>% 
-   select(-activeID) %>% glimpse()
-
-unit_lu <- mdb.get(tisdale_access_db, "luUnit") %>% 
-   select(-activeID) %>% glimpse()
-
+```{r}
+site_subsite <- full_join(site_lu, subsite_lu)
 ```
 
 # Catch (not including recaptures)
@@ -246,7 +192,7 @@ filter(trap_visit, !is.na(sampleGearID))
 # select relevant variables from trapvisit table
 trap_visit_format <- trap_visit %>% 
   select(trapVisitID, trapPositionID, visitTime, visitTime2, visitTypeID, fishProcessedID, sampleGearID, inThalwegID, trapFunctioningID, counterAtStart, counterAtEnd, rpmRevolutionsAtStart, rpmRevolutionsAtEnd, halfConeID, debrisVolumeCatID, comments) %>% 
-  left_join(subsite_lu, by = c("trapPositionID" = "subSiteID")) %>% 
+  left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
   left_join(visit_type_lu) %>% 
   left_join(processed_lu) %>% 
   left_join(sample_gear_lu) %>% 
@@ -255,7 +201,7 @@ trap_visit_format <- trap_visit %>%
   left_join(trap_function_lu) %>% 
   left_join(debris_volume_lu) %>% 
   mutate(halfCone = ifelse(halfConeID == 1, T, F)) %>% 
-  select(-c(trapPositionID, visitTypeID, fishProcessedID, sampleGearID, inThalwegID, trapFunctioningID, debrisVolumeCatID, halfConeID))
+  select(-c(trapPositionID, visitTypeID, fishProcessedID, sampleGearID, inThalwegID, trapFunctioningID, debrisVolumeCatID, halfConeID, siteID))
 
 # Save data to google cloud
 f <- function(input, output) write_csv(input, file = output)
@@ -357,8 +303,12 @@ barometer <- environmental %>%
 
 trap_visit_subsite <- trap_visit %>%
   select(trapVisitID, visitTime, visitTime2, trapPositionID) %>%
-  left_join(subsite_lu, by = c("trapPositionID" = "subSiteID")) %>% 
-  select(-trapPositionID)
+  left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
+  select(-trapPositionID, -siteID) %>% 
+  rename(site = siteName,
+         subsite = subSiteName) %>% 
+  mutate(site = tolower(site),
+         subsite = tolower(subsite))
 
 environmental_format <- bind_rows(discharge,
                                   depth,
@@ -374,8 +324,7 @@ environmental_format <- bind_rows(discharge,
   left_join(sample_gear_lu) %>% 
   select(-c(unitID, sampleGearID, visitTime2)) %>% 
   rename(date = visitTime,
-         sample_gear = sampleGear,
-         subsite = subSiteName) %>% 
+         sample_gear = sampleGear) %>% 
   mutate(unit = case_when(is.na(unit) & !is.na(value) ~ "not recorded", 
                           is.na(unit) & is.na(value) ~ NA_character_,
                           T ~ unit),
