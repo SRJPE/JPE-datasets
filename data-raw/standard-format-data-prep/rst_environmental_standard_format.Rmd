@@ -178,19 +178,50 @@ The dataset included operations and environmental data. Below only
 columns for environmental data are selected.
 
 ```{r, message=FALSE, warning=FALSE}
-gcs_get_object(object_name = "rst/feather-river/data/feather_rst_effort.csv",
+gcs_get_object(object_name = "rst/feather-river/data-raw/feather_environmental_camp.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data", "rst", "feather_rst_environmental.csv"),
+               saveToDisk = here::here("data", "rst", "feather_environmental_camp.csv"),
                overwrite = TRUE)
 
-feather_env <- read_csv(here::here("data", "rst", "feather_rst_environmental.csv")) %>% 
-  select(date, site = site_name, subsite = sub_site_name, temperature = water_temp_c, 
-         turbidity = turbidity_ntu) %>%
-  mutate(stream = "feather creek",
-         site = tolower(site),
-         subsite = tolower(subsite)) %>%
-  distinct() %>%
-  glimpse
+feather_env_raw <- read_csv(here::here("data", "rst", "feather_environmental_camp.csv")) 
+
+# check those with different units
+# looks like for those with different units is typo
+# assume all flow in cfs
+feather_flow <- filter(feather_env_raw, parameter == "discharge") %>% 
+  group_by(date, site, subsite) %>% 
+  summarise(value = mean(value, na.rm = T),
+            value = ifelse(is.nan(value), NA_real_, value)) %>% 
+  rename(flow = value)
+# convert meters to feet and get rid of nonsensical values which are errors
+feather_velocity <- filter(feather_env_raw, parameter == "velocity") %>% 
+  mutate(value = case_when(unit == "meters/second (m/sec)" ~ value*3.28,
+                           value > 50 ~ NA_real_,
+                           T ~ value)) %>% 
+  group_by(date, site, subsite) %>% 
+  summarise(value = mean(value, na.rm = T),
+            value = ifelse(is.nan(value), NA_real_, value)) %>% 
+  rename(velocity = value)
+# convert F to C
+feather_temperature <- filter(feather_env_raw, parameter == "temperature") %>% 
+  mutate(value = case_when(unit == "°F" ~ (value-32)*(5/9),
+                           T ~ value)) %>% 
+  group_by(date, site, subsite) %>% 
+  summarise(value = mean(value, na.rm = T),
+            value = ifelse(is.nan(value), NA_real_, value)) %>% 
+  rename(temperature = value)
+# filter for NTU, few with values that don't make sense
+feather_turbidity <- filter(feather_env_raw, parameter == "turbidity") %>% 
+  filter(unit == "nephelometric turbidity units (NTU)") %>% 
+  group_by(date, site, subsite) %>% 
+  summarise(value = mean(value, na.rm = T),
+            value = ifelse(is.nan(value), NA_real_, value)) %>% 
+  rename(turbidity = value)
+  
+feather_env <- full_join(feather_flow, feather_velocity) %>% 
+  full_join(feather_temperature) %>% 
+  full_join(feather_turbidity) %>% 
+  mutate(stream = "feather river")
 
 ```
 
