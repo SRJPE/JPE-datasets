@@ -65,7 +65,7 @@ detach(package:Hmisc)
 selected_trap_visit <- trap_visit %>%
   select(trapVisitID, visitTime, visitTime2, trapPositionID) %>%
   left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
-  select(-trapPositionID, -siteID, -subSiteName)
+  select(-trapPositionID, -siteID, -subSiteName) 
 
 selected_mark_existing <- mark %>% 
   select(catchRawID, markTypeID, markColorID, markPositionID) %>% 

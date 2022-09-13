@@ -1,0 +1,149 @@
+---
+title: "Feather - Check CAMP tables and variables"
+output: html_document
+date: "2022-09-13"
+---
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(Hmisc)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+```
+
+```{r}
+feather_camp <- (here::here("data-raw", "qc-markdowns", "rst", "feather-river", "CAMP.mdb"))
+mdb.get(feather_camp, tables = T)
+```
+
+# Project Description 
+
+Only one record: contains metadata information and is not needed as a separate data table
+
+```{r}
+project_description <- mdb.get(feather_camp, tables = "ProjectDescription")
+```
+
+# Site
+I think this should be included as metadata, not a separate data table
+
+## variables to exclude
+- beginDate
+- endDate
+- srcXCoord
+- srcYCoord
+- srcCoordSystem
+- llSource
+- srcDatum
+- srcProjection
+- coordSystem
+- projection
+- georefQAstatus
+- relative
+- usgsStationNumber
+- dischargeURL
+- comments
+- activeID
+- dataRecorder
+- dataRecorderAgencyID,
+- creationTime
+- updateTime
+
+```{r}
+site <- mdb.get(feather_camp, tables = "Site")
+```
+
+# Subsite 
+I think this should be joined with the Site table and included as metadata
+
+## variables to exclude
+- projectDescriptionID
+- srcXCoord
+- srcYCoord
+- srcCoordSystem
+- llSource
+- srcDatum
+- srcProjection
+- coordSystem
+- projection
+- georefQAstatus
+- comments
+- activeID
+- dataRecorder
+- dataRecorderAgencyID
+- creationTime
+- updateTime
+
+```{r}
+subsite <- mdb.get(feather_camp, tables = "SubSite")
+```
+
+# TrapVisit
+
+## Variables to exclude
+- projectDescriptionID (all one project)
+- crew (internal only)
+- sampleGearID (metadata)
+- timeSampleStarted
+- timeSampleEnded
+- batchDate
+- counterOld,
+- counterOldTime
+- counterAtEndTime
+- counterNew
+- coneDepthAtStart
+- coneDepthAtEnd
+- includeCatchComments
+- coneDebrisIntake1
+- coneDebrisIntake2
+- dataCollectedID
+- dataSheetNumber
+- dataRecorder
+
+```{r}
+trap_visit <- mdb.get(feather_camp, tables = "TrapVisit")
+# These are all NA
+filter(trap_visit, !is.na(timeSampleStarted))
+filter(trap_visit, !is.na(timeSampleEnded))
+filter(trap_visit, !is.na(batchDate))
+filter(trap_visit, !is.na(counterOld))
+filter(trap_visit, !is.na(counterOldTime))
+filter(trap_visit, !is.na(counterAtEndTime))
+filter(trap_visit, !is.na(counterNew))
+filter(trap_visit, !is.na(rpmSecondsAtStart))
+# only two records where rpm is not 60 seconds
+filter(trap_visit, rpmSecondsAtStart != 60)
+filter(trap_visit, !is.na(coneDepthAtStart))
+filter(trap_visit, !is.na(coneDepthAtEnd))
+filter(trap_visit, !is.na(includeCatchID))
+unique(trap_visit$includeCatchID)
+filter(trap_visit, includeCatchID == 2)
+filter(trap_visit, !is.na(includeCatchComments))
+filter(trap_visit, includeCatchComments != "")
+filter(trap_visit, !is.na(ConeDebrisIntake1))
+filter(trap_visit, !is.na(ConeDebrisIntake2))
+filter(trap_visit, !is.na(debrisVolumeCatID))
+filter(trap_visit, !is.na(debrisVolume))
+filter(trap_visit, !is.na(debrisType))
+```
+
+
+```{r}
+
+catch_raw <- mdb.get(feather_camp, tables = "CatchRaw")
+
+mark <-  mdb.get(feather_camp, tables = "MarkExisting")
+# might be able to pull some information from 2016, 2021, 2022
+release <- mdb.get(feather_camp, tables = "Release")
+release_target <- mdb.get(feather_camp, tables = "ReleaseXTargetSite")
+# no helpful information in this table
+release_fish <- mdb.get(feather_camp, tables = "ReleaseFish")
+environmental <- mdb.get(feather_camp, tables = "EnvDataRaw")
+# check post handle mort (nothing included)
+# post_handle_mort <- mdb.get(feather_camp, "PostHandleMort")
+# post_handle_mort_mark <- mdb.get(feather_camp, "PostHandleMortMark")
+env_raw_target <- mdb.get(feather_camp, "EnvDataRawXTargetSite")
+# env_daily <- mdb.get(feather_camp, "EnvDataDaily")
+```

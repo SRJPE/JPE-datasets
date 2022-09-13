@@ -4,16 +4,16 @@ library(Hmisc)
 library(lubridate)
 
 feather_camp <- (here::here("data-raw", "qc-markdowns", "rst", "feather-river", "CAMP.mdb"))
-mdb.get(feather_camp, tables = T)
 
 catch_raw <- mdb.get(feather_camp, tables = "CatchRaw")
 trap_visit <- mdb.get(feather_camp, tables = "TrapVisit")
 mark <-  mdb.get(feather_camp, tables = "MarkExisting")
-# might be able to pull some information from 2016, 2021, 2022
 release <- mdb.get(feather_camp, tables = "Release")
-# no helpful information in this table
-release_fish <- mdb.get(feather_camp, tables = "ReleaseFish")
+# TODO check if needed
+release_target <- mdb.get(feather_camp, tables = "ReleaseXTargetSite")
 environmental <- mdb.get(feather_camp, tables = "EnvDataRaw")
+# TODO check if needed
+env_raw_target <- mdb.get(feather_camp, "EnvDataRawXTargetSite")
 
 # pull lookup tables
 visit_type_lu <- mdb.get(feather_camp, "luVisitType") %>% 
