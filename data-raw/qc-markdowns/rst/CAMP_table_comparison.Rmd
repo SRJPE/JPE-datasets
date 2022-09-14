@@ -1,0 +1,310 @@
+---
+title: "CAMP comparisons"
+output: html_document
+date: "2022-09-14"
+---
+
+This document compares the proportion of NA within each CAMP data table across
+monitoring programs.
+
+```{r, include = F}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(Hmisc)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+```
+
+```{r, include = F}
+tisdale_camp <- here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "tisdale", "CAMP.mdb")
+knights_camp <- here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "knights_landing", "CAMP.mdb")
+feather_camp <- (here::here("data-raw", "qc-markdowns", "rst", "feather-river", "CAMP.mdb"))
+```
+
+```{r, include = F}
+heatmap <- function(dat, table) {
+ggplot(dat, aes(x = projectName, y = field, fill = prop_na)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "D") +
+  theme(axis.text.x = element_text(size = 8)) +
+  labs(x = "",
+       y = "CAMP field",
+       title = table,
+       fill = "Proportion NA")
+}
+```
+
+# CAMP data tables {.tabset}
+
+## ProjectDescription 
+
+```{r}
+project_description <- mdb.get(tisdale_camp, tables = "ProjectDescription") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "ProjectDescription")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "ProjectDescription")) %>%  glimpse
+
+project_id <- select(project_description, projectName, projectDescriptionID) %>% 
+  distinct() %>% 
+  filter(projectDescriptionID != 0) %>% 
+  mutate(projectName = case_when(projectName == "Butte Creek Parrot-Phelan Diversion Dam\n-\nPhelan Diversion \nDam" ~ "Butte",
+                                 projectName == "Lower Feather River RST" ~ "Lower Feather", 
+                                 projectName == "Sacramento River Knights Landing RST" ~ "Knights Landing",
+                                 projectName == "Sacramento River Tisdale RST" ~ "Tisdale",
+                                 projectName == "Feather River RST Program" ~ "Upper Feather"))
+```
+
+## Site
+
+```{r}
+site <- mdb.get(tisdale_camp, tables = "Site") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "Site")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "Site")) %>%  glimpse()
+```
+
+## SubSite
+
+```{r}
+subsite <- mdb.get(tisdale_camp, tables = "SubSite") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "SubSite")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "SubSite")) %>% 
+  full_join(project_id)
+
+subsite_summary <- subsite %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(subsite_summary, "SubSite")
+```
+
+## TrapVisit
+
+```{r}
+trap_visit <- mdb.get(tisdale_camp, tables = "TrapVisit") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "TrapVisit")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "TrapVisit")) %>% 
+  full_join(project_id)
+
+trap_visit_summary <- trap_visit %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(trap_visit_summary, "TrapVisit")
+```
+
+## CatchRaw
+
+```{r}
+catch_raw <- mdb.get(tisdale_camp, tables = "CatchRaw") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "CatchRaw")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "CatchRaw") %>% 
+              mutate(taxonID = as.numeric(taxonID))) %>% 
+  full_join(project_id)
+
+catch_raw_summary <- catch_raw %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(catch_raw_summary, "CatchRaw")
+```
+
+## MarkExisting
+
+```{r}
+mark_existing <- mdb.get(tisdale_camp, tables = "MarkExisting") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "MarkExisting")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "MarkExisting") %>% 
+              mutate(markCode = as.character(markCode))) %>% 
+  full_join(project_id)
+
+mark_existing_summary <- mark_existing %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(mark_existing_summary, "MarkExisting")
+```
+
+## Specimen
+
+```{r}
+specimen <- mdb.get(tisdale_camp, tables = "Specimen") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "Specimen")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "Specimen") %>% 
+            mutate(physicalSpecimenCode = as.character(physicalSpecimenCode),
+                   comments = as.character(comments),
+                   dataRecorder = as.character(dataRecorder),
+                   creationTime = as.Date(creationTime),
+                   updateTime = as.Date(updateTime))) %>% 
+  full_join(project_id)
+
+specimen_summary <- specimen %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(specimen_summary, "Specimen")
+```
+
+## PostHandleMort
+
+```{r}
+post_handle_mort <- mdb.get(tisdale_camp, "PostHandleMort") %>% 
+  bind_rows(mdb.get(knights_camp, "PostHandleMort")) %>% 
+  bind_rows(mdb.get(feather_camp, "PostHandleMort")) %>% 
+  full_join(project_id)
+
+post_handle_mort_summary <- post_handle_mort %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(post_handle_mort_summary, "PostHandleMort")
+```
+
+## PostHandleMortMark
+
+```{r}
+post_handle_mort_mark <- mdb.get(tisdale_camp, "PostHandleMortMark") %>% 
+  bind_rows(mdb.get(knights_camp, "PostHandleMortMark")) %>% 
+  bind_rows(mdb.get(feather_camp, "PostHandleMortMark")) %>% 
+  full_join(project_id)
+
+post_handle_mort_mark_summary <- post_handle_mort_mark %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(post_handle_mort_mark_summary, "PostHandleMortMark")
+```
+
+## EnvDataRaw
+
+```{r}
+env_data_raw <- mdb.get(tisdale_camp, tables = "EnvDataRaw") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "EnvDataRaw")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "EnvDataRaw")) %>% 
+  full_join(project_id)
+
+env_data_raw_summary <- env_data_raw %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(env_data_raw_summary, "EnvDataRaw")
+```
+
+## EnvDataRawXTargetSite
+
+```{r}
+env_data_raw_target <- mdb.get(tisdale_camp, tables = "EnvDataRawXTargetSite") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "EnvDataRawXTargetSite")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "EnvDataRawXTargetSite"))  %>% 
+  full_join(project_id)
+
+env_data_raw_target_summary <- env_data_raw_target %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(env_data_raw_target_summary, "EnvDataRawXTargetSite")
+```
+
+## EnvDataDaily
+
+```{r}
+env_data_daily <- mdb.get(tisdale_camp, tables = "EnvDataDaily") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "EnvDataDaily")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "EnvDataDaily")) %>% 
+  full_join(project_id)
+
+env_data_daily_summary <- env_data_daily %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(env_data_daily_summary, "EnvDataDaily")
+```
+
+## EnvDataDailyXTargetSite
+
+```{r}
+env_data_daily_target <- mdb.get(tisdale_camp, tables = "EnvDataDailyXTargetSite") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "EnvDataDailyXTargetSite")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "EnvDataDailyXTargetSite")) %>% 
+  full_join(project_id)
+
+env_data_daily_target_summary <- env_data_daily_target %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(env_data_daily_target_summary, "EnvDataDailyXTargetSite")
+```
+
+## Release
+
+```{r}
+release <- mdb.get(tisdale_camp, tables = "Release") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "Release")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "Release")) %>% 
+  full_join(project_id)
+
+release_summary <- release %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(release_summary, "Release")
+```
+
+## ReleaseXTargetSite
+
+```{r}
+release_target <- mdb.get(tisdale_camp, tables = "ReleaseXTargetSite") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "ReleaseXTargetSite")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "ReleaseXTargetSite")) %>% 
+  full_join(project_id)
+
+release_target_summary <- release_target %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(release_target_summary, "ReleaseXTargetSite")
+```
+
+## MarkApplied
+
+```{r}
+mark_applied <- mdb.get(tisdale_camp, tables = "MarkApplied") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "MarkApplied")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "MarkApplied")) %>% 
+  full_join(project_id)
+
+mark_applied_summary <- mark_applied %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(mark_applied_summary, "MarkApplied")
+```
+
+## ReleaseFish
+
+```{r}
+release_fish <- mdb.get(tisdale_camp, tables = "ReleaseFish") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "ReleaseFish")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "ReleaseFish")) %>% 
+  full_join(project_id)
+
+release_fish_summary <- release_fish %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(na = ~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
+
+heatmap(release_fish_summary, "ReleaseFish")
+```
