@@ -39,6 +39,8 @@ ggplot(dat, aes(x = projectName, y = field, fill = prop_na)) +
 
 ## ProjectDescription 
 
+This table contains project level metadata and will be captured in metadata documents. 
+
 ```{r}
 project_description <- mdb.get(tisdale_camp, tables = "ProjectDescription") %>% 
   bind_rows(mdb.get(knights_camp, tables = "ProjectDescription")) %>% 
@@ -56,6 +58,9 @@ project_id <- select(project_description, projectName, projectDescriptionID) %>%
 
 ## Site
 
+Site location information will be captured in the metadata. All tables will include
+site name.
+
 ```{r}
 site <- mdb.get(tisdale_camp, tables = "Site") %>% 
   bind_rows(mdb.get(knights_camp, tables = "Site")) %>% 
@@ -63,6 +68,9 @@ site <- mdb.get(tisdale_camp, tables = "Site") %>%
 ```
 
 ## SubSite
+
+Subsite information will be captured in metadata. All tables will include subsite
+name. 
 
 ```{r}
 subsite <- mdb.get(tisdale_camp, tables = "SubSite") %>% 
@@ -80,6 +88,55 @@ heatmap(subsite_summary, "SubSite")
 
 ## TrapVisit
 
+### variables to exclude
+- crew (internal only)
+- sampleGearID (metadata)
+- timeSampleStarted
+- timeSampleEnded
+- batchDate
+- counterOld
+- counterOldTime
+- counterAtEndTime
+- counterNew
+- coneDepthAtStart
+- coneDepthAtEnd
+- includeCatchComments
+- coneDebrisIntake1
+- coneDebrisIntake2
+- debrisType
+- dataCollectedID
+- dataSheetNumber
+- dataRecorder
+- dataRecorderAgencyID
+- creationTime
+- updateTime
+- qcDone
+- qcDoneTime
+- qcComments
+
+### variables to include
+- projectDescriptionID
+- trapVisitID (used to join with CatchRaw)
+- trapPositionID (join with site/subsite)
+- visitTime
+- visitTime2
+- visitTypeID
+- fishProcessedID (luFishProcessed)
+- inThalwegID (luNoYes)
+- trapFunctioningID (luTrapFunctioning)
+- counterAtStart
+- counterAtEnd
+- rpmRevolutionsAtStart
+- rpmSecondsAtStart
+- rpmRevolutionsAtEnd
+- rpmSecondsAtEnd
+- halfConeID (luNoYes)
+- includeCatchID (luNoYes)
+- debrisVolumeCatID (luVolumeCat)
+- debrisVolume
+- debrisVolumeUnits 
+- comments
+
 ```{r}
 trap_visit <- mdb.get(tisdale_camp, tables = "TrapVisit") %>% 
   bind_rows(mdb.get(knights_camp, tables = "TrapVisit")) %>% 
@@ -95,6 +152,45 @@ heatmap(trap_visit_summary, "TrapVisit")
 ```
 
 ## CatchRaw
+
+### variables to exclude
+- auxiliaryRunID
+- auxiliaryRunMethodID
+- stdLength 
+- subsampleMethodID
+- subsampleNumerator
+- subsampleDenominator
+- fishHealth
+- gillRating
+- dataSheetNumber
+- dataRecorder
+- dataRecorderAgencyID
+- creationTime
+- updateTime
+- qcDone
+- qcDoneTime
+- qcComments
+
+### variables to include
+- projectDescriptionID
+- catchRawID
+- trapVisitID (used to join with TrapVisit table)
+- taxonID (luTaxon)
+- atCaptureRunID (luRun)
+- atCaptureRunMethodID (luRunMethod)
+- finalRunID (luRun)
+- finalRunMethodID (luRunMethod)
+- fishOriginID (luFishOrigin)
+- lifeStageID (luLifeStage)
+- forkLength
+- totalLength
+- weight
+- n
+- randomID (luNoYes)
+- actualCountID (luNoYes)
+- releaseID (used to join with Release table)
+- mortID (luNoYes)
+- comments
 
 ```{r}
 catch_raw <- mdb.get(tisdale_camp, tables = "CatchRaw") %>% 
@@ -113,6 +209,24 @@ heatmap(catch_raw_summary, "CatchRaw")
 
 ## MarkExisting
 
+### variables to exclude
+- dataRecorder
+- dataRecorderAgencyID
+- creationTime
+- updateTime
+- qcDone
+- qcDoneTime
+- qcComments
+
+### variables to include
+- projectDescriptionID
+- catchRawID (used to join with CatchRaw table)
+- markTypeID (luMarkType)
+- markColorID (luColor)
+- markPositionID (luBodyPart)
+- markExistingID
+- markCode
+
 ```{r}
 mark_existing <- mdb.get(tisdale_camp, tables = "MarkExisting") %>% 
   bind_rows(mdb.get(knights_camp, tables = "MarkExisting")) %>% 
@@ -129,6 +243,8 @@ heatmap(mark_existing_summary, "MarkExisting")
 ```
 
 ## Specimen
+
+Do not plan to include this table. For internal use only.
 
 ```{r}
 specimen <- mdb.get(tisdale_camp, tables = "Specimen") %>% 
@@ -151,6 +267,8 @@ heatmap(specimen_summary, "Specimen")
 
 ## PostHandleMort
 
+No data.
+
 ```{r}
 post_handle_mort <- mdb.get(tisdale_camp, "PostHandleMort") %>% 
   bind_rows(mdb.get(knights_camp, "PostHandleMort")) %>% 
@@ -166,6 +284,8 @@ heatmap(post_handle_mort_summary, "PostHandleMort")
 ```
 
 ## PostHandleMortMark
+
+No data.
 
 ```{r}
 post_handle_mort_mark <- mdb.get(tisdale_camp, "PostHandleMortMark") %>% 
@@ -183,6 +303,63 @@ heatmap(post_handle_mort_mark_summary, "PostHandleMortMark")
 
 ## EnvDataRaw
 
+### variables to exclude
+- measureTime does not exist
+- subSiteID does not exist
+- waterVelReadingStart
+- waterVelReadingEnd
+- waterVelTime
+- waterVelTimeUnitID
+- waterVelConvertFactor
+- airTemp
+- airTempUnitID
+- airTempSampleGearID
+- cloudCover
+- dataCollectedID
+- dataSheetNumber
+- dataRecorder
+- dataRecorderAgencyID
+- creationTime
+- updateTime
+- qcDone
+- qcDoneTime
+- qcComments
+
+### variables to include
+- projectDescriptionID
+- trapVisitID (used to join with TrapVisit table)
+- envDataRawID
+- discharge
+- dischargeUnitID (luUnit)
+- dischargeSampleGearID (luSampleGear)
+- waterDepth
+- waterDepthUnitID (luUnit)
+- waterDepthSampleGearID (luSampleGear)
+- waterVel
+- waterVelUnitID (luUnit)
+- waterVelSampleGearID (luSampleGear)
+- waterTemp
+- waterTempUnitID (luUnit)
+- waterTempSampleGearID (luSampleGear)
+- lightPenetration
+- lightPenetrationUnitID (luUnit)
+- lightPenetrationSampleGearID (luSampleGear)
+- turbidity
+- turbidityUnitID (luUnit)
+- turbiditySampleGearID (luSampleGear)
+- dissolvedOxygen
+- dissolvedOxygenUnitID (luUnit)
+- dissolvedOxygenSampleGearID (luSampleGear)
+- conductivity
+- conductivityUnitID (luUnit)
+- conductivitySampleGearID (luSampleGear)
+- barometer
+- barometerUnitID (luUnit)
+- barometerSampleGearID (luSampleGear)
+- cloudCover
+- weather
+- comments
+
 ```{r}
 env_data_raw <- mdb.get(tisdale_camp, tables = "EnvDataRaw") %>% 
   bind_rows(mdb.get(knights_camp, tables = "EnvDataRaw")) %>% 
@@ -199,6 +376,8 @@ heatmap(env_data_raw_summary, "EnvDataRaw")
 
 ## EnvDataRawXTargetSite
 
+We do not need this table because join can be made to TrapVisit table.
+
 ```{r}
 env_data_raw_target <- mdb.get(tisdale_camp, tables = "EnvDataRawXTargetSite") %>% 
   bind_rows(mdb.get(knights_camp, tables = "EnvDataRawXTargetSite")) %>% 
@@ -212,8 +391,21 @@ env_data_raw_target_summary <- env_data_raw_target %>%
 
 heatmap(env_data_raw_target_summary, "EnvDataRawXTargetSite")
 ```
+```{r, include = F}
+# join envdataraw with trapvisit
+
+e1 <- env_data_raw %>% 
+  left_join(env_data_raw_target)
+# join envdataraw with envdatarawtargetsite
+
+e2 <- env_data_raw %>% 
+  left_join(trap_visit)
+
+```
 
 ## EnvDataDaily
+
+No data.
 
 ```{r}
 env_data_daily <- mdb.get(tisdale_camp, tables = "EnvDataDaily") %>% 
@@ -231,6 +423,8 @@ heatmap(env_data_daily_summary, "EnvDataDaily")
 
 ## EnvDataDailyXTargetSite
 
+No data.
+
 ```{r}
 env_data_daily_target <- mdb.get(tisdale_camp, tables = "EnvDataDailyXTargetSite") %>% 
   bind_rows(mdb.get(knights_camp, tables = "EnvDataDailyXTargetSite")) %>% 
@@ -246,6 +440,43 @@ heatmap(env_data_daily_target_summary, "EnvDataDailyXTargetSite")
 ```
 
 ## Release
+
+### variables to exclude
+- checkedTime
+- nMarkExamined
+- nMarkNotRetained
+- propMarked
+- crew
+- dataCollectedID
+- dataSheetNumber
+- dataRecorder
+- dataRecorderAgencyID
+- creationTime
+- updateTime
+- qcDone
+- qcDoneTime
+- qcComments
+
+### variables to include
+- projectDescriptionID
+- releaseID (used to join with CatchRaw table)
+- releasePurposeID (luReleasePurpose)
+- markedTaxonID (luTaxon)
+- markedRunID (luRun)
+- markedLifeStageID (luLifeStage)
+- markedFishOriginID (luFishOrigin)
+- sourceOfFishSiteID (join with site)
+- releaseSiteID (join with site)
+- releaseSubSiteID (join with site)
+- nMortWhileHandling
+- nMortAtCheck
+- nReleased
+- releaseTime
+- releaseLightConditionID (luLightCondition)
+- testDays
+- includeTestID (luNoYes)
+- includeTestComments
+- comments
 
 ```{r}
 release <- mdb.get(tisdale_camp, tables = "Release") %>% 
@@ -279,6 +510,24 @@ heatmap(release_target_summary, "ReleaseXTargetSite")
 
 ## MarkApplied
 
+### variables to exclude
+- dataRecorder
+- dataRecorderAgencyID
+- creationTime
+- updateTime
+- qcDone
+- qcDoneTime
+
+### variables to include
+- projectDescriptionID
+- releaseID (used to join with Release table)
+- appliedMarkTypeID (luMarkType)
+- appliedMarkColorID (luColor)
+- appliedMarkPositionID (luBodyPart)
+- markAppliedID
+- appliedMarkCode
+- comments
+
 ```{r}
 mark_applied <- mdb.get(tisdale_camp, tables = "MarkApplied") %>% 
   bind_rows(mdb.get(knights_camp, tables = "MarkApplied")) %>% 
@@ -295,6 +544,26 @@ heatmap(mark_applied_summary, "MarkApplied")
 
 ## ReleaseFish
 
+### variables to exclude
+- dataSheetNumber
+- dataRecorder
+- dataRecorderAgencyID
+- creationTime
+- updateTime
+- qcDone
+- qcDoneTime
+- qcComments
+
+### variables to include
+- projectDescriptionID
+- releaseFishID
+- releaseID (used to join with Release table)
+- nMarked
+- forkLength
+- weight
+- timeMarked
+- comments
+
 ```{r}
 release_fish <- mdb.get(tisdale_camp, tables = "ReleaseFish") %>% 
   bind_rows(mdb.get(knights_camp, tables = "ReleaseFish")) %>% 
@@ -307,4 +576,322 @@ release_fish_summary <- release_fish %>%
   pivot_longer(!projectName, names_to = "field", values_to = "prop_na")
 
 heatmap(release_fish_summary, "ReleaseFish")
+```
+
+# CAMP Lookup Tables
+
+Using Tisdale lookup tables for an example.
+
+```{r}
+visit_type_lu <- mdb.get(tisdale_camp, "luVisitType") %>% 
+  select(-activeID) %>%glimpse
+
+run_lu <- mdb.get(tisdale_camp, "luRun") %>% 
+  select(-activeID) %>% glimpse
+
+run_method_lu <- mdb.get(tisdale_camp, "luRunMethod") %>% 
+  select(-activeID) %>% glimpse
+
+lifestage_lu <- mdb.get(tisdale_camp, "luLifeStage") %>% 
+  select(-activeID) %>% glimpse
+
+taxon_lu <-  mdb.get(tisdale_camp, "luTaxon") %>% 
+  mutate(taxonID = as.numeric(taxonID)) %>% 
+  select(taxonID, commonName) %>% glimpse
+
+origin_lu <-  mdb.get(tisdale_camp, "luFishOrigin") %>% 
+  select(-activeID) %>% glimpse
+
+debris_volume_lu <- mdb.get(tisdale_camp,  "luDebrisVolumeCat") %>% 
+  select(-activeID) %>% 
+  glimpse
+
+trap_function_lu <- mdb.get(tisdale_camp, "luTrapFunctioning") %>%
+  select(-activeID) %>% 
+  glimpse
+
+processed_lu <- mdb.get(tisdale_camp, "luFishProcessed") %>%
+  select(-activeID) %>% 
+  glimpse
+
+subsite_lu <- mdb.get(tisdale_camp, "SubSite") %>% 
+  select(subSiteName, subSiteID, siteID) %>% 
+  filter(subSiteName != "N/A")
+
+site_lu <- mdb.get(tisdale_camp, "Site") %>% 
+  select(siteName, siteID)
+
+sample_gear_lu <- mdb.get(tisdale_camp, "luSampleGear") %>% 
+  select(-activeID) %>% glimpse()
+
+no_yes_lu <- mdb.get(tisdale_camp, "luNoYes")
+
+# lookups for existing mark
+color_lu <- mdb.get(tisdale_camp, "luColor") %>%
+  select(-activeID) %>% glimpse()
+
+mark_type_lu <- mdb.get(tisdale_camp, "luMarkType") %>%
+  select(-activeID) %>% glimpse()
+
+body_part_lu <- mdb.get(tisdale_camp, "luBodyPart") %>%
+  select(-activeID) %>% glimpse()
+
+# lookups for releases
+release_purpose_lu <- mdb.get(tisdale_camp, "luReleasePurpose") %>% 
+  select(-activeID) %>% glimpse()
+
+light_condition_lu <- mdb.get(tisdale_camp, "luLightCondition") %>% 
+  select(-activeID) %>% glimpse()
+
+unit_lu <- mdb.get(tisdale_camp, "luUnit") %>% 
+  select(-activeID) %>% glimpse()
+
+```
+# CAMP Views for Data Sharing
+
+## Site and SubSite
+
+Not shared but linked with other tables.
+
+```{r}
+site_subsite <- full_join(site %>% select(siteName, siteID), 
+                          subsite %>%  select(subSiteName, subSiteID, siteID))
+```
+
+## Trap
+
+```{r}
+trap_table <- trap_visit %>% 
+  select(projectDescriptionID, trapVisitID, trapPositionID, visitTime, visitTime2, visitTypeID, fishProcessedID, inThalwegID, trapFunctioningID, counterAtStart, counterAtEnd, rpmRevolutionsAtStart, rpmSecondsAtStart, rpmRevolutionsAtEnd, rpmSecondsAtEnd, halfConeID, includeCatchID, debrisVolumeCatID, debrisVolume, debrisVolumeUnits, comments) %>% 
+  left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
+  select(-trapPositionID, -siteID) %>% 
+  left_join(visit_type_lu, by = c("visitTypeID" = "visitTypeID")) %>% 
+  select(-visitTypeID) %>% 
+  left_join(processed_lu, by = c("fishProcessedID" = "fishProcessedID")) %>% 
+  select(-fishProcessedID) %>% 
+  left_join(no_yes_lu, by = c("inThalwegID" = "noYesID")) %>% 
+  rename(inThalweg = noYes) %>% 
+  select(-inThalwegID) %>% 
+  left_join(trap_function_lu, by = c("trapFunctioningID" = "trapFunctioningID")) %>% 
+  select(-trapFunctioningID) %>% 
+  left_join(no_yes_lu, by = c("halfConeID" = "noYesID")) %>% 
+  rename(halfCone = noYes) %>% 
+  select(-halfConeID) %>% 
+  left_join(no_yes_lu, by = c("includeCatchID" = "noYesID")) %>% 
+  rename(includeCatch = noYes) %>% 
+  select(-includeCatchID) %>% 
+  left_join(debris_volume_lu, by = c("debrisVolumeCatID" = "debrisVolumeCatID")) %>% 
+  select(-debrisVolumeCatID)
+```
+
+## Catch
+
+### TrapVisit
+- projectDescriptionID (used to join with CatchRaw)
+- trapVisitID (used to join with CatchRaw)
+- visitTime
+- visitTime2
+- visitType (luVisitType)
+- siteName (join with site/subsite)
+- subSiteName (join with site/subsite)
+
+### MarkExisting
+- projectDescriptionID (used to join with CatchRaw table)
+- catchRawID (used to join with CatchRaw table)
+- markTypeID (luMarkType)
+- markColorID (luColor)
+- markPositionID (luBodyPart)
+- markExistingID
+- markCode
+
+In some cases one catchRawID can have multiple markExisitingIDs. This creates duplicates in the catchRaw table when joining. To avoid duplicates the markExisting table needs to spread to include columns for each mark.
+
+```{r}
+mark_existing_w_joins <- mark_existing %>% 
+  left_join(mark_type_lu, by = c("markTypeID" = "markTypeID")) %>% 
+  select(-markTypeID) %>% 
+  left_join(color_lu, by = c("markColorID" = "colorID")) %>% 
+  rename(markColor = color) %>% 
+  select(-markColorID) %>% 
+  left_join(body_part_lu, by = c("markPositionID" = "bodyPartID")) %>% 
+  rename(markPosition = bodyPart) %>% 
+  select(-markPositionID) %>% 
+  select(projectDescriptionID, catchRawID, markCode, markType, markColor, markPosition) %>% 
+  pivot_longer(cols = starts_with("mark"),
+               names_to = "mark",
+               values_to = "value") %>% 
+  group_by(catchRawID, projectDescriptionID, mark) %>% 
+  mutate(number = 1:n(),
+         mark = paste0(mark,"_",number)) %>% 
+  select(-number) %>% 
+  pivot_wider(id_cols = c("catchRawID", "projectDescriptionID"), names_from = "mark", values_from = "value")
+
+catch_table <- catch_raw %>% 
+  select(projectDescriptionID, catchRawID, trapVisitID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, totalLength, weight, n, randomID, actualCountID, releaseID, mortID, comments) %>% 
+  left_join(filter(trap_table, fishProcessed %in% c("Processed fish", "Processed fish")) %>% 
+              select(projectDescriptionID, trapVisitID, visitTime, visitTime2, visitType, siteName, subSiteName), by = c("trapVisitID" = "trapVisitID", "projectDescriptionID" = "projectDescriptionID")) %>% 
+  left_join(mark_existing_w_joins, by = c("catchRawID" = "catchRawID", "projectDescriptionID" = "projectDescriptionID"))
+```
+
+## Release
+
+### Release Summary
+- projectDescriptionID
+- releaseID (used to join with CatchRaw table)
+- releasePurposeID (luReleasePurpose)
+- markedTaxonID (luTaxon)
+- markedRunID (luRun)
+- markedLifeStageID (luLifeStage)
+- markedFishOriginID (luFishOrigin)
+- sourceOfFishSiteID (join with site)
+- releaseSiteID (join with site)
+- releaseSubSiteID (join with site)
+- nMortWhileHandling
+- nMortAtCheck
+- nReleased
+- releaseTime
+- releaseLightConditionID (luLightCondition)
+- testDays
+- includeTestID (luNoYes)
+- includeTestComments
+- comments
+
+### MarkApplied
+- projectDescriptionID
+- releaseID (used to join with Release table)
+- appliedMarkTypeID (luMarkType)
+- appliedMarkColorID (luColor)
+- appliedMarkPositionID (luBodyPart)
+- markAppliedID
+- appliedMarkCode
+- comments
+
+```{r}
+release_summary_table <- release %>% 
+  select(projectDescriptionID, releaseID, releasePurposeID, markedTaxonID, markedRunID, markedLifeStageID, markedFishOriginID, sourceOfFishSiteID, releaseSiteID, releaseSubSiteID, nMortWhileHandling, nMortAtCheck, nReleased, releaseTime, releaseLightConditionID,
+         testDays, includeTestID, includeTestComments, comments) %>% 
+  left_join(release_purpose_lu, by = c("releasePurposeID" = "releasePursposeID")) %>% 
+  select(-releasePurposeID) %>% 
+  left_join(taxon_lu, by = c("markedTaxonID" = "taxonID")) %>% 
+  rename(markedTaxon = commonName) %>% 
+  select(-markedTaxonID) %>% 
+  left_join(run_lu, by = c("markedRunID" = "runID")) %>% 
+  rename(markedRun = run) %>% 
+  select(-markedRunID) %>% 
+  left_join(lifestage_lu, by = c("markedLifeStageID" = "lifeStageID")) %>% 
+  rename(markedLifeStage = lifeStage) %>% 
+  select(-markedLifeStageID) %>% 
+  left_join(origin_lu, by = c("markedFishOriginID" = "fishOriginID")) %>% 
+  rename(markedFishOrigin = fishOrigin) %>% 
+  select(-markedFishOrigin) %>% 
+  left_join(site_subsite %>% 
+              select(siteID, siteName), by = c("sourceOfFishSiteID" = "siteID")) %>% 
+  rename(sourceOfFishSite = siteName) %>% 
+  select(-sourceOfFishSiteID) %>% 
+  left_join(site_subsite %>% 
+              select(siteID, siteName), by = c("releaseSiteID" = "siteID")) %>% 
+  rename(releaseSite = siteName) %>% 
+  select(-releaseSiteID) %>% 
+  left_join(site_subsite %>% 
+              select(subSiteID, subSiteName), by = c("releaseSubSiteID" = "subSiteID")) %>% 
+  rename(releaseSubSite = subSiteName) %>% 
+  select(-releaseSubSiteID) %>% 
+  left_join(light_condition_lu, by = c("releaseLightConditionID" = "lightConditionID")) %>% 
+  rename(releaseLightCondition = lightCondition) %>% 
+  select(-releaseLightConditionID) %>%  
+  left_join(no_yes_lu, by = c("includeTestID" = "noYesID")) %>% 
+  rename(includeTest = noYes) %>% 
+  select(-includeTestID)
+```
+
+## Released Fish
+- projectDescriptionID
+- releaseFishID
+- releaseID (used to join with Release table)
+- nMarked
+- forkLength
+- weight
+- timeMarked
+- comments
+
+Option would be to add rows of recaptured fish to this table
+
+```{r}
+release_fish_table <- release_fish %>% 
+  select(projectDescriptionID, releaseFishID, releaseID, nMarked, forkLength, weight, timeMarked, comments)
+```
+
+## Environmental
+
+### TrapVisit
+- projectDescriptionID
+- trapVisitID
+- visitTime
+- visitTime2
+- visitType
+- siteName
+- subSiteName
+
+### EnvDataRaw
+- projectDescriptionID
+- trapVisitID (used to join with TrapVisit table)
+- envDataRawID
+- discharge
+- dischargeUnitID (luUnit)
+- dischargeSampleGearID (luSampleGear)
+- waterDepth
+- waterDepthUnitID (luUnit)
+- waterDepthSampleGearID (luSampleGear)
+- waterVel
+- waterVelUnitID (luUnit)
+- waterVelSampleGearID (luSampleGear)
+- waterTemp
+- waterTempUnitID (luUnit)
+- waterTempSampleGearID (luSampleGear)
+- lightPenetration
+- lightPenetrationUnitID (luUnit)
+- lightPenetrationSampleGearID (luSampleGear)
+- turbidity
+- turbidityUnitID (luUnit)
+- turbiditySampleGearID (luSampleGear)
+- dissolvedOxygen
+- dissolvedOxygenUnitID (luUnit)
+- dissolvedOxygenSampleGearID (luSampleGear)
+- conductivity
+- conductivityUnitID (luUnit)
+- conductivitySampleGearID (luSampleGear)
+- barometer
+- barometerUnitID (luUnit)
+- barometerSampleGearID (luSampleGear)
+- comments
+
+```{r}
+environmental_table <- env_data_raw %>% 
+  select(projectDescriptionID, trapVisitID, envDataRawID, discharge, dischargeUnitID, dischargeSampleGearID, waterDepth, waterDepthUnitID, waterDepthSampleGearID, waterVel, waterVelUnitID, waterVelSampleGearID, waterTemp, waterTempUnitID, waterTempSampleGearID, lightPenetration, lightPenetrationUnitID, lightPenetrationSampleGearID, turbidity, turbidityUnitID, turbiditySampleGearID, dissolvedOxygen, dissolvedOxygenUnitID, dissolvedOxygenSampleGearID, conductivity, conductivityUnitID, conductivitySampleGearID, barometer, barometerUnitID, barometerSampleGearID, comments) %>% 
+  pivot_longer(c(discharge, waterDepth, waterVel, waterTemp, lightPenetration, turbidity, dissolvedOxygen, conductivity, barometer), names_to = "parameter", values_to = "value") %>% 
+  mutate(unitID = case_when(parameter == "discharge" ~ dischargeUnitID,
+                          parameter == "waterDepth" ~ waterDepthUnitID,
+                          parameter == "waterVel" ~ waterVelUnitID,
+                          parameter == "waterTemp" ~ waterTempUnitID,
+                          parameter == "lightPenetration" ~ lightPenetrationUnitID,
+                          parameter == "turbidity" ~ turbidityUnitID,
+                          parameter == "dissolvedOxygen" ~ dissolvedOxygenUnitID,
+                          parameter == "conductivity" ~ conductivityUnitID,
+                          parameter == "barometer" ~ barometerUnitID),
+         sampleGearID = case_when(parameter == "discharge" ~ dischargeSampleGearID,
+                          parameter == "waterDepth" ~ waterDepthSampleGearID,
+                          parameter == "waterVel" ~ waterVelSampleGearID,
+                          parameter == "waterTemp" ~ waterTempSampleGearID,
+                          parameter == "lightPenetration" ~ lightPenetrationSampleGearID,
+                          parameter == "turbidity" ~ turbiditySampleGearID,
+                          parameter == "dissolvedOxygen" ~ dissolvedOxygenSampleGearID,
+                          parameter == "conductivity" ~ conductivitySampleGearID,
+                          parameter == "barometer" ~ barometerSampleGearID)) %>% 
+  select(-c(dischargeUnitID, dischargeSampleGearID, waterDepthUnitID, waterDepthSampleGearID, waterVelUnitID, waterVelSampleGearID, waterTempUnitID, waterTempSampleGearID, lightPenetrationUnitID, lightPenetrationSampleGearID, turbidityUnitID, turbiditySampleGearID, dissolvedOxygenUnitID, dissolvedOxygenSampleGearID, conductivityUnitID, conductivitySampleGearID, barometerUnitID, barometerSampleGearID)) %>% 
+  left_join(unit_lu, by = c("unitID" = "unitID")) %>% 
+  left_join(sample_gear_lu, by = c("sampleGearID" = "sampleGearID")) %>% 
+  select(-unitID, -sampleGearID) %>% 
+  left_join(trap_table %>% 
+              select(projectDescriptionID, trapVisitID, visitTime, visitTime2, visitType, siteName, subSiteName), by = c("trapVisitID" = "trapVisitID", "projectDescriptionID" = "projectDescriptionID"))
+  
 ```
