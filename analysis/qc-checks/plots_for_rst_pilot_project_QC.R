@@ -210,7 +210,10 @@ env_data |>
   geom_point(data = qc_day, aes(x = date, y = flow), color = "red", size = 4) +
   theme_minimal() + 
   labs(x = "Date", 
-       y = "Flow (cfs)")
+       y = "Flow (cfs)") +
+  geom_segment(aes(x = as_date("2009-06-10"), 
+                   xend = as_date("2009-10-15"),
+                   y = 0, yend = 0), color = "red", size = 1)
 
 # temp
 qc_day <- env_data  |>  
@@ -231,6 +234,25 @@ env_data |>
   theme_minimal() + 
   labs(x = "Date", 
        y = "Temperature (°C)")
+
+# temp lolipop
+env_data |> 
+  filter(site == "mill creek") |> 
+  mutate(year = year(date), 
+         month = month(date), 
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         max_year = max(water_year, na.rm = T)) |>  
+  filter(water_year > max_year - 2) |> 
+  ggplot() +
+  geom_point(aes(x = date, y = temperature)) +
+  geom_segment(aes(x = date, y = temperature, xend = date, yend = 0)) +
+  geom_point(data = qc_day, aes(x = date, y = temperature), color = "red", size = 4) +
+  theme_minimal() + 
+  labs(x = "Date", 
+       y = "Temperature (C)") +
+  geom_segment(aes(x = as_date("2009-06-10"), 
+                   xend = as_date("2009-10-15"),
+                   y = 0, yend = 0), color = "red", size = 1)
 
 # turbidity
 qc_day <- env_data  |>  
