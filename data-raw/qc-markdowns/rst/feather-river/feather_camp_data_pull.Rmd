@@ -117,6 +117,7 @@ mark_existing_w_joins <- mark %>%
   rename(markPosition = bodyPart) %>% 
   select(-markPositionID) %>% 
   select(projectDescriptionID, catchRawID, markCode, markType, markColor, markPosition) %>% 
+  mutate(markCode = as.character(markCode)) %>% 
   pivot_longer(cols = starts_with("mark"),
                names_to = "mark",
                values_to = "value") %>% 

@@ -10,7 +10,7 @@ mdb.get(knights_camp, tables = T)
 catch_raw <- mdb.get(knights_camp, tables = "CatchRaw")
 trap_visit <- mdb.get(knights_camp, tables = "TrapVisit") %>% 
   mutate(visitTime = as.POSIXct(visitTime),
-         visitTime2 = as.POSIXct(vistTime2))
+         visitTime2 = as.POSIXct(visitTime2))
 mark <-  mdb.get(knights_camp, tables = "MarkExisting")
 # might be able to pull some information from 2016, 2021, 2022
 release <- mdb.get(knights_camp, tables = "Release") %>% 

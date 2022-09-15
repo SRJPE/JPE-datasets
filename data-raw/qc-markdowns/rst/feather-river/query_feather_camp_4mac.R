@@ -9,7 +9,7 @@ feather_camp <- (here::here("data-raw", "qc-markdowns", "rst", "feather-river", 
 catch_raw <- mdb.get(feather_camp, tables = "CatchRaw")
 trap_visit <- mdb.get(feather_camp, tables = "TrapVisit") %>% 
   mutate(visitTime = as.POSIXct(visitTime),
-         visitTime2 = as.POSIXct(vistTime2))
+         visitTime2 = as.POSIXct(visitTime2))
 mark <-  mdb.get(feather_camp, tables = "MarkExisting")
 release <- mdb.get(feather_camp, tables = "Release") %>% 
   mutate(releaseTime = as.POSIXct(releaseTime))
