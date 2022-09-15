@@ -14,6 +14,7 @@ release <- sqlFetch(tisdale_camp, tables = "Release")
 # no helpful information in this table
 release_fish <- sqlFetch(tisdale_camp, tables = "ReleaseFish")
 environmental <- sqlFetch(tisdale_camp, tables = "EnvDataRaw")
+mark_applied <- sqlFetch(tisdale_camp, tables = "MarkApplied")
 
 # pull lookup tables
 visit_type_lu <- sqlFetch(tisdale_camp, "luVisitType") %>% 

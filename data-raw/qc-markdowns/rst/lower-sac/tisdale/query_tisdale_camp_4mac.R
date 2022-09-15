@@ -14,6 +14,7 @@ release <- mdb.get(tisdale_camp, tables = "Release")
 # no helpful information in this table
 release_fish <- mdb.get(tisdale_camp, tables = "ReleaseFish")
 environmental <- mdb.get(tisdale_camp, tables = "EnvDataRaw")
+mark_applied <- mdb.get(tisdale_camp, tables = "MarkApplied")
 
 # pull lookup tables
 visit_type_lu <- mdb.get(tisdale_camp, "luVisitType") %>% 
