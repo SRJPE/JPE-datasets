@@ -13,7 +13,7 @@ Depending on the operating system this script will run either the query_feather_
 
 *Important to filter releaseID == 0 or releasedID == 255 to exclude recaptures*
 
-```{r}
+```{r, include = F}
 library(tidyverse)
 library(knitr)
 library(lubridate)
@@ -23,7 +23,7 @@ root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
 ```
 
-```{r}
+```{r, include = F}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
@@ -55,51 +55,82 @@ if(operating_system == "pc") {
 Joins site and subsite table
 
 ```{r}
-site_subsite <- full_join(site_lu, subsite_lu)
+site_subsite <- full_join(site_lu, subsite_lu) %>% glimpse()
+```
+
+# Trap
+
+```{r}
+detach(package:Hmisc)
+# all NA
+filter(trap_visit, !is.na(timeSampleStarted))
+filter(trap_visit, !is.na(timeSampleEnded))
+filter(trap_visit, !is.na(coneDepthAtStart))
+filter(trap_visit, !is.na(coneDepthAtEnd))
+filter(trap_visit, !is.na(debrisVolume))
+
+# not NA
+filter(trap_visit, !is.na(inThalwegID))
+filter(trap_visit, !is.na(sampleGearID))
+
+trap_visit_format <- trap_visit %>% 
+  select(projectDescriptionID, trapVisitID, trapPositionID, visitTime, visitTime2, visitTypeID, fishProcessedID, inThalwegID, trapFunctioningID, counterAtStart, counterAtEnd, rpmRevolutionsAtStart, rpmSecondsAtStart, rpmRevolutionsAtEnd, rpmSecondsAtEnd, halfConeID, includeCatchID, debrisVolumeCatID, debrisVolume, debrisVolumeUnits, comments) %>% 
+  left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
+  select(-trapPositionID, -siteID) %>% 
+  left_join(visit_type_lu, by = c("visitTypeID" = "visitTypeID")) %>% 
+  select(-visitTypeID) %>% 
+  left_join(processed_lu, by = c("fishProcessedID" = "fishProcessedID")) %>% 
+  select(-fishProcessedID) %>% 
+  left_join(no_yes_lu, by = c("inThalwegID" = "noYesID")) %>% 
+  rename(inThalweg = noYes) %>% 
+  select(-inThalwegID) %>% 
+  left_join(trap_function_lu, by = c("trapFunctioningID" = "trapFunctioningID")) %>% 
+  select(-trapFunctioningID) %>% 
+  left_join(no_yes_lu, by = c("halfConeID" = "noYesID")) %>% 
+  rename(halfCone = noYes) %>% 
+  select(-halfConeID) %>% 
+  left_join(no_yes_lu, by = c("includeCatchID" = "noYesID")) %>% 
+  rename(includeCatch = noYes) %>% 
+  select(-includeCatchID) %>% 
+  left_join(debris_volume_lu, by = c("debrisVolumeCatID" = "debrisVolumeCatID")) %>% 
+  select(-debrisVolumeCatID) %>% glimpse()
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(trap_visit_format,
+           object_function = f,
+           type = "csv",
+           name = "rst/feather-river/data-raw/feather_trap_camp.csv",
+           predefinedAcl = "bucketLevel")
 ```
 
 # Catch (not including recaptures)
 
 ```{r}
-detach(package:Hmisc)
-# select relevant column
-selected_trap_visit <- trap_visit %>%
-  select(trapVisitID, visitTime, visitTime2, trapPositionID) %>%
-  left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
-  select(-trapPositionID, -siteID, -subSiteName) 
-
-selected_mark_existing <- mark %>% 
-  select(catchRawID, markTypeID, markColorID, markPositionID) %>% 
+mark_existing_w_joins <- mark %>% 
   left_join(mark_type_lu, by = c("markTypeID" = "markTypeID")) %>% 
+  select(-markTypeID) %>% 
   left_join(color_lu, by = c("markColorID" = "colorID")) %>% 
+  rename(markColor = color) %>% 
+  select(-markColorID) %>% 
   left_join(body_part_lu, by = c("markPositionID" = "bodyPartID")) %>% 
-  select(-c(markTypeID, markColorID, markPositionID))
+  rename(markPosition = bodyPart) %>% 
+  select(-markPositionID) %>% 
+  select(projectDescriptionID, catchRawID, markCode, markType, markColor, markPosition) %>% 
+  pivot_longer(cols = starts_with("mark"),
+               names_to = "mark",
+               values_to = "value") %>% 
+  group_by(catchRawID, projectDescriptionID, mark) %>% 
+  mutate(number = 1:n(),
+         mark = paste0(mark,"_",number)) %>% 
+  select(-number) %>% 
+  pivot_wider(id_cols = c("catchRawID", "projectDescriptionID"), names_from = "mark", values_from = "value")
 
-# pull in both atcapturerun and finalrun to make sure all information is captured
-# and finalrun is not mostly NA
 selected_catch <- catch_raw %>% 
-  select(catchRawID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
-  mutate(taxonID = as.numeric(taxonID)) %>% 
-  left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
-  # filter(commonName == "Chinook salmon") %>% 
-  left_join(run_lu, by = c("finalRunID" = "runID")) %>%
-  rename(final_run = run) %>% 
-  left_join(run_lu, by = c("atCaptureRunID" = "runID")) %>%
-  left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
-  rename(final_run_method = runMethod) %>% 
-  left_join(run_method_lu, by = c("atCaptureRunMethodID" = "runMethodID")) %>%
-  left_join(lifestage_lu %>% 
-              select(-lifeStageCAMPID), by = c("lifeStageID" = "lifeStageID")) %>%
-  left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
-  left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
-  rename(dead = noYes) %>% 
-  select(-lifeStageID, -finalRunMethodID, -finalRunID, -atCaptureRunMethodID, -atCaptureRunID, -taxonID, -fishOriginID, - mortID) %>%
-  # add existing mark data
-  left_join(selected_mark_existing, by = c("catchRawID" = "catchRawID")) %>% 
-  left_join(selected_trap_visit) %>%
-  # filter out marked and recapture fish by selecting for only fish where release trial does not exist
-  filter(releaseID == 0 | releaseID == 255) %>% 
-  glimpse
+  select(projectDescriptionID, catchRawID, trapVisitID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, totalLength, weight, n, randomID, actualCountID, releaseID, mortID, comments) %>% 
+  left_join(filter(trap_visit_format, fishProcessed %in% c("Processed fish", "Processed fish")) %>% 
+              select(projectDescriptionID, trapVisitID, visitTime, visitTime2, visitType, siteName, subSiteName), by = c("trapVisitID" = "trapVisitID", "projectDescriptionID" = "projectDescriptionID")) %>% 
+  left_join(mark_existing_w_joins, by = c("catchRawID" = "catchRawID", "projectDescriptionID" = "projectDescriptionID")) %>% glimpse()
 
 # Save data to google cloud
 f <- function(input, output) write_csv(input, file = output)
@@ -140,7 +171,7 @@ selected_recaptured <- catch_raw %>%
   left_join(trap_visit_recaptures) %>%
   # filter out marked and recapture fish by selecting for only fish where release trial does not exist
   filter(releaseID != 0 & releaseID != 255) %>% 
-  glimpse
+  glimpse()
 
 # Save data to google cloud
 f <- function(input, output) write_csv(input, file = output)
@@ -154,23 +185,41 @@ gcs_upload(selected_recaptured,
 # Releases
 
 ```{r}
-# think about summing the nmort columns
 selected_release <- release %>% 
-  filter(releaseID != 255 & releaseID  != 0) %>% 
-  # select for trap efficiency releases (note there are 8 records from 2014 that are experimental releases; 1 record that was live box retention, these are removed)
-  filter(releasePurposeID == 1) %>% 
-  select(releaseID, markedTaxonID, markedRunID, markedFishOriginID, sourceOfFishSiteID, releaseSiteID, releaseSubSiteID, nMortWhileHandling, nMortAtCheck, nReleased, releaseTime, releaseLightConditionID, testDays) %>% 
-  left_join(taxon_lu, by = c("markedTaxonID" = "taxonID")) %>%
-  # filter(commonName == "Chinook salmon") %>% 
-  left_join(run_lu, by = c("markedRunID" = "runID")) %>%
-  left_join(origin_lu, by = c("markedFishOriginID" = "fishOriginID")) %>%
-  left_join(site_lu, by = c("sourceOfFishSiteID" = "siteID")) %>% 
-  rename(site_fish_source = siteName) %>% 
-  left_join(site_lu, by = c("releaseSiteID" = "siteID")) %>% 
-  rename(release_site = siteName) %>% 
-  left_join(subsite_lu, by = c("releaseSubSiteID" = "subSiteID")) %>% 
+  select(projectDescriptionID, releaseID, releasePurposeID, markedTaxonID, markedRunID, markedLifeStageID, markedFishOriginID, sourceOfFishSiteID, releaseSiteID, releaseSubSiteID, nMortWhileHandling, nMortAtCheck, nReleased, releaseTime, releaseLightConditionID,
+         testDays, includeTestID, includeTestComments, comments) %>% 
+  left_join(release_purpose_lu, by = c("releasePurposeID" = "releasePursposeID")) %>% 
+  select(-releasePurposeID) %>% 
+  left_join(taxon_lu, by = c("markedTaxonID" = "taxonID")) %>% 
+  rename(markedTaxon = commonName) %>% 
+  select(-markedTaxonID) %>% 
+  left_join(run_lu, by = c("markedRunID" = "runID")) %>% 
+  rename(markedRun = run) %>% 
+  select(-markedRunID) %>% 
+  left_join(lifestage_lu, by = c("markedLifeStageID" = "lifeStageID")) %>% 
+  rename(markedLifeStage = lifeStage) %>% 
+  select(-markedLifeStageID) %>% 
+  left_join(origin_lu, by = c("markedFishOriginID" = "fishOriginID")) %>% 
+  rename(markedFishOrigin = fishOrigin) %>% 
+  select(-markedFishOrigin) %>% 
+  left_join(site_subsite %>% 
+              select(siteID, siteName), by = c("sourceOfFishSiteID" = "siteID")) %>% 
+  rename(sourceOfFishSite = siteName) %>% 
+  select(-sourceOfFishSiteID) %>% 
+  left_join(site_subsite %>% 
+              select(siteID, siteName), by = c("releaseSiteID" = "siteID")) %>% 
+  rename(releaseSite = siteName) %>% 
+  select(-releaseSiteID) %>% 
+  left_join(site_subsite %>% 
+              select(subSiteID, subSiteName), by = c("releaseSubSiteID" = "subSiteID")) %>% 
+  rename(releaseSubSite = subSiteName) %>% 
+  select(-releaseSubSiteID) %>% 
   left_join(light_condition_lu, by = c("releaseLightConditionID" = "lightConditionID")) %>% 
-  select(-c(markedTaxonID, markedRunID, markedFishOriginID, sourceOfFishSiteID, releaseSiteID, releaseSubSiteID, releaseLightConditionID))
+  rename(releaseLightCondition = lightCondition) %>% 
+  select(-releaseLightConditionID) %>%  
+  left_join(no_yes_lu, by = c("includeTestID" = "noYesID")) %>% 
+  rename(includeTest = noYes) %>% 
+  select(-includeTestID) %>% glimpse()
 
 # Save data to google cloud
 f <- function(input, output) write_csv(input, file = output)
@@ -178,43 +227,6 @@ gcs_upload(selected_release,
            object_function = f,
            type = "csv",
            name = "rst/feather-river/data-raw/feather_releases_camp.csv",
-           predefinedAcl = "bucketLevel")
-```
-
-# Trap
-
-```{r}
-# all NA
-filter(trap_visit, !is.na(timeSampleStarted))
-filter(trap_visit, !is.na(timeSampleEnded))
-filter(trap_visit, !is.na(coneDepthAtStart))
-filter(trap_visit, !is.na(coneDepthAtEnd))
-filter(trap_visit, !is.na(debrisVolume))
-
-# not NA
-filter(trap_visit, !is.na(inThalwegID))
-filter(trap_visit, !is.na(sampleGearID))
-
-# select relevant variables from trapvisit table
-trap_visit_format <- trap_visit %>% 
-  select(trapVisitID, trapPositionID, visitTime, visitTime2, visitTypeID, fishProcessedID, sampleGearID, inThalwegID, trapFunctioningID, counterAtStart, counterAtEnd, rpmRevolutionsAtStart, rpmRevolutionsAtEnd, halfConeID, debrisVolumeCatID, comments) %>% 
-  left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
-  left_join(visit_type_lu) %>% 
-  left_join(processed_lu) %>% 
-  left_join(sample_gear_lu) %>% 
-  left_join(no_yes_lu, by = c("inThalwegID" = "noYesID")) %>% 
-  rename(inThalweg = noYes) %>% 
-  left_join(trap_function_lu) %>% 
-  left_join(debris_volume_lu) %>% 
-  mutate(halfCone = ifelse(halfConeID == 1, T, F)) %>% 
-  select(-c(trapPositionID, visitTypeID, fishProcessedID, sampleGearID, inThalwegID, trapFunctioningID, debrisVolumeCatID, halfConeID, siteID))
-
-# Save data to google cloud
-f <- function(input, output) write_csv(input, file = output)
-gcs_upload(trap_visit_format,
-           object_function = f,
-           type = "csv",
-           name = "rst/feather-river/data-raw/feather_trap_camp.csv",
            predefinedAcl = "bucketLevel")
 ```
 

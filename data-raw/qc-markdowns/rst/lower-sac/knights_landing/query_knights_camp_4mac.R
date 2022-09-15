@@ -18,6 +18,7 @@ release <- mdb.get(knights_camp, tables = "Release") %>%
 # no helpful information in this table
 release_fish <- mdb.get(knights_camp, tables = "ReleaseFish")
 environmental <- mdb.get(knights_camp, tables = "EnvDataRaw")
+mark_applied <- mdb.get(knights_camp, tables = "MarkApplied")
 
 # pull lookup tables
 visit_type_lu <- mdb.get(knights_camp, "luVisitType") %>% 

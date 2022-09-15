@@ -14,7 +14,7 @@ release <- sqlFetch(knights_camp,  "Release")
 # no helpful information in this table
 release_fish <- sqlFetch(knights_camp,  "ReleaseFish")
 environmental <- sqlFetch(knights_camp,  "EnvDataRaw")
-
+mark_applied <- sqlFetch(knights_camp, "MarkApplied")
 # pull lookup tables
 visit_type_lu <- sqlFetch(knights_camp, "luVisitType") %>% 
   select(-activeID) %>%glimpse

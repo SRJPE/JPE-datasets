@@ -18,6 +18,7 @@ release_target <- mdb.get(feather_camp, tables = "ReleaseXTargetSite")
 environmental <- mdb.get(feather_camp, tables = "EnvDataRaw")
 # TODO check if needed
 env_raw_target <- mdb.get(feather_camp, "EnvDataRawXTargetSite")
+mark_applied <- mdb.get(feather_camp, tables = "MarkApplied")
 
 # pull lookup tables
 visit_type_lu <- mdb.get(feather_camp, "luVisitType") %>% 

@@ -14,6 +14,7 @@ release <- sqlFetch(feather_camp, "Release")
 # no helpful information in this table
 release_fish <- sqlFetch(feather_camp, "ReleaseFish")
 environmental <- sqlFetch(feather_camp, "EnvDataRaw")
+mark_applied <- sqlFetch(feather_camp, "MarkApplied")
 
 # pull lookup tables
 visit_type_lu <- sqlFetch(feather_camp, "luVisitType") %>% 
