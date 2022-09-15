@@ -8,12 +8,12 @@ feather_camp <- odbcConnectAccess2007(here::here("data-raw", "qc-markdowns", "rs
 
 catch_raw <- sqlFetch(feather_camp, "CatchRaw") 
 trap_visit <- sqlFetch(feather_camp, "TrapVisit")
-mark <-  sqlFetch(feather_camp, tables = "MarkExisting")
+mark <-  sqlFetch(feather_camp, "MarkExisting")
 # might be able to pull some information from 2016, 2021, 2022
-release <- sqlFetch(feather_camp, tables = "Release")
+release <- sqlFetch(feather_camp, "Release")
 # no helpful information in this table
-release_fish <- sqlFetch(feather_camp, tables = "ReleaseFish")
-environmental <- sqlFetch(feather_camp, tables = "EnvDataRaw")
+release_fish <- sqlFetch(feather_camp, "ReleaseFish")
+environmental <- sqlFetch(feather_camp, "EnvDataRaw")
 
 # pull lookup tables
 visit_type_lu <- sqlFetch(feather_camp, "luVisitType") %>% 
