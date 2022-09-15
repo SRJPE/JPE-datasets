@@ -19,6 +19,7 @@ library(tidyverse)
 library(knitr)
 library(lubridate)
 library(googleCloudStorageR)
+library(Hmisc)
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
 ```

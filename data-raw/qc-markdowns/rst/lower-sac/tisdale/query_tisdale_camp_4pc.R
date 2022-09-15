@@ -8,13 +8,13 @@ tisdale_camp <- odbcConnectAccess2007(here::here("data-raw", "qc-markdowns", "rs
 
 catch_raw <- sqlFetch(tisdale_camp, "CatchRaw") 
 trap_visit <- sqlFetch(tisdale_camp, "TrapVisit")
-mark <-  sqlFetch(tisdale_camp, tables = "MarkExisting")
+mark <-  sqlFetch(tisdale_camp, "MarkExisting")
 # might be able to pull some information from 2016, 2021, 2022
-release <- sqlFetch(tisdale_camp, tables = "Release")
+release <- sqlFetch(tisdale_camp, "Release")
 # no helpful information in this table
-release_fish <- sqlFetch(tisdale_camp, tables = "ReleaseFish")
-environmental <- sqlFetch(tisdale_camp, tables = "EnvDataRaw")
-mark_applied <- sqlFetch(tisdale_camp, tables = "MarkApplied")
+release_fish <- sqlFetch(tisdale_camp, "ReleaseFish")
+environmental <- sqlFetch(tisdale_camp, "EnvDataRaw")
+mark_applied <- sqlFetch(tisdale_camp, "MarkApplied")
 
 # pull lookup tables
 visit_type_lu <- sqlFetch(tisdale_camp, "luVisitType") %>% 
