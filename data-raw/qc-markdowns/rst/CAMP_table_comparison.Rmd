@@ -42,11 +42,14 @@ ggplot(dat, aes(x = projectName, y = field, fill = prop_na)) +
 This table contains project level metadata and will be captured in metadata documents. 
 
 ```{r}
-project_description <- mdb.get(tisdale_camp, tables = "ProjectDescription") %>% 
+project_description <- mdb.get(tisdale_camp, tables = "ProjectDescription") %>%
+  select(projectName, projectDescriptionID) %>% 
   bind_rows(mdb.get(knights_camp, tables = "ProjectDescription")) %>% 
-  bind_rows(mdb.get(feather_camp, tables = "ProjectDescription")) %>%  glimpse
+  select(projectName, projectDescriptionID) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "ProjectDescription")) %>%  
+  select( projectName, projectDescriptionID) 
 
-project_id <- select(project_description, projectName, projectDescriptionID) %>% 
+project_id <- project_description %>% 
   distinct() %>% 
   filter(projectDescriptionID != 0) %>% 
   mutate(projectName = case_when(projectName == "Butte Creek Parrot-Phelan Diversion Dam\n-\nPhelan Diversion \nDam" ~ "Butte",
@@ -63,8 +66,11 @@ site name.
 
 ```{r}
 site <- mdb.get(tisdale_camp, tables = "Site") %>% 
-  bind_rows(mdb.get(knights_camp, tables = "Site")) %>% 
-  bind_rows(mdb.get(feather_camp, tables = "Site")) %>%  glimpse()
+  select(-creationTime) %>% 
+  bind_rows(mdb.get(knights_camp, tables = "Site") %>% 
+              select(-creationTime)) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "Site") %>% 
+              select(-creationTime)) %>%  glimpse()
 ```
 
 ## SubSite
@@ -194,9 +200,12 @@ heatmap(trap_visit_summary, "TrapVisit")
 
 ```{r}
 catch_raw <- mdb.get(tisdale_camp, tables = "CatchRaw") %>% 
-  bind_rows(mdb.get(knights_camp, tables = "CatchRaw")) %>% 
+  select(-qcDoneTime) %>% 
+  bind_rows(mdb.get(knights_camp, tables = "CatchRaw") %>% 
+              select(-qcDoneTime)) %>% 
   bind_rows(mdb.get(feather_camp, tables = "CatchRaw") %>% 
-              mutate(taxonID = as.numeric(taxonID))) %>% 
+              mutate(taxonID = as.numeric(taxonID)) %>% 
+              select(-qcDoneTime)) %>% 
   full_join(project_id)
 
 catch_raw_summary <- catch_raw %>% 
@@ -248,13 +257,14 @@ Do not plan to include this table. For internal use only.
 
 ```{r}
 specimen <- mdb.get(tisdale_camp, tables = "Specimen") %>% 
-  bind_rows(mdb.get(knights_camp, tables = "Specimen")) %>% 
+  select(-creationTime, -updateTime) %>% 
+  bind_rows(mdb.get(knights_camp, tables = "Specimen") %>% 
+              select(-creationTime, -updateTime)) %>% 
   bind_rows(mdb.get(feather_camp, tables = "Specimen") %>% 
             mutate(physicalSpecimenCode = as.character(physicalSpecimenCode),
                    comments = as.character(comments),
-                   dataRecorder = as.character(dataRecorder),
-                   creationTime = as.Date(creationTime),
-                   updateTime = as.Date(updateTime))) %>% 
+                   dataRecorder = as.character(dataRecorder)) %>% 
+              select(-creationTime, -updateTime)) %>% 
   full_join(project_id)
 
 specimen_summary <- specimen %>% 
@@ -496,8 +506,11 @@ heatmap(release_summary, "Release")
 
 ```{r}
 release_target <- mdb.get(tisdale_camp, tables = "ReleaseXTargetSite") %>% 
-  bind_rows(mdb.get(knights_camp, tables = "ReleaseXTargetSite")) %>% 
-  bind_rows(mdb.get(feather_camp, tables = "ReleaseXTargetSite")) %>% 
+  select(-updateTime) %>% 
+  bind_rows(mdb.get(knights_camp, tables = "ReleaseXTargetSite") %>% 
+              select(-updateTime)) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "ReleaseXTargetSite") %>% 
+              select(-updateTime)) %>% 
   full_join(project_id)
 
 release_target_summary <- release_target %>% 
@@ -565,9 +578,12 @@ heatmap(mark_applied_summary, "MarkApplied")
 - comments
 
 ```{r}
-release_fish <- mdb.get(tisdale_camp, tables = "ReleaseFish") %>% 
-  bind_rows(mdb.get(knights_camp, tables = "ReleaseFish")) %>% 
-  bind_rows(mdb.get(feather_camp, tables = "ReleaseFish")) %>% 
+release_fish <- mdb.get(tisdale_camp, tables = "ReleaseFish") %>%
+  mutate(timeMarked = as.Date(timeMarked)) %>% 
+  bind_rows(mdb.get(knights_camp, tables = "ReleaseFish") %>% 
+              mutate(timeMarked = as.Date(timeMarked))) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "ReleaseFish") %>% 
+              mutate(timeMarked = as.Date(timeMarked))) %>% 
   full_join(project_id)
 
 release_fish_summary <- release_fish %>% 
@@ -730,7 +746,34 @@ catch_table <- catch_raw %>%
   select(projectDescriptionID, catchRawID, trapVisitID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, totalLength, weight, n, randomID, actualCountID, releaseID, mortID, comments) %>% 
   left_join(filter(trap_table, fishProcessed %in% c("Processed fish", "Processed fish")) %>% 
               select(projectDescriptionID, trapVisitID, visitTime, visitTime2, visitType, siteName, subSiteName), by = c("trapVisitID" = "trapVisitID", "projectDescriptionID" = "projectDescriptionID")) %>% 
-  left_join(mark_existing_w_joins, by = c("catchRawID" = "catchRawID", "projectDescriptionID" = "projectDescriptionID"))
+  left_join(mark_existing_w_joins, by = c("catchRawID" = "catchRawID", "projectDescriptionID" = "projectDescriptionID")) %>% 
+  left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>% 
+  select(-taxonID) %>% 
+  left_join(run_lu, by = c("atCaptureRunID" = "runID")) %>% 
+  rename(atCaptureRun = run) %>% 
+  select(-atCaptureRunID) %>% 
+  left_join(run_method_lu, by = c("atCaptureRunMethodID" = "runMethodID")) %>% 
+  rename(atCaptureRunMethod = runMethod) %>% 
+  select(-atCaptureRunMethodID) %>% 
+  left_join(run_lu, by = c("finalRunID" = "runID")) %>% 
+  rename(finalRun = run) %>% 
+  select(-finalRunID) %>% 
+  left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>% 
+  rename(finalRunMethod = runMethod) %>% 
+  select(-finalRunMethodID) %>% 
+  left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>% 
+  select(-fishOriginID) %>% 
+  left_join(lifestage_lu, by = c("lifeStageID" = "lifeStageID")) %>% 
+  select(-lifeStageID, -lifeStageCAMPID) %>% 
+  left_join(no_yes_lu, by = c("randomID" = "noYesID")) %>% 
+  rename(random = noYes) %>% 
+  select(-randomID) %>% 
+  left_join(no_yes_lu, by = c("actualCountID" = "noYesID")) %>% 
+  rename(actualCount = noYes) %>% 
+  select(-actualCountID) %>% 
+  left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
+  rename(mort = noYes) %>% 
+  select(-mortID)
 ```
 
 ## Release
