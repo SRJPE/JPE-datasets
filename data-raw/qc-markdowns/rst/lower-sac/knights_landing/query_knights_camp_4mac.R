@@ -2,15 +2,19 @@ library(tidyverse)
 library(knitr)
 library(Hmisc)
 library(lubridate)
+library(chron)
 
 knights_camp <- here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "knights_landing", "CAMP.mdb")
 mdb.get(knights_camp, tables = T)
 
 catch_raw <- mdb.get(knights_camp, tables = "CatchRaw")
-trap_visit <- mdb.get(knights_camp, tables = "TrapVisit")
+trap_visit <- mdb.get(knights_camp, tables = "TrapVisit") %>% 
+  mutate(visitTime = as.POSIXct(visitTime),
+         visitTime2 = as.POSIXct(vistTime2))
 mark <-  mdb.get(knights_camp, tables = "MarkExisting")
 # might be able to pull some information from 2016, 2021, 2022
-release <- mdb.get(knights_camp, tables = "Release")
+release <- mdb.get(knights_camp, tables = "Release") %>% 
+  mutate(releaseTime = as.POSIXct(releaseTime))
 # no helpful information in this table
 release_fish <- mdb.get(knights_camp, tables = "ReleaseFish")
 environmental <- mdb.get(knights_camp, tables = "EnvDataRaw")
