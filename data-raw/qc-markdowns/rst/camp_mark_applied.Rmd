@@ -1,0 +1,129 @@
+---
+title: "CAMP MarkApplied"
+author: "Ashley Vizek"
+date: "9/16/2022"
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# How do monitoring programs use the CAMP MarkApplied table?
+
+```{r, include = F}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(Hmisc)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+```
+
+```{r, include = F}
+tisdale_camp <- here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "tisdale", "CAMP.mdb")
+knights_camp <- here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "knights_landing", "CAMP.mdb")
+feather_camp <- (here::here("data-raw", "qc-markdowns", "rst", "feather-river", "CAMP.mdb"))
+```
+
+```{r, include = F}
+heatmap <- function(dat, table) {
+ggplot(dat, aes(x = projectName, y = field, fill = percent_nonNA)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "BuPu", direction = 1) +
+  theme(axis.text.x = element_text(size = 8)) +
+  labs(x = "",
+       y = "CAMP field",
+       title = table,
+       fill = "Percent Complete") +
+  theme(legend.position = "bottom")
+}
+```
+
+```{r, include = F}
+project_description <- mdb.get(tisdale_camp, tables = "ProjectDescription") %>%
+  select(projectName, projectDescriptionID) %>% 
+  bind_rows(mdb.get(knights_camp, tables = "ProjectDescription")) %>% 
+  select(projectName, projectDescriptionID) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "ProjectDescription")) %>%  
+  select( projectName, projectDescriptionID) 
+
+project_id <- project_description %>% 
+  distinct() %>% 
+  filter(projectDescriptionID != 0) %>% 
+  mutate(projectName = case_when(projectName == "Butte Creek Parrot-Phelan Diversion Dam\n-\nPhelan Diversion \nDam" ~ "Butte",
+                                 projectName == "Lower Feather River RST" ~ "Lower Feather", 
+                                 projectName == "Sacramento River Knights Landing RST" ~ "Knights Landing",
+                                 projectName == "Sacramento River Tisdale RST" ~ "Tisdale",
+                                 projectName == "Feather River RST Program" ~ "Upper Feather")) %>% 
+  filter(projectName != "Butte")
+```
+
+```{r}
+mark_applied <- mdb.get(tisdale_camp, tables = "MarkApplied") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "MarkApplied")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "MarkApplied")) %>% 
+  full_join(project_id)
+
+mark_applied_summary <- mark_applied %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na") %>% 
+  mutate(percent_nonNA = (1-prop_na) * 100)
+
+heatmap(mark_applied_summary, "MarkApplied")
+```
+
+Proposed list of fields to keep and exclude. Select the field for more
+detail.
+
+| Keep                  | Exclude              |
+|-----------------------|----------------------|
+| projectDescriptionID  | dataRecorder         |
+| releaseID             | dataRecorderAgencyID |
+| appliedMarkTypeID     | creationTime         |
+| appliedMarkColorID    | updateTime           |
+| appliedMarkPositionID | qcDone               |
+| markAppliedID         | qcDoneTime           |
+|                       | comments             |
+|                       | appliedMarkCode      |
+
+## Keep
+
+### projectDescriptionID
+
+The projectDescriptionID is a unique identifier for your monitoring program.
+
+#### Use
+
+When combining data with other monitoring programs and making joins with other tables.
+Joins should include projectDescriptionID so that the record identifier is unique to the
+monitoring program.
+
+### releaseID
+
+The releaseID is a unique identifier for an individual efficiency trial and represents
+one record in the CAMP release table.
+
+#### Use 
+
+To join the MarkApplied table to the Release table. When combining data from
+multiple monitoring programs, releaseID and projectDescriptionID should be used
+to make the join. 
+
+### markAppliedID
+
+### appliedMarkTypeID
+
+### appliedMarkColorID
+
+### appliedMarkPositionID
+
+### Exclude
+
+### dataRecorder, dataRecorderAgencyID, creationTime, updateTime, qcDone, qcDoneTime
+
+### appliedMarkCode
+
+### comments
