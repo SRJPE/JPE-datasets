@@ -60,7 +60,7 @@ project_id <- project_description %>%
   filter(projectName != "Butte")
 ```
 
-```{r}
+```{r, include = F}
 mark_applied <- mdb.get(tisdale_camp, tables = "MarkApplied") %>% 
   bind_rows(mdb.get(knights_camp, tables = "MarkApplied")) %>% 
   bind_rows(mdb.get(feather_camp, tables = "MarkApplied")) %>% 
@@ -71,7 +71,9 @@ mark_applied_summary <- mark_applied %>%
   summarise_all(list(~sum(is.na(.))/length(.))) %>% 
   pivot_longer(!projectName, names_to = "field", values_to = "prop_na") %>% 
   mutate(percent_nonNA = (1-prop_na) * 100)
+```
 
+```{r, echo = F}
 heatmap(mark_applied_summary, "MarkApplied")
 ```
 
@@ -89,7 +91,7 @@ detail.
 |                       | comments             |
 |                       | appliedMarkCode      |
 
-## Keep
+## Keep {.tabset}
 
 ### projectDescriptionID
 
@@ -114,16 +116,46 @@ to make the join.
 
 ### markAppliedID
 
+The markAppliedID is a unique identifier for each record in this table.
+
+#### Use
+
+There should only be one markAppliedID for each observation in the table.
+
 ### appliedMarkTypeID
+
+Code for the type of mark applied to the fish.
+
+#### Use
+
+Used to join with the luMarkType table to determine the mark types associated with each code.
 
 ### appliedMarkColorID
 
+Code for the color of the mark applied to the fish.
+
+#### Use
+
+Used to join with the luColor table to determine the color of the mark associated with each code.
+
 ### appliedMarkPositionID
 
-### Exclude
+Code for the position on the body where the mark was applied.
+
+#### Use
+
+Used to join with the luBodyPart table to determine the position of the mark associated with each code.
+
+## Exclude {.tabset}
 
 ### dataRecorder, dataRecorderAgencyID, creationTime, updateTime, qcDone, qcDoneTime
 
+These fields are most important for internal use especially when performing QC. It is assumed that QC has been performed prior to data sharing and these fields are no longer needed.
+
 ### appliedMarkCode
 
+None of the monitoring programs used this field. The markApplied table is used for trap efficiency mark and recapture trials where fish are typically marked with a dye. The mark code does not apply for dyes.
+
 ### comments
+
+Qualitative text is not readily useful and only half of the programs complete this field.
