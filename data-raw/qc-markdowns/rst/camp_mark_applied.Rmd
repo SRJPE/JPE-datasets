@@ -32,12 +32,14 @@ heatmap <- function(dat, table) {
 ggplot(dat, aes(x = projectName, y = field, fill = percent_nonNA)) +
   geom_tile() +
   scale_fill_distiller(palette = "BuPu", direction = 1) +
-  theme(axis.text.x = element_text(size = 8)) +
+  theme(axis.text.x = element_text(size = 8),
+        legend.position = "bottom") +
   labs(x = "",
        y = "CAMP field",
        title = table,
        fill = "Percent Complete") +
-  theme(legend.position = "bottom")
+  theme_minimal()
+  
 }
 ```
 
@@ -91,6 +93,21 @@ detail.
 |                       | comments             |
 |                       | appliedMarkCode      |
 
+```{r, include = F}
+mark_type <- mark_applied %>% 
+  left_join(mdb.get(tisdale_camp, "luMarkType") %>%
+  select(-activeID), by = c("appliedMarkTypeID" = "markTypeID")) 
+
+mark_color <- mark_applied %>% 
+  left_join(mdb.get(tisdale_camp, "luColor") %>%
+  select(-activeID), by = c("appliedMarkColorID" = "colorID")) 
+
+mark_position <- mark_applied %>% 
+  left_join(mdb.get(tisdale_camp, "luBodyPart") %>%
+  select(-activeID), by = c("appliedMarkPositionID" = "bodyPartID")) 
+
+```
+
 ## Keep {.tabset}
 
 ### projectDescriptionID
@@ -130,6 +147,27 @@ Code for the type of mark applied to the fish.
 
 Used to join with the luMarkType table to determine the mark types associated with each code.
 
+```{r, echo = F}
+detach(package:Hmisc)
+
+mark_type %>% 
+  group_by(projectName, markType) %>% 
+  summarize(n = n()) %>% 
+  ungroup() %>% 
+  group_by(projectName) %>% 
+  mutate(total = sum(n)) %>% 
+  ungroup() %>% 
+  mutate(percent = round(n/total,2)*100) %>% 
+  ggplot(aes(x = projectName, y = percent, fill = markType)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_viridis_d() +
+  theme_minimal() +
+  labs(x = "",
+       y = "Percent", 
+       fill = "Mark Type")
+```
+
+
 ### appliedMarkColorID
 
 Code for the color of the mark applied to the fish.
@@ -138,6 +176,12 @@ Code for the color of the mark applied to the fish.
 
 Used to join with the luColor table to determine the color of the mark associated with each code.
 
+```{r}
+
+
+```
+
+
 ### appliedMarkPositionID
 
 Code for the position on the body where the mark was applied.
@@ -145,6 +189,10 @@ Code for the position on the body where the mark was applied.
 #### Use
 
 Used to join with the luBodyPart table to determine the position of the mark associated with each code.
+
+```{r}
+
+```
 
 ## Exclude {.tabset}
 
