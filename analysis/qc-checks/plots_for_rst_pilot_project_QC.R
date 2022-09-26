@@ -1,6 +1,7 @@
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
+library(wakefield)
 catch_data <- read_csv("data/standard-format-data/standard_catch.csv")  |>  glimpse()
 env_data <- read_csv("data/standard-format-data/standard_environmental.csv")
 ops_data <- read_csv("data/standard-format-data/standard_trap.csv")
@@ -126,12 +127,11 @@ catch_data  |>
   geom_point(data = qc_day, aes(x = weight, y = 0, color = lifestage), size = 2) +
   theme_minimal() + 
   labs(x = "Weight (g)", 
-       y = " ",
+       y = "Density",
        # title = "Today's Fork Length values with historical data", 
        # subtitle = "Point Plot of today's fork length data with desity curves of fork length dirstibution for the last five years."
   ) +
-  theme(axis.text.y = element_blank(),
-        legend.position = c(0.8, 0.8))
+  theme(legend.position = c(0.8, 0.8))
 
 
 catch_data %>% group_by(stream, site) %>% 
@@ -326,6 +326,22 @@ catch_data  |>
         legend.title = element_blank())
 
 
+# FAKE Data for adipose clipped
+
+times <-  seq.POSIXt(from = as.POSIXct("2022-01-01 00:00:00"), to = as.POSIXct("2022-01-01 04:00:00"), by = "5 mins")
+adipose_clipped <- wakefield::r_sample_logical(49, prob = NULL, name = "Logical")
+
+clipped_values <- tibble(times, adipose_clipped)
+
+clipped_values |> 
+  ggplot() +
+  geom_point(aes(x = times, y = adipose_clipped, color = adipose_clipped), 
+             size = 2) + 
+  theme_minimal() + 
+  labs(x = "Sampling Time", 
+       y = "Adipose Clipped") +
+  theme(legend.position = "none")
+
 # species
 catch_data  |>  
   filter(site == "mill creek") |> 
@@ -353,8 +369,8 @@ catch_data  |>
 
 qc_day <- mark_recapture  |>  
   filter(site == "ubc") |> 
-  # group_by(date) |>
-  filter(release_date == as.Date("2021-03-08")) |> distinct() |> glimpse()
+  # group_by(release_date) |> View()
+  filter(release_date == as.Date("2021-03-02")) |> distinct() |> glimpse()
 
 mark_recapture |> 
   filter(site == "ubc") |> 
@@ -369,5 +385,7 @@ mark_recapture |>
   geom_point(data = qc_day, aes(x = efficiency, y = 0, size = number_released)) +
   theme_minimal() + 
   labs(x = "Efficiency", 
-       y = " ") +
-  theme(legend.position = c(0.8, 0.8))
+       y = "Density") +
+  annotate(geom = "text", x = .1, y = 130, label = paste("Number Released: 320")) +
+  annotate(geom = "text", x = .1, y = 120, label = paste("Number Recaptured: 14")) +
+  theme(legend.position = "none")
