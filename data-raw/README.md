@@ -21,4 +21,4 @@ This repository uses a Google Cloud Bucket (GCB) to store and download data beca
 
 ## Set up an Rmarkdown file
 
-- When creating a new Rmarkdown that uses `googleCloudStorageR` set up using the template.
+- When creating a new Rmarkdown that uses `googleCloudStorageR` set up using the template markdown [`template_using_google_cloud.Rmd`](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/template_using_googlecloud.Rmd).
