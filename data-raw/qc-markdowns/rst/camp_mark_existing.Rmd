@@ -73,51 +73,55 @@ make_heatmap <- function(df_num) {
                          angle_col = c("0"), heatmap_legend_param = list(title ="Percent Complete"))
 }
 
-mark_applied <- mdb.get(tisdale_camp, tables = "MarkApplied") %>% 
-  bind_rows(mdb.get(knights_camp, tables = "MarkApplied")) %>% 
-  bind_rows(mdb.get(feather_camp, tables = "MarkApplied")) %>% 
-  full_join(project_id)
+mark_existing <- mdb.get(tisdale_camp, tables = "MarkExisting") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "MarkExisting")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "MarkExisting") %>% 
+              mutate(markCode = as.character(markCode))) %>% 
+  full_join(project_id) 
+  
 
-percent_complete_data <- mark_applied %>% 
+percent_complete_data <- mark_existing %>% 
   make_percent_complete()
 
 heatmap_data <- percent_complete_data %>% 
   make_heatmap_data()
 
-df_num <- as.matrix(heatmap_data[,2:16])
+df_num <- as.matrix(heatmap_data[,2:15])
 rownames(df_num) <- heatmap_data$projectName
 ```
 
-### MarkApplied
+### MarkExisting
 
 ```{r, echo = F}
 make_heatmap(df_num)
 ```
 
-#### MarkApplied - Useful fields
+#### MarkExisting - Useful fields
 
-These fields contain useful information to identify the mark applied associated with a release group. This information can be joined to other tables using the projectDescriptionID and releaseID.
+These fields contain useful information to identify the release group that corresponds with an existing mark. This information can be joined to other tables using the projectDescriptionID and catchRawID.
 
 ```{r, echo = F}
 table <- tibble(Keep = c("projectDescriptionID",
-                         "releaseID",
-                         "appliedMarkTypeID",
-                         "appliedMarkColorID",
-                         "appliedMarkPositionID",
-                         "markAppliedID"),
+                         "catchRawID",
+                         "markTypeID",
+                         "markColorID",
+                         "markPositionID",
+                         "markCode",
+                         "markExistingID"),
                 Rationale = c("unique identifier for monitoring program",
-                              "unique identifier for release group",
-                              "type of mark applied useful for identification during recapture",
-                              "color of mark applied useful for identification during recapture",
-                              "position of mark applied useful for identification during recapture",
+                              "unique identifier for fish caught in trap, useful for joining with CatchRaw table",
+                              "type of existing mark, useful for identification of release group",
+                              "color of existing mark, useful for identification of release group",
+                              "position of existing mark, useful for identification of release group",
+                              "code of existing mark (e.g., PIT, CWT), useful to connect with other studies and releases",
                               "unique identifier for record in table"))
 kbl(table) %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), font_size = 14)
 ```
 
-#### MarkApplied - Are all fields needed?
+#### MarkExisting - Are all fields needed?
 
-All fields are not needed. There are 6 fields that are primarily for internal use
+All fields are not needed. There are 7 fields that are primarily for internal use
 when performing QC. When sharing data it is assumed that these QC checks have already
 been performed and this information is no longer needed.
 
@@ -128,17 +132,14 @@ table <- tibble(Exclude = c("dataRecorder",
                          "updateTime",
                          "qcDone",
                          "qcDoneTime",
-                         "comments",
-                         "appliedMarkCode"),
+                         "qcComments"),
                 Rationale = c("used internally for QC",
                               "used internally for QC",
                               "used internally for QC",
-                              "used internally for QC",
                               "not used",
                               "not used",
-                              "not used by majority",
-                              "not used"))
+                              "not used",
+                              "not used by majority"))
 kbl(table) %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), font_size = 14)
 ```
-
