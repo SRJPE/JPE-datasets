@@ -1,3 +1,13 @@
+library(tidyverse)
+library(googleCloudStorageR)
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_get_object(object_name = "rst/RiverLAD.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "analysis/RiverLAD.csv",
+               overwrite = TRUE)
+
 lad_raw <- read_csv(here::here("analysis", "RiverLAD.csv"))
 
 
