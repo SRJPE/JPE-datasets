@@ -113,7 +113,8 @@ battle_trap_clean %>% glimpse
 - sub_week: is related to efficiency and included in efficiency table
 - sample_weight: same as cone variable
 - flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
-weather_code, lunar_phase, diel, river_left_depth, river_center_depth, river_right_depth included in environmental table
+weather_code, lunar_phase, diel included in environmental table
+- river_left_depth, river_center_depth, river_right_depth removed because they should be included in the environmental table rather than trap. 
 - habitat removed because most data are in "run"
 - debris_type removed because data does not exist for other locations and is treated like a comments field
 - start_counter is always NA or 0. No meaningful data.
@@ -223,6 +224,7 @@ clear_trap_clean %>% glimpse
 - sub_week: is related to efficiency and included in efficiency table
 - flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
 weather_code, lunar_phase, diel included in environmental table
+- river_left_depth, river_center_depth, river_right_depth removed because they should be included in the environmental table rather than trap. 
 - habitat removed because most data are in "run"
 - debris_type removed because data does not exist for other locations and is treated like a comments field
 - start_counter is always NA or 0. No meaningful data.
