@@ -20,7 +20,7 @@ knitr::opts_knit$set(root.dir)
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
 ```
 
-```{r}
+```{r, include = FALSE}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
@@ -44,7 +44,7 @@ FlowWest received environmental data for rst from 9 monitoring programs:
 Data dictionary for standard format:
 
 (B - Battle Creek, Bu - Butte Creek, C - Clear Creek, F - Feather River,
-D - Deer Creek, F - Feather River, M - Mill Creek, KL - Knights Landing,
+D - Deer Creek, M - Mill Creek, KL - Knights Landing,
 T - Tisdale, Y - Yuba River)
 
 | column name   | stream collects         | definition                                               |
@@ -53,15 +53,9 @@ T - Tisdale, Y - Yuba River)
 | site          | B, Bu, C, D, F, M, KL, T, Y | site name                                                |
 | subsite       | B, Bu, C, F, Y, KL, T          | sub site information name                                |
 | date          | B, Bu, C, D, F, M, KL, T, Y | date that samples are taken                              |
-| trap_visit_ID | B, C                    | sample id that links with catch or trap condition tables |
-| velocity      | B, Bu, C, Y, T             | velocity measure in feet per second                      |
-| flow          | D, KL, M, T                | flow in cfs                                              |
-| temperature   | Bu, D, F, KL, M, Y, T      | temperature measure in degrees Celsius                   |
-| turbidity     | B, Bu, C, D, F, M, KL, Y, T | turbidity measure in NTU                                 |
-| secchi        | Bu, KL                  | secchi measure in ft                                     |
-| weather       | B, Bu, C, D, M          | Weather condition at time of trapping                    |
-| habitat       | B, C                    | Habitat trap is located in (backwater pool, glide, run)  |
-|               |                         |                                                          |
+| parameter     | B, Bu, C, D, F, M, KL, T, Y           | type of parameter being measured: velocity (ft/s), turbidity (NTU), weather (text), habitat (text), river depth left (m), river depth center (m), river depth right (m), temperature (degrees C), light penetration (secchi disk), discharge (cfs), water depth (m; measured at trap location)                     |
+| text          | B, Bu, C, D, F, M, KL, T, Y               | text value for categorical parameters                                             |
+| value  | B, Bu, C, D, F, M, KL, T, Y      | numeric value for numeric parameters                   |
 
 ## Read in data {.tabset}
 
@@ -71,6 +65,11 @@ T - Tisdale, Y - Yuba River)
 
 The dataset included operations and environmental data. Below only
 columns for environmental data are selected.
+
+- velocity
+- turbidity
+- weather
+- habitat
 
 We did not include lunar phase since that stream can be found elsewhere. 
 
@@ -83,11 +82,15 @@ gcs_get_object(object_name = "rst/battle-creek/data/battle_rst_environmental.csv
 
 battle_env <- read_csv(here::here("data", "rst", "battle_rst_environmental.csv")) %>% 
   select(trap_visit_id = sample_id, date = sample_date, 
-         velocity, turbidity, weather = weather_code, habitat) %>%
+         velocity, turbidity, weather = weather_code, habitat, `river depth left` = river_left_depth, `river depth center` = river_center_depth, `river depth right` = river_right_depth) %>%
   mutate(stream = "battle creek",
          site = "ubc",
          subsite = "ubc") %>%
   distinct() %>%
+  mutate_if(is.numeric, as.character) %>% 
+  pivot_longer(cols = c("velocity", "turbidity", "weather", "habitat", "river depth left", "river depth center", "river depth right"), values_to = "text", names_to = "parameter") %>% 
+  mutate(value = as.numeric(text),
+         text = ifelse(!is.na(value), NA_character_, text)) %>% 
   glimpse
 ```
 
@@ -97,6 +100,12 @@ battle_env <- read_csv(here::here("data", "rst", "battle_rst_environmental.csv")
 
 The dataset included catch, operations and environmental data. Below
 only columns for environmental data are selected.
+
+- weather
+- temperature
+- turbidity
+- secchi
+- velocity
 
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "rst/butte-creek/data/butte_rst.csv",
@@ -111,11 +120,15 @@ butte_env <- read_csv(here::here("data", "rst", "butte_rst_environmental.csv"),
                       "n", "n", "c"
                       )) %>%
   select(date, site = station, 
-         weather, temperature, turbidity, secchi, velocity) %>%
+         weather, temperature, turbidity, `light penetration` = secchi, velocity) %>%
   mutate(stream = "butte creek",
          subsite = tolower(site), 
          site = ifelse(site == "Adams Dam", "adams dam", "okie dam")) %>%
   distinct() %>%
+  mutate_if(is.numeric, as.character) %>% 
+  pivot_longer(cols = c("velocity", "turbidity", "weather", "temperature", "light penetration"), values_to = "text", names_to = "parameter") %>% 
+  mutate(value = as.numeric(text),
+         text = ifelse(!is.na(value), NA_character_, text)) %>% 
   glimpse
 ```
 
@@ -125,6 +138,11 @@ butte_env <- read_csv(here::here("data", "rst", "butte_rst_environmental.csv"),
 
 The dataset included operations and environmental data. Below only
 columns for environmental data are selected.
+
+- velocity
+- turbidity
+- weather
+- habitat
 
 We did not include lunar phase since that stream can be found elsewhere. 
 
@@ -136,12 +154,16 @@ gcs_get_object(object_name = "rst/clear-creek/data/clear_rst_environmental.csv",
 
 clear_env <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv")) %>% 
   select(trap_visit_id = sample_id, date = sample_date, 
-         velocity, turbidity, weather = weather_code, habitat, station_code) %>%
+         velocity, turbidity, weather = weather_code, habitat, station_code, `river depth left` = river_left_depth, `river depth center` = river_center_depth, `river depth right` = river_right_depth) %>%
   mutate(stream = "clear creek", 
          site = ifelse(station_code == "ucc", "ucc", "lcc"),
          subsite = site) %>%
   select(-station_code) %>%
   distinct() %>%
+  mutate_if(is.numeric, as.character) %>% 
+  pivot_longer(cols = c("velocity", "turbidity", "weather", "habitat", "river depth left", "river depth center", "river depth right"), values_to = "text", names_to = "parameter") %>% 
+  mutate(value = as.numeric(text),
+         text = ifelse(!is.na(value), NA_character_, text)) %>% 
   glimpse
 ```
 
@@ -152,6 +174,11 @@ clear_env <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv")) 
 The dataset included operations and environmental data. Below only
 columns for environmental data are selected.
 
+- turbidity
+- weather
+- temperature
+- flow 
+
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "rst/deer-creek/data/deer_rst.csv",
                bucket = gcs_get_global_bucket(),
@@ -161,11 +188,15 @@ gcs_get_object(object_name = "rst/deer-creek/data/deer_rst.csv",
 deer_env <- read_csv(here::here("data", "rst", "deer_rst_environmental.csv"), 
                      col_types = list("D", "c", "n", "n", "n", "n", "n", "n", "c", 
                                       "n", "c", "c", "n")) %>% 
-  select(date, site = location, flow, turbidity, weather, temperature = water_temperature_celsius) %>%
+  select(date, site = location, discharge = flow, turbidity, weather, temperature = water_temperature_celsius) %>%
   mutate(stream = "deer creek",
          site = "deer creek", # All the streams are really the same site
          subsite = "deer creek") %>%
   distinct() %>%
+  mutate_if(is.numeric, as.character) %>% 
+  pivot_longer(cols = c("discharge", "turbidity", "weather", "temperature"), values_to = "text", names_to = "parameter") %>% 
+  mutate(value = as.numeric(text),
+         text = ifelse(!is.na(value), NA_character_, text)) %>% 
   glimpse
 
 ```
@@ -176,6 +207,11 @@ deer_env <- read_csv(here::here("data", "rst", "deer_rst_environmental.csv"),
 
 The dataset included operations and environmental data. Below only
 columns for environmental data are selected.
+
+- discharge
+- velocity
+- temperature
+- turbidity
 
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "rst/feather-river/data-raw/feather_environmental_camp.csv",
@@ -188,41 +224,17 @@ feather_env_raw <- read_csv(here::here("data", "rst", "feather_environmental_cam
 # check those with different units
 # looks like for those with different units is typo
 # assume all flow in cfs
-feather_flow <- filter(feather_env_raw, parameter == "discharge") %>% 
-  group_by(date, site, subsite) %>% 
-  summarise(value = mean(value, na.rm = T),
-            value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(flow = value)
-# convert meters to feet and get rid of nonsensical values which are errors
-feather_velocity <- filter(feather_env_raw, parameter == "velocity") %>% 
-  mutate(value = case_when(unit == "meters/second (m/sec)" ~ value*3.28,
-                           value > 50 ~ NA_real_,
+feather_env <- feather_env_raw %>% 
+  # convert meters to feet and get rid of nonsensical values which are errors
+  mutate(value = case_when(unit == "meters/second (m/sec)" & parameter == "velocity" ~ value*3.28,
+                           parameter == "velocity" & value > 50 ~ NA_real_,
+                           # convert F to C
+                           unit == "°F" & parameter == "temperature" ~ (value-32)*(5/9),
                            T ~ value)) %>% 
-  group_by(date, site, subsite) %>% 
+  group_by(date, site, subsite, parameter) %>% 
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(velocity = value)
-# convert F to C
-feather_temperature <- filter(feather_env_raw, parameter == "temperature") %>% 
-  mutate(value = case_when(unit == "°F" ~ (value-32)*(5/9),
-                           T ~ value)) %>% 
-  group_by(date, site, subsite) %>% 
-  summarise(value = mean(value, na.rm = T),
-            value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(temperature = value)
-# filter for NTU, few with values that don't make sense
-feather_turbidity <- filter(feather_env_raw, parameter == "turbidity") %>% 
-  filter(unit == "nephelometric turbidity units (NTU)") %>% 
-  group_by(date, site, subsite) %>% 
-  summarise(value = mean(value, na.rm = T),
-            value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(turbidity = value)
-  
-feather_env <- full_join(feather_flow, feather_velocity) %>% 
-  full_join(feather_temperature) %>% 
-  full_join(feather_turbidity) %>% 
   mutate(stream = "feather river")
-
 ```
 
 ### Lower Sac - Knights Landing
@@ -234,6 +246,12 @@ columns for environmental data are selected.
 
 *knights landing has 2 subsites 8.3 and 8.4. The trap environmental data that we received did not include subsite. We listed subsite as NA for these data. 
 
+- discharge
+- light penetration
+- temperature
+- turbidity
+
+
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knl_combine_sampling_effort_clean.csv",
                bucket = gcs_get_global_bucket(),
@@ -242,15 +260,15 @@ gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knl_combi
 
 knights_landing_env_pre2006 <- read_csv(here::here("data", "rst", "knights_rst_environmental_pre2006.csv")) %>% 
   filter(date < as.Date("2006-10-02")) %>% 
-  select(date, location, flow = flow_cfs, secchi = secchi_ft, temperature = water_t_f, turbidity, cone_id) %>%
+  select(date, location, discharge = flow_cfs, `light penetration` = secchi_ft, temperature = water_t_f, turbidity, cone_id) %>%
   mutate(temperature = round((temperature - 32) * (5/9), 1), 
          site = "knights landing", 
          subsite = as.character(cone_id), 
          stream = "sacramento river") %>%
   select(-location, -cone_id) %>%
   distinct() %>%
-  glimpse
-
+  pivot_longer(cols = c("discharge", "turbidity", "light penetration", "temperature"), values_to = "value", names_to = "parameter") %>% 
+  glimpse()
 ```
 
 ```{r, message=FALSE, warning=FALSE}
@@ -261,47 +279,20 @@ gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/knigh
 
 knights_env_raw <- read_csv(here::here("data", "rst", "knights_environmental_camp.csv")) 
 
-# check those with different units
-# looks like for those with different units is typo
-# assume all flow in cfs
-knights_flow <- filter(knights_env_raw, parameter == "discharge") %>% 
-  group_by(date, subsite) %>% 
-  summarise(value = mean(value, na.rm = T),
-            value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(flow = value)
-# convert meters to feet and get rid of nonsensical values which are errors
-knights_velocity <- filter(knights_env_raw, parameter == "velocity") %>% 
-  mutate(value = case_when(unit == "meters/second (m/sec)" ~ value*3.28,
-                           value > 50 ~ NA_real_,
+knights_env <- knights_env_raw %>% 
+  # convert meters to feet and get rid of nonsensical values which are errors
+  mutate(value = case_when(unit == "meters/second (m/sec)" & parameter == "velocity" ~ value*3.28,
+                           parameter == "velocity" & value > 50 ~ NA_real_,
+                           # convert F to C
+                           unit == "°F" & parameter == "temperature" ~ (value-32)*(5/9),
                            T ~ value)) %>% 
-  group_by(date,  subsite) %>% 
+  group_by(date, site, subsite, parameter) %>% 
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(velocity = value)
-# convert F to C
-knights_temperature <- filter(knights_env_raw, parameter == "temperature") %>% 
-  mutate(value = case_when(unit == "°F" ~ (value-32)*(5/9),
-                           T ~ value)) %>% 
-  group_by(date, subsite) %>% 
-  summarise(value = mean(value, na.rm = T),
-            value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(temperature = value)
-# filter for NTU, few with values that don't make sense
-knights_turbidity <- filter(knights_env_raw, parameter == "turbidity") %>% 
-  filter(unit == "nephelometric turbidity units (NTU)") %>% 
-  group_by(date, subsite) %>% 
-  summarise(value = mean(value, na.rm = T),
-            value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(turbidity = value)
-  
-knights_env <- full_join(knights_flow, knights_velocity) %>% 
-  full_join(knights_temperature) %>% 
-  full_join(knights_turbidity) %>% 
   mutate(stream = "sacramento river",
          site = "knights landing",
          subsite = as.character(subsite)) %>% 
   bind_rows(knights_landing_env_pre2006)
-
 ```
 
 ### Lower Sac - Tisdale
@@ -318,45 +309,21 @@ gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_envir
 
 tisdale_env_raw <- read_csv(here::here("data", "rst", "tisdale_rst_environmental.csv")) 
 
-# check those with different units
-# looks like for those with different units is typo
-# assume all flow in cfs
-tisdale_flow <- filter(tisdale_env_raw, parameter == "discharge") %>% 
-  group_by(date, subsite) %>% 
-  summarise(value = mean(value, na.rm = T),
-            value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(flow = value)
-# convert meters to feet and get rid of nonsensical values which are errors
-tisdale_velocity <- filter(tisdale_env_raw, parameter == "velocity") %>% 
-  mutate(value = case_when(unit == "meters/second (m/sec)" ~ value*3.28,
-                           value > 50 ~ NA_real_,
+tisdale_env <- tisdale_env_raw %>% 
+  # convert meters to feet and get rid of nonsensical values which are errors
+  mutate(value = case_when(unit == "meters/second (m/sec)" & parameter == "velocity" ~ value*3.28,
+                           parameter == "velocity" & value > 50 ~ NA_real_,
+                           # convert F to C
+                           unit == "°F" & parameter == "temperature" ~ (value-32)*(5/9),
+                           # convert ft to m
+                           parameter == "water depth" ~ value*0.3048,
                            T ~ value)) %>% 
-  group_by(date, subsite) %>% 
+  group_by(date, site, subsite, parameter) %>% 
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(velocity = value)
-# convert F to C
-tisdale_temperature <- filter(tisdale_env_raw, parameter == "temperature") %>% 
-  mutate(value = case_when(unit == "°F" ~ (value-32)*(5/9),
-                           T ~ value)) %>% 
-  group_by(date, subsite) %>% 
-  summarise(value = mean(value, na.rm = T),
-            value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(temperature = value)
-# filter for NTU, few with values that don't make sense
-tisdale_turbidity <- filter(tisdale_env_raw, parameter == "turbidity") %>% 
-  filter(unit == "nephelometric turbidity units (NTU)") %>% 
-  group_by(date, subsite) %>% 
-  summarise(value = mean(value, na.rm = T),
-            value = ifelse(is.nan(value), NA_real_, value)) %>% 
-  rename(turbidity = value)
-  
-tisdale_env <- full_join(tisdale_flow, tisdale_velocity) %>% 
-  full_join(tisdale_temperature) %>% 
-  full_join(tisdale_turbidity) %>% 
-  mutate(stream = "sacramento river", 
-         site = "tisdale",
-         subsite = tolower(subsite))
+  mutate(subsite = tolower(subsite)) %>% 
+  # removed because large majority did not recored units
+  filter(!parameter %in% c("dissolved oxygen", "barometer", "conductivity"))
 ```
 
 ### Mill Creek
@@ -366,6 +333,11 @@ tisdale_env <- full_join(tisdale_flow, tisdale_velocity) %>%
 The dataset included operations and environmental data. Below only
 columns for environmental data are selected.
 
+- flow
+- temperature
+- turbidity
+- weather
+
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "rst/mill-creek/data/mill_rst.csv",
                bucket = gcs_get_global_bucket(),
@@ -373,13 +345,17 @@ gcs_get_object(object_name = "rst/mill-creek/data/mill_rst.csv",
                overwrite = TRUE)
 
 mill_env <- read_csv(here::here("data", "rst", "mill_rst_environmental.csv")) %>% 
-  select(date, site = location, flow, temperature = water_temperature, turbidity, weather) %>%
+  select(date, site = location, discharge = flow, temperature = water_temperature, turbidity, weather) %>%
   mutate(temperature = round((temperature - 32) * (5/9), 1),
          stream = "mill creek",
          site = "mill creek", #only one site 
          subsite = "mill creek") %>%
   distinct() %>%
-  glimpse
+  mutate_if(is.numeric, as.character) %>% 
+  pivot_longer(cols = c("discharge", "turbidity", "weather", "temperature"), values_to = "text", names_to = "parameter") %>% 
+  mutate(value = as.numeric(text),
+         text = ifelse(!is.na(value), NA_character_, text)) %>% 
+  glimpse()
 
 ```
 
@@ -391,6 +367,10 @@ The dataset included operations and environmental data. Below only
 columns for environmental data are selected.
 
 *Yuba River has 3 subsites. They also reported data that did not link to a specific subsite. For these data we listed subsite as NA. 
+
+- temperature
+- turbidity
+- velocity
 
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "rst/yuba-river/data/yuba_rst.csv",
@@ -412,7 +392,8 @@ yuba_env <- read_csv(here::here("data", "rst", "yuba_rst_environmental.csv"),
          site = ifelse(subsite == "yub", "yuba river", "hallwood"),
          temperature = ifelse(temperature > 40, round((temperature - 32) * (5/9), 1), temperature)) %>% # appears to be F and C temps at yuba 
   distinct() %>%
-  glimpse
+  pivot_longer(cols = c("turbidity", "velocity", "temperature"), values_to = "value", names_to = "parameter") %>% 
+  glimpse()
 
 unique(yuba_env$subsite)
 unique(yuba_env$site)
@@ -423,31 +404,30 @@ unique(yuba_env$site)
 ```{r}
 combined_env <- bind_rows(battle_env, butte_env, clear_env, deer_env,
                           feather_env, knights_env, tisdale_env, 
-                          mill_env, yuba_env) %>% glimpse
-
-
+                          mill_env, yuba_env) %>% 
+  mutate(text = case_when(parameter == "weather" & text == "partially cloudy" ~ "partly cloudy",
+                          parameter == "weather" & text == "foggy" ~ "fog",
+                          parameter == "weather" & text %in% c("precipitation", "rain", "rainy", "windy and precipitation") ~ "precipitation",
+                          parameter == "weather" & text %in% c("sunny", "clear") ~ "clear",
+                          parameter == "weather" & text %in% c("windy", "windy and clear") ~ "windy",
+                          T ~ text),
+         # remove temperature above 40 because errors
+         value = case_when(parameter == "temperature" & value > 40 ~ NA_real_,
+                           T ~ value)) %>% 
+  # we do not need to keep rows for parameters where no data was collected because it does not provide any additional information
+  filter(!is.na(value) | !is.na(text)) %>% 
+  # decided to remove this because not needed for standard datasets
+  select(-trap_visit_id)
 ```
 
 ## Explore Varibles {.tabset}
-
-### sample_id
-
-Battle and Clear Creeks are the only tribs that give a sample ID. The
-rest of the tribs are entirely NA for this column.
-
-TODO assign trap visit ID for other tribs
-
-```{r}
-combined_env %>% group_by(stream) %>%
-  summarize(unique_trap_visit_id = length(unique(trap_visit_id)))
-```
 
 ### date
 
 ```{r}
 combined_env %>% 
   ggplot() + 
-  geom_point(aes(x = date, y = stream, color = stream), alpha = .5) + 
+  geom_point(aes(x = date, y = site, color = stream), alpha = .5) + 
   theme_minimal() + 
   scale_color_manual(values = color_pal) + 
   theme(legend.position = "none", 
@@ -460,8 +440,9 @@ Battle, Butte, Clear, and Yuba provide velocity data.
 
 ```{r}
 combined_env %>% 
+  filter(parameter == "velocity") %>% 
   ggplot() + 
-  geom_boxplot(aes(x = velocity, y = stream, color = stream), alpha = .5, binwidth = .5) + 
+  geom_boxplot(aes(x = value, y = stream, color = stream), alpha = .5, binwidth = .5) + 
   theme_minimal() + 
   scale_color_manual(values = color_pal) +
   theme(legend.position = "none", 
@@ -472,9 +453,10 @@ Zoom in on 0 - 10 velocity range:
 
 ```{r}
 combined_env %>% 
-  filter(velocity < 10) %>%
+  filter(parameter == "velocity") %>% 
+  filter(value < 10) %>%
   ggplot() + 
-  geom_histogram(aes(x = velocity, fill = stream), alpha = .5, binwidth = .3, position="identity") + 
+  geom_histogram(aes(x = value, fill = stream), alpha = .5, binwidth = .3, position="identity") + 
   theme_minimal() + 
   scale_fill_manual(values = color_pal) +
   theme(legend.position = "bottom", 
@@ -487,8 +469,9 @@ All watersheds provide turbidity data
 
 ```{r}
 combined_env %>% 
+  filter(parameter == "turbidity") %>% 
   ggplot() + 
-  geom_boxplot(aes(x = turbidity, y = stream, color = stream), alpha = .5) + 
+  geom_boxplot(aes(x = value, y = stream, color = stream), alpha = .5) + 
   theme_minimal() + 
   scale_color_manual(values = color_pal) +
   theme(legend.position = "none", 
@@ -499,9 +482,10 @@ Zoom in on 0 - 25 turbidity range:
 
 ```{r}
 combined_env %>% 
-  filter(turbidity < 50) %>% # 1,647 values above 50 (274,049 rows total)
+  filter(parameter == "turbidity") %>% 
+  filter(value < 50) %>% # 1,647 values above 50 (274,049 rows total)
   ggplot() + 
-  geom_histogram(aes(x = turbidity, fill = stream), alpha = .5, binwidth = .3, position="identity") + 
+  geom_histogram(aes(x = value, fill = stream), alpha = .5, binwidth = .3, position="identity") + 
   theme_minimal() + 
   scale_fill_manual(values = color_pal) +
   theme(legend.position = "bottom", 
@@ -515,8 +499,9 @@ Battle, Butte, Clear Deer, and Mill collect weather data:
 ```{r}
 unique(combined_env$weather)
 combined_env %>% 
+  filter(parameter == "weather") %>% 
   ggplot() + 
-  geom_bar(aes(x = weather, fill = stream), position = "dodge") + 
+  geom_bar(aes(x = text, fill = stream), position = "dodge") + 
   theme_minimal() + 
   scale_fill_manual(values = color_pal) +
   theme(legend.position = "bottom", 
@@ -525,40 +510,15 @@ combined_env %>%
 
 ```
 
-Fix encoding of weather data
-
-```{r}
-combined_env <- combined_env %>% 
-  mutate(weather = case_when(weather %in% c("precipitation", "rain", "rainy", "windy and precipitation") ~ "precipitation",
-                             weather %in% c("sunny", "clear") ~ "clear",
-                             weather %in% c("partially cloudy", "partly cloudy") ~ "partially cloudy",
-                             weather %in% c("fog", "foggy") ~ "clear",
-                             weather %in% c("windy", "windy and clear") ~ "windy",
-                             weather == "cloudy" ~ "cloudy")) %>% glimpse
-
-table(combined_env$weather, useNA = "ifany")
-
-combined_env %>% 
-  ggplot() + 
-  geom_bar(aes(x = weather, fill = stream), position = "dodge") + 
-  theme_minimal() + 
-  scale_fill_manual(values = color_pal) +
-  theme(legend.position = "bottom", 
-        text = element_text(size = 18))
-```
-
 ### habitat
-
-```{r}
-table(combined_env$habitat, useNA = "ifany")
-```
 
 Only battle and clear give habitat:
 
 ```{r}
 combined_env %>% 
+  filter(parameter == "habitat") %>% 
   ggplot() + 
-  geom_bar(aes(x = habitat, fill = stream), position = "dodge") +
+  geom_bar(aes(x = text, fill = stream), position = "dodge") +
   theme_minimal() + 
   scale_fill_manual(values = color_pal) +
   theme(legend.position = "bottom", 
@@ -580,33 +540,22 @@ temperature data
 
 ```{r}
 combined_env %>% 
+  filter(parameter == "temperature") %>% 
   ggplot() + 
-  geom_boxplot(aes(x = temperature, y = stream, color = stream), alpha = .5, binwidth = .5) + 
+  geom_boxplot(aes(x = value, y = stream, color = stream), alpha = .5, binwidth = .5) + 
   theme_minimal() +
   scale_color_manual(values = color_pal) +
   theme(legend.position = "none", 
         text = element_text(size = 18))
 ```
 
-How many values are above 30 degrees C?
-
-```{r}
-combined_env %>% 
-  filter(temperature > 40) # all on butte creek and seem like errors 
-
-
-# Remove temps above 40 
-combined_env <- combined_env %>% 
-  filter(temperature < 40 | is.na(temperature)) 
-```
-
 Zoom in on 0 - 25 temperature range:
 
 ```{r}
 combined_env %>% 
-  filter(temperature < 30) %>% # Filter out outliers
+  filter(parameter == "temperature", value < 30) %>% # Filter out outliers
   ggplot() + 
-  geom_histogram(aes(x = temperature, fill = stream), alpha = .5, binwidth = 2.5, position = "identity") + 
+  geom_histogram(aes(x = value, fill = stream), alpha = .5, binwidth = 2.5, position = "identity") + 
   theme_minimal() + 
   scale_fill_manual(values = color_pal) +
   theme(legend.position = "bottom", 
@@ -615,12 +564,11 @@ combined_env %>%
 
 ### secchi
 
-Knights Landing and Butte provide secchi data
-
 ```{r}
 combined_env %>% 
+  filter(parameter == "light penetration") %>% 
   ggplot() + 
-  geom_boxplot(aes(x = secchi, y = stream, color = stream), alpha = .5, binwidth = .5) + 
+  geom_boxplot(aes(x = value, y = stream, color = stream), alpha = .5, binwidth = .5) + 
   theme_minimal() + 
   scale_color_manual(values = color_pal) +
   theme(legend.position = "none", 
@@ -629,8 +577,9 @@ combined_env %>%
 
 ```{r}
 combined_env %>% 
+  filter(parameter == "light penetration") %>% 
   ggplot() + 
-  geom_histogram(aes(x = secchi, fill = stream), binwidth = 2.5, position = "identity", alpha = .5) + 
+  geom_histogram(aes(x = value, fill = stream), binwidth = 2.5, position = "identity", alpha = .5) + 
   theme_minimal() + 
   scale_fill_manual(values = color_pal) +
   theme(legend.position = "bottom", 
@@ -645,12 +594,11 @@ table(combined_env$site, useNA = "ifany")
 
 ### flow
 
-Mill, Deer, and Knights Landing provide flow data
-
 ```{r}
 combined_env %>% 
+  filter(parameter == "discharge") %>% 
   ggplot() + 
-  geom_boxplot(aes(x = flow, y = stream, color = stream), alpha = .5, binwidth = .5) + 
+  geom_boxplot(aes(x = value, y = stream, color = stream), alpha = .5, binwidth = .5) + 
   theme_minimal() + 
   scale_color_manual(values = color_pal) +
   theme(legend.position = "none", 
@@ -659,9 +607,9 @@ combined_env %>%
 
 ```{r}
 combined_env %>% 
-  filter(stream %in% c("mill creek", "sacramento river", "deer creek")) %>%
+  filter(parameter == "discharge") %>% 
   ggplot() + 
-  geom_histogram(aes(x = flow, fill = stream), binwidth = 10) + 
+  geom_histogram(aes(x = value, fill = stream), binwidth = 10) + 
   theme_minimal() + 
   facet_wrap(~stream, ncol = 1, drop = TRUE, scales = "free") + 
   scale_fill_manual(values = color_pal) +
@@ -671,24 +619,14 @@ combined_env %>%
 
 ### subsite
 
-NA for subsites come from Knights landing and yuba
+There are no missing subsites
 
 ```{r}
-combined_env %>% group_by(stream) %>%
-  summarise(subsites = paste0(unique(subsite), collapse = ", "))
+filter(combined_env, is.na(subsite))
 table(combined_env$subsite, useNA = "ifany")
 ```
 
-## Reorder columns and save data to google cloud 
-
-```{r}
-reordered_env <- combined_env %>% 
-  relocate(stream, site, subsite, date, trap_visit_id, 
-           velocity, turbidity, temperature, flow, secchi, 
-           weather, habitat)
-
-knitr::kable(align = 'c', head(reordered_env, 5)) 
-```
+## Save data to google cloud 
 
 ```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
