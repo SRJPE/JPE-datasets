@@ -20,7 +20,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 
 
-## RST Environmental Data Standardization
+## RST Trap Operations Data Standardization
 
 Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
 
@@ -36,7 +36,7 @@ FlowWest received trap operations data from 9 monitoring programs:
 -   Yuba River
 -   Tisdale (and Lower Feather River)
 
-## Standard format for RST Environmental Data
+## Standard format for RST Trap Operations Data
 
 Data dictionary for standard format:
 
