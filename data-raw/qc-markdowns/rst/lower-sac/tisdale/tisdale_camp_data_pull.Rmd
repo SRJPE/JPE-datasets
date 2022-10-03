@@ -93,7 +93,11 @@ trap_visit_format <- trap_visit %>%
   rename(includeCatch = noYes) %>% 
   select(-includeCatchID) %>% 
   left_join(debris_volume_lu, by = c("debrisVolumeCatID" = "debrisVolumeCatID")) %>% 
-  select(-debrisVolumeCatID)
+  select(-debrisVolumeCatID) %>% 
+  mutate(stream = case_when(projectDescriptionID == 10 ~ "sacramento river",
+                            projectDescriptionID == 12 ~ "feather river"),
+         site = case_when(projectDescriptionID == 10 ~ "tisdale",
+                            projectDescriptionID == 12 ~ "lower feather river"))
 
 # Save data to google cloud
 f <- function(input, output) write_csv(input, file = output)
