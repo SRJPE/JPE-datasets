@@ -13,7 +13,7 @@ root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
 ```
 
-```{r}
+```{r, include = F}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
@@ -144,7 +144,23 @@ battle_trap_clean <- battle_environmental %>%
          debris_volume = debris_tubs*10,
          is_half_cone_configuration = ifelse(is_half_cone_configuration == 0.5, T, F),
          # convert average time per revolution to revolutions per minute
-         rpms_start = 60/avg_time_per_rev) %>%
+         rpms_start = 60/avg_time_per_rev,
+         # fix typos in trap start date
+         trap_start_date = case_when(trap_stop_date == "2004-02-13" ~ as_date("2004-02-12"),
+                                trap_stop_date == "2005-01-06" ~ as_date("2005-01-05"),
+                                trap_visit_id == "207_20" ~ as_date("2020-07-24"),
+                                trap_visit_id == "049_20" ~ as_date("2020-02-17"),
+                                trap_visit_id == "085_19" ~ as_date("2020-03-2025"),
+                                trap_visit_id == "274_18" ~ as_date("2018-09-20"),
+                                trap_visit_id == "006_16" ~ as_date("2016-01-05"),
+                                T ~ trap_start_date),
+         trap_stop_date = case_when(trap_visit_id == "050_20" ~ as_date("2020-02-20"),
+                                    T ~ trap_stop_date),
+  # fill in missing start dates with the stop date from previous day
+         trap_start_date = case_when(is.na(trap_start_date) ~ lag(trap_stop_date),
+                                T ~ trap_start_date),
+         trap_start_time = case_when(is.na(trap_start_time) ~ lag(trap_stop_time), 
+                                T ~ trap_start_time)) %>% 
   select(-debris_tubs, -avg_time_per_rev) %>%
   filter(!is.na(trap_start_date)) %>%
   data.frame() %>%
@@ -261,8 +277,19 @@ clear_trap_clean <- clear_environmental %>%
          subsite = site,
          is_half_cone_configuration = ifelse(is_half_cone_configuration == 0.5, T, F),
          # convert average time per revolution to revolutions per minute
-         rpms_start = 60/avg_time_per_rev) %>%
-  select(-debris_tubs, -avg_time_per_rev) %>%
+         rpms_start = 60/avg_time_per_rev,
+    # fix typos
+        trap_start_time = case_when(trap_stop_date == "2020-02-24" ~ trap_stop_time,
+                                     T ~ trap_start_time),
+         trap_stop_time = case_when(trap_stop_date == "2020-02-24" ~ trap_start_time,
+                                    site == "LCC" & trap_stop_date == "2021-05-10" ~ as_hms("08:00:00"),
+                                     T ~ trap_stop_time),
+         trap_start_date = case_when(trap_stop_date == "2006-01-07" ~ as_date("2006-01-06"),
+                                     T ~ trap_start_date),
+         remove = case_when(trap_stop_date == "2005-01-16" & is.na(trap_start_time) ~ "remove",
+                            T ~ "keep")) %>% 
+  filter(remove == "keep") %>% 
+  select(-debris_tubs, -avg_time_per_rev, -remove) %>%
   filter(!is.na(trap_start_date)) %>%
   distinct()
 
@@ -393,7 +420,12 @@ feather_trap_clean <- feather_trap_camp %>%
                                 T ~ NA),
          trap_status = tolower(trap_status),
          fish_processed = tolower(fish_processed),
-         gear_condition_code = tolower(gear_condition_code)) %>% 
+         gear_condition_code = tolower(gear_condition_code),
+         # fix typos
+        trap_stop_time = case_when(is.na(trap_stop_time) ~ trap_visit_time,
+                                   T ~ trap_stop_time),
+        trap_stop_date = case_when(is.na(trap_stop_date) ~ trap_visit_date,
+                                   T ~ trap_stop_date)) %>%
   distinct() %>% glimpse()
 
 # # check to make sure one row per day/time 
@@ -668,7 +700,13 @@ tisdale_trap_clean <- tisdale_trap_camp %>%
          debris_level = tolower(debris_level),
          trap_status = tolower(trap_status),
          fish_processed = tolower(fish_processed),
-         gear_condition_code = tolower(gear_condition_code)) %>% 
+         gear_condition_code = tolower(gear_condition_code),
+         # fix typos
+         trap_stop_date = case_when(trap_start_date == "2019-07-24" ~ as.Date("2019-07-25"),
+                                    trap_start_date == "2019-07-26" ~ as.Date("2019-07-27"),
+                                    T ~ trap_stop_date),
+         trap_stop_time = case_when(trap_start_date %in% c("2019-07-24","2019-07-26") ~ trap_start_time,
+                                    T ~ trap_stop_time)) %>%  
   distinct() %>% glimpse()
 
 # # check to make sure one row per day/time 

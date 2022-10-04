@@ -1,5 +1,5 @@
 ---
-title: "Data prep for JPE model"
+title: "Create standard format for RST hours fished"
 output: html_document
 ---
 
@@ -91,22 +91,6 @@ it is the sample date of the previous record.
 battle_hours_fished <- filter(trap, stream == "battle creek") %>%
   select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, stream, site, subsite, trap_visit_id) %>% 
   arrange(site, subsite, trap_stop_date, trap_stop_time) %>% 
-  # fix typos 
-  mutate(trap_start_date = case_when(trap_stop_date == "2004-02-13" ~ as_date("2004-02-12"),
-                                trap_stop_date == "2005-01-06" ~ as_date("2005-01-05"),
-                                trap_visit_id == "207_20" ~ as_date("2020-07-24"),
-                                trap_visit_id == "049_20" ~ as_date("2020-02-17"),
-                                trap_visit_id == "085_19" ~ as_date("2020-03-2025"),
-                                trap_visit_id == "274_18" ~ as_date("2018-09-20"),
-                                trap_visit_id == "006_16" ~ as_date("2016-01-05"),
-                                T ~ trap_start_date),
-         trap_stop_date = case_when(trap_visit_id == "050_20" ~ as_date("2020-02-20"),
-                                    T ~ trap_stop_date),
-  # fill in missing start dates with the stop date from previous day
-         trap_start_date = case_when(is.na(trap_start_date) ~ lag(trap_stop_date),
-                                T ~ trap_start_date),
-         trap_start_time = case_when(is.na(trap_start_time) ~ lag(trap_stop_time), 
-                                T ~ trap_start_time)) %>% 
   hours_fished()
 ```
 
@@ -142,10 +126,10 @@ observation.
 ## Butte ####
 ### Hours fished ####
 # There are no missing dates but we only have one data and time, no start/stop
-filter(trap, stream == "butte creek", is.na(trap_stop_date)) %>% 
-  tally()
-
-filter(trap, stream == "butte creek", trap_stop_date == "2008-03-24")
+# filter(trap, stream == "butte creek", is.na(trap_stop_date)) %>% 
+#   tally()
+# 
+# filter(trap, stream == "butte creek", trap_stop_date == "2008-03-24")
 
 butte_hours_fished <- filter(trap, stream == "butte creek") %>%
   distinct(trap_stop_date, trap_stop_time, site, subsite, stream) %>%
@@ -207,19 +191,6 @@ it is the sample date of the previous record.
 
 clear_hours_fished <- filter(trap, stream == "clear creek") %>%
   select(stream, site, subsite, trap_start_date, trap_start_time, trap_stop_date, trap_stop_time) %>% 
-  # fix typos
-  mutate(trap_start_time = case_when(trap_stop_date == "2020-02-24" ~ trap_stop_time,
-                                     T ~ trap_start_time),
-         trap_stop_time = case_when(trap_stop_date == "2020-02-24" ~ trap_start_time,
-                                     T ~ trap_stop_time),
-         trap_start_date = case_when(trap_stop_date == "2006-01-07" ~ as_date("2006-01-06"),
-                                     T ~ trap_start_date),
-         remove = case_when(trap_stop_date == "2005-01-16" & is.na(trap_start_time) ~ "remove",
-                            T ~ "keep")) %>% 
-  filter(remove == "keep") %>% 
-  select(-remove) %>% 
-  mutate(trap_stop_time = case_when(site == "LCC" & trap_stop_date == "2021-05-10" ~ as_hms("08:00:00"),
-                               T ~ trap_stop_time)) %>% 
   arrange(site, subsite, trap_stop_date, trap_stop_time) %>% 
   # fill in missing start dates with the stop date from previous day
   mutate(trap_start_date = case_when(is.na(trap_start_date) ~ lag(trap_stop_date),
@@ -293,10 +264,6 @@ feather_hours_fished <- filter(trap, stream == "feather river", fish_processed =
   arrange(stream, site, subsite, trap_stop_date, trap_stop_time) %>% 
   # fix typos
   mutate(
-        trap_stop_time = case_when(is.na(trap_stop_time) ~ trap_visit_time,
-                                   T ~ trap_stop_time),
-        trap_stop_date = case_when(is.na(trap_stop_date) ~ trap_visit_date,
-                                   T ~ trap_stop_date),
   # fill in missing start dates with the stop date from previous day
          trap_start_date = case_when(is.na(trap_start_date) ~ lag(trap_stop_date),
                                 T ~ trap_start_date),
@@ -364,12 +331,6 @@ knights_hours_fished %>%
 tisdale_hours_fished <- filter(trap, stream == "sacramento river", site == "tisdale", fish_processed == "processed fish", include == T, visit_type != "start trapping") %>%
   select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, trap_visit_time, trap_visit_date, subsite, site, stream) %>% 
   arrange(subsite, trap_stop_date, trap_stop_time) %>% 
-  # fix typos
-  mutate(trap_stop_date = case_when(trap_start_date == "2019-07-24" ~ as.Date("2019-07-25"),
-                                    trap_start_date == "2019-07-26" ~ as.Date("2019-07-27"),
-                                    T ~ trap_stop_date),
-         trap_stop_time = case_when(trap_start_date %in% c("2019-07-24","2019-07-26") ~ trap_start_time,
-                                    T ~ trap_stop_time)) %>% 
   hours_fished() 
 
 ```
