@@ -2,7 +2,6 @@
 title: "Data prep for JPE model"
 output: html_document
 ---
-# Hours fished {.tabset}
 
 Hours fished is not included as a variable in the data and needs to be calculated.
 This file calculates hours fished by date, stream and site.
@@ -18,12 +17,12 @@ knitr::opts_knit$set(root.dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, include = F}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
-Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
+Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst).
 Cleaned data were saved on the jpe-dev-bucket on google cloud.
 
 ```{r, include = F}
@@ -34,6 +33,10 @@ gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
 trap <- read_csv("data/standard_rst_trap.csv")
 ```
 
+# Method
+
+If the start and stop date/time of the sampling period are available, simply subtract the difference in time.
+
 ```{r, helpers}
 # calculating hours fished when have start and stop datetime
 hours_fished <- function(dat){
@@ -43,9 +46,13 @@ hours_fished <- function(dat){
          stop_datetime = ymd_hms(paste(trap_stop_date, trap_stop_time)),
          hours_fished = round(difftime(stop_datetime, start_datetime, units = "hours"), 2))
 }
+```
 
+If only one date is available, assume that the end date is the date sampled following day.
+
+```{r, helper2}
 # calculating hours fished when have only date and time
-hours_fished_no_end_date <- function(dat) {
+hours_fished_one_date <- function(dat) {
   dat %>%
   arrange(site, subsite, start_datetime) %>%
   mutate(end_datetime = lead(start_datetime),
@@ -54,6 +61,18 @@ hours_fished_no_end_date <- function(dat) {
          hours_fished = round(difftime(end_datetime, start_datetime, units = "hours"), 2))
 }
 ```
+
+## Other Assumptions
+
+Based on protocols and information from monitoring programs, sampling periods are typically 24 hours,
+unless flows are very high in which traps are checked more frequently. Calculating hours fished based
+on time and date provided in data provides more specificity, however, there are typos and errors resulting
+in nonsensical hours fished. In these cases, we assume 24 hour sampling periods. 
+
+- If only a date is available and no time, assume 24 hour sampling periods for each date.
+- If information is missing or there are typos, assume 24 hour sampling periods.
+
+# Hours fished {.tabset}
 
 ## battle creek
 
@@ -64,10 +83,10 @@ it is the sample date of the previous record.
 ```{r, battle}
 ## Battle ####
 ### Hours fished ####
-filter(trap, stream == "battle creek", is.na(trap_start_time))
-# these are typos that need to be fixed
-filter(trap, stream == "battle creek", trap_stop_date == "2004-02-13")
-filter(trap, stream == "battle creek", trap_stop_date == "2005-01-06")
+# filter(trap, stream == "battle creek", is.na(trap_start_time))
+# # these are typos that need to be fixed
+# filter(trap, stream == "battle creek", trap_stop_date == "2004-02-13")
+# filter(trap, stream == "battle creek", trap_stop_date == "2005-01-06")
 
 battle_hours_fished <- filter(trap, stream == "battle creek") %>%
   select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, stream, site, subsite, trap_visit_id) %>% 
@@ -103,15 +122,15 @@ battle_hours_fished %>%
   geom_histogram()
 
 # these are typos and will be fixed by assuming 24 hours fished
-filter(battle_hours_fished, hours_fished > 5000) %>%  tally()
-filter(trap, stream == "battle creek", trap_stop_date == "2004-02-13")
-filter(trap, stream == "battle creek", trap_stop_date == "2005-01-06")
-filter(trap, stream == "battle creek", trap_stop_date == "2020-07-25")
-
-# these seem large. it is possible so i will leave as is.
-filter(battle_hours_fished, hours_fished > 50)
-filter(battle_hours_fished, hours_fished < 0)
-ck <- filter(trap, stream == "battle creek")
+# filter(battle_hours_fished, hours_fished > 5000) %>%  tally()
+# filter(trap, stream == "battle creek", trap_stop_date == "2004-02-13")
+# filter(trap, stream == "battle creek", trap_stop_date == "2005-01-06")
+# filter(trap, stream == "battle creek", trap_stop_date == "2020-07-25")
+# 
+# # these seem large. it is possible so i will leave as is.
+# filter(battle_hours_fished, hours_fished > 50)
+# filter(battle_hours_fished, hours_fished < 0)
+# ck <- filter(trap, stream == "battle creek")
 ```
 
 ## butte creek
@@ -131,7 +150,7 @@ filter(trap, stream == "butte creek", trap_stop_date == "2008-03-24")
 butte_hours_fished <- filter(trap, stream == "butte creek") %>%
   distinct(trap_stop_date, trap_stop_time, site, subsite, stream) %>%
   mutate(start_datetime = ymd_hms(paste(trap_stop_date, trap_stop_time))) %>%
-  hours_fished_no_end_date() %>% 
+  hours_fished_one_date() %>% 
   mutate(end_datetime = case_when(trap_stop_date == "2007-05-03" ~ ymd_hms("2007-05-04 08:00:00"),
                                   trap_stop_date == "2008-04-23" ~ ymd_hms("2008-04-24 07:15:00"),
                                   trap_stop_date == "2015-06-03" ~ ymd_hms("2015-06-04 08:00:00"),
@@ -155,11 +174,11 @@ butte_hours_fished %>%
   geom_histogram()
 
 # these are typos and will be fixed by assuming 24 hours fished
-butte_hours_fished %>% 
-  filter(hours_fished > 5000) %>% tally()
-butte_hours_fished %>% 
-  filter(hours_fished < 0)
-ck <- filter(trap, stream == "butte creek")
+# butte_hours_fished %>% 
+#   filter(hours_fished > 5000) %>% tally()
+# butte_hours_fished %>% 
+#   filter(hours_fished < 0)
+# ck <- filter(trap, stream == "butte creek")
 ```
 
 ## clear creek
@@ -173,18 +192,18 @@ it is the sample date of the previous record.
 ### Hours fished ####
 
 # missing some start dates
-filter(trap, stream == "clear creek", is.na(trap_start_date)) %>% 
-  tally()
-
-filter(trap, stream == "clear creek", is.na(trap_stop_date)) %>% 
-  tally()
-
-# swapped start and stop time for both the UCC and LCC
-filter(trap, stream == "clear creek", trap_stop_date == "2020-02-24")
-# duplicates for UCC, remove one with missing trap_start_time and missing counter
-filter(trap, stream == "clear creek", trap_stop_date == "2005-01-16")
-# typo
-filter(trap, stream == "clear creek", trap_stop_date == "2006-01-07")
+# filter(trap, stream == "clear creek", is.na(trap_start_date)) %>% 
+#   tally()
+# 
+# filter(trap, stream == "clear creek", is.na(trap_stop_date)) %>% 
+#   tally()
+# 
+# # swapped start and stop time for both the UCC and LCC
+# filter(trap, stream == "clear creek", trap_stop_date == "2020-02-24")
+# # duplicates for UCC, remove one with missing trap_start_time and missing counter
+# filter(trap, stream == "clear creek", trap_stop_date == "2005-01-16")
+# # typo
+# filter(trap, stream == "clear creek", trap_stop_date == "2006-01-07")
 
 clear_hours_fished <- filter(trap, stream == "clear creek") %>%
   select(stream, site, subsite, trap_start_date, trap_start_time, trap_stop_date, trap_stop_time) %>% 
@@ -222,12 +241,12 @@ clear_hours_fished %>%
   geom_histogram()
 
 # these are typos and will be fixed by assuming 24 hours fished
-filter(clear_hours_fished, hours_fished > 5000) %>% 
-  tally()
-filter(clear_hours_fished, hours_fished < 0) %>% 
-  tally()
-
-filter(trap, stream == "clear creek", trap_stop_date == "2006-01-07")
+# filter(clear_hours_fished, hours_fished > 5000) %>% 
+#   tally()
+# filter(clear_hours_fished, hours_fished < 0) %>% 
+#   tally()
+# 
+# filter(trap, stream == "clear creek", trap_stop_date == "2006-01-07")
 ```
 
 ## deer creek
@@ -246,31 +265,27 @@ deer_hours_fished <- filter(trap, stream == "deer creek") %>%
 
 Feather River has data available to calculate the hours fished. We only calculate
 the hours fished when fish are processed. 
-There are a few
-cases when start date is NA. For these we fill in the start date assuming
-it is the sample date of the previous record.
-
 
 ```{r, feather}
 ## Feather ####
 
-# it looks like all cases where start date is missing and fish were processed are typos or issues with data
-filter(trap, stream == "feather river", is.na(trap_start_date) & fish_processed == "processed fish")
-# are there multiple subsites per site?
-filter(trap, stream == "feather river") %>% 
-  group_by(site) %>% 
-  distinct(subsite)
-# multiple subsites fish on same day? yes
-filter(trap, stream == "feather river") %>% 
-  group_by(trap_stop_date, site) %>% 
-  tally() %>% 
-  filter(n > 1)
-filter(trap, stream == "feather river") %>% 
-filter(trap_stop_date == "2019-01-02")
-filter(trap, stream == "feather river") %>% 
-filter(trap_stop_date == "2000-01-20")
-filter(trap, stream == "feather river") %>% 
-filter(trap_start_date == "2015-02-14")
+# # it looks like all cases where start date is missing and fish were processed are typos or issues with data
+# filter(trap, stream == "feather river", is.na(trap_start_date) & fish_processed == "processed fish")
+# # are there multiple subsites per site?
+# filter(trap, stream == "feather river") %>% 
+#   group_by(site) %>% 
+#   distinct(subsite)
+# # multiple subsites fish on same day? yes
+# filter(trap, stream == "feather river") %>% 
+#   group_by(trap_stop_date, site) %>% 
+#   tally() %>% 
+#   filter(n > 1)
+# filter(trap, stream == "feather river") %>% 
+# filter(trap_stop_date == "2019-01-02")
+# filter(trap, stream == "feather river") %>% 
+# filter(trap_stop_date == "2000-01-20")
+# filter(trap, stream == "feather river") %>% 
+# filter(trap_start_date == "2015-02-14")
 # calculate hours fished only for period of times when trap was fishing otherwise there will be duplicates that don't make sense
 # typically a trap is not processed fish when service but this happens 2x. stop date/time filled in with the visit date
 feather_hours_fished <- filter(trap, stream == "feather river", fish_processed == "processed fish", include == T, visit_type != "start trapping") %>%
@@ -304,20 +319,18 @@ feather_hours_fished %>%
   geom_histogram()
 
 # these are typos and will be fixed by assuming 24 hours fished
-filter(feather_hours_fished, hours_fished > 1000)%>% 
-  tally()
-filter(feather_hours_fished, hours_fished < 0) %>% 
-  tally()
-filter(feather_hours_fished, is.na(hours_fished))%>% 
-  tally()
+# filter(feather_hours_fished, hours_fished > 1000)%>% 
+#   tally()
+# filter(feather_hours_fished, hours_fished < 0) %>% 
+#   tally()
+# filter(feather_hours_fished, is.na(hours_fished))%>% 
+#   tally()
 
 ```
 
 ## knights landing
 
 Knights Landing has data available to calculate the hours fished. 
-
-TODO add knights landing trap data from CAMP
 
 ```{r, knights}
 ## Knights Landing ####
@@ -342,15 +355,11 @@ knights_hours_fished %>%
   geom_histogram()
 ```
 
-## tisdale
-
-Tisdale does not have data available to calculate the hours fished though we
-did not receive their CAMP database and it may be in there. Assume that effort
-is 24 hours for every day with data.
+## tisdale & lower feather
 
 ```{r, tisdale}
 ## Tisdale ####
-filter(trap, stream == "sacramento river", site == "tisdale", trap_start_date == "2019-07-24")
+# filter(trap, stream == "sacramento river", site == "tisdale", trap_start_date == "2019-07-24")
 
 tisdale_hours_fished <- filter(trap, stream == "sacramento river", site == "tisdale", fish_processed == "processed fish", include == T, visit_type != "start trapping") %>%
   select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, trap_visit_time, trap_visit_date, subsite, site, stream) %>% 
@@ -376,7 +385,7 @@ tisdale_hours_fished %>%
   ggplot(aes(x = hours_fished)) +
   geom_histogram()
 
-filter(tisdale_hours_fished, hours_fished > 1000) %>%  tally()
+# filter(tisdale_hours_fished, hours_fished > 1000) %>%  tally()
 ```
 
 ## mill creek
@@ -398,13 +407,13 @@ each observation.
 
 ```{r, yuba}
 ## Yuba ####
-filter(trap, stream == "yuba river", is.na(trap_stop_date)) %>% 
-  tally()
+# filter(trap, stream == "yuba river", is.na(trap_stop_date)) %>% 
+#   tally()
 ### Hours fished ####
 yuba_hours_fished <- filter(trap, stream == "yuba river") %>%
   distinct(trap_stop_date, trap_stop_time, subsite, site, stream) %>%
   mutate(start_datetime = ymd_hms(paste(trap_stop_date, trap_stop_time))) %>%
-  hours_fished_no_end_date() %>% 
+  hours_fished_one_date() %>% 
   # add hours across traps at a site
   # group_by(stream, site, date) %>% 
   # summarize(hours_fished = sum(hours_fished)) %>% 
@@ -425,7 +434,7 @@ yuba_hours_fished %>%
   ggplot(aes(x = hours_fished)) +
   geom_histogram()
 
-filter(yuba_hours_fished, hours_fished < 0)
+# filter(yuba_hours_fished, hours_fished < 0)
 ```
 
 # Combine data
@@ -484,16 +493,16 @@ hours_fished_combined <- bind_rows(battle_final,
                                    mill_final,
                                    yuba_final) %>% 
   # if hours fished NA assumed 24 hours
-  mutate(hours_fished = ifelse(is.na(hours_fished), 24, hours_fished))
+  mutate(hours_fished = ifelse(is.na(hours_fished), 24, hours_fished)) %>% glimpse()
 ```
 
 ## Summarized by week
 
 ```{r}
-filter(hours_fished_combined, is.na(trap_stop_date)) %>%  tally()
-filter(hours_fished_combined, is.na(hours_fished)) %>%  tally()
-filter(hours_fished_combined, trap_stop_date == "2008-03-24")
-filter(hours_fished_combined, hours_fished < 0)
+# filter(hours_fished_combined, is.na(trap_stop_date)) %>%  tally()
+# filter(hours_fished_combined, is.na(hours_fished)) %>%  tally()
+# filter(hours_fished_combined, trap_stop_date == "2008-03-24")
+# filter(hours_fished_combined, hours_fished < 0)
 #filter(butte_hours_fished, date == "2015-06-03")
 #filter(clear_hours_fished, stop_date == "2021-05-10")
 #filter(yuba_hours_fished, date == "2009-08-18")
