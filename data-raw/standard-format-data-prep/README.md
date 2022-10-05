@@ -20,7 +20,8 @@ This directory contains the following Rmd documents:
 -   [`rst_environmental_standard_format.Rmd`](https://github.com/FlowWest/JPE-datasets/blob/documentation/data-raw/standard-format-data-prep/rst_environmental_standard_format.Rmd) contains the code used to generate `standard_environmental.csv` which contains environmental covariate measurements taken during trap visits.
 -   [`flow_standard_format.Rmd`](https://github.com/FlowWest/JPE-datasets/blob/documentation/data-raw/standard-format-data-prep/flow_standard_format.Rmd) contains the code used to generate `standard_flow.csv` which compiles flow data from publically available streamgages.
 -   [`adult_upstream_passage_standard_format.Rmd`](https://github.com/FlowWest/JPE-datasets/blob/documentation/data-raw/standard-format-data-prep/adult_upstream_passage_standard_format.Rmd) contains the code used to generate `standard_adult_upstream_passage.csv`
--   In Progress: adult holding, redd, carcass, temperature
+-   [`holding_standard_format.Rmd`] (https://github.com/FlowWest/JPE-datasets/blob/documentation/data-raw/standard-format-data-prep/holding_standard_format.Rmd) contains the code used to generate `standard_holding.csv`
+-   In Progress: adult redd, carcass, temperature
 
 Data descriptions are included within each Rmd. Each standard dataset is described in more detail below.
 
@@ -334,7 +335,23 @@ The following weir passage dataset contains data describing fish migrating upstr
 
 ## Adult Holding
 
-In Progress
+Adult holding data is available for Battle Creek, Butte Creek, Clear Creek, and Deer Creek. Currently Deer provides counts by year. Surveys for each location cover various stream reaches and extents and may be conducted once or multiple times per year.
+
+| column name        | tributary collects | definition                                                                                             |
+|:-------------------|:-------------------|:-------------------------------------------------------------------------------------------------------|
+| stream             | **B, Bu, C, D**    | stream data is from                                                                                    |
+| date               | **B, Bu, C**       | date of survey                                                                                  |
+| year               | **B, Bu, C, D**    | year of survey (Deer only includes year)                                                                                  |
+| reach              | **B, Bu, C, D**    | Reach number within stream                                                                           |
+| river_mile         | **B, C**           | River mile number                                                            |
+| latitude           | **B, C**           | Latitude measurement                                                                                         |
+| longitude          | **B, C**           | Longitude measurement                                                                              |
+| picket_weir_location_rm | **C**         | Location (river mile) of picket weir. Only applies to Clear Creek. Categories: 7.4, 8.2                                                                                  |
+| picket_weir_relate | **C**              | Fish observed above or below the picket weir                        |
+| survey_intent      | **C**              | Intent of survey. Categories: august index, spawning |
+| count              | **B, Bu, C, D**    | Number of fish observed: Butte Creek data has multiple observations from different personnels per day - to prevent double counting, the average of each day at each reach is used as the daily fish count |
+| jacks              | **B, C**           | Number of jacks observed                                                  |
+
 
 ## Adult Redd
 
