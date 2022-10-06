@@ -779,28 +779,33 @@ unique(tisdale_rst_camp$markType)
 filter(tisdale_rst_camp, visitTime != visitTime2)
 tisdale_rst_clean <- tisdale_rst_camp %>%
   # removing existing mark for now. will add all those in later
-  select(-c(catchRawID, trapVisitID, releaseID, visitTime2, markType, color, bodyPart, visitType)) %>%
+  select(-c(catchRawID, trapVisitID, visitTime2, visitType, markCode_1, markType_1, markColor_1, markPosition_1)) %>%
   # combine atcapture and final run
-  mutate(run = ifelse(!is.na(final_run), final_run, run),
-         runMethod = ifelse(!is.na(final_run_method), final_run_method, runMethod)) %>% 
-  select(-c(final_run, final_run_method)) %>% 
+  mutate(run = ifelse(!is.na(finalRun), finalRun, atCaptureRun),
+         runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>% 
+  select(-c(atCaptureRun, atCaptureRunMethod, finalRun, finalRunMethod)) %>% 
   rename(fork_length = forkLength,
          adipose_clipped = fishOrigin,
          species = commonName,
          lifestage = lifeStage,
          date = visitTime,
-         run_method = runMethod) %>%
-  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method) %>%
+         run_method = runMethod, 
+         subsite = subSiteName,
+         release_id = releaseID,
+         dead = mort) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, subsite, release_id,) %>%
   summarize(count = sum(n, na.rm = T)) %>%
   mutate(stream = "sacramento river",
          site = "tisdale",
+         subsite = tolower(subsite),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
          species = tolower(species),
          run_method = tolower(run_method),
          run = tolower(run),
-         dead = ifelse(dead == "Yes", T, F)) 
+         dead = ifelse(dead == "Yes", T, F),
+         release_id = ifelse(release_id == 0 | release_id == 255, NA, release_id)) 
 
 tisdale_rst_min <- tisdale_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
