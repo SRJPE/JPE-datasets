@@ -55,11 +55,11 @@ RST sites are described in a hierarchical structure: stream, site, and subsite. 
 |--------|------|---------|-------------|
 | battle creek | ubc | ubc | there is only one site at battle creek and one trap at ubc |
 | butte creek | adams dam, okie dam | adams dam, okie dam 1, okie dam 2 | there are two sites at butte creek; one trap at adams dam; 2 traps at okie dam. Note that in some cases a diversion fyke is used at this location. |
-| clear creek | lcc, ucc | lcc, ucc | there are two sites at clear creek and one trap at each site |
+| clear creek | lcc, ucc | lcc, ucc | there are two sites at clear creek and one trap at each site; one recapture record in clear creek has a missing site/subsite |
 | deer creek | deer creek | deer creek | there is one site and one trap at deer creek |
 | feather river | upper feather lfc, upper feather hfc, lower feather | eye riffle_north, eye riffle_side channel, gateway main 400' up river, gateway_main1, gateway_rootball, gateway_rootball_river_left, #steep riffle_rst, steep riffle_10' ext, steep side channel, herringer_east, herringer_upper_west, herringer_west, live oak, shawns_east, shawns_west, sunset east bank, sunset west bank, rr, rl | there are three sites on the feather river; there are 9 traps at the upper feather lfc; there are 8 traps at the upper feather hfc; there are 2 traps at the lower feather |
 | mill creek | mill creek | mill creek | there is one site and one trap at mill creek |
-| sacramento river | tisdale, knights landing | rr, rl, 8.3, 8.4 | there are two sites on the sacramento river and two traps at each site |
+| sacramento river | tisdale, knights landing | rr, rl, 8.3, 8.4, knights landing | there are two sites on the sacramento river and two traps at each site except prior to 2006 knights landing data is aggregated across traps |
 | yuba river | hallwood, yuba river | hal, hal2, hal3, yub | there are two sites on the yuba river; there are three traps at hallwood; there is one trap at the yuba river site |
 
 ### Entity Relationship Diagram:
