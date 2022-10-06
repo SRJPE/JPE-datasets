@@ -164,7 +164,11 @@ selected_catch <- catch_raw %>%
   select(-actualCountID) %>% 
   left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
   rename(mort = noYes) %>% 
-  select(-mortID) %>%  glimpse()
+  select(-mortID) %>% 
+  mutate(stream = case_when(projectDescriptionID == 10 ~ "sacramento river",
+                            projectDescriptionID == 12 ~ "feather river"),
+         site = case_when(projectDescriptionID == 10 ~ "tisdale",
+                            projectDescriptionID == 12 ~ "lower feather river"))
 
 # Save data to google cloud
 f <- function(input, output) write_csv(input, file = output)
