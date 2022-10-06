@@ -107,7 +107,7 @@ gcs_upload(trap_visit_format,
            predefinedAcl = "bucketLevel")
 ```
 
-# Catch (not including recaptures)
+# Catch (including recaptures)
 
 ```{r}
 mark_existing_w_joins <- mark %>% 
