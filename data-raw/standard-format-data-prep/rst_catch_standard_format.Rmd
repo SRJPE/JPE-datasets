@@ -479,29 +479,34 @@ filter(feather_rst_camp, visitTime != visitTime2)
 
 feather_rst_clean <- feather_rst_camp %>%
   # removing existing mark for now. will add all those in later
-  select(-c(catchRawID, trapVisitID, releaseID, visitTime2, markType, color, bodyPart)) %>%
+  select(-c(catchRawID, trapVisitID, visitTime2, markType_1, markColor_1, markPosition_1, markCode_1)) %>%
   # combine atcapture and final run
-  mutate(run = ifelse(!is.na(final_run), final_run, run),
-         runMethod = ifelse(!is.na(final_run_method), final_run_method, runMethod)) %>% 
-  select(-c(final_run, final_run_method)) %>% 
+  mutate(run = ifelse(!is.na(finalRun), finalRun, atCaptureRun),
+         runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>% 
+  select(-c(atCaptureRun, atCaptureRunMethod, finalRun, finalRunMethod)) %>% 
   rename(fork_length = forkLength,
          adipose_clipped = fishOrigin,
          species = commonName,
          lifestage = lifeStage,
          date = visitTime,
          run_method = runMethod,
-         site = siteName) %>%
-  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site) %>%
+         site = siteName,
+         subsite = subSiteName,
+         release_id = releaseID,
+         dead = mort) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site, subsite, release_id) %>%
   summarize(count = sum(n, na.rm = T)) %>%
   mutate(stream = "feather river",
          site = tolower(site),
+         subsite = tolower(subsite),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
          species = tolower(species),
          run_method = tolower(run_method),
          run = tolower(run),
-         dead = ifelse(dead == "Yes", T, F)) 
+         dead = ifelse(dead == "Yes", T, F),
+         release_id = ifelse(release_id == 0 | release_id == 255, NA, release_id)) 
 
 feather_rst_min <- feather_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -631,16 +636,34 @@ filter(knights_effort, visitTime == "2014-02-15")
 filter(knights_landing_rst, fishOrigin == "Unknown") %>% tally()
 
 knights_rst_clean_camp <- knights_landing_rst %>%
-  select(-c(catchRawID, trapVisitID, lifeStageCAMPID, visitTime2, visitType, releaseID)) %>%
+  select(-c(catchRawID, trapVisitID, visitTime2, visitType, markCode_1, markType_1, markColor_1, markPosition_1, markType_2, markColor_2, markPosition_2, markCode_2, markType_3, markColor_3, markPosition_3, markCode_3)) %>%
+  # combine atcapture and final run
+  mutate(run = ifelse(!is.na(finalRun), finalRun, atCaptureRun),
+         runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>% 
+  select(-c(atCaptureRun, atCaptureRunMethod, finalRun, finalRunMethod)) %>% 
   rename(count = n,
          date = visitTime,
          fork_length = forkLength,
          adipose_clipped = fishOrigin,
          species = commonName,
          run_method = runMethod,
-         lifestage = lifeStage) %>%
-  group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date) %>%
-  summarize(count = sum(count, na.rm = T))
+         lifestage = lifeStage,
+         release_id = releaseID,
+         subsite = subSiteName,
+         dead = mort) %>%
+  group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date, release_id, subsite, dead) %>%
+  summarize(count = sum(count, na.rm = T)) %>% 
+  mutate(stream = "sacramento river",
+         site = "knights landing",
+         subsite = tolower(subsite),
+         adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
+                                     adipose_clipped == "Hatchery" ~ T),
+         lifestage = tolower(lifestage),
+         species = tolower(species),
+         run_method = tolower(run_method),
+         run = tolower(run),
+         dead = ifelse(dead == "Yes", T, F),
+         release_id = ifelse(release_id == 0 | release_id == 255, NA, release_id)) 
 
 filter(knights_landing_pre2006, species == "Steelhead", count > 0)
 filter(knights_landing_pre2006, species == "Chinook", is.na(at_capture_run), count > 0)
