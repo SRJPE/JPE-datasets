@@ -260,6 +260,20 @@ gcs_upload(selected_release,
            name = "rst/feather-river/data-raw/feather_releases_camp.csv",
            predefinedAcl = "bucketLevel")
 ```
+# ReleaseFish
+
+```{r}
+selected_release_fish <- release_fish %>% 
+  select(projectDescriptionID, releaseID, nMarked, forkLength, weight)
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_release_fish,
+           object_function = f,
+           type = "csv",
+           name = "rst/feather-river/data-raw/feather_release_fish_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
 
 # Environmental
 
