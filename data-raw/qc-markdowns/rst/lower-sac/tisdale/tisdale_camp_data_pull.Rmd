@@ -190,7 +190,7 @@ trap_visit_recaptures <- trap_visit %>%
 
 # add atcapturerun
 selected_recaptured <- catch_raw %>% 
-  select(catchRawID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
+  select(projectDescriptionID, catchRawID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
   left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
   # filter(commonName == "Chinook salmon") %>% 
   left_join(run_lu, by = c("finalRunID" = "runID")) %>%
@@ -208,7 +208,10 @@ selected_recaptured <- catch_raw %>%
   left_join(trap_visit_recaptures) %>%
   # filter out marked and recapture fish by selecting for only fish where release trial does not exist
   filter(releaseID != 0 & releaseID != 255) %>% 
-  glimpse()
+  mutate(stream = case_when(projectDescriptionID == 10 ~ "sacramento river",
+                            projectDescriptionID == 12 ~ "feather river"),
+         site = case_when(projectDescriptionID == 10 ~ "tisdale",
+                            projectDescriptionID == 12 ~ "lower feather river"))
 
 f <- function(input, output) write_csv(input, file = output)
 gcs_upload(selected_recaptured,
@@ -224,6 +227,7 @@ gcs_upload(selected_recaptured,
 selected_release <- release %>% 
   select(projectDescriptionID, releaseID, releasePurposeID, markedTaxonID, markedRunID, markedLifeStageID, markedFishOriginID, sourceOfFishSiteID, releaseSiteID, releaseSubSiteID, nMortWhileHandling, nMortAtCheck, nReleased, releaseTime, releaseLightConditionID,
          testDays, includeTestID, includeTestComments, comments) %>% 
+  filter(projectDescriptionID != 0) %>% 
   left_join(release_purpose_lu, by = c("releasePurposeID" = "releasePursposeID")) %>% 
   select(-releasePurposeID) %>% 
   left_join(taxon_lu, by = c("markedTaxonID" = "taxonID")) %>% 
@@ -255,7 +259,11 @@ selected_release <- release %>%
   select(-releaseLightConditionID) %>%  
   left_join(no_yes_lu, by = c("includeTestID" = "noYesID")) %>% 
   rename(includeTest = noYes) %>% 
-  select(-includeTestID) %>%  glimpse()
+  select(-includeTestID) %>%
+  mutate(stream = case_when(projectDescriptionID == 10 ~ "sacramento river",
+                            projectDescriptionID == 12 ~ "feather river"),
+         site = case_when(projectDescriptionID == 10 ~ "tisdale",
+                            projectDescriptionID == 12 ~ "lower feather river"))
 
 f <- function(input, output) write_csv(input, file = output)
 gcs_upload(selected_release,
@@ -263,6 +271,21 @@ gcs_upload(selected_release,
            type = "csv",
            name = "rst/lower-sac-river/data-raw/tisdale/tisdale_releases_camp.csv",
            predefinedAcl = "bucketLevel")
+```
+# ReleaseFish
+
+```{r}
+selected_release_fish <- release_fish %>% 
+  select(projectDescriptionID, releaseID, nMarked, forkLength, weight) %>% 
+  full_join(selected_release %>% 
+  select(projectDescriptionID, stream, site, releaseID))
+  
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_release_fish,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/tisdale/tisdale_release_fish_camp.csv",
+           predefinedAcl = "bucketLevel")  
 ```
 
 # Environmental
