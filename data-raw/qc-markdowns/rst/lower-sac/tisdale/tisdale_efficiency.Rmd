@@ -95,57 +95,80 @@ tisdale_efficiency_clean <- tisdale_efficiency_raw %>%
   rename(date_released = `Release Date`,
          number_released = `Number Released`,
          number_recaptured = `Number Recaptured`) %>% 
-  mutate(date_released = as.Date(date_released, "%m/%d/%y"))
+  mutate(date_released = as.Date(date_released, "%m/%d/%y"),
+         stream = "sacramento river",
+         site = "tisdale")
 
 # CAMP data
 tisdale_releases_camp <- tisdale_releases_raw %>% 
-  select(releaseID, nReleased, releaseTime, run, fishOrigin, lightCondition, release_site) %>% 
+  select(stream, site, releaseID, nReleased, releaseTime, markedRun, markedLifeStage, sourceOfFishSite, includeTest, markedFishOrigin, releaseLightCondition, releaseSite, releaseSubSite) %>% 
+  filter(!releaseID %in% c(0,255)) %>% 
   rename(release_id = releaseID,
          number_released = nReleased,
          date_released = releaseTime,
-         run_released = run,
-         release_origin = fishOrigin,
-         light_condition = lightCondition)
+         run_released = markedRun,
+         origin_released = markedFishOrigin,
+         lifestage_released = markedLifeStage,
+         light_condition = releaseLightCondition,
+         source_released = sourceOfFishSite,
+         site_released = releaseSite,
+         subsite_released = releaseSubSite,
+         include = includeTest) %>% 
+  mutate(time_released = as_hms(date_released),
+         date_released = as.Date(date_released)) %>% 
+  # there are duplicates in the camp data for some reason
+  group_by(date_released, time_released, release_id) %>% 
+  distinct()
 
 tisdale_recaptures_camp <- tisdale_recaptures_raw %>% 
-  select(catchRawID, forkLength, weight, n, releaseID, run, final_run, fishOrigin, dead, visitTime, halfCone) %>% 
+  mutate(subsite = tolower(subSiteName)) %>% 
+  select(stream, site, subsite, catchRawID, forkLength, weight, n, releaseID, run, final_run, fishOrigin, visitTime, lifeStage) %>% 
   mutate(run = ifelse(!is.na(final_run), final_run, run)) %>% 
   select(-final_run) %>% 
   rename(release_id = releaseID,
          fork_length = forkLength,
          number_recaptured = n,
-         recapture_origin = fishOrigin,
+         origin_recaptured = fishOrigin,
          date_recaptured = visitTime,
-         half_cone = halfCone)
+         run_recaptured = run,
+         lifestage_recaptured = lifeStage) %>% 
+  mutate(time_recaptured = as_hms(date_recaptured),
+         date_recaptured = as.Date(date_recaptured),
+         release_id = as.character(release_id))
 
 # checking full data
-tisdale_efficiency_camp <- tisdale_releases_camp %>% 
-  left_join(tisdale_recaptures_camp %>% 
+tisdale_recaptures_summary <- tisdale_recaptures_camp %>% 
               group_by(release_id) %>% 
               summarize(number_recaptured = sum(number_recaptured),
-                        median_fork_length = median(fork_length, na.rm = T)))
+                        median_fork_length = median(fork_length, na.rm = T))
+tisdale_efficiency_camp <- tisdale_releases_camp %>% 
+  mutate(release_id = as.character(release_id)) %>% 
+  left_join(tisdale_recaptures_summary)
 
 # combining excel and CAMP data
 tisdale_releases <- tisdale_efficiency_clean %>% 
-  select(date_released, number_released) %>% 
+  select(date_released, number_released, stream, site) %>% 
   full_join(tisdale_releases_camp %>% 
-              select(release_id, date_released, number_released, run_released, release_origin, light_condition, release_site))
+              select(release_id, date_released, time_released, number_released, run_released, origin_released, light_condition, site_released, subsite_released, stream, site, lifestage_released, source_released, include)) %>% 
+  mutate(release_id = ifelse(is.na(release_id), paste0("TIS", row_number()), release_id))
 
 # check that no duplicates
 tisdale_releases %>% 
   group_by(date_released) %>% 
-  tally()
+  tally() %>% 
+  filter(n>1)
 
-tisdale_recaptures <- tisdale_efficiency_clean %>% 
-  rename(number_recaptured_excel = number_recaptured) %>% 
-  full_join(tisdale_releases_camp %>% 
-              select(date_released, number_released, release_id)) %>% 
-  full_join(tisdale_recaptures_camp) %>% 
-  select(release_id, number_recaptured_excel, number_recaptured, fork_length, weight, run, recapture_origin, dead, date_recaptured, half_cone) %>% 
-  mutate(number_recaptured = case_when(is.na(number_recaptured) & !is.na(number_recaptured_excel) ~ number_recaptured_excel,
-                                       T ~ number_recaptured),
-         number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% 
-  select(-number_recaptured_excel) 
+tisdale_excel_recaptures <- tisdale_efficiency_clean %>% 
+  full_join(tisdale_releases %>% 
+              select(stream, site, date_released, number_released, release_id)) %>% 
+  filter(grepl("TIS", release_id)) %>% 
+  mutate(date_recaptured = date_released + 1) %>% 
+  ungroup() %>% 
+  select(-date_released,-number_released)
+
+tisdale_recaptures <- tisdale_recaptures_camp %>% 
+  select(release_id, number_recaptured, fork_length, weight, run_recaptured, origin_recaptured, date_recaptured, time_recaptured, lifestage_recaptured, stream, site, subsite) %>% 
+  bind_rows(tisdale_excel_recaptures)
   
 ```
 
@@ -163,7 +186,7 @@ tisdale_efficiency_clean %>%
   mutate(efficiency = number_recaptured/number_released,
          wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released)),
          wy = as.factor(wy)) %>% 
-  ggplot(aes(x = wy, y = efficiency)) +
+  ggplot(aes(x = wy, y = efficiency, fill = stream)) +
   geom_boxplot()
 ```
 
