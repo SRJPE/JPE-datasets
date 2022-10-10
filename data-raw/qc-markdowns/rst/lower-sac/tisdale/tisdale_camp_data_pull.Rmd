@@ -182,12 +182,8 @@ gcs_upload(selected_catch,
 # Recaptures
 
 ```{r}
-trap_visit_recaptures <- trap_visit %>%
-  select(trapVisitID, visitTime, visitTime2, visitTypeID, halfConeID) %>%
-  left_join(visit_type_lu, by = c("visitTypeID" = "visitTypeID")) %>% 
-  mutate(halfCone = ifelse(halfConeID == 1, T, F)) %>% 
-  select(-visitTypeID, -halfConeID)
-
+trap_visit_recaptures <- trap_visit_format %>%
+  select(trapVisitID, visitTime, visitTime2, visitType, halfCone, siteName, subSiteName)
 # add atcapturerun
 selected_recaptured <- catch_raw %>% 
   select(projectDescriptionID, catchRawID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
@@ -241,7 +237,7 @@ selected_release <- release %>%
   select(-markedLifeStageID) %>% 
   left_join(origin_lu, by = c("markedFishOriginID" = "fishOriginID")) %>% 
   rename(markedFishOrigin = fishOrigin) %>% 
-  select(-markedFishOrigin) %>% 
+  select(-markedFishOriginID) %>% 
   left_join(site_subsite %>% 
               select(siteID, siteName), by = c("sourceOfFishSiteID" = "siteID")) %>% 
   rename(sourceOfFishSite = siteName) %>% 
