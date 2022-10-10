@@ -13,6 +13,7 @@ trap_visit <- mdb.get(feather_camp, tables = "TrapVisit") %>%
 mark <-  mdb.get(feather_camp, tables = "MarkExisting")
 release <- mdb.get(feather_camp, tables = "Release") %>% 
   mutate(releaseTime = as.POSIXct(releaseTime))
+release_fish <- mdb.get(feather_camp, tables ="ReleaseFish")
 # TODO check if needed
 release_target <- mdb.get(feather_camp, tables = "ReleaseXTargetSite")
 environmental <- mdb.get(feather_camp, tables = "EnvDataRaw")
