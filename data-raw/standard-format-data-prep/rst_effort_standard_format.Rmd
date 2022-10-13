@@ -395,7 +395,7 @@ yuba_hours_fished <- filter(trap, stream == "yuba river") %>%
   mutate(hours_fished = case_when(is.na(hours_fished) | hours_fished < 0 ~ 24,
                                   T ~ as.numeric(hours_fished)))
 yuba_hours_fished |> glimpse()
-yuba_2 <- dat |> revolution_calculated_hours_fished() |> glimpse()
+yuba_2 <- filter(trap, stream == "yuba river") %>% revolution_calculated_hours_fished() %>% glimpse()
 
 ```
 
