@@ -259,7 +259,7 @@ gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knl_combi
                saveToDisk = here::here("data", "rst", "knights_rst_environmental_pre2006.csv"),
                overwrite = TRUE)
 
-knights_landing_env_pre2006 <- read_csv(here::here("data", "rst", "knights_rst_environmental_pre2006.csv")) %>% glimpse()
+knights_landing_env_pre2006 <- read_csv(here::here("data", "rst", "knights_rst_environmental_pre2006.csv")) %>% 
   filter(date < as.Date("2006-10-02")) %>% 
   select(date, location, discharge = flow_cfs, `light penetration` = secchi_ft, temperature = water_t_f, turbidity, cone_id) %>%
   mutate(temperature = round((temperature - 32) * (5/9), 1), 

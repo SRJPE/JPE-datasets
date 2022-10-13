@@ -384,8 +384,8 @@ feather_trap_clean <- feather_trap_camp %>%
   arrange(visitTime) %>% 
   mutate(stream = "feather river",
          subsite = tolower(subSiteName),
-         site = case_when(subsite %in% lfc, "upper feather lfc",
-                          subsite %in% hfc, "upper feather hfc"),
+         site = case_when(subsite %in% lfc ~ "upper feather lfc",
+                          subsite %in% hfc ~ "upper feather hfc"),
          trap_visit_date = as.Date(visitTime),
          trap_visit_time = as_hms(visitTime),
          trap_stop_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
@@ -741,14 +741,16 @@ colnames(combined_trap_raw)
 combined_trap <- combined_trap_raw %>%
   rename(trap_functioning = gear_condition_code,
          visit_type = trap_status) %>%
-  mutate(debris_level = case_when(debris_level == "veryheavy" ~ "very heavy", 
-                                  is.na(debris_level) ~ "not recorded",
-                                  T ~ debris_level),
-         trap_functioning = case_when(trap_functioning %in% c("total block", "total blockage", "trap not in service") ~ "trap not in service",
-                                         trap_functioning %in% c("not rotating", "cone stopped", "trap stopped functioning") ~ "trap stopped functioning",
+  mutate(
+         trap_functioning = case_when(trap_functioning %in% c("trap not in service") ~ "trap not in service",
+                                         trap_functioning %in% c("total block", "total blockage","not rotating", "cone stopped", "trap stopped functioning") ~ "trap stopped functioning",
                                            trap_functioning %in% c("partial block", "partial blockage", "trap functioning, but not normally") ~ "trap functioning but not normally",
                                            trap_functioning %in% c("normal", "trap functioning normally") ~ "trap functioning normally",
                                     T ~ "not recorded"),
+         debris_level = case_when(debris_level == "veryheavy" ~ "very heavy", 
+                                  is.na(debris_level) & trap_functioning %in% c("trap not in service", "trap stopped functioning") ~ NA_character_,
+                                  is.na(debris_level) ~ "not recorded",
+                                  T ~ debris_level),
          visit_type = case_when(visit_type %in% c("pull", "end trapping") ~ "end trapping",
                                    visit_type %in% c("set", "start trap & begin trapping") ~ "start trapping",
                                    visit_type %in% c("drive-by only") ~ "drive by",
