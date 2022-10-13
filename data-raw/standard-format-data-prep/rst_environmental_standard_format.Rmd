@@ -221,13 +221,13 @@ gcs_get_object(object_name = "rst/feather-river/data-raw/feather_environmental_c
 
 feather_env_raw <- read_csv(here::here("data", "rst", "feather_environmental_camp.csv")) 
 
+filter(feather_env_raw, parameter == "velocity") %>%  ggplot(aes(value)) + geom_histogram()
 # check those with different units
 # looks like for those with different units is typo
 # assume all flow in cfs
 feather_env <- feather_env_raw %>% 
   # convert meters to feet and get rid of nonsensical values which are errors
   mutate(value = case_when(unit == "meters/second (m/sec)" & parameter == "velocity" ~ value*3.28,
-                           parameter == "velocity" & value > 50 ~ NA_real_,
                            # convert F to C
                            unit == "°F" & parameter == "temperature" ~ (value-32)*(5/9),
                            T ~ value)) %>% 
