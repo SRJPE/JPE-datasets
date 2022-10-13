@@ -368,7 +368,7 @@ mill_env <- read_csv(here::here("data", "rst", "mill_rst_environmental.csv")) %>
 The dataset included operations and environmental data. Below only
 columns for environmental data are selected.
 
-*Yuba River has 3 subsites. They also reported data that did not link to a specific subsite. For these data we listed subsite as NA. 
+*Yuba River has 3 subsites. 
 
 - temperature
 - turbidity
@@ -385,7 +385,7 @@ yuba_env <- read_csv(here::here("data", "rst", "yuba_rst_environmental.csv"),
                                       "n", "c", "n", "n", "c", "c", "n", "n", 
                                       "c", "n", "c", "c")) %>% 
   mutate(date = lubridate::as_date(date)) %>%
-  select(date, temperature, turbidity, velocity, site = location) %>%
+  select(date, temperature, turbidity, velocity, site = location) %>% 
   mutate(stream = "yuba river",
          subsite = case_when(site == "Yuba River" ~ "yub",
                              site == "RST 1 at Hallwood on Yuba River" ~ "hal",
