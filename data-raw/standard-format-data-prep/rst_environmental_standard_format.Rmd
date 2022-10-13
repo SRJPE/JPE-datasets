@@ -318,13 +318,14 @@ tisdale_env <- tisdale_env_raw %>%
                            unit == "°F" & parameter == "temperature" ~ (value-32)*(5/9),
                            # convert ft to m
                            parameter == "water depth" ~ value*0.3048,
-                           T ~ value)) %>% 
+                           T ~ value),
+         unit = ifelse(parameter == "dissolved oxygen", "percent (%)", unit)) %>% 
   group_by(date, site, subsite, parameter) %>% 
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
   mutate(subsite = tolower(subsite)) %>% 
   # removed because large majority did not recored units
-  filter(!parameter %in% c("dissolved oxygen", "barometer", "conductivity"))
+  filter(!parameter %in% c("barometer", "conductivity"))
 ```
 
 ### Mill Creek
