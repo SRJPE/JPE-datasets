@@ -1,0 +1,162 @@
+---
+title: "feather efficiency data"
+output: html_document
+date: "2022-10-09"
+---
+
+```{r, include = F}
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Feather Rotary Screw Trap Data - Efficiency Trials
+
+## Data pull
+```{r, include = F}
+# # Data pull ---------------------------------------------------------------
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+
+### Data from CAMP
+```{r, include = F}
+gcs_get_object(object_name = "rst/feather-river/data-raw/feather_releases_camp.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "feather_releases_camp.csv"),
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/feather-river/data-raw/feather_recaptures_camp.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "feather_recaptures_camp.csv"),
+                 overwrite = TRUE)
+```
+```{r}
+feather_releases_raw <- read_csv(here::here("data-raw", "qc-markdowns", "rst", "feather_releases_camp.csv")) %>% glimpse()
+feather_recaptures_raw <- read_csv(here::here("data-raw", "qc-markdowns", "rst", "feather_recaptures_camp.csv")) %>% glimpse()
+```
+
+## Cleaning and formatting
+
+```{r}
+# CAMP data
+feather_releases_camp <- feather_releases_raw %>% 
+  mutate(stream = "feather river",
+         site = tolower(releaseSite),
+         site = case_when(grepl("eye riffle", site) ~ "eye riffle",
+                          grepl("live oak", site) ~ "live oak",
+                          grepl("herringer", site) ~ "herringer riffle",
+                          grepl("steep riffle", site) ~ "steep riffle",
+                          grepl("sunset", site) ~ "sunset pumps",
+                          grepl("gateway", site) ~ "gateway riffle",
+                          T ~ "not recorded")) %>% 
+  select(stream, site, releaseID, nReleased, releaseTime, markedRun, markedLifeStage, sourceOfFishSite, includeTest, markedFishOrigin, releaseLightCondition, releaseSite, releaseSubSite) %>% 
+  filter(!releaseID %in% c(0,255)) %>% 
+  rename(release_id = releaseID,
+         number_released = nReleased,
+         date_released = releaseTime,
+         run_released = markedRun,
+         origin_released = markedFishOrigin,
+         lifestage_released = markedLifeStage,
+         light_condition = releaseLightCondition,
+         source_released = sourceOfFishSite,
+         site_released = releaseSite,
+         subsite_released = releaseSubSite,
+         include = includeTest) %>% 
+  mutate(time_released = as_hms(date_released),
+         date_released = as.Date(date_released)) %>%
+  # there are duplicates in the camp data for some reason
+  group_by(date_released, time_released, release_id) %>%
+  distinct() %>% glimpse()
+
+feather_recaptures_camp <- feather_recaptures_raw %>% 
+  mutate(stream = "feather river",
+         site = tolower(siteName),
+         subsite = tolower(subSiteName)) %>% 
+  select(stream, site, subsite, forkLength, weight, n, releaseID, run, final_run, fishOrigin, visitTime, lifeStage) %>% 
+  mutate(run = ifelse(!is.na(final_run), final_run, run)) %>% 
+  select(-final_run) %>% 
+  rename(release_id = releaseID,
+         fork_length = forkLength,
+         number_recaptured = n,
+         origin_recaptured = fishOrigin,
+         date_recaptured = visitTime,
+         run_recaptured = run,
+         lifestage_recaptured = lifeStage) %>% 
+  mutate(time_recaptured = as_hms(date_recaptured),
+         date_recaptured = as.Date(date_recaptured),
+         release_id = as.character(release_id)) %>% glimpse()
+
+# checking full data
+feather_recaptures_summary <- feather_recaptures_camp %>% 
+              group_by(release_id) %>% 
+              summarize(number_recaptured = sum(number_recaptured),
+                        median_fork_length = median(fork_length, na.rm = T))
+feather_efficiency_camp <- feather_releases_camp %>% 
+  mutate(release_id = as.character(release_id)) %>% 
+  left_join(feather_recaptures_summary)
+
+# check that no duplicates
+feather_releases_camp %>% 
+  group_by(date_released) %>% 
+  tally() %>% 
+  filter(n>1)
+filter(feather_releases_camp, date_released == "2000-01-11")
+```
+
+## Exploratory plots
+```{r}
+feather_efficiency_camp %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
+         efficiency = number_recaptured/number_released) %>% 
+  ggplot(aes(x = date_released, y = efficiency)) +
+  geom_point()
+
+```
+
+```{r}
+feather_efficiency_camp %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
+         efficiency = number_recaptured/number_released,
+         wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released)),
+         wy = as.factor(wy)) %>% 
+  ggplot(aes(x = wy, y = efficiency, fill = stream)) +
+  geom_boxplot()
+```
+
+```{r}
+feather_efficiency_camp %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
+         efficiency = number_recaptured/number_released,
+         wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released)),
+         wy = as.factor(wy)) %>% 
+  group_by(wy) %>% 
+  summarise(n = length(unique(date_released)),
+            mean_efficiency = mean(efficiency)) %>%  
+  ggplot(aes(x = wy, y = mean_efficiency, fill = n)) +
+  geom_col()
+```
+
+## Save data
+
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_releases_camp,
+           object_function = f,
+           type = "csv",
+           name = "rst/feather-river/data/feather_releases.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(feather_recaptures_camp,
+           object_function = f,
+           type = "csv",
+           name = "rst/feather-river/data/feather_recaptures.csv",
+           predefinedAcl = "bucketLevel")
+```

@@ -85,7 +85,7 @@ deer_holding_1986_1996 <- read_csv("data/redd-carcass-holding/deer_adult_holding
 ## Battle Creek
 
 ```{r, battle_holding_data_dictionary}
-battle_data_dictionary <- read_rds("data/redd-carcass-holding/battle_holding_data_dictionary.rds")
+battle_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/data-dictionaries/battle_holding_data_dictionary.rds")
 kable(battle_data_dictionary)
 ```
 ```{r, battle_clean}
@@ -98,12 +98,13 @@ battle_holding_clean <- battle_holding %>%
 ```
 
 ### Varibles removed
-- notes
+
+- notes: internal use
 
 ## Clear Creek
 
 ```{r, clear_holding_data_dictionary}
-clear_data_dictionary <- read_rds("data/redd-carcass-holding/clear_holding_data_dictionary.rds")
+clear_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/data-dictionaries/clear_holding_data_dictionary.rds")
 kable(clear_data_dictionary)
 ```
 ```{r, clear_clean}
@@ -115,13 +116,14 @@ clear_holding_clean <- clear_holding %>%
 ```
 
 ### Variables removed
-- comments
+
+- comments: internal use
 
 
 ## Deer Creek
 
 ```{r, deer_holding_data_dictionary}
-deer_data_dictionary <- read_rds("data/redd-carcass-holding/deer_holding_data_dictionary.rds")
+deer_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/data-dictionaries/deer_holding_data_dictionary.rds")
 kable(deer_data_dictionary)
 ```
 
@@ -133,37 +135,13 @@ deer_holding_clean <- bind_rows(deer_holding_1986_1996,
 ```
 
 ### Variables removed
+
 - none
 
 ## Butte Creek
 
-```{r}
-# percent_na <- bind_rows(butte_holding_01 %>% select(-comments),
-#                                  butte_holding_02,
-#                                  butte_holding_03,
-#                                  butte_holding_04,
-#                                  butte_holding_05,
-#                                  butte_holding_06,
-#                                  butte_holding_07, 
-#                                  butte_holding_08,
-#                                  butte_holding_09,
-#                                  butte_holding_10,
-#                                  butte_holding_11,
-#                                  butte_holding_12,
-#                                  butte_holding_13,
-#                                  butte_holding_14,
-#                                  butte_holding_15,
-#                                  butte_holding_16,
-#                                  butte_holding_17) %>% 
-#   summarise_all(list(name = ~sum(is.na(.)/length(.)))) %>% 
-#                   pivot_longer(cols = everything())
-
-# butte_data_dictionary <- tibble(variables = colnames(butte_holding_02), description = c("Date of Sampling", "Reach within stream", "Name of survey person", "Fish count", "Comments why count is NA"), percent_na = round(percent_na$value*100))
-# saveRDS(butte_data_dictionary, file = "butte_holding_data_dictionary.rds")
-```
-
 ```{r, butte_holding_data_dictionary}
-butte_data_dictionary <- read_rds("data/redd-carcass-holding/butte_holding_data_dictionary.rds")
+butte_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/data-dictionaries/butte_holding_data_dictionary.rds")
 kable(butte_data_dictionary)
 ```
 
@@ -210,7 +188,52 @@ combined_holding <- bind_rows(battle_holding_clean,
 
 ```{r, data_dictionary_prep, include = F}
 colnames(combined_holding)
-holding_catch_data_dictionary <- tibble(variable_name = colnames(combined_holding), description = c("Date survey was conducted", "Reach number within stream", "River mile number", "Number of fish observed: Butte Creek data has multiple observations from different personnels per day - to prevent double counting, the average of each day at each reach is used as the daily fish count", "Number of jacks observed", "Latitude measurement of adult holding", "Longitude measurement of adult holding", "Stream name","Year survey was conducted", "Reason survey was conducted", " Location of the Picket Weir - this is unique to Clear Creek and it has the same value for the entire dataset","Fish above or below Picket Weir"), encoding = c("YYYY-MM-DD", NA,NA,NA,NA,NA,NA,NA, "YYYY", "august index, spawning", NA, "above, below" ), collected = c("All but Deer", "All","Battle and Clear", "All", "Battle and Clear", "Battle and Clear", "Battle and Clear", "All", "All","Clear", "Clear", "Clear"))
+holding_catch_data_dictionary <-
+  tibble(
+    variable_name = colnames(combined_holding),
+    description = c(
+      "Date survey was conducted",
+      "Reach number within stream",
+      "River mile number",
+      "Number of fish observed: Butte Creek data has multiple observations from different personnels per day - to prevent double counting, the average of each day at each reach is used as the daily fish count",
+      "Number of jacks observed",
+      "Latitude measurement of adult holding",
+      "Longitude measurement of adult holding",
+      "Stream name",
+      "Year survey was conducted",
+      "Reason survey was conducted",
+      "Location of the Picket Weir - this is unique to Clear Creek and is either 7.4 or 8.2",
+      "Fish above or below Picket Weir"
+    ),
+    encoding = c(
+      "YYYY-MM-DD",
+      NA,
+      NA,
+      NA,
+      NA,
+      NA,
+      NA,
+      NA,
+      "YYYY",
+      "august index, spawning",
+      NA,
+      "above, below"
+    ),
+    collected = c(
+      "All but Deer",
+      "All",
+      "Battle and Clear",
+      "All",
+      "Battle and Clear",
+      "Battle and Clear",
+      "Battle and Clear",
+      "All",
+      "All",
+      "Clear",
+      "Clear",
+      "Clear"
+    )
+  )
 ```
 ```{r, data_dictionary}
 kable(holding_catch_data_dictionary)
@@ -227,7 +250,7 @@ combined_holding %>%
   geom_col()
 ```
 
-Average count per month. This chart shows Battle, Butte and Clear as Deer does not have monthly count.
+Average count per month. This chart shows Battle, Butte and Clear; Deer does not have monthly count.
 
 ```{r}
 combined_holding %>% 
@@ -248,7 +271,7 @@ combined_holding %>%
   geom_col()
 ```
 
-Rivermile distribution for Battle and Clear
+River mile distribution for Battle and Clear
 
 ```{r}
 combined_holding %>% 
@@ -297,7 +320,7 @@ combined_holding %>%
 ## Jacks
 Jacks are not recorded for Deer and Butte
 
-Figure below whos the percentage count by month for Battle and Clear.
+Figure below show the percentage count by month for Battle and Clear.
 
 ```{r, jack_qa_qc}
 total_jacks <- combined_holding %>% 

@@ -26,15 +26,15 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # define files to pull in (in some cases there is just one catch file while others
 # have sample and environmental data)
-files_battle <- tibble(path = rep("rst/battle-creek/data/battle_rst_",3),
-                       name = c("catch","environmental","passage_estimates"),
-                       save = rep(here::here("data","rst", "battle_rst_"), 3))
+files_battle <- tibble(path = rep("rst/battle-creek/data/battle_",4),
+                       name = c("rst_catch","rst_environmental","rst_passage_estimates", "mark_reacpture"),
+                       save = rep(here::here("data","rst", "battle_rst_"), 4))
 files_butte <- tibble(path = "rst/butte-creek/data/butte_rst",
                       name = c(""),
                       save = here::here("data","rst", "butte_rst"))
-files_clear <- tibble(path = rep("rst/clear-creek/data/clear_rst_",3),
-                      name = c("catch","environmental","passage_estimates"),
-                      save = rep(here::here("data", "rst", "clear_rst_"), 3))
+files_clear <- tibble(path = rep("rst/clear-creek/data/clear_",4),
+                      name = c("rst_catch","rst_environmental","rst_passage_estimates", "mark_reacpture"),
+                      save = rep(here::here("data", "rst", "clear_rst_"), 4))
 files_deer <- tibble(path = "rst/deer-creek/data/deer_rst",
                      name = c(""),
                      save = here::here("data","rst", "deer_rst"))
@@ -102,7 +102,9 @@ yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 
 # sampling effort and environmental
 battle_environmental <- read_csv(here::here("data","rst", "battle_rst_environmental.csv"))
+battle_mark_recapture <- read_csv(here::here("data","rst", "battle_rst_mark_reacpture.csv"))
 clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
+clear_mark_recapture <- read_csv(here::here("data", "rst", "clear_rst_mark_reacpture.csv"))
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
 feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"))
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
@@ -225,6 +227,28 @@ battle_trap_min <- battle_trap_clean %>%
 # this means that we need to add in zero catch data
 battle_min_date_compare <- full_join(battle_rst_min, battle_trap_min)
 
+# select recaptured fish to add to full catch table
+battle_recapture <- battle_mark_recapture %>% 
+  select(release_date, caught_day_1, caught_day_2, caught_day_3, caught_day_4, caught_day_5, origin) %>% 
+  mutate(stream = "battle creek",
+         site = "ubc",
+         subsite = "ubc",
+         release_id = paste0("BAT", row_number())) %>%
+  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "date", values_to = "count") %>%
+  mutate(date = case_when(date == "caught_day_1" ~ release_date + 1, 
+                                    date == "caught_day_2" ~ release_date + 2,
+                                    date == "caught_day_3" ~ release_date + 3,
+                                    date == "caught_day_4" ~ release_date + 4,
+                                    date == "caught_day_5" ~ release_date + 5),
+         adipose_clipped = case_when(origin == "natural" ~ F,
+                                     origin == "hatchery" ~ T),
+         species = "chinook salmon",
+         run = "not recorded",
+         lifestage = "not recorded",
+         run_method = "not recorded") %>% 
+  select(-release_date, -origin) %>% 
+  filter(count > 0 & !is.na(count))
+  
 # This contains ALL data
 # Assumption is that if date is in environmental data but not catch data there was zero catch
 battle_rst_clean_final <- full_join(battle_rst_clean, 
@@ -233,9 +257,12 @@ battle_rst_clean_final <- full_join(battle_rst_clean,
   mutate(count = ifelse(is.na(count), 0, count),
          stream = "battle creek",
          site = "ubc",
+         subsite = "ubc",
          adipose_clipped = F,
          run_method = "adjusted length-at-date",
-         species = "chinook salmon")
+         species = "chinook salmon",
+         release_id = NA) %>% 
+  bind_rows(battle_recapture)
 
 # convert to data table for faster mutation
 setDT(battle_rst_clean_final)
@@ -276,17 +303,17 @@ filter(butte_rst, is.na(mark_code)) %>% tally()
 butte_rst_clean <- butte_rst %>%
   select(date, station, dead, count, fork_length, weight, mark_code, lifestage) %>%
   rename(adipose_clipped = mark_code, 
-         site = station) %>%
+         subsite = station) %>%
   mutate(stream = "butte creek",
-         subsite = tolower(site),
-         site = case_when(grepl("Okie Dam", site) ~ "okie dam",
-                          T ~ tolower(site)),
+         subsite = tolower(subsite),
+         site = case_when(grepl("Okie Dam", subsite) ~ "okie dam",
+                          T ~ tolower(subsite)),
          run = "spring",
          adipose_clipped = case_when(adipose_clipped == "none" ~ F,
                             adipose_clipped == "adclipped" ~ T),
          run_method = "not recorded",
          species = "chinook salmon") %>%
-  group_by(date, site, dead, fork_length, weight, adipose_clipped, lifestage, stream, run, run_method, species) %>%
+  group_by(date, site, subsite, dead, fork_length, weight, adipose_clipped, lifestage, stream, run, run_method, species) %>%
   summarize(count = sum(count, na.rm = T)) 
 
 setDT(butte_rst_clean)
@@ -355,6 +382,28 @@ clear_trap_min <- clear_trap_clean %>%
 # this means that we need to add in zero catch data
 clear_min_date_compare <- full_join(clear_rst_min, clear_trap_min)
 
+# select recaptured fish to add to full catch table
+clear_recapture <- clear_mark_recapture %>% 
+  select(release_date, release_site, caught_day_1, caught_day_2, caught_day_3, caught_day_4, caught_day_5) %>% 
+  mutate(stream = "clear creek",
+         release_id = paste0("CLR", row_number()), 
+         site = case_when(release_site == "CCRB" ~ "ucc", 
+                          release_site == "VB" ~ "lcc"),
+         subsite = site) %>%
+  select(-release_site) %>% 
+  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "date", values_to = "count") %>%
+  mutate(date = case_when(date == "caught_day_1" ~ release_date + 1, 
+                                    date == "caught_day_2" ~ release_date + 2,
+                                    date == "caught_day_3" ~ release_date + 3,
+                                    date == "caught_day_4" ~ release_date + 4,
+                                    date == "caught_day_5" ~ release_date + 5),
+         species = "chinook salmon",
+         run = "not recorded",
+         lifestage = "not recorded",
+         run_method = "not recorded") %>% 
+  select(-release_date) %>% 
+  filter(count > 0 & !is.na(count))
+  
 # This contains ALL data
 # Assumption is that if date is in environmental data but not catch data there was zero catch
 clear_rst_clean_final <- full_join(clear_rst_clean, 
@@ -363,9 +412,11 @@ clear_rst_clean_final <- full_join(clear_rst_clean,
   mutate(count = ifelse(is.na(count), 0, count),
          stream = "clear creek",
          site = tolower(site),
+         subsite = site,
          adipose_clipped = F,
          run_method = "adjusted length-at-date",
-         species = "chinook salmon") 
+         species = "chinook salmon") %>% 
+  bind_rows(clear_recapture)
 
 # THIS CODE MODIFIES battle_rst_clean_final using functions that
 # mutate using data.table package
@@ -401,6 +452,7 @@ deer_rst_clean <- deer_rst %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(stream = "deer creek",
          site = stream,
+         subsite = site,
          run = "not recorded",
          run_method = "not recorded",
          adipose_clipped = F,
@@ -442,11 +494,11 @@ feather_excel_test <- feather_rst %>%
   
 
 feather_camp_test <- feather_rst_camp %>% 
-  select(-c(catchRawID, trapVisitID, releaseID, visitTime2, markType, color, bodyPart)) %>%
+  select(-c(catchRawID, trapVisitID, releaseID, visitTime2)) %>%
   #combine atcapture and final run
-  mutate(run = ifelse(!is.na(final_run) & final_run != "Not recorded", final_run, run),
-         runMethod = ifelse(!is.na(final_run_method), final_run_method, runMethod)) %>%
-  select(-c(final_run, final_run_method)) %>%
+  mutate(run = ifelse(!is.na(finalRun) & finalRun != "Not recorded", finalRun, atCaptureRun),
+         runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>%
+  select(-c(finalRun, finalRunMethod, atCaptureRun, atCaptureRunMethod)) %>%
   filter(commonName == "Chinook salmon") %>% 
   rename(fork_length = forkLength,
          lifestage = lifeStage,
@@ -469,9 +521,10 @@ feather_rst_camp %>% glimpse
 # same dates for the excel sheets vs CAMP so use CAMP
 min(feather_rst$date)
 min(feather_rst_camp$visitTime)
+ck <- filter(feather_rst_camp, is.na(visitTime))
 # many obs where run is NA
 unique(feather_rst_camp$run)
-filter(feather_rst_camp, is.na(run), commonName == "Chinook salmon", n >0)
+#filter(feather_rst_camp, is.na(run), commonName == "Chinook salmon", n >0)
 unique(feather_rst_camp$commonName)
 unique(feather_rst_camp$fishOrigin)
 unique(feather_rst_camp$markType)
@@ -479,29 +532,34 @@ filter(feather_rst_camp, visitTime != visitTime2)
 
 feather_rst_clean <- feather_rst_camp %>%
   # removing existing mark for now. will add all those in later
-  select(-c(catchRawID, trapVisitID, releaseID, visitTime2, markType, color, bodyPart)) %>%
+  select(-c(catchRawID, trapVisitID, visitTime2, markType_1, markColor_1, markPosition_1, markCode_1)) %>%
   # combine atcapture and final run
-  mutate(run = ifelse(!is.na(final_run), final_run, run),
-         runMethod = ifelse(!is.na(final_run_method), final_run_method, runMethod)) %>% 
-  select(-c(final_run, final_run_method)) %>% 
+  mutate(run = ifelse(!is.na(finalRun), finalRun, atCaptureRun),
+         runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>% 
+  select(-c(atCaptureRun, atCaptureRunMethod, finalRun, finalRunMethod)) %>% 
   rename(fork_length = forkLength,
          adipose_clipped = fishOrigin,
          species = commonName,
          lifestage = lifeStage,
          date = visitTime,
          run_method = runMethod,
-         site = siteName) %>%
-  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site) %>%
+         site = siteName,
+         subsite = subSiteName,
+         release_id = releaseID,
+         dead = mort) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site, subsite, release_id) %>%
   summarize(count = sum(n, na.rm = T)) %>%
   mutate(stream = "feather river",
          site = tolower(site),
+         subsite = tolower(subsite),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
          species = tolower(species),
          run_method = tolower(run_method),
          run = tolower(run),
-         dead = ifelse(dead == "Yes", T, F)) 
+         dead = ifelse(dead == "Yes", T, F),
+         release_id = as.character(ifelse(release_id == 0 | release_id == 255, NA, release_id))) 
 
 feather_rst_min <- feather_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -551,6 +609,7 @@ mill_rst_clean <- mill_rst %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(stream = "mill creek",
          site = stream,
+         subsite = site,
          run = "not recorded",
          run_method = "not recorded",
          adipose_clipped = F,
@@ -590,8 +649,12 @@ filter(yuba_rst, run == "unknown") %>% glimpse
 yuba_rst_clean<- yuba_rst %>%
   select(date, fork_length, weight, lifestage, count, run, location) %>%
   mutate(site = ifelse(location == "Yuba River", "yuba river", "hallwood"),
-         date = as_date(date)) %>%
-  group_by(date, fork_length, weight, lifestage, run, site) %>%
+         date = as_date(date),
+         subsite = case_when(location == "Yuba River" ~ "yub",
+                             location == "5 foot RST at Hallwood" ~ "hal3",
+                             location == "RST 1 at Hallwood on Yuba River" ~ "hal",
+                             location == "RST 2 at Hallwood" ~ "hal2")) %>%
+  group_by(date, fork_length, weight, lifestage, run, site, subsite) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   mutate(stream = "yuba river",
          adipose_clipped = F,
@@ -618,9 +681,9 @@ yuba_rst_clean %>%
 unique(knights_landing_rst$commonName)
 unique(knights_landing_rst$fishOrigin)
 unique(knights_landing_rst$run)
-filter(knights_landing_rst, run == "Not applicable (n/a)") %>% glimpse
+#filter(knights_landing_rst, run == "Not applicable (n/a)") %>% glimpse
 filter(knights_landing_rst, is.na(forkLength), n > 0) %>% glimpse
-unique(knights_landing_rst$runMethod)
+#unique(knights_landing_rst$runMethod)
 unique(knights_landing_rst$lifeStage)
 unique(knights_landing_pre2006$lifestage)
 filter(knights_landing_pre2006, lifestage == "older juvenile") %>% tally()
@@ -631,16 +694,34 @@ filter(knights_effort, visitTime == "2014-02-15")
 filter(knights_landing_rst, fishOrigin == "Unknown") %>% tally()
 
 knights_rst_clean_camp <- knights_landing_rst %>%
-  select(-c(catchRawID, trapVisitID, lifeStageCAMPID, visitTime2, visitType, releaseID)) %>%
+  select(-c(catchRawID, trapVisitID, visitTime2, visitType, markCode_1, markType_1, markColor_1, markPosition_1, markType_2, markColor_2, markPosition_2, markCode_2, markType_3, markColor_3, markPosition_3, markCode_3)) %>%
+  # combine atcapture and final run
+  mutate(run = ifelse(!is.na(finalRun), finalRun, atCaptureRun),
+         runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>% 
+  select(-c(atCaptureRun, atCaptureRunMethod, finalRun, finalRunMethod)) %>% 
   rename(count = n,
          date = visitTime,
          fork_length = forkLength,
          adipose_clipped = fishOrigin,
          species = commonName,
          run_method = runMethod,
-         lifestage = lifeStage) %>%
-  group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date) %>%
-  summarize(count = sum(count, na.rm = T))
+         lifestage = lifeStage,
+         release_id = releaseID,
+         subsite = subSiteName,
+         dead = mort) %>%
+  group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date, release_id, subsite, dead) %>%
+  summarize(count = sum(count, na.rm = T)) %>% 
+  mutate(stream = "sacramento river",
+         site = "knights landing",
+         subsite = tolower(subsite),
+         adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
+                                     adipose_clipped == "Hatchery" ~ T),
+         lifestage = tolower(lifestage),
+         species = tolower(species),
+         run_method = tolower(run_method),
+         run = tolower(run),
+         dead = ifelse(dead == "Yes", T, F),
+         release_id = as.character(ifelse(release_id == 0 | release_id == 255, NA, release_id)))
 
 filter(knights_landing_pre2006, species == "Steelhead", count > 0)
 filter(knights_landing_pre2006, species == "Chinook", is.na(at_capture_run), count > 0)
@@ -652,16 +733,14 @@ knights_rst_clean_pre2006 <- knights_landing_pre2006 %>%
   select(-c(start_date, stop_date, location, fork_length_max_mm, fork_length_min_mm, cpue)) %>% 
   rename(run = at_capture_run,
          adipose_clipped = marked) %>% 
-  mutate(adipose_clipped = case_when(adipose_clipped == T ~ "Natural",
-                                     adipose_clipped == F ~ "Hatchery",
-                                     T ~ "Unknown"),
-         count = ifelse(is.na(count), 0, count),
+  mutate(count = ifelse(is.na(count), 0, count),
+         subsite = "knights landing", # data not disaggregated by trap
          # this likely happened from reshaping of data
          remove = case_when(is.na(run) & species == "Chinook" & count == 0 ~ "remove",
                             T ~ "keep")) %>% 
   filter(remove != "remove") %>% 
   select(-remove) %>% 
-  group_by(date, species, run, lifestage, adipose_clipped) %>% 
+  group_by(date, species, run, lifestage, adipose_clipped, subsite) %>% 
   summarise(count = sum(count))
 
 knights_rst_clean <- bind_rows(knights_rst_clean_camp,
@@ -717,7 +796,7 @@ knights_rst_clean_final <- full_join(knights_rst_clean,
          species = ifelse(species == "chinook", "chinook salmon", species),
          lifestage = tolower(lifestage),
          run = tolower(run)) 
-# THIS CODE MODIFIES battle_rst_clean_final using functions that
+# THIS CODE MODIFIES knights_clean_final using functions that
 # mutate using data.table package
 setDT(knights_rst_clean_final)
 knights_rst_clean_final %>% 
@@ -749,35 +828,38 @@ min(tisdale_rst$date)
 min(tisdale_rst_camp$visitTime)
 # many obs where run is NA
 unique(tisdale_rst_camp$run)
-filter(tisdale_rst_camp, is.na(run), commonName == "Chinook salmon", n >0)
+#filter(tisdale_rst_camp, is.na(run), commonName == "Chinook salmon", n >0)
 unique(tisdale_rst_camp$commonName)
 unique(tisdale_rst_camp$fishOrigin)
 unique(tisdale_rst_camp$markType)
 filter(tisdale_rst_camp, visitTime != visitTime2)
 tisdale_rst_clean <- tisdale_rst_camp %>%
   # removing existing mark for now. will add all those in later
-  select(-c(catchRawID, trapVisitID, releaseID, visitTime2, markType, color, bodyPart, visitType)) %>%
+  select(-c(catchRawID, trapVisitID, visitTime2, visitType, markCode_1, markType_1, markColor_1, markPosition_1)) %>%
   # combine atcapture and final run
-  mutate(run = ifelse(!is.na(final_run), final_run, run),
-         runMethod = ifelse(!is.na(final_run_method), final_run_method, runMethod)) %>% 
-  select(-c(final_run, final_run_method)) %>% 
+  mutate(run = ifelse(!is.na(finalRun), finalRun, atCaptureRun),
+         runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>% 
+  select(-c(atCaptureRun, atCaptureRunMethod, finalRun, finalRunMethod)) %>% 
   rename(fork_length = forkLength,
          adipose_clipped = fishOrigin,
          species = commonName,
          lifestage = lifeStage,
          date = visitTime,
-         run_method = runMethod) %>%
-  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method) %>%
+         run_method = runMethod, 
+         subsite = subSiteName,
+         release_id = releaseID,
+         dead = mort) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, stream, site, subsite, release_id,) %>%
   summarize(count = sum(n, na.rm = T)) %>%
-  mutate(stream = "sacramento river",
-         site = "tisdale",
+  mutate(subsite = tolower(subsite),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
          species = tolower(species),
          run_method = tolower(run_method),
          run = tolower(run),
-         dead = ifelse(dead == "Yes", T, F)) 
+         dead = ifelse(dead == "Yes", T, F),
+         release_id = as.character(ifelse(release_id == 0 | release_id == 255, NA, release_id))) 
 
 tisdale_rst_min <- tisdale_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -840,8 +922,8 @@ unique(combined_rst$stream)
 colnames(combined_rst)
 
 rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
-                                    description = c("Date trap checked.",
-                                                    "Designated run of fish using method in run_method. Some locations did not designated a run. NA when count is 0.",
+                                    description = c("Date trap was checked.",
+                                                    "Designated run of fish using method in run_method. Some locations did not designate a run. NA when count is 0.",
                                                     "Fork length of fish in mm.",
                                                     "Life stage of fish. NA when count is 0.",
                                                     "Describes if fish were dead when observed (T/F).",
@@ -849,10 +931,13 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                     "Number of fish caught.",
                                                     "Mainstem/tributary location of trap.",
                                                     "Site of trap within location. Some locations do not have multiples sites in which stream = site. Site names are specific to the tributary.",
+                                                    "Name of trap where fish were caught.",
                                                     "Describes if adipose fin is clipped (T/F). This is used to determine if the fish is natural or hatchery origin. In some cases this information may be unknown.",
                                                     "Method used to designate run. NA if count is 0.",
-                                                    "Weight in grams.",
-                                                    "Species of fish. All were filtered to chinook."),
+                                                    "Species of fish.",
+                                                    "Release group that recaptured fish is part of. If fish is not a recaptured fish, release_id is NA.",
+                                                    "Weight in grams."
+                                                    ),
                                     
                                     encoding = c(NA,
                                                  "late fall, spring, fall, winter, not recorded, unknown",
@@ -863,23 +948,28 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                  NA,
                                                  "battle creek, butte creek, clear creek, deer creek, feather river, mill creek, yuba river, sacramento river",
                                                  "battle creek, okie dam, adams dam, lcc, ucc, deer creek, eye riffle, live oak, herringer riffle, steep riffle, sunset pumps, shawns beach, gateway riffle, mill creek, yuba river, hallwood, knights landing, tisdale",
+                                                 "see readme",
                                                  "TRUE, FALSE",
                                                  "not recorded, length-at-date criteria, appearance, hatchery attribute",
-                                                 NA,
-                                                 "chinook salmon"),
+                                                 "chinook salmon as well as other species caught in trap",
+                                                 "NA if not recapture fish",
+                                                 NA
+                                                 ),
                                     collected = c("All",
                                                        "All but Deer, Mill",
                                                        "All",
                                                        "All but Deer, Mill",
-                                                       "Battle, Butte, Clear, Tisdale",
+                                                       "All but Deer, Mill, Yuba",
                                                        "Battle, Clear",
                                                        "All",
                                                        "All",
                                                        "All",
+                                                       "All",
                                                        "Butte, Feather, Knights, Tisdale",
-                                                       "Butte",
-                                                       "Butte, Deer, Yuba, Knights, Tisdale",
-                                                       "Knights"))
+                                                       "Battle, Clear, Feather, Knights, Tisdale",
+                                                       "Feather, Knights, Tisdale",
+                                                  "Battle, Clear, Feather, Knights, Tisdale",
+                                                       "Butte, Deer, Feather, Knights, Tisdale, Yuba"))
 ```
 
 ```{r, data_dictionary}
