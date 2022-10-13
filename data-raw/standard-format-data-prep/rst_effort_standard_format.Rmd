@@ -41,10 +41,24 @@ If the start and stop date/time of the sampling period are available, simply sub
 # calculating hours fished when have start and stop datetime
 hours_fished <- function(dat){
   dat %>%
-    filter(!is.na(trap_start_date), !is.na(trap_start_time)) %>%
+    filter(!is.na(trap_stop_time), !is.na(trap_start_time)) %>%
     mutate(start_datetime = ymd_hms(paste(trap_start_date, trap_start_time)),
          stop_datetime = ymd_hms(paste(trap_stop_date, trap_stop_time)),
          hours_fished = round(difftime(stop_datetime, start_datetime, units = "hours"), 2))
+}
+```
+
+If the start and stop date/time of the sampling period are available, simply subtract the difference in time.
+
+```{r, helpers}
+# calculating hours fished when have start and stop datetime
+revolution_calculated_hours_fished <- function(dat){
+  dat %>%
+    filter(!is.na(rpms_start), !is.na(rpms_end), !is.na(sample_period_revolutions)) %>% 
+    mutate(prior_day_rpm = lag(rpms_end),
+           sum_rpms = sum(prior_day_rpm, rpms_start, na.rm = T), 
+           cone_rpms = prior_day_rpm + rpms_start / sum_rpms,
+           hours_fished = round(sample_period_revolutions/cone_rpms/60, 2))
 }
 ```
 
@@ -380,7 +394,9 @@ yuba_hours_fished <- filter(trap, stream == "yuba river") %>%
   # summarize(hours_fished = sum(hours_fished)) %>% 
   mutate(hours_fished = case_when(is.na(hours_fished) | hours_fished < 0 ~ 24,
                                   T ~ as.numeric(hours_fished)))
-  
+yuba_hours_fished |> glimpse()
+yuba_2 <- dat |> revolution_calculated_hours_fished() |> glimpse()
+
 ```
 
 ### QC
