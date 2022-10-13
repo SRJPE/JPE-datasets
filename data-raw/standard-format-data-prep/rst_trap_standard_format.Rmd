@@ -210,8 +210,6 @@ butte_rst %>%
 butte_trap_clean <- butte_rst %>% 
   select(-c(dead, count, fork_length, weight, mark_code, lifestage,
             weather, temperature, turbidity, secchi, velocity)) %>%
-  # select(date, station, trap_status, time, gear_id, temperature, turbidity, velocity,
-  #        trap_revolutions, rpms_start, rpms_end) %>%
   group_by(date, station, trap_status, time, gear_id) %>%
   # summarized because pulling from rst data which is row per fish
   summarize(trap_revolutions = mean(trap_revolutions, na.rm = T),
