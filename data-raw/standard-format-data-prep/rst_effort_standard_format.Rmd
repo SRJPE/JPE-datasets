@@ -6,7 +6,7 @@ output: html_document
 Hours fished is not included as a variable in the data and needs to be calculated.
 This file calculates hours fished by date, stream and site.
 
-```{r, include = F}
+```{r, include = F, warning = FALSE, message = FALSE}
 library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
@@ -35,7 +35,16 @@ trap <- read_csv("data/standard_rst_trap.csv")
 
 # Method
 
-If the start and stop date/time of the sampling period are available, simply subtract the difference in time.
+We explored three primary methods were used to calculate hours fished. Methods were chosen based on data collected at the RST site. When no times, trap revolutions, or trap RPMs were collected we assume 24 hours for each day that trap is fishing. The trap revolution method is commonly used by RST programs but we were not able to get reasonable results for most programs we tried it on so we ended up relying on trap times instead of revolutions. 
+
+1) Use start and stop time. 
+2) Use rpms start, rpms end, and total revolutions
+3) Use start time only 
+
+
+Below is the code for each of the methods described above: 
+
+1) If the start and stop date/time of the sampling period are available, simply subtract the difference in time.
 
 ```{r, helpers}
 # calculating hours fished when have start and stop datetime
@@ -43,28 +52,30 @@ hours_fished <- function(dat){
   dat %>%
     filter(!is.na(trap_stop_time), !is.na(trap_start_time)) %>%
     mutate(start_datetime = ymd_hms(paste(trap_start_date, trap_start_time)),
-         stop_datetime = ymd_hms(paste(trap_stop_date, trap_stop_time)),
-         hours_fished = round(difftime(stop_datetime, start_datetime, units = "hours"), 2))
+           stop_datetime = ymd_hms(paste(trap_stop_date, trap_stop_time)),
+           hours_fished = round(difftime(stop_datetime, start_datetime, units = "hours"), 2))
 }
 ```
 
-If the start and stop date/time of the sampling period are available, simply subtract the difference in time.
+2) If the RPMs start, RPMs end, and sample period revolutions are available, take the average cone RPMs and divide `sample_period_revolutions`/average RMP/60 to get total hours fished.
 
-```{r, helpers}
+```{r, helpers2}
 # calculating hours fished when have start and stop datetime
 revolution_calculated_hours_fished <- function(dat){
   dat %>%
-    filter(!is.na(rpms_start), !is.na(rpms_end), !is.na(sample_period_revolutions)) %>% 
-    mutate(prior_day_rpm = lag(rpms_end),
-           sum_rpms = sum(prior_day_rpm, rpms_start, na.rm = T), 
-           cone_rpms = prior_day_rpm + rpms_start / sum_rpms,
-           hours_fished = round(sample_period_revolutions/cone_rpms/60, 2))
+    filter(!is.na(rpms_start) | !is.na(rpms_end), !is.na(sample_period_revolutions)) %>% 
+    mutate(prior_day_rpm = ifelse(is.na(rpms_end), NA, lag(rpms_end)),
+           sum_rpms = ifelse(is.na(prior_day_rpm), rpms_start, rpms_start + prior_day_rpm), 
+           cone_rpms = sum_rpms / 2,
+           hours_fished = case_when(is.na(rpms_start) ~ round(sample_period_revolutions/rpms_end/60, 2),
+                                    is.na(rpms_end) ~ round(sample_period_revolutions/rpms_start/60, 2), 
+                                    TRUE ~ round(sample_period_revolutions/cone_rpms/60, 2)))
 }
 ```
 
-If only one date is available, assume that the end date is the date sampled following day.
+3) If only one date is available, assume that the end date is the date sampled following day.
 
-```{r, helper2}
+```{r, helper3}
 # calculating hours fished when have only date and time
 hours_fished_one_date <- function(dat) {
   dat %>%
@@ -102,10 +113,15 @@ it is the sample date of the previous record.
 # filter(trap, stream == "battle creek", trap_stop_date == "2004-02-13")
 # filter(trap, stream == "battle creek", trap_stop_date == "2005-01-06")
 
-battle_hours_fished <- filter(trap, stream == "battle creek") %>%
-  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, stream, site, subsite, trap_visit_id) %>% 
+battle_hours_fished <- filter(trap, stream == "battle creek") %>% 
+  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, 
+         stream, site, subsite, trap_visit_id) %>% 
   arrange(site, subsite, trap_stop_date, trap_stop_time) %>% 
+  mutate(hours_fished_methodology = "using start time and stop time") %>% 
   hours_fished()
+
+
+knitr::kable(head(battle_hours_fished, 5))
 ```
 
 ### QC
@@ -126,10 +142,40 @@ battle_hours_fished %>%
 # filter(trap, stream == "battle creek", trap_stop_date == "2020-07-25")
 # 
 # # these seem large. it is possible so i will leave as is.
-# filter(battle_hours_fished, hours_fished > 50)
+filter(battle_hours_fished, hours_fished > 50)
 # filter(battle_hours_fished, hours_fished < 0)
 # ck <- filter(trap, stream == "battle creek")
+
+# TODO we can go into trap and fix double date at one trap 
+# - would be educated guess as to which one to keep and leave
+battle_hours_fished %>% filter(trap_start_date == as_date("2003-10-22"))
+
+battle_hours_fished %>% filter(trap_start_date == as_date("2018-09-20")) # leave as is given everything looks good with start and end date
+trap %>% filter(site == "ubc", trap_start_date == as_date("2018-09-20")) # everything looks fine with this data
+trap %>% filter(site == "ubc", trap_start_date == as_date("2018-10-01"))# also fine here 
 ```
+### Compare methodologies 
+
+Tested out trap revolution methodology - more variation in hours fished. There is inconsistent data on RPMs start / RPMs end. It makes most sense to use the start date - end date method. 
+
+```{r}
+#test out using trap rotations methodology 
+rev_method <- filter(trap, stream == "battle creek") %>% 
+  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, rpms_start, rpms_end, sample_period_revolutions, stream, site, subsite, trap_visit_id) %>% 
+  arrange(site, subsite, trap_stop_date, trap_stop_time) %>% 
+  mutate(hours_fished_methodology = "using rpm and revolutions") %>% 
+  revolution_calculated_hours_fished() %>% glimpse()
+
+# hours fished appear to be more spread out using this revolution method - do not link well with trap start date/trap start time 
+rev_method %>% 
+  ggplot(aes(x = trap_stop_date, y = hours_fished)) +
+  geom_point()
+
+rev_method %>% 
+  ggplot(aes(x = hours_fished)) +
+  geom_histogram()
+```
+
 
 ## butte creek
 
@@ -148,6 +194,7 @@ observation.
 butte_hours_fished <- filter(trap, stream == "butte creek") %>%
   distinct(trap_stop_date, trap_stop_time, site, subsite, stream) %>%
   mutate(start_datetime = ymd_hms(paste(trap_stop_date, trap_stop_time))) %>%
+  mutate(hours_fished_methodology = "using only start time") %>% 
   hours_fished_one_date() %>% 
   mutate(end_datetime = case_when(trap_stop_date == "2007-05-03" ~ ymd_hms("2007-05-04 08:00:00"),
                                   trap_stop_date == "2008-04-23" ~ ymd_hms("2008-04-24 07:15:00"),
@@ -155,6 +202,8 @@ butte_hours_fished <- filter(trap, stream == "butte creek") %>%
                                   T ~ end_datetime),
          hours_fished = round(difftime(end_datetime, start_datetime, units = "hours"), 2),
          hours_fished = ifelse(hours_fished < 0, 24, hours_fished))
+
+knitr::kable(head(butte_hours_fished, 5))
 ```
 
 ### QC
@@ -174,8 +223,11 @@ butte_hours_fished %>%
 # these are typos and will be fixed by assuming 24 hours fished
 # butte_hours_fished %>% 
 #   filter(hours_fished > 5000) %>% tally()
-# butte_hours_fished %>% 
-#   filter(hours_fished < 0)
+butte_hours_fished %>%
+  filter(hours_fished > 50)
+# big hour days do not seem to correspond to weekends - trap fished effort unclear here 
+# TODO see if there are more dates that have 2 records for the same site
+trap %>%  filter(stream == "butte creek", trap_stop_date == as_date("2014-11-28")) 
 # ck <- filter(trap, stream == "butte creek")
 ```
 
@@ -211,7 +263,10 @@ clear_hours_fished <- filter(trap, stream == "clear creek") %>%
                                 T ~ trap_start_date),
          trap_start_time = case_when(is.na(trap_start_time) ~ lag(trap_stop_time), 
                                 T ~ trap_start_time)) %>% 
+  mutate(hours_fished_methodology = "using start time and stop time") %>% 
   hours_fished()
+
+knitr::kable(head(clear_hours_fished, 5))
 ```
 
 ### QC
@@ -234,23 +289,51 @@ clear_hours_fished %>%
 # filter(trap, stream == "clear creek", trap_stop_date == "2006-01-07")
 ```
 
+### Compare methodologies 
+
+Tested out trap revolution methodology - more variation in hours fished. There is inconsistent data on RPMs start / RPMs end. It makes most sense to use the start date - end date method. 
+
+```{r}
+#test out using trap rotations methodology 
+rev_method <- filter(trap, stream == "clear creek") %>% 
+  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, rpms_start, rpms_end, sample_period_revolutions, stream, site, subsite, trap_visit_id) %>% 
+  arrange(site, subsite, trap_stop_date, trap_stop_time) %>% 
+  mutate(hours_fished_methodology = "using rpm and revolutions") %>% 
+  revolution_calculated_hours_fished() %>% glimpse()
+
+# hours fished appear to be more spread out using this revolution method - do not link well with trap start date/trap start time 
+rev_method %>% 
+  ggplot(aes(x = trap_stop_date, y = hours_fished)) +
+  geom_point()
+
+rev_method %>% 
+  ggplot(aes(x = hours_fished)) +
+  geom_histogram()
+```
+
+
 ## deer creek
 
 Deer Creek does not have data available (no time variable) to calculate hours
+Deer creek also does not have sample period revolutions so we cannot use trap revolutions 
 fished so assume 24 hours for every day with data. 
 
 ```{r, deer}
 ## Deer #####
 deer_hours_fished <- filter(trap, stream == "deer creek") %>% 
   distinct(trap_stop_date, stream, site, subsite) %>% 
+  mutate(hours_fished_methodology = "24 hour assumption") %>% 
   mutate(hours_fished = 24)
+
+knitr::kable(head(deer_hours_fished, 5))
 ```
 
 ## feather river
 
 Feather River has data available to calculate the hours fished. We only calculate
-the hours fished when fish are processed. 
+the hours fished when fish are processed. Does not look like they have any sample period revolutions so cannot try out total revolution technique. 
 
+#TODO it does look like feather has a counter at end which should correspond to total revs (might need some manipulation)
 ```{r, feather}
 ## Feather ####
 
@@ -273,8 +356,12 @@ the hours fished when fish are processed.
 # filter(trap_start_date == "2015-02-14")
 # calculate hours fished only for period of times when trap was fishing otherwise there will be duplicates that don't make sense
 # typically a trap is not processed fish when service but this happens 2x. stop date/time filled in with the visit date
-feather_hours_fished <- filter(trap, stream == "feather river", fish_processed == "processed fish", include == T, visit_type != "start trapping") %>%
-  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, trap_visit_time, trap_visit_date, stream, site, subsite) %>% 
+feather_hours_fished <- filter(trap, stream == "feather river", 
+                               # Tested out move lower so that we still know the next day/day before even if fish were not processed on that day, doesn't look like it makes a difference 
+                               fish_processed == "processed fish", include == T, 
+                               visit_type != "start trapping") %>%
+  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, 
+         trap_visit_time, trap_visit_date, stream, site, subsite) %>% 
   arrange(stream, site, subsite, trap_stop_date, trap_stop_time) %>% 
   # fix typos
   mutate(
@@ -283,8 +370,11 @@ feather_hours_fished <- filter(trap, stream == "feather river", fish_processed =
                                 T ~ trap_start_date),
          trap_start_time = case_when(is.na(trap_start_time) ~ lag(trap_stop_time),
                                 T ~ trap_start_time)) %>%
-  hours_fished() %>% 
+  mutate(hours_fished_methodology = "using start time and stop time") %>% 
+  hours_fished() %>%  
   select(-trap_visit_date, -trap_visit_time)
+
+knitr::kable(head(feather_hours_fished, 5))
 
 ```
 
@@ -293,7 +383,8 @@ feather_hours_fished <- filter(trap, stream == "feather river", fish_processed =
 ```{r}
 feather_hours_fished %>% 
   ggplot(aes(x = stop_datetime, y = hours_fished)) +
-  geom_point()
+  geom_point() 
+  # geom_point(data = og_feather, aes(x = stop_datetime, y = hours_fished), color = "red", alpha = .5)
 
 feather_hours_fished %>% 
   ggplot(aes(x = hours_fished)) +
@@ -309,19 +400,28 @@ feather_hours_fished %>%
 
 ```
 
+
 ## knights landing
 
-Knights Landing has data available to calculate the hours fished. 
+Knights Landing has date and time data available to calculate the hours fished. We do not have sample_period_revolutions so we cannot try out the trap revolution method. 
 
 ```{r, knights}
 ## Knights Landing ####
 
 ### Hours fished ####
 # calculate hours fished only for period of times when trap was fishing otherwise there will be duplicates that don't make sense
-knights_hours_fished <- filter(trap, stream == "sacramento river", site == "knights landing", fish_processed == "processed fish", include == T, visit_type != "start trapping") %>%
-  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, stream, site, subsite) %>% 
+knights_hours_fished <- trap %>% 
+  filter(stream == "sacramento river", site == "knights landing", 
+         fish_processed == "processed fish", include == T, visit_type != "start trapping"
+         ) %>%
+  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time,
+         stream, site, subsite, fish_processed, 
+         include, visit_type) %>% 
   arrange(subsite, trap_stop_date, trap_stop_time) %>% 
+  mutate(hours_fished_methodology = "using start time and stop time") %>% 
   hours_fished() 
+
+knitr::kable(head(knights_hours_fished, 5))
 ```
 
 ### QC
@@ -334,20 +434,29 @@ knights_hours_fished %>%
 knights_hours_fished %>% 
   ggplot(aes(x = hours_fished)) +
   geom_histogram()
+
+knights_hours_fished %>% filter(hours_fished > 50)
 ```
 
-## tisdale & lower feather
+## tisdale
 
 ```{r, tisdale}
 ## Tisdale ####
 # filter(trap, stream == "sacramento river", site == "tisdale", trap_start_date == "2019-07-24")
 
-tisdale_hours_fished <- filter(trap, stream == "sacramento river", site == "tisdale", fish_processed == "processed fish", include == T, visit_type != "start trapping") %>%
-  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, trap_visit_time, trap_visit_date, subsite, site, stream) %>% 
+tisdale_hours_fished <- filter(trap, stream == "sacramento river", site == "tisdale", 
+                               fish_processed == "processed fish", include == T, 
+                               visit_type != "start trapping") %>%
+  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, 
+         trap_visit_time, trap_visit_date, subsite, site, stream) %>% 
   arrange(subsite, trap_stop_date, trap_stop_time) %>% 
+  mutate(hours_fished_methodology = "using start time and stop time") %>% 
   hours_fished() 
 
+knitr::kable(head(tisdale_hours_fished, 5))
 ```
+
+
 
 ### QC
 
@@ -363,6 +472,7 @@ tisdale_hours_fished %>%
 # filter(tisdale_hours_fished, hours_fished > 1000) %>%  tally()
 ```
 
+
 ## mill creek
 
 Mill Creek does not have data available (no time variable) to calculate hours
@@ -372,7 +482,11 @@ fished. Assume that effort is 24 hours for every day with data.
 ## Mill ####
 mill_hours_fished <- filter(trap, stream == "mill creek") %>% 
   distinct(trap_stop_date, stream, site, subsite) %>% 
+  mutate(hours_fished_methodology = "24 hour assumption") %>% 
   mutate(hours_fished = 24)
+
+
+knitr::kable(head(mill_hours_fished, 5))
 ```
 
 ## yuba river
@@ -388,15 +502,15 @@ each observation.
 yuba_hours_fished <- filter(trap, stream == "yuba river") %>%
   distinct(trap_stop_date, trap_stop_time, subsite, site, stream) %>%
   mutate(start_datetime = ymd_hms(paste(trap_stop_date, trap_stop_time))) %>%
+  mutate(hours_fished_methodology = "using only start time") %>% 
   hours_fished_one_date() %>% 
   # add hours across traps at a site
   # group_by(stream, site, date) %>% 
   # summarize(hours_fished = sum(hours_fished)) %>% 
   mutate(hours_fished = case_when(is.na(hours_fished) | hours_fished < 0 ~ 24,
                                   T ~ as.numeric(hours_fished)))
-yuba_hours_fished |> glimpse()
-yuba_2 <- filter(trap, stream == "yuba river") %>% revolution_calculated_hours_fished() %>% glimpse()
 
+knitr::kable(head(yuba_hours_fished, 5))
 ```
 
 ### QC
@@ -412,6 +526,30 @@ yuba_hours_fished %>%
   geom_histogram()
 
 # filter(yuba_hours_fished, hours_fished < 0)
+```
+
+### Compare methodologies 
+
+There are a few really large values when using the rev methodology, some comments in the trap data reflect that the counter may have been tampered with in some of these instances. To clean up the data on these really large days we change all instances where hours fished > 200 and assume a 24 hour fish. 
+
+```{r}
+#test out using trap rotations methodology 
+yuba_rev_method <- filter(trap, stream == "yuba river") %>% 
+  select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, rpms_start, rpms_end, sample_period_revolutions, stream, site, subsite, trap_visit_id) %>% 
+  arrange(site, subsite, trap_stop_date, trap_stop_time) %>% 
+  mutate(hours_fished_methodology = "using rpm and revolutions") %>% 
+  revolution_calculated_hours_fished() %>% 
+  mutate(hours_fished = case_when(hours_fished > 200 ~ 24,
+                                  T ~ as.numeric(hours_fished)))
+
+# hours fished appear to be more spread out using this revolution method - do not link well with trap start date/trap start time 
+yuba_rev_method %>% 
+  ggplot(aes(x = trap_stop_date, y = hours_fished)) +
+  geom_point()
+
+yuba_rev_method %>% 
+  ggplot(aes(x = hours_fished)) +
+  geom_histogram()
 ```
 
 # Combine data
@@ -489,18 +627,21 @@ hours_fished_weekly <- hours_fished_combined %>%
          year = year(trap_stop_date)) %>% 
   group_by(stream, site, subsite, week, year) %>% 
   summarize(hours_fished = sum(hours_fished)) %>% glimpse()
+
+hours_fished_combined %>% filter(site == "lower feather river", trap_stop_date == as_date("2022-02-22")) 
 ```
 
 ### QC
 
 ```{r}
 hours_fished_weekly %>% 
-  ggplot(aes(x = week, y = hours_fished, color = stream)) +
-  geom_point()
+  ggplot(aes(x = week, y = hours_fished, color = year)) +
+  geom_point() + 
+  facet_wrap(~stream)
 
 hours_fished_weekly %>% 
-  ggplot(aes(x = hours_fished)) +
-  geom_histogram()
+  ggplot(aes(x = hours_fished, fill = stream)) +
+  geom_histogram(alpha = .75, position = 'identity')
 ```
 
 # Save data
