@@ -35,12 +35,11 @@ trap <- read_csv("data/standard_rst_trap.csv")
 
 # Method
 
-We explored three primary methods were used to calculate hours fished. Methods were chosen based on data collected at the RST site. When no times, trap revolutions, or trap RPMs were collected we assume 24 hours for each day that trap is fishing. The trap revolution method is commonly used by RST programs but we were not able to get reasonable results for most programs we tried it on so we ended up relying on trap times instead of revolutions. 
+We explored three primary methods to calculate hours fished. Methods were chosen based on data collected at the RST site. When no times, trap revolutions, or trap RPMs were collected we assume 24 hours for each day that trap is fishing. The trap revolution method is commonly used by RST programs but we were not able to get reasonable results for most programs we tried it on so we ended up relying on trap times instead of revolutions. This may be due to different methods for determining cone rotation rate. For instance, Battle measures the average time per rotation whereas Feather River and Knights Landing measure the revolutions per minute. Using total revolutions and the cone rotation rate to calculate sampling period may be useful in the future when methods are more similar.  
 
 1) Use start and stop time. 
 2) Use rpms start, rpms end, and total revolutions
 3) Use start time only 
-
 
 Below is the code for each of the methods described above: 
 
