@@ -415,7 +415,8 @@ combined_env <- bind_rows(battle_env, butte_env, clear_env, deer_env,
                           T ~ text),
          # remove temperature above 40 because errors
          value = case_when(parameter == "temperature" & value > 40 ~ NA_real_,
-                           T ~ value)) %>% 
+                           T ~ value),
+         date = as.Date(date)) %>% 
   # we do not need to keep rows for parameters where no data was collected because it does not provide any additional information
   filter(!is.na(value) | !is.na(text)) %>% 
   # decided to remove this because not needed for standard datasets
