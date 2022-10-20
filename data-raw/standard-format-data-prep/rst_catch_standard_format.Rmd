@@ -314,9 +314,9 @@ butte_rst_clean <- butte_rst %>%
   rename(adipose_clipped = mark_code, 
          subsite = station) %>%
   mutate(stream = "butte creek",
-         subsite = tolower(subsite),
          site = case_when(grepl("Okie Dam", subsite) ~ "okie dam",
                           T ~ tolower(subsite)),
+         subsite = tolower(subsite),
          run = "spring",
          adipose_clipped = case_when(adipose_clipped == "none" ~ F,
                             adipose_clipped == "adclipped" ~ T),
