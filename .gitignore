@@ -9,3 +9,4 @@ config.json
 *.html
 *.xls
 .DS_Store
+*.mdb

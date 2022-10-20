@@ -54,10 +54,18 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 Read in data from google cloud, glimpse raw data and domain description sheet:
 ```{r, eval=FALSE}
-DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
-MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2000.mdb"
-PATH <- paste0(DRIVERINFO, "DBQ=", MDBPATH)
 
+
+
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2000.mdb"),
+bucket = gcs_get_global_bucket(),
+saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2000.mdb",
+overwrite = TRUE)
+
+filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2000.mdb"
+
+DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
 con <- odbcDriverConnect(PATH)
 
 # sqlTables(con)$TABLE_NAME
