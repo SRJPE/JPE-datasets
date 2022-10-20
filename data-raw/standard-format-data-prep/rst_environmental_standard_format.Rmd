@@ -633,9 +633,9 @@ table(combined_env$subsite, useNA = "ifany")
 ```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
-gcs_upload(reordered_env,
+gcs_upload(combined_env,
            object_function = f,
            type = "csv",
-           name = "standard-format-data/standard_RST_environmental.csv")
-write_csv(reordered_env, "../../data/standard-format-data/standard_RST_environmental.csv")
+           name = "standard-format-data/standard_RST_environmental.csv",
+           predefinedAcl = "bucketLevel")
 ```
