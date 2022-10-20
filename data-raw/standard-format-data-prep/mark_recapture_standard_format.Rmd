@@ -202,15 +202,18 @@ gcs_get_object(object_name = "rst/feather-river/data/feather_recaptures.csv",
                saveToDisk = here::here("data", "rst", "feather_recaptures.csv"),
                overwrite = TRUE)
 
+# organize feather subsites by high flow channel and low flow channel to make easier to understand
+lfc <- c("eye riffle_north", "eye riffle_side channel", "gateway main 400' up river", "gateway_main1", "gateway_rootball", "gateway_rootball_river_left", "#steep riffle_rst", "steep riffle_10' ext", "steep side channel", "eye riffle", "steep riffle",
+         "gateway riffle", "eye riffle_release site", "steep riffle_release site", "gateway_release site")
+hfc <- c("herringer_east", "herringer_upper_west", "herringer_west", "live oak", "shawns_east", "shawns_west", "sunset east bank", "sunset west bank", "live oak", "herringer riffle", "sunset pumps", "live oak_release site", "herringer_release site", "sunset_release site")
+
 feather_released <- read_csv(here::here("data", "rst", "feather_releases.csv")) %>% 
-  mutate(site_released = tolower(site_released),
-         site_released = case_when(grepl("eye", site_released) ~ "eye riffle",
-                          grepl("live", site_released) ~ "live oak",
-                          grepl("herringer", site_released) ~ "herringer riffle",
-                          grepl("steep", site_released) ~ "steep riffle",
-                          grepl("sunset", site_released) ~ "sunset pumps",
-                          grepl("gateway", site_released) ~ "gateway riffle",
-                          T ~ "not recorded"),
+  mutate(site = case_when(site %in% lfc ~ "upper feather lfc",
+                          site %in% hfc ~ "lower feather hfc"),
+         site_released = tolower(site_released),
+         site_released = case_when(site_released %in% lfc ~ "upper feather lfc",
+                                   site_released %in% hfc ~ "lower feather hfc",
+                                   T ~ "not recorded"),
          subsite_released = tolower(subsite_released),
          subsite_released = ifelse(is.na(subsite_released) | subsite_released == "not applicable (n/a)", "not recorded", subsite_released),
          day_or_night_release = ifelse(light_condition %in% c("Twilight / dusk", "Night, dark", "Night, moonlit"), "night", "day"),
@@ -226,7 +229,9 @@ feather_recaptured <- read_csv(here::here("data", "rst", "feather_recaptures.csv
   group_by(stream, site, subsite, release_id, date_recaptured) %>% 
   summarize(number_recaptured = sum(number_recaptured),
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
-  mutate(release_id = as.character(release_id)) %>% 
+  mutate(release_id = as.character(release_id),
+         site = case_when(site %in% lfc ~ "upper feather lfc",
+                          site %in% hfc ~ "lower feather hfc")) %>% 
   glimpse()
 ```
 
@@ -749,7 +754,9 @@ combined_release <- combined_release %>%
   glimpse
 
 combined_recapture <- combined_recapture %>% 
-  mutate(date_recaptured = as_date(date_recaptured)) %>% glimpse 
+  mutate(date_recaptured = as_date(date_recaptured),
+         site = ifelse(is.na(site), "not recorded", site),
+         subsite = ifelse(is.na(subsite), "not recorded", subsite)) %>% glimpse 
 
 ```
 
@@ -768,11 +775,10 @@ gcs_upload(combined_release,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_release.csv")
-write_csv(combined_release, here::here("data", "standard-format-data", "standard_release.csv"))
 
 gcs_upload(combined_recapture,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_recapture.csv")
-write_csv(combined_recapture, here::here("data", "standard-format-data", "standard_recapture.csv"))
+
 ```
