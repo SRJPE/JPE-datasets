@@ -629,7 +629,11 @@ hours_fished_combined <- bind_rows(battle_final,
                                    mill_final,
                                    yuba_final) %>% 
   # if hours fished NA assumed 24 hours
-  mutate(hours_fished = ifelse(is.na(hours_fished), 24, hours_fished)) %>% glimpse()
+  mutate(hours_fished = ifelse(is.na(hours_fished), 24, hours_fished)) %>% 
+  rename(date = trap_stop_date) %>% 
+  group_by(stream, site, subsite, date) %>% 
+  summarize(hours_fished = sum(hours_fished)) %>% 
+  glimpse()
 ```
 
 ## Summarized by week
@@ -644,12 +648,12 @@ hours_fished_combined <- bind_rows(battle_final,
 #filter(yuba_hours_fished, date == "2009-08-18")
 
 hours_fished_weekly <- hours_fished_combined %>% 
-  mutate(week = week(trap_stop_date),
-         year = year(trap_stop_date)) %>% 
+  mutate(week = week(date),
+         year = year(date)) %>% 
   group_by(stream, site, subsite, week, year) %>% 
   summarize(hours_fished = sum(hours_fished)) %>% glimpse()
 
-hours_fished_combined %>% filter(site == "lower feather river", trap_stop_date == as_date("2022-02-22")) 
+hours_fished_combined %>% filter(site == "lower feather river", date == as_date("2022-02-22")) 
 ```
 
 ### QC
