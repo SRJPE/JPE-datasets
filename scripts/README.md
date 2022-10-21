@@ -8,9 +8,9 @@ key datasets shared for the JPE model.
 
 ### Rotary screw trap data
 
-#### Daily catch
+#### Daily catch unmarked
 
-**daily catch** is the standard catch data table except it is
+**daily catch unmarked** is the standard catch data table except it is
 filtered to only included unmarked chinook salmon. Recaptured fish that were part
 of an efficiency trial are NOT included.
 
@@ -29,9 +29,9 @@ of an efficiency trial are NOT included.
 | adipose_clipped   |                           | Describes if adipose fin is clipped                                                        | TRUE/FALSE                                                                                                                                                                                                   |
 | run_method        | Bu                        | Method used to designate run                                                               | NA if count is 0. not recorded, length-at-date criteria, appearance, hatchery attribute                                                                                                                      |
 | weight            | Bu, D, Y, KL, T           | Weight in grams                                                                            | \-                                                                                                                                                                                                           |
-#### Weekly catch
+#### Weekly catch unmarked
 
-**weekly catch** is daily catch summarized by week/year and stream/site/subsite. If catch needs to be summarized at the site level, catch can be summed across subsites.
+**weekly catch unmarked** is daily catch summarized by week/year and stream/site/subsite. If catch needs to be summarized at the site level, catch can be summed across subsites.
 
 | **Variable Name**   | **Variable Collected By** | **Description**  | **Encoding** |
 |:-----------------|:-------------------|:---------------------------------|:--------|
