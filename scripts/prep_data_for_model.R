@@ -1,4 +1,5 @@
 # Scripts to prepare data for model
+library(lubridate)
 source("data/standard-format-data/pull_data.R") # pulls in all standard datasets on GCP
 
 # Filter standard_catch to include only unmarked fish (is.na(release_id), species == "chinook")
@@ -28,8 +29,8 @@ weekly_standard_catch_unmarked <- standard_catch_unmarked %>%
 standard_effort %>% glimpse()
 
 weekly_standard_effort <- standard_effort %>% 
-  mutate(week = week(trap_stop_date),
-         year = year(trap_stop_date)) %>% 
+  mutate(week = week(date),
+         year = year(date)) %>% 
   group_by(stream, site, subsite, week, year) %>% 
   summarize(hours_fished = sum(hours_fished))
 
@@ -39,11 +40,33 @@ weekly_catch <- left_join(weekly_standard_catch_unmarked, weekly_standard_effort
 filter(weekly_catch, is.na(hours_fished))
 
 # Join environmental data to catch data
+standard_environmental %>% glimpse()
+
+standard_catch_unmarked_environmental <- standard_catch_unmarked %>% 
+  left_join(standard_environmental)
 
 # Join trap operations data to catch data
+# improvement that could be made is making counter and sample revolutions easier to understand
+standard_trap %>% glimpse()
+
+standard_catch_unmarked_trap <- standard_catch_unmarked %>% 
+  left_join(standard_trap, by = c("date" = "trap_stop_date", 
+                                  "stream" ="stream", 
+                                  "site" = "site", 
+                                  "subsite" = "subsite"))
 
 # Summarize releases and recaptures
+standard_recapture %>% glimpse()
+standard_release %>% glimpse()
 
-# Summarize releases and recaptures by week
+efficiency_summary <- standard_release %>% 
+  select(stream, site, release_id, number_released) %>% 
+  left_join(standard_recapture %>% 
+              select(stream, site, subsite, release_id, number_recaptured) %>% 
+              group_by(stream, site, subsite, release_id) %>% 
+              summarize(number_recaptured = sum(number_recaptured))) %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured))
+
+
 
 
