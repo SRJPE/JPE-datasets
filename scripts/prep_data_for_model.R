@@ -31,7 +31,7 @@ weekly_standard_catch_unmarked <- standard_catch_unmarked %>%
   group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped) %>% 
   summarize(mean_fork_length = mean(fork_length, na.rm = T),
             mean_weight = mean(weight, na.rm = T),
-            count = sum(count))
+            count = sum(count)) %>% glimpse()
 
 gcs_upload(weekly_standard_catch_unmarked,
            object_function = f,
@@ -74,6 +74,13 @@ gcs_upload(standard_environmental,
 
 standard_catch_unmarked_environmental <- standard_catch_unmarked %>% 
   left_join(standard_environmental)
+
+# Standard flow
+gcs_upload(standard_flow,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/standard_flow.csv",
+           predefinedAcl = "bucketLevel")
 
 # Join trap operations data to catch data
 # improvement that could be made is making counter and sample revolutions easier to understand
