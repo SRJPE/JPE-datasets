@@ -89,9 +89,8 @@ of an efficiency trial are NOT included.
 | flow_at_release             | B, C               | flow measure at time and stream of release                                                                                   |
 | temperature_at_release      | B, C               | temperature measure at time and stream of release                                                                            |
 | turbidity_at_release        | B, C               | turbidity measure at time and stream of release                                                                              |
-| origin_released                      | B, F, KL, T, F           | fish origin (natural, hatchery, mixed, unknown, not recorded, or NA)                                                         |
-| run_released                         | T, KL, F                   | run of fish released
-        |
+| origin_released                      | B, F, KL, T, F           | fish origin (natural, hatchery, mixed, unknown, not recorded, or NA)                                          |
+| run_released                         | T, KL, F                   | run of fish released |
 | site_released | T, KL, F | release site location |
 | subsite_released | T, KL, F | trap or details about release site location |
 | source_released | T, KL, F | source of fish used in release trial |
