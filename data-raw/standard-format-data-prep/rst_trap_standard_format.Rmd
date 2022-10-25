@@ -93,6 +93,7 @@ yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 # sampling effort and environmental
 battle_environmental <- read_csv(here::here("data", "rst", "battle_rst_environmental.csv"))
 clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
+butte_trap_camp <- read_csv(here::here("data", "rst", "butte_trap_camp.csv"))
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
 feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"))
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
@@ -207,7 +208,7 @@ butte_rst %>%
 
 # there are multiple obs per day which i think is a data entry issue.
 # group by date, station, time, gear_id, trap_status then average
-butte_trap_clean <- butte_rst %>% 
+butte_trap_clean_pre_2015 <- butte_rst %>% 
   select(-c(dead, count, fork_length, weight, mark_code, lifestage,
             weather, temperature, turbidity, secchi, velocity)) %>%
   group_by(date, station, trap_status, time, gear_id) %>%
@@ -228,6 +229,56 @@ butte_trap_clean <- butte_rst %>%
          rpms_start = ifelse(is.nan(rpms_start), NA, rpms_start),
          rpms_end = ifelse(is.nan(rpms_end), NA, rpms_end)) %>%
   distinct()
+
+
+butte_trap_clean_camp <- butte_trap_camp |> 
+    select(-c(debrisVolumeCat, debrisVolume, debrisVolumeUnits)) %>%
+  mutate(stream = "butte creek",
+         site = "okie dam", # Only fish at okie dam now - also refered to as parot-phelan
+         subsite = tolower(subSiteName), # TODO talk through subsite with ashley
+         trap_visit_date = as.Date(visitTime),
+         trap_visit_time = as_hms(visitTime),
+         trap_stop_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
+                                      T ~ NA_real_),
+         trap_stop_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as_hms(visitTime),
+                                      T ~ NA_real_),
+         trap_start_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as.Date(lag(visitTime2)),
+                                     T ~ NA_real_),
+         trap_start_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as_hms(lag(visitTime2)),
+                                     T ~ NA_real_)) %>% 
+  rename(trap_visit_id = trapVisitID,
+         rpms_start = rpmRevolutionsAtStart,
+         rpms_seconds_start = rpmSecondsAtStart,
+         rpms_end = rpmRevolutionsAtEnd,
+         rpms_seconds_end = rpmSecondsAtEnd,
+         counter_start = counterAtStart,
+         counter_end = counterAtEnd,
+         trap_status = visitType,
+         fish_processed = fishProcessed,
+         gear_condition_code = trapFunctioning,
+         is_half_cone_configuration = halfCone,
+         in_thalweg = inThalweg,
+         include = includeCatch) %>%
+  select(-c(subSiteName, siteName, visitTime, visitTime2, projectDescriptionID)) %>% 
+   mutate(trap_visit_id = as.character(trap_visit_id),
+         in_thalweg = case_when(in_thalweg == "Yes" ~ T, 
+                                in_thalweg == "No" ~ F,
+                                T ~ NA),
+         include = case_when(include == "Yes" ~ T, 
+                                include == "No" ~ F,
+                                T ~ NA),
+         is_half_cone_configuration = case_when(is_half_cone_configuration == "Yes" ~ T, 
+                                is_half_cone_configuration == "No" ~ F,
+                                T ~ NA),
+         trap_status = tolower(trap_status),
+         fish_processed = tolower(fish_processed),
+         gear_condition_code = tolower(gear_condition_code)) %>%
+  distinct() %>% glimpse()
+
+  
+  
+butte_trap_clean <- bind_rows(butte_trap_clean_pre_2015, butte_trap_clean_camp)
+
 
 unique(butte_trap_clean$site)
 unique(butte_trap_clean$subsite)
