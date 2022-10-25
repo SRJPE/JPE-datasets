@@ -112,6 +112,15 @@ knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sa
 tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
 ```
 
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/RiverLAD.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "river_lad.csv"),
+               overwrite = TRUE)
+lad <- read_csv(here::here("data", "river_lad.csv"))
+```
+
 # Data formatting {.tabset}
 
 We format, check, and clean catch data for each stream individually because their
@@ -305,9 +314,9 @@ butte_rst_clean <- butte_rst %>%
   rename(adipose_clipped = mark_code, 
          subsite = station) %>%
   mutate(stream = "butte creek",
-         subsite = tolower(subsite),
          site = case_when(grepl("Okie Dam", subsite) ~ "okie dam",
                           T ~ tolower(subsite)),
+         subsite = tolower(subsite),
          run = "spring",
          adipose_clipped = case_when(adipose_clipped == "none" ~ F,
                             adipose_clipped == "adclipped" ~ T),
@@ -416,7 +425,10 @@ clear_rst_clean_final <- full_join(clear_rst_clean,
          adipose_clipped = F,
          run_method = "adjusted length-at-date",
          species = "chinook salmon") %>% 
-  bind_rows(clear_recapture)
+  bind_rows(clear_recapture) %>% 
+  # there is one obs in recapture data missing site/subsite. filled in with ucc
+  mutate(site = ifelse(is.na(site), "ucc", site),
+         subsite = ifelse(is.na(subsite), "ucc", subsite))
 
 # THIS CODE MODIFIES battle_rst_clean_final using functions that
 # mutate using data.table package
@@ -530,6 +542,10 @@ unique(feather_rst_camp$fishOrigin)
 unique(feather_rst_camp$markType)
 filter(feather_rst_camp, visitTime != visitTime2)
 
+# organize feather subsites by high flow channel and low flow channel to make easier to understand
+lfc <- c("eye riffle_north", "eye riffle_side channel", "gateway main 400' up river", "gateway_main1", "gateway_rootball", "gateway_rootball_river_left", "#steep riffle_rst", "steep riffle_10' ext", "steep side channel")
+hfc <- c("herringer_east", "herringer_upper_west", "herringer_west", "live oak", "shawns_east", "shawns_west", "sunset east bank", "sunset west bank")
+
 feather_rst_clean <- feather_rst_camp %>%
   # removing existing mark for now. will add all those in later
   select(-c(catchRawID, trapVisitID, visitTime2, markType_1, markColor_1, markPosition_1, markCode_1)) %>%
@@ -550,8 +566,9 @@ feather_rst_clean <- feather_rst_camp %>%
   group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site, subsite, release_id) %>%
   summarize(count = sum(n, na.rm = T)) %>%
   mutate(stream = "feather river",
-         site = tolower(site),
          subsite = tolower(subsite),
+         site = case_when(subsite %in% lfc ~ "upper feather lfc",
+                          subsite %in% hfc ~ "upper feather hfc"),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
@@ -896,6 +913,105 @@ tisdale_rst_clean %>%
 
 # Standard format {.tabset}
 
+## River Length At Date
+
+Process LAD to find range of fork lengths assigned to run on given day
+
+```{r}
+lad_spring <- filter(lad, LENGTHRUN == "S") %>%
+  rename(s_start = STARTFL,
+         s_end = ENDFL) %>%
+  select(-LENGTHRUN) %>%
+  group_by(SAMPLEMONTH, SAMPLEDAY) %>%
+  mutate(count = n()) 
+lad_spring_2 <- filter(lad_spring, count > 1) %>% 
+  slice_min(s_start) %>%
+  rename(s_start_1 = s_start,
+         s_end_1 = s_end) %>%
+  left_join(filter(lad_spring, count > 1) %>% 
+  slice_max(s_start) %>%
+  rename(s_start_2 = s_start,
+         s_end_2 = s_end)) %>%
+  select(-count)
+lad_spring_format <- filter(lad_spring, count == 1) %>%
+  select(-count) %>%
+  rename(s_start_1 = s_start,
+         s_end_1 = s_end) %>%
+  bind_rows(lad_spring_2)
+
+# Format fall run. There may be multiple criteria for one date
+lad_fall <- filter(lad, LENGTHRUN == "F") %>%
+  rename(f_start = STARTFL,
+         f_end = ENDFL) %>%
+  select(-LENGTHRUN) %>%
+  group_by(SAMPLEMONTH, SAMPLEDAY) %>%
+  mutate(count = n()) 
+lad_fall_2 <- filter(lad_fall, count > 1) %>% 
+  slice_min(f_start) %>%
+  rename(f_start_1 = f_start,
+         f_end_1 = f_end) %>%
+  left_join(filter(lad_fall, count > 1) %>% 
+  slice_max(f_start) %>%
+  rename(f_start_2 = f_start,
+         f_end_2 = f_end)) %>%
+  select(-count)
+lad_fall_format <- filter(lad_fall, count == 1) %>%
+  select(-count) %>%
+  rename(f_start_1 = f_start,
+         f_end_1 = f_end) %>%
+  bind_rows(lad_fall_2)
+
+# Format winter run. There may be multiple criteria for one date.
+lad_winter <- filter(lad, LENGTHRUN == "W") %>%
+  rename(w_start = STARTFL,
+         w_end = ENDFL) %>%
+  select(-LENGTHRUN) %>%
+  group_by(SAMPLEMONTH, SAMPLEDAY) %>%
+  mutate(count = n()) 
+lad_winter_2 <- filter(lad_winter, count > 1) %>% 
+  slice_min(w_start) %>%
+  rename(w_start_1 = w_start,
+         w_end_1 = w_end) %>%
+  left_join(filter(lad_winter, count > 1) %>% 
+  slice_max(w_start) %>%
+  rename(w_start_2 = w_start,
+         w_end_2 = w_end)) %>%
+  select(-count)
+lad_winter_format <- filter(lad_winter, count == 1) %>%
+  select(-count) %>%
+  rename(w_start_1 = w_start,
+         w_end_1 = w_end) %>%
+  bind_rows(lad_winter_2)
+
+# Format late fall run. There may be multiple criteria for one date.
+lad_latefall <- filter(lad, LENGTHRUN == "L") %>%
+  rename(l_start = STARTFL,
+         l_end = ENDFL) %>%
+  select(-LENGTHRUN) %>%
+  group_by(SAMPLEMONTH, SAMPLEDAY) %>%
+  mutate(count = n()) 
+lad_latefall_2 <- filter(lad_latefall, count > 1) %>% 
+  slice_min(l_start) %>%
+  rename(l_start_1 = l_start,
+         l_end_1 = l_end) %>%
+  left_join(filter(lad_latefall, count > 1) %>% 
+  slice_max(l_start) %>%
+  rename(l_start_2 = l_start,
+         l_end_2 = l_end)) %>%
+  select(-count)
+lad_latefall_format <- filter(lad_latefall, count == 1) %>%
+  select(-count) %>%
+  rename(l_start_1 = l_start,
+         l_end_1 = l_end) %>%
+  bind_rows(lad_latefall_2)
+
+lad_format <- full_join(lad_spring_format, lad_fall_format) %>%
+  full_join(lad_winter_format) %>%
+  full_join(lad_latefall_format) %>%
+  rename(month = SAMPLEMONTH,
+         day = SAMPLEDAY)
+```
+
 ```{r, combined}
 # TODO fill in run method - this will involve outreach with monitoring programs
 # improve performance by using data.table
@@ -908,7 +1024,23 @@ combined_rst <- bind_rows(battle_rst_clean_final,
                           yuba_rst_clean,
                           knights_rst_clean_final,
                           tisdale_rst_clean) %>% 
-  as_tibble()
+  as_tibble() %>% 
+  mutate(date = as.Date(date),
+         month = month(date), # add to join with lad
+         day = day(date)) %>% # add to join with lad
+  left_join(lad_format) %>% 
+  # if run is not recorded (e.g. mill and deer) replace with river model LAD
+  mutate(run_lad_rivermodel = case_when((fork_length >= s_start_1 & fork_length < s_end_1) |
+                                      (fork_length >= s_start_2 & fork_length < s_end_2) ~ "spring",
+                                    (fork_length >= f_start_1 & fork_length < f_end_1) |
+                                      (fork_length >= f_start_2 & fork_length < f_end_2) ~ "fall",
+                                    (fork_length >= w_start_1 & fork_length < w_end_1) |
+                                      (fork_length >= w_start_2 & fork_length < w_end_2) ~ "winter",
+                                    (fork_length >= l_start_1 & fork_length < l_end_1) |
+                                      (fork_length >= l_start_2 & fork_length < l_end_2) ~ "late fall"),
+         run = ifelse(run == "not recorded", run_lad_rivermodel, run),
+         run_method = ifelse(run == "not recorded", "length-at-date criteria", run_method)) %>% 
+  select(date, run, fork_length, lifestage, dead, interpolated, count, stream, site, subsite, adipose_clipped, run_method, species, release_id, weight)
 
 unique(combined_rst$run)
 unique(combined_rst$lifestage)
@@ -923,7 +1055,7 @@ colnames(combined_rst)
 
 rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                     description = c("Date trap was checked.",
-                                                    "Designated run of fish using method in run_method. Some locations did not designate a run. NA when count is 0.",
+                                                    "Designated run of fish using method in run_method. Some locations did not designate a run; in these cases the river model length at date criteria were applied. NA when count is 0.",
                                                     "Fork length of fish in mm.",
                                                     "Life stage of fish. NA when count is 0.",
                                                     "Describes if fish were dead when observed (T/F).",

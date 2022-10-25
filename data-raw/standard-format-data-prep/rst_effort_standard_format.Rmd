@@ -31,6 +31,14 @@ gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
                saveToDisk = "data/standard_rst_trap.csv",
                overwrite = TRUE)
 trap <- read_csv("data/standard_rst_trap.csv")
+
+# pull in hours fished for knights landing pre 2006
+gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knl_combine_sampling_effort_clean.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/knights_combine_sampling_effort_clean.csv",
+               overwrite = TRUE)
+
+knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
 ```
 
 # Method
@@ -406,6 +414,18 @@ Knights Landing has date and time data available to calculate the hours fished. 
 
 ```{r, knights}
 ## Knights Landing ####
+# prior to 2006 data stored in excel spreadsheets where hours fished was calculated
+knights_hours_fished_pre2006 <- knights_effort_pre2006 %>% 
+  select(date, hrs_fished, cone_id) %>% 
+  rename(trap_stop_date = date,
+         hours_fished = hrs_fished,
+         subsite = cone_id) %>% 
+  mutate(stream = "sacramento river",
+         site = "knights landing") %>% 
+  group_by(stream, site, trap_stop_date) %>% 
+  summarize(hours_fished = sum(hours_fished, na.rm = T)) %>% 
+  mutate(subsite = "knights landing",
+         hours_fished_methodology = "calculated by knights landing") # catch data pre 2006 is aggregated across traps
 
 ### Hours fished ####
 # calculate hours fished only for period of times when trap was fishing otherwise there will be duplicates that don't make sense
@@ -418,7 +438,9 @@ knights_hours_fished <- trap %>%
          include, visit_type) %>% 
   arrange(subsite, trap_stop_date, trap_stop_time) %>% 
   mutate(hours_fished_methodology = "using start time and stop time") %>% 
-  hours_fished() 
+  hours_fished() %>% 
+  mutate(hours_fished = as.numeric(hours_fished)) %>% 
+  bind_rows(knights_hours_fished_pre2006)
 
 knitr::kable(head(knights_hours_fished, 5))
 ```
@@ -607,7 +629,11 @@ hours_fished_combined <- bind_rows(battle_final,
                                    mill_final,
                                    yuba_final) %>% 
   # if hours fished NA assumed 24 hours
-  mutate(hours_fished = ifelse(is.na(hours_fished), 24, hours_fished)) %>% glimpse()
+  mutate(hours_fished = ifelse(is.na(hours_fished), 24, hours_fished)) %>% 
+  rename(date = trap_stop_date) %>% 
+  group_by(stream, site, subsite, date) %>% 
+  summarize(hours_fished = sum(hours_fished)) %>% 
+  glimpse()
 ```
 
 ## Summarized by week
@@ -622,12 +648,12 @@ hours_fished_combined <- bind_rows(battle_final,
 #filter(yuba_hours_fished, date == "2009-08-18")
 
 hours_fished_weekly <- hours_fished_combined %>% 
-  mutate(week = week(trap_stop_date),
-         year = year(trap_stop_date)) %>% 
+  mutate(week = week(date),
+         year = year(date)) %>% 
   group_by(stream, site, subsite, week, year) %>% 
   summarize(hours_fished = sum(hours_fished)) %>% glimpse()
 
-hours_fished_combined %>% filter(site == "lower feather river", trap_stop_date == as_date("2022-02-22")) 
+hours_fished_combined %>% filter(site == "lower feather river", date == as_date("2022-02-22")) 
 ```
 
 ### QC
