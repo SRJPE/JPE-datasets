@@ -252,7 +252,7 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(selected_release,
            object_function = f,
            type = "csv",
-           name = "rst/butte/data-raw/butte_releases_camp.csv",
+           name = "rst/butte-creek/data-raw/butte_releases_camp.csv",
            predefinedAcl = "bucketLevel")
 ```
 
