@@ -32,6 +32,9 @@ files_battle <- tibble(path = rep("rst/battle-creek/data/battle_",4),
 files_butte <- tibble(path = "rst/butte-creek/data/butte_rst",
                       name = c(""),
                       save = here::here("data","rst", "butte_rst"))
+files_butte_camp <- tibble(path = rep("rst/butte-creek/data-raw/butte_",3),
+                        name = c("catch_camp","trap_camp", "environmental_camp"),
+                        save = rep(here::here("data","rst", "butte_"), 3))
 files_clear <- tibble(path = rep("rst/clear-creek/data/clear_",4),
                       name = c("rst_catch","rst_environmental","rst_passage_estimates", "mark_reacpture"),
                       save = rep(here::here("data", "rst", "clear_rst_"), 4))
@@ -72,6 +75,7 @@ get_data <- function(path, name, save) {
 # apply function to each set of files
 pmap(files_battle, get_data)
 pmap(files_butte, get_data)
+pmap(files_butte_camp, get_data)
 pmap(files_clear, get_data)
 pmap(files_deer, get_data)
 pmap(files_feather, get_data)
@@ -89,6 +93,7 @@ pmap(files_yuba, get_data)
 # catch data
 battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"))
 butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains trap data too
+butte_rst_camp <- read_csv(here::here("data", "rst", "butte_catch_camp.csv"))
 clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"))
 deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv")) # contains trap data too
 feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
@@ -103,6 +108,7 @@ yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 # sampling effort and environmental
 battle_environmental <- read_csv(here::here("data","rst", "battle_rst_environmental.csv"))
 battle_mark_recapture <- read_csv(here::here("data","rst", "battle_rst_mark_reacpture.csv"))
+butte_trap_camp <- read_csv(here::here("data", "rst", "butte_trap_camp.csv"))
 clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
 clear_mark_recapture <- read_csv(here::here("data", "rst", "clear_rst_mark_reacpture.csv"))
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
@@ -289,6 +295,9 @@ to include
 
 
 ## Butte Creek
+
+All data pre 2015 was shared with us in excel spreadsheets. Post 2015 data is stored and shared using the CAMP platform. 
+
 ```{r, butte_data_dictionary}
 butte_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst", 
                                              "data-dictionaries", "butte_rst_data_dictionary.rds"))
@@ -309,7 +318,7 @@ ck <- filter(butte_rst, gear_id == "diversion fyke trap 1")
 filter(butte_rst, is.na(fork_length), count > 0) %>% glimpse
 filter(butte_rst, is.na(mark_code)) %>% tally()
 
-butte_rst_clean <- butte_rst %>%
+butte_rst_clean_pre_2015 <- butte_rst %>%
   select(date, station, dead, count, fork_length, weight, mark_code, lifestage) %>%
   rename(adipose_clipped = mark_code, 
          subsite = station) %>%
@@ -325,6 +334,79 @@ butte_rst_clean <- butte_rst %>%
   group_by(date, site, subsite, dead, fork_length, weight, adipose_clipped, lifestage, stream, run, run_method, species) %>%
   summarize(count = sum(count, na.rm = T)) 
 
+```
+
+Prep data from CAMP to combine with RST clean
+```{r, butte_camp_clean}
+butte_rst_clean_camp <- butte_rst_camp %>%
+  # removing existing mark for now. will add all those in later
+  select(-c(catchRawID, trapVisitID, visitTime2, markType_1, markColor_1, markPosition_1, markCode_1)) %>%
+  # combine atcapture and final run
+  mutate(run = ifelse(!is.na(finalRun), finalRun, atCaptureRun),
+         runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>% 
+  select(-c(atCaptureRun, atCaptureRunMethod, finalRun, finalRunMethod)) %>% 
+  rename(fork_length = forkLength,
+         adipose_clipped = fishOrigin,
+         species = commonName,
+         lifestage = lifeStage,
+         date = visitTime,
+         run_method = runMethod,
+         site = siteName,
+         subsite = subSiteName,
+         release_id = releaseID,
+         dead = mort) %>%
+  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site, subsite, release_id) %>%
+  summarize(count = sum(n, na.rm = T)) %>%
+  mutate(stream = "butte creek",
+         # TODO update sites and subsites
+         site = ifelse(site == "Okie RST", "okie dam", tolower(site)),
+         subsite = tolower(subsite),
+         adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
+                                     adipose_clipped == "Hatchery" ~ T),
+         lifestage = tolower(lifestage),
+         species = tolower(species),
+         run_method = tolower(run_method),
+         run = tolower(run),
+         dead = ifelse(dead == "Yes", T, F),
+         release_id = as.character(ifelse(release_id == 0 | release_id == 255, NA, release_id))) |> glimpse()
+
+```
+
+Combine butte pre 2015 (excel) and post 2015 (CAMP). No temporal overlap in datasets so we can just bind rows
+```{r, combine_butte}
+# bind rows
+butte_rst_clean <- bind_rows(butte_rst_clean_pre_2015, butte_rst_clean_camp) |> glimpse()
+
+```
+
+Check that all days trap running have catch rows
+```{r}
+butte_rst_min <- butte_rst_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(min = min(date))
+
+# pre 2015 all catch and trap stored in one spot
+butte_trap_pre_2015 <- butte_rst %>% 
+  select(date) %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy) %>% 
+  summarize(min = min(date))
+
+butte_trap_camp_dates <-  butte_trap_camp |>
+  mutate(wy = ifelse(month(visitTime) %in% 10:12, year(visitTime) + 1, year(visitTime))) %>% 
+  group_by(wy) %>% 
+  summarize(min = min(visitTime))
+
+butte_trap_combined <- bind_rows(butte_trap_pre_2015, butte_trap_camp_dates) |>  rename(trap_min = min)
+
+# min date in catch and trap aligns 
+butte_min_date_compare <- full_join(butte_rst_min, butte_trap_combined)
+```
+
+
+```{r, final_butte_edits}
+
 setDT(butte_rst_clean)
 # THIS CODE MODIFIES battle_rst_clean_final using functions that
 # mutate using data.table package
@@ -332,6 +414,9 @@ butte_rst_clean %>%
   # run mutate not applied because all spring
   lifestage_encoding_dt()
 ```
+
+
+
 
 ### Variables removed
 
