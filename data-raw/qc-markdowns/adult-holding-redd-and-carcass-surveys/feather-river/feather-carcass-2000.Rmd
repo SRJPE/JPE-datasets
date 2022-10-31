@@ -54,43 +54,48 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 Read in data from google cloud, glimpse raw data and domain description sheet:
 ```{r, eval=FALSE}
-
-
-
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2000.mdb"),
-bucket = gcs_get_global_bucket(),
-saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2000.mdb",
-overwrite = TRUE)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2000.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2000.mdb",
+               overwrite = TRUE)
 
 filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2000.mdb"
 
-DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
-PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
-con <- odbcDriverConnect(PATH)
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
 
-# sqlTables(con)$TABLE_NAME
+# Mac and PC need to run different code to pull data from Access db
+if(operating_system == "pc") {
+  DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+  PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
+  con <- odbcDriverConnect(PATH)
+  # sqlTables(con)$TABLE_NAME
+  ChopEnv_raw <- sqlFetch(con, "ChopEnvTBL")
+  RecovTag_raw <- sqlFetch(con, "RecovTagTBL")
+  ChopRecov_raw <- sqlFetch(con, "ChopRecovTBL")
+  TagCol <- sqlFetch(con, "TagColLU")
+  TagData <- sqlFetch(con, "TagDataTBL")
+  TagEnv <- sqlFetch(con, "TagEnvTBL")
+  cwt <- sqlFetch(con, "cwtTBL")
+} else{
+  library(Hmisc)
+  ChopEnv_raw <- mdb.get(filepath, tables = "ChopEnvTBL")
+  RecovTag_raw <- mdb.get(filepath, tables = "RecovTagTBL")
+  ChopRecov_raw <- mdb.get(filepath, tables = "ChopRecovTBL")
+  TagCol <- mdb.get(filepath, tables = "TagColLU")
+  TagData <- mdb.get(filepath, tables = "TagDataTBL")
+  TagEnv <- mdb.get(filepath, tables = "TagEnvTBL")
+  cwt <- mdb.get(filepath, tables = "cwtTBL")
+}
 
-ChopEnv_raw <- sqlFetch(con, "ChopEnvTBL")
 write_csv(ChopEnv_raw, "ChopEnv_2000.csv")
-
-RecovTag_raw <- sqlFetch(con, "RecovTagTBL")
 write_csv(RecovTag_raw, "RecovTag_2000.csv")
-
-ChopRecov_raw <- sqlFetch(con,"ChopRecovTBL")
 write_csv(ChopRecov_raw, "ChopRecov_2000.csv")
-
-TagCol<- sqlFetch(con, "TagColLU")
 write_csv(TagCol, "TagCol_2000.csv")
-
-TagData <- sqlFetch(con, "TagDataTBL")
 write_csv(TagData, "TagDataTBL_2000.csv")
-
-TagEnv <- sqlFetch(con, "TagEnvTBL")
 write_csv(TagEnv, "TagEnvTBL_2000.csv")
-
-cwt <- sqlFetch(con, "cwtTBL")
 write_csv(cwt, "cwt_2000.csv")
 ```
+
 ## Raw Data Glimpse: {.tabset}
 
 ### ChopEnv_Raw
