@@ -52,38 +52,52 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
 ```
-
+Read in data from google cloud, glimpse raw data and domain description sheet: 
 ```{r, eval=FALSE}
-#Connect to microsoft access through RODBC
-#Use 
-DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
-MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2001.mdb"
-PATH <- paste0(DRIVERINFO, "DBQ=", MDBPATH)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2001.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2001.mdb",
+               overwrite = TRUE)
 
-con <- odbcDriverConnect(PATH)
+filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2001.mdb"
 
-# Show the different table names 
-sqlTables(con)$TABLE_NAME
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
 
-#Download table and write csv
-ChopEnv_raw <- sqlFetch(con, "ChopEnvTBL")
-write_csv(ChopEnv_raw, "ChopEnv_2001.csv")
+# Mac and PC need to run different code to pull data from Access db
+if(operating_system == "pc") {
+  DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+  PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
+  con <- odbcDriverConnect(PATH)
+  # sqlTables(con)$TABLE_NAME
+  ChopEnv_raw <- sqlFetch(con, "ChopEnvTBL")
+  RecovTag_raw <- sqlFetch(con, "RecovTagTBL")
+  ChopRecov_raw - sqlFetch(con, "ChopRecovTBL")
+  cwt_raw <- sqlFetch(con, "cwtTBL")
+  TagData_raw <- sqlFetch(con, "TagDataTBL")
+  TagEnv_raw <- sqlFetch(con, "TagEnvTBL")
+} else{
+  library(Hmisc)
+  mdb.get(filepath, tables = TRUE) # check for name differences
+  # OtoDateLU, Section Description Lookup not helpful 
+  # TagColLU contains metadata about tag colors
+  # OtoTBL contains sex, fork_length, eggs, week - not sure about any otolith information
+  ChopEnv_raw <- mdb.get(filepath, "ChopEnvTBL")
+  RecovTag_raw <- mdb.get(filepath, "RecovTagTBL")
+  ChopRecov_raw <- mdb.get(filepath, "ChopRecovTBL")
+  cwt_raw <- mdb.get(filepath, "cwtTBL")
+  TagData_raw <- mdb.get(filepath, "TagDataTBL")
+  TagEnv_raw <- mdb.get(filepath, "TagEnvTBL")
+  detach(package:Hmisc)
+}
 
-RecovTag_raw <- sqlFetch(con, "RecovTagTBL")
-write_csv(RecovTag_raw, "RecovTag_2001.csv")
-
-ChopRecov_raw <- sqlFetch(con,"ChopRecovTBL")
-write_csv(ChopRecov_raw, "ChopRecov_2001.csv")
-
-cwt_raw <- sqlFetch(con, "cwtTBL")
-write_csv(cwt_raw, "cwt_2001.csv")
-
-TagData_raw <- sqlFetch(con, "TagDataTBL")
-write_csv(TagData_raw, "TagData_2001.csv")
-
-TagEnv_raw <- sqlFetch(con, "TagEnvTBL")
-write_csv(TagEnv_raw, "TagEnv_2001.csv")
+write_csv(ChopEnv_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopEnv_2001.csv"))
+write_csv(RecovTag_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "RecovTag_2001.csv"))
+write_csv(ChopRecov_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2001.csv"))
+write_csv(cwt_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "cwt_2001.csv"))
+write_csv(TagData_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "TagData_2001.csv"))
+write_csv(TagEnv_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "TagEnv_2001.csv"))
 ```
+
 ## Raw Data Glimpse: {.tabset}
 
 ### ChopEnv_Raw
@@ -91,7 +105,8 @@ write_csv(TagEnv_raw, "TagEnv_2001.csv")
 ```{r}
 #Heading Info for Chopped Data
 #Columns that were not in ChopEnv 2001: Flow and vis
-ChopEnv_raw <- read_csv("ChopEnv_2001.csv") %>% 
+ChopEnv_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
+                                   "feather-river","ChopEnv_2001.csv")) %>% 
   # mutate("Start" = as_hms("Start")) %>%
   glimpse()
 ```
@@ -100,7 +115,8 @@ ChopEnv_raw <- read_csv("ChopEnv_2001.csv") %>%
 ```{r}
 #Data collection for Chopping and Spawning to determine how many carcasses are being captured (link to the ChopEnv table using ChopEnvID)
 
-ChopRecov_raw <-read_csv("ChopRecov_2001.csv") %>% 
+ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                                     "ChopRecov_2001.csv")) %>% 
   glimpse()
 ```
 
@@ -108,7 +124,8 @@ ChopRecov_raw <-read_csv("ChopRecov_2001.csv") %>%
 ```{r}
 #There is Tag1 and Tag2- what is the difference?
 #What is TagComp?
-RecovTag_raw <- read_csv("RecovTag_2001.csv") %>% 
+RecovTag_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                                    "RecovTag_2001.csv")) %>% 
   # rename("ID" = HeaderID) %>% 
   glimpse()
 ```
@@ -121,7 +138,8 @@ RecovTag_raw <- read_csv("RecovTag_2001.csv") %>%
 
 #Data for Tagging DataSheet - for some reason when export access table to excel, Tag Number is automatically changed to TagID
 #Link to RecovTag table
-TagData_raw <- read_csv("TagData_2001.csv") %>% 
+TagData_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                                   "TagData_2001.csv")) %>% 
   rename("TagNum" = "TagID") %>%
   glimpse()
 ```
@@ -130,7 +148,8 @@ TagData_raw <- read_csv("TagData_2001.csv") %>%
 ```{r}
 #Heading Info for Tagging Data Sheet
 # Join via TagEnvID
-TagEnv_raw <- read_csv("TagEnv_2001.csv") %>% 
+TagEnv_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                                  "TagEnv_2001.csv")) %>% 
   glimpse()
 ```
 
@@ -138,7 +157,8 @@ TagEnv_raw <- read_csv("TagEnv_2001.csv") %>%
 
 ```{r}
 #Coded Wiretag Info
-cwt_raw <- read_csv("cwt_2001.csv", col_types = c("d","T","d","d","c","d","c","c")) %>% 
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                               "cwt_2001.csv"), col_types = c("d","T","d","d","c","d","c","c")) %>% 
   glimpse
 ```
 
