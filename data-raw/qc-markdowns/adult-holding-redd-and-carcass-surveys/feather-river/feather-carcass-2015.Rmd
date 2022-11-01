@@ -112,9 +112,19 @@ Chops_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd
 ### cwt_raw
 ```{r}
 cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","CWT_2015.csv")) %>% 
-  rename("ID" = `CWT.Header.ID`) %>% 
-  glimpse
+  rename("ID" = `CWT.Header.ID`) 
 
+# column names appeared to be shifted one to the right when read in from the
+# access database (i.e. fork length was orders of magnitude larger)
+# so the following code renames columns based on assumed order and type of
+# column values expected
+
+colnames(cwt_raw) <- c("CWT.ID", "ID", "River.Section", "Tag.ID", "Recapture.or.Chop", "Sex",
+                       "Spawning.Condition", "Adipose.Fin.Clipped", "Samples.Collected",
+                       "Fork.Length", "Head.Tag.Number", "Scales", "Otoliths", "Hallprint.Color", 
+                       "Hallprint", "Comments", "Tag")
+
+cwt_raw |> glimpse()
 ```
 
 ### cwt_header_raw
@@ -160,11 +170,10 @@ The `cwt` table contains coded wire tag information.
 ```{r}
 cwt <- full_join(cwt_header_raw, cwt_raw) %>% 
   clean_names() %>% 
-  rename(fl = "fork_length") %>% 
   mutate(head_tag_number = as.numeric(head_tag_number),
-         tag_id_number = as.numeric(tag_id_number),
+         tag_id = as.numeric(tag_id),
          scales = as.numeric(scales),
-         otoliths = as.numeric(otoliths))%>% glimpse()
+         otoliths = as.numeric(otoliths)) %>% glimpse()
 ```
 
 
@@ -215,12 +224,6 @@ summary(chop_join$count)
 **Plotting count over Period of Record**
 
 ```{r}
-chop_join %>% 
-  ggplot(aes(x = date, y = count)) + 
-  geom_point() +
-  theme_minimal()
-```
-```{r}
 chop_join %>%
   group_by(date) %>%
   summarise(total_count = sum(count, na.rm = T)) %>%
@@ -228,16 +231,6 @@ chop_join %>%
   geom_col() +
   theme_minimal()
 ```
-```{r}
-chop_header %>% 
-  select_if(is.numeric) %>% 
-  colnames()
-
-```
-```{r}
-summary(chop_header$id)
-```
-
 
 ### Chop Header Variable: `id`
 
@@ -257,7 +250,7 @@ cwt %>%
   colnames()
 ```
 ```{r}
-summary(cwt$fl)
+summary(cwt$fork_length)
 ```
 ```{r}
 summary(cwt$river_section)
@@ -294,7 +287,7 @@ total_cwt_summary <- cwt_count %>%
 ```
 
 ```{r}
-total_cwt_summary %>% 
+total_cwt_summary %>% #TODO: kept this graph in; is it helpful?
   pivot_longer(cols = c(male_cwt, female_cwt, unknown_cwt), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_cwt)) %>% 
   ggplot(aes(x = `month(date)`, y = proportions, fill = sex)) + 
@@ -313,7 +306,7 @@ total_cwt_summary %>%
 cwt %>% 
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
                          TRUE ~ sex))%>% 
-  ggplot(aes(x = sex, y = fl)) + 
+  ggplot(aes(x = sex, y = fork_length)) + 
   geom_boxplot() + 
   theme_minimal() + 
   labs(y = "FL", x = "Sex")
@@ -337,7 +330,7 @@ chop_cleaner <- chop_join %>%
   mutate(date = as_date(date)) %>%
   mutate_if(is.character, str_to_lower)
 
-chop_cleaner
+chop_cleaner |> glimpse()
 
 ```
 ### Chop Header Clean Data
@@ -360,19 +353,20 @@ unique(chop_header$weather)
 ```{r}
 chop_header_cleaner <- chop_header %>%
   mutate(date = as_date(date)) %>% 
-  mutate_if(is.character, str_to_lower) %>% 
+  mutate_if(is.character, str_to_lower) |> 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          weather = case_when(weather == "cld" ~ "cloudy",
-                             weather == "cld ran" ~ "cloudy, rain",
+                             weather %in% c("cld ran", "cld/rain", "cld,rain") ~ "cloudy, rain",
                              weather == "ran" ~ "rain",
                              weather == "sun/cld" ~ "sun, cloud",
+                             weather == "clr" ~ "sun",
                              TRUE ~ weather),
          weather = str_replace_all(weather, " ", ""),
          weather = str_replace_all(weather, "/", ",")) %>% 
   select(-c(time))
 
-chop_header_cleaner
+chop_header_cleaner |> glimpse()
 ```
 
 ### CWT Clean Data
@@ -395,7 +389,7 @@ unique(cwt$adipose_fin_clipped)
 unique(cwt$crew)
 ```
 ```{r}
-unique(cwt$tag_recapture_or_chop)
+unique(cwt$recapture_or_chop)
 ```
 
 ```{r}
@@ -406,27 +400,29 @@ unique(cwt$tag_color)
 ```
 
 ```{r}
-#Dropping sectiongroup and morale
+#Dropping sectiongroup, morale, tag and hallprint (tag and hallprint are NAs)
 cwt_cleaner <- cwt %>% 
   mutate_if(is.character, str_to_lower) %>% 
+  rename(tag_recapture_or_chop = recapture_or_chop) |> #TODO: is this necessary? standardizes across years
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
                          TRUE ~ sex),
-         tag_recapture_or_chop = case_when(tag_recapture_or_chop == "T" ~ "tagged",
-                                         tag_recapture_or_chop == "R" ~ "recapture",
-                                         tag_recapture_or_chop == "C" ~ "chop",
+         tag_recapture_or_chop = case_when(tag_recapture_or_chop == "t" ~ "tagged",
+                                         tag_recapture_or_chop == "r" ~ "recapture",
+                                         tag_recapture_or_chop == "c" ~ "chop",
                                          TRUE ~ tag_recapture_or_chop),
-         adipose_fin_clipped = case_when(adipose_fin_clipped == "UK" ~ "unknown",
-                                         adipose_fin_clipped == "Y" ~ "yes",
-                                         adipose_fin_clipped == "N" ~ "no",
+         adipose_fin_clipped = case_when(adipose_fin_clipped == "uk" ~ "unknown",
+                                         adipose_fin_clipped == "y" ~ "yes",
+                                         adipose_fin_clipped == "n" ~ "no",
                                          TRUE ~ adipose_fin_clipped),
-         hallprint_color = case_when(hallprint_color == "grey" ~ "G",
+         hallprint_color = case_when(hallprint_color == "g" ~ "G", # TODO: this was "grey" ~ "G" - syntax didn't make sense
                                      TRUE ~ hallprint_color),
-         spawning_condition = case_when(spawning_condition == "UK" ~ "unknown",
+         spawning_condition = case_when(spawning_condition == "uk" ~ "unknown",
                                         TRUE ~ spawning_condition),
          tag_color = ifelse(is.na(tag_color), NA, "Blue")) %>% 
-  select(-c(morale, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38)) %>% 
+  select(-c(morale, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38,
+            tag, hallprint)) %>% 
   glimpse
 ```
 
@@ -478,7 +474,7 @@ percent_na <- cwt_cleaner %>%
 cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
                           description = c("ID",
                                           "Date",
-                                          "Crew memeber initials that collected",
+                                          "Crew member initials",
                                           "Week number",
                                           "Tag colour",
                                           "CWT ID",
@@ -488,13 +484,12 @@ cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
                                           "Sex of the carcass",
                                           "Spawning condition",
                                           "Adipose fin clipped or not",
-                                          "Sample collected",
+                                          "Samples collected",
                                           "Fork length",
                                           "Head tag number",
                                           "Scales",
                                           "Otoliths",
                                           "Hallprint colour",
-                                          "Hallprint",
                                           "Comments"),
                           percent_na = round(percent_na$value*100))
 # 
