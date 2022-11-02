@@ -209,10 +209,10 @@ hfc <- c("herringer_east", "herringer_upper_west", "herringer_west", "live oak",
 
 feather_released <- read_csv(here::here("data", "rst", "feather_releases.csv")) %>% 
   mutate(site = case_when(site %in% lfc ~ "upper feather lfc",
-                          site %in% hfc ~ "lower feather hfc"),
+                          site %in% hfc ~ "upper feather hfc"),
          site_released = tolower(site_released),
          site_released = case_when(site_released %in% lfc ~ "upper feather lfc",
-                                   site_released %in% hfc ~ "lower feather hfc",
+                                   site_released %in% hfc ~ "upper feather hfc",
                                    T ~ "not recorded"),
          subsite_released = tolower(subsite_released),
          subsite_released = ifelse(is.na(subsite_released) | subsite_released == "not applicable (n/a)", "not recorded", subsite_released),
@@ -231,7 +231,7 @@ feather_recaptured <- read_csv(here::here("data", "rst", "feather_recaptures.csv
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
   mutate(release_id = as.character(release_id),
          site = case_when(site %in% lfc ~ "upper feather lfc",
-                          site %in% hfc ~ "lower feather hfc")) %>% 
+                          site %in% hfc ~ "upper feather hfc")) %>% 
   glimpse()
 ```
 
