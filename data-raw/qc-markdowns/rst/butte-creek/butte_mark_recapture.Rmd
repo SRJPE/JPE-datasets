@@ -1,5 +1,5 @@
 ---
-  title: "butte efficiency data"
+title: "butte efficiency data"
 output: html_document
 date: "2022-10-09"
 ---
@@ -73,7 +73,7 @@ butte_releases_camp <- butte_releases_raw %>%
 butte_recaptures_camp <- butte_recaptures_raw %>% 
   mutate(stream = "butte creek",
          site = "okie dam",
-         subsite = " ", ) %>% 
+         subsite = ifelse(subSiteName == "pp RST", "okie RST", "okie fyke trap")) %>% 
   select(stream, site, subsite, forkLength, weight, n, releaseID, run, final_run, fishOrigin, visitTime, lifeStage) %>% 
   mutate(run = ifelse(!is.na(final_run), final_run, run)) %>% 
   select(-final_run) %>% 
