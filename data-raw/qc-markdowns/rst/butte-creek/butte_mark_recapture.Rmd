@@ -63,15 +63,17 @@ butte_releases_camp <- butte_releases_raw %>%
          subsite_released = releaseSubSite,
          include = includeTest) %>% 
   mutate(time_released = as_hms(date_released),
-         date_released = as.Date(date_released)) %>%
-  # there are duplicates in the camp data for some reason
-  group_by(date_released, time_released, release_id) %>%
+         date_released = as.Date(date_released),
+         site = "okie dam", 
+         site_released = "okie dam release site", 
+         subsite_released = "not recorded") %>%
+  filter(!is.na(date_released), release_id != 257) %>% # removes one duplicative values and a few values that were not recorded correctly 
   distinct() %>% glimpse()
 
 butte_recaptures_camp <- butte_recaptures_raw %>% 
   mutate(stream = "butte creek",
-         site = tolower(siteName),
-         subsite = tolower(subSiteName)) %>% 
+         site = "okie dam",
+         subsite = " ", ) %>% 
   select(stream, site, subsite, forkLength, weight, n, releaseID, run, final_run, fishOrigin, visitTime, lifeStage) %>% 
   mutate(run = ifelse(!is.na(final_run), final_run, run)) %>% 
   select(-final_run) %>% 
@@ -84,7 +86,10 @@ butte_recaptures_camp <- butte_recaptures_raw %>%
          lifestage_recaptured = lifeStage) %>% 
   mutate(time_recaptured = as_hms(date_recaptured),
          date_recaptured = as.Date(date_recaptured),
-         release_id = as.character(release_id)) %>% glimpse()
+         release_id = as.character(release_id),
+         run_recaptured = tolower(run_recaptured),
+         lifestage_recaptured = tolower(lifestage_recaptured),
+         origin_recaptured = tolower(origin_recaptured)) %>% glimpse()
 
 # checking full data
 butte_recaptures_summary <- butte_recaptures_camp %>% 
@@ -109,7 +114,8 @@ butte_efficiency_camp %>%
   mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
          efficiency = number_recaptured/number_released) %>% 
   ggplot(aes(x = date_released, y = efficiency)) +
-  geom_point()
+  geom_point() +
+  theme_minimal()
 
 ```
 
@@ -120,7 +126,9 @@ butte_efficiency_camp %>%
          wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released)),
          wy = as.factor(wy)) %>% 
   ggplot(aes(x = wy, y = efficiency, fill = stream)) +
-  geom_boxplot()
+  geom_boxplot() +
+  theme_minimal()
+
 ```
 
 ```{r}
@@ -133,7 +141,8 @@ butte_efficiency_camp %>%
   summarise(n = length(unique(date_released)),
             mean_efficiency = mean(efficiency)) %>%  
   ggplot(aes(x = wy, y = mean_efficiency, fill = n)) +
-  geom_col()
+  geom_col() + 
+  theme_minimal()
 ```
 
 ## Save data
