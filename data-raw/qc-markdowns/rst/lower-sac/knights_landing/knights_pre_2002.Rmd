@@ -1,0 +1,177 @@
+---
+title: "Knights Landing Pre 2002"
+output: html_document
+date: "2022-11-07"
+---
+
+```{r, include = F}
+library(tidyverse)
+library(foreign)
+library(googleCloudStorageR)
+library(readxl)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = F}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+
+# 1996
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM96.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum96.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/MARK96.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/mark96.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/RSTFL96.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst96.DBF",
+                 overwrite = TRUE)
+```
+
+```{r}
+path <- "data-raw/qc-markdowns/rst/lower-sac/knights_landing/"
+
+sum96 <- read.dbf(paste0(path, "sum96.DBF")) %>% glimpse()
+mark96 <- read.dbf(paste0(path, "mark96.DBF")) %>% glimpse()
+rst96 <- read.dbf(paste0(path, "rst96.DBF")) %>% glimpse()
+#1996: adfl, sum, mark
+```
+
+# 1997
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/97KLSUMT.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum97.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLFL97T.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst97.DBF",
+                 overwrite = TRUE)
+```
+
+```{r}
+sum97 <- read.dbf(paste0(path, "sum97.DBF")) %>% glimpse()
+rst97 <- read.dbf(paste0(path, "rst97.DBF")) %>% glimpse()
+
+```
+
+# 1998
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM98.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum98.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLFL98.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst98.DBF",
+                 overwrite = TRUE)
+```
+
+```{r}
+sum98 <- read.dbf(paste0(path, "sum98.DBF")) %>% glimpse()
+rst98 <- read.dbf(paste0(path, "rst98.DBF")) %>% glimpse()
+
+```
+
+# 1999
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM99.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum99.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLFL99.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst99.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/STAIN99.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/stain99.DBF",
+                 overwrite = TRUE)
+```
+
+```{r}
+sum99 <- read.dbf(paste0(path, "sum99.DBF")) %>% glimpse()
+rst99 <- read.dbf(paste0(path, "rst99.DBF")) %>% glimpse()
+stain99 <- read.dbf(paste0(path, "stain99.DBF")) %>% glimpse()
+```
+
+# 2000
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/SUM00.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum00.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/CSFL00.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst00.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/csstaind00.dbf",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/stain00.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/EFFORT00.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/effort00.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/CSBISBRN00.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/bisbrn00.DBF",
+                 overwrite = TRUE)
+```
+
+```{r}
+sum00 <- read.dbf(paste0(path, "sum00.DBF")) %>% glimpse()
+rst00 <- read.dbf(paste0(path, "rst00.DBF")) %>% glimpse()
+stain00 <- read.dbf(paste0(path, "stain00.DBF")) %>% glimpse()
+bisbrn00 <- read.dbf(paste0(path, "bisbrn00.DBF")) %>% glimpse()
+effort00 <- read.dbf(paste0(path, "effort00.DBF")) %>% glimpse()
+```
+
+# 2001
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KL01SUM.mdb",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum01.mdb",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KL01CSFL.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst01.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/2001_RECAP.XLS",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/efficiency01.xls",
+                 overwrite = TRUE)
+```
+
+```{r}
+library(Hmisc)
+sum01 <- mdb.get(paste0(path, "sum01.mdb"), tables = "KL01SUM1") %>% glimpse()
+rst01 <- read.dbf(paste0(path, "rst01.DBF")) %>% glimpse()
+efficiency01 <- read_excel(paste0(path, "efficiency01.xls"), sheet = 2) %>% glimpse()
+```
