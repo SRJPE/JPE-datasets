@@ -10,3 +10,4 @@ config.json
 *.xls
 *.mdb
 *.DS_Store
+*.DBF
