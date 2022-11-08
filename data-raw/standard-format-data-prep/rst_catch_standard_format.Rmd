@@ -358,9 +358,9 @@ butte_rst_clean_camp <- butte_rst_camp %>%
   group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site, subsite, release_id) %>%
   summarize(count = sum(n, na.rm = T)) %>%
   mutate(stream = "butte creek",
-         # TODO update sites and subsites
-         site = ifelse(site == "Okie RST", "okie dam", tolower(site)),
-         subsite = tolower(subsite),
+         # TODO confirm sites and subsites with grant
+         site = "okie dam", # only fish okie dam site past 2015 
+         subsite = ifelse(subsite == "PP RST", "okie RST", "okie fyke trap"),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
