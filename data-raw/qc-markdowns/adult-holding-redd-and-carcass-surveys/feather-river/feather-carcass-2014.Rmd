@@ -114,6 +114,18 @@ Chops_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd
 cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWT_2014.csv")) %>%
   rename("ID" = CWT.Header.ID) %>% 
   glimpse
+
+# column names appeared to be shifted one to the right when read in from the
+# access database (i.e. fork length was orders of magnitude larger)
+# so the following code renames columns based on assumed order and type of
+# column values expected
+
+colnames(cwt_raw) <- c("CWT.ID", "ID", "River.Section", "Tag.ID", "Recapture.or.Chop", "Sex",
+                       "Spawning.Condition", "Adipose.Fin.Clipped", "Samples.Collected",
+                       "Fork.Length", "Head.Tag.Number", "Scales", "Otoliths", "Hallprint.Color", 
+                       "Hallprint", "Comments", "Tag")
+
+cwt_raw |> glimpse()
 ```
 
 ### cwt_header_raw
@@ -162,11 +174,10 @@ The `cwt` table contains coded wire tag information.
 ```{r}
 cwt <- full_join(cwt_header_raw, cwt_raw) %>% 
   clean_names() %>% 
-  rename(fl = "fork_length") %>% 
   mutate(head_tag_number = as.numeric(head_tag_number),
-         tag_id_number = as.numeric(tag_id_number),
+         tag_id = as.numeric(tag_id),
          scales = as.numeric(scales),
-         otoliths = as.numeric(otoliths))%>% glimpse()
+         otoliths = as.numeric(otoliths)) %>% glimpse()
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -213,12 +224,6 @@ summary(chop_join$count)
 **Plotting count over Period of Record**
 
 ```{r}
-chop_join %>% 
-  ggplot(aes(x = date, y = count)) + 
-  geom_point() +
-  theme_minimal()
-```
-```{r}
 chop_join %>%
   group_by(date) %>%
   summarise(total_count = sum(count, na.rm = T)) %>%
@@ -254,7 +259,7 @@ cwt %>%
   colnames()
 ```
 ```{r}
-summary(cwt$fl)
+summary(cwt$fork_length)
 ```
 ```{r}
 summary(cwt$river_section)
@@ -266,8 +271,7 @@ summary(cwt$river_section)
 ```{r}
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
-#Is this graph helpful?
-unique(cwt$sex)
+#TODO: keep graph/summary of cwt tags by sex?
 cwt_count <- cwt %>% 
   mutate(count = 1) %>%
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
@@ -276,7 +280,7 @@ cwt_count <- cwt %>%
   # unnest() %>% 
   rename("male_cwt" = M,
          "female_cwt" = F,
-         "unknown_cwt" = U) %>% glimpse
+         "unknown_cwt" = U)
 
 total_cwt_summary <- cwt_count %>% 
   mutate(male_cwt = ifelse(is.na(male_cwt), 0, male_cwt), # fill na
