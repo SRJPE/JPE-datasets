@@ -314,10 +314,10 @@ total_cwt_summary %>%
 cwt %>% 
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
                          TRUE ~ sex))%>% 
-  ggplot(aes(x = sex, y = fl)) + 
+  ggplot(aes(x = sex, y = fork_length)) + 
   geom_boxplot() + 
   theme_minimal() + 
-  labs(y = "FL", x = "Sex")
+  labs(y = "Fork Length", x = "Sex")
 ```
 
 ## Explore Categorical variables: {.tabset}
@@ -334,10 +334,8 @@ chop_join %>%
 
 ```{r}
 chop_cleaner <- chop_join %>%
-  mutate(date = as_date(date)) %>%
-  mutate_if(is.character, str_to_lower) 
-
-chop_cleaner
+  mutate(date = as_date(date)) |> 
+  glimpse()
 
 ```
 ### Chop Header Clean Data
@@ -361,11 +359,11 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = case_when(weather == "cld" ~ "cloudy",
-                             weather == "frumpy, oh you know" ~ "cloudy",
-                             weather == "clr" |  weather == "cld/ran" ~ "cloudy, rain",
+         weather = case_when(weather %in% c("cld", "frumpy, oh you know") ~ "cloudy",
+                             weather == "cld/ran" ~ "cloudy, rain",
                              weather == "ran" ~ "rain",
-                             weather == "sun, cld" ~ "sun, cloud",
+                             weather == "sun/cld" ~ "sun, cloudy",
+                             weather == "clr" ~ "sun",
                              TRUE ~ weather),
          weather = str_replace_all(weather, " ", ""),
          weather = str_replace_all(weather, "/", ",")) %>% 
@@ -394,7 +392,7 @@ unique(cwt$adipose_fin_clipped)
 unique(cwt$crew)
 ```
 ```{r}
-unique(cwt$tag_recapture_or_chop)
+unique(cwt$recapture_or_chop)
 ```
 
 ```{r}
@@ -411,20 +409,20 @@ cwt_cleaner <- cwt %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+         sex = case_when(is.na(sex) ~ "unknown",
                          TRUE ~ sex),
-         tag_recapture_or_chop = case_when(tag_recapture_or_chop == "t" ~ "tagged",
-                                         tag_recapture_or_chop == "r" ~ "recapture",
-                                         tag_recapture_or_chop == "c" ~ "chop",
-                                         TRUE ~ tag_recapture_or_chop),
+         recapture_or_chop = case_when(recapture_or_chop == "t" ~ "tagged",
+                                       recapture_or_chop == "r" ~ "recaptured",
+                                       recapture_or_chop == "c" ~ "chopped",
+                                       TRUE ~ recapture_or_chop),
          adipose_fin_clipped = case_when(adipose_fin_clipped == "uk" ~ "unknown",
                                          adipose_fin_clipped == "y" ~ "yes",
                                          adipose_fin_clipped == "n" ~ "no",
                                          TRUE ~ adipose_fin_clipped),
-         hallprint_color = case_when(hallprint_color == "grey" ~ "G",
+         hallprint_color = case_when(hallprint_color == "grey" ~ "g",
                                      hallprint_color == "4751" ~ NA_character_,
                                      TRUE ~ hallprint_color)) %>% 
-  select(-c(morale, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38)) %>% 
+  select(-c(morale, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38, tag)) %>% # remove tag bc all NAs
   glimpse
 ```
 
