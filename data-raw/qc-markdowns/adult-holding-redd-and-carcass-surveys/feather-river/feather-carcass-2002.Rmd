@@ -51,80 +51,108 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
 ```
-
 ```{r, eval=FALSE}
-#Connect to microsoft access through RODBC
-#Use 
-DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
-MDBPATH <- "C:/Users/InigoPeng/Projects/jpe/JPE-datasets/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/Carcass 2002.mdb"
-PATH <- paste0(DRIVERINFO, "DBQ=", MDBPATH)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2002.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2002.mdb",
+               overwrite = TRUE)
 
-con <- odbcDriverConnect(PATH)
+filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2002.mdb"
 
-# Show the different table names 
-# sqlTables(con)$TABLE_NAME
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
 
-#Download table and write csv
-ChopChannel_1 <- sqlFetch(con, "ChopChannelTBL")
-ChopChannel_2 <- sqlFetch(con, "ChopChannelTBL2")
+# Mac and PC need to run different code to pull data from Access db
+if(operating_system == "pc") {
+  DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+  PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
+  con <- odbcDriverConnect(PATH)
+  # sqlTables(con)$TABLE_NAME
+  ChopChannel_1 <- sqlFetch(con, "ChopChannelTBL")
+  ChopChannel_2<- sqlFetch(con, "ChopChannelTBL2")
+  ChopRecov_1 <- sqlFetch(con, "ChopRecovTBL")
+  ChopRecov_2 <- sqlFetch(con, "ChopRecovTBL2")
+  ChopHeader_1 <- sqlFetch(con, "ChopHeaderTBL")
+  ChopHeader_2 <- sqlFetch(con, "ChopHeaderTBL2")
+  cwt_1 <- sqlFetch(con, "CWTTagTBL")  |> 
+    select(-WeekNum)
+  cwt_2 <- sqlFetch(con, "CWTTagTBL1") |> 
+    mutate(SampNum = as.character(SampNum))
+  cwt_header_1 <- sqlFetch(con, "CWTHeaderTBL")
+  cwt_header_2 <- sqlFetch(con, "CWTHeaderTBL1")
+} else{
+  library(Hmisc)
+  mdb.get(filepath, tables = TRUE) # check for name differences
+  ChopChannel_1 <- mdb.get(filepath, "ChopChannelTBL")
+  ChopChannel_2 <- mdb.get(filepath, "ChopChannelTBL2")
+  ChopRecov_1 <- mdb.get(filepath, "ChopRecovTBL")
+  ChopRecov_2 <- mdb.get(filepath, "ChopRecovTBL2")
+  ChopHeader_1 <- mdb.get(filepath, "ChopHeaderTBL")
+  ChopHeader_2 <- mdb.get(filepath, "ChopHeaderTBL2")
+  cwt_1 <- mdb.get(filepath, "CWTTagTBL") |> 
+    select(-WeekNum)
+  cwt_2 <- mdb.get(filepath, "CWTTagTBL1") |> 
+    mutate(SampNum = as.character(SampNum))
+  cwt_header_1 <- mdb.get(filepath, "CWTHeaderTBL")
+  cwt_header_2 <- mdb.get(filepath, "CWTHeaderTBL1")
+  # Steelhead Data table contains biological sampling data (n = 7) for steelhead
+  # TagColLU contains metadata about tag colors
+
+  detach(package:Hmisc)
+}
+
+# combine some tables before writing
 ChopChannel_raw <- bind_rows(ChopChannel_1, ChopChannel_2)
-write_csv(ChopChannel_raw, "ChopChannel_2002.csv")
-
-ChopRecov_1 <- sqlFetch(con,"ChopRecovTBL")
-ChopRecov_2 <- sqlFetch(con, "ChopRecovTBL2")
 ChopRecov_raw <- bind_rows(ChopRecov_1, ChopRecov_2)
-write_csv(ChopRecov_raw, "ChopRecov_2002.csv")
-
-ChopHeader_1 <- sqlFetch(con,"ChopHeaderTBL")
-ChopHeader_2 <- sqlFetch(con, "ChopHeaderTBL2")
 ChopHeader_raw <- bind_rows(ChopHeader_1, ChopHeader_2)
-write_csv(ChopHeader_raw, "ChopHeader_2002.csv")
-
-
-cwt_1 <- sqlFetch(con, "CWTTagTBL") %>% 
-  select(-WeekNum)
-cwt_2 <- sqlFetch(con, "CWTTagTBL1") %>% 
-  mutate(SampNum = as.character(SampNum))
 cwt_raw <- bind_rows(cwt_1, cwt_2)
-write_csv(cwt_raw, "cwt_2002.csv")
-
-cwt_header_1 <- sqlFetch(con, "CWTHeaderTBL")
-cwt_header_2 <- sqlFetch(con, "CWTHeaderTBL1")
 cwt_header_raw <-  bind_rows(cwt_header_1, cwt_header_2)
-write_csv(cwt_header_raw, "CWTHeader_2002.csv")
 
-#Other tables include Steelhead Data and TagColLu
+write_csv(ChopChannel_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopChannel_2002.csv"))
+write_csv(ChopRecov_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2002.csv"))
+write_csv(ChopHeader_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2002.csv"))
+write_csv(cwt_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "cwt_2002.csv"))
+write_csv(cwt_header_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2002.csv"))
 ```
+
 
 ## Raw Data Glimpse: {.tabset}
 
 ### ChopEnv_Raw
 ```{r}
-ChopChannel_raw <- read_csv("ChopChannel_2002.csv") %>% 
+ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                       "adult-holding-redd-and-carcass-surveys",
+                                       "feather-river","ChopChannel_2002.csv")) %>%
   rename("ID" = HeaderID) %>% 
   glimpse()
 ```
 
 ### ChopRecov_raw
 ```{r}
-ChopRecov_raw <- read_csv("ChopRecov_2002.csv") %>% glimpse
+ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                     "adult-holding-redd-and-carcass-surveys",
+                                     "feather-river","ChopRecov_2002.csv")) %>% glimpse
 ```
 
 ### ChopHeader_Raw
 ```{r}
-ChopHeader_raw <- read_csv("ChopHeader_2002.csv") %>% 
+ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                      "adult-holding-redd-and-carcass-surveys",
+                                      "feather-river","ChopHeader_2002.csv")) %>% 
   rename("ID" = headerID) %>%
   glimpse()
 ```
 
 ### cwt_raw
 ```{r}
-cwt_raw <- read_csv("cwt_2002.csv") %>% glimpse()
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
+                               "feather-river","cwt_2002.csv")) %>% glimpse()
 ```
 
 ### CWT_Header_raw
 ```{r}
-cwt_header_raw <- read_csv("CWTHeader_2002.csv") %>% glimpse
+cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                      "adult-holding-redd-and-carcass-surveys",
+                                      "feather-river","CWTHeader_2002.csv")) %>% glimpse
 ```
 
 ## Data transformations: {.tabset}
