@@ -210,6 +210,8 @@ butte_hours_fished <- filter(trap, stream == "butte creek") %>%
          hours_fished = round(difftime(end_datetime, start_datetime, units = "hours"), 2),
          hours_fished = ifelse(hours_fished < 0, 24, hours_fished))
 
+# tried treating post 2015 differnt since it is cAMP data and has start and end dates but caused a lot of huge outliers
+
 knitr::kable(head(butte_hours_fished, 5))
 ```
 
