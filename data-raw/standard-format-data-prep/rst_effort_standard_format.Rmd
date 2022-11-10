@@ -217,8 +217,9 @@ knitr::kable(head(butte_hours_fished, 5))
 
 ```{r}
 butte_hours_fished %>% 
-  ggplot(aes(x = end_datetime, y = hours_fished)) +
+  ggplot(aes(x = trap_stop_time, y = hours_fished)) +
   geom_point()
+
 
 # trying to figure out where to set cut of for effort
 # decided to set as 5 days - 120 hours
