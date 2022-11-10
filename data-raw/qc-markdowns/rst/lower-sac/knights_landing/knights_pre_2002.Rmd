@@ -22,6 +22,8 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # 1996
 
+TODO - Need to figure out what codes for lifestage, race, traptype
+
 ```{r, include = F}
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM96.DBF",
                  bucket = gcs_get_global_bucket(),
@@ -38,6 +40,10 @@ gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/RSTFL
                  saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst96.DBF",
                  overwrite = TRUE)
 ```
+
+- sum table: date, trapid, time, effrt_time, rpm_averag, pt_vel
+- mark table: date, trapid, traptype, dye_type, n0_dyed, recap_type n0_recap
+- rst table: date, time, trapid, traptype, fl, ww, lifestage, rage, clip
 
 ```{r}
 path <- "data-raw/qc-markdowns/rst/lower-sac/knights_landing/"
@@ -170,8 +176,16 @@ gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/2001_
 ```
 
 ```{r}
-library(Hmisc)
-sum01 <- mdb.get(paste0(path, "sum01.mdb"), tables = "KL01SUM1") %>% glimpse()
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
+
+if(operating_system == "pc") {
+  library(RODBC)
+  sum01 <- sqlFetch(paste0(path, "sum01.mdb"), "KL01SUM1")
+  } else{
+    library(Hmisc)
+    sum01 <- mdb.get(paste0(path, "sum01.mdb"), tables = "KL01SUM1") %>% glimpse()
+  }
+
 rst01 <- read.dbf(paste0(path, "rst01.DBF")) %>% glimpse()
 efficiency01 <- read_excel(paste0(path, "efficiency01.xls"), sheet = 2) %>% glimpse()
 ```
