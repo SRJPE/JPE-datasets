@@ -228,38 +228,20 @@ round(sum(is.na(chop_channel_join$grilse))/nrow(chop_channel_join), 3) * 100
 * `r round(sum(is.na(chop_channel_join$female_chop))/nrow(chop_channel_join), 3) * 100` % of values in the `female_chop` column are NA.
 * `r round(sum(is.na(chop_channel_join$grilse))/nrow(chop_channel_join), 3) * 100` % of values in the `grilse` column are NA.
 
-**Plotting female_chop over Period of Record**
+**Plotting total chops over Period of Record**
 
 ```{r}
 # Make whatever plot is appropriate 
-filter(chop_channel_join) %>% 
-  ggplot(aes(x = date, y = female_chop)) +
-  geom_point(size = 1.4, alpha = .5, color = "blue") + 
-  labs(x = "Date", 
-       y = "Female Chop") +
+chop_channel_join |> 
+  group_by(date) |> 
+  summarise(total_chop = sum(female_chop, male_chop, grilse)) |> 
+  ggplot(aes(x = date, y = total_chop)) +
+  geom_col() +
   theme_minimal() + 
+  labs(x = "Date",
+       y = "Total Chops") + 
   theme(text = element_text(size = 15)) 
-```
-**Plotting male_chop over Period of Record**
-```{r}
-filter(chop_channel_join) %>% 
-  ggplot(aes(x = date, y = male_chop)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
-  labs(x = "Date", 
-       y = "Male Chop") +
-  theme_minimal() + 
-  theme(text = element_text(size = 15)) 
-```
 
-**Plotting grilse over Period of Record**
-```{r}
-filter(chop_channel_join) %>% 
-  ggplot(aes(x = date, y = grilse)) +
-  geom_point(size = 1.4, alpha = .5, color = "black") + 
-  labs(x = "Date", 
-       y = "Grilse") +
-  theme_minimal() + 
-  theme(text = element_text(size = 15)) 
 ```
 
 **Plotting Total chops over Period of Record**
@@ -322,26 +304,26 @@ round(sum(is.na(chop_channel_join$tag_count))/nrow(chop_channel_join), 3) * 100
 
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(tag_count = sum(tag_count)) |> 
   ggplot(aes(x = date, y = tag_count)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(fill = "blue") + 
   labs(x = "Date", 
-       y = "Tag Count") +
+       y = "Daily Total Tags") +
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 ```
-
 ```{r}
 total_tags_summary <- chop_channel_join %>%
   group_by(date) %>%
   summarise(total_tags = sum(tag_count, na.rm = T))
-
 total_tags_summary %>% 
   ggplot(aes(x = date, y = total_tags)) +
   geom_col() +
   theme_minimal() +
   labs(y = "Daily Total Tags", x = "Date")
-
 ```
+
 **Comparing tags and chops**
 
 ```{r}
@@ -350,9 +332,13 @@ total_carcass <- full_join(total_chops_summary, total_tags_summary) %>%
   select(date, total_chops, total_tags) %>% 
   pivot_longer(c(total_chops, total_tags), names_to = "mark")
 
-full_join(total_chops_summary, total_tags_summary) %>% 
-  select(date, total_chops, total_tags) %>% 
-  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+proportion_tags <- total_carcass |> 
+  pivot_wider(names_from = mark, 
+              values_from = value) |> 
+  group_by(date) |> 
+  mutate(total_collected = sum(total_chops, total_tags)) |> 
+  summarise(proportion_tagged = total_tags/total_collected)
+summary(proportion_tags$proportion_tagged)
 
 ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
   geom_col() +
@@ -420,7 +406,6 @@ summary(cwt$fl)
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
 #Is this graph helpful?
-unique(cwt$sex)
 cwt_count <- cwt %>% 
   mutate(count = 1) %>%
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
@@ -462,7 +447,7 @@ total_cwt_summary %>%
 cwt %>% 
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
                          TRUE ~ sex))%>% 
-  filter(fl < 600) %>% 
+  filter(fl < 600) %>% # one individual has fl = 777
   ggplot(aes(x = sex, y = fl)) + 
   geom_boxplot() + 
   theme_minimal() + 
@@ -544,7 +529,9 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = ifelse(weather == "ran", "rain", weather)) %>%  
+         weather = case_when(weather == "ran" ~ "rain",
+                             weather == "cld" ~ "cloudy",
+                             TRUE ~ weather)) %>%  
   select(-c(time))
 
 chop_header_cleaner
@@ -580,11 +567,12 @@ cwt_cleaner <- cwt %>%
   rename(datetime = "date") %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+         sex = case_when(sex %in% c("nd", "uk", NA) ~ "unknown",
                          TRUE ~ sex),
          rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),  
-         spawn = ifelse(spawn == "no data", NA, spawn),
-         clip = case_when(clip == "no data" ~ NA_character_,
+         spawn = case_when(spawn %in% c("no data", "uk") ~ NA_character_,
+                           TRUE ~ spawn),
+         clip = case_when(clip %in% c("no data", "uk") ~ NA_character_,
                           clip == "y" ~ "yes",
                           clip == "n" ~ "no",
                           TRUE ~ clip),
