@@ -52,88 +52,79 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # git data and save as xlsx
 ```
 
+
 ```{r, eval=FALSE}
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/ChopChannelTBL_2003.xlsx",
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2003_converted.accdb",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopChannel_2003.xlsx",
-               overwrite = TRUE)
-#
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/ChopHeaderTBL_2003.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopHeader_2003.xlsx",
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2003.mdb",
                overwrite = TRUE)
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/ChopRecovTBL_2003.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopRecov_2003.xlsx",
-               overwrite = TRUE)
-# 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/CWTHeaderTBL_2003.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTHeader_2003.xlsx",
-               overwrite = TRUE)
+filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2003.mdb"
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/CWTTagTBL_2003.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTTag_2003.xlsx",
-               overwrite = TRUE)
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
+
+# Mac and PC need to run different code to pull data from Access db
+if(operating_system == "pc") {
+  DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+  PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
+  con <- odbcDriverConnect(PATH)
+  # sqlTables(con)$TABLE_NAME
+  ChopChannel <- sqlFetch(con, "ChopChannelTBL")
+  ChopHeader <- sqlFetch(con, "ChopHeaderTBL")
+  ChopRecov <- sqlFetch(con, "ChopRecovTBL")
+  cwt <- sqlFetch(con, "CWTTagTBL")
+  cwt_header <- sqlFetch(con, "CWTHeaderTBL")
+} else{
+  library(Hmisc)
+  mdb.get(filepath, tables = TRUE) # check for name differences
+  ChopChannel <- mdb.get(filepath, "ChopChannelTBL")
+  ChopHeader <- mdb.get(filepath, "ChopHeaderTBL")
+  ChopRecov <- mdb.get(filepath, "ChopRecovTBL")
+  cwt <- mdb.get(filepath, "CWTTagTBL")
+  cwt_header <- mdb.get(filepath, "CWTHeaderTBL")
+  # Steelhead contains biological sampling data for steelhead
+  # TagColLU contains metadata about tag colors
+  # Conversion Errors not relevant
+  detach(package:Hmisc)
+}
+
+write_csv(ChopChannel, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopChannel_2003.csv"))
+write_csv(ChopRecov, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2003.csv"))
+write_csv(ChopHeader, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2003.csv"))
+write_csv(cwt, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "cwt_2003.csv"))
+write_csv(cwt_header, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2003.csv"))
 ```
-```{r, eval=FALSE}
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/ChopChannelTBL_2003.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopChannel_2003.xlsx",
-               overwrite = TRUE)
-#
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/ChopHeaderTBL_2003.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopHeader_2003.xlsx",
-               overwrite = TRUE)
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/ChopRecovTBL_2003.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopRecov_2003.xlsx",
-               overwrite = TRUE)
-# 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/CWTHeaderTBL_2003.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTHeader_2003.xlsx",
-               overwrite = TRUE)
-
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2003/CWTTagTBL_2003.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTTag_2003.xlsx",
-               overwrite = TRUE)
-```
 
 ## Raw Data Glimpse: {.tabset}
 
 ### ChopChannel_Raw
 ```{r}
-ChopChannel_raw <- read_excel("ChopChannel_2003.xlsx") %>% 
+ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopChannel_2003.csv")) %>% 
   rename("ID" = HeaderID) %>% 
   glimpse()
 ```
 
 ### ChopRecov_raw
 ```{r}
-ChopRecov_raw <- read_excel("ChopRecov_2003.xlsx") %>% glimpse
+ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2003.csv")) %>% glimpse
 ```
 
 ### ChopHeader_Raw
 ```{r}
-ChopHeader_raw <- read_excel("ChopHeader_2003.xlsx") %>% 
+ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2003.csv")) %>% 
   rename("ID" = headerID) %>%
   glimpse()
 ```
 
 ### cwt_raw
 ```{r}
-cwt_raw <- read_excel("CWTTag_2003.xlsx") %>% glimpse()
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "cwt_2003.csv")) %>% glimpse()
 ```
 
 ### CWT_Header_raw
 ```{r}
-cwt_header_raw <- read_xlsx("CWTHeader_2003.xlsx") %>% glimpse
+cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2003.csv")) %>% glimpse
 ```
 
 ## Data transformations: {.tabset}
