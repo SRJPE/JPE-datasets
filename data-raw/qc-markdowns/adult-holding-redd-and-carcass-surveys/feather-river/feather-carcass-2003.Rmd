@@ -231,10 +231,12 @@ round(sum(is.na(chop_channel_join$grilse))/nrow(chop_channel_join), 3) * 100
 **Plotting female_chop over Period of Record**
 
 ```{r}
-# Make whatever plot is appropriate 
+# visualize chops
 filter(chop_channel_join) %>% 
+  group_by(date) |> 
+  summarize(female_chop = sum(female_chop)) |> 
   ggplot(aes(x = date, y = female_chop)) +
-  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  geom_col(size = 1.4, alpha = .5, fill = "blue") + 
   labs(x = "Date", 
        y = "Female Chop") +
   theme_minimal() + 
@@ -243,8 +245,10 @@ filter(chop_channel_join) %>%
 **Plotting male_chop over Period of Record**
 ```{r}
 filter(chop_channel_join) %>% 
+  group_by(date) |> 
+  summarise(male_chop = sum(male_chop)) |> 
   ggplot(aes(x = date, y = male_chop)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(size = 1.4, alpha = .5, fill = "red") + 
   labs(x = "Date", 
        y = "Male Chop") +
   theme_minimal() + 
@@ -254,8 +258,10 @@ filter(chop_channel_join) %>%
 **Plotting grilse over Period of Record**
 ```{r}
 filter(chop_channel_join) %>% 
+  group_by(date) |> 
+  summarise(grilse = sum(grilse)) |> 
   ggplot(aes(x = date, y = grilse)) +
-  geom_point(size = 1.4, alpha = .5, color = "black") + 
+  geom_col(size = 1.4, alpha = .5, fill = "black") + 
   labs(x = "Date", 
        y = "Grilse") +
   theme_minimal() + 
@@ -265,8 +271,6 @@ filter(chop_channel_join) %>%
 **Plotting Total chops over Period of Record**
 
 ```{r}
-chop_channel_join %>% glimpse()
-
 # Percentage by Gender of Daily Chops
 # Address NA values for chops
 total_chops <- chop_channel_join%>%
@@ -322,26 +326,17 @@ round(sum(is.na(chop_channel_join$tag_count))/nrow(chop_channel_join), 3) * 100
 
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(tag_count = sum(tag_count)) |> 
   ggplot(aes(x = date, y = tag_count)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(size = 1.4, alpha = .5, fill = "red") + 
   labs(x = "Date", 
        y = "Tag Count") +
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 ```
 
-```{r}
-total_tags_summary <- chop_channel_join %>%
-  group_by(date) %>%
-  summarise(total_tags = sum(tag_count, na.rm = T))
 
-total_tags_summary %>% 
-  ggplot(aes(x = date, y = total_tags)) +
-  geom_col() +
-  theme_minimal() +
-  labs(y = "Daily Total Tags", x = "Date")
-
-```
 **Comparing tags and chops**
 
 ```{r}
@@ -350,9 +345,15 @@ total_carcass <- full_join(total_chops_summary, total_tags_summary) %>%
   select(date, total_chops, total_tags) %>% 
   pivot_longer(c(total_chops, total_tags), names_to = "mark")
 
-full_join(total_chops_summary, total_tags_summary) %>% 
-  select(date, total_chops, total_tags) %>% 
-  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+proportion_tags <- total_carcass |> 
+  pivot_wider(names_from = mark, 
+              values_from = value) |> 
+  group_by(date) |> 
+  mutate(total_collected = sum(total_chops, total_tags)) |> 
+  summarise(proportion_tagged = total_tags/total_collected)
+summary(proportion_tags$proportion_tagged)
+
+# TODO: I think from reading the sampling protocol, the tags recovered on a specific date are likely from the previous two weeks. So this plot is essentially showing us the proportion of chops recovered on a specific date that were tagged previously, i.e. giving us an idea of how many in the population are tagged. Check in on this with Ashley to confirm understanding.
 
 ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
   geom_col() +
@@ -428,13 +429,11 @@ summary(cwt$fl)
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
 #Is this graph helpful?
-unique(cwt$sex)
 cwt_count <- cwt %>% 
   mutate(count = 1) %>%
-  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
+  mutate(sex = case_when(sex == "nd"|is.na(sex) ~ "U",
                          TRUE ~ sex)) %>% 
   pivot_wider(names_from = sex, values_from = count, values_fill = 0) %>% 
-  # unnest() %>% 
   rename("male_cwt" = M,
          "female_cwt" = F,
          "unknown_cwt" = U) %>% glimpse
@@ -468,7 +467,7 @@ total_cwt_summary %>%
 
 ```{r}
 cwt %>% 
-  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
+  mutate(sex = case_when(sex == "nd" ~ "Unknown",
                          TRUE ~ sex))%>% 
   ggplot(aes(x = sex, y = fl)) + 
   geom_boxplot() + 
@@ -552,7 +551,9 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = ifelse(weather == "ran", "rain", weather)) %>%  
+         weather = case_when(weather == "ran" ~ "rain",
+                             weather == "cld" ~ "cloudy",
+                             TRUE ~ weather)) %>%  
   select(-c(time))
 
 chop_header_cleaner
@@ -588,15 +589,19 @@ cwt_cleaner <- cwt %>%
   rename(datetime = "date") %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "U",
+         sex = case_when(sex == "nd" ~ "unknown",
                          TRUE ~ sex),
          rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),  
-         spawn = ifelse(spawn == "no data", NA, spawn),
+         spawn = case_when(spawn == "no data" ~ NA_character_,
+                           spawn == "uk" ~ "unknown",
+                           TRUE ~ spawn),
          clip = case_when(clip == "no data" ~ NA_character_,
                           clip == "y" ~ "yes",
                           clip == "n" ~ "no",
+                          clip == "uk" ~ "unknown",
                           TRUE ~ clip),
-         samp_type = ifelse(samp_type == "no data", NA, samp_type),
+         samp_type = case_when(samp_type %in% c("no data", "none") ~ NA_character_,
+                               TRUE ~ samp_type),
          carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) %>% 
   glimpse
 ```
