@@ -93,8 +93,9 @@ write_csv(cwt_header_raw, here::here("data-raw", "qc-markdowns", "adult-holding-
 
 ### Chop_raw
 ```{r}
-Chops_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2013.csv")) %>% 
+Chops_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "Chops_2013.csv")) %>% 
   rename("ID" = `Chop.Header.ID`) |> 
+  select(-`Chop.ID`) |> 
   glimpse()
 ```
 
