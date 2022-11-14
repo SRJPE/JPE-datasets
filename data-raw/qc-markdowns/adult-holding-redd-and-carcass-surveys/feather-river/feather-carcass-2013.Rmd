@@ -110,8 +110,19 @@ ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding
 ### cwt_raw
 ```{r}
 cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWT_2013.csv")) %>% 
-  rename("ID" = `CWT.Header.ID`) %>% 
-  glimpse
+  rename("ID" = `CWT.Header.ID`)
+
+# column names appeared to be shifted one to the right when read in from the
+# access database (i.e. fork length was orders of magnitude larger)
+# so the following code renames columns based on assumed order and type of
+# column values expected
+
+colnames(cwt_raw) <- c("CWT.ID", "ID", "River.Section", "Tag.ID", "Recapture.or.Chop", "Sex",
+                       "Spawning.Condition", "Adipose.Fin.Clipped", "Samples.Collected",
+                       "Fork.Length", "Head.Tag.Number", "Scales", "Otoliths", "Hallprint.Color", 
+                       "Hallprint", "Comments", "Tag")
+
+cwt_raw |> glimpse()
 
 ```
 
@@ -156,8 +167,7 @@ chop_header <- ChopHeader_raw %>%
 The `cwt` table contains coded wire tag information. 
 
 ```{r}
-cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names()) %>%  
-  rename(fl = "fork_length") %>% 
+cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names()) %>% 
   glimpse
 ```
 
@@ -200,12 +210,6 @@ summary(chop_join$count)
 **Plotting count over Period of Record**
 
 ```{r}
-chop_join %>% 
-  ggplot(aes(x = date, y = count)) + 
-  geom_point() +
-  theme_minimal()
-```
-```{r}
 chop_join %>%
   group_by(date) %>%
   summarise(total_count = sum(count, na.rm = T)) %>%
@@ -233,7 +237,7 @@ cwt %>%
   colnames()
 ```
 ```{r}
-summary(cwt$fl)
+summary(cwt$fork_length)
 ```
 ```{r}
 summary(cwt$river_section)
@@ -289,8 +293,8 @@ total_cwt_summary %>%
 cwt %>% 
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
                          TRUE ~ sex))%>% 
-  filter(fl < 600) %>% #one extreme outlier (data entry error?)
-  ggplot(aes(x = sex, y = fl)) + 
+  filter(fork_length < 600) %>% # TODO: outlier (data entry error?) = 750
+  ggplot(aes(x = sex, y = fork_length)) + 
   geom_boxplot() + 
   theme_minimal() + 
   labs(y = "FL", x = "Sex")
@@ -313,12 +317,9 @@ chop_join %>%
 
 ```{r}
 chop_cleaner <- chop_join %>%
-  # mutate(date = as_date(date)) %>%
-  mutate_if(is.character, str_to_lower) 
-  # select(-c(date))
+  mutate_if(is.character, str_to_lower)
 
 chop_cleaner
-
 ```
 
 ### Chop Header Clean Data
@@ -343,7 +344,11 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = ifelse(weather == "cld", "cloudy", weather),
+         weather = case_when(weather == "cld" ~ "cloudy",
+                             weather %in% c("cld / rain", "cld/rain") ~ "rain",
+                             weather %in% c("sun/cld", "sun / cld", "sun/ cld") ~ "sun,cloudy",
+                             weather == "clr" ~ "sun",
+                             TRUE ~ weather),
          weather = str_replace_all(weather, " ", "")) %>% 
   select(-c(time)) %>% glimpse
 
@@ -376,21 +381,28 @@ cwt_cleaner <- cwt %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+         sex = case_when(is.na(sex) ~ "unknown",
                          TRUE ~ sex),
-         tag_recapture_or_chop = case_when(tag_recapture_or_chop == "t" ~ "tagged",
-                                         tag_recapture_or_chop == "r" ~ "recapture",
-                                         tag_recapture_or_chop == "c" ~ "chop",
-                                         TRUE ~ tag_recapture_or_chop),
+         tag_color = case_when(str_detect(tag_color, "d=") ~ "decay",
+                               str_detect(tag_color, "silver") ~ "silver",
+                               tag_color == "blue tag" ~ "blue",
+                               tag_color == "d in comment = decayed" ~ "decay",
+                               TRUE ~ tag_color),
+         recapture_or_chop = case_when(recapture_or_chop == "t" ~ "tagged",
+                                       recapture_or_chop == "r" ~ "recapture",
+                                       recapture_or_chop == "c" ~ "chop",
+                                       recapture_or_chop == "t/c" ~ "recapture,chop",
+                                       TRUE ~ recapture_or_chop),
          adipose_fin_clipped = case_when(adipose_fin_clipped == "uk" ~ "unknown",
                                          adipose_fin_clipped == "y" ~ "yes",
                                          adipose_fin_clipped == "n" ~ "no",
                                          TRUE ~ adipose_fin_clipped),
-         hallprint_color = case_when(hallprint_color == "grey" ~ "G",
+         hallprint_color = case_when(hallprint_color == "one oti" ~ NA_character_,
                                      TRUE ~ hallprint_color),
-         spawning_condition = case_when(spawning_condition == "uk" ~ "unknown",
+         spawning_condition = case_when(spawning_condition %in% c("uk", "u") ~ "unknown",
                                         TRUE ~ spawning_condition)) %>% 
-  select(-c(morale, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38)) %>% 
+  select(-c(morale, section_group_1_10, section_group_11_15, 
+            section_group_16_21, section_group_22_38, tag)) %>% # tag column is all NAs
   glimpse
 ```
 
