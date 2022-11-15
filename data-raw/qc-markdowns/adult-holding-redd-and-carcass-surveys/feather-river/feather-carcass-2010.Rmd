@@ -45,6 +45,7 @@ Any additional info?
 # getwd() to see how to specify paths 
 # Open object from google cloud storage
 # Set your authentication using gcs_auth
+
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
@@ -53,46 +54,61 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet: 
-
-```{r}
-# knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
-
-# Google Cloud Set up
-# Sys.setenv("GCS_AUTH_FILE" = "config.json")
-# Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
-# 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/ChopChannelTBL_2010.xlsx",
+```{r, eval=FALSE}
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2010.mdb",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopChannelTBL_2010.xlsx",
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2010.mdb",
                overwrite = TRUE)
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/ChopHeaderTBL_2010.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopHeaderTBL_2010.xlsx",
-               overwrite = TRUE)
+filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2010.mdb"
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/ChopRecovTBL_2010.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopRecovTBL_2010.xlsx",
-               overwrite = TRUE)
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/CWTHeaderTBL_2010.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTHeader_2010.xlsx",
-               overwrite = TRUE)
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2010/CWTTagTBL_2010.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTTag_2010.xlsx",
-               overwrite = TRUE)
+# Mac and PC need to run different code to pull data from Access db
+if(operating_system == "pc") {
+  DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+  PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
+  con <- odbcDriverConnect(PATH)
+  # sqlTables(con)$TABLE_NAME
+  Chops_raw <- sqlFetch(con, "ChopChannelTBL1")
+  ChopHeader_raw <- sqlFetch(con, "ChopHeaderTBL")
+  ChopRecov_raw <- sqlFetch(con, "ChopRecovTBL")
+  cwt_raw <- sqlFetch(con, "CWTTagTBL")
+  cwt_header_raw <- sqlFetch(con, "CWTHeaderTBL")
+} else{
+  library(Hmisc)
+  mdb.get(filepath, tables = TRUE) # check for name differences
+  # Carcass Hallprint 2009: hallprint IDs, date, sex, FL, sec
+  # ChopHallprintTBL: TagID, sex, clip, headtag, fl, carc_stat, HeaderID
+  # Copy of CWTTagTBL: a duplicate?
+  # FL by sex: fork length by sex
+  # headtag: empty
+  # Paste Errors: some information, not sure why titled "errors"
+  # ScaleSPLs: empty
+  # TagColLU_06: metadata about tag colors
+  Chops_raw <- mdb.get(filepath, "ChopChannelTBL1")
+  ChopHeader_raw <- mdb.get(filepath, "ChopHeaderTBL")
+  ChopRecov_raw <- mdb.get(filepath, "ChopRecovTBL")
+  cwt_raw <- mdb.get(filepath, "CWTTagTBL")
+  cwt_header_raw <- mdb.get(filepath, "CWTHeaderTBL")
+  detach(package:Hmisc)
+}
 
-# Read Data
-# this is our main data collection table
+write_csv(Chops_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "Chops_2010.csv"))
+write_csv(ChopHeader_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2010.csv"))
+write_csv(ChopRecov_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2010.csv"))
+write_csv(cwt_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWT_2010.csv"))
+write_csv(cwt_header_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2010.csv"))
 ```
+
+
 ```{r}
 ## Raw Data Glimpse: {.tabset}
 
 ### ChopChannel_raw
-ChopChannel_raw <- read_excel("ChopChannel_2010.xlsx") %>% 
+ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "Chops_2010.csv")) %>% 
   rename("ID" = HeaderID) %>%
   glimpse()
 ```
@@ -100,26 +116,34 @@ ChopChannel_raw <- read_excel("ChopChannel_2010.xlsx") %>%
 ### ChopHeader_raw
 
 ```{r}
-ChopHeader_raw <- read_excel("ChopHeader_2010.xlsx") %>% 
+ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "ChopHeader_2010.csv")) %>% 
   rename("ID" = headerID) %>%
   glimpse()
 ```
 
 ### ChopRecov_raw
 ```{r}
-ChopRecov_raw <- read_excel("ChopRecov_2010.xlsx") %>% 
+ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "ChopRecov_2010.csv")) %>% 
   glimpse()
 ```
 ### cwt_raw
 ```{r}
-cwt_raw <- read_excel("CWTTag_2010.xlsx") %>% 
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "CWT_2010.csv")) %>% 
   glimpse
 ```
 
 ### cwt_header_raw
 
 ```{r}
-cwt_header_raw <- read_excel("CWTHeader_2010.xlsx") %>% 
+cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "CWTHeader_2010.csv")) %>% 
   glimpse
 ```
 
@@ -133,14 +157,14 @@ cwt_header_raw <- read_excel("CWTHeader_2010.xlsx") %>%
 
 #1. chopchannel table (with dates and tag color)
 chop_channel_join <- full_join(ChopHeader_raw %>% 
-                                 select(ID, TagCol, Date, Time),
+                                 select(ID, TagCol, Date),
                                ChopChannel_raw) %>% 
   clean_names()
 
 # 2. choprecovery table (with dates)
 
 chop_recovery_join <- full_join(ChopHeader_raw %>% 
-                                  select(ID, Date, Time),
+                                  select(ID, Date),
                                 ChopRecov_raw %>% 
                                   rename(ID = RecovID))  %>% 
   clean_names()
@@ -160,6 +184,14 @@ The `chop_recovery` table contains recovered carcass counts by color
 ### Survey
 
 The `chop_header` table contains survey metadata and covariates
+
+### CWT
+The `cwt` table contains coded wire tag information. 
+
+```{r}
+cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names(), by = "header_id") %>% 
+  glimpse
+```
 
 
 ## Explore Numeric Variables: {.tabset}
@@ -220,8 +252,10 @@ round(sum(is.na(chop_channel_join$unknown_chops))/nrow(chop_channel_join), 3) * 
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
+  group_by(date) |> 
+  summarise(female_chop = sum(female_chop)) |> 
   ggplot(aes(x = date, y = female_chop)) +
-  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  geom_col(fill= "blue") + 
   labs(x = "Date", 
        y = "Female Chop") +
   theme_minimal() + 
@@ -233,8 +267,10 @@ filter(chop_channel_join) %>%
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
+  group_by(date) |> 
+  summarise(male_chop = sum(male_chop)) |> 
   ggplot(aes(x = date, y = male_chop)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(fill = "red") + 
   labs(x = "Date", 
        y = "Male Chop") +
   theme_minimal() + 
@@ -245,8 +281,10 @@ filter(chop_channel_join) %>%
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
+  group_by(date) |> 
+  summarise(unknown_chops = sum(unknown_chops)) |> 
   ggplot(aes(x = date, y = unknown_chops)) +
-  geom_point(size = 1.4, alpha = .5, color = "black") + 
+  geom_col(fill = "black") + 
   labs(x = "Date", 
        y = "Unknown Chops") +
   theme_minimal() + 
@@ -256,8 +294,6 @@ filter(chop_channel_join) %>%
 **Plotting Total chops over Period of Record**
 
 ```{r}
-chop_channel_join %>% glimpse()
-
 # Percentage by Gender of Daily Chops
 # Address NA values for chops
 total_chops <- chop_channel_join%>%
@@ -296,23 +332,6 @@ sum(B %in% A) # they are
 
 
 ```{r}
-# # Check why some plots are above 100%
-# proportion_irregularities <- total_chops_summary %>%
-#   pivot_longer(cols = c(male_chops, female_chops, unknown_chops), names_to = "sex", values_to = "count") %>%
-#   mutate(proportions = (count / total_chops)) %>% 
-#   group_by(date) %>%
-#   summarise(date = date,
-#             proportion_sum = sum(proportions)) %>% 
-#   mutate(need_to_check = ifelse((proportion_sum > 1), TRUE, FALSE)) %>% 
-#   filter(need_to_check == TRUE)
-# 
-# # Explore the irregularities
-# proportion_irregularities_date = proportion_irregularities$date
-# proportion_irregularities_date_index = total_chops_summary$date %in% proportion_irregularities_date
-# total_chops_summary %>% 
-#   filter(proportion_irregularities_date_index) %>% 
-#   mutate(proportion = (male_chops + female_chops + unknown_chops) / (total_chops))
-# # It is result of significant figure rounding error
 
 # plot
 total_chops_summary %>% 
@@ -363,8 +382,10 @@ round(sum(is.na(chop_channel_join$unknown_tags))/nrow(chop_channel_join), 3) * 1
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
+  group_by(date) |> 
+  summarise(female_tag = sum(female_tag)) |> 
   ggplot(aes(x = date, y = female_tag)) +
-  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  geom_col(fill = "blue") + 
   labs(x = "Date", 
        y = "Female Tag") +
   theme_minimal() + 
@@ -376,8 +397,10 @@ filter(chop_channel_join) %>%
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
+  group_by(date) |> 
+  summarise(male_tag = sum(male_tag)) |> 
   ggplot(aes(x = date, y = male_tag)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(fill = "red") + 
   labs(x = "Date", 
        y = "Male Tag") +
   theme_minimal() + 
@@ -388,8 +411,10 @@ filter(chop_channel_join) %>%
 ```{r}
 # Make whatever plot is appropriate 
 filter(chop_channel_join) %>% 
+  group_by(date) |> 
+  summarise(unknown_tags = sum(unknown_tags)) |> 
   ggplot(aes(x = date, y = unknown_tags)) +
-  geom_point(size = 1.4, alpha = .5, color = "black") + 
+  geom_col(fill = "black") + 
   labs(x = "Date", 
        y = "Unknown Tags") +
   theme_minimal() + 
@@ -420,13 +445,6 @@ total_tags_summary %>%
   pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
   mutate(proportions = (count / total_tags)) %>% 
   ggplot(aes(x = date, y = proportions, fill = sex)) +
-  geom_bar(stat = "identity", position = "stack")
-
-# Make Graph Prettier
-total_tags_summary %>% 
-  pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") %>% 
-  mutate(proportions = (count / total_tags)) %>% 
-  ggplot(aes(x = date, y = proportions, fill = sex)) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = c("Blue","Red", "Black"), 
                     name = "Sex", 
@@ -452,12 +470,15 @@ This plot shows the gender proportion of tags for each day over the the period o
 ```{r}
 # from ashley: please improve on this plot I got started, make it look better, describe it, double check that the numbers make sense
 total_carcass <- full_join(total_chops_summary, total_tags_summary) %>% 
-  select(date, total_chops, total_tags) %>% 
+  select(date, total_chops, total_tags) %>%  
   pivot_longer(c(total_chops, total_tags), names_to = "mark")
 
-full_join(total_chops_summary, total_tags_summary) %>% 
-  select(date, total_chops, total_tags) %>% 
-  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+prop_tags <- total_carcass |> 
+  pivot_wider(names_from = mark,
+              values_from = value) |> 
+  mutate(prop_tags = total_tags/total_chops) |> 
+  select(prop_tags)
+summary(prop_tags)
 
 ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
   geom_col() +
@@ -466,7 +487,7 @@ ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
 
 ```
 
-Tags appear to be less commonly applied compared to chops.
+Tags appear to be less commonly applied compared to chops. The proportion of tags recovered compared to chops observed is, at maximum, 50%, but this is when chops recovered were very low. 
 
 ```{r}
 # Filter clean data to show only numeric variables 
@@ -504,6 +525,7 @@ summary(chop_header$tag_col)
 ```
 
 ### CWT Variable: `tag_id`, `sect`, `fl`, `header_id`, `week_num`
+
 ```{r}
 cwt %>% 
   select_if(is.numeric) %>% 
@@ -525,8 +547,6 @@ summary(cwt$fl)
 ```{r}
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
-#Is this graph helpful?
-unique(cwt$sex)
 cwt_count <- cwt %>% 
   mutate(count = 1) %>%
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
@@ -591,8 +611,7 @@ Fix inconsistencies with spelling, capitalization, and dates
 ```{r}
 chop_channel_cleaner <- chop_channel_join %>% 
   mutate_if(is.character, str_to_lower) %>% 
-  mutate(date = as_date(date)) %>% 
-  select(-time)
+  mutate(date = as_date(date))
 
 chop_channel_cleaner
 ```
@@ -600,8 +619,7 @@ chop_channel_cleaner
 ```{r}
 chop_recovery_cleaner <- chop_recovery_join %>% 
   mutate_if(is.character, str_to_lower) %>% 
-  mutate(date = as_date(date)) %>% 
-  select(-time)
+  mutate(date = as_date(date))
 
 chop_recovery_cleaner
 ```
@@ -610,7 +628,10 @@ chop_recovery_cleaner
 chop_header_cleaner <- chop_header %>% 
   mutate_if(is.character, str_to_lower) %>% 
   mutate(date = as_date(date),
-         crew = str_replace(crew, " ", ",")) %>% 
+         crew = str_replace(crew, " ", ","),
+         weather = case_when(weather == "cld" ~ "cloudy",
+                             weather == "ran" ~ "rain",
+                             TRUE ~ weather)) %>% 
   select(-c(time, week_num))
 chop_header_cleaner
 ```
@@ -634,14 +655,15 @@ cwt_cleaner <- cwt %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+         sex = case_when(sex %in% c("uk", "nd") |is.na(sex) ~ "unknown",
                          TRUE ~ sex),
-         spawn = ifelse(spawn == "no data", NA, spawn),
-         clip = case_when(clip == "no data" ~ NA_character_,
+         spawn = case_when(spawn %in% c("uk", "no data") ~ NA_character_,
+                           TRUE ~ spawn),
+         clip = case_when(clip %in% c("no data", "uk") | is.na(clip) ~ NA_character_,
                           clip == "y" ~ "yes",
                           clip == "n" ~ "no",
                           TRUE ~ clip),
-         samp_type = ifelse(samp_type == "no data", NA, samp_type)) %>% 
+         samp_type = ifelse(samp_type == "none", NA, samp_type)) %>% 
   select(-comments)%>%glimpse
 
 ```
@@ -772,9 +794,3 @@ gcs_upload(feather_carcass_chop_header_2010,
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2010.csv")
 ```
 
-
-## Save cleaned data back to google cloud (TBA)
-
-```{r}
-# Name file [watershed]_[data type].csv
-```
