@@ -52,6 +52,29 @@ sum96 <- read.dbf(paste0(path, "sum96.DBF")) %>% glimpse()
 mark96 <- read.dbf(paste0(path, "mark96.DBF")) %>% glimpse()
 rst96 <- read.dbf(paste0(path, "rst96.DBF")) %>% glimpse()
 #1996: adfl, sum, mark
+
+rst96 %>% group_by(LIFESTAGE) %>% tally()
+rst96 %>% group_by(RACE) %>% tally()
+```
+
+```{r}
+trap96_clean <- sum96 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel)
+
+efficiency96_clean <- mark96 %>% 
+  janitor::clean_names() %>% 
+  select(date, n0_dyed, no_recap) %>% 
+  group_by(date) %>% 
+  summarise(number_marked = sum(n0_dyed, na.rm = T),
+            number_recaptured = sum(no_recap, na.rm = T))
+
+rst96_clean <- rst96 %>% 
+  janitor::clean_names() %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, clip)
 ```
 
 # 1997
@@ -74,6 +97,19 @@ rst97 <- read.dbf(paste0(path, "rst97.DBF")) %>% glimpse()
 
 ```
 
+```{r}
+trap97_clean <- sum97 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel)
+
+rst97_clean <- rst97 %>% 
+  janitor::clean_names() %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark)
+```
+
 # 1998
 
 ```{r, include = F}
@@ -92,6 +128,19 @@ gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLFL9
 sum98 <- read.dbf(paste0(path, "sum98.DBF")) %>% glimpse()
 rst98 <- read.dbf(paste0(path, "rst98.DBF")) %>% glimpse()
 
+```
+
+```{r}
+trap98_clean <- sum98 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel)
+
+rst98_clean <- rst98 %>% 
+  janitor::clean_names() %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort)
 ```
 
 # 1999
@@ -118,6 +167,28 @@ sum99 <- read.dbf(paste0(path, "sum99.DBF")) %>% glimpse()
 rst99 <- read.dbf(paste0(path, "rst99.DBF")) %>% glimpse()
 stain99 <- read.dbf(paste0(path, "stain99.DBF")) %>% glimpse()
 ```
+
+```{r}
+trap99_clean <- sum99 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel)
+
+rst99_clean <- rst99 %>% 
+  janitor::clean_names() %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort)
+
+mark99_clean <- stain99 %>% 
+  janitor::clean_names() %>% 
+  select(date_relea, time_relea, cs_release) %>% 
+  filter(!is.na(date_relea)) %>% 
+  rename(date_released = date_relea,
+         time_released = time_relea,
+         number_released = cs_release)
+```
+
 
 # 2000
 
@@ -153,7 +224,32 @@ sum00 <- read.dbf(paste0(path, "sum00.DBF")) %>% glimpse()
 rst00 <- read.dbf(paste0(path, "rst00.DBF")) %>% glimpse()
 stain00 <- read.dbf(paste0(path, "stain00.DBF")) %>% glimpse()
 bisbrn00 <- read.dbf(paste0(path, "bisbrn00.DBF")) %>% glimpse()
-effort00 <- read.dbf(paste0(path, "effort00.DBF")) %>% glimpse()
+# decided we don't need this because info is in the sum table
+effort00 <- read.dbf(paste0(path, "effort00.DBF")) %>% glimpse() 
+```
+
+```{r}
+trap00_clean <- sum00 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel)
+
+rst00_clean <- rst00 %>% 
+  janitor::clean_names() %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, id_num)
+
+mark00_clean <- stain00 %>% 
+  janitor::clean_names() %>% 
+  select(date, no_cs_rel) %>% 
+  filter(!is.na(date)) %>% 
+  rename(date_released = date,
+         number_released = no_cs_rel)
+
+recap00_clean <- bisbrn00 %>% 
+  janitor::clean_names() %>% 
+  select(date, time, trapid, fl, ww, lifestage, race)
 ```
 
 # 2001
@@ -188,4 +284,35 @@ if(operating_system == "pc") {
 
 rst01 <- read.dbf(paste0(path, "rst01.DBF")) %>% glimpse()
 efficiency01 <- read_excel(paste0(path, "efficiency01.xls"), sheet = 2) %>% glimpse()
+
+rst01 %>% group_by(RACE) %>% tally()
 ```
+
+```{r}
+trap01_clean <- sum01 %>% 
+  janitor::clean_names() %>% 
+  select(date, trap, efft) %>% 
+  rename(trapid = trap,
+         effort = efft)
+
+rst01_clean <- rst01 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, fl, ww, stage, race, mort, id) %>% 
+  rename(lifestage = stage,
+         id_num = id)
+
+efficiency01_clean <- efficiency01 %>% 
+  janitor::clean_names() %>% 
+  select(week, number_marked, number_recovered) %>% 
+  filter(week != "Total") %>% 
+  mutate(year = 2001) %>% 
+  rename(number_recaptured = number_recovered)
+```
+
+# Combine 1996-2001
+
+trap: date, time, trapid, effort, avg_rpm, velocity
+rst: date, trapid, fl, ww, lifestage, race, mort, clip, mark, id_num
+efficiency: date, week, year, number_marked, number_recaptured
+marked: date_released, time_released, number_released
+recaptured: date, time, trapid, fl, ww, lifestage, race
