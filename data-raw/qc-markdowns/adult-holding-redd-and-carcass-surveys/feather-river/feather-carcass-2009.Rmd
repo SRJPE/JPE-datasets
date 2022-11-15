@@ -159,7 +159,7 @@ The `chop_channel` table contains carcass counts by chop/tagged based on clips
 #1. chopchannel table (with dates and tag color)
 chop_channel_join <- full_join(ChopHeader_raw %>% 
                                  select(ID, TagCol, Date, Time),
-                               ChopChannel_raw) %>% 
+                               ChopChannel_raw, by = "ID") %>% 
   clean_names()
 ```
 
@@ -173,8 +173,9 @@ The `chop_recovery` table contains recovered carcass counts by color
 chop_recovery_join <- full_join(ChopHeader_raw %>% 
                                   select(ID, Date, Time),
                                 ChopRecov_raw %>% 
-                                  rename(ID = RecovID))  %>% 
+                                  rename(ID = RecovID), by = "ID")  %>% 
   clean_names()
+# These IDs match up
 ```
 
 ### Survey
@@ -190,7 +191,8 @@ chop_header <- ChopHeader_raw %>%
 The `cwt` table contains coded wire tag information. 
 
 ```{r}
-cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names()) %>%  
+cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names(),
+                 by = "header_id") %>%  
   glimpse
 ```
 
@@ -242,8 +244,10 @@ round(sum(is.na(chop_channel_join$tags))/nrow(chop_channel_join), 3) * 100
 
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(chops = sum(chops)) |> 
   ggplot(aes(x = date, y = chops)) +
-  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  geom_col(fill = "blue") + 
   labs(x = "Date", 
        y = "Chops") +
   theme_minimal() + 
@@ -255,8 +259,10 @@ chop_channel_join %>%
 
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(tags = sum(tags)) |> 
   ggplot(aes(x = date, y = tags)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(fill = "red") + 
   labs(x = "Date", 
        y = "Tags") +
   theme_minimal() + 
@@ -338,8 +344,6 @@ summary(cwt$fl)
 ```{r}
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
-#Is this graph helpful?
-unique(cwt$sex)
 cwt_count <- cwt %>% 
   mutate(count = 1) %>%
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
@@ -379,8 +383,6 @@ total_cwt_summary %>%
 
 ```{r}
 cwt %>% 
-  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
-                         TRUE ~ sex))%>% 
   ggplot(aes(x = sex, y = fl)) + 
   geom_boxplot() + 
   theme_minimal() + 
@@ -398,9 +400,6 @@ Fix inconsistencies with spelling, capitalization, and dates
 chop_channel_join %>% 
   select_if(is.character) %>%
   colnames()
-```
-```{r}
-unique(chop_channel_join$tag_col)
 ```
 
 ```{r}
@@ -425,9 +424,6 @@ chop_recovery_join %>%
   colnames()
 ```
 
-```{r}
-unique(chop_recovery_join$recov_color)
-```
 ```{r}
 chop_recovery_cleaner <- chop_recovery_join %>% 
   mutate(date = as_date(date),
@@ -463,7 +459,9 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = ifelse(weather == "ran", "rain", weather)) %>% 
+         weather = case_when(weather == "cld" ~ "cloudy",
+                             weather == "ran" ~ "rain",
+                             TRUE ~ weather)) %>% 
   select(-c(time))
 
 chop_header_cleaner
@@ -488,10 +486,9 @@ cwt_cleaner <- cwt %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
-                         TRUE ~ sex),
-         spawn = ifelse(spawn == "no data", NA, spawn),
-         clip = case_when(clip == "no data" ~ NA_character_,
+         spawn = case_when(spawn %in% c("no data", "uk") ~ NA_character_,
+                           TRUE ~ spawn),
+         clip = case_when(clip == "uk" ~ NA_character_,
                           clip == "y" ~ "yes",
                           clip == "n" ~ "no",
                           TRUE ~ clip),
