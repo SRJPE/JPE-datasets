@@ -53,43 +53,67 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
-
-
 ```
 
 ```{r, eval=FALSE}
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2006/ChopChannelTBL1_2006.xlsx",
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2006.mdb",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopChannel_2006.xlsx",
-               overwrite = TRUE)
-#
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2006/ChopHeaderTBL_2006.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopHeader_2006.xlsx",
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2006.mdb",
                overwrite = TRUE)
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2006/ChopRecovTBL_2006.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopRecov_2006.xlsx",
-               overwrite = TRUE)
+filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2006.mdb"
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2005/CWTHeaderTBL_2005.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTHeader_2006.xlsx",
-               overwrite = TRUE)
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2005/CWTTagTBL_2005.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTTag_2006.xlsx",
-               overwrite = TRUE)
+# Mac and PC need to run different code to pull data from Access db
+if(operating_system == "pc") {
+  DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+  PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
+  con <- odbcDriverConnect(PATH)
+  # sqlTables(con)$TABLE_NAME
+  ChopChannel <- sqlFetch(con, "ChopChannelTBL1")
+  ChopRecov <- sqlFetch(con, "ChopRecovTBL")
+  ChopHeader <- sqlFetch(con, "ChopHeaderTBL")
+  cwt <- sqlFetch(con, "CWTTagTBL")
+  cwt_header <- sqlFetch(con, "CWTHeaderTBL")
+} else{
+  library(Hmisc)
+  mdb.get(filepath, tables = TRUE) # check for name differences
+  ChopChannel <- mdb.get(filepath, "ChopChannelTBL1")
+  ChopRecov <- mdb.get(filepath, "ChopRecovTBL")
+  ChopHeader <- mdb.get(filepath, "ChopHeaderTBL")
+  cwt <- mdb.get(filepath, "CWTTagTBL")
+  cwt_header <- mdb.get(filepath, "CWTHeaderTBL")
+  
+  # ~TMPCLP55551 contains no data
+  # TagColLU_06 contains metadata about tag color
+  # ~TMPCLP536961 contains carcass status, sample type, forklength, sex, release_location, egg retention, no ID
+  # FL by sex (self explanatory), TagColLU_05 (metadata about tag colors)
+  # Paste errors not relevant
+  # Fish Data_SR_Database contains tagID, fork length, Tissue, adipose clip, and sample ID
+  # Sample table SR Database - sampleID, date, mortality, comments ("Angling")
+  # headtag contains location, fork length, run, sex, date, recovery, head_tag ID
+  # ~TMPCLP246041 contains headerID, tag color, date, week number, sect, chop clip, chopnclip, chopuncheck, tag clip, tagnclip, tag unknown, which seems to be the same as ChopChannelTBL except ChopChannel does not have tagcolor
+  # TODO: check in on this with Ashley
+  detach(package:Hmisc)
+}
 
+write_csv(ChopChannel, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopChannel_2006.csv"))
+write_csv(ChopRecov, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2006.csv"))
+write_csv(ChopHeader, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2006.csv"))
+write_csv(cwt, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTTag_2006.csv"))
+write_csv(cwt_header, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2006.csv"))
 ```
+
+
 ## Raw Data Glimpse: {.tabset}
 
 ### ChopChannel_raw
 
 ```{r}
-ChopChannel_raw <- read_excel("ChopChannel_2006.xlsx") %>% 
+ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "ChopChannel_2006.csv")) %>% 
   rename("ID" = HeaderID) %>%
   glimpse()
 ```
@@ -97,26 +121,34 @@ ChopChannel_raw <- read_excel("ChopChannel_2006.xlsx") %>%
 ### ChopHeader_raw
 
 ```{r}
-ChopHeader_raw <- read_excel("ChopHeader_2006.xlsx") %>% 
+ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "ChopHeader_2006.csv")) %>% 
   rename("ID" = headerID) %>%
   glimpse()
 ```
 
 ### ChopRecov_raw
 ```{r}
-ChopRecov_raw <- read_excel("ChopRecov_2006.xlsx") %>% 
+ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "ChopRecov_2006.csv")) %>% 
   glimpse()
 ```
 ### cwt_raw
 ```{r}
-cwt_raw <- read_excel("CWTTag_2006.xlsx") %>% 
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "CWTTag_2006.csv")) %>% 
   glimpse
 ```
 
 ### cwt_header_raw
 
 ```{r}
-cwt_header_raw <- read_excel("CWTHeader_2006.xlsx") %>% 
+cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "CWTHeader_2006.csv")) %>% 
   glimpse
 ```
 
