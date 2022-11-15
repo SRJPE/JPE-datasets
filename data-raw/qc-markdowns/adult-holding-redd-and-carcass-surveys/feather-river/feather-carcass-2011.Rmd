@@ -116,8 +116,19 @@ ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
                                  "feather-river", "CWT_2011.csv")) %>% 
-  rename("ID" = `CWT.Header.ID`) %>% 
-  glimpse
+  rename("ID" = `CWT.Header.ID`)
+
+# column names appeared to be shifted one to the right when read in from the
+# access database (i.e. fork length was orders of magnitude larger)
+# so the following code renames columns based on assumed order and type of
+# column values expected
+
+colnames(cwt_raw) <- c("CWT.ID", "ID", "River.Section", "Tag.Recap.Chop.Color", "Tag.ID", "Recapture.or.Chop", "Sex",
+                       "Spawning.Condition", "Adipose.Fin.Clipped", "Samples.Collected",
+                       "Fork.Length", "Head.Tag.Number", "Scales", "Otoliths", "Hallprint", 
+                       "Comments", "Tag")
+
+cwt_raw |> glimpse()
 
 ```
 
@@ -210,12 +221,6 @@ summary(chop_join$count)
 **Plotting total_count over Period of Record**
 
 ```{r}
-chop_join %>% 
-  ggplot(aes(x = date, y = count)) + 
-  geom_point() +
-  theme_minimal()
-```
-```{r}
 chop_join %>%
   group_by(date) %>%
   summarise(total_count = sum(count, na.rm = T)) %>%
@@ -255,7 +260,6 @@ summary(cwt$river_section)
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
 #Is this graph helpful?
-unique(cwt$sex)
 cwt_count <- cwt %>% 
   mutate(count = 1) %>%
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
@@ -296,7 +300,7 @@ total_cwt_summary %>%
 
 ```{r}
 cwt %>% 
-  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
+  mutate(sex = case_when(is.na(sex) ~ "Unknown",
                          TRUE ~ sex))%>% 
   ggplot(aes(x = sex, y = fl)) + 
   geom_boxplot() + 
@@ -347,8 +351,9 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = ifelse(weather == "cloudy", "cld", weather),
-         weather = ifelse(weather == "sun/cloudy", "sun, cld", weather)
+         weather = case_when(weather == "cld" ~ "cloudy",
+                             weather == "sun/cloudy" ~ "sun,cloudy",
+                             TRUE ~ weather)
          ) %>% 
   select(-c(time))
 
@@ -367,7 +372,7 @@ cwt %>%
 unique(cwt$tag_recap_chop_color)
 ```
 ```{r}
-unique(cwt$tag_recapture_or_chop)
+unique(cwt$recapture_or_chop)
 ```
 ```{r}
 unique(cwt$spawning_condition)
@@ -390,27 +395,29 @@ unique(cwt$tag_color)
 
 ```{r}
 #Dropping sectiongroup and morale
+# "k" = "unknown" (using Feather River Carcass Survey Plans 2021 document)
 cwt_cleaner <- cwt %>% 
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+         sex = case_when(is.na(sex) ~ "unknown",
                          TRUE ~ sex),
-         tag_recapture_or_chop = case_when(tag_recapture_or_chop == "t" ~ "tagged",
-                                         tag_recapture_or_chop == "r" ~ "recapture",
-                                         tag_recapture_or_chop == "c" ~ "chop",
-                                         TRUE ~ tag_recapture_or_chop),
-         adipose_fin_clipped = case_when(adipose_fin_clipped == "uk" ~ "unknown",
+         recapture_or_chop = case_when(recapture_or_chop == "t" ~ "tagged",
+                                       recapture_or_chop == "r" ~ "recapture",
+                                       recapture_or_chop == "c" ~ "chop",
+                                       TRUE ~ recapture_or_chop),
+         adipose_fin_clipped = case_when(adipose_fin_clipped == "k" ~ "unknown",
                                          adipose_fin_clipped == "y" ~ "yes",
                                          adipose_fin_clipped == "n" ~ "no",
                                          TRUE ~ adipose_fin_clipped),
-         spawning_condition = case_when(spawning_condition == "uk" ~ "unknown",
+         spawning_condition = case_when(spawning_condition == "k" ~ "unknown",
                                         TRUE ~ spawning_condition),
          tag_color = case_when(tag_color == "b" ~ "blue",
                                tag_color == "s" ~ "silver",
                                tag_color == "no tag" ~ NA_character_,
                                TRUE ~ tag_color)) %>% 
-  select(-c(morale, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38)) %>% 
+  select(-c(morale, section_group_1_10, section_group_11_15, 
+            section_group_16_21, section_group_22_38, tag)) %>% # tag column is all NAs
   glimpse
 
 ```
@@ -467,15 +474,15 @@ percent_na <- cwt_cleaner %>%
 cwt_dictionary <- tibble(variables = colnames(cwt_cleaner),
                           description = c("CWT ID",
                                           "ID",
+                                          "River section",
                                           "Tag recapture chop color",
                                           "Tag ID number",
-                                          "Tag recapture or chop",
+                                          "Recapture or chop",
                                           "Sex",
                                           "Spawning condition",
+                                          "Adipose fin clipped",
                                           "Samples collected",
                                           "Fork length",
-                                          "River section",
-                                          "Adipose fin clipped",
                                           "Head tag number",
                                           "Scales",
                                           "Otoliths",
