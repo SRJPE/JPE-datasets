@@ -94,7 +94,7 @@ if(operating_system == "pc") {
   # Sample table SR Database - sampleID, date, mortality, comments ("Angling")
   # headtag contains location, fork length, run, sex, date, recovery, head_tag ID
   # ~TMPCLP246041 contains headerID, tag color, date, week number, sect, chop clip, chopnclip, chopuncheck, tag clip, tagnclip, tag unknown, which seems to be the same as ChopChannelTBL except ChopChannel does not have tagcolor
-  # TODO: check in on this with Ashley
+  # TODO: check in on this with Ashley. We might be able to obtain sex data from headtag if necessary
   detach(package:Hmisc)
 }
 
@@ -165,7 +165,7 @@ The `chop_channel` table contains carcass counts by chop/tagged based on clips
 #1. chopchannel table (with dates and tag color)
 chop_channel_join <- full_join(ChopHeader_raw %>% 
                                  select(ID, TagCol, Date, Time),
-                               ChopChannel_raw) %>% 
+                               ChopChannel_raw, by = "ID") %>% 
   clean_names()
 ```
 
@@ -175,6 +175,7 @@ The `chop_recovery` table contains recovered carcass counts by color
 
 ```{r}
 # 2. choprecovery table (with dates)
+# TODO: there is no matching ID in ChopRecov that will match up with ChopHeader ID, resulting in a ChopRecov table that is NAs
 
 chop_recovery_join <- full_join(ChopHeader_raw %>% 
                                   select(ID, Date, Time),
@@ -189,14 +190,15 @@ The `chop_header` table contains survey metadata and covariates
 
 ```{r}
 chop_header <- ChopHeader_raw %>% 
-  clean_names()
+  clean_names() |> glimpse()
 ```
 
 ### CWT
 The `cwt` table contains coded wire tag information. 
 
 ```{r}
-cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names()) %>%  
+cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names(), 
+                 by = "header_id") %>%  
   glimpse
 ```
 
@@ -257,8 +259,10 @@ round(sum(is.na(chop_channel_join$chop_uncheck))/nrow(chop_channel_join), 3) * 1
 ```{r}
  
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(chop_clip = sum(chop_clip)) |> 
   ggplot(aes(x = date, y = chop_clip)) +
-  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  geom_col(fill = "blue") + 
   labs(x = "Date", 
        y = "Chop With Clip") +
   theme_minimal() + 
@@ -270,8 +274,10 @@ chop_channel_join %>%
 
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(chop_n_clip = sum(chop_n_clip)) |> 
   ggplot(aes(x = date, y = chop_n_clip)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(fill = "red") + 
   labs(x = "Date", 
        y = "Chop Without Clip") +
   theme_minimal() + 
@@ -281,9 +287,11 @@ chop_channel_join %>%
 **Plotting chop_uncheck over Period of Record**
 
 ```{r}
-chop_channel_join %>% 
+chop_channel_join %>%
+  group_by(date) |> 
+  summarise(chop_uncheck = sum(chop_uncheck)) |> 
   ggplot(aes(x = date, y = chop_uncheck)) +
-  geom_point(size = 1.4, alpha = .5, color = "black") + 
+  geom_col(fill = "black") + 
   labs(x = "Date", 
        y = "Chop Not Checked") +
   theme_minimal() + 
@@ -293,8 +301,6 @@ chop_channel_join %>%
 **Plotting Total chops over Period of Record**
 
 ```{r}
-chop_channel_join %>% glimpse()
-
 total_chops <- chop_channel_join%>%
   mutate(chop_clip = ifelse(is.na(chop_clip), 0, chop_clip), # fill na
          chop_n_clip = ifelse(is.na(chop_n_clip), 0, chop_n_clip),
@@ -375,8 +381,10 @@ round(sum(is.na(chop_channel_join$tag_unk))/nrow(chop_channel_join), 3) * 100
 **Plotting tag_clip over Period of Record**
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(tag_clip = sum(tag_clip)) |> 
   ggplot(aes(x = date, y = tag_clip)) +
-  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  geom_col(fill = "blue") + 
   labs(x = "Date", 
        y = "Tag Clip") +
   theme_minimal() + 
@@ -387,8 +395,10 @@ chop_channel_join %>%
 
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(tag_n_clip = sum(tag_n_clip)) |> 
   ggplot(aes(x = date, y = tag_n_clip)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(fill = "red") + 
   labs(x = "Date", 
        y = "Tag No Clip") +
   theme_minimal() + 
@@ -398,8 +408,10 @@ chop_channel_join %>%
 **Plotting tag_unk over Period of Record**
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(tag_unk = sum(tag_unk)) |> 
   ggplot(aes(x = date, y = tag_unk)) +
-  geom_point(size = 1.4, alpha = .5, color = "black") + 
+  geom_col(fill = "black") + 
   labs(x = "Date", 
        y = "Unknown Tags") +
   theme_minimal() + 
@@ -455,9 +467,13 @@ total_carcass <- full_join(total_chops_summary, total_tags_summary) %>%
   select(date, total_chops, total_tags) %>% 
   pivot_longer(c(total_chops, total_tags), names_to = "mark")
 
-full_join(total_chops_summary, total_tags_summary) %>% 
-  select(date, total_chops, total_tags) %>% 
-  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+proportion_tags <- total_carcass |> 
+  pivot_wider(names_from = mark, 
+              values_from = value) |> 
+  group_by(date) |> 
+  mutate(total_collected = sum(total_chops, total_tags)) |> 
+  summarise(proportion_tagged = total_tags/total_collected)
+summary(proportion_tags$proportion_tagged)
 
 ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
   geom_col() +
@@ -523,11 +539,9 @@ summary(cwt$fl)
 ```{r}
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
-#Is this graph helpful?
-unique(cwt$sex)
 cwt_count <- cwt %>% 
   mutate(count = 1) %>%
-  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
+  mutate(sex = case_when(is.na(sex)|sex =="UK" ~ "U",
                          TRUE ~ sex)) %>% 
   pivot_wider(names_from = sex, values_from = count, values_fill = 0) %>% 
   # unnest() %>% 
@@ -564,8 +578,8 @@ total_cwt_summary %>%
 
 ```{r}
 cwt %>% 
-  mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "Unknown",
-                         TRUE ~ sex))%>% 
+  mutate(sex = case_when(is.na(sex)|sex =="UK" ~ "Unknown",
+                         TRUE ~ sex)) %>% 
   ggplot(aes(x = sex, y = fl)) + 
   geom_boxplot() + 
   theme_minimal() + 
@@ -595,7 +609,7 @@ unique(chop_channel_join$chan)
 chop_channel_cleaner <- chop_channel_join %>%
   mutate(date = as_date(date)) %>%
   mutate_if(is.character, str_to_lower) %>% 
-  select(-c(time))
+  select(-c(time, male, fem, gril)) # male, female, and gril columns are empty
 
 chop_channel_cleaner
 ```
@@ -619,6 +633,7 @@ chop_recovery_cleaner <- chop_recovery_join %>%
   select(-c(time))
 
 chop_recovery_cleaner
+# TODO: here is where the mismatch of IDs in ChopRecov come into play
 ```
 
 ### Chop Header Clean Data
@@ -646,10 +661,11 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = ifelse(weather == "ran", "rain", weather)) %>% 
+         weather = case_when(weather == "ran" ~ "rain",
+                             weather == "cld" ~ "cloudy",
+                             TRUE ~ weather)) %>% 
   select(-c(time))
 
-chop_header_cleaner$crew
 ```
 
 ### CWT Clean Data
@@ -676,15 +692,16 @@ cwt_cleaner <- cwt %>%
   rename(datetime = "date") %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+         sex = case_when(sex == "uk"|is.na(sex) ~ "unknown",
                          TRUE ~ sex),
-         rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),  
-         spawn = ifelse(spawn == "no data", NA, spawn),
-         clip = case_when(clip == "no data" ~ NA_character_,
+         rel_loc = ifelse(rel_loc == "no side", NA, rel_loc),
+         spawn = case_when(spawn %in% c("no data", "uk") ~ NA_character_,
+                           TRUE ~ spawn),
+         clip = case_when(clip %in% c("no data", "uk") ~ NA_character_,
                           clip == "y" ~ "yes",
                           clip == "n" ~ "no",
                           TRUE ~ clip),
-         samp_type = ifelse(samp_type == "no data", NA, samp_type),
+         samp_type = ifelse(samp_type == "none", NA, samp_type),
          carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) %>% 
   glimpse
 ```
@@ -706,11 +723,12 @@ percent_na <- chop_channel_cleaner %>%
 counts_data_dictionary <- tibble(variables = colnames(chop_channel_cleaner),
                           description = c("ID",
                                           "Color of tag applied to carcass",
-                                          "Channel ID",
                                           "Date of survey",
+                                          "Channel ID",
                                           "Sect", 
                                           "Chan", 
-                                          "Min", 
+                                          "Min",
+                                          "Tag Count",
                                           "Carcass that were chopped and has clip",
                                           "Carcass that were chopped and has no clip",
                                           "Carcass that were chopped and not checked for clip",
