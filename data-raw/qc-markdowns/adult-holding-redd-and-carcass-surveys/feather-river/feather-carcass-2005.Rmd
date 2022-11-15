@@ -45,73 +45,105 @@ Any additional info?
 # getwd() to see how to specify paths 
 # Open object from google cloud storage
 # Set your authentication using gcs_auth
+
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
-
-
 ```
 
 ```{r, eval=FALSE}
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2005/ChopChannelTBL1_2005.xlsx",
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2005.mdb",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopChannel_2005.xlsx",
-               overwrite = TRUE)
-#
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2005/ChopHeaderTBL_2005.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopHeader_2005.xlsx",
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2005.mdb",
                overwrite = TRUE)
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2005/ChopRecovTBL_2005.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "ChopRecov_2005.xlsx",
-               overwrite = TRUE)
-# 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2005/CWTHeaderTBL_2005.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTHeader_2005.xlsx",
-               overwrite = TRUE)
+filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2005.mdb"
 
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2005/CWTTagTBL_2005.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "CWTTag_2005.xlsx",
-               overwrite = TRUE)
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
+
+# Mac and PC need to run different code to pull data from Access db
+if(operating_system == "pc") {
+  DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+  PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
+  con <- odbcDriverConnect(PATH)
+  # sqlTables(con)$TABLE_NAME
+  ChopChannel <- sqlFetch(con, "ChopChannelTBL1")
+  ChopRecov <- sqlFetch(con, "ChopRecovTBL")
+  ChopHeader <- sqlFetch(con, "ChopHeaderTBL")
+  cwt <- sqlFetch(con, "CWTTagTBL")
+  cwt_header <- sqlFetch(con, "CWTHeaderTBL")
+} else{
+  library(Hmisc)
+  mdb.get(filepath, tables = TRUE) # check for name differences
+  ChopChannel <- mdb.get(filepath, "ChopChannelTBL1")
+  ChopRecov <- mdb.get(filepath, "ChopRecovTBL")
+  ChopHeader <- mdb.get(filepath, "ChopHeaderTBL")
+  cwt <- mdb.get(filepath, "CWTTagTBL")
+  cwt_header <- mdb.get(filepath, "CWTHeaderTBL")
+  
+  # Steelhead is empty
+  # Fish Data_SR_Database has information on TagID, 
+  # FL by sex (self explanatory), TagColLU_05 (metadata about tag colors),
+  # 2005_recaps has fish IDs, ID, released, fate, date, location
+  # 2005_chops has headerID, tag color, date, chop clip, tag clip, tag unknown (many cols are in ChopChannel)
+  # Sample table SR Database - mortality 
+  # TODO: check in on this with Ashley
+  detach(package:Hmisc)
+}
+
+write_csv(ChopChannel, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopChannel_2005.csv"))
+write_csv(ChopRecov, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2005.csv"))
+write_csv(ChopHeader, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2005.csv"))
+write_csv(cwt, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTTag_2005.csv"))
+write_csv(cwt_header, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2005.csv"))
 ```
+
+
 ## Raw Data Glimpse: {.tabset}
 
 ### ChopChannel_raw
 ```{r}
-ChopChannel_raw <- read_excel("ChopChannel_2005.xlsx") %>% 
+ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "ChopChannel_2005.csv")) %>% 
   rename("ID" = HeaderID) %>%
   glimpse()
 ```
 
 ### ChopHeader_raw
 ```{r}
-ChopHeader_raw <- read_excel("ChopHeader_2005.xlsx") %>% 
+ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "ChopHeader_2005.csv")) %>% 
   rename("ID" = headerID) %>%
   glimpse()
 ```
 
 ### ChopRecov_raw
 ```{r}
-ChopRecov_raw <- read_excel("ChopRecov_2005.xlsx") %>% 
+ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "ChopRecov_2005.csv")) %>% 
   glimpse()
 ```
 
 ### cwt_raw
 ```{r}
-cwt_raw <- read_excel("CWTTag_2005.xlsx") %>% 
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "CWTTag_2005.csv")) %>% 
   glimpse
 ```
 
 ### cwt_header_raw
 
 ```{r}
-cwt_header_raw <- read_excel("CWTHeader_2005.xlsx")
+cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                 "adult-holding-redd-and-carcass-surveys",
+                                 "feather-river", "CWTHeader_2005.csv")) |> 
+  glimpse()
 ```
 
 ## Data transformations: {.tabset}
@@ -146,6 +178,8 @@ chop_recovery_join <- full_join(ChopHeader_raw %>%
   clean_names()%>% 
   mutate(date = as_date(date)) %>%
   filter(year(date) == 2005)  %>% glimpse
+
+# TODO: these IDs do not align
 ```
 
 ### Survey
@@ -225,8 +259,10 @@ round(sum(is.na(chop_channel_join$chop_uncheck))/nrow(chop_channel_join), 3) * 1
 ```{r}
  
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(chop_clip = sum(chop_clip)) |> 
   ggplot(aes(x = date, y = chop_clip)) +
-  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  geom_col(fill = "blue") + 
   labs(x = "Date", 
        y = "Chop With Clip") +
   theme_minimal() + 
@@ -238,8 +274,10 @@ chop_channel_join %>%
 
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(chop_n_clip = sum(chop_n_clip)) |> 
   ggplot(aes(x = date, y = chop_n_clip)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(fill = "red") + 
   labs(x = "Date", 
        y = "Chop Without Clip") +
   theme_minimal() + 
@@ -250,8 +288,10 @@ chop_channel_join %>%
 
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(chop_uncheck = sum(chop_uncheck)) |> 
   ggplot(aes(x = date, y = chop_uncheck)) +
-  geom_point(size = 1.4, alpha = .5, color = "black") + 
+  geom_col(fill = "black") + 
   labs(x = "Date", 
        y = "Chop Not Checked") +
   theme_minimal() + 
@@ -291,6 +331,7 @@ total_chops_summary <- total_chops %>%
 A = left_join(ChopChannel_raw, ChopHeader_raw, by = "ID")$ChanID
 B = ChopRecov_raw$ChanID
 sum(B %in% A) # they are
+# TODO: some data entry issues in 2005 ChopChannel (IDs aren't all in the ChopHeader table)
 # yes I noticed that. there are some IDs in the chop_channel table that are not in the chop_header table. there are A LOT of IDs in the recovery table that are not in header table. at this point i would assume this is a data entry issue and we can leave as is but clearly document. this is something we may learn more about and then be able to fix
 ```
 ```{r}
@@ -344,8 +385,10 @@ round(sum(is.na(chop_channel_join$tag_unk))/nrow(chop_channel_join), 3) * 100
 **Plotting tag_clip over Period of Record**
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(tag_clip = sum(tag_clip)) |> 
   ggplot(aes(x = date, y = tag_clip)) +
-  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  geom_col(fill = "blue") + 
   labs(x = "Date", 
        y = "Tag Clip") +
   theme_minimal() + 
@@ -356,8 +399,10 @@ chop_channel_join %>%
 
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(tag_n_clip = sum(tag_n_clip)) |> 
   ggplot(aes(x = date, y = tag_n_clip)) +
-  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  geom_col(fill = "red") + 
   labs(x = "Date", 
        y = "Tag No Clip") +
   theme_minimal() + 
@@ -367,8 +412,10 @@ chop_channel_join %>%
 **Plotting tag_unk over Period of Record**
 ```{r}
 chop_channel_join %>% 
+  group_by(date) |> 
+  summarise(tag_unk = sum(tag_unk)) |> 
   ggplot(aes(x = date, y = tag_unk)) +
-  geom_point(size = 1.4, alpha = .5, color = "black") + 
+  geom_col(fill = "black") + 
   labs(x = "Date", 
        y = "Unknown Tags") +
   theme_minimal() + 
@@ -395,7 +442,7 @@ total_tags_summary <- total_tags %>%
             tag_n_clip = sum(tag_n_clip, na.rm = T),
             tag_unk = sum(tag_unk, na.rm = T))
 
-# Make Graph to identify clip proportion
+# Make graph to identify clip proportion
 total_tags_summary %>% 
   pivot_longer(cols = c(tag_n_clip, tag_clip, tag_unk), names_to = "tags", values_to = "count") %>% 
   mutate(proportions = (count / total_tags)) %>% 
@@ -417,9 +464,13 @@ total_carcass <- full_join(total_chops_summary, total_tags_summary) %>%
   select(date, total_chops, total_tags) %>% 
   pivot_longer(c(total_chops, total_tags), names_to = "mark")
 
-full_join(total_chops_summary, total_tags_summary) %>% 
-  select(date, total_chops, total_tags) %>% 
-  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+proportion_tags <- total_carcass |> 
+  pivot_wider(names_from = mark, 
+              values_from = value) |> 
+  group_by(date) |> 
+  mutate(total_collected = sum(total_chops, total_tags)) |> 
+  summarise(proportion_tagged = total_tags/total_collected)
+summary(proportion_tags$proportion_tagged)
 
 ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
   geom_col() +
@@ -445,6 +496,7 @@ summary(chop_recovery_join$id)
 
 ```{r}
 summary(chop_recovery_join$chan_id)
+#TODO: all are NAs
 ```
 
 
@@ -485,7 +537,6 @@ summary(cwt$fl)
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
 #Is this graph helpful?
-unique(cwt$sex)
 cwt_count <- cwt %>% 
   mutate(count = 1) %>%
   mutate(sex = case_when(sex == "ND"|is.na(sex)|sex =="UK" ~ "U",
@@ -549,7 +600,6 @@ unique(chop_channel_join$tag_col)
 ```
 
 ```{r}
-#Remove 5?
 unique(chop_channel_join$chan)
 ```
 
@@ -575,6 +625,7 @@ chop_recovery_join %>%
 
 ```{r}
 unique(chop_recovery_join$recov_color)
+# TODO: all NAs
 ```
 ```{r}
 chop_recovery_cleaner <- chop_recovery_join %>% 
@@ -614,7 +665,9 @@ chop_header_cleaner <- chop_header %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         weather = ifelse(weather == "ran", "rain", weather)) %>% 
+         weather = case_when(weather == "ran" ~ "rain",
+                             weather == "cld" ~ "cloudy",
+                             TRUE ~ weather)) %>% 
   select(-c(time))
 
 chop_header_cleaner
@@ -649,15 +702,17 @@ cwt_cleaner <- cwt %>%
   mutate_if(is.character, str_to_lower) %>% 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex == "nd"|is.na(sex) ~ "unknown",
+         sex = case_when(sex == "nd"|is.na(sex)|sex == "uk" ~ "unknown",
                          TRUE ~ sex),
-         rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),  
-         spawn = ifelse(spawn == "no data", NA, spawn),
-         clip = case_when(clip == "no data" ~ NA_character_,
+         rel_loc = ifelse(rel_loc == "no data", NA, rel_loc), 
+         spawn = case_when(spawn %in% c("uk", "no data") ~ NA_character_,
+                           TRUE ~ spawn),
+         clip = case_when(clip %in% c("no data", "uk") ~ NA_character_,
                           clip == "y" ~ "yes",
                           clip == "n" ~ "no",
                           TRUE ~ clip),
-         samp_type = ifelse(samp_type == "no data", NA, samp_type),
+         samp_type = case_when(samp_type %in% c("no data", "none") ~ NA_character_,
+                               TRUE ~ samp_type),
          carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) %>% 
   glimpse
 ```
