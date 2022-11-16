@@ -9,6 +9,7 @@ library(tidyverse)
 library(foreign)
 library(googleCloudStorageR)
 library(readxl)
+library(lubridate)
 
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
@@ -387,6 +388,7 @@ We will need to figure out how to assign these trapids to the current 8.3 and
 8.4 sites for Knights Landing
 
 ```{r}
+unique(trap_combined$trapid)
 trap_combined %>% group_by(year = year(date), trapid) %>% tally()
 ```
 
@@ -584,7 +586,7 @@ We need to assign labels to these codes
 recap_combined %>% 
   group_by(year = year(date), lifestage) %>% 
   tally() %>% 
-  ggplot(aes(x = year, y = n, fill = lifestage)) +
+  ggplot(aes(x = as.factor(year), y = n, fill = lifestage)) +
   geom_col()
 ```
 
@@ -596,18 +598,10 @@ We need to assign labels to these codes
 recap_combined %>% 
   group_by(year = year(date), race) %>% 
   tally() %>% 
-  ggplot(aes(x = year, y = n, fill = race)) +
+  ggplot(aes(x = as.factor(year), y = n, fill = race)) +
   geom_col()
 ```
 
-### adipose_clip
-```{r}
-recap_combined %>% 
-  group_by(year = year(date), adipose_clip) %>% 
-  tally() %>% 
-  ggplot(aes(x = year, y = n, fill = adipose_clip)) +
-  geom_col()
-```
 
 ### mort
 ```{r}
@@ -616,10 +610,24 @@ unique(recap_combined$mort)
 recap_combined %>% 
   group_by(year = year(date), mort) %>% 
   tally() %>% 
-  ggplot(aes(x = year, y = n, fill = mort)) +
+  ggplot(aes(x = as.factor(year), y = n, fill = mort)) +
   geom_col()
 ```
 # edits
+
+Assume that trapid is 1 or 2 is 8.3, trapid is 3 or 4 is 8.4. According to catch
+data trapid is either 2 or 3 in earlier years. Need to make consistent with later
+years.
+
+## trap
+
+```{r}
+trap_clean <- trap_combined %>% 
+  mutate(trapid = case_when(trapid %in% c(1,2) ~ 8.3,
+                            trapid %in% c(3,4) ~ 8.4))
+
+unique(trap_clean$trapid)
+```
 
 ## rst
 
@@ -627,15 +635,72 @@ reformat trapid
 
 ```{r}
 rst_clean <- rst_combined %>% 
-  mutate(mort = ifelse(mort == 1, T, F))
+  mutate(mort = ifelse(mort == 1, T, F),
+         trapid = case_when(trapid %in% c(1,2) ~ 8.3,
+                            trapid %in% c(3,4) ~ 8.4))
+
+unique(rst_clean$trapid)
 ```
 
 ## efficiency
 
 ```{r}
+# add 1999 and 2000 to efficiency
+number_recaptured <- recap_combined %>% 
+  group_by(week = week(date),
+           year = year(date)) %>% 
+  tally() %>% 
+  rename(number_recaptured = n)
 
-efficiency_clean <- efficiency_combined %>% 
+number_marked <- marked_combined %>% 
+  mutate(week = week(date_released),
+           year = year(date_released))
+
+eff <- left_join(number_marked, number_recaptured)
+
+efficiency_clean <- left_join(number_marked, number_recaptured) %>% 
+              select(date_released, week, year, number_released, number_recaptured) %>% 
+              mutate(number_recaptured = as.numeric(ifelse(is.na(number_recaptured), 0, number_recaptured)),
+                     number_released = as.numeric(number_released)) %>% 
+  bind_rows(efficiency_combined %>% 
   mutate(year = ifelse(is.na(year), year(date), year),
-         week = ifelse(is.na(week), week(date), week))
+         week = as.numeric(ifelse(is.na(week), week(date), week))) %>% 
+  rename(date_released = date,
+         number_released = number_marked))
+```
 
+# save data
+
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(trap_clean,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-trap.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(rst_clean,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-rst.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(efficiency_clean,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-efficiency.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(marked_combined,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-mark.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(recap_combined,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-recap.csv",
+           predefinedAcl = "bucketLevel")
 ```
