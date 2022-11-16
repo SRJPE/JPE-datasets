@@ -20,6 +20,11 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
+# Assumptions
+
+- Assuming mark or clip as "A" means adipose-clipped
+- Assuming mark as "B" or "BB" means bismark brown and is a recaptured fish
+
 # 1996
 
 TODO - Need to figure out what codes for lifestage, race, traptype
@@ -74,10 +79,14 @@ efficiency96_clean <- mark96 %>%
 
 rst96_clean <- rst96 %>% 
   janitor::clean_names() %>% 
-  select(date, time, trapid, fl, ww, lifestage, race, clip)
+  mutate(lifestage = as.factor(lifestage),
+         adipose_clip = ifelse(clip == "A",T, F)) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, adipose_clip)
 ```
 
 # 1997
+
+What does A and B mark mean? A for adipose clip? B for bismark brown?
 
 ```{r, include = F}
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/97KLSUMT.DBF",
@@ -107,10 +116,20 @@ trap97_clean <- sum97 %>%
 
 rst97_clean <- rst97 %>% 
   janitor::clean_names() %>% 
-  select(date, time, trapid, fl, ww, lifestage, race, mark)
+  mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race),
+         adipose_clip = ifelse(mark == "A", T, F),
+         mark = case_when(mark == "A" | mark == 0 ~ F, 
+                          mark == "B" | mark == "BB" ~ T)
+         ) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, adipose_clip)
+
+rst97_clean %>% group_by(mark) %>% tally()
 ```
 
 # 1998
+
+What does A and B mark mean? A for adipose clip? B for bismark brown?
 
 ```{r, include = F}
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM98.DBF",
@@ -140,10 +159,19 @@ trap98_clean <- sum98 %>%
 
 rst98_clean <- rst98 %>% 
   janitor::clean_names() %>% 
-  select(date, time, trapid, fl, ww, lifestage, race, mark, mort)
+  mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race),
+         adipose_clip = ifelse(mark == "A", T, F),
+         mark = case_when(mark == "A" | mark == 0 ~ F, 
+                          mark == "B" | mark == "BB" ~ T)) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, adipose_clip)
+
+rst98_clean %>% group_by(mark) %>% tally()
 ```
 
 # 1999
+
+If we knew what mark was then we could pull out the recaptured fish.
 
 ```{r, include = F}
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM99.DBF",
@@ -178,7 +206,13 @@ trap99_clean <- sum99 %>%
 
 rst99_clean <- rst99 %>% 
   janitor::clean_names() %>% 
-  select(date, time, trapid, fl, ww, lifestage, race, mark, mort)
+   mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race),
+         adipose_clip = ifelse(mark == "A", T, F),
+         mark = case_when(mark == "A" | mark == 0 ~ F, 
+                          mark == "B" | mark == "BB" ~ T)
+         ) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, adipose_clip)
 
 mark99_clean <- stain99 %>% 
   janitor::clean_names() %>% 
@@ -187,6 +221,10 @@ mark99_clean <- stain99 %>%
   rename(date_released = date_relea,
          time_released = time_relea,
          number_released = cs_release)
+
+recap99_clean <- filter(rst99_clean, mark %in% c("B", "BB"))
+
+rst99_clean %>% group_by(mark) %>% tally()
 ```
 
 
@@ -238,7 +276,13 @@ trap00_clean <- sum00 %>%
 
 rst00_clean <- rst00 %>% 
   janitor::clean_names() %>% 
-  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, id_num)
+   mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race),
+         time = as.factor(time),
+         adipose_clip = ifelse(mark == "A", T, F),
+         mark = case_when(mark == "A" | mark == 0 ~ F, 
+                          mark == "B" | mark == "BB" ~ T)) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, adipose_clip)
 
 mark00_clean <- stain00 %>% 
   janitor::clean_names() %>% 
@@ -249,7 +293,12 @@ mark00_clean <- stain00 %>%
 
 recap00_clean <- bisbrn00 %>% 
   janitor::clean_names() %>% 
-  select(date, time, trapid, fl, ww, lifestage, race)
+  select(date, time, trapid, fl, ww, lifestage, race) %>% 
+  mutate(time = as.factor(time),
+         lifestage = as.factor(lifestage),
+         race = as.factor(race))
+
+rst00_clean %>% group_by(mark) %>% tally()
 ```
 
 # 2001
@@ -297,9 +346,10 @@ trap01_clean <- sum01 %>%
 
 rst01_clean <- rst01 %>% 
   janitor::clean_names() %>% 
-  select(date, trapid, fl, ww, stage, race, mort, id) %>% 
-  rename(lifestage = stage,
-         id_num = id)
+  select(date, trapid, fl, ww, stage, race, mort) %>% 
+  rename(lifestage = stage) %>% 
+  mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race))
 
 efficiency01_clean <- efficiency01 %>% 
   janitor::clean_names() %>% 
@@ -316,3 +366,276 @@ rst: date, trapid, fl, ww, lifestage, race, mort, clip, mark, id_num
 efficiency: date, week, year, number_marked, number_recaptured
 marked: date_released, time_released, number_released
 recaptured: date, time, trapid, fl, ww, lifestage, race
+
+## trap
+```{r}
+trap_combined <- bind_rows(trap96_clean,
+                           trap97_clean,
+                           trap98_clean,
+                           trap99_clean,
+                           trap00_clean,
+                           trap01_clean) %>% glimpse()
+```
+### time
+```{r}
+trap_combined %>% group_by(year = year(date), time) %>% tally()
+```
+
+### trapid
+
+We will need to figure out how to assign these trapids to the current 8.3 and 
+8.4 sites for Knights Landing
+
+```{r}
+trap_combined %>% group_by(year = year(date), trapid) %>% tally()
+```
+
+### effort
+```{r}
+trap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = effort)) +
+  geom_boxplot()
+```
+
+### avg_rpm
+```{r}
+trap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = avg_rpm)) +
+  geom_boxplot()
+```
+
+### velocity
+```{r}
+trap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = velocity)) +
+  geom_boxplot()
+```
+## rst 
+```{r}
+rst_combined <- bind_rows(rst96_clean,
+                          rst97_clean,
+                          rst98_clean,
+                          rst99_clean,
+                          rst00_clean,
+                          rst01_clean) %>% glimpse()
+```
+### time
+```{r}
+rst_combined %>% group_by(year = year(date), time) %>% tally()
+```
+
+### trapid
+```{r}
+rst_combined %>% group_by(year = year(date), trapid) %>% tally()
+```
+
+### fl
+```{r}
+rst_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = fl)) +
+  geom_boxplot()
+
+rst_combined %>% 
+  filter(fl < 250) %>% 
+  ggplot(aes(x = as.factor(year(date)), y = fl)) +
+  geom_boxplot()
+```
+### ww
+```{r}
+rst_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = ww)) +
+  geom_boxplot()
+
+rst_combined %>% 
+  filter(ww < 20) %>% 
+  ggplot(aes(x = as.factor(year(date)), y = ww)) +
+  geom_boxplot()
+```
+
+### lifestage
+
+We need to assign labels to these codes
+
+```{r}
+rst_combined %>% 
+  group_by(year = year(date), lifestage) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = lifestage)) +
+  geom_col()
+```
+
+### race
+
+We need to assign labels to these codes
+
+```{r}
+rst_combined %>% 
+  group_by(year = year(date), race) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = race)) +
+  geom_col()
+```
+
+### adipose_clip
+```{r}
+rst_combined %>% 
+  group_by(year = year(date), adipose_clip) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = adipose_clip)) +
+  geom_col()
+```
+
+### mark
+```{r}
+unique(rst_combined$mark)
+
+rst_combined %>% 
+  group_by(year = year(date), mark) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = mark)) +
+  geom_col()
+```
+
+### mort
+```{r}
+unique(rst_combined$mort)
+
+rst_combined %>% 
+  group_by(year = year(date), mort) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = mort)) +
+  geom_col()
+```
+
+## efficiency 
+
+Ton of fish were marked in week 8 and 19 in 2001
+
+```{r}
+efficiency_combined <- bind_rows(efficiency96_clean,
+                                 efficiency01_clean) %>% glimpse()
+```
+
+```{r}
+efficiency_combined %>% 
+  mutate(year = ifelse(is.na(year), year(date), year),
+         week = ifelse(is.na(week), week(date), week)) %>% 
+  pivot_longer(cols = c(number_marked, number_recaptured), names_to = "type", values_to = "number") %>% 
+  ggplot(aes(x = week, y = number, fill = type)) +
+  geom_col() +
+  facet_wrap(~year)
+```
+
+
+## marked
+
+- Ton of fish released prior to week 10 in 2000
+- Few releases in 1998
+
+```{r}
+marked_combined <- bind_rows(mark99_clean,
+                             mark00_clean) %>% glimpse()
+```
+
+```{r}
+marked_combined %>% 
+  mutate(year = year(date_released),
+         week = week(date_released)) %>% 
+  ggplot(aes(x = week, y = number_released)) +
+  geom_col() +
+  facet_wrap(~year)
+```
+  
+
+## recap
+```{r}
+recap_combined <- bind_rows(recap99_clean,
+                            recap00_clean) %>% glimpse()
+```
+
+### time
+```{r}
+recap_combined %>% group_by(year = year(date), time) %>% tally()
+```
+
+### trapid
+```{r}
+recap_combined %>% group_by(year = year(date), trapid) %>% tally()
+```
+
+### fl
+```{r}
+recap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = fl)) +
+  geom_boxplot()
+```
+### ww
+```{r}
+recap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = ww)) +
+  geom_boxplot()
+```
+
+### lifestage
+
+We need to assign labels to these codes
+
+```{r}
+recap_combined %>% 
+  group_by(year = year(date), lifestage) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = lifestage)) +
+  geom_col()
+```
+
+### race
+
+We need to assign labels to these codes
+
+```{r}
+recap_combined %>% 
+  group_by(year = year(date), race) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = race)) +
+  geom_col()
+```
+
+### adipose_clip
+```{r}
+recap_combined %>% 
+  group_by(year = year(date), adipose_clip) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = adipose_clip)) +
+  geom_col()
+```
+
+### mort
+```{r}
+unique(recap_combined$mort)
+
+recap_combined %>% 
+  group_by(year = year(date), mort) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = mort)) +
+  geom_col()
+```
+# edits
+
+## rst
+
+reformat trapid
+
+```{r}
+rst_clean <- rst_combined %>% 
+  mutate(mort = ifelse(mort == 1, T, F))
+```
+
+## efficiency
+
+```{r}
+
+efficiency_clean <- efficiency_combined %>% 
+  mutate(year = ifelse(is.na(year), year(date), year),
+         week = ifelse(is.na(week), week(date), week))
+
+```
