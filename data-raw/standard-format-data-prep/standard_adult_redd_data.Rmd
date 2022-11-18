@@ -22,19 +22,21 @@ FlowWest received Adult Redd data from four monitoring programs:
 -   Clear Creek
 -   Mill Creek
 
-## Standard format for Adult Redd Data
+Due to the format of the data received, two redd datasets were developed. The first dataset includes Feather, Battle, and Clear Creek daily data and the second dataset includes Feather, Battle, Clear, and Mill Creek and is aggregated by year.
 
-Data dictionary for standard format:
+## Standard format for Adult All Redd Data
+
+Data dictionary for standard format for `all_redd_data`:
 
 (B - Battle Creek, C - Clear Creek,\
-F - Feather River, M - Mill Creek)
+F - Feather River)
 
 | column name              | tributary collects | definition                                                         |
-|:-----------------------|:-----------------------|:-----------------------|
+|:----------------|:----------------|:-------------------------------------|
 | date                     | B, C, F            | Date in which redd data was collected                              |
-| latitude                 | B, C, F, M         | Latitude of redd location                                          |
-| longitude                | B, C, F, M         | Longitude of redd location                                         |
-| reach                    | B, C, F, M         | Unique name identifer of reach sampled                             |
+| latitude                 | B, C, F            | Latitude of redd location                                          |
+| longitude                | B, C, F            | Longitude of redd location                                         |
+| reach                    | B, C, F            | Unique name identifer of reach sampled                             |
 | river_mile               | B, C               | River mile associated with redd measured                           |
 | redd_measured            | B, C               | Whether or not a redd was measured (T/F)                           |
 | age                      | C                  | integer ranging from 1 - 5; redd age                               |
@@ -42,12 +44,19 @@ F - Feather River, M - Mill Creek)
 | redd_length              | B, C, F            | Length of measured redd (m)                                        |
 | redd_width               | B, C, F            | Width of measured redd (m)                                         |
 | run                      | C                  | `spring`, `fall`, `late-fall`                                      |
-| stream                   | B, C, F, M         | Unique stream associated with redd data collected                  |
+| stream                   | B, C, F            | Unique stream associated with redd data collected                  |
 | redd_substrate_class     | B, C               | categorical; size class determined by millimeter size of substrate |
 | pre_redd_substrate_class | B, C               | categorical; size class determined by millimeter size of substrate |
 | tail_substrate_class     | B, C               | categorical; size class determined by millimeter size of substrate |
-| year                     | B, C, F, M         | Calendar year sampling occurred                                    |
+| year                     | B, C, F            | Calendar year sampling occurred                                    |
 | velocity                 | B, C, F            | measured stream velocity (ft/s)                                    |
+
+## Standard format for Adult Redd Data Aggregated by Year
+
+Data dictionary for standard format for `redd_count_by_year`:
+
+(B - Battle Creek, C - Clear Creek,\
+F - Feather River)
 
 ## Read in data {.tabset}
 
@@ -67,11 +76,10 @@ Below we read in the adult redd data for each monitoring program and rename or s
 -   `flow_meter_time_80`: deemed unnecessary for final dataset
 -   `redd_pit_depth`: deemed unnecessary for final dataset
 -   `redd_tail_depth`: deemed unnecessary for final dataset
--   `comments`: deemed unecessary for final dataset
+-   `comments`: deemed unnecessary for final dataset
 
 columns created:
 
--   `redd_count`: based on the count of `redd_measured` for alike days and reach identifier
 -   `stream`: used Battle Creek
 -   `flow_fps` changed to `velocity`
 
@@ -113,8 +121,6 @@ view(clean_battle_redd)
 ### Clear Creek
 
 FlowWest acquired Clear Creek redd data for late fall and spring runs through CVPIA. This data was integrated into this dataset by taking the maximum date of data provided to JPE spring run and filtering the CVPIA-provided spring run to only include newer data. Late fall run data was bound to this dataset.
-
-TODO: confirm velocity in feet per second
 
 TODO: do we want to include O. mykiss redd data? It is currently included but can be filtered out.
 
@@ -175,7 +181,7 @@ clean_clear_redd <- clear_redd %>%
          redd_length, redd_width, run,
          pre_redd_substrate_size, redd_substrate_size, 
          tail_substrate_size, 
-         velocity) %>%
+         velocity) %>% # feet per second
   group_by(date, surveyed_reach) %>%
   mutate(redd_count = length(measured),
          stream = 'Clear Creek', 
