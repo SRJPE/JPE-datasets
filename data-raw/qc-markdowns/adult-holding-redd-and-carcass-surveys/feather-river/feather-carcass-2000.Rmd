@@ -78,6 +78,9 @@ if(operating_system == "pc") {
   cwt <- sqlFetch(con, "cwtTBL")
 } else{
   library(Hmisc)
+  mdb.get(filepath, tables = TRUE) # check for name differences
+  # TagColLU contains metadata about tag colors
+  # Jason's Week #'s contains information about week # and date
   ChopEnv_raw <- mdb.get(filepath, tables = "ChopEnvTBL")
   RecovTag_raw <- mdb.get(filepath, tables = "RecovTagTBL")
   ChopRecov_raw <- mdb.get(filepath, tables = "ChopRecovTBL")
