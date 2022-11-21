@@ -61,9 +61,9 @@ Data dictionary for standard format for `max_yearly_redd_count`:
 
 | column name              | tributary collects | definition                                                            |
 |:-----------------|:-----------------|:------------------------------------|
-| date                     | B, C, F            | Date in which redd data was collected                                 |
-| latitude                 | B, C, F            | Latitude of redd location                                             |
-| longitude                | B, C, F            | Longitude of redd location                                            |
+| date                     | B, C, F, Y            | Date in which redd data was collected                                 |
+| latitude                 | B, C, F, Y            | Latitude of redd location                                             |
+| longitude                | B, C, F, Y            | Longitude of redd location                                            |
 | reach                    | B, C, F, M         | Unique name identifier of reach sampled                               |
 | river_mile               | B, C               | River mile associated with redd measured                              |
 | redd_measured            | B, C               | Whether or not a redd was measured (T/F)                              |
@@ -76,10 +76,10 @@ Data dictionary for standard format for `max_yearly_redd_count`:
 | redd_substrate_class     | B, C               | categorical; size class determined by millimeter size of substrate    |
 | pre_redd_substrate_class | B, C               | categorical; size class determined by millimeter size of substrate    |
 | tail_substrate_class     | B, C               | categorical; size class determined by millimeter size of substrate    |
-| year                     | B, C, F, M         | Calendar year sampling occurred                                       |
-| velocity                 | B, C, F            | measured stream velocity (ft/s)                                       |
-| depth_m                  | F                  | Depth of water (meters)                                               |
-| max_yearly_redd_count    | B, C, F, M         | maximum number of redds counted on a day in a unique reach, per year  |
+| year                     | B, C, F, M, Y         | Calendar year sampling occurred                                       |
+| velocity                 | B, C, F, Y            | measured stream velocity (ft/s)                                       |
+| depth_m                  | F, Y                  | Depth of water (meters)                                               |
+| max_yearly_redd_count    | B, C, F, M, Y         | maximum number of redds counted on a day in a unique reach, per year  |
 
 ## Read in data {.tabset}
 
@@ -114,7 +114,7 @@ battle_redd <- read_csv("../../data/redd-carcass-holding/battle_redd.csv",
                                          "c", "c", "l", "l", "l", "n", 
                                          "n", "n", "n", "n", "c", "n", 
                                          "n", "n", "n", "n", "n", "n", 
-                                         "c")) %>% glimpse
+                                         "c"))  |> glimpse()
 
 summary(battle_redd)
 
@@ -124,19 +124,19 @@ table(battle_redd$tail_substrate_size, useNA = "ifany")
 unique(battle_redd$why_not_measured)
 unique(battle_redd$flow_meter)
 
-clean_battle_redd <- battle_redd %>%
+clean_battle_redd <- battle_redd  |>
   select(date, latitude, longitude, 
          reach, river_mile, fish_guarding, 
          redd_measured, redd_width, redd_length, 
          pre_redd_substrate_size, redd_substrate_size, 
          tail_substrate_size, 
-         flow_fps) %>%
-  group_by(date, reach) %>%
+         flow_fps)  |>
+  group_by(date, reach)  |>
   mutate(redd_count = n(),
          stream = 'Battle Creek', 
-         year = lubridate::year(date)) %>%
-  rename(velocity = flow_fps) %>%
-  glimpse
+         year = lubridate::year(date))  |>
+  rename(velocity = flow_fps)  |>
+  glimpse()
 
 ```
 
@@ -144,7 +144,7 @@ clean_battle_redd <- battle_redd %>%
 
 FlowWest acquired Clear Creek redd data for late fall and spring runs through CVPIA. This data was integrated into this dataset by taking the maximum date of data provided to JPE spring run and filtering the CVPIA-provided spring run to only include newer data. Late fall run data was bound to this dataset.
 
-TODO: do we want to include O. mykiss redd data? It is currently included but can be filtered out.
+O. mykiss data is included in this dataset. 
 
 #### Columns Removed
 
@@ -187,7 +187,7 @@ clear_redd <- read_csv("../../data/redd-carcass-holding/clear_redd.csv",
                                         "c", "c", "c", "c", "c", "l", "l", "l", 
                                         "D", "n", "n", "n", "n", "n", "n", "n", 
                                         "n", "n", "n", "n", "n", "c", "c", "c",
-                                        "D", "n", "l", "n", "n")) %>% glimpse()
+                                        "D", "n", "l", "n", "n"))  |> glimpse()
 
 summary(clear_redd)
 table(clear_redd$method, useNA = "ifany")
@@ -196,45 +196,42 @@ table(clear_redd$picket_weir_relation, useNA = "ifany")
 table(clear_redd$run, useNA = "ifany")
 
 
-clean_clear_redd <- clear_redd %>%
+clean_clear_redd <- clear_redd  |>
   select(surveyed_reach, date, river_mile, 
          latitude, longitude, 
          measured, fish_on_redd,
          redd_length, redd_width, run,
          pre_redd_substrate_size, redd_substrate_size, 
          tail_substrate_size, 
-         velocity) %>% # feet per second
-  group_by(date, surveyed_reach) %>%
+         velocity)  |> # feet per second
+  group_by(date, surveyed_reach)  |>
   mutate(redd_count = length(measured),
          stream = 'Clear Creek', 
-         year = lubridate::year(date)) %>%  
+         year = lubridate::year(date))  |>  
   rename(reach = surveyed_reach,
          redd_measured = measured,
-         fish_guarding = fish_on_redd) %>%
+         fish_guarding = fish_on_redd)  |>
   glimpse()
 
 # load in aggregated clear creek data from other runs 
-clear_all_runs <- read_csv('../../../../CVPIA/CVPIA-EDA/jim_data_requests/redd_monitoring_data/all_redd_data_for_clear_creek.csv') %>% glimpse
-
-# TODO: do we want O. mykiss too? 
-# TODO: spring run overlap -- keep all spring run data and fill in with new data to 2021?
+clear_all_runs <- read_csv('../../../../CVPIA/CVPIA-EDA/jim_data_requests/redd_monitoring_data/all_redd_data_for_clear_creek.csv')
 
 max_date <- max(clear_redd$date)
 print(max_date)
 
-spring_filter <- clear_all_runs %>% 
-  filter(run == "spring") %>%
+spring_filter <- clear_all_runs  |> 
+  filter(run == "spring")  |>
   filter(date > max_date)
-clear_fall_and_spring <- clear_all_runs %>% 
-  filter(run == "late fall") %>%
-  bind_rows(spring_filter) %>%
-  mutate(stream = "Clear Creek") %>%
-  bind_rows(clean_clear_redd) %>%
+clear_fall_and_spring <- clear_all_runs  |> 
+  filter(run == "late fall")  |>
+  bind_rows(spring_filter)  |>
+  mutate(stream = "Clear Creek")  |>
+  bind_rows(clean_clear_redd)  |>
   mutate(run = case_when(run == "late-fall" ~ "late fall",
                          TRUE ~ as.character(run)))
 
 # replace name 
-clean_clear_redd <- clear_fall_and_spring %>% glimpse
+clean_clear_redd <- clear_fall_and_spring  |> glimpse()
 ```
 
 ### Mill Creek
@@ -247,15 +244,15 @@ clean_clear_redd <- clear_fall_and_spring %>% glimpse
 
 ```{r}
 
-mill_redd <- read_csv("../../data/redd-carcass-holding/mill_redd.csv") %>% glimpse()
+mill_redd <- read_csv("../../data/redd-carcass-holding/mill_redd.csv")  |>  glimpse()
 
 summary(mill_redd)
 
-clean_mill_redd <- mill_redd %>%
-  rename(reach = location) %>%
-  select(-starting_elevation_ft) %>%
-  mutate(stream = 'Mill Creek') %>%
-  glimpse
+clean_mill_redd <- mill_redd  |>
+  rename(reach = location)  |>
+  select(-starting_elevation_ft)  |>
+  mutate(stream = 'Mill Creek')  |>
+  glimpse()
 ```
 
 ### Feather River
@@ -280,32 +277,34 @@ feather_redd <- read_csv("../../data/redd-carcass-holding/feather_redd.csv",
                          col_types = list("D", "c", "c", "n",
                                        "n", "n", "n", "n", "n",
                                        "n", "n", "n", "n", "n",
-                                       "n", "n", "n")) %>% glimpse()
+                                       "n", "n", "n"))  |> glimpse()
 
 summary(feather_redd)
 table(feather_redd$type, useNA = "ifany")
 
-clean_feather_redd <- feather_redd %>%
+clean_feather_redd <- feather_redd  |>
   select(date, location, redd_count, 
          latitude, longitude, 
-         redd_width_m, redd_length_m, velocity_m_per_s, depth_m) %>% 
+         redd_width_m, redd_length_m, velocity_m_per_s, depth_m)  |> 
   rename(reach = location,
          redd_width = redd_width_m, 
-         redd_length = redd_length_m) %>%
+         redd_length = redd_length_m)  |>
   mutate(stream = "Feather River",
          year = lubridate::year(date),
          date = as.Date(date),
-         velocity = velocity_m_per_s / 0.3048) %>% # convert to feet per second 
-  select(-velocity_m_per_s) %>%
-  glimpse
+         velocity = velocity_m_per_s / 0.3048)  |> # convert to feet per second 
+  select(-velocity_m_per_s)  |>
+  glimpse()
 
 ```
 
 ### Yuba River
 
-#### Columns Removed:
+#### Columns Created:
+* `stream` set to Yuba River
 
--   `num_of_fish_on_redd` - was not included in other redd datasets and deemed unnecessary
+#### Columns Removed:
+None
 
 ```{r warning=FALSE}
 
@@ -325,11 +324,10 @@ all_redd_data <- bind_rows(clean_battle_redd,
                            clean_clear_redd,
                            clean_feather_redd,
                            clean_mill_redd,
-                           clean_yuba_redd) %>% 
-  select(-redd_count) %>%
+                           clean_yuba_redd)  |> 
+  select(-redd_count)  |>
   # remove mill creek
-  filter(stream != "Mill Creek") %>%
-  glimpse
+  filter(stream != "Mill Creek")  
 ```
 
 ## Substrate Size Standardization
@@ -350,7 +348,7 @@ Substrate sizes were given names and classes following the Wentworth Scale, crea
 | Medium sand        | 0.25-0.5        |
 | Fine sand - clay   | \<0.25          |
 
-```{r}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 # standarized size ranges lookup
 substrate_class = data.frame("standardized_size_range" = c("<0.25", 
                                                            "0.25-0.5",
@@ -373,37 +371,36 @@ redd_substrate_size_lookup <-
                                                    "<0.25", "4-8", "4-8", ">16", "2-4", 
                                                    "2-4", "1-2", "2-4", "1-2", "2-4",
                                                    "0.25-0.5", "2-4", "2-4", "4-8", 
-                                                   "4-8", "8-16")) %>% 
+                                                   "4-8", "8-16"))  |> 
   left_join(substrate_class)
                     
-tail_substrate_size_lookup <- all_redd_data %>% 
-  ungroup() %>%
-  select(tail_substrate_size) %>% 
-  full_join(redd_substrate_size_lookup %>% 
-              rename(tail_substrate_size = redd_substrate_size)) %>% 
-  distinct() %>%
+tail_substrate_size_lookup <- all_redd_data  |> 
+  ungroup()  |>
+  select(tail_substrate_size)  |> 
+  full_join(redd_substrate_size_lookup  |> 
+              rename(tail_substrate_size = redd_substrate_size))  |> 
+  distinct()  |>
   rename(tail_substrate_class = redd_substrate_class)
 
-pre_redd_substrate_size_lookup <- all_redd_data %>% 
-  ungroup() %>%
-  select(pre_redd_substrate_size) %>% 
-  full_join(redd_substrate_size_lookup %>% 
-              rename(pre_redd_substrate_size = redd_substrate_size)) %>% 
-  distinct() %>%
-  rename(pre_redd_substrate_class = redd_substrate_class) %>% glimpse
+pre_redd_substrate_size_lookup <- all_redd_data  |> 
+  ungroup()  |>
+  select(pre_redd_substrate_size)  |> 
+  full_join(redd_substrate_size_lookup  |> 
+              rename(pre_redd_substrate_size = redd_substrate_size))  |> 
+  distinct()  |>
+  rename(pre_redd_substrate_class = redd_substrate_class) 
 
-all_redd_data <- all_redd_data %>% 
-  left_join(redd_substrate_size_lookup) %>%
-  select(-standardized_size_range) %>%
-  left_join(tail_substrate_size_lookup) %>%
-  select(-standardized_size_range) %>%
-  left_join(pre_redd_substrate_size_lookup) %>%
+all_redd_data <- all_redd_data  |> 
+  left_join(redd_substrate_size_lookup)  |>
+  select(-standardized_size_range)  |>
+  left_join(tail_substrate_size_lookup)  |>
+  select(-standardized_size_range)  |>
+  left_join(pre_redd_substrate_size_lookup)  |>
   select(-standardized_size_range, -pre_redd_substrate_size, 
-         -redd_substrate_size, -tail_substrate_size) %>%
-  glimpse
-
+         -redd_substrate_size, -tail_substrate_size)  
 
 ```
+
 
 ## Explore Variables {.tabset}
 
@@ -418,12 +415,12 @@ table(all_redd_data$stream)
 ```{r}
 summary(all_redd_data$date)
 
-all_redd_data %>%
-  group_by(stream) %>%
+all_redd_data  |>
+  group_by(stream)  |>
   summarise(year_range = paste0(min(year, na.rm = TRUE), " : ", max(year, na.rm = TRUE)), 
-            months = paste0(unique(sort(lubridate::month(date))), collapse = ", ")) %>%
-  ungroup() %>%
-  distinct %>% kable()
+            months = paste0(unique(sort(lubridate::month(date))), collapse = ", "))  |>
+  ungroup()  |>
+  distinct()  |> knitr::kable()
 
 ```
 
@@ -492,27 +489,22 @@ table(all_redd_data$tail_substrate_class, useNA = "ifany")
 
 All redd data was aggregated by sampled reach and date to get a count of redds. In order to not potentially double count, the maximum of a daily count is reported as the yearly redd count. Since Mill Creek is aggregated by year already, this dataset includes Mill Creek.
 
-*TODO: we need to look at how sampling rate/frequency can play into decay rate and potential double counting. The sampling frequency for Battle and Clear seem to be similar while Feather is much more frequent.*
-
 ```{r}
-
-# TODO: incorporate decay rate? If 
-
 redd_count_by_year <- bind_rows(clean_battle_redd, 
                            clean_clear_redd,
-                           clean_feather_redd) %>% 
-  group_by(reach, date) %>%
-  mutate(sum_redd = n()) %>%
+                           clean_feather_redd, 
+                           clean_yuba_redd)  |> 
+  group_by(reach, date)  |>
+  mutate(sum_redd = n())  |>
   # how many redds were counted on each day? 
-  group_by(year, stream) %>%
-  mutate(max_yearly_redd_count = max(sum_redd)) %>%  # maximum per year 
-  select(-sum_redd) %>%
-  bind_rows(clean_mill_redd %>% 
-              group_by(year) %>%
-              mutate(max_yearly_redd_count = sum(redd_count, na.rm = TRUE))) %>%
-  select(-redd_count) %>%
-  distinct() %>%
-  glimpse
+  group_by(year, stream)  |>
+  mutate(max_yearly_redd_count = max(sum_redd))  |>  # maximum per year 
+  select(-sum_redd)  |>
+  bind_rows(clean_mill_redd  |> 
+              group_by(year)  |>
+              mutate(max_yearly_redd_count = sum(redd_count, na.rm = TRUE)))  |>
+  select(-redd_count)  |>
+  distinct()  
 
 ```
 
@@ -520,16 +512,16 @@ redd_count_by_year <- bind_rows(clean_battle_redd,
 
 ```{r}
 # a plot to help understand sampling frequency across streams 
-all_redd_data %>%
-  group_by(date, stream) %>%
-  summarise(n_reaches = length(unique(reach))) %>%
+all_redd_data  |>
+  group_by(date, stream)  |>
+  summarise(n_reaches = length(unique(reach)))  |>
   ggplot() + 
   geom_point(aes(x = date, y = n_reaches)) + 
   facet_wrap(~ stream)
 
-redd_count_by_year %>% 
-  select(year, max_yearly_redd_count, stream) %>%
-  distinct() %>%
+redd_count_by_year  |> 
+  select(year, max_yearly_redd_count, stream)  |>
+  distinct()  |>
 ggplot() + 
   geom_bar(aes(x = year, y = max_yearly_redd_count, fill = stream), stat = "identity") + 
   facet_wrap(~stream) +
@@ -540,9 +532,9 @@ ggplot() +
 ## Save Cleaned Data to Google Cloud
 
 ```{r}
-knitr::kable(all_redd_data %>% head)
+knitr::kable(all_redd_data  |> head())
 
-knitr::kable(redd_count_by_year %>% head)
+knitr::kable(redd_count_by_year  |> head())
 
 ```
 
