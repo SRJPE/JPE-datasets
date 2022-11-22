@@ -23,7 +23,7 @@ FlowWest received Adult Redd data from four monitoring programs:
 -   Mill Creek
 -   Yuba River
 
-Due to the format of the data received, two redd datasets were developed. The first dataset includes Feather, Battle, Yuba, and Clear Creek daily data and the second dataset includes Feather, Battle, Clear, and Mill Creek and has a yearly maximum redd counts value.
+Due to the format of the data received, two redd datasets were developed. The first dataset includes Feather, Battle, Yuba, and Clear Creek daily data and the second dataset includes Feather, Battle, Clear, Yuba, and Mill Creek and has a yearly maximum redd counts value.
 
 ## Standard format for Adult All Redd Data
 
@@ -33,7 +33,7 @@ Data dictionary for standard format for `all_redd_data`:
 F - Feather River, Y - Yuba River)
 
 | column name              | tributary collects | definition                                                         |
-|:----------------|:----------------|:-------------------------------------|
+|:-----------------|:-----------------|:------------------------------------|
 | date                     | B, C, F, Y         | Date in which redd data was collected                              |
 | latitude                 | B, C, F, Y         | Latitude of redd location                                          |
 | longitude                | B, C, F, Y         | Longitude of redd location                                         |
@@ -55,31 +55,18 @@ F - Feather River, Y - Yuba River)
 
 ## Standard format for Adult Redd Data Aggregated by Year
 
-This dataset is the same as `all_redd_data` but includes `max_yearly_redd_count` which is the maximum number of redds counted on a single day per year. This dataset does not include Yuba River because count measurements are not collected for the Yuba.
+This dataset includes `max_yearly_redd_count` which is the maximum number of redds counted on a single day per year per reach.
 
 Data dictionary for standard format for `max_yearly_redd_count`:
 
-| column name              | tributary collects | definition                                                            |
-|:-----------------|:-----------------|:------------------------------------|
-| date                     | B, C, F, Y            | Date in which redd data was collected                                 |
-| latitude                 | B, C, F, Y            | Latitude of redd location                                             |
-| longitude                | B, C, F, Y            | Longitude of redd location                                            |
-| reach                    | B, C, F, M         | Unique name identifier of reach sampled                               |
-| river_mile               | B, C               | River mile associated with redd measured                              |
-| redd_measured            | B, C               | Whether or not a redd was measured (T/F)                              |
-| age                      | C                  | integer ranging from 1 - 5; redd age                                  |
-| fish_guarding            | B, C               | Whether or not a fish is on redd when measured ??                     |
-| redd_length              | B, C, F            | Length of measured redd (m)                                           |
-| redd_width               | B, C, F            | Width of measured redd (m)                                            |
-| run                      | C                  | `spring`, `fall`, `late-fall`                                         |
-| stream                   | B, C, F, M         | Unique stream associated with redd data collected                     |
-| redd_substrate_class     | B, C               | categorical; size class determined by millimeter size of substrate    |
-| pre_redd_substrate_class | B, C               | categorical; size class determined by millimeter size of substrate    |
-| tail_substrate_class     | B, C               | categorical; size class determined by millimeter size of substrate    |
-| year                     | B, C, F, M, Y         | Calendar year sampling occurred                                       |
-| velocity                 | B, C, F, Y            | measured stream velocity (ft/s)                                       |
-| depth_m                  | F, Y                  | Depth of water (meters)                                               |
-| max_yearly_redd_count    | B, C, F, M, Y         | maximum number of redds counted on a day in a unique reach, per year  |
+| column name           | tributary collects | definition                                                          |
+|:-----------------|:-----------------|:-----------------------------------|
+| date                  | B, C, F, Y         | Date in which redd data was collected                               |
+| reach                 | B, C, F, M         | Unique name identifier of reach sampled                             |
+| stream                | B, C, F, M         | Unique stream associated with redd data collected                   |
+| year                  | B, C, F, M, Y      | Calendar year sampling occurred                                     |
+| max_yearly_redd_count | B, C, F, M, Y      | maximum number of redds counted on a day in a unique reach per year |
+| run                   | C                  | `spring`, `fall`, `late-fall`                                       |
 
 ## Read in data {.tabset}
 
@@ -144,7 +131,7 @@ clean_battle_redd <- battle_redd  |>
 
 FlowWest acquired Clear Creek redd data for late fall and spring runs through CVPIA. This data was integrated into this dataset by taking the maximum date of data provided to JPE spring run and filtering the CVPIA-provided spring run to only include newer data. Late fall run data was bound to this dataset.
 
-O. mykiss data is included in this dataset. 
+O. mykiss data is included in this dataset.
 
 #### Columns Removed
 
@@ -301,9 +288,11 @@ clean_feather_redd <- feather_redd  |>
 ### Yuba River
 
 #### Columns Created:
-* `stream` set to Yuba River
+
+-   `stream` set to Yuba River
 
 #### Columns Removed:
+
 None
 
 ```{r warning=FALSE}
@@ -400,7 +389,6 @@ all_redd_data <- all_redd_data  |>
          -redd_substrate_size, -tail_substrate_size)  
 
 ```
-
 
 ## Explore Variables {.tabset}
 
@@ -499,12 +487,12 @@ redd_count_by_year <- bind_rows(clean_battle_redd,
   # how many redds were counted on each day? 
   group_by(year, stream)  |>
   mutate(max_yearly_redd_count = max(sum_redd))  |>  # maximum per year 
-  select(-sum_redd)  |>
   bind_rows(clean_mill_redd  |> 
-              group_by(year)  |>
-              mutate(max_yearly_redd_count = sum(redd_count, na.rm = TRUE)))  |>
-  select(-redd_count)  |>
+              group_by(year, reach)  |>
+              mutate(max_yearly_redd_count = max(redd_count, na.rm = TRUE))) |>
+  select(year, reach, stream, species, run, max_yearly_redd_count)  |>
   distinct()  
+
 
 ```
 
@@ -517,13 +505,15 @@ all_redd_data  |>
   summarise(n_reaches = length(unique(reach)))  |>
   ggplot() + 
   geom_point(aes(x = date, y = n_reaches)) + 
+  ylab('number of samples per reach and date') + 
   facet_wrap(~ stream)
 
+# Note: based on plot, count value could be double counting for Mill Creek
 redd_count_by_year  |> 
   select(year, max_yearly_redd_count, stream)  |>
   distinct()  |>
 ggplot() + 
-  geom_bar(aes(x = year, y = max_yearly_redd_count, fill = stream), stat = "identity") + 
+  geom_col(aes(x = year, y = max_yearly_redd_count, fill = stream)) + 
   facet_wrap(~stream) +
   scale_fill_manual(values = color_pal) + 
   theme_minimal()
