@@ -94,7 +94,6 @@ if(operating_system == "pc") {
   # Sample table SR Database - sampleID, date, mortality, comments ("Angling")
   # headtag contains location, fork length, run, sex, date, recovery, head_tag ID
   # ~TMPCLP246041 contains headerID, tag color, date, week number, sect, chop clip, chopnclip, chopuncheck, tag clip, tagnclip, tag unknown, which seems to be the same as ChopChannelTBL except ChopChannel does not have tagcolor
-  # TODO: check in on this with Ashley. We might be able to obtain sex data from headtag if necessary
   detach(package:Hmisc)
 }
 
@@ -175,7 +174,7 @@ The `chop_recovery` table contains recovered carcass counts by color
 
 ```{r}
 # 2. choprecovery table (with dates)
-# TODO: there is no matching ID in ChopRecov that will match up with ChopHeader ID, resulting in a ChopRecov table that is NAs
+# The IDs in ChopHeader_raw do not align with the ChopRecov_raw table. Not sure we need the ChopRecovery table for later analyses.
 
 chop_recovery_join <- full_join(ChopHeader_raw %>% 
                                   select(ID, Date, Time),

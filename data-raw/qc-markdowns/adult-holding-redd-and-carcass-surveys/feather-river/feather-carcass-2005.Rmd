@@ -88,8 +88,7 @@ if(operating_system == "pc") {
   # FL by sex (self explanatory), TagColLU_05 (metadata about tag colors),
   # 2005_recaps has fish IDs, ID, released, fate, date, location
   # 2005_chops has headerID, tag color, date, chop clip, tag clip, tag unknown (many cols are in ChopChannel)
-  # Sample table SR Database - mortality 
-  # TODO: check in on this with Ashley
+  # Sample table SR Database - mortality and sample ID that similar to   # Fish Data_SR_Database
   detach(package:Hmisc)
 }
 
@@ -179,7 +178,7 @@ chop_recovery_join <- full_join(ChopHeader_raw %>%
   mutate(date = as_date(date)) %>%
   filter(year(date) == 2005)  %>% glimpse
 
-# TODO: these IDs do not align
+# The IDs in ChopHeader_raw do not align with the ChopRecov_raw table. Not sure we need the ChopRecovery table for later analyses.
 ```
 
 ### Survey

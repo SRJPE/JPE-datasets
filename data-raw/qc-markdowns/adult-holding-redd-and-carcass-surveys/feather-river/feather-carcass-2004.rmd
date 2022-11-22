@@ -84,9 +84,9 @@ if(operating_system == "pc") {
   
   # Steelhead is empty
   # Fish Data_SR_Database has information on TagID (doesn't match with any other datasets), Sample ID (same as TagID), adipose clip (0/1), Tissue (0/1), Fork Length
-  # TODO: check in on this with Ashley
   # TagColLU contains metadata about tag colors
-  # Sample table SR Database - mortality 
+  # Sample table SR Database - mortality and sample ID that is in same range
+  # as Fish Data_SR_Database SampleID
   detach(package:Hmisc)
 }
 

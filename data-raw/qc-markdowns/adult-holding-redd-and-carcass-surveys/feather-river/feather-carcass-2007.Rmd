@@ -89,7 +89,6 @@ if(operating_system == "pc") {
   # ChopHallprintTBL contains TagID, sect, fork length, sex, spawn, clip, carc_stat, comment, headerID, hallprint1, hallprint2, headtag
   # ScaleSPLs contains date, fork length, sex, spawn, clip, sample type, head tag
   # Hallprint_Sect contains hallprint1, hallprint2, date, sect
-  # TODO: check in on this with Ashley. We might be able to obtain sex data from headtag if necessary
   detach(package:Hmisc)
 }
 
@@ -162,7 +161,8 @@ chop_channel_join <- full_join(ChopHeader_raw %>%
                                  select(ID, TagCol, Date, Time),
                                ChopChannel_raw, by = "ID") %>% 
   clean_names()
-# TODO: male, female, gril columns are NA
+# ChopChannel_raw has multiple rows per "ID". This translates to the
+# chop_channel_join table - need to clarify.
 ```
 
 ### Recovery

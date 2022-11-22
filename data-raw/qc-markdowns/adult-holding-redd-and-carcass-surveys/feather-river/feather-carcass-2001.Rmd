@@ -184,7 +184,9 @@ chop_recovery_join <- full_join(ChopEnv_raw %>% select(Date, Time, ChopEnvID),
 The `tag_join` table contains additional tag information 
 
 ```{r}
-tag_join <- left_join(TagData_raw, RecovTag_raw) %>% #TODO: what are we joining by? What are these data for? I think tag data is the biological data recorded when the tag was put in, and recovery tag records when that tag has been recovered (?) 
+tag_join <- left_join(TagData_raw, RecovTag_raw) %>% # joining on Tag1, Tag2, TagComp because
+  # these are the common column, though tag_num and recov_id could be related. Because we couldn't
+  # tie them together decisively we are going with the common columns.
   clean_names() %>% 
   select(c(tag_num, sect, fl, sex, egg_ret, recov_id)) %>% 
   glimpse
@@ -414,8 +416,7 @@ summary(all_tags$unknown_tags)
 **Plotting tags sex proportion with dates over Period of Record**
 ```{r}
 #Join tags to chops recovery using recov_id
-# TODO: do we need these analyses?
-tags_with_dates <- left_join(all_tags, chop_recovery_join) %>% glimpse # TODO: joining on recov_id ?
+tags_with_dates <- left_join(all_tags, chop_recovery_join) %>% glimpse 
 
 total_tags_with_dates <- tags_with_dates%>% 
   mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na

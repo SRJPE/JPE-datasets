@@ -88,7 +88,6 @@ if(operating_system == "pc") {
   # headtag is empty
   # ChopHallprintTBL contains TagID, sect, fork length, sex, clip, carc_stat, headerID, hallprint1, hallprint2, headtag, otolith, scale
   # ScaleSPLs is empty
-  # TODO: check in on this with Ashley. What is Hallprint?
   detach(package:Hmisc)
 }
 ```
@@ -176,7 +175,8 @@ chop_recovery_join <- full_join(ChopHeader_raw %>%
                                 ChopRecov_raw %>% 
                                   rename(ID = RecovID), by = "ID")  %>% 
   clean_names()
-# TODO: there are no matching IDs from the ChopRecov table that align with the ChopHeader ID column, so this produces NAs
+# The IDs in ChopHeader_raw do not align with the ChopRecov_raw table. Not sure we need the ChopRecovery table for later analyses.
+
 ```
 
 ### Survey

@@ -346,7 +346,6 @@ total_tags_summary %>%
 **Comparing tags and chops**
 
 ```{r}
-# from ashley: please improve on this plot I got started, make it look better, describe it, double check that the numbers make sense
 total_carcass <- full_join(total_chops_summary, total_tags_summary) %>% 
   select(date, total_chops, total_tags) %>% 
   pivot_longer(c(total_chops, total_tags), names_to = "mark")
@@ -359,7 +358,8 @@ proportion_tags <- total_carcass |>
   summarise(proportion_tagged = total_tags/total_collected) |> 
   summary()
 
-# TODO: I think from reading the sampling protocol, the tags recovered on a specific date are likely from the previous two weeks. So this plot is essentially showing us the proportion of chops recovered on a specific date that were tagged previously, i.e. giving us an idea of how many in the population are tagged. Check in on this with Ashley to confirm understanding.
+# Note: the tags recovered on a specific date are likely from a previous date (not necessarily
+# linked with chops on that day)
 
 ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
   geom_col() +
