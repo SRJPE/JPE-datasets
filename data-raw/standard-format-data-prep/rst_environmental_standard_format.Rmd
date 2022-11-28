@@ -118,17 +118,18 @@ butte_env_pre_2015 <- read_csv(here::here("data", "rst", "butte_rst_environmenta
                       "D", "c", "c", "l", "n", "n", "n", "n", "c", "t", 
                       "c", "c", "n", "n", "n", "n", "l", "l", "n", "c", 
                       "n", "n", "c"
-                      )) %>%
+                      )) %>% 
   select(date, site = station, 
-         weather, temperature, turbidity, `light penetration` = secchi, velocity) %>%
+         weather, temperature, turbidity, `light penetration` = secchi, velocity, gear_id) %>%
   mutate(stream = "butte creek",
-         subsite = tolower(site), 
+         subsite = ifelse(gear_id == "diversion fyke trap 1", "okie fyke trap", tolower(site)), 
          site = ifelse(site == "Adams Dam", "adams dam", "okie dam")) %>%
   distinct() %>%
   mutate_if(is.numeric, as.character) %>% 
   pivot_longer(cols = c("velocity", "turbidity", "weather", "temperature", "light penetration"), values_to = "text", names_to = "parameter") %>% 
   mutate(value = as.numeric(text),
-         text = ifelse(!is.na(value), NA_character_, text)) 
+         text = ifelse(!is.na(value), NA_character_, text)) %>%
+  select(-gear_id)
 
 gcs_get_object(object_name = "rst/butte-creek/data-raw/butte_environmental_camp.csv",
                bucket = gcs_get_global_bucket(),
