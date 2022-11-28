@@ -97,6 +97,7 @@ feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
 feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"))
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
 knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
+knight_trap_pre2002 <-  read_csv(here::here("data", "rst", "knights_2002_trap.csv"))
 tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
 ```
 
@@ -621,7 +622,17 @@ knights_trap_clean_pre2006 <- knights_effort_pre2006 %>%
   select(-date) %>% 
   distinct()
 
-knights_trap_clean <- bind_rows(knights_trap_clean_2006, knights_trap_clean_pre2006) %>% 
+knights_trap_clean_pre2002 <- knight_trap_pre2002 %>% 
+  select(date, time, trapid, avg_rpm) %>% 
+  mutate(stream = "sacramento river",
+         site = "knights landing",
+         trapid = ifelse(is.na(trapid), "knights landing", trapid)) %>% 
+  rename(subsite = trapid,
+         rpms_start = avg_rpm,
+         trap_stop_date = date) 
+  
+
+knights_trap_clean <- bind_rows(knights_trap_clean_2006, knights_trap_clean_pre2006, knights_trap_clean_pre2002) %>% 
   select(-projectDescriptionID)
 
 # # check to make sure one row per day/time 
