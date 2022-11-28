@@ -413,13 +413,34 @@ trap_combined %>%
   geom_boxplot()
 ```
 ## rst 
+
+Codes for Life Stage from Jeanine Phillips:
+During the early years, the codes were explained on the datasheets, 
+but they are the ones still in use today: 1=alevin, 2=fry, 3=parr, 4=silvery parr, 5=smolt
+
+Codes for Run from Jeanine Phillips:
+1=fall, 2=spring, 3=winter, 4=late fall
+Assume 5 is unknown
+
 ```{r}
 rst_combined <- bind_rows(rst96_clean,
                           rst97_clean,
                           rst98_clean,
                           rst99_clean,
                           rst00_clean,
-                          rst01_clean) %>% glimpse()
+                          rst01_clean) %>% 
+  mutate(lifestage = case_when(lifestage == 1 ~ "alevin",
+                               lifestage == 2 ~ "fry",
+                               lifestage == 3 ~ "parr",
+                               lifestage == 4 ~ "silvery parr",
+                               lifestage == 5 ~ "smolt"),
+         run = case_when(race == 1 ~ "fall",
+                         race == 2 ~ "spring",
+                         race == 3 ~ "winter",
+                         race == 4 ~ "late fall",
+                         race == 5 ~ "unknown")) %>% 
+  select(-race) %>% 
+  glimpse()
 ```
 ### time
 ```{r}
@@ -550,9 +571,29 @@ marked_combined %>%
   
 
 ## recap
+Codes for Life Stage from Jeanine Phillips:
+During the early years, the codes were explained on the datasheets, 
+but they are the ones still in use today: 1=alevin, 2=fry, 3=parr, 4=silvery parr, 5=smolt
+
+Codes for Run from Jeanine Phillips:
+1=fall, 2=spring, 3=winter, 4=late fall
+Assume 5 is unknown
+
 ```{r}
 recap_combined <- bind_rows(recap99_clean,
-                            recap00_clean) %>% glimpse()
+                            recap00_clean) %>% 
+  mutate(lifestage = case_when(lifestage == 1 ~ "alevin",
+                               lifestage == 2 ~ "fry",
+                               lifestage == 3 ~ "parr",
+                               lifestage == 4 ~ "silvery parr",
+                               lifestage == 5 ~ "smolt"),
+         run = case_when(race == 1 ~ "fall",
+                         race == 2 ~ "spring",
+                         race == 3 ~ "winter",
+                         race == 4 ~ "late fall",
+                         race == 5 ~ "unknown")) %>% 
+  select(-race) %>% 
+  glimpse()
 ```
 
 ### time
