@@ -608,7 +608,7 @@ unique(chop_channel_join$chan)
 chop_channel_cleaner <- chop_channel_join %>%
   mutate(date = as_date(date)) %>%
   mutate_if(is.character, str_to_lower) %>% 
-  select(-c(time, male, fem, gril)) # male, female, and gril columns are empty
+  select(-c(time, male, fem, gril, tag_count)) # male, female, gril, and tag_count columns are empty
 
 chop_channel_cleaner
 ```
@@ -727,7 +727,6 @@ counts_data_dictionary <- tibble(variables = colnames(chop_channel_cleaner),
                                           "Sect", 
                                           "Chan", 
                                           "Min",
-                                          "Tag Count",
                                           "Carcass that were chopped and has clip",
                                           "Carcass that were chopped and has no clip",
                                           "Carcass that were chopped and not checked for clip",
