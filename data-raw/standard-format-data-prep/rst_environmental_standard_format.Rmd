@@ -149,7 +149,7 @@ butte_env_post_2015 <- butte_env_raw_camp %>%
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
   mutate(stream = "butte creek",
          site = "okie dam",
-         subsite = ifelse(subsite == "PP RST", "okie RST", "okie fyke trap")) 
+         subsite = ifelse(subsite == "PP RST", "okie 1", "okie fyke trap")) 
 
 butte_env <- bind_rows(butte_env_pre_2015, butte_env_post_2015)
 ```

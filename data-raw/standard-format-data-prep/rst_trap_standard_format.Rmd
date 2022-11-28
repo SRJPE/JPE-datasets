@@ -239,8 +239,7 @@ butte_trap_clean_camp <- butte_trap_camp |>
     select(-c(debrisVolumeCat, debrisVolume, debrisVolumeUnits)) %>%
   mutate(stream = "butte creek",
          site = "okie dam", # Only fish at okie dam now - also refered to as parot-phelan
-         subsite = tolower(subSiteName), # TODO talk through subsite with ashley
-         # TODO add gear_type in here
+         subsite = ifelse(subsite == "PP RST", "okie 1", "okie fyke trap"),
          trap_visit_date = as.Date(visitTime),
          trap_visit_time = as_hms(visitTime),
          trap_stop_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
