@@ -193,6 +193,8 @@ feather_carcass_chops_and_tags_2005 <- read_from_cloud("chops_and_tags",2005) %>
          lifestage = "unknown") %>%
   rename(sec = "sect") %>% 
   glimpse()
+
+# TODO: the sex here is unknown. Checking the 2005 .Rmd file doesn't show any sex data.
 ```
 ### 2006 Chops and Tags
 ```{r}
@@ -212,9 +214,11 @@ feather_carcass_chops_and_tags_2006 <- read_from_cloud("chops_and_tags",2006) %>
     tag_clip_status == "tag_n_clip" ~ "no",
     tag_clip_status == "tag_unk" ~ "unknown")) %>%
   mutate(sex = "unknown",
-         lifestage = "unknown") %>% 
+         lifestage = "unknown",
+         tag_col = as.character(tag_col)) %>% 
   rename(sec = "sect") %>% 
   glimpse()
+# TODO: the sex here is unknown. Checking the 2006 .Rmd file doesn't show any sex data.
 ```
 ### 2007 Chops and Tags
 ```{r}
@@ -234,17 +238,13 @@ feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>
     tag_clip_status == "tag_n_clip" ~ "no",
     tag_clip_status == "tag_unk" ~ "unknown")) %>%
   mutate(sex = "unknown",
-         lifestage = "unknown") %>% 
+         lifestage = "unknown",
+         tag_col = as.character(tag_col)) %>% 
   rename(sec = "sect") %>% 
   glimpse()
+# TODO: the sex here is unknown. Checking the 2007 .Rmd file doesn't show any sex data.
 ```
 ### 2008 Chops and Tags
-```{r}
-# years <- c(2008:2016)
-# chops_and_tags <- rep(c("chops_and_tags"), times = 8)
-# combined_data <- purrr::map(chops_and_tags,years,read_from_cloud) %>% 
-#   reduce(bind_rows)
-```
 
 * 2008 - 2016 (except for 2010) dataset dropped clip status and only has chop count and tag count
 ```{r}
@@ -254,9 +254,11 @@ feather_carcass_chops_and_tags_2008 <- read_from_cloud("chops_and_tags",2008) %>
   mutate(chop_clip_status = "unknown",
          tag_clip_status = "unknown",
          sex = "unknown",
-         lifestage = "unknown") %>% 
+         lifestage = "unknown",
+         tag_col = as.character(tag_col)) %>% 
   rename(sec = "sect") %>% 
 glimpse
+# TODO: the sex here is unknown. Checking the 2008 .Rmd file doesn't show any sex data.
 ```
 ### 2009 Chops and Tags
 ```{r}
@@ -266,32 +268,36 @@ feather_carcass_chops_and_tags_2009 <- read_from_cloud("chops_and_tags",2009) %>
   mutate(chop_clip_status = "unknown",
          tag_clip_status = "unknown",
          sex = "unknown",
-         lifestage = "unknown") %>% 
+         lifestage = "unknown",
+         tag_col = as.character(tag_col)) %>% 
   rename(sec = "sect") %>% 
 glimpse()
+# TODO: the sex here is unknown. Checking the 2009 .Rmd file doesn't show any sex data.
 ```
 ### 2010 Chops and Tags
 * 2010 has sex in dataset
 ```{r}
-# feather_carcass_chops_and_tags_2010 <- read_from_cloud("chops_and_tags",2010) %>% 
-#   pivot_longer(cols = c("male_chop", "female_chop", "unknown_chops"),
-#                names_to = "sex",
-#                values_to = "chop_count") %>% 
-#   mutate(sex = case_when(
-#     sex == "male_chop" ~ "male",
-#     sex == "female_chop" ~ "female",
-#     sex == "unknown_chops" ~ "unknown")) %>% 
-#   pivot_longer(cols = c("male_tag", "female_tag", "unknown_tags"),
-#                names_to = "sex",
-#                values_to = "tag_count") %>% 
-#   mutate(sex = case_when(
-#     sex == "male_tag" ~ "male",
-#     sex == "female_tag" ~ "female",
-#     sex == "unknown_tags" ~ "unknown")) %>%
-#   mutate(chop_clip_status = "unknown",
-#          tag_clip_status = "unknown",
-#          lifestage = "unknown") %>% 
-#   glimpse()
+feather_carcass_chops_and_tags_2010 <- read_from_cloud("chops_and_tags",2010) %>%
+  pivot_longer(cols = c("male_chop", "female_chop", "unknown_chops"),
+               names_to = "sex",
+               values_to = "chop_count") %>%
+  mutate(sex = case_when(
+    sex == "male_chop" ~ "male",
+    sex == "female_chop" ~ "female",
+    sex == "unknown_chops" ~ "unknown")) %>%
+  pivot_longer(cols = c("male_tag", "female_tag", "unknown_tags"),
+               names_to = "sex_tag",
+               values_to = "tag_count") %>%
+  mutate(sex_tag = case_when(
+    sex_tag == "male_tag" ~ "male",
+    sex_tag == "female_tag" ~ "female",
+    sex_tag == "unknown_tags" ~ "unknown")) %>%
+  mutate(chop_clip_status = "unknown",
+         tag_clip_status = "unknown",
+         lifestage = "unknown",
+         tag_col = as.character(tag_col)) %>%
+  glimpse()
+# TODO: is there a way to make this tidier? Join the sex_tag and sex column?
 ```
 
 
@@ -331,7 +337,7 @@ feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>
 ### 2014 Chops and Tags
 ```{r}
 feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>% 
-    rename(chop_count = "count") %>% 
+    rename(chop_count = "count") %>%
   mutate(tag_count = NA,
          chop_clip_status = "unknown",
          tag_clip_status = "unknown",
@@ -373,7 +379,7 @@ feather_carcass_chops_and_tags_combined <- bind_rows(feather_carcass_chops_and_t
           feather_carcass_chops_and_tags_2007,
           feather_carcass_chops_and_tags_2008,
           feather_carcass_chops_and_tags_2009,
-          # feather_carcass_chops_and_tags_2010,
+          feather_carcass_chops_and_tags_2010,
           feather_carcass_chops_and_tags_2011,
           feather_carcass_chops_and_tags_2012,
           feather_carcass_chops_and_tags_2013,
