@@ -50,6 +50,9 @@ files_knights <- tibble(path = rep("rst/lower-sac-river/data-raw/knights-landing
 files_knights_pre2006 <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/knl_",2),
                         name = c("combine_rst_clean", "combine_sampling_effort_clean"),
                         save = rep(here::here("data","rst", "knights_"), 2))
+files_knights_pre2002 <- tibble(path = rep("rst/lower-sac-river/data/knights-landing/pre-2002-",5),
+                        name = c("efficiency", "mark", "recap","trap","rst"),
+                        save = rep(here::here("data","rst", "knights_2002_"), 5))
 files_tisdale <- tibble(path = "rst/lower-sac-river/data/tisdale/rst_clean",
                         name = c(""),
                         save = here::here("data","rst", "tisdale_rst"))
@@ -78,6 +81,7 @@ pmap(files_feather, get_data)
 pmap(files_feather_camp, get_data)
 pmap(files_knights, get_data)
 pmap(files_knights_pre2006, get_data)
+pmap(files_knights_pre2002, get_data)
 pmap(files_tisdale, get_data)
 pmap(files_tisdale_camp, get_data)
 pmap(files_mill, get_data)
@@ -95,6 +99,7 @@ feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
 feather_rst_camp <- read_csv(here::here("data", "rst", "feather_catch_camp.csv"))
 knights_landing_rst <- read_csv(here::here("data", "rst", "knights_catch_camp.csv"))
 knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_rst_clean.csv"))
+knights_landing_pre2002 <- read_csv(here::here("data", "rst", "knights_2002_rst.csv"))
 tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"))
 tisdale_rst_camp <- read_csv(here::here("data", "rst", "tisdale_rst_catch_camp.csv"))
 mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv")) # contains trap data too
@@ -109,6 +114,7 @@ feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
 feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"))
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
 knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
+knight_trap_pre2002 <-  read_csv(here::here("data", "rst", "knights_2002_trap.csv"))
 tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
 ```
 
@@ -738,7 +744,7 @@ knights_rst_clean_camp <- knights_landing_rst %>%
          run_method = tolower(run_method),
          run = tolower(run),
          dead = ifelse(dead == "Yes", T, F),
-         release_id = as.character(ifelse(release_id == 0 | release_id == 255, NA, release_id)))
+         release_id = as.character(ifelse(release_id == 0 | release_id == 255, NA, release_id))) %>% glimpse()
 
 filter(knights_landing_pre2006, species == "Steelhead", count > 0)
 filter(knights_landing_pre2006, species == "Chinook", is.na(at_capture_run), count > 0)
@@ -758,10 +764,29 @@ knights_rst_clean_pre2006 <- knights_landing_pre2006 %>%
   filter(remove != "remove") %>% 
   select(-remove) %>% 
   group_by(date, species, run, lifestage, adipose_clipped, subsite) %>% 
-  summarise(count = sum(count))
+  summarise(count = sum(count)) %>% glimpse()
+
+
+knights_rst_clean_pre2002 <- knights_landing_pre2002 %>% 
+  # there is one missing date that should be removed
+  filter(!is.na(date)) %>% 
+  # no count column so assume 1
+  mutate(count = 1,
+         trapid = ifelse(is.na(trapid), "knights landing", trapid),
+         species = "chinook") %>% 
+  rename(subsite = trapid,
+         fork_length = fl,
+         weight = ww,
+         adipose_clipped = adipose_clip,
+         dead = mort) %>% 
+  # filter out marks (these are recaptures except in 1997 when they may be fish caught in trap for first time)
+  filter(is.na(mark) | mark == F | (date >= "1996-11-24" & date <= "1997-10-03")) %>% 
+  group_by(date, subsite, fork_length, weight, lifestage, run, adipose_clipped, dead) %>% 
+  summarize(count = sum(count))
 
 knights_rst_clean <- bind_rows(knights_rst_clean_camp,
-                           knights_rst_clean_pre2006) 
+                           knights_rst_clean_pre2006,
+                           knights_rst_clean_pre2002) 
 
 knights_rst_min <- knights_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
@@ -787,7 +812,11 @@ knights_trap_pre2006 <- knights_effort_pre2006 %>%
   select(date) %>% 
   distinct()
 
-knights_trap_clean <- bind_rows(knights_trap_clean_camp, knights_trap_pre2006)
+knights_trap_pre2002 <- knight_trap_pre2002 %>% 
+  select(date) %>% 
+  distinct()
+
+knights_trap_clean <- bind_rows(knights_trap_clean_camp, knights_trap_pre2006, knights_trap_pre2002)
 
 knights_trap_min <- knights_trap_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
