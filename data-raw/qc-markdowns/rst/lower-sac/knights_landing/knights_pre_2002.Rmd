@@ -24,11 +24,10 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # Assumptions
 
 - Assuming mark or clip as "A" means adipose-clipped
-- Assuming mark as "B" or "BB" means bismark brown and is a recaptured fish
+- Assuming mark as "B" or "BB" means bismark brown and is a recaptured fish in all years except 1997
+- The number of marked fish in 1997 does not seem likely that they were recaptured, waiting for efficiency data
 
 # 1996
-
-TODO - Need to figure out what codes for lifestage, race, traptype
 
 ```{r, include = F}
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM96.DBF",
@@ -87,7 +86,12 @@ rst96_clean <- rst96 %>%
 
 # 1997
 
-What does A and B mark mean? A for adipose clip? B for bismark brown?
+What does A and B mark mean? 
+
+Assumptions: 
+- A for adipose clip
+- B for bismark brown
+- mark field is for fish marked not recapturing marked fish
 
 ```{r, include = F}
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/97KLSUMT.DBF",
@@ -130,7 +134,12 @@ rst97_clean %>% group_by(mark) %>% tally()
 
 # 1998
 
-What does A and B mark mean? A for adipose clip? B for bismark brown?
+What does A and B mark mean? 
+
+Assumptions: 
+- A for adipose clip
+- B for bismark brown
+- mark field is for fish marked not recapturing marked fish
 
 ```{r, include = F}
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM98.DBF",
@@ -142,11 +151,17 @@ gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLFL9
                  bucket = gcs_get_global_bucket(),
                  saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst98.DBF",
                  overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/knights_1998_efficiency.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/knights_1998_efficiency.csv",
+                 overwrite = TRUE)
 ```
 
 ```{r}
 sum98 <- read.dbf(paste0(path, "sum98.DBF")) %>% glimpse()
 rst98 <- read.dbf(paste0(path, "rst98.DBF")) %>% glimpse()
+efficiency98 <- read_csv(paste0(path, "knights_1998_efficiency.csv"))
 
 ```
 
@@ -168,11 +183,17 @@ rst98_clean <- rst98 %>%
   select(date, time, trapid, fl, ww, lifestage, race, mark, mort, adipose_clip)
 
 rst98_clean %>% group_by(mark) %>% tally()
+
+efficiency98_clean <- efficiency98 %>% 
+  janitor::clean_names() %>% 
+  rename(number_recaptured = number_recovered)
 ```
 
 # 1999
 
 If we knew what mark was then we could pull out the recaptured fish.
+
+Assumes mark of B or BB is a recaptured fish.
 
 ```{r, include = F}
 gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM99.DBF",
@@ -356,7 +377,8 @@ efficiency01_clean <- efficiency01 %>%
   janitor::clean_names() %>% 
   select(week, number_marked, number_recovered) %>% 
   filter(week != "Total") %>% 
-  mutate(year = 2001) %>% 
+  mutate(year = 2001,
+         week = as.numeric(week)) %>% 
   rename(number_recaptured = number_recovered)
 ```
 
@@ -493,9 +515,9 @@ We need to assign labels to these codes
 
 ```{r}
 rst_combined %>% 
-  group_by(year = year(date), race) %>% 
+  group_by(year = year(date), run) %>% 
   tally() %>% 
-  ggplot(aes(x = year, y = n, fill = race)) +
+  ggplot(aes(x = year, y = n, fill = run)) +
   geom_col()
 ```
 
@@ -536,6 +558,7 @@ Ton of fish were marked in week 8 and 19 in 2001
 
 ```{r}
 efficiency_combined <- bind_rows(efficiency96_clean,
+                                 efficiency98_clean,
                                  efficiency01_clean) %>% glimpse()
 ```
 
@@ -637,9 +660,9 @@ We need to assign labels to these codes
 
 ```{r}
 recap_combined %>% 
-  group_by(year = year(date), race) %>% 
+  group_by(year = year(date), run) %>% 
   tally() %>% 
-  ggplot(aes(x = as.factor(year), y = n, fill = race)) +
+  ggplot(aes(x = as.factor(year), y = n, fill = run)) +
   geom_col()
 ```
 
