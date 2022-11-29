@@ -252,7 +252,27 @@ gcs_get_object(object_name = "standard-format-data/standard_rst_release_fish.csv
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "standard-format-data", "release_fish.csv"),
                overwrite = TRUE)
+# add in pre 2002 data
+gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/pre-2002-efficiency.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "knights-pre-2002-efficiency.csv"),
+               overwrite = TRUE)
+gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/pre-2002-mark.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "knights-pre-2002-mark.csv"),
+               overwrite = TRUE)
+gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/pre-2002-recap.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "knights-pre-2002-recap.csv"),
+               overwrite = TRUE)
 
+knights_pre2002 <- read_csv(here::here("data", "rst", "knights-pre-2002-efficiency.csv")) %>% 
+  rename(week_released = week,
+         year_released = year) %>% 
+  mutate(stream = "sacramento river",
+         site = "knights landing",
+         release_id = paste0("KNL", row_number())) # assign release id because does not exist
+  
 knights_release_fish <- read_csv(here::here("data","standard-format-data", "release_fish.csv")) %>% 
   filter(site == "knights landing") %>% 
   group_by(release_id) %>% 
@@ -270,6 +290,8 @@ knights_released <- read_csv(here::here("data", "rst", "knights_releases.csv")) 
   select(-light_condition) %>%  
   left_join(knights_release_fish) %>% 
   mutate(release_id = as.character(release_id)) %>% 
+  bind_rows(knights_pre2002 %>% 
+              select(date_released, week_released, year_released, release_id, number_released)) %>% 
   glimpse()
 
 knights_recaptured <- read_csv(here::here("data", "rst", "knights_recaptures.csv")) %>% 
@@ -277,7 +299,10 @@ knights_recaptured <- read_csv(here::here("data", "rst", "knights_recaptures.csv
   summarize(number_recaptured = sum(number_recaptured),
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
   mutate(release_id = as.character(release_id),
-         subsite = as.character(subsite)) %>% glimpse()
+         subsite = as.character(subsite)) %>% 
+  bind_rows(knights_pre2002 %>% 
+              select(date_released, week_released, year_released, release_id, number_recaptured)) %>% 
+glimpse()
 ```
 
 ### Tisdale
