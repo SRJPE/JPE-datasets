@@ -11,6 +11,9 @@ library(tidyverse)
 library(googleCloudStorageR)
 library(knitr)
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 ## Adult Redd Data Standardization
@@ -94,8 +97,14 @@ columns created:
 -   `flow_fps` changed to `velocity`
 
 ```{r}
-# Adult upstream passage data for Battle Creek
-battle_redd <- read_csv("../../data/redd-carcass-holding/battle_redd.csv", 
+gcs_get_object(
+  object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_redd.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "redd-carcass-holding", "battle_redd.csv"),
+  overwrite = TRUE
+)
+# Redd data for Battle Creek
+battle_redd <- read_csv(here::here("data", "redd-carcass-holding", "battle_redd.csv"), 
                         col_names = TRUE, 
                         col_types = list("n", "n", "D", "c", "n", "c", 
                                          "c", "c", "l", "l", "l", "n", 
@@ -166,8 +175,14 @@ O. mykiss data is included in this dataset.
 -   `method`: mostly snorkel surveys, method deemed unnecessary for final dataset
 
 ```{r}
+gcs_get_object(
+  object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_redd.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "redd-carcass-holding", "clear_redd.csv"),
+  overwrite = TRUE
+)
 # spring run Chinook Salmon from USFW - Ryan Shaffer 
-clear_redd <- read_csv("../../data/redd-carcass-holding/clear_redd.csv", 
+clear_redd <- read_csv(here::here("data", "redd-carcass-holding","clear_redd.csv"), 
                        col_names = TRUE,
                        col_types = list("c", "n", "n", "n", "n", "n", 
                                         "c", "n", "c", "D", "c", "c", "n", "c", 
@@ -201,7 +216,15 @@ clean_clear_redd <- clear_redd  |>
   glimpse()
 
 # load in aggregated clear creek data from other runs 
-clear_all_runs <- read_csv('../../../../CVPIA/CVPIA-EDA/jim_data_requests/redd_monitoring_data/all_redd_data_for_clear_creek.csv')
+# this data was pulled from CVPIA-EDA repo (CVPIA-EDA/jim_data_requests/redd_monitoring_data/all_redd_data_for_clear_creek.csv)
+# and saved to jpe google cloud for easy access
+gcs_get_object(
+  object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/all_redd_data_for_clear_creek.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "redd-carcass-holding", "all_redd_data_for_clear_creek.csv"),
+  overwrite = TRUE
+)
+clear_all_runs <- read_csv(here::here("data", "redd-carcass-holding", "all_redd_data_for_clear_creek.csv"))
 
 max_date <- max(clear_redd$date)
 print(max_date)
@@ -230,8 +253,13 @@ clean_clear_redd <- clear_fall_and_spring  |> glimpse()
 -   `starting_elevation_ft`: numeric and ranging from 1600 to 5200; deemed unnecessary for final dataset
 
 ```{r}
-
-mill_redd <- read_csv("../../data/redd-carcass-holding/mill_redd.csv")  |>  glimpse()
+gcs_get_object(
+  object_name = "adult-holding-redd-and-carcass-surveys/mill-creek/data/mill_redd_survey.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "redd-carcass-holding", "mill_redd.csv"),
+  overwrite = TRUE
+)
+mill_redd <- read_csv(here::here("data", "redd-carcass-holding", "mill_redd.csv"))  |>  glimpse()
 
 summary(mill_redd)
 
@@ -259,7 +287,13 @@ clean_mill_redd <- mill_redd  |>
 -   `percent_boulder`: numeric ranging from 0 to 70; mostly `NA` and deemed unnecessary
 
 ```{r}
-feather_redd <- read_csv("../../data/redd-carcass-holding/feather_redd.csv", 
+gcs_get_object(
+  object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_redd.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "redd-carcass-holding", "feather_redd.csv"),
+  overwrite = TRUE
+)
+feather_redd <- read_csv(here::here("data", "redd-carcass-holding", "feather_redd.csv"), 
                          col_names = TRUE, 
                          col_types = list("D", "c", "c", "n",
                                        "n", "n", "n", "n", "n",
@@ -296,8 +330,13 @@ clean_feather_redd <- feather_redd  |>
 None
 
 ```{r warning=FALSE}
-
-yuba_river_raw <- read_csv('../../data/redd-carcass-holding/yuba_redd.csv') |> 
+gcs_get_object(
+  object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_redd.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "redd-carcass-holding", "yuba_redd.csv"),
+  overwrite = TRUE
+)
+yuba_river_raw <- read_csv(here::here("data", "redd-carcass-holding", "yuba_redd.csv")) |> 
   glimpse()
 
 clean_yuba_redd <- yuba_river_raw |> 
@@ -530,11 +569,15 @@ knitr::kable(redd_count_by_year  |> head())
 
 ```{r, eval=FALSE}
 
-write_csv(all_redd_data, "../../data/redd-carcass-holding/standard_all_redd_data.csv")
-write_csv(redd_count_by_year, "../../data/redd-carcass-holding/standard_redd_data_by_year.csv")
-# f <- function(input, output) write_csv(input, file = output)
-# gcs_upload(clean_passage,
-#            object_function = f,
-#            type = "csv",
-#            name = "standard-format-data/standard_adult_upstream_passage.csv")
+write_csv(all_redd_data, here::here("data","redd-carcass-holding","standard_all_redd_data.csv"))
+write_csv(redd_count_by_year, here::here("data","redd-carcass-holding","standard_redd_data_by_year.csv"))
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(all_redd_data,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_daily_redd.csv")
+gcs_upload(redd_count_by_year,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_annual_redd.csv")
 ```

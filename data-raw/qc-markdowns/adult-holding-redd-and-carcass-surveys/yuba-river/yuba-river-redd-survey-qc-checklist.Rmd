@@ -272,6 +272,6 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(all_yuba_redd,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/2yuba_redd.csv",
+           name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_redd.csv",
            predefinedAcl = "bucketLevel")
 ```

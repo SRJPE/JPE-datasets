@@ -298,26 +298,26 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(all_yuba_redd,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/2yuba_redd.csv",
+           name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_redd.csv",
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2022-12-01 12:29:12 > File size detected as  170.9 Kb
+    ## ℹ 2022-12-01 13:02:53 > File size detected as  170.9 Kb
 
     ## ==Google Cloud Storage Object==
-    ## Name:                adult-holding-redd-and-carcass-surveys/yuba-river/data/2yuba_redd.csv 
+    ## Name:                adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_redd.csv 
     ## Type:                csv 
     ## Size:                170.9 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2F2yuba_redd.csv?generation=1669926552375407&alt=media 
-    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2F2yuba_redd.csv 
-    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2F2yuba_redd.csv 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2Fyuba_redd.csv?generation=1669928573960975&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2Fyuba_redd.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2Fyuba_redd.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/yuba-river/data/2yuba_redd.csv/1669926552375407 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_redd.csv/1669928573960975 
     ## MD5 Hash:            WEUnceZtCsPog7+iqodnMw== 
     ## Class:               STANDARD 
-    ## Created:             2022-12-01 20:29:12 
-    ## Updated:             2022-12-01 20:29:12 
-    ## Generation:          1669926552375407 
+    ## Created:             2022-12-01 21:02:53 
+    ## Updated:             2022-12-01 21:02:53 
+    ## Generation:          1669928573960975 
     ## Meta Generation:     1 
-    ## eTag:                CO+g0peh2fsCEAE= 
+    ## eTag:                CI+Gztuo2fsCEAE= 
     ## crc32c:              wjWppQ==
