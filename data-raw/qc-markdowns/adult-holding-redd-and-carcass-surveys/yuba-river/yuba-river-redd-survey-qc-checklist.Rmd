@@ -49,9 +49,29 @@ Any additional info?
 
 ## Access Cloud Data
 
+```{r, include = F, echo = F}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_get_object(
+  object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/data-raw/yuba_Redd data request Aug2022.xlsx",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/yuba-river/yuba_Redd_data_request_Aug2022.xlsx",
+  overwrite = TRUE
+)
+
+gcs_get_object(
+  object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/data-raw/2017Redd data request Aug2022.xlsx",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/yuba-river/2017Redd_data_request_Aug2022.xlsx",
+  overwrite = TRUE
+)
+```
+
+
 ```{r, eval=TRUE}
-sheets <- readxl::excel_sheets('yuba_Redd data request Aug2022.xlsx')
-raw_yuba_redd <- readxl::read_excel('yuba_Redd data request Aug2022.xlsx')
+sheets <- readxl::excel_sheets(here::here('data-raw', 'qc-markdowns', 'adult-holding-redd-and-carcass-surveys', 'yuba-river/yuba_Redd_data_request_Aug2022.xlsx'))
+raw_yuba_redd <- readxl::read_excel(here::here('data-raw', 'qc-markdowns', 'adult-holding-redd-and-carcass-surveys', 'yuba-river/yuba_Redd_data_request_Aug2022.xlsx'))
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet: 
@@ -61,11 +81,11 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 sheets %>%
   purrr::map(function(sheet){ # iterate through each sheet name
   assign(x = paste0('redd_',sheet),
-         value = readxl::read_xlsx(path = 'yuba_Redd data request Aug2022.xlsx', sheet = sheet) %>% janitor::clean_names(),
+         value = readxl::read_xlsx(path = here::here('data-raw', 'qc-markdowns', 'adult-holding-redd-and-carcass-surveys', 'yuba-river/yuba_Redd_data_request_Aug2022.xlsx'), sheet = sheet) %>% janitor::clean_names(),
          envir = .GlobalEnv)
 })
 
-redd_2017 <- readxl::read_xlsx('2017Redd data request Aug2022.xlsx') %>% janitor::clean_names()
+redd_2017 <- readxl::read_xlsx(here::here("data-raw","qc-markdowns", "adult-holding-redd-and-carcass-surveys", "yuba-river", "2017Redd_data_request_Aug2022.xlsx")) %>% janitor::clean_names()
 ```
 
 ## Data transformations
@@ -236,7 +256,7 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 **Create lookup rda for [variable] encoding:** 
 ```{r}
-save(all_yuba_redd, file = '../../../../data/redd-carcass-holding/yuba_redd.rda')
+save(all_yuba_redd, file = here::here('data/redd-carcass-holding/yuba_redd.rda'))
 ```
 
 **NA and Unknown Values**
@@ -247,7 +267,11 @@ save(all_yuba_redd, file = '../../../../data/redd-carcass-holding/yuba_redd.rda'
 ## Save cleaned data back to google cloud 
 
 ```{r}
-# Write to google cloud 
-write_csv(all_yuba_redd, '../../../../data/redd-carcass-holding/yuba_redd.csv')
-# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(all_yuba_redd,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/2yuba_redd.csv",
+           predefinedAcl = "bucketLevel")
 ```

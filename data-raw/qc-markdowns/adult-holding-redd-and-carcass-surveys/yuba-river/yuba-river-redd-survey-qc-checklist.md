@@ -15,18 +15,18 @@ Maddee Rubenson
 primarily during October - December. The number of samples per month is
 summarized below.
 
-- January: 75
-- February: 34
-- March: 40
-- April: 15
-- May: 0
-- June: 0
-- July: 0
-- August: 0
-- September: 174
-- October: 759
-- November: 639
-- December: 188
+-   January: 75
+-   February: 34
+-   March: 40
+-   April: 15
+-   May: 0
+-   June: 0
+-   July: 0
+-   August: 0
+-   September: 174
+-   October: 759
+-   November: 639
+-   December: 188
 
 **Sampling Location:**
 
@@ -40,8 +40,8 @@ Any additional info?
 ## Access Cloud Data
 
 ``` r
-sheets <- readxl::excel_sheets('yuba_Redd data request Aug2022.xlsx')
-raw_yuba_redd <- readxl::read_excel('yuba_Redd data request Aug2022.xlsx')
+sheets <- readxl::excel_sheets(here::here('data-raw', 'qc-markdowns', 'adult-holding-redd-and-carcass-surveys', 'yuba-river/yuba_Redd_data_request_Aug2022.xlsx'))
+raw_yuba_redd <- readxl::read_excel(here::here('data-raw', 'qc-markdowns', 'adult-holding-redd-and-carcass-surveys', 'yuba-river/yuba_Redd_data_request_Aug2022.xlsx'))
 ```
 
 Read in data from google cloud, glimpse raw data and domain description
@@ -213,7 +213,7 @@ ggplot(data = all_yuba_redd) +
   geom_point(aes(x = date, y = depth_m))
 ```
 
-![](yuba-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](yuba-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 **Numeric Summary of velocity**
 
@@ -222,7 +222,7 @@ ggplot(data = all_yuba_redd) +
   geom_point(aes(x = date, y = velocity))
 ```
 
-![](yuba-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](yuba-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 **Numeric Summary of num_of_fish_on_redd**
 
@@ -231,7 +231,7 @@ ggplot(data = all_yuba_redd) +
   geom_jitter(aes(x = date, y = num_of_fish_on_redd))
 ```
 
-![](yuba-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](yuba-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 **NA and Unknown Values**
 
 Provide a stat on NA or unknown values
@@ -283,7 +283,7 @@ Fix inconsistencies with spelling, capitalization, and abbreviations.
 **Create lookup rda for \[variable\] encoding:**
 
 ``` r
-save(all_yuba_redd, file = '../../../../data/redd-carcass-holding/yuba_redd.rda')
+save(all_yuba_redd, file = here::here('data/redd-carcass-holding/yuba_redd.rda'))
 ```
 
 **NA and Unknown Values**
@@ -293,7 +293,31 @@ save(all_yuba_redd, file = '../../../../data/redd-carcass-holding/yuba_redd.rda'
 ## Save cleaned data back to google cloud
 
 ``` r
-# Write to google cloud 
-write_csv(all_yuba_redd, '../../../../data/redd-carcass-holding/yuba_redd.csv')
-# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(all_yuba_redd,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/2yuba_redd.csv",
+           predefinedAcl = "bucketLevel")
 ```
+
+    ## ℹ 2022-11-29 13:32:28 > File size detected as  170.9 Kb
+
+    ## ==Google Cloud Storage Object==
+    ## Name:                adult-holding-redd-and-carcass-surveys/yuba-river/data/2yuba_redd.csv 
+    ## Type:                csv 
+    ## Size:                170.9 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2F2yuba_redd.csv?generation=1669757548565815&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2F2yuba_redd.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2F2yuba_redd.csv 
+    ## Bucket:              jpe-dev-bucket 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/yuba-river/data/2yuba_redd.csv/1669757548565815 
+    ## MD5 Hash:            WEUnceZtCsPog7+iqodnMw== 
+    ## Class:               STANDARD 
+    ## Created:             2022-11-29 21:32:28 
+    ## Updated:             2022-11-29 21:32:28 
+    ## Generation:          1669757548565815 
+    ## Meta Generation:     1 
+    ## eTag:                CLeqrMyr1PsCEAE= 
+    ## crc32c:              wjWppQ==
