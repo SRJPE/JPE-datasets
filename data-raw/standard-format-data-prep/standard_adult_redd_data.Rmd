@@ -127,9 +127,8 @@ clean_battle_redd <- battle_redd  |>
          pre_redd_substrate_size, redd_substrate_size, 
          tail_substrate_size, 
          flow_fps)  |>
-  group_by(date, reach)  |>
-  mutate(redd_count = n(),
-         stream = 'Battle Creek', 
+  mutate(redd_count = 1, # each row is a redd observation
+         stream = 'battle creek', 
          year = lubridate::year(date))  |>
   rename(velocity = flow_fps)  |>
   glimpse()
@@ -147,8 +146,7 @@ O. mykiss data is included in this dataset.
 -   `survey`: integer ranging from 1 to 12; deemed unnecessary for final dataset
 -   `X1000ftbreak`: deemed unnecessary for final dataset
 -   `ucc_relate`: enumerated value of `above` or `below`; deemed unnecessary for final dataset
--   `picket_weir_location`: numeric value ranging from 7.4 to 8.2; deemed unnecessary for final dataset
--   `picket_weir_relation`: this could be used to determine the run type, if needed; enumerated as `above` or `below`
+-   `picket_weir_location`: numeric value ranging from 7.4 to 8.2; deemed unnecessary for final dataset because `picket_weir_relation` is included
 -   `redd_id`: unique identifier to each redd; deemed unnecessary for final redd dataset
 -   `gravel`: enumerated value of `combination`, `injection`, or `native`; deemed unnecessary for final redd dataset
 -   `fish_on_redd`: TRUE/FALSE
@@ -157,7 +155,6 @@ O. mykiss data is included in this dataset.
 -   `pre_redd_depth`: numeric range from 0.13 to 2.24; deemed unnecessary
 -   `redd_pit_depth`: numeric range from 0.15 to 2.41; deemed unnecessary
 -   `redd_tail_depth`: numeric range from 0.076 to 2.13; deemed unnecessary
--   `velocity`: numeric range from 0.25 to 11.1; deemed unnecessary
 -   `start_60`: numeric; deemed unnecessary
 -   `end_60`: numeric; deemed unnecessary
 -   `sec_60`: numeric; deemed unnecessary
@@ -167,12 +164,10 @@ O. mykiss data is included in this dataset.
 -   `bomb_vel60`: numeric; deemed unnecessary
 -   `bomb_vel80`: numeric; deemed unnecessary
 -   `comments`: unique to dataset and deemed unnecessary
--   `run`: enumerated as `spring`, `fall`, `late-fall` though mostly `NA`; deemed unnecessary.
 -   `observation_reach` -- Incomplete and matches `surveyed_reach`
 -   `observation_date` -- Incomplete and matches `date`
 -   `observation_age` -- Incomplete and matches `age`
 -   `survey_observed`: TRUE/FALSE though mostly `NA`
--   `method`: mostly snorkel surveys, method deemed unnecessary for final dataset
 
 ```{r}
 gcs_get_object(
@@ -205,10 +200,10 @@ clean_clear_redd <- clear_redd  |>
          redd_length, redd_width, run,
          pre_redd_substrate_size, redd_substrate_size, 
          tail_substrate_size, 
-         velocity)  |> # feet per second
-  group_by(date, surveyed_reach)  |>
-  mutate(redd_count = length(measured),
-         stream = 'Clear Creek', 
+         velocity, picket_weir_relation, age,
+         method)  |> # feet per second
+  mutate(redd_count = 1, # each row is a redd observation
+         stream = 'clear creek', 
          year = lubridate::year(date))  |>  
   rename(reach = surveyed_reach,
          redd_measured = measured,
@@ -235,7 +230,8 @@ spring_filter <- clear_all_runs  |>
 clear_fall_and_spring <- clear_all_runs  |> 
   filter(run == "late fall")  |>
   bind_rows(spring_filter)  |>
-  mutate(stream = "Clear Creek")  |>
+  mutate(stream = "clear creek",
+         redd_count = 1)  |> # each row is a redd observation
   bind_rows(clean_clear_redd)  |>
   mutate(run = case_when(run == "late-fall" ~ "late fall",
                          TRUE ~ as.character(run)))
@@ -250,7 +246,7 @@ clean_clear_redd <- clear_fall_and_spring  |> glimpse()
 
 #### Columns Removed
 
--   `starting_elevation_ft`: numeric and ranging from 1600 to 5200; deemed unnecessary for final dataset
+None
 
 ```{r}
 gcs_get_object(
@@ -265,8 +261,7 @@ summary(mill_redd)
 
 clean_mill_redd <- mill_redd  |>
   rename(reach = location)  |>
-  select(-starting_elevation_ft)  |>
-  mutate(stream = 'Mill Creek')  |>
+  mutate(stream = 'mill creek')  |>
   glimpse()
 ```
 
@@ -310,7 +305,7 @@ clean_feather_redd <- feather_redd  |>
   rename(reach = location,
          redd_width = redd_width_m, 
          redd_length = redd_length_m)  |>
-  mutate(stream = "Feather River",
+  mutate(stream = "feather river",
          year = lubridate::year(date),
          date = as.Date(date),
          velocity = velocity_m_per_s / 0.3048)  |> # convert to feet per second 
@@ -340,7 +335,8 @@ yuba_river_raw <- read_csv(here::here("data", "redd-carcass-holding", "yuba_redd
   glimpse()
 
 clean_yuba_redd <- yuba_river_raw |> 
-  mutate(stream = "Yuba River") 
+  mutate(stream = "yuba river",
+         redd_count = 1) # each row is a redd observation 
 ```
 
 ## Combine data:
@@ -355,7 +351,12 @@ all_redd_data <- bind_rows(clean_battle_redd,
                            clean_yuba_redd)  |> 
   select(-redd_count)  |>
   # remove mill creek
-  filter(stream != "Mill Creek")  
+  filter(stream != "mill creek")  |> 
+  mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
+                             species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
+                             species == "SH" ~ "steelhead",
+                             is.na(species) ~ "not recorded"),
+         run = ifelse(is.na(run), "not recorded", run))
 ```
 
 ## Substrate Size Standardization
@@ -521,16 +522,22 @@ redd_count_by_year <- bind_rows(clean_battle_redd,
                            clean_clear_redd,
                            clean_feather_redd, 
                            clean_yuba_redd)  |> 
-  group_by(reach, date)  |>
-  mutate(sum_redd = n())  |>
-  # how many redds were counted on each day? 
-  group_by(year, stream)  |>
-  mutate(max_yearly_redd_count = max(sum_redd))  |>  # maximum per year 
+  # find the redd count by date/stream/reach/species/run
+  group_by(reach, date, stream, year, species, run)  |>
+  summarize(redd_count = sum(redd_count))  |>
+  ungroup() |> 
+  # since some redds may be double counted, summarize yearly count by date
+  # as we learn more about methods we can summarize using a better method
+  group_by(year, stream, reach, species, run)  |>
+  summarize(max_yearly_redd_count = max(redd_count, na.rm = T))  |>  # maximum per year 
   bind_rows(clean_mill_redd  |> 
-              group_by(year, reach)  |>
-              mutate(max_yearly_redd_count = max(redd_count, na.rm = TRUE))) |>
-  select(year, reach, stream, species, run, max_yearly_redd_count)  |>
-  distinct()  
+              rename(max_yearly_redd_count = redd_count) |> 
+              select(-starting_elevation_ft)) |> 
+  mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
+                             species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
+                             species == "SH" ~ "steelhead",
+                             is.na(species) ~ "not recorded"),
+         run = ifelse(is.na(run), "not recorded", run))
 
 
 ```
@@ -548,9 +555,11 @@ all_redd_data  |>
   facet_wrap(~ stream)
 
 # Note: based on plot, count value could be double counting for Mill Creek
+# I spent some time trying to figure out why feather and mill are so much higher
+# feather does survey a lot of reaches. this may be an artificat of the methodology
 redd_count_by_year  |> 
-  select(year, max_yearly_redd_count, stream)  |>
-  distinct()  |>
+  group_by(year, stream)  |> # add across reaches
+  summarize(max_yearly_redd_count = sum(max_yearly_redd_count, na.rm = T)) |> 
 ggplot() + 
   geom_col(aes(x = year, y = max_yearly_redd_count, fill = stream)) + 
   facet_wrap(~stream) +
