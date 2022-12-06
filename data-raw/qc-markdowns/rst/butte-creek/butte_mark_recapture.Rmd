@@ -138,9 +138,9 @@ butte_efficiency_camp %>%
          wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released)),
          wy = as.factor(wy)) %>% 
   group_by(wy) %>% 
-  summarise(n = length(unique(date_released)),
+  summarise(number_trials = length(unique(date_released)),
             mean_efficiency = mean(efficiency)) %>%  
-  ggplot(aes(x = wy, y = mean_efficiency, fill = n)) +
+  ggplot(aes(x = wy, y = mean_efficiency, fill = number_trials)) +
   geom_col() + 
   theme_minimal()
 ```
