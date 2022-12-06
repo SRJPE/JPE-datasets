@@ -105,7 +105,8 @@ write_csv(TagEnv_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd
 ```{r}
 #Heading Info for Chopped Data
 #Columns that were not in ChopEnv 2001: Flow and vis
-ChopEnv_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
+ChopEnv_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                   "adult-holding-redd-and-carcass-surveys",
                                    "feather-river","ChopEnv_2001.csv")) %>% 
   # mutate("Start" = as_hms("Start")) %>%
   glimpse()
