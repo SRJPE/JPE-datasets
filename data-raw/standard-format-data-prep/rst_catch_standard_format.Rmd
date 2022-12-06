@@ -325,7 +325,7 @@ butte_rst_clean_pre_2015 <- butte_rst %>%
   mutate(stream = "butte creek",
          site = case_when(grepl("Okie Dam", subsite) ~ "okie dam",
                           T ~ tolower(subsite)),
-         subsite = ifelse(gear_id == "diversion fyke trap 1", "okie fyke trap", tolower(site)),
+         subsite = ifelse(gear_id == "diversion fyke trap 1", "okie fyke trap", tolower(subsite)),
          run = "spring",
          adipose_clipped = case_when(adipose_clipped == "none" ~ F,
                             adipose_clipped == "adclipped" ~ T),
