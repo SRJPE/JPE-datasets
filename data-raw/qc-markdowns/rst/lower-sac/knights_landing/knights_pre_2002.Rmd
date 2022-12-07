@@ -117,7 +117,7 @@ trap97_clean <- sum97 %>%
   select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
   rename(effort = effrt_time,
          avg_rpm = rpm_averag,
-         velocity = pt_vel)
+         velocity = pt_vel) |> glimpse()
 
 rst97_clean <- rst97 %>% 
   janitor::clean_names() %>% 
@@ -127,7 +127,7 @@ rst97_clean <- rst97 %>%
          mark = case_when(mark == "A" | mark == 0 ~ F, 
                           mark == "B" | mark == "BB" ~ T)
          ) %>% 
-  select(date, time, trapid, fl, ww, lifestage, race, mark, adipose_clip)
+  select(date, time, trapid, fl, ww, lifestage, race, mark, adipose_clip) |> glimpse()
 
 rst97_clean %>% group_by(mark) %>% tally()
 ```
@@ -171,7 +171,7 @@ trap98_clean <- sum98 %>%
   select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
   rename(effort = effrt_time,
          avg_rpm = rpm_averag,
-         velocity = pt_vel)
+         velocity = pt_vel) |> glimpse()
 
 rst98_clean <- rst98 %>% 
   janitor::clean_names() %>% 
@@ -180,13 +180,13 @@ rst98_clean <- rst98 %>%
          adipose_clip = ifelse(mark == "A", T, F),
          mark = case_when(mark == "A" | mark == 0 ~ F, 
                           mark == "B" | mark == "BB" ~ T)) %>% 
-  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, adipose_clip)
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, adipose_clip) |> glimpse()
 
 rst98_clean %>% group_by(mark) %>% tally()
 
 efficiency98_clean <- efficiency98 %>% 
   janitor::clean_names() %>% 
-  rename(number_recaptured = number_recovered)
+  rename(number_recaptured = number_recovered) |> glimpse()
 ```
 
 # 1999
@@ -347,7 +347,8 @@ operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", S
 
 if(operating_system == "pc") {
   library(RODBC)
-  sum01 <- sqlFetch(paste0(path, "sum01.mdb"), "KL01SUM1")
+  connection <- odbcConnectAccess2007(paste0(path, "sum01.mdb"))
+  sum01 <- sqlFetch(connection, "KL01SUM1")
   } else{
     library(Hmisc)
     sum01 <- mdb.get(paste0(path, "sum01.mdb"), tables = "KL01SUM1") %>% glimpse()
