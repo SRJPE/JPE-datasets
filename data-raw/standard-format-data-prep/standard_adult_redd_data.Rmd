@@ -36,7 +36,7 @@ Data dictionary for standard format for `all_redd_data`:
 F - Feather River, Y - Yuba River)
 
 | column name              | tributary collects | definition                                                         |
-|:-----------------|:-----------------|:------------------------------------|
+|:-----------------|:-----------------|:-----------------------------------|
 | date                     | B, C, F, Y         | Date in which redd data was collected                              |
 | latitude                 | B, C, F, Y         | Latitude of redd location                                          |
 | longitude                | B, C, F, Y         | Longitude of redd location                                         |
@@ -63,7 +63,7 @@ This dataset includes `max_yearly_redd_count` which is the maximum number of red
 Data dictionary for standard format for `max_yearly_redd_count`:
 
 | column name           | tributary collects | definition                                                          |
-|:-----------------|:-----------------|:-----------------------------------|
+|:-----------------|:-----------------|:----------------------------------|
 | date                  | B, C, F, Y         | Date in which redd data was collected                               |
 | reach                 | B, C, F, M         | Unique name identifier of reach sampled                             |
 | stream                | B, C, F, M         | Unique stream associated with redd data collected                   |
@@ -137,78 +137,14 @@ clean_battle_redd <- battle_redd  |>
 
 ### Clear Creek
 
-FlowWest acquired Clear Creek redd data for late fall and spring runs through CVPIA. This data was integrated into this dataset by taking the maximum date of data provided to JPE spring run and filtering the CVPIA-provided spring run to only include newer data. Late fall run data was bound to this dataset.
+FlowWest acquired Clear Creek redd data for late fall and spring runs through CVPIA.
 
 O. mykiss data is included in this dataset.
 
 #### Columns Removed
 
--   `survey`: integer ranging from 1 to 12; deemed unnecessary for final dataset
--   `X1000ftbreak`: deemed unnecessary for final dataset
--   `ucc_relate`: enumerated value of `above` or `below`; deemed unnecessary for final dataset
--   `picket_weir_location`: numeric value ranging from 7.4 to 8.2; deemed unnecessary for final dataset because `picket_weir_relation` is included
--   `redd_id`: unique identifier to each redd; deemed unnecessary for final redd dataset
--   `gravel`: enumerated value of `combination`, `injection`, or `native`; deemed unnecessary for final redd dataset
--   `fish_on_redd`: TRUE/FALSE
--   `why_not_measured`: description of why redd was not measured; deemed unnecessary for final redd dataset
--   `date_measured`: chose to use `date` instead of this column
--   `pre_redd_depth`: numeric range from 0.13 to 2.24; deemed unnecessary
--   `redd_pit_depth`: numeric range from 0.15 to 2.41; deemed unnecessary
--   `redd_tail_depth`: numeric range from 0.076 to 2.13; deemed unnecessary
--   `start_60`: numeric; deemed unnecessary
--   `end_60`: numeric; deemed unnecessary
--   `sec_60`: numeric; deemed unnecessary
--   `start_80`: numeric; deemed unnecessary
--   `end_80`: numeric; deemed unnecessary
--   `sec_80`: numeric; deemed unnecessary
--   `bomb_vel60`: numeric; deemed unnecessary
--   `bomb_vel80`: numeric; deemed unnecessary
--   `comments`: unique to dataset and deemed unnecessary
--   `observation_reach` -- Incomplete and matches `surveyed_reach`
--   `observation_date` -- Incomplete and matches `date`
--   `observation_age` -- Incomplete and matches `age`
--   `survey_observed`: TRUE/FALSE though mostly `NA`
-
 ```{r}
-gcs_get_object(
-  object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_redd.csv",
-  bucket = gcs_get_global_bucket(),
-  saveToDisk = here::here("data", "redd-carcass-holding", "clear_redd.csv"),
-  overwrite = TRUE
-)
-# spring run Chinook Salmon from USFW - Ryan Shaffer 
-clear_redd <- read_csv(here::here("data", "redd-carcass-holding","clear_redd.csv"), 
-                       col_names = TRUE,
-                       col_types = list("c", "n", "n", "n", "n", "n", 
-                                        "c", "n", "c", "D", "c", "c", "n", "c", 
-                                        "c", "c", "c", "c", "c", "l", "l", "l", 
-                                        "D", "n", "n", "n", "n", "n", "n", "n", 
-                                        "n", "n", "n", "n", "n", "c", "c", "c",
-                                        "D", "n", "l", "n", "n"))  |> glimpse()
-
-summary(clear_redd)
-table(clear_redd$method, useNA = "ifany")
-table(clear_redd$ucc_relate, useNA = "ifany")
-table(clear_redd$picket_weir_relation, useNA = "ifany")
-table(clear_redd$run, useNA = "ifany")
-
-
-clean_clear_redd <- clear_redd  |>
-  select(surveyed_reach, date, river_mile, 
-         latitude, longitude, 
-         measured, fish_on_redd,
-         redd_length, redd_width, run,
-         pre_redd_substrate_size, redd_substrate_size, 
-         tail_substrate_size, 
-         velocity, picket_weir_relation, age,
-         method)  |> # feet per second
-  mutate(redd_count = 1, # each row is a redd observation
-         stream = 'clear creek', 
-         year = lubridate::year(date))  |>  
-  rename(reach = surveyed_reach,
-         redd_measured = measured,
-         fish_guarding = fish_on_redd)  |>
-  glimpse()
+# TODO: just use CVPIA data
 
 # load in aggregated clear creek data from other runs 
 # this data was pulled from CVPIA-EDA repo (CVPIA-EDA/jim_data_requests/redd_monitoring_data/all_redd_data_for_clear_creek.csv)
@@ -221,23 +157,12 @@ gcs_get_object(
 )
 clear_all_runs <- read_csv(here::here("data", "redd-carcass-holding", "all_redd_data_for_clear_creek.csv"))
 
-max_date <- max(clear_redd$date)
-print(max_date)
-
-spring_filter <- clear_all_runs  |> 
-  filter(run == "spring")  |>
-  filter(date > max_date)
-clear_fall_and_spring <- clear_all_runs  |> 
-  filter(run == "late fall")  |>
-  bind_rows(spring_filter)  |>
+clean_clear_redd <- clear_all_runs  |> 
   mutate(stream = "clear creek",
          redd_count = 1)  |> # each row is a redd observation
-  bind_rows(clean_clear_redd)  |>
-  mutate(run = case_when(run == "late-fall" ~ "late fall",
+   mutate(run = case_when(run == "late-fall" ~ "late fall",
                          TRUE ~ as.character(run)))
 
-# replace name 
-clean_clear_redd <- clear_fall_and_spring  |> glimpse()
 ```
 
 ### Mill Creek
@@ -383,7 +308,10 @@ substrate_class = data.frame("standardized_size_range" = c("<0.25",
                                                            "0.25-0.5",
                                                            "0.5-1",
                                                            "1-2",
-                                                           "2-4", "4-8", '8-16', ">16"),
+                                                           "2-4", 
+                                                           "4-8", 
+                                                           '8-16', 
+                                                           ">16"),
                               "redd_substrate_class" = c("fine sand",
                                                     "medium sand",
                                                     "coarse sand", "very coarse sand",
@@ -395,12 +323,9 @@ unique(all_redd_data$redd_substrate_size)
 
 redd_substrate_size_lookup <- 
   data.frame("redd_substrate_size" = unique(all_redd_data$redd_substrate_size),
-                     "standardized_size_range" = c(NA, "1-2", "2-4", "1-2", "2-4",
-                                                   "2-4", "1-2", "2-4", "0.25-0.5", 
-                                                   "<0.25", "4-8", "4-8", ">16", "2-4", 
-                                                   "2-4", "1-2", "2-4", "1-2", "2-4",
-                                                   "0.25-0.5", "2-4", "2-4", "4-8", 
-                                                   "4-8", "8-16"))  |> 
+             "standardized_size_range" = c(NA, "1-2", "2-4", "1-2", "2-4",
+                                           "2-4", "1-2", "2-4", "0.25-0.5", 
+                                           "<0.25", "4-8", "4-8", ">16", "2-4")) |> 
   left_join(substrate_class)
                     
 tail_substrate_size_lookup <- all_redd_data  |> 
