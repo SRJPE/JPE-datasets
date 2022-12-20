@@ -779,8 +779,8 @@ knights_rst_clean_pre2002 <- knights_landing_pre2002 %>%
          weight = ww,
          adipose_clipped = adipose_clip,
          dead = mort) %>% 
-  # filter out marks (these are recaptures except in 1997 when they may be fish caught in trap for first time)
-  filter(is.na(mark) | mark == F | (date >= "1996-11-24" & date <= "1997-10-03")) %>% 
+  # filter includes only fish that were unmarked (is.na or mark == F) or if the date was between 1996-11-24 and 1997-10-03 because the fish that were marked TRUE in this time period may be fish caught in trap for first time
+  filter((is.na(mark) | mark == F | (date >= "1996-11-24" & date <= "1997-10-03"))) %>% 
   group_by(date, subsite, fork_length, weight, lifestage, run, adipose_clipped, dead) %>% 
   summarize(count = sum(count))
 
