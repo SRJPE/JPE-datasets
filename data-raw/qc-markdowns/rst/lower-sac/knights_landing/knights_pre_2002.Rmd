@@ -461,7 +461,9 @@ rst_combined <- bind_rows(rst96_clean,
                          race == 2 ~ "spring",
                          race == 3 ~ "winter",
                          race == 4 ~ "late fall",
-                         race == 5 ~ "unknown")) %>% 
+                         race == 5 ~ "unknown"),
+         # assuming -83 is a typo and they meant 83 fork length
+         fl = ifelse(fl == -83, 83, fl)) %>% 
   select(-race) %>% 
   glimpse()
 ```
