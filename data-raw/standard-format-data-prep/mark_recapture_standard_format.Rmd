@@ -19,8 +19,8 @@ knitr::opts_knit$set(root.dir)
 ```{r, include = FALSE}
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089")
 
-Sys.getenv("GCS_DEFAULT_BUCKET")
-Sys.getenv("GCS_AUTH_FILE")
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 ## Mark Recapture Data Standardization
@@ -134,6 +134,61 @@ battle_recaptured <-  battle_mark_recap %>%
   
 ```
 
+### Butte Creek
+
+```{r, message=FALSE, warning=FALSE}
+gcs_get_object(object_name = "rst/butte-creek/data/butte_releases.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "butte_releases.csv"),
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/butte-creek/data/butte_recaptures.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "butte_recaptures.csv"),
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/butte-creek/data-raw/butte_release_fish_camp.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "butte_release_fish_camp.csv"),
+               overwrite = TRUE)
+
+# Does not look like they have any info on fork length 
+butte_release_fish <- read_csv(here::here("data","rst", "butte_release_fish_camp.csv")) %>% 
+  group_by(release_id = releaseID) %>% 
+  summarize(median_fork_length_released = median(forkLength, na.rm = T)) %>% glimpse
+
+butte_released <- read_csv(here::here("data", "rst", "butte_releases.csv")) %>% 
+  mutate(subsite_released = ifelse(is.na(subsite_released) | 
+                                     subsite_released == "not applicable (n/a)", 
+                                   "not recorded", subsite_released),
+         day_or_night_release = ifelse(light_condition %in% 
+                                         c("Twilight / dusk", "Night, dark", 
+                                           "Night, moonlit"), "night", "day"),
+         day_or_night_release = ifelse(light_condition %in% 
+                                         c("Twilight / dusk", "Night, dark", 
+                                           "Night, moonlit"), "night", "day"),
+         run_released = ifelse(is.na(run_released), "not recorded", tolower(run_released)),
+         lifestage_released = ifelse(is.na(lifestage_released), "not recorded",
+                                     tolower(lifestage_released)),
+         source_released = case_when(source_released == "Parrott-Phelan canal trap box" ~ "okie fyke trap",
+                                     source_released == "Parrot-Phelan RST" ~ "okie RST", 
+                                     T ~ "not recorded"),
+         origin_released = ifelse(is.na(origin_released), "not recorded",
+                                  tolower(origin_released)),
+         include = ifelse(is.na(include), "yes", tolower(include))) %>% 
+  select(-light_condition) %>%  
+  left_join(butte_release_fish) %>% 
+  mutate(release_id = as.character(release_id)) %>% 
+  glimpse()
+
+butte_recaptured <- read_csv(here::here("data", "rst", "butte_recaptures.csv")) %>% 
+  group_by(stream, site, subsite, release_id, date_recaptured) %>% 
+  summarize(number_recaptured = sum(number_recaptured),
+            median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
+  mutate(release_id = as.character(release_id)) %>% glimpse()
+
+```
+
 ### Clear Creek
 
 #### Columns Removed
@@ -166,7 +221,7 @@ clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv
                                     date_recaptured == "caught_day_4" ~ release_date + 4,
                                     date_recaptured == "caught_day_5" ~ release_date + 5,),
          median_fork_length_recaptured = ifelse(number_recaptured == 0 | is.na(number_recaptured), 
-                                                NA, as.numeric(median_fork_length_recaptured))) %>%
+                                                NA, as.numeric(median_fork_length_recaptured))) %>% 
     filter(!is.na(number_released)) # filter 2 values that have na in raw data for number released
 
 clear_released <- clear_mark_recap %>% 
