@@ -177,6 +177,7 @@ The `chop_recovery` table contains recovered carcass counts by color
 
 ```{r}
 # according to Access relationships, ChanID connects the header to the Recovery table
+# TODO no ChanID in ChopHeader_raw
 chop_recovery_join <- full_join(ChopHeader_raw |> 
                                   select(HeaderID, Date, Time),
                                 ChopRecov_raw |> 
