@@ -509,9 +509,11 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(all_redd_data,
            object_function = f,
            type = "csv",
-           name = "standard-format-data/standard_daily_redd.csv")
+           name = "standard-format-data/standard_daily_redd.csv",
+           predefinedAcl = "bucketLevel")
 gcs_upload(redd_count_by_year,
            object_function = f,
            type = "csv",
-           name = "standard-format-data/standard_annual_redd.csv")
+           name = "standard-format-data/standard_annual_redd.csv",
+           predefinedAcl = "bucketLevel")
 ```
