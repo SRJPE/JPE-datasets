@@ -39,6 +39,14 @@ gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knl_combi
                overwrite = TRUE)
 
 knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
+
+# pull in effort for knights landing pre 2002
+gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/pre-2002-trap.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/knights_pre_2002_trap.csv",
+               overwrite = TRUE)
+
+knights_effort_pre2002 <- read_csv(here::here("data", "rst", "knights_pre_2002_trap.csv"))
 ```
 
 # Method
@@ -430,6 +438,19 @@ knights_hours_fished_pre2006 <- knights_effort_pre2006 %>%
   mutate(subsite = "knights landing",
          hours_fished_methodology = "calculated by knights landing") # catch data pre 2006 is aggregated across traps
 
+# prior to 2002 data stored in database files where hours fished was calculated
+knights_hours_fished_pre2002 <- knights_effort_pre2002 %>% 
+  select(date, trapid, effort) %>% 
+  rename(trap_stop_date = date,
+         hours_fished = effort,
+         subsite = trapid) %>% 
+  mutate(stream = "sacramento river",
+         site = "knights landing") %>% 
+  group_by(stream, site, subsite, trap_stop_date) %>% 
+  summarize(hours_fished = sum(hours_fished, na.rm = T)) %>% 
+  mutate(subsite = ifelse(is.na(subsite), "knights landing", as.character(subsite)), # there are a few subsites that are NA so fill in with Knights Landing
+         hours_fished_methodology = "calculated by knights landing") 
+
 ### Hours fished ####
 # calculate hours fished only for period of times when trap was fishing otherwise there will be duplicates that don't make sense
 knights_hours_fished <- trap %>% 
@@ -443,7 +464,8 @@ knights_hours_fished <- trap %>%
   mutate(hours_fished_methodology = "using start time and stop time") %>% 
   hours_fished() %>% 
   mutate(hours_fished = as.numeric(hours_fished)) %>% 
-  bind_rows(knights_hours_fished_pre2006)
+  bind_rows(knights_hours_fished_pre2006,
+            knights_hours_fished_pre2002)
 
 knitr::kable(head(knights_hours_fished, 5))
 ```
