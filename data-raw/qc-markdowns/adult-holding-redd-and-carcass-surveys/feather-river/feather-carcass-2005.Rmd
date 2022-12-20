@@ -169,7 +169,8 @@ The `chop_recovery` table contains recovered carcass counts by color
 
 ```{r}
 # 2. choprecovery table (with dates)
-
+# TODO should not be joining on RecovID
+# TODO should join headerID to chopchannel headerID, and then chanID from chop channel to ChopRecovery
 chop_recovery_join <- full_join(ChopHeader_raw %>% 
                                   select(ID, Date, Time),
                                 ChopRecov_raw %>% 

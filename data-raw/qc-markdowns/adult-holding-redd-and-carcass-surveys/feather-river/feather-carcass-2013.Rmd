@@ -142,7 +142,7 @@ The `chop` table contains carcass counts by chop/tagged based on clips
 
 
 ```{r}
-
+# TODO same join relationships as 2011
 #1. chop table (with dates and tag color)
 chop_join <- full_join(ChopHeader_raw %>% 
                                  select(ID, Date),

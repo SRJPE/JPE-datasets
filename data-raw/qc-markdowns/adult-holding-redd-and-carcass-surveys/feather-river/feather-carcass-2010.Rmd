@@ -162,7 +162,7 @@ chop_channel_join <- full_join(ChopHeader_raw %>%
   clean_names()
 
 # 2. choprecovery table (with dates)
-
+# TODO should not be joining on RecovID; should join on ChanID instead
 chop_recovery_join <- full_join(ChopHeader_raw %>% 
                                   select(ID, Date),
                                 ChopRecov_raw %>% 

@@ -158,6 +158,7 @@ The `chop_channel` table contains carcass counts by chop/tagged based on clips
 
 ```{r}
 #1. chopchannel table (with dates and tag color)
+# TODO join on HeaderID
 chop_channel_join <- full_join(ChopHeader_raw %>% 
                                  select(ID, TagCol, Date, Time),
                                ChopChannel_raw, by = "ID") %>% 
@@ -170,6 +171,7 @@ The `chop_recovery` table contains recovered carcass counts by color
 
 ```{r}
 # 2. choprecovery table (with dates)
+# TODO should not be joining on RecovID here; should be joining on ChanID
 chop_recovery_join <- full_join(ChopHeader_raw %>% 
                                   select(ID, Date, Time),
                                 ChopRecov_raw %>% 

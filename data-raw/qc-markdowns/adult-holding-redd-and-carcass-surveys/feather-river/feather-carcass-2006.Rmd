@@ -176,6 +176,9 @@ The `chop_recovery` table contains recovered carcass counts by color
 # 2. choprecovery table (with dates)
 # The IDs in ChopHeader_raw do not align with the ChopRecov_raw table. Not sure we need the ChopRecovery table for later analyses.
 
+# TODO should not be joining on RecovID
+# ChopHeader$headerID join to ChopChannel$headerID, then chopchannel$chanID to choprecov$chanid
+
 chop_recovery_join <- full_join(ChopHeader_raw %>% 
                                   select(ID, Date, Time),
                                 ChopRecov_raw %>% 
