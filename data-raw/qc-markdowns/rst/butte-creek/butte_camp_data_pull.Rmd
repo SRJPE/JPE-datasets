@@ -1,0 +1,396 @@
+---
+title: "Butte Creek CAMP Data Pull"
+output: html_document
+date: "2022-09-02"
+---
+
+This document queries the CAMP database provided by Grant Henely to extract
+RST data for Butte Creek. 
+
+If this file doesn't run, make sure operating system is being set correctly. 
+Depending on the operating system this script will run either the query_butte_camp 
+'4pc' or '4mac'
+
+*Important to filter releaseID == 0 or releasedID == 255 to exclude recaptures*
+
+```{r, include = F}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(googleCloudStorageR)
+library(Hmisc)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+```
+
+```{r, include = F}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+
+# Pull in Access db from Google Cloud
+
+```{r}
+gcs_get_object(object_name = "rst/CAMP/butte/CAMP_butte.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns", "rst", "butte-creek", "CAMP.mdb"),
+               overwrite = TRUE)
+```
+
+# Query data tables
+
+```{r}
+# runs the mac or pc version of the query tables file depending on operating system
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
+
+if(operating_system == "pc") {
+  source(here::here("data-raw", "qc-markdowns", "rst", "butte-creek", "query_butte_camp_4pc.R"))
+  } else{
+    source(here::here("data-raw", "qc-markdowns", "rst", "butte-creek", "query_butte_camp_4mac.R"))
+  }
+```
+
+# Site
+
+Joins site and subsite table
+
+```{r}
+site_subsite <- full_join(site_lu, subsite_lu) %>% glimpse()
+```
+
+# Trap
+
+```{r}
+detach(package:Hmisc)
+# all NA
+# filter(trap_visit, !is.na(timeSampleStarted))
+# filter(trap_visit, !is.na(timeSampleEnded))
+# filter(trap_visit, !is.na(coneDepthAtStart))
+# filter(trap_visit, !is.na(coneDepthAtEnd))
+# filter(trap_visit, !is.na(debrisVolume))
+# 
+# # not NA
+# filter(trap_visit, !is.na(inThalwegID))
+# filter(trap_visit, !is.na(sampleGearID))
+
+trap_visit_format <- trap_visit %>% 
+  select(projectDescriptionID, trapVisitID, trapPositionID, visitTime, visitTime2, visitTypeID, fishProcessedID, inThalwegID, trapFunctioningID, counterAtStart, counterAtEnd, rpmRevolutionsAtStart, rpmSecondsAtStart, rpmRevolutionsAtEnd, rpmSecondsAtEnd, halfConeID, includeCatchID, debrisVolumeCatID, debrisVolume, debrisVolumeUnits, comments) %>% 
+  left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
+  select(-trapPositionID, -siteID) %>% 
+  left_join(visit_type_lu, by = c("visitTypeID" = "visitTypeID")) %>% 
+  select(-visitTypeID) %>% 
+  left_join(processed_lu, by = c("fishProcessedID" = "fishProcessedID")) %>% 
+  select(-fishProcessedID) %>% 
+  left_join(no_yes_lu, by = c("inThalwegID" = "noYesID")) %>% 
+  rename(inThalweg = noYes) %>% 
+  select(-inThalwegID) %>% 
+  left_join(trap_function_lu, by = c("trapFunctioningID" = "trapFunctioningID")) %>% 
+  select(-trapFunctioningID) %>% 
+  left_join(no_yes_lu, by = c("halfConeID" = "noYesID")) %>% 
+  rename(halfCone = noYes) %>% 
+  select(-halfConeID) %>% 
+  left_join(no_yes_lu, by = c("includeCatchID" = "noYesID")) %>% 
+  rename(includeCatch = noYes) %>% 
+  select(-includeCatchID) %>% 
+  left_join(debris_volume_lu, by = c("debrisVolumeCatID" = "debrisVolumeCatID")) %>% 
+  select(-debrisVolumeCatID) %>% glimpse()
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(trap_visit_format,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data-raw/butte_trap_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
+
+# Catch (including recaptures)
+
+```{r}
+mark_existing_w_joins <- mark %>% 
+  left_join(mark_type_lu, by = c("markTypeID" = "markTypeID")) %>% 
+  select(-markTypeID) %>% 
+  left_join(color_lu, by = c("markColorID" = "colorID")) %>% 
+  rename(markColor = color) %>% 
+  select(-markColorID) %>% 
+  left_join(body_part_lu, by = c("markPositionID" = "bodyPartID")) %>% 
+  rename(markPosition = bodyPart) %>% 
+  select(-markPositionID) %>% 
+  select(projectDescriptionID, catchRawID, markCode, markType, markColor, markPosition) %>% 
+  pivot_longer(cols = starts_with("mark"),
+               names_to = "mark",
+               values_to = "value") %>% 
+  group_by(catchRawID, projectDescriptionID, mark) %>% 
+  mutate(number = 1:n(),
+         mark = paste0(mark,"_",number)) %>% 
+  select(-number) %>% 
+  pivot_wider(id_cols = c("catchRawID", "projectDescriptionID"), names_from = "mark", values_from = "value")
+
+selected_catch <- catch_raw %>% 
+  select(projectDescriptionID, catchRawID, trapVisitID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, totalLength, weight, n, randomID, actualCountID, releaseID, mortID, comments) %>% 
+  left_join(trap_visit_format %>% 
+              select(projectDescriptionID, trapVisitID, visitTime, visitTime2, visitType, siteName, subSiteName), by = c("trapVisitID" = "trapVisitID", "projectDescriptionID" = "projectDescriptionID")) %>% 
+  left_join(mark_existing_w_joins, by = c("catchRawID" = "catchRawID", "projectDescriptionID" = "projectDescriptionID")) %>% 
+  mutate(taxonID = as.character(taxonID)) %>% 
+  left_join(taxon_lu %>% 
+              mutate(taxonID = as.character(taxonID)), 
+            by = c("taxonID" = "taxonID")) %>% 
+  select(-taxonID) %>% 
+  left_join(run_lu, by = c("atCaptureRunID" = "runID")) %>% 
+  rename(atCaptureRun = run) %>% 
+  select(-atCaptureRunID) %>% 
+  left_join(run_method_lu, by = c("atCaptureRunMethodID" = "runMethodID")) %>% 
+  rename(atCaptureRunMethod = runMethod) %>% 
+  select(-atCaptureRunMethodID) %>% 
+  left_join(run_lu, by = c("finalRunID" = "runID")) %>% 
+  rename(finalRun = run) %>% 
+  select(-finalRunID) %>% 
+  left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>% 
+  rename(finalRunMethod = runMethod) %>% 
+  select(-finalRunMethodID) %>% 
+  left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>% 
+  select(-fishOriginID) %>% 
+  left_join(lifestage_lu, by = c("lifeStageID" = "lifeStageID")) %>% 
+  select(-lifeStageID, -lifeStageCAMPID) %>% 
+  left_join(no_yes_lu, by = c("randomID" = "noYesID")) %>% 
+  rename(random = noYes) %>% 
+  select(-randomID) %>% 
+  left_join(no_yes_lu, by = c("actualCountID" = "noYesID")) %>% 
+  rename(actualCount = noYes) %>% 
+  select(-actualCountID) %>% 
+  left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
+  rename(mort = noYes) %>% 
+  select(-mortID) %>% glimpse()
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_catch,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data-raw/butte_catch_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
+
+# Recaptures
+
+```{r}
+trap_visit_recaptures <- trap_visit_format %>%
+  select(trapVisitID, visitTime, visitTime2, visitType, halfCone, siteName, subSiteName)
+
+# add atcapturerun
+selected_recaptured <- catch_raw %>% 
+  select(catchRawID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, weight, n, trapVisitID, releaseID, mortID) %>% 
+  mutate(taxonID = as.numeric(taxonID)) %>% 
+  left_join(taxon_lu, by = c("taxonID" = "taxonID")) %>%
+  # filter(commonName == "Chinook salmon") %>% 
+  left_join(run_lu, by = c("finalRunID" = "runID")) %>%
+  rename(final_run = run) %>% 
+  left_join(run_lu, by = c("atCaptureRunID" = "runID")) %>%
+  left_join(run_method_lu, by = c("finalRunMethodID" = "runMethodID")) %>%
+  rename(final_run_method = runMethod) %>% 
+  left_join(run_method_lu, by = c("atCaptureRunMethodID" = "runMethodID")) %>%
+  left_join(lifestage_lu %>% 
+              select(-lifeStageCAMPID), by = c("lifeStageID" = "lifeStageID")) %>%
+  left_join(origin_lu, by = c("fishOriginID" = "fishOriginID")) %>%
+  left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
+  rename(dead = noYes) %>% 
+  select(-lifeStageID, -finalRunMethodID, -finalRunID, -atCaptureRunMethodID, -atCaptureRunID, -taxonID, -fishOriginID, - mortID) %>%
+  left_join(trap_visit_recaptures) %>%
+  filter(releaseID != 0 & releaseID != 255) %>% 
+  glimpse()
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_recaptured,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data-raw/butte_recaptures_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
+
+# Releases
+
+```{r}
+selected_release <- release %>% 
+  select(projectDescriptionID, releaseID, releasePurposeID, markedTaxonID, markedRunID, markedLifeStageID, markedFishOriginID, sourceOfFishSiteID, releaseSiteID, releaseSubSiteID, nMortWhileHandling, nMortAtCheck, nReleased, releaseTime, releaseLightConditionID,
+         testDays, includeTestID, includeTestComments, comments) %>% 
+  left_join(release_purpose_lu, by = c("releasePurposeID" = "releasePursposeID")) %>% 
+  select(-releasePurposeID) %>% 
+  left_join(taxon_lu, by = c("markedTaxonID" = "taxonID")) %>% 
+  rename(markedTaxon = commonName) %>% 
+  select(-markedTaxonID) %>% 
+  left_join(run_lu, by = c("markedRunID" = "runID")) %>% 
+  rename(markedRun = run) %>% 
+  select(-markedRunID) %>% 
+  left_join(lifestage_lu, by = c("markedLifeStageID" = "lifeStageID")) %>% 
+  rename(markedLifeStage = lifeStage) %>% 
+  select(-markedLifeStageID) %>% 
+  left_join(origin_lu, by = c("markedFishOriginID" = "fishOriginID")) %>% 
+  rename(markedFishOrigin = fishOrigin) %>% 
+  select(-markedFishOriginID) %>% 
+  left_join(site_subsite %>% 
+              select(siteID, siteName), by = c("sourceOfFishSiteID" = "siteID")) %>% 
+  rename(sourceOfFishSite = siteName) %>% 
+  select(-sourceOfFishSiteID) %>% 
+  left_join(site_subsite %>% 
+              select(siteID, siteName), by = c("releaseSiteID" = "siteID")) %>% 
+  rename(releaseSite = siteName) %>% 
+  select(-releaseSiteID) %>% 
+  left_join(site_subsite %>% 
+              select(subSiteID, subSiteName), by = c("releaseSubSiteID" = "subSiteID")) %>% 
+  rename(releaseSubSite = subSiteName) %>% 
+  select(-releaseSubSiteID) %>% 
+  left_join(light_condition_lu, by = c("releaseLightConditionID" = "lightConditionID")) %>% 
+  rename(releaseLightCondition = lightCondition) %>% 
+  select(-releaseLightConditionID) %>%  
+  left_join(no_yes_lu, by = c("includeTestID" = "noYesID")) %>% 
+  rename(includeTest = noYes) %>% 
+  select(-includeTestID) %>% glimpse()
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_release,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data-raw/butte_releases_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
+
+# ReleaseFish
+
+```{r}
+selected_release_fish <- release_fish %>% 
+  select(projectDescriptionID, releaseID, nMarked, forkLength, weight)
+  
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_release_fish,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data-raw/butte_release_fish_camp.csv",
+           predefinedAcl = "bucketLevel")  
+```
+
+# Environmental
+
+```{r}
+# all NA
+# filter(environmental, !is.na(waterVelReadingStart))
+# filter(environmental, !is.na(waterVelReadingEnd))
+# filter(environmental, !is.na(waterVelTime))
+# filter(environmental, !is.na(airTemp))
+# filter(environmental, !is.na(cloudCover))
+# filter(environmental, !is.na(waterDepth))
+# filter(environmental, !is.na(dissolvedOxygen))
+# filter(environmental, !is.na(conductivity))
+# filter(environmental, !is.na(barometer))
+# 
+# # contains data
+# filter(environmental, !is.na(discharge))
+# filter(environmental, !is.na(dischargeUnitID))
+# filter(environmental, !is.na(dischargeSampleGearID))
+# filter(environmental, !is.na(waterVel))
+# filter(environmental, !is.na(waterTemp))
+# filter(environmental, !is.na(lightPenetration))
+# filter(environmental, !is.na(turbidity))
+# filter(environmental, !is.na(weather))
+
+# select relevant variables from envDataRaw table
+
+discharge <- environmental %>% 
+  select(trapVisitID, envDataRawID, discharge, dischargeUnitID, dischargeSampleGearID) %>% 
+  rename(value = discharge,
+         unitID = dischargeUnitID,
+         sampleGearID = dischargeSampleGearID) %>% 
+  mutate(parameter = "discharge")
+
+# depth <- environmental %>% 
+#   select(trapVisitID, envDataRawID, waterDepth, waterDepthUnitID, waterDepthSampleGearID) %>% 
+#   rename(value = waterDepth,
+#          unitID = waterDepthUnitID,
+#          sampleGearID = waterDepthSampleGearID) %>% 
+#   mutate(parameter = "water depth")
+
+velocity <- environmental %>% 
+  select(trapVisitID, envDataRawID, waterVel, waterVelUnitID, waterVelSampleGearID) %>% 
+  rename(value = waterVel,
+         unitID = waterVelUnitID,
+         sampleGearID = waterVelSampleGearID) %>% 
+  mutate(parameter = "velocity")
+
+temperature <- environmental %>% 
+  select(trapVisitID, envDataRawID, waterTemp, waterTempUnitID, waterTempSampleGearID) %>% 
+  rename(value = waterTemp,
+         unitID = waterTempUnitID,
+         sampleGearID = waterTempSampleGearID) %>% 
+  mutate(parameter = "temperature")
+
+light <- environmental %>% 
+  select(trapVisitID, envDataRawID,  lightPenetration, lightPenetrationUnitID, lightPenetrationSampleGearID) %>% 
+  rename(value = lightPenetration,
+         unitID = lightPenetrationUnitID,
+         sampleGearID = lightPenetrationSampleGearID) %>% 
+  mutate(parameter = "light penetration")
+
+turbidity <- environmental %>% 
+  select(trapVisitID, envDataRawID,  turbidity, turbidityUnitID, turbiditySampleGearID) %>% 
+  rename(value = turbidity,
+         unitID = turbidityUnitID,
+         sampleGearID = turbiditySampleGearID) %>% 
+  mutate(parameter = "turbidity")
+
+# oxygen <- environmental %>% 
+#   select(trapVisitID, envDataRawID,  dissolvedOxygen, dissolvedOxygenUnitID, dissolvedOxygenSampleGearID) %>% 
+#   rename(value = dissolvedOxygen,
+#          unitID = dissolvedOxygenUnitID,
+#          sampleGearID = dissolvedOxygenSampleGearID) %>% 
+#   mutate(parameter = "dissolved oxygen")
+# 
+# conductivity <- environmental %>% 
+#   select(trapVisitID, envDataRawID,  conductivity, conductivityUnitID, conductivitySampleGearID) %>% 
+#   rename(value = conductivity,
+#          unitID = conductivityUnitID,
+#          sampleGearID = conductivitySampleGearID) %>% 
+#   mutate(parameter = "conductivity")
+# 
+# barometer <- environmental %>% 
+#   select(trapVisitID, envDataRawID,  barometer, barometerUnitID, barometerSampleGearID) %>% 
+#   rename(value = barometer,
+#          unitID = barometerUnitID,
+#          sampleGearID = barometerSampleGearID) %>% 
+#   mutate(parameter = "barometer")
+
+trap_visit_subsite <- trap_visit %>%
+  select(trapVisitID, visitTime, visitTime2, trapPositionID) %>%
+  left_join(site_subsite, by = c("trapPositionID" = "subSiteID")) %>% 
+  select(-trapPositionID, -siteID) %>% 
+  rename(site = siteName,
+         subsite = subSiteName) %>% 
+  mutate(site = tolower(site),
+         subsite = tolower(subsite))
+
+environmental_format <- bind_rows(discharge,
+                                  velocity,
+                                  temperature,
+                                  light,
+                                  turbidity) %>% 
+  left_join(trap_visit_subsite) %>% 
+  left_join(unit_lu) %>% 
+  left_join(sample_gear_lu) %>% 
+  select(-c(unitID, sampleGearID, visitTime2)) %>% 
+  rename(date = visitTime,
+         sample_gear = sampleGear) %>% 
+  mutate(unit = case_when(is.na(unit) & !is.na(value) ~ "not recorded", 
+                          is.na(unit) & is.na(value) ~ NA_character_,
+                          T ~ unit),
+         sample_gear = case_when(is.na(sample_gear) & !is.na(value) ~ "not recorded", 
+                                 is.na(sample_gear) & is.na(value) ~ NA_character_,
+                                 T ~ sample_gear)) %>% glimpse()
+
+# Save data to google cloud
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(environmental_format,
+           object_function = f,
+           type = "csv",
+           name = "rst/butte-creek/data-raw/butte_environmental_camp.csv",
+           predefinedAcl = "bucketLevel")
+```
