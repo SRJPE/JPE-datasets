@@ -502,8 +502,6 @@ rst_combined %>%
 
 ### lifestage
 
-We need to assign labels to these codes
-
 ```{r}
 rst_combined %>% 
   group_by(year = year(date), lifestage) %>% 
@@ -513,8 +511,6 @@ rst_combined %>%
 ```
 
 ### race
-
-We need to assign labels to these codes
 
 ```{r}
 rst_combined %>% 
@@ -647,8 +643,6 @@ recap_combined %>%
 
 ### lifestage
 
-We need to assign labels to these codes
-
 ```{r}
 recap_combined %>% 
   group_by(year = year(date), lifestage) %>% 
@@ -658,8 +652,6 @@ recap_combined %>%
 ```
 
 ### race
-
-We need to assign labels to these codes
 
 ```{r}
 recap_combined %>% 
