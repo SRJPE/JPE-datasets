@@ -156,7 +156,6 @@ chop_recovery_join <- full_join(chop_channel_join |>
                                   rename(chan_id = ChanID), 
                                 by = "chan_id") |> 
   clean_names() |> 
-  filter(year(date) == 2005) |> 
   glimpse()
 # chop_recovery_join <- full_join(ChopHeader_raw |> 
 #                                   select(headerID, Date, Time),
@@ -368,8 +367,6 @@ summary(chop_recovery_join$chan_id)
 summary(chop_recovery_join$recov_count)
 ```
 
-
-No recovery count have dates associated to them.
 
 ### Chop Header Variable: `id`
 
@@ -617,11 +614,16 @@ percent_na <- chop_recovery_cleaner |>
 
 
 chop_recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
-                          description = c("ID",
-                                          "Date of survey",
+                          description = c("Date of survey", 
+                                          "Sect", 
+                                          "Chan", 
+                                          "Min", 
+                                          "Channel ID",
+                                          "Header ID",
                                           "Color of tag recovered from carcass",
-                                          "Count of recovery",
-                                          "Channel ID"),
+                                          "Recovery ID",
+                                          "Color of recovery tag",
+                                          "Count of recovery"),
                           percent_na = round(percent_na$value*100))
 
 kable(chop_recovery_data_dictionary)
