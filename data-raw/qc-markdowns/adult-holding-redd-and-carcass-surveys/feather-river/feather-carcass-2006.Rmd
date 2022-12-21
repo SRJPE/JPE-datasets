@@ -42,7 +42,7 @@ Any additional info?
 
 
 
-```{r, eval=FALSE}
+```{r, include=FALSE}
 # Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
 # getwd() to see how to specify paths 
 # Open object from google cloud storage
@@ -55,7 +55,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # git data and save as xlsx
 ```
 
-```{r, eval=FALSE}
+```{r, include=FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2006.mdb",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2006.mdb",
@@ -112,8 +112,7 @@ write_csv(cwt_header, here::here("data-raw", "qc-markdowns", "adult-holding-redd
 ```{r}
 ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
-                                 "feather-river", "ChopChannel_2006.csv")) %>% 
-  rename("ID" = HeaderID) %>%
+                                 "feather-river", "ChopChannel_2006.csv")) |> 
   glimpse()
 ```
 
@@ -122,8 +121,7 @@ ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 ```{r}
 ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
-                                 "feather-river", "ChopHeader_2006.csv")) %>% 
-  rename("ID" = headerID) %>%
+                                 "feather-river", "ChopHeader_2006.csv")) |> 
   glimpse()
 ```
 
@@ -131,15 +129,15 @@ ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 ```{r}
 ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
-                                 "feather-river", "ChopRecov_2006.csv")) %>% 
+                                 "feather-river", "ChopRecov_2006.csv")) |> 
   glimpse()
 ```
 ### cwt_raw
 ```{r}
 cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
-                                 "feather-river", "CWTTag_2006.csv")) %>% 
-  glimpse
+                                 "feather-river", "CWTTag_2006.csv")) |> 
+  glimpse()
 ```
 
 ### cwt_header_raw
@@ -147,8 +145,8 @@ cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 ```{r}
 cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
-                                 "feather-river", "CWTHeader_2006.csv")) %>% 
-  glimpse
+                                 "feather-river", "CWTHeader_2006.csv")) |> 
+  glimpse()
 ```
 
 
@@ -162,10 +160,11 @@ The `chop_channel` table contains carcass counts by chop/tagged based on clips
 ```{r}
 
 #1. chopchannel table (with dates and tag color)
-chop_channel_join <- full_join(ChopHeader_raw %>% 
-                                 select(ID, TagCol, Date, Time),
-                               ChopChannel_raw, by = "ID") %>% 
-  clean_names()
+chop_channel_join <- full_join(ChopHeader_raw |> 
+                                 select(HeaderID = headerID, TagCol, Date, Time),
+                               ChopChannel_raw, by = "HeaderID") |> 
+  clean_names() |> 
+  glimpse()
 ```
 
 ### Recovery
@@ -174,16 +173,21 @@ The `chop_recovery` table contains recovered carcass counts by color
 
 ```{r}
 # 2. choprecovery table (with dates)
-# The IDs in ChopHeader_raw do not align with the ChopRecov_raw table. Not sure we need the ChopRecovery table for later analyses.
+# should join headerID to chopchannel headerID, and then chanID from chop channel to ChopRecovery
+# HeaderID connects ChopChannel to ChopHeader; ChanID joins ChopChannel to ChopRecov
+chop_recovery_join <- full_join(chop_channel_join |> 
+                                  select(date, time, sect, chan, min, chan_id, header_id,
+                                         tag_col), ChopRecov_raw |> 
+                                  rename(chan_id = ChanID), 
+                                by = "chan_id") |> 
+  clean_names() |> 
+  glimpse()
 
-# TODO should not be joining on RecovID
-# ChopHeader$headerID join to ChopChannel$headerID, then chopchannel$chanID to choprecov$chanid
-
-chop_recovery_join <- full_join(ChopHeader_raw %>% 
-                                  select(ID, Date, Time),
-                                ChopRecov_raw %>% 
-                                  rename(ID = RecovID))  %>% 
-  clean_names()
+# chop_recovery_join <- full_join(ChopHeader_raw |> 
+#                                   select(ID, Date, Time),
+#                                 ChopRecov_raw |> 
+#                                   rename(ID = RecovID))  |> 
+#   clean_names()
 ```
 
 ### Survey
@@ -191,7 +195,7 @@ chop_recovery_join <- full_join(ChopHeader_raw %>%
 The `chop_header` table contains survey metadata and covariates
 
 ```{r}
-chop_header <- ChopHeader_raw %>% 
+chop_header <- ChopHeader_raw |> 
   clean_names() |> glimpse()
 ```
 
@@ -199,23 +203,23 @@ chop_header <- ChopHeader_raw %>%
 The `cwt` table contains coded wire tag information. 
 
 ```{r}
-cwt <- full_join(cwt_raw %>% clean_names(), cwt_header_raw %>% clean_names(), 
-                 by = "header_id") %>%  
-  glimpse
+cwt <- full_join(cwt_raw |> clean_names(), cwt_header_raw |> clean_names(), 
+                 by = "header_id") |>  
+  glimpse()
 ```
 
 ## Explore Numeric Variables: {.tabset}
 
-### Chop Channel Variable: `id`, `chan_id`, `sect`, `min`
+### Chop Channel Variable: `header_id`, `chan_id`, `sect`, `min`
 ```{r}
 # Filter clean data to show only numeric variables 
-chop_channel_join %>% 
-  select_if(is.numeric) %>%
+chop_channel_join |> 
+  select_if(is.numeric) |>
   colnames()
 ```
 
 ```{r}
-summary(chop_channel_join$id)
+summary(chop_channel_join$header_id)
 ```
 ```{r}
 summary(chop_channel_join$chan_id)
@@ -260,7 +264,7 @@ round(sum(is.na(chop_channel_join$chop_uncheck))/nrow(chop_channel_join), 3) * 1
 
 ```{r}
  
-chop_channel_join %>% 
+chop_channel_join |> 
   group_by(date) |> 
   summarise(chop_clip = sum(chop_clip)) |> 
   ggplot(aes(x = date, y = chop_clip)) +
@@ -275,7 +279,7 @@ chop_channel_join %>%
 **Plotting chop_n_clip over Period of Record**
 
 ```{r}
-chop_channel_join %>% 
+chop_channel_join |> 
   group_by(date) |> 
   summarise(chop_n_clip = sum(chop_n_clip)) |> 
   ggplot(aes(x = date, y = chop_n_clip)) +
@@ -289,7 +293,7 @@ chop_channel_join %>%
 **Plotting chop_uncheck over Period of Record**
 
 ```{r}
-chop_channel_join %>%
+chop_channel_join |>
   group_by(date) |> 
   summarise(chop_uncheck = sum(chop_uncheck)) |> 
   ggplot(aes(x = date, y = chop_uncheck)) +
@@ -303,23 +307,23 @@ chop_channel_join %>%
 **Plotting Total chops over Period of Record**
 
 ```{r}
-total_chops <- chop_channel_join%>%
+total_chops <- chop_channel_join|>
   mutate(chop_clip = ifelse(is.na(chop_clip), 0, chop_clip), # fill na
          chop_n_clip = ifelse(is.na(chop_n_clip), 0, chop_n_clip),
          chop_uncheck = ifelse(is.na(chop_uncheck), 0, chop_uncheck),
-         total_chops = chop_clip + chop_n_clip + chop_uncheck) %>% 
+         total_chops = chop_clip + chop_n_clip + chop_uncheck) |> 
   select(date, chop_clip, chop_n_clip, chop_uncheck, total_chops)
 
 # Case check: checking for duplicates
-total_chops_test <- total_chops %>% # get total chops
+total_chops_test <- total_chops |> # get total chops
   filter(date == as_date("2006-09-15"))
 
 # Check if NAs introduced in creating total chop columns
 nrow(total_chops_test) == (sum(total_chops_test$total_chops == (total_chops_test$chop_clip + total_chops_test$chop_n_clip + total_chops_test$chop_uncheck)))
 
 # total number of chops for the day
-total_chops_summary <- total_chops %>%
-  group_by(date) %>%
+total_chops_summary <- total_chops |>
+  group_by(date) |>
   summarise(total_chops = sum(total_chops, na.rm = T),
             chop_clip = sum(chop_clip, na.rm = T),
             chop_n_clip = sum(chop_n_clip, na.rm = T),
@@ -328,15 +332,16 @@ total_chops_summary <- total_chops %>%
 
 
 # check if NAs are introduced in merge
-A = left_join(ChopChannel_raw, ChopHeader_raw, by = "ID")$ChanID
+A = left_join(ChopChannel_raw, ChopHeader_raw |> rename(HeaderID = headerID), 
+              by = "HeaderID")$ChanID
 B = ChopRecov_raw$ChanID
 sum(B %in% A) # they are
-# yes I noticed that. there are some IDs in the chop_channel table that are not in the chop_header table. there are A LOT of IDs in the recovery table that are not in header table. at this point i would assume this is a data entry issue and we can leave as is but clearly document. this is something we may learn more about and then be able to fix
+# yes I noticed that. there are some IDs in the chop_channel table that are not in the chop_header table.
 ```
 ```{r}
-total_chops_summary %>% 
-  pivot_longer(cols = c(chop_clip, chop_n_clip, chop_uncheck), names_to = "clip", values_to = "count") %>% 
-  mutate(proportions = (count / total_chops)) %>% 
+total_chops_summary |> 
+  pivot_longer(cols = c(chop_clip, chop_n_clip, chop_uncheck), names_to = "clip", values_to = "count") |> 
+  mutate(proportions = (count / total_chops)) |> 
   ggplot(aes(x = date, y = proportions, fill = clip)) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = c("Blue","Red", "Black"), 
@@ -382,7 +387,7 @@ round(sum(is.na(chop_channel_join$tag_unk))/nrow(chop_channel_join), 3) * 100
 
 **Plotting tag_clip over Period of Record**
 ```{r}
-chop_channel_join %>% 
+chop_channel_join |> 
   group_by(date) |> 
   summarise(tag_clip = sum(tag_clip)) |> 
   ggplot(aes(x = date, y = tag_clip)) +
@@ -396,7 +401,7 @@ chop_channel_join %>%
 **Plotting tag_n_clip over Period of Record**
 
 ```{r}
-chop_channel_join %>% 
+chop_channel_join |> 
   group_by(date) |> 
   summarise(tag_n_clip = sum(tag_n_clip)) |> 
   ggplot(aes(x = date, y = tag_n_clip)) +
@@ -409,7 +414,7 @@ chop_channel_join %>%
 
 **Plotting tag_unk over Period of Record**
 ```{r}
-chop_channel_join %>% 
+chop_channel_join |> 
   group_by(date) |> 
   summarise(tag_unk = sum(tag_unk)) |> 
   ggplot(aes(x = date, y = tag_unk)) +
@@ -425,32 +430,25 @@ chop_channel_join %>%
 ```{r}
 # Percentage by Gender of Daily Chops
 # Address NA values for chops
-total_tags <- chop_channel_join %>%
+total_tags <- chop_channel_join |>
   mutate(tag_clip = ifelse(is.na(tag_clip), 0, tag_clip), # fill na
          tag_n_clip = ifelse(is.na(tag_n_clip), 0, tag_n_clip),
          tag_unk = ifelse(is.na(tag_unk), 0, tag_unk),
-         total_tags = tag_unk + tag_clip + tag_n_clip) %>% 
+         total_tags = tag_unk + tag_clip + tag_n_clip) |> 
   select(date, tag_clip, tag_n_clip, tag_unk, total_tags)
 
 # total number of chops for the day
-total_tags_summary <- total_tags %>%
-  group_by(date) %>%
+total_tags_summary <- total_tags |>
+  group_by(date) |>
   summarise(total_tags = sum(total_tags, na.rm = T),
             tag_clip = sum(tag_clip, na.rm = T),
             tag_n_clip = sum(tag_n_clip, na.rm = T),
             tag_unk = sum(tag_unk, na.rm = T))
 
-# Plot to identify proportions by sex for each day
-total_tags_summary %>% 
-  pivot_longer(cols = c(tag_n_clip, tag_clip, tag_unk), names_to = "tags", values_to = "count") %>% 
-  mutate(proportions = (count / total_tags)) %>% 
-  ggplot(aes(x = date, y = proportions, fill = tags)) +
-  geom_bar(stat = "identity", position = "stack")
-
 # Make Graph Prettier
-total_tags_summary %>% 
-  pivot_longer(cols = c(tag_n_clip, tag_clip, tag_unk), names_to = "tags", values_to = "count") %>% 
-  mutate(proportions = (count / total_tags)) %>% 
+total_tags_summary |> 
+  pivot_longer(cols = c(tag_n_clip, tag_clip, tag_unk), names_to = "tags", values_to = "count") |> 
+  mutate(proportions = (count / total_tags)) |> 
   ggplot(aes(x = date, y = proportions, fill = tags)) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = c("Blue","Red", "Black"), 
@@ -465,8 +463,8 @@ total_tags_summary %>%
 
 ```{r}
 # from ashley: please improve on this plot I got started, make it look better, describe it, double check that the numbers make sense
-total_carcass <- full_join(total_chops_summary, total_tags_summary) %>% 
-  select(date, total_chops, total_tags) %>% 
+total_carcass <- full_join(total_chops_summary, total_tags_summary) |> 
+  select(date, total_chops, total_tags) |> 
   pivot_longer(c(total_chops, total_tags), names_to = "mark")
 
 proportion_tags <- total_carcass |> 
@@ -486,17 +484,17 @@ ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
 
 Tags appear to be less commonly applied compared to chops.
 
-### Chop Recovery Variable: `id`, `chan_id`, `recov_count`
+### Chop Recovery Variable: `recov_id`, `chan_id`, `recov_count`
 
 ```{r}
 # Filter clean data to show only numeric variables 
-chop_recovery_join %>% 
-  select_if(is.numeric) %>%
+chop_recovery_join |> 
+  select_if(is.numeric) |>
   colnames()
 ```
 
 ```{r}
-summary(chop_recovery_join$id)
+summary(chop_recovery_join$recov_id)
 ```
 
 ```{r}
@@ -507,22 +505,20 @@ summary(chop_recovery_join$chan_id)
 summary(chop_recovery_join$recov_count)
 ```
 
-Note: No recovery count.
-
-### Chop Header Variable: `id`
+### Chop Header Variable: `header_id`
 
 ```{r}
-chop_header %>% 
-  select_if(is.numeric) %>% 
+chop_header |> 
+  select_if(is.numeric) |> 
   colnames()
 ```
 ```{r}
-summary(chop_header$id)
+summary(chop_header$header_id)
 ```
 ### CWT Variable: `tag_id`, `sect`, `fl`, `header_id`, `week_num`
 ```{r}
-cwt %>% 
-  select_if(is.numeric) %>% 
+cwt |> 
+  select_if(is.numeric) |> 
   colnames()
 ```
 ```{r}
@@ -541,22 +537,22 @@ summary(cwt$fl)
 ```{r}
 #Create a cwt_count column
 #Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
-cwt_count <- cwt %>% 
-  mutate(count = 1) %>%
+cwt_count <- cwt |> 
+  mutate(count = 1) |>
   mutate(sex = case_when(is.na(sex)|sex =="UK" ~ "U",
-                         TRUE ~ sex)) %>% 
-  pivot_wider(names_from = sex, values_from = count, values_fill = 0) %>% 
-  # unnest() %>% 
+                         TRUE ~ sex)) |> 
+  pivot_wider(names_from = sex, values_from = count, values_fill = 0) |> 
+  # unnest() |> 
   rename("male_cwt" = M,
          "female_cwt" = F,
-         "unknown_cwt" = U) %>% glimpse
+         "unknown_cwt" = U) |> glimpse()
 
-total_cwt_summary <- cwt_count %>% 
+total_cwt_summary <- cwt_count |> 
   mutate(male_cwt = ifelse(is.na(male_cwt), 0, male_cwt), # fill na
          female_cwt = ifelse(is.na(female_cwt), 0, female_cwt),
          unknown_cwt = ifelse(is.na(unknown_cwt), 0, unknown_cwt),
-         total_cwt = unknown_cwt + male_cwt + female_cwt) %>% 
-  group_by(month(date)) %>% 
+         total_cwt = unknown_cwt + male_cwt + female_cwt) |> 
+  group_by(month(date)) |> 
   summarise(total_cwt = sum(total_cwt),
             male_cwt = sum(male_cwt),
             female_cwt = sum(female_cwt),
@@ -564,9 +560,9 @@ total_cwt_summary <- cwt_count %>%
 ```
 
 ```{r}
-total_cwt_summary %>% 
-  pivot_longer(cols = c(male_cwt, female_cwt, unknown_cwt), names_to = "sex", values_to = "count") %>% 
-  mutate(proportions = (count / total_cwt)) %>% 
+total_cwt_summary |> 
+  pivot_longer(cols = c(male_cwt, female_cwt, unknown_cwt), names_to = "sex", values_to = "count") |> 
+  mutate(proportions = (count / total_cwt)) |> 
   ggplot(aes(x = `month(date)`, y = proportions, fill = sex)) + 
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(name = "chops", 
@@ -579,9 +575,9 @@ total_cwt_summary %>%
 **Plotting fork length of each sex**
 
 ```{r}
-cwt %>% 
+cwt |> 
   mutate(sex = case_when(is.na(sex)|sex =="UK" ~ "Unknown",
-                         TRUE ~ sex)) %>% 
+                         TRUE ~ sex)) |> 
   ggplot(aes(x = sex, y = fl)) + 
   geom_boxplot() + 
   theme_minimal() + 
@@ -596,8 +592,8 @@ cwt %>%
 Fix inconsistencies with spelling, capitalization, and dates
 ```{r}
 # Filter clean data to show only categorical variables
-chop_channel_join %>% 
-  select_if(is.character) %>%
+chop_channel_join |> 
+  select_if(is.character) |>
   colnames()
 ```
 ```{r}
@@ -608,41 +604,38 @@ unique(chop_channel_join$tag_col)
 unique(chop_channel_join$chan)
 ```
 ```{r}
-chop_channel_cleaner <- chop_channel_join %>%
-  mutate(date = as_date(date)) %>%
-  mutate_if(is.character, str_to_lower) %>% 
-  select(-c(time, male, fem, gril, tag_count)) # male, female, gril, and tag_count columns are empty
+chop_channel_cleaner <- chop_channel_join |>
+  mutate(date = as_date(date)) |>
+  mutate_if(is.character, str_to_lower) |> 
+  select(-c(time, male, fem, gril, tag_count))  |> 
+  glimpse() # male, female, gril, and tag_count columns are empty
 
-chop_channel_cleaner
 ```
 ### Chop Recovery Clean Data
 
 Fix inconsistencies with spelling, capitalization, and dates
 
 ```{r}
-chop_recovery_join %>% 
-  select_if(is.character) %>% 
+chop_recovery_join |> 
+  select_if(is.character) |> 
   colnames()
 ```
 
 ```{r}
-unique(chop_recovery_join$recov_color)
+unique(chop_recovery_join$recov_color) # encoded numerically in 2006
 ```
 ```{r}
-chop_recovery_cleaner <- chop_recovery_join %>% 
-  mutate(date = as_date(date)) %>%
-  mutate_if(is.character, str_to_lower) %>% 
-  select(-c(time))
-
-chop_recovery_cleaner
-# TODO: here is where the mismatch of IDs in ChopRecov come into play
+chop_recovery_cleaner <- chop_recovery_join |> 
+  mutate(date = as_date(date)) |>
+  mutate_if(is.character, str_to_lower) |> 
+  select(-c(time)) |> glimpse()
 ```
 
 ### Chop Header Clean Data
 
 ```{r}
-chop_header %>% 
-  select_if(is.character) %>% 
+chop_header |> 
+  select_if(is.character) |> 
   colnames()
 ```
 ```{r}
@@ -658,14 +651,14 @@ unique(chop_header$weather)
 
 
 ```{r}
-chop_header_cleaner <- chop_header %>%
-  mutate(date = as_date(date)) %>%
-  mutate_if(is.character, str_to_lower) %>% 
+chop_header_cleaner <- chop_header |>
+  mutate(date = as_date(date)) |>
+  mutate_if(is.character, str_to_lower) |> 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          weather = case_when(weather == "ran" ~ "rain",
                              weather == "cld" ~ "cloudy",
-                             TRUE ~ weather)) %>% 
+                             TRUE ~ weather)) |> 
   select(-c(time))
 
 ```
@@ -673,9 +666,9 @@ chop_header_cleaner <- chop_header %>%
 ### CWT Clean Data
 
 ```{r}
-cwt %>% 
-  select_if(is.character) %>% 
-  colnames
+cwt |> 
+  select_if(is.character) |> 
+  colnames()
 ```
 ```{r}
 unique(cwt$rel_loc)
@@ -689,9 +682,9 @@ unique(cwt$carc_stat)
 
 
 ```{r}
-cwt_cleaner <- cwt %>% 
-  mutate_if(is.character, str_to_lower) %>% 
-  rename(datetime = "date") %>% 
+cwt_cleaner <- cwt |> 
+  mutate_if(is.character, str_to_lower) |> 
+  rename(datetime = "date") |> 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          sex = case_when(sex == "uk"|is.na(sex) ~ "unknown",
@@ -704,8 +697,8 @@ cwt_cleaner <- cwt %>%
                           clip == "n" ~ "no",
                           TRUE ~ clip),
          samp_type = ifelse(samp_type == "none", NA, samp_type),
-         carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) %>% 
-  glimpse
+         carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) |> 
+  glimpse()
 ```
 ## Comments
 * 2006 data is similar with 2005 using clip and non clip to keep track of the carcasses
@@ -717,13 +710,13 @@ cwt_cleaner <- cwt %>%
 ### Channel
 
 ```{r}
-percent_na <- chop_channel_cleaner %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+percent_na <- chop_channel_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
 
 
 counts_data_dictionary <- tibble(variables = colnames(chop_channel_cleaner),
-                          description = c("ID",
+                          description = c("Header ID",
                                           "Color of tag applied to carcass",
                                           "Date of survey",
                                           "Channel ID",
@@ -744,17 +737,22 @@ kable(counts_data_dictionary)
 ### Recovery
 
 ```{r}
-percent_na <- chop_recovery_cleaner %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+percent_na <- chop_recovery_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
 
 
 recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
-                          description = c("ID",
-                                          "Date of survey",
+                          description = c("Date of Survey",
+                                          "Sect",
+                                          "Chan",
+                                          "Min",
+                                          "Chan ID",
+                                          "Header ID",
                                           "Color of tag recovered from carcass",
                                           "Count of recovery",
-                                          "Channel ID"),
+                                          "Color of recovery tag", 
+                                          "Count of recvered tags"),
                           percent_na = round(percent_na$value*100))
 
 kable(recovery_data_dictionary)
@@ -764,8 +762,8 @@ kable(recovery_data_dictionary)
 
 ```{r}
 # 
-percent_na <- chop_header_cleaner %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+percent_na <- chop_header_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
 # 
 header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
@@ -785,12 +783,12 @@ kable(header_data_dictionary)
 ### CWT
 ```{r}
 
-percent_na <- cwt_cleaner %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+percent_na <- cwt_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
 
 cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
-                          description = c("ID",
+                          description = c("Tag ID",
                                           "Sect",
                                           "Release Location",
                                           "Fork length",
@@ -815,12 +813,12 @@ kable(cwt_data_dictionary)
 ```
 ## Save cleaned data back to google cloud (TBA)
 ```{r}
-feather_carcass_chops_and_tags_2006 <- chop_channel_cleaner %>% glimpse()
-feather_carcass_chop_recovery_2006 <- chop_recovery_cleaner %>% glimpse()
-feather_carcass_cwt_2006 <- cwt_cleaner %>% glimpse()
-feather_carcass_chop_header_2006 <- chop_header_cleaner %>% glimpse()
+feather_carcass_chops_and_tags_2006 <- chop_channel_cleaner |> glimpse()
+feather_carcass_chop_recovery_2006 <- chop_recovery_cleaner |> glimpse()
+feather_carcass_cwt_2006 <- cwt_cleaner |> glimpse()
+feather_carcass_chop_header_2006 <- chop_header_cleaner |> glimpse()
 ```
-```{r, eval=FALSE}
+```{r, include=FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(feather_carcass_chops_and_tags_2006,
