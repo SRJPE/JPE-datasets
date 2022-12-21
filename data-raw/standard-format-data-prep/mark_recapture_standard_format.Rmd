@@ -17,7 +17,7 @@ knitr::opts_knit$set(root.dir)
 ```
 
 ```{r, include = FALSE}
-color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089")
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#8C5899")
 
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
@@ -341,12 +341,16 @@ knights_released <- read_csv(here::here("data", "rst", "knights_releases.csv")) 
          lifestage_released = ifelse(is.na(lifestage_released), "not recorded", tolower(lifestage_released)),
          source_released = ifelse(is.na(source_released), "not recorded", tolower(source_released)),
          origin_released = ifelse(is.na(origin_released), "not recorded", tolower(origin_released)),
-         include = ifelse(is.na(include), "yes", tolower(include))) %>% 
+         include = ifelse(is.na(include), "yes", tolower(include)),
+         week_released = week(date_released),
+         year_released = year(date_released)) %>% 
   select(-light_condition) %>%  
   left_join(knights_release_fish) %>% 
   mutate(release_id = as.character(release_id)) %>% 
   bind_rows(knights_pre2002 %>% 
-              select(date_released, week_released, year_released, release_id, number_released)) %>% 
+              select(stream, site, date_released, week_released, year_released, release_id, number_released)) %>% 
+  mutate(date_released = case_when(is.na(date_released) ~ ymd(paste0(year_released, "-01-01")) + weeks(week_released - 1), 
+                                   T ~ date_released)) |> 
   glimpse()
 
 knights_recaptured <- read_csv(here::here("data", "rst", "knights_recaptures.csv")) %>% 
@@ -355,8 +359,12 @@ knights_recaptured <- read_csv(here::here("data", "rst", "knights_recaptures.csv
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
   mutate(release_id = as.character(release_id),
          subsite = as.character(subsite)) %>% 
-  bind_rows(knights_pre2002 %>% 
-              select(date_released, week_released, year_released, release_id, number_recaptured)) %>% 
+  bind_rows(knights_pre2002 %>% # note that pre 2002 do not have date_recaptured
+              select(stream, site, date_released, week_released, year_released, release_id, number_recaptured) |> 
+              # assume that date_recaptured is date_released + 1
+              mutate(date_released = case_when(is.na(date_released) ~ ymd(paste0(year_released, "-01-01")) + weeks(week_released - 1), 
+                                   T ~ date_released),
+                     date_recaptured = date_released + 1)) %>% 
 glimpse()
 ```
 
@@ -395,7 +403,7 @@ tisdale_recaptured <- read_csv(here::here("data", "rst", "tisdale_recaptures.csv
 ## Combine datasets:
 
 ```{r}
-combined_release <- bind_rows(battle_released, clear_released, feather_released, knights_released, tisdale_released) %>% 
+combined_release <- bind_rows(battle_released, butte_released, clear_released, feather_released, knights_released, tisdale_released) %>% 
   relocate(stream, site, release_id, date_released, time_released, site_released, subsite_released, number_released, 
            median_fork_length_released, day_or_night_release, origin_released, run_released, lifestage_released, source_released, 
            days_held_post_mark, flow_at_release = release_flow, temperature_at_release = release_temp, turbidity_at_release = release_turbidity) %>% 
@@ -412,7 +420,7 @@ combined_release <- bind_rows(battle_released, clear_released, feather_released,
 #   tally() %>% 
 #   filter(n > 1)
 
-combined_recapture <- bind_rows(battle_recaptured, clear_recaptured, feather_recaptured, knights_recaptured, tisdale_recaptured) %>%
+combined_recapture <- bind_rows(battle_recaptured, butte_recaptured, clear_recaptured, feather_recaptured, knights_recaptured, tisdale_recaptured) %>%
   relocate(stream, site, subsite, release_id,
            date_recaptured, number_recaptured, median_fork_length_recaptured) %>% glimpse
 ```
@@ -848,7 +856,7 @@ combined_release %>% View
 knitr::kable(align = 'c', head(combined_recapture, 5))
 ```
 
-```{r, eval = FALSE}
+```{r}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(combined_release,
