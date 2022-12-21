@@ -102,9 +102,7 @@ write_csv(ChopRecov_raw, here::here("data-raw", "qc-markdowns", "adult-holding-r
 
 ### Chops_raw
 ```{r}
-Chop_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","Chops_2016.csv")) |> 
-  rename(Header.ID = `Chop.Header.ID`,
-         "Count" = `Total.Count`) |>
+Chop_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","Chops_2017.csv")) |> 
   glimpse()
 
 ```
@@ -112,10 +110,11 @@ Chop_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-
 ### ChopHeader_raw
 
 ```{r}
-ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","ChopHeader_2016.csv")) |> 
-  rename(Header.ID = `Chop.Header.ID`,
-         week_number = `Week..`) |>
+ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","ChopHeader_2017.csv")) |>
+  mutate(Date = as.Date(SurveyDate)) |> 
+  filter(year(Date) >= 2017) |> 
   glimpse()
+# TODO stopped here 12-21-2022
 ```
 
 ### cwt_raw
