@@ -176,13 +176,21 @@ chop_channel_join <- full_join(ChopHeader_raw |>
 The `chop_recovery` table contains recovered carcass counts by color
 
 ```{r}
+# HeaderID connects ChopChannel to ChopHeader; ChanID joins ChopChannel to ChopRecov
+chop_recovery_join <- full_join(chop_channel_join |> 
+                                  select(date, time, sect, chan, min, chan_id, header_id,
+                                         tag_col), ChopRecov_raw |> 
+                                  rename(chan_id = ChanID), 
+                                by = "chan_id") |> 
+  clean_names() |> 
+  filter(year(date) == 2005) |> 
+  glimpse()
 # according to Access relationships, ChanID connects the header to the Recovery table
-# TODO no ChanID in ChopHeader_raw
-chop_recovery_join <- full_join(ChopHeader_raw |> 
-                                  select(HeaderID, Date, Time),
-                                ChopRecov_raw |> 
-                                  rename(HeaderID = ChanID))  |> # join on HeaderID <-> ChanID
-  clean_names()
+# chop_recovery_join <- full_join(ChopHeader_raw |> 
+#                                   select(HeaderID, Date, Time),
+#                                 ChopRecov_raw |> 
+#                                   rename(HeaderID = ChanID))  |> # join on HeaderID <-> ChanID
+#   clean_names()
 ```
 
 ### Survey

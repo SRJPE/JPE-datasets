@@ -149,14 +149,21 @@ chop_channel_join <- full_join(ChopHeader_raw |>
 The `chop_recovery` table contains recovered carcass counts by color
 
 ```{r}
-# according to Access relationships, ChanID connects the header to the Recovery table
-# TODO no ChanID in ChopHeader_raw
-chop_recovery_join <- full_join(ChopHeader_raw |> 
-                                  select(headerID, Date, Time),
-                                ChopRecov_raw |> 
-                                  rename(headerID = ChanID),
-                                by = "headerID")  |> # ChanID <-> HeaderID - not correct
-  clean_names() |> glimpse()
+# HeaderID connects ChopChannel to ChopHeader; ChanID joins ChopChannel to ChopRecov
+chop_recovery_join <- full_join(chop_channel_join |> 
+                                  select(date, time, sect, chan, min, chan_id, header_id,
+                                         tag_col), ChopRecov_raw |> 
+                                  rename(chan_id = ChanID), 
+                                by = "chan_id") |> 
+  clean_names() |> 
+  filter(year(date) == 2005) |> 
+  glimpse()
+# chop_recovery_join <- full_join(ChopHeader_raw |> 
+#                                   select(headerID, Date, Time),
+#                                 ChopRecov_raw |> 
+#                                   rename(headerID = ChanID),
+#                                 by = "headerID")  |> # ChanID <-> HeaderID - not correct
+#   clean_names() |> glimpse()
 ```
 
 ### Survey
@@ -372,7 +379,7 @@ chop_header |>
   colnames()
 ```
 ```{r}
-summary(chop_header$id)
+summary(chop_header$header_id)
 ```
 
 ### CWT Variable: `tag_id`, `sect`, `fl`, `header_id`, `week_num`
@@ -406,7 +413,7 @@ cwt_count <- cwt |>
   # unnest() |> 
   rename("male_cwt" = M,
          "female_cwt" = F,
-         "unknown_cwt" = U) |> glimpse
+         "unknown_cwt" = U) |> glimpse()
 
 total_cwt_summary <- cwt_count |> 
   mutate(male_cwt = ifelse(is.na(male_cwt), 0, male_cwt), # fill na
@@ -534,7 +541,7 @@ chop_header_cleaner
 ```{r}
 cwt |> 
   select_if(is.character) |> 
-  colnames
+  colnames()
 ```
 ```{r}
 unique(cwt$rel_loc)
@@ -570,7 +577,7 @@ cwt_cleaner <- cwt |>
                           TRUE ~ clip),
          samp_type = ifelse(samp_type == "no data", NA, samp_type),
          carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) |> 
-  glimpse
+  glimpse()
 ```
 
 ## Data Dictionaries
