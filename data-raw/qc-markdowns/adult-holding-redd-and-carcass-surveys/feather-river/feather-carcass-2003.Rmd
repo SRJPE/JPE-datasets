@@ -154,8 +154,7 @@ chop_recovery_join <- full_join(chop_channel_join |>
                                          tag_col), ChopRecov_raw |> 
                                   rename(chan_id = ChanID), 
                                 by = "chan_id") |> 
-  clean_names() |> 
-  filter(year(date) == 2005) |> 
+  clean_names() |>  
   glimpse()
 # according to Access relationships, ChanID connects the header to the Recovery table
 # chop_recovery_join <- full_join(ChopHeader_raw |> 
@@ -670,11 +669,16 @@ percent_na <- chop_recovery_cleaner |>
 
 
 recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
-                          description = c("ID",
-                                          "Date",
+                          description = c("Date of survey",
+                                          "Sect",
+                                          "Channel",
+                                          "Min",
+                                          "Channel ID",
+                                          "Header ID",
                                           "Color of tag recovered from carcass",
-                                          "Count of recovery",
-                                          "Channel ID"),
+                                          "Recovery ID",
+                                          "Color of recovery tag",
+                                          "Count of recovery"),
                           percent_na = round(percent_na$value*100))
 
 kable(recovery_data_dictionary)
