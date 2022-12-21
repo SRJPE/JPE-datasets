@@ -153,7 +153,7 @@ The `chop` table contains carcass counts by chop/tagged based on clips
 
 ```{r}
 # Note: for 2011-2016 data, the Access relationships are as follows:
-# CWT$HeaderID jins to CWTHeader$HeaderID, which joins to SampleWeeks$WeekNumber, which joins to ChopHeader$WeekNumber, which joins to Chops$HeaderID.
+# CWT$HeaderID jins to CWTHeader$HeaderID, which joins to SampleWeeks$WeekNumber, which joins to ChopHeader$WeekNumber. ChopHeader$HeaderID joins to Chops$HeaderID.
 
 #1. chop table (with dates and tag color)
 chop_join <- full_join(ChopHeader_raw |> 
@@ -161,10 +161,10 @@ chop_join <- full_join(ChopHeader_raw |>
                                Chops_raw,
                        by = "Header.ID") |> 
   clean_names() |> 
-  rename(sec = "section",
+  rename(sect = "section",
          min = "minutes",
          count = "total_count") |> 
-  mutate(sec = as.numeric(sec)) |> glimpse()
+  mutate(sect = as.numeric(sect)) |> glimpse()
 ```
 
 ### Survey
@@ -392,7 +392,6 @@ unique(cwt$tag_color)
 ```
 
 ```{r}
-#Dropping sectiongroup and morale
 # "k" = "unknown" (using Feather River Carcass Survey Plans 2021 document)
 cwt_cleaner <- cwt |> 
   mutate_if(is.character, str_to_lower) |> 
