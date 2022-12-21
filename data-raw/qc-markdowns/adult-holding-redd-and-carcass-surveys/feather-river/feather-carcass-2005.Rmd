@@ -158,9 +158,9 @@ chop_channel_join <- full_join(ChopHeader_raw |>
                                  select(HeaderID = headerID, TagCol, Date, Time),
                                ChopChannel_raw,
                                by = "HeaderID") |> 
-  clean_names() |> 
-  mutate(date = as_date(date)) |>
-  filter(year(date) == 2005)  |> glimpse()
+  clean_names() |>
+  mutate(date = as_date(date)) |> 
+  filter(year(date) == 2005) |> glimpse()
 ```
 ### Recovery
 
@@ -175,7 +175,6 @@ chop_recovery_join <- full_join(chop_channel_join |>
                                   rename(chan_id = ChanID), 
                                 by = "chan_id") |> 
   clean_names() |> 
-  filter(year(date) == 2005) |> 
   glimpse()
 
 # chop_recovery_join <- full_join(ChopHeader_raw |> 
