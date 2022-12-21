@@ -170,12 +170,21 @@ The `chop_recovery` table contains recovered carcass counts by color
 
 ```{r}
 # 2. choprecovery table (with dates)
-# TODO should not be joining on RecovID; should be joining on ChanID
-chop_recovery_join <- full_join(ChopHeader_raw |> 
-                                  select(ID, Date, Time),
-                                ChopRecov_raw |> 
-                                  rename(ID = RecovID), by = "ID")  |> 
-  clean_names()
+# should join headerID to chopchannel headerID, and then chanID from chop channel to ChopRecovery
+# HeaderID connects ChopChannel to ChopHeader; ChanID joins ChopChannel to ChopRecov
+chop_recovery_join <- full_join(chop_channel_join |> 
+                                  select(date, time, sect, chan, min, chan_id, header_id,
+                                         tag_col), ChopRecov_raw |> 
+                                  rename(chan_id = ChanID), 
+                                by = "chan_id") |> 
+  clean_names() |> 
+  glimpse()
+
+# chop_recovery_join <- full_join(ChopHeader_raw |> 
+#                                   select(ID, Date, Time),
+#                                 ChopRecov_raw |> 
+#                                   rename(ID = RecovID), by = "ID")  |> 
+#   clean_names()
 ```
 
 ### Survey
@@ -193,13 +202,13 @@ The `cwt` table contains coded wire tag information.
 ```{r}
 cwt <- full_join(cwt_raw |> clean_names(), cwt_header_raw |> clean_names(),
                  by = "header_id") |>  
-  glimpse
+  glimpse()
 ```
 
 
 ## Explore Numeric Variables: {.tabset}
 
-### Chop Channel Variable: `id`, `chan_id`, `sect`, `min`
+### Chop Channel Variable: `header_id`, `chan_id`, `sect`, `min`
 ```{r}
 # Filter clean data to show only numeric variables 
 chop_channel_join |> 
@@ -208,7 +217,7 @@ chop_channel_join |>
 ```
 
 ```{r}
-summary(chop_channel_join$id)
+summary(chop_channel_join$header_id)
 ```
 ```{r}
 summary(chop_channel_join$chan_id)
@@ -325,10 +334,11 @@ total_chops_summary <- total_chops |>
 
 
 # check if NAs are introduced in merge
-A = left_join(ChopChannel_raw, ChopHeader_raw, by = "ID")$ChanID
+A = left_join(ChopChannel_raw, ChopHeader_raw |> rename(HeaderID = headerID), 
+              by = "HeaderID")$ChanID
 B = ChopRecov_raw$ChanID
 sum(B %in% A) # they are
-# yes I noticed that. there are some IDs in the chop_channel table that are not in the chop_header table. there are A LOT of IDs in the recovery table that are not in header table. at this point i would assume this is a data entry issue and we can leave as is but clearly document. this is something we may learn more about and then be able to fix
+# yes I noticed that. there are some IDs in the chop_channel table that are not in the chop_header table. 
 ```
 ```{r}
 total_chops_summary |> 
@@ -476,7 +486,7 @@ ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
 
 Tags appear to be less commonly applied compared to chops.
 
-### Chop Recovery Variable: `id`, `chan_id`, `recov_count`
+### Chop Recovery Variable: `header_id`, `chan_id`, `recov_count`
 
 ```{r}
 # Filter clean data to show only numeric variables 
@@ -485,7 +495,7 @@ chop_recovery_join |>
   colnames()
 ```
 ```{r}
-summary(chop_recovery_join$id)
+summary(chop_recovery_join$header_id)
 ```
 ```{r}
 summary(chop_recovery_join$recov_count)
@@ -493,7 +503,7 @@ summary(chop_recovery_join$recov_count)
 
 * Note: all recov_count do not have dates associated with them
 
-### Chop Header Variable: `id`
+### Chop Header Variable: `header_id`
 
 ```{r}
 chop_header |> 
@@ -501,7 +511,7 @@ chop_header |>
   colnames()
 ```
 ```{r}
-summary(chop_header$id)
+summary(chop_header$header_id)
 ```
 
 ### CWT Variable: `tag_id`, `sect`, `fl`, `header_id`, `week_num`
@@ -535,7 +545,7 @@ cwt_count <- cwt |>
   # unnest() |> 
   rename("male_cwt" = M,
          "female_cwt" = F,
-         "unknown_cwt" = U) |> glimpse
+         "unknown_cwt" = U) |> glimpse()
 
 total_cwt_summary <- cwt_count |> 
   mutate(male_cwt = ifelse(is.na(male_cwt), 0, male_cwt), # fill na
@@ -613,9 +623,7 @@ chop_recovery_join |>
 chop_recovery_cleaner <- chop_recovery_join |> 
   mutate(date = as_date(date)) |>
   mutate_if(is.character, str_to_lower) |> 
-  select(-c(time))
-
-chop_recovery_cleaner
+  select(-c(time)) |> glimpse()
 ```
 
 ### Chop Header Clean Data
@@ -645,9 +653,7 @@ chop_header_cleaner <- chop_header |>
          crew = str_replace_all(crew, ",,", ","),
          weather = case_when(weather == "cld" ~ "cloudy",
                              TRUE ~ weather)) |> 
-  select(-c(time))
-
-chop_header_cleaner
+  select(-c(time)) |> glimpse()
 ```
 
 ### CWT Clean Data
@@ -655,7 +661,7 @@ chop_header_cleaner
 ```{r}
 cwt |> 
   select_if(is.character) |> 
-  colnames
+  colnames()
 ```
 ```{r}
 unique(cwt$rel_loc)
@@ -683,13 +689,12 @@ cwt_cleaner <- cwt |>
                           TRUE ~ clip),
          samp_type = ifelse(samp_type == "none", NA, samp_type),
          carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) |> 
-  glimpse
+  glimpse()
 ```
 
 ## Comments
 
 * Data set similar to 2007 and 2007 data
-* Little recovery data
 
 ## Data Dictionaries
 
@@ -729,11 +734,16 @@ percent_na <- chop_recovery_cleaner |>
 
 
 recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
-                          description = c("ID",
-                                          "Date of survey",
+                          description = c("Date of Survey",
+                                          "Sect",
+                                          "Chan",
+                                          "Min",
+                                          "Chan ID",
+                                          "Header ID",
                                           "Color of tag recovered from carcass",
                                           "Count of recovery",
-                                          "Channel ID"),
+                                          "Color of recovery tag", 
+                                          "Count of recvered tags"),
                           percent_na = round(percent_na$value*100))
 
 kable(recovery_data_dictionary)
