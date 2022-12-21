@@ -69,25 +69,33 @@ if(operating_system == "pc") {
   PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
   con <- odbcDriverConnect(PATH)
   # sqlTables(con)$TABLE_NAME
-  ChopHeader_raw<- sqlFetch(con, "Chop Header")
-  Chops_raw<- sqlFetch(con, "Chops")
-  CWT_raw<- sqlFetch(con, "CWT")
-  CWTHeader_raw <- sqlFetch(con, "CWT Header")
+  ChopHeader_raw <- sqlFetch(con, "CarcassSurvey")
+  Chops_raw <- sqlFetch(con, "CarcassChops")
+  Carcass_individual_raw <- sqlFetch(con, "CarcassIndividual")
+  ChopRecov_raw <- sqlFetch(con, "CarcassRecover")
 } else{
   library(Hmisc)
   mdb.get(filepath, tables = TRUE) # check for name differences
-  # Otoliths, Switchboard, and Sample Weeks tables contain no data
-  ChopHeader_raw<- mdb.get(filepath, "Chop Header")
-  Chops_raw<- mdb.get(filepath, "Chops")
-  CWT_raw<- mdb.get(filepath, "CWT")
-  CWTHeader_raw <- mdb.get(filepath, "CWT Header")
+  Chops_raw <- mdb.get(filepath, "CarcassChops")
+  Carcass_individual_raw <- mdb.get(filepath, "CarcassIndividual")
+  ChopRecov_raw <- mdb.get(filepath, "CarcassRecover")
+  ChopHeader_raw <- mdb.get(filepath, "CarcassSurvey")
+  # Other tables include Location, luActive, luAdFinStatus, luBoat,
+  # luBodyPart, luCentralValleyStreams, luChopType, luColor, luCondition, 
+  # luDates, luDisposition, luEstimator, luLocationType, luMarkType,
+  # luOtherMarkDisposition, luOtherObservations, luPeople, luProject,
+  # luRun, luSizeClass, luSpawnStatus, luSpecies, luSubsample, luSpawnStatus,
+  # luWeather, OptionLocationSubSections, OptionSelections, CarcassOtherMarks,
+  # SurveyDocuments, TrapCWTS, TrapOtherSpecies, TrapSurvey, Version, 
+  # luCWTStatus, luNoYes, luSex, luTransportType, TrapSalmon, CarcassOtherObsv,
+  # SurveyMetadata
   detach(package:Hmisc)
 }
 
-write_csv(ChopHeader_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2016.csv"))
-write_csv(Chops_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "Chops_2016.csv"))
-write_csv(CWT_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWT_2016.csv"))
-write_csv(CWTHeader_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2016.csv"))
+write_csv(Chops_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "Chops_2017.csv"))
+write_csv(ChopHeader_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2017.csv"))
+write_csv(ChopRecov_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2017.csv"))
+
 ```
 
 ## Raw Data Glimpse: {.tabset}
