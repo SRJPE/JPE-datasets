@@ -183,7 +183,6 @@ chop_recovery_join <- full_join(chop_channel_join |>
                                   rename(chan_id = ChanID), 
                                 by = "chan_id") |> 
   clean_names() |> 
-  filter(year(date) == 2005) |> 
   glimpse()
 # according to Access relationships, ChanID connects the header to the Recovery table
 # chop_recovery_join <- full_join(ChopHeader_raw |> 
@@ -537,8 +536,7 @@ chop_recovery_cleaner <- chop_recovery_join |>
   mutate(date = as_date(date)) |>
   mutate(recov_color = str_replace_all(recov_color, " ", "")) |> 
   mutate_if(is.character, str_to_lower) |> 
-  select(-c(time)) |> 
-  filter(!is.na(recov_color)) # filter out NAs (all values in rows where recov_color is NA are also NA)
+  select(-c(time))
 
 chop_recovery_cleaner
 ```
@@ -664,11 +662,16 @@ percent_na <- chop_recovery_cleaner |>
 
 
 recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
-                          description = c("ID",
-                                          "Date of survey",
-                                          "Color of tag recovered from carcass",
-                                          "Count of recovery",
-                                          "Channel ID"),
+                          description = c("Date of survey",
+                                          "Sect",
+                                          "Channel",
+                                          "Min",
+                                          "Channel ID",
+                                          "Header ID",
+                                          "Tag color",
+                                          "Recovery ID",
+                                          "Recovery Color",
+                                          "Count of recovered tags"),
                           percent_na = round(percent_na$value*100))
 
 kable(recovery_data_dictionary)
