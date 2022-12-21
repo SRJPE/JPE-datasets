@@ -318,6 +318,12 @@ chop_join |>
 ```
 
 ### Chop Header Clean Data
+```{r}
+chop_cleaner <- chop_join |>
+  mutate(date = as_date(date)) |>
+  mutate_if(is.character, str_to_lower) |> 
+  glimpse()
+```
 
 ```{r}
 chop_header |> 
