@@ -137,3 +137,15 @@ gcs_upload(standard_holding,
            name = "jpe-model-data/holding.csv",
            predefinedAcl = "bucketLevel")
 write_csv(standard_holding, "data/model-data/holding.csv")
+gcs_upload(standard_annual_redd,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/annual_redd.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(standard_annual_redd, "data/model-data/annual_redd.csv")
+gcs_upload(standard_daily_redd,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/daily_redd.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(standard_annual_redd, "data/model-data/daily_redd.csv")

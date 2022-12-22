@@ -77,3 +77,16 @@ gcs_get_object(object_name = "standard-format-data/standard_holding.csv",
                saveToDisk = "data/standard-format-data/standard_holding.csv",
                overwrite = TRUE)
 standard_holding <- read_csv("data/standard-format-data/standard_holding.csv")
+
+# Adult Redd Data
+gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_annual_redd.csv",
+               overwrite = TRUE)
+standard_annual_redd <- read_csv("data/standard-format-data/standard_annual_redd.csv")
+
+gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_daily_redd.csv",
+               overwrite = TRUE)
+standard_daily_redd <- read_csv("data/standard-format-data/standard_daily_redd.csv")
