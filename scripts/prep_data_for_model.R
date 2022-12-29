@@ -160,6 +160,7 @@ gcs_upload(efficiency_summary,
 write_csv(efficiency_summary, "data/model-data/efficiency_summary.csv")
 # weekly release
 weekly_release <- standard_release |> 
+  filter(include == "yes") |> 
   select(stream, site, release_id, date_released, week_released, year_released, 
          number_released, median_fork_length_released, flow_at_release, temperature_at_release, 
          turbidity_at_release) |> 
