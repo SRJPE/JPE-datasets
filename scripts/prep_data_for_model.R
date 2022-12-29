@@ -76,7 +76,8 @@ standard_catch_unmarked_environmental <- standard_catch_unmarked %>%
   left_join(standard_environmental)
 
 # Standard flow
-gcs_upload(standard_flow,
+unique(standard_flow$site)
+ gcs_upload(standard_flow,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/standard_flow.csv",
@@ -106,12 +107,16 @@ gcs_upload(standard_release,
            name = "jpe-model-data/release_summary.csv",
            predefinedAcl = "bucketLevel")
 write_csv(standard_release, "data/model-data/release_summary.csv")
-gcs_upload(standard_recapture,
+# add zero recaptures
+recapture_summary <- select(standard_release, stream, site, release_id, date_released, week_released, year_released) |> 
+  full_join(select(standard_recapture, -c(date_released, week_released, year_released))) |> 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured))
+gcs_upload(ecapture_summary,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/recapture_summary.csv",
            predefinedAcl = "bucketLevel")
-write_csv(standard_recapture, "data/model-data/recapture_summary.csv")
+write_csv(recapture_summary, "data/model-data/recapture_summary.csv")
 efficiency_summary <- standard_release %>% 
   select(stream, site, release_id, number_released) %>% 
   left_join(standard_recapture %>% 
