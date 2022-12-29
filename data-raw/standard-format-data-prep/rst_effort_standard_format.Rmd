@@ -88,7 +88,7 @@ revolution_calculated_hours_fished <- function(dat){
 }
 ```
 
-3) If only one date is available, assume that the end date is the date sampled following day.
+3) If only one date is available, assume that the end date is the date sampled on the following day.
 
 ```{r, helper3}
 # calculating hours fished when have only date and time
