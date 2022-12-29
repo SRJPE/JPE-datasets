@@ -120,7 +120,7 @@ feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
 feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"))
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
 knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
-knight_trap_pre2002 <-  read_csv(here::here("data", "rst", "knights_2002_trap.csv"))
+knight_effort_pre2002 <-  read_csv(here::here("data", "rst", "knights_2002_trap.csv"))
 tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
 ```
 
@@ -345,8 +345,10 @@ butte_rst_clean_pre_2015 <- butte_rst %>%
 Prep data from CAMP to combine with RST clean
 ```{r, butte_camp_clean}
 butte_rst_clean_camp <- butte_rst_camp %>%
+  # seems like there are catch entries when it wasn't a sampling visit, remove these
+  filter(fishProcessed != "N/A; not a sampling visit") |> 
   # removing existing mark for now. will add all those in later
-  select(-c(catchRawID, trapVisitID, visitTime2, markType_1, markColor_1, markPosition_1, markCode_1)) %>%
+  select(-c(catchRawID, trapVisitID, visitTime2, markType_1, markColor_1, markPosition_1, markCode_1, fishProcessed)) %>%
   # combine atcapture and final run
   mutate(run = ifelse(!is.na(finalRun), finalRun, atCaptureRun),
          runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>% 
@@ -399,6 +401,8 @@ butte_trap_pre_2015 <- butte_rst %>%
   summarize(min = min(date))
 
 butte_trap_camp_dates <-  butte_trap_camp |>
+  # no fish are processed on these days so don't want to include catch data
+  filter(fishProcessed != "N/A; not a sampling visit") |> 
   mutate(wy = ifelse(month(visitTime) %in% 10:12, year(visitTime) + 1, year(visitTime))) %>% 
   group_by(wy) %>% 
   summarize(min = min(visitTime))
@@ -886,18 +890,23 @@ filter(knights_effort, visitTime != visitTime2)
 
 knights_trap_clean_camp <- knights_effort %>%
   # use sample date because this is the date the trap would have been checked
-  select(visitTime) %>% 
-  rename(date = visitTime) %>% 
-  distinct()
+  select(visitTime, subSiteName) %>% 
+  rename(date = visitTime,
+         subsite = subSiteName) %>% 
+  distinct() |> 
+  mutate(subsite = as.character(subsite))
 
 knights_trap_pre2006 <- knights_effort_pre2006 %>% 
   # filter to only include data before 2006 (CAMP stores data 2006 to present)
   filter(date < "2006-10-02") %>% 
-  select(date) %>% 
-  distinct()
+  select(date) |> 
+  distinct() |> 
+  mutate(subsite = "knights landing")
 
-knights_trap_pre2002 <- knight_trap_pre2002 %>% 
-  select(date) %>% 
+knights_trap_pre2002 <- knight_effort_pre2002 %>% 
+  select(date, trapid) %>% 
+  rename(subsite = trapid) |> 
+  mutate(subsite = ifelse(is.na(subsite), "knights landing", subsite)) |> 
   distinct()
 
 knights_trap_clean <- bind_rows(knights_trap_clean_camp, knights_trap_pre2006, knights_trap_pre2002)
