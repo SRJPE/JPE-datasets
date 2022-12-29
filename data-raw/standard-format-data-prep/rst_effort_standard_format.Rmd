@@ -376,7 +376,7 @@ the hours fished when fish are processed. Does not look like they have any sampl
 # typically a trap is not processed fish when service but this happens 2x. stop date/time filled in with the visit date
 feather_hours_fished <- filter(trap, stream == "feather river", 
                                # Tested out move lower so that we still know the next day/day before even if fish were not processed on that day, doesn't look like it makes a difference 
-                               fish_processed == "processed fish", include == T, 
+                               fish_processed %in% c("processed fish", "not recorded", "no fish caught"), include == T, 
                                visit_type != "start trapping") %>%
   select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, 
          trap_visit_time, trap_visit_date, stream, site, subsite) %>% 
