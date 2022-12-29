@@ -32,6 +32,12 @@ gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
                overwrite = TRUE)
 trap <- read_csv("data/standard_rst_trap.csv")
 
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard_rst_catch.csv",
+               overwrite = TRUE)
+catch <- read_csv("data/standard_rst_catch.csv")
+
 # pull in hours fished for knights landing pre 2006
 gcs_get_object(object_name = "rst/lower-sac-river/data/knights-landing/knl_combine_sampling_effort_clean.csv",
                bucket = gcs_get_global_bucket(),
@@ -425,6 +431,16 @@ Knights Landing has date and time data available to calculate the hours fished. 
 
 ```{r, knights}
 ## Knights Landing ####
+# there seem to be quite a few missing effort calculations pre 2002. for the ones that are missing,
+# we will apply the one date metholody
+knights_hours_fished_pre2006_calculated <- filter(catch, site == "knights landing", year(date) < 2006, year(date) >= 2002) %>%
+  distinct(date, site, subsite, stream) %>%
+  rename(trap_stop_date = date) |> 
+  mutate(start_datetime = ymd_hms(paste(trap_stop_date, "00:00:00"))) %>%
+  mutate(hours_fished_methodology = "using only start time") %>% 
+  hours_fished_one_date() |> 
+  mutate(hours_fished = as.numeric(hours_fished)) |> 
+  rename(hours_fished_calculated = hours_fished)
 # prior to 2006 data stored in excel spreadsheets where hours fished was calculated
 knights_hours_fished_pre2006 <- knights_effort_pre2006 %>% 
   select(date, hrs_fished, cone_id) %>% 
@@ -436,9 +452,24 @@ knights_hours_fished_pre2006 <- knights_effort_pre2006 %>%
   group_by(stream, site, trap_stop_date) %>% 
   summarize(hours_fished = sum(hours_fished, na.rm = T)) %>% 
   mutate(subsite = "knights landing",
-         hours_fished_methodology = "calculated by knights landing") # catch data pre 2006 is aggregated across traps
+         hours_fished_methodology = "calculated by knights landing") |> # catch data pre 2006 is aggregated across traps
+  full_join(knights_hours_fished_pre2006_calculated |> 
+              select(trap_stop_date, stream, site, subsite, hours_fished_calculated)) |> 
+  mutate(hours_fished = ifelse(is.na(hours_fished), hours_fished_calculated, hours_fished),
+         hours_fished_methodology = ifelse(is.na(hours_fished_methodology),"using only start time", hours_fished_methodology)) |> select(-hours_fished_calculated)
 
+# there seem to be quite a few missing effort calculations pre 2002. for the ones that are missing,
+# we will apply the one date metholody
+knights_hours_fished_pre2002_calculated <- filter(catch, site == "knights landing", year(date) < 2002) %>%
+  distinct(date, site, subsite, stream) %>%
+  rename(trap_stop_date = date) |> 
+  mutate(start_datetime = ymd_hms(paste(trap_stop_date, "00:00:00"))) %>%
+  mutate(hours_fished_methodology = "using only start time") %>% 
+  hours_fished_one_date() |> 
+  mutate(hours_fished = as.numeric(hours_fished)) |> 
+  rename(hours_fished_calculated = hours_fished)
 # prior to 2002 data stored in database files where hours fished was calculated
+
 knights_hours_fished_pre2002 <- knights_effort_pre2002 %>% 
   # if effort is.na() then assume 24 hours
   mutate(effort = ifelse(is.na(effort), 24, effort)) |> 
@@ -451,7 +482,11 @@ knights_hours_fished_pre2002 <- knights_effort_pre2002 %>%
   group_by(stream, site, subsite, trap_stop_date) %>% 
   summarize(hours_fished = sum(hours_fished, na.rm = T)) %>% 
   mutate(subsite = ifelse(is.na(subsite), "knights landing", as.character(subsite)), # there are a few subsites that are NA so fill in with Knights Landing
-         hours_fished_methodology = "calculated by knights landing") 
+         hours_fished_methodology = "calculated by knights landing") |> 
+  full_join(knights_hours_fished_pre2002_calculated |> 
+              select(trap_stop_date, stream, site, subsite, hours_fished_calculated)) |> 
+  mutate(hours_fished = ifelse(is.na(hours_fished), hours_fished_calculated, hours_fished),
+         hours_fished_methodology = ifelse(is.na(hours_fished_methodology),"using only start time", hours_fished_methodology)) |> select(-hours_fished_calculated)
 
 ### Hours fished ####
 # calculate hours fished only for period of times when trap was fishing otherwise there will be duplicates that don't make sense
