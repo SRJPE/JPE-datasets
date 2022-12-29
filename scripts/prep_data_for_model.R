@@ -65,10 +65,25 @@ gcs_upload(weekly_standard_effort,
            name = "jpe-model-data/weekly_effort.csv",
            predefinedAcl = "bucketLevel")
 write_csv(weekly_standard_effort, "data/model-data/weekly_effort.csv")
+
+
+# Catch & Effort ----------------------------------------------------------
+
 # Join weekly effort data to weekly catch data
-# there are a handful of cases where hours fished is NA. may be able to fill these in
-weekly_catch <- left_join(weekly_standard_catch_unmarked, weekly_standard_effort) 
-filter(weekly_catch, is.na(hours_fished))
+# there are a handful of cases where hours fished is NA. 
+# weekly hours fished will be assumed to be 168 hours (24 hours * 7) as most
+# traps fish continuously. Ideally these data points would be filled in, however,
+# after extensive effort 54 still remain. It is unlikely that these datapoints
+# will have a huge effect in such a large data set.
+weekly_catch_effort <- left_join(weekly_standard_catch_unmarked, weekly_standard_effort) |> 
+  mutate(hours_fished = ifelse(is.na(hours_fished), 168, hours_fished))
+gcs_upload(weekly_catch_effort,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/weekly_catch_effort.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(weekly_catch_effort, "data/model-data/weekly_catch_effort.csv")
+
 
 # Environmental -----------------------------------------------------------
 
@@ -175,6 +190,7 @@ gcs_upload(weekly_efficiency,
            name = "jpe-model-data/weekly_efficiency.csv",
            predefinedAcl = "bucketLevel")
 write_csv(weekly_efficiency, "data/model-data/weekly_efficiency.csv")
+
 # Adult Upstream ----------------------------------------------------------
 
 gcs_upload(standard_upstream,
