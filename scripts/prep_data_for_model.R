@@ -4,6 +4,8 @@ source("data/standard-format-data/pull_data.R") # pulls in all standard datasets
 f <- function(input, output) write_csv(input, file = output)
 
 
+# Catch -------------------------------------------------------------------
+
 # Filter standard_catch to include only unmarked fish (is.na(release_id), species == "chinook")
 standard_catch %>% glimpse()
 unique(standard_catch$site)
@@ -23,6 +25,7 @@ gcs_upload(standard_catch_unmarked,
            name = "jpe-model-data/daily_catch_unmarked.csv",
            predefinedAcl = "bucketLevel")
 write_csv(standard_catch_unmarked, "data/model-data/daily_catch_unmarked.csv")
+
 # Summarize standard_catch by week
 # stream, site, subsite, week, year, run, lifestage, adipose_clipped
 weekly_standard_catch_unmarked <- standard_catch_unmarked %>% 
@@ -39,6 +42,9 @@ gcs_upload(weekly_standard_catch_unmarked,
            name = "jpe-model-data/weekly_catch_unmarked.csv",
            predefinedAcl = "bucketLevel")
 write_csv(weekly_standard_catch_unmarked, "data/model-data/weekly_catch_unmarked.csv")
+
+# Effort ------------------------------------------------------------------
+
 # Summarize effort data by week
 standard_effort %>% glimpse()
 gcs_upload(standard_effort,
@@ -64,6 +70,8 @@ write_csv(weekly_standard_effort, "data/model-data/weekly_effort.csv")
 weekly_catch <- left_join(weekly_standard_catch_unmarked, weekly_standard_effort) 
 filter(weekly_catch, is.na(hours_fished))
 
+# Environmental -----------------------------------------------------------
+
 # Join environmental data to catch data
 standard_environmental %>% glimpse()
 gcs_upload(standard_environmental,
@@ -83,6 +91,9 @@ unique(standard_flow$site)
            name = "jpe-model-data/standard_flow.csv",
            predefinedAcl = "bucketLevel")
 write_csv(standard_flow, "data/model-data/standard_flow.csv")
+
+# Trap --------------------------------------------------------------------
+
 # Join trap operations data to catch data
 # improvement that could be made is making counter and sample revolutions easier to understand
 standard_trap %>% glimpse()
@@ -97,6 +108,8 @@ standard_catch_unmarked_trap <- standard_catch_unmarked %>%
                                   "stream" ="stream", 
                                   "site" = "site", 
                                   "subsite" = "subsite"))
+
+# Efficiency --------------------------------------------------------------
 
 # Summarize releases and recaptures
 standard_recapture %>% glimpse()
@@ -130,18 +143,58 @@ gcs_upload(efficiency_summary,
            name = "jpe-model-data/efficiency_summary.csv",
            predefinedAcl = "bucketLevel")
 write_csv(efficiency_summary, "data/model-data/efficiency_summary.csv")
+# weekly release
+weekly_release <- standard_release |> 
+  select(stream, site, release_id, date_released, week_released, year_released, 
+         number_released, median_fork_length_released, flow_at_release, temperature_at_release, 
+         turbidity_at_release) |> 
+  mutate(week_released = ifelse(is.na(week_released), week(date_released), week_released),
+         year_released = ifelse(is.na(year_released), year(date_released), year_released)) |> 
+  group_by(stream, site, week_released, year_released) |> 
+  summarise(number_released = sum(number_released),
+            median_fork_length_released = median(median_fork_length_released, na.rm = T),
+            flow_at_release = mean(flow_at_release, na.rm = T),
+            temperature_at_release = mean(temperature_at_release, na.rm = T),
+            turbidity_at_release = mean(turbidity_at_release, na.rm = T)) |> 
+  mutate(across(everything(), ~replace(., is.nan(.), NA)))
+# weekly recapture
+weekly_recapture <- recapture_summary |> 
+  select(stream, site, release_id, date_released, week_released, year_released, 
+         number_recaptured, median_fork_length_recaptured) |> 
+  mutate(week_released = ifelse(is.na(week_released), week(date_released), week_released),
+         year_released = ifelse(is.na(year_released), year(date_released), year_released)) |> 
+  group_by(stream, site, week_released, year_released) |> 
+  summarise(number_recaptured = sum(number_recaptured),
+            median_fork_length_recaptured = median(median_fork_length_recaptured, na.rm = T))
+# weekly efficiency
+# this weekly summary assumes fish released in week 1 are caught in week 1
+weekly_efficiency <- left_join(weekly_release, weekly_recapture)
+gcs_upload(weekly_efficiency,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/weekly_efficiency.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(weekly_efficiency, "data/model-data/weekly_efficiency.csv")
+# Adult Upstream ----------------------------------------------------------
+
 gcs_upload(standard_upstream,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/upstream_passage.csv",
            predefinedAcl = "bucketLevel")
 write_csv(standard_upstream, "data/model-data/upstream_passage.csv")
+
+# Holding -----------------------------------------------------------------
+
 gcs_upload(standard_holding,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/holding.csv",
            predefinedAcl = "bucketLevel")
 write_csv(standard_holding, "data/model-data/holding.csv")
+
+# Redd --------------------------------------------------------------------
+
 gcs_upload(standard_annual_redd,
            object_function = f,
            type = "csv",
