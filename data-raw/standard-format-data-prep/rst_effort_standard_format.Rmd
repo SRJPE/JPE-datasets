@@ -96,7 +96,7 @@ hours_fished_one_date <- function(dat) {
   dat %>%
   arrange(site, subsite, start_datetime) %>%
   mutate(end_datetime = lead(start_datetime),
-         end_datetime = case_when(difftime(end_datetime, start_datetime, units = "hours") > 120 ~ start_datetime + 1, 
+         end_datetime = case_when(difftime(end_datetime, start_datetime, units = "hours") > 120 ~ start_datetime + hours(24), 
                                   T ~ end_datetime),
          hours_fished = round(difftime(end_datetime, start_datetime, units = "hours"), 2))
 }
