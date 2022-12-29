@@ -440,6 +440,8 @@ knights_hours_fished_pre2006 <- knights_effort_pre2006 %>%
 
 # prior to 2002 data stored in database files where hours fished was calculated
 knights_hours_fished_pre2002 <- knights_effort_pre2002 %>% 
+  # if effort is.na() then assume 24 hours
+  mutate(effort = ifelse(is.na(effort), 24, effort)) |> 
   select(date, trapid, effort) %>% 
   rename(trap_stop_date = date,
          hours_fished = effort,
@@ -491,7 +493,7 @@ knights_hours_fished %>% filter(hours_fished > 50)
 # filter(trap, stream == "sacramento river", site == "tisdale", trap_start_date == "2019-07-24")
 
 tisdale_hours_fished <- filter(trap, stream == "sacramento river", site == "tisdale", 
-                               fish_processed == "processed fish", include == T, 
+                               fish_processed %in% c("processed fish", "not recorded", "no fish caught"), include == T, 
                                visit_type != "start trapping") %>%
   select(trap_start_date, trap_start_time, trap_stop_date, trap_stop_time, 
          trap_visit_time, trap_visit_date, subsite, site, stream) %>% 
