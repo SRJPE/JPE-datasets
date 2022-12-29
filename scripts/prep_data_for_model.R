@@ -174,6 +174,8 @@ weekly_release <- standard_release |>
             turbidity_at_release = mean(turbidity_at_release, na.rm = T)) |> 
   mutate(across(everything(), ~replace(., is.nan(.), NA)))
 # weekly recapture
+# # More recaps than releases because we removed include == F from release data to 
+# remove trials that we should exclude 
 weekly_recapture <- recapture_summary |> 
   select(stream, site, release_id, date_released, week_released, year_released, 
          number_recaptured, median_fork_length_recaptured) |> 
