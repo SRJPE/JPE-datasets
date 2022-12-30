@@ -231,12 +231,16 @@ weekly_release <- release_summary |>
   select(stream, site, release_id, date_released, week_released, year_released, 
          number_released, median_fork_length_released, flow_at_release, temperature_at_release, 
          turbidity_at_release) |> 
+  left_join(standard_flow |> 
+              mutate(date_released = date + 1,
+                     flow_release = lag(flow_cfs),
+                     week_released = week(date_released),
+                     year_released = year(date_released)) |> 
+              select(-date, -flow_cfs)) |> 
   group_by(stream, site, week_released, year_released) |> 
   summarise(number_released = sum(number_released),
             median_fork_length_released = median(median_fork_length_released, na.rm = T),
-            flow_at_release = mean(flow_at_release, na.rm = T),
-            temperature_at_release = mean(temperature_at_release, na.rm = T),
-            turbidity_at_release = mean(turbidity_at_release, na.rm = T)) |> 
+            flow_at_recapture_day1 = mean(flow_release, na.rm = T)) |> 
   mutate(across(everything(), ~replace(., is.nan(.), NA))) |> 
   left_join(weekly_release_origin)
 
