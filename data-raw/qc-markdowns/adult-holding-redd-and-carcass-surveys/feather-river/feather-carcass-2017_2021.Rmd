@@ -1,0 +1,544 @@
+---
+title: "Feather Carcass QC 2017"
+author: "Elizabeth Stebbins"
+date: '2022-12-21'
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+library(janitor)
+library(hms) #?as_hms()
+library(RODBC)
+library(knitr)
+library(wesanderson)
+```
+
+# Feather River Carcass Data
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+**Video Season:** 
+
+**Completeness of Record throughout timeframe:** 
+
+**Sampling Location:**
+
+**Data Contact:** 
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, include=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r, include=FALSE}
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2017_2021/CAMP_Escapement_20210412.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2017_2021.mdb",
+               overwrite = TRUE)
+
+filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2017_2021.mdb"
+
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
+
+# Mac and PC need to run different code to pull data from Access db
+if(operating_system == "pc") {
+  DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+  PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
+  con <- odbcDriverConnect(PATH)
+  # sqlTables(con)$TABLE_NAME
+  ChopHeader_raw <- sqlFetch(con, "CarcassSurvey")
+  Chops_raw <- sqlFetch(con, "CarcassChops")
+  Carcass_individual_raw <- sqlFetch(con, "CarcassIndividual")
+  ChopRecov_raw <- sqlFetch(con, "CarcassRecover")
+} else{
+  library(Hmisc)
+  mdb.get(filepath, tables = TRUE) # check for name differences
+  Chops_raw <- mdb.get(filepath, "CarcassChops")
+  CWT_raw <- mdb.get(filepath, "CarcassIndividual")
+  ChopRecov_raw <- mdb.get(filepath, "CarcassRecover")
+  ChopHeader_raw <- mdb.get(filepath, "CarcassSurvey")
+  # lookup tables
+  disposition_LU = mdb.get(filepath, "luDisposition")
+  color_LU = mdb.get(filepath, "luColor")
+  condition_LU = mdb.get(filepath, "luCondition")
+  cwtstatus_LU = mdb.get(filepath, "luCWTStatus")
+  spawnstatus_LU = mdb.get(filepath, "luSpawnStatus")
+  marktype_LU = mdb.get(filepath, "luMarkType")
+  species_LU = mdb.get(filepath, "luSpecies")
+  adfin_LU = mdb.get(filepath, "luAdFinStatus")
+  choptype_LU = mdb.get(filepath, "luChopType")
+  sex_LU = mdb.get(filepath, "luSex")
+  weather_LU = mdb.get(filepath, "luWeather")
+  # Other tables include Location, luActive, luAdFinStatus, luBoat,
+  # luBodyPart, luCentralValleyStreams, luChopType, luColor, luCondition, 
+  # luDates, luDisposition, luEstimator, luLocationType, luMarkType,
+  # luOtherMarkDisposition, luOtherObservations, luPeople, luProject,
+  # luRun, luSizeClass, luSpawnStatus, luSpecies, luSubsample, luSpawnStatus,
+  # luWeather, OptionLocationSubSections, OptionSelections, CarcassOtherMarks,
+  # SurveyDocuments, TrapCWTS, TrapOtherSpecies, TrapSurvey, Version, 
+  # luCWTStatus, luNoYes, luSex, luTransportType, TrapSalmon, CarcassOtherObsv,
+  # SurveyMetadata
+  detach(package:Hmisc)
+}
+
+write_csv(Chops_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "Chops_2017_2021.csv"))
+write_csv(ChopHeader_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2017_2021.csv"))
+write_csv(ChopRecov_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2017_2021.csv"))
+write_csv(CWT_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWT_2017_2021.csv"))
+
+```
+
+## Raw Data Glimpse: {.tabset}
+
+### Chops_raw
+```{r}
+Chop_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","Chops_2017_2021.csv")) |> 
+  glimpse()
+```
+
+### ChopHeader_raw
+
+```{r}
+ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","ChopHeader_2017_2021.csv")) |>
+  mutate(Date = as.Date(SurveyDate)) |> 
+  filter(year(Date) >= 2017) |> 
+  glimpse()
+```
+
+### ChopRecov_raw
+
+```{r}
+ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns", 
+                                  "adult-holding-redd-and-carcass-surveys",
+                                  "feather-river", "ChopRecov_2017_2021.csv")) |> 
+  glimpse()
+```
+### cwt_raw
+```{r}
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","CWT_2017_2021.csv")) |> glimpse()
+
+```
+
+## Data transformations: {.tabset}
+
+### Counts
+
+The `chop` table contains carcass counts by chop/tagged based on clips
+
+
+```{r}
+# Using SurveyMetaID to get Date
+
+#1. chop table (with dates and tag color)
+chop_join <- full_join(ChopHeader_raw |> 
+                                 select(SurveyMetaID, Date),
+                               Chop_raw,
+                       by = "SurveyMetaID") |> 
+  clean_names() |> 
+  rename(count = chop_count) |> 
+  mutate(way_pt = as.character(way_pt),
+         r_mile = as.numeric(r_mile)) |> glimpse()
+```
+
+### Survey
+
+The `chop_header` table contains survey metadata and covariates
+
+```{r}
+chop_header <- ChopHeader_raw |> 
+  clean_names() |> glimpse()
+```
+
+### CWT
+The `cwt` table contains coded wire tag information and biological sampling data. 
+
+```{r}
+cwt <- full_join(ChopHeader_raw |>
+                   select(Date, SurveyMetaID), cwt_raw,
+                 by = "SurveyMetaID") |> 
+  clean_names() |> 
+  mutate(way_pt = as.character(way_pt),
+         r_mile = as.numeric(r_mile),
+         tissue_nu = as.numeric(tissue_nu),
+         dna_nu = as.numeric(dn_anu),
+         creation_time = as.POSIXct(gsub("[()]", "", creation_time), format = "%m/%d/%y %H:%M:%S"),
+         edit_time = as.POSIXct(gsub("[()]", "", edit_time), format = "%m/%d/%y %H:%M:%S")) |> 
+  rename(fl_mm = f_lmm,
+         fl_cm = f_lcm,
+         cwt_cd = cw_tcd) |> 
+  select(-dn_anu) |> 
+  glimpse()
+```
+
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables 
+chop_join |> 
+  select_if(is.numeric) |>
+  colnames()
+```
+
+### Chop Join Variable: `survey_meta_id`, `chops_id`, `survey_id`, `r_mile`, `species_id`, `run_id`
+
+```{r}
+summary(chop_join$survey_meta_id)
+```
+```{r}
+summary(chop_join$chops_id)
+```
+```{r}
+summary(chop_join$survey_id)
+```
+```{r}
+# all NAs
+summary(chop_join$r_mile)
+```
+
+```{r}
+summary(chop_join$species_id)
+```
+```{r}
+# all 3s
+summary(chop_join$run_id)
+```
+
+### Chop Join Variable: `count`
+
+**Numeric Summary of `count` over Period of Record**
+
+
+```{r}
+summary(chop_join$count)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(chop_join$count))/nrow(chop_join), 3) * 100` % of values in the `count` column are NA.
+
+**Plotting total daily chops over Period of Record**
+
+```{r}
+# daily chop count over time
+chop_join |> 
+  filter(!is.na(date)) |>
+  mutate(year = year(date)) |>
+  group_by(date, year) |> 
+  summarize(count = sum(count, na.rm = T)) |> 
+  ggplot(aes(x = day(date), y = count)) +
+  geom_col() + 
+  facet_wrap(~year) +
+  theme_minimal() +
+  theme(text = element_text(size = 15))
+```
+
+This plot shows the total daily chops collected each day from August to December from 2017-2020. Each square represents a different year. 
+
+
+### Chop Header Variable: `survey_meta_id`
+
+```{r}
+chop_header |> 
+  select_if(is.numeric) |> 
+  colnames()
+```
+```{r}
+summary(chop_header$survey_meta_id)
+```
+
+### CWT Variable: `survey_meta_id`, `individual_id`, `fl_mm`, `survey_id`
+```{r}
+cwt |> 
+  select_if(is.numeric) |> 
+  colnames()
+```
+```{r}
+# there is an outlier here
+summary(cwt$fl_mm)
+```
+
+
+* `r round(sum(is.na(cwt$fl_mm))/nrow(cwt), 3) * 100` % of values in the `fl` column are NA.
+
+
+**Plotting fork length of each sex**
+
+```{r}
+# use sex lookup table
+cwt |> 
+  mutate(sex = case_when(sex_id == 251 ~ "unknown",
+                         sex_id == 253 ~ "not recorded", 
+                         sex_id == 1 ~ "female",
+                         sex_id == 2 ~ "male")) |> 
+  filter(fl_mm < 2000) |> 
+  ggplot(aes(x = sex, y = fl_mm)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(y = "FL", x = "Sex") + 
+  facet_wrap(~year(date))
+```
+
+## Explore Categorical variables: {.tabset}
+
+### Chop Clean Data
+
+Fix inconsistencies with spelling, capitalization, and dates
+
+```{r}
+chop_join |> 
+  select_if(is.character) |>
+  colnames()
+```
+
+```{r}
+# TODO what is runid? run lookup table not working
+chop_cleaner <- chop_join |>
+  mutate(chop_type_cd = tolower(chop_type_cd)) |>
+  left_join(species_LU |> 
+              mutate(species_id = as.numeric(TaxonID),
+                     species = CommonName) |> 
+              select(species_id, species), by = "species_id") |> 
+  select(-species_id) |> glimpse()
+
+```
+### Chop Header Clean Data
+
+```{r}
+chop_header |> 
+  select_if(is.character) |> 
+  colnames()
+```
+```{r}
+unique(chop_header$crew)
+```
+```{r}
+unique(chop_header$weather)
+```
+
+
+
+```{r}
+chop_header_cleaner <- chop_header |>
+  left_join(weather_LU |> 
+              select(weather_id = WeatherID, weather = Weather), by = "weather_id") |> 
+  mutate(time_in = strftime(as.POSIXct(time_in, format = "%m/%d/%y %H:%M:%S"), "%H:%M:%S"),
+         time_out = strftime(as.POSIXct(time_out, format = "%m/%d/%y %H:%M:%S"), "%H:%M:%S"),
+         edit_time = as.POSIXct(edit_time, format = "%m/%d/%y %H:%M:%S"),
+         weather = tolower(weather),
+         water_temp_f = as.numeric(water_temp_f),
+         water_temp_c = as.numeric(water_temp_c),
+         secchi_cm = as.numeric(secchi_cm),
+         secchi_feet = as.numeric(secchi_feet),
+         flow_cfs = as.numeric(flow_cfs),
+         turbidity_ntu = as.numeric(turbidity_ntu)) |> 
+  select(-weather_id) |> 
+    glimpse()
+```
+
+### CWT Clean Data
+
+```{r}
+cwt |> 
+  select_if(is.character) |> 
+  colnames()
+```
+
+
+
+```{r}
+# connect IDs to lookup tables to get values
+cwt_cleaner <- cwt |> 
+  left_join(species_LU |> 
+              mutate(species_id = as.numeric(TaxonID),
+                     species = tolower(CommonName)) |> 
+              select(species_id, species), by = "species_id") |> 
+  left_join(disposition_LU |> 
+              mutate(disposition_id = as.numeric(DispositionID),
+                     disposition = tolower(Disposition)) |> 
+              select(disposition_id, disposition), by = "disposition_id") |> 
+  left_join(condition_LU |> 
+              mutate(condition_id = as.numeric(ConditionID),
+                     condition = tolower(Condition)) |> 
+              select(condition_id, condition), by = "condition_id") |> 
+  left_join(spawnstatus_LU |> 
+              mutate(spawned_id = as.numeric(SpawnedID),
+                     spawn_status = tolower(Spawned)) |> 
+              select(spawned_id, spawn_status), 
+            by = "spawned_id") |> 
+  left_join(adfin_LU |> 
+              mutate(ad_fin_clip_id = as.numeric(AdFinClipID),
+                     ad_clip = tolower(AdFinClip)) |> 
+              select(ad_fin_clip_id, ad_clip), by = "ad_fin_clip_id") |> 
+  left_join(cwtstatus_LU |> 
+              mutate(cwt_status_id = as.numeric(CWTStatusID),
+                     cwt_status = tolower(CWTStatus)) |> 
+              select(cwt_status_id, cwt_status), 
+            by = "cwt_status_id") |> 
+  mutate_if(is.character, str_to_lower) |> 
+  select(-c(species_id, disposition_id, condition_id, spawned_id, 
+            ad_fin_clip_id, cwt_status_id, sex_id)) |> 
+  glimpse()
+```
+
+
+## Data Dictionaries
+
+### Chop Count
+
+```{r}
+percent_na <- chop_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
+  pivot_longer(cols = everything())
+
+
+counts_data_dictionary <- tibble(variables = colnames(chop_cleaner),
+                          description = c("Survey Meta ID",
+                                          "Date",
+                                          "Chops ID",
+                                          "Survey ID",
+                                          "Waypoint",
+                                          "River Mile",
+                                          "Run ID",
+                                          "Chop Type CD",
+                                          "Count",
+                                          "Data Recorder",
+                                          "Creation Time",
+                                          "Editor",
+                                          "Edit Time",
+                                          "Species"),
+                          percent_na = round(percent_na$value*100,
+                                             digits = 1))
+
+kable(counts_data_dictionary)
+```
+
+### Survey
+
+```{r}
+percent_na <- chop_header_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
+  pivot_longer(cols = everything())
+
+chop_header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
+                          description = c("Survey Meta ID",
+                                          "Survey ID",
+                                          "Location ID",
+                                          "Section ID",
+                                          "Boat",
+                                          "Survey Week",
+                                          "Transport Type ID",
+                                          "Subsample ID",
+                                          "Survey Date",
+                                          "Time In",
+                                          "Time Out",
+                                          "Water Temp (F)",
+                                          "Water Temp (C)",
+                                          "Secchi (cm)",
+                                          "Secchi (ft)",
+                                          "Flow (cfs)",
+                                          "Turbidity (NTU)",
+                                          "Field Recorder",
+                                          "Crew",
+                                          "GPS Unit",
+                                          "Comments",
+                                          "Data Recorder",
+                                          "Creation Time",
+                                          "Editor",
+                                          "Edit Time",
+                                          "Date",
+                                          "Weather"),
+                          percent_na = round(percent_na$value*100,
+                                             digits = 1))
+
+kable(chop_header_data_dictionary)
+```
+### CWT
+```{r}
+percent_na <- cwt_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
+  pivot_longer(cols = everything())
+
+cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
+                          description = c("Date",
+                                          "Survey Meta ID",
+                                          "Individual ID",
+                                          "Survey ID",
+                                          "Waypoint",
+                                          "River Mile",
+                                          "Run ID",
+                                          "Disc Tag Applied",
+                                          "Color Tag Applied",
+                                          "Fork Length (mm)",
+                                          "Fork Length (cm)",
+                                          "Head Number",
+                                          "Scale Number",
+                                          "Tissue Number",
+                                          "Otolith Number",
+                                          "Comments",
+                                          "Data Recorder",
+                                          "Creation Time",
+                                          "Editor",
+                                          "Edit Time",
+                                          "CWT CD",
+                                          "DNA Number",
+                                          "Species",
+                                          "Disposition",
+                                          "Condition",
+                                          "Spawn Status",
+                                          "Adipose fin clip",
+                                          "CWT Status"),
+                          percent_na = round(percent_na$value*100))
+
+kable(cwt_data_dictionary)
+```
+## Saved cleaned data back to google cloud
+```{r}
+#Ignore chop recovery as its 100% NA
+feather_carcass_chops_2017_2021 <- chop_cleaner |> glimpse()
+feather_carcass_cwt_2017_2021 <- cwt_cleaner |> glimpse()
+feather_carcass_chop_header_2017_2021 <- chop_header_cleaner |> glimpse()
+```
+```{r, include=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_carcass_chops_2017_2021,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2017_2021.csv")
+gcs_upload(feather_carcass_cwt_2017_2021,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2017_2021.csv")
+gcs_upload(feather_carcass_chop_header_2017_2021,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2017_2021.csv")
+```
+
+
+
+

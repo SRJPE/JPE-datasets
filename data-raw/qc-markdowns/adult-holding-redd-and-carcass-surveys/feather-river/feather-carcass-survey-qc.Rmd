@@ -26,13 +26,13 @@ library(wesanderson)
 
 ## Description of Monitoring Data
 
-**Timeframe:** 2000 to 2016
+**Timeframe:** 2000 to 2021
   
 **Video Season:** 
   
 **Completeness of Record throughout timeframe:** 
 
-* Data collected varies between different seasons. Cwt has the highest variability. Stop collecting "Chops Recovery" after (2011?); earlier years have more detailed chops data and had separate table for tags data; later chops data and tags data combines into one.
+* Data collected varies between different seasons. Coded wire tag (CWT) data has the highest variability. Collection of "Chop Recovery" data is inconsistent - collected from 2000-2010 and 2017-2021. Earlier years have more detailed chops data and had separate table for tags data; later chops data and tags data combines into one.
   
 **Sampling Location:** Various sampling locations on Feather River
   
