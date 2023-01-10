@@ -49,7 +49,7 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-# git data and save as xlsx
+# get data and save as xlsx
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet: 
@@ -73,6 +73,17 @@ if(operating_system == "pc") {
   Chops_raw <- sqlFetch(con, "CarcassChops")
   Carcass_individual_raw <- sqlFetch(con, "CarcassIndividual")
   ChopRecov_raw <- sqlFetch(con, "CarcassRecover")
+    disposition_LU = sqlFetch(con, "luDisposition")
+  color_LU = sqlFetch(con, "luColor")
+  condition_LU = sqlFetch(con, "luCondition")
+  cwtstatus_LU = sqlFetch(con, "luCWTStatus")
+  spawnstatus_LU = sqlFetch(con, "luSpawnStatus")
+  marktype_LU = sqlFetch(con, "luMarkType")
+  species_LU = sqlFetch(con, "luSpecies")
+  adfin_LU = sqlFetch(con, "luAdFinStatus")
+  choptype_LU = sqlFetch(con, "luChopType")
+  sex_LU = sqlFetch(con, "luSex")
+  weather_LU = sqlFetch(con, "luWeather")
 } else{
   library(Hmisc)
   mdb.get(filepath, tables = TRUE) # check for name differences
@@ -93,7 +104,7 @@ if(operating_system == "pc") {
   sex_LU = mdb.get(filepath, "luSex")
   weather_LU = mdb.get(filepath, "luWeather")
   # Other tables include Location, luActive, luAdFinStatus, luBoat,
-  # luBodyPart, luCentralValleyStreams, luChopType, luColor, luCondition, 
+  # luBodyPart, luCentralValleyStreams, luChopType, luColor, luCondition,
   # luDates, luDisposition, luEstimator, luLocationType, luMarkType,
   # luOtherMarkDisposition, luOtherObservations, luPeople, luProject,
   # luRun, luSizeClass, luSpawnStatus, luSpecies, luSubsample, luSpawnStatus,
@@ -148,6 +159,8 @@ cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-a
 
 The `chop` table contains carcass counts by chop/tagged based on clips
 
+The `chop_recovery` table contains recovered carcass counts by color
+
 
 ```{r}
 # Using SurveyMetaID to get Date
@@ -161,6 +174,22 @@ chop_join <- full_join(ChopHeader_raw |>
   rename(count = chop_count) |> 
   mutate(way_pt = as.character(way_pt),
          r_mile = as.numeric(r_mile)) |> glimpse()
+
+#2. chop recovery
+chop_recovery_join <- full_join(ChopHeader_raw |> 
+                                  select(SurveyMetaID, Date),
+                                ChopRecov_raw) |> 
+  clean_names() |> 
+  rename(fl_mm = f_lmm,
+         fl_cm = f_lcm) |> 
+  mutate(count = 1,
+         edit_time = as.POSIXct(gsub("[()]", "", edit_time), format = "%m/%d/%y %H:%M:%S"),
+         creation_time = as.POSIXct(gsub("[()]", "", creation_time), format = "%m/%d/%y %H:%M:%S"),
+         color_tag_recovered_id = as.numeric(color_tag_recovered_id),
+         sex_id = as.numeric(sex_id),
+         fl_mm = as.numeric(fl_mm),
+         fl_cm = as.numeric(fl_cm)) |> 
+  glimpse()
 ```
 
 ### Survey
@@ -258,6 +287,70 @@ chop_join |>
 
 This plot shows the total daily chops collected each day from August to December from 2017-2020. Each square represents a different year. 
 
+#### Chop Recovery Variable: 
+
+```{r}
+# Filter clean data to show only numeric variables 
+chop_recovery_join |> 
+  select_if(is.numeric) |>
+  colnames()
+```
+
+### Chop Recovery Variable: `survey_meta_id`, `chops_id`, `survey_id`, `r_mile`, `species_id`, `run_id`
+
+```{r}
+summary(chop_recovery_join$survey_meta_id)
+```
+```{r}
+summary(chop_recovery_join$recover_id)
+```
+```{r}
+summary(chop_recovery_join$survey_id)
+```
+```{r}
+summary(chop_recovery_join$tag_recovered)
+```
+```{r}
+summary(chop_recovery_join$color_tag_recovered_id)
+```
+```{r}
+# all NAs
+summary(chop_recovery_join$fl_mm)
+```
+```{r}
+# all NAs
+summary(chop_recovery_join$fl_cm)
+```
+
+### Chop Recovery Variable: `count`
+
+**Numeric Summary of `count` over Period of Record**
+
+
+```{r}
+summary(chop_recovery_join$count)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(chop_recovery_join$count))/nrow(chop_join), 3) * 100` % of values in the `count` column are NA.
+
+**Plotting total daily chops over Period of Record**
+
+```{r}
+# daily recovered chop count over time
+chop_recovery_join |> 
+  filter(!is.na(date)) |>
+  mutate(year = year(date)) |>
+  group_by(date, year) |> 
+  summarize(count = sum(count, na.rm = T)) |> 
+  ggplot(aes(x = day(date), y = count)) +
+  geom_col() + 
+  facet_wrap(~year) +
+  theme_minimal() +
+  theme(text = element_text(size = 15))
+```
+
 
 ### Chop Header Variable: `survey_meta_id`
 
@@ -323,6 +416,22 @@ chop_cleaner <- chop_join |>
                      species = CommonName) |> 
               select(species_id, species), by = "species_id") |> 
   select(-species_id) |> glimpse()
+
+```
+### Chop Recovery Clean Data
+
+
+```{r}
+chop_recovery_join |> 
+  select_if(is.character) |>
+  colnames()
+```
+
+```{r}
+chop_recovery_cleaner <- chop_recovery_join |> 
+  mutate(way_pt = as.character(way_pt),
+         r_mile = as.numeric(r_mile)) |> 
+           glimpse()
 
 ```
 ### Chop Header Clean Data
