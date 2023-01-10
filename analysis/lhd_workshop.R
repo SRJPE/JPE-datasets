@@ -27,6 +27,6 @@ butte_catch <- filter(daily_catch_unmarked, stream == "butte creek") |>
 filter(butte_catch, wy == 2019) |> 
   ggplot(aes(x = date, y = fork_length)) +
   geom_point() +
-  scale_x_date(date_breaks = "1 month", date_labels = "%b", limits = c(paste0(year,"-10-01"), NA)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
   labs(y = "fork length (mm)",
        x = "")
