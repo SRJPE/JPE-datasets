@@ -430,7 +430,16 @@ chop_recovery_join |>
 ```{r}
 chop_recovery_cleaner <- chop_recovery_join |> 
   mutate(way_pt = as.character(way_pt),
-         r_mile = as.numeric(r_mile)) |> 
+         r_mile = as.numeric(r_mile),
+         sex = case_when(sex_id == 251 ~ "unknown",
+                         sex_id == 253 ~ "not recorded", 
+                         sex_id == 1 ~ "female",
+                         sex_id == 2 ~ "male")) |> 
+    left_join(disposition_LU |> 
+              mutate(disposition_id = as.numeric(DispositionID),
+                     disposition = tolower(Disposition)) |> 
+              select(disposition_id, disposition), by = "disposition_id") |> 
+  select(-disposition_id, -sex_id) |> 
            glimpse()
 
 ```
@@ -545,6 +554,37 @@ counts_data_dictionary <- tibble(variables = colnames(chop_cleaner),
 kable(counts_data_dictionary)
 ```
 
+### Chop Recovery
+```{r}
+percent_na <- chop_recovery_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
+  pivot_longer(cols = everything())
+
+
+counts_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
+                          description = c("Survey Meta ID",
+                                          "Date",
+                                          "Recover ID", 
+                                          "Survey ID",
+                                          "Way point",
+                                          "River mile",
+                                          "Tag Recovered",
+                                          "Color of Tag Recovered ID",
+                                          "Fork length (mm)",
+                                          "Fork length (cm)",
+                                          "Comments",
+                                          "Data Recorder",
+                                          "Creation Time",
+                                          "Editor",
+                                          "Edit Time",
+                                          "Count",
+                                          "Sex",
+                                          "Disposition"),
+                          percent_na = round(percent_na$value*100,
+                                             digits = 1))
+
+kable(counts_data_dictionary)
+```
 ### Survey
 
 ```{r}
@@ -634,6 +674,8 @@ feather_carcass_cwt_2017 <- cwt_cleaner |>
   filter(year(date) == 2017) |> glimpse()
 feather_carcass_chop_header_2017<- chop_header_cleaner |> 
   filter(year(date) == 2017) |> glimpse()
+feather_carcass_chop_recovery_2017<- chop_recovery_cleaner |> 
+  filter(year(date) == 2017) |> glimpse()
 
 #2018
 feather_carcass_chops_2018 <- chop_cleaner |> 
@@ -642,6 +684,8 @@ feather_carcass_cwt_2018 <- cwt_cleaner |>
   filter(year(date) == 2018) |> glimpse()
 feather_carcass_chop_header_2018 <- chop_header_cleaner |> 
   filter(year(date) == 2018) |> glimpse()
+feather_carcass_chop_recovery_2018 <- chop_recovery_cleaner |> 
+  filter(year(date) == 2018) |> glimpse()
 #2019
 feather_carcass_chops_2019 <- chop_cleaner |> 
   filter(year(date) == 2019) |> glimpse()
@@ -649,12 +693,16 @@ feather_carcass_cwt_2019 <- cwt_cleaner |>
   filter(year(date) == 2019) |> glimpse()
 feather_carcass_chop_header_2019<- chop_header_cleaner |> 
   filter(year(date) == 2019) |> glimpse()
+feather_carcass_chop_recovery_2019 <- chop_recovery_cleaner |> 
+  filter(year(date) == 2019) |> glimpse()
 #2020
 feather_carcass_chops_2020 <- chop_cleaner |> 
   filter(year(date) == 2020) |> glimpse()
 feather_carcass_cwt_2020 <- cwt_cleaner |> 
   filter(year(date) == 2020) |> glimpse()
 feather_carcass_chop_header_2020<- chop_header_cleaner |> 
+  filter(year(date) == 2020) |> glimpse()
+feather_carcass_chop_recovery_2020 <- chop_recovery_cleaner |> 
   filter(year(date) == 2020) |> glimpse()
 
 ```
@@ -674,6 +722,10 @@ gcs_upload(feather_carcass_chop_header_2017,
            object_function = f,
            type = "csv",
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2017.csv")
+gcs_upload(feather_carcass_chop_recovery_2017,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2017.csv")
 
 # 2018
 gcs_upload(feather_carcass_chops_2018,
@@ -688,6 +740,10 @@ gcs_upload(feather_carcass_chop_header_2018,
            object_function = f,
            type = "csv",
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2018.csv")
+gcs_upload(feather_carcass_chop_recovery_2018,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2018.csv")
 
 # 2019
 gcs_upload(feather_carcass_chops_2019,
@@ -702,6 +758,10 @@ gcs_upload(feather_carcass_chop_header_2019,
            object_function = f,
            type = "csv",
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2019.csv")
+gcs_upload(feather_carcass_chop_recovery_2019,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2019.csv")
 
 # 2020
 gcs_upload(feather_carcass_chops_2020,
@@ -716,6 +776,10 @@ gcs_upload(feather_carcass_chop_header_2020,
            object_function = f,
            type = "csv",
            name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2020.csv")
+gcs_upload(feather_carcass_chop_recovery_2020,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2020.csv")
 ```
 
 
