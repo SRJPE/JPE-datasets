@@ -172,7 +172,7 @@ The `chop_recovery` table contains recovered carcass counts by color
 
 #1. chop table (with dates and tag color)
 chop_join <- full_join(ChopHeader_raw |> 
-                                 select(SurveyMetaID, SurveyID, Date),
+                                 select(SurveyMetaID, SurveyID, Date, SectionID),
                                Chop_raw,
                        by = c("SurveyID", "SurveyMetaID")) |> 
   clean_names() |> 
@@ -191,7 +191,7 @@ chop_join <- full_join(ChopHeader_raw |>
 
 #2. chops and tags
 chops_and_tags_join <- full_join(ChopHeader_raw |> 
-                                   select(SurveyMetaID, SurveyID, Date), 
+                                   select(SurveyMetaID, SurveyID, Date, SectionID), 
                                  chops_and_tags_raw, by = c("SurveyMetaID", "SurveyID")) |>
   clean_names() |> 
   left_join(species_LU |> 
@@ -223,7 +223,7 @@ chops_and_tags_join <- full_join(ChopHeader_raw |>
 
 #3. chop recovery
 chop_recovery_join <- full_join(ChopHeader_raw |> 
-                                  select(SurveyMetaID, SurveyID, Date),
+                                  select(SurveyMetaID, SurveyID, Date, SectionID),
                                 ChopRecov_raw, by = c("SurveyMetaID", "SurveyID")) |> 
   clean_names() |> 
   left_join(disposition_LU |> select(DispositionID, disposition = Disposition), 
@@ -263,10 +263,11 @@ chop_join |>
   colnames()
 ```
 
-### Chop Join Variables: `survey_meta_id`, `chops_id`, `survey_id`
+### Chop Join Variables: `survey_meta_id`, `section_id`, `chops_id`, `survey_id`
 
 ```{r}
 summary(chop_join$survey_meta_id)
+summary(chop_join$section_id)
 ```
 ```{r}
 summary(chop_join$chops_id)
@@ -320,10 +321,11 @@ chop_recovery_join |>
   colnames()
 ```
 
-### Chop Recovery Variable: `survey_meta_id`, `chops_id`, `survey_id`, `r_mile`, `species_id`, `run_id`
+### Chop Recovery Variable: `survey_meta_id`, `section_id`, `chops_id`, `survey_id`, `r_mile`, `species_id`, `run_id`
 
 ```{r}
 summary(chop_recovery_join$survey_meta_id)
+summary(chop_recovery_join$section_id)
 ```
 ```{r}
 summary(chop_recovery_join$recover_id)
@@ -385,6 +387,7 @@ chops_and_tags_join |>
 ```
 ```{r}
 summary(chops_and_tags_join$survey_meta_id)
+summary(chops_and_tags_join$section_id)
 summary(chops_and_tags_join$survey_id)
 summary(chops_and_tags_join$individual_id)
 summary(chops_and_tags_join$disc_tag_applied)
@@ -447,6 +450,7 @@ chop_header |>
 ```
 ```{r}
 summary(chop_header$survey_meta_id)
+summary(chop_header$section_id)
 summary(chop_header$survey_week)
 ```
 
@@ -563,6 +567,7 @@ counts_data_dictionary <- tibble(variables = colnames(chop_cleaner),
                           description = c("Survey Meta ID",
                                           "Survey ID",
                                           "Date",
+                                          "Section ID",
                                           "Chops ID",
                                           "Chop Type Code", 
                                           "Count", 
@@ -589,6 +594,7 @@ recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                           description = c("Survey Meta ID",
                                           "Survey ID",
                                           "Date",
+                                          "Section ID",
                                           "Recover ID",
                                           "Tag ID Recovered",
                                           "Comments",
@@ -652,10 +658,11 @@ percent_na <- chops_and_tags_cleaner |>
   summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
 
-cwt_data_dictionary <- tibble(variables = colnames(chops_and_tags_cleaner),
+chops_and_tags_data_dictionary <- tibble(variables = colnames(chops_and_tags_cleaner),
                           description = c("Survey Meta ID",
                                           "Survey ID",
                                           "Date",
+                                          "Section ID",
                                           "Individual ID",
                                           "Disc Tag Applied",
                                           "Fork Length (mm)",
@@ -683,7 +690,7 @@ cwt_data_dictionary <- tibble(variables = colnames(chops_and_tags_cleaner),
                                           "Sex"),
                           percent_na = round(percent_na$value*100))
 
-kable(cwt_data_dictionary)
+kable(chops_and_tags_data_dictionary)
 ```
 ## Saved cleaned data back to google cloud
 ```{r}
@@ -695,7 +702,6 @@ feather_carcass_chop_header_2017_2021 <- chop_header_cleaner |>
   glimpse()
 feather_carcass_chop_recovery_2017_2021 <- chop_recovery_cleaner |>
   glimpse()
-
 ```
 ```{r, include=FALSE}
 f <- function(input, output) write_csv(input, file = output)
@@ -704,11 +710,11 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(feather_carcass_chops_2017_2021,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2017_2021.csv")
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_2017_2021.csv")
 gcs_upload(feather_carcass_chops_and_tags_2017_2021,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2017_2021.csv")
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2017_2021.csv")
 gcs_upload(feather_carcass_chop_header_2017_2021,
            object_function = f,
            type = "csv",

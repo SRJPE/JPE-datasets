@@ -32,7 +32,7 @@ library(wesanderson)
   
 **Completeness of Record throughout timeframe:** 
 
-* Data collected varies between different seasons. Coded wire tag (CWT) data has the highest variability. Collection of "Chop Recovery" data is inconsistent - collected from 2000-2010 and 2017-2021. Earlier years have more detailed chops data and had separate table for tags data; later chops data and tags data combines into one. Tables from 2017-2021 do not have tag data contained in chops.
+* Data collected varies between different seasons. Coded wire tag (CWT) data has the highest variability. Collection of "Chop Recovery" data is inconsistent - collected from 2000-2010 and 2017-2021. Earlier years have more detailed chops data and had separate table for tags data; later chops data and tags data combines into one. Tables from 2017-2021 include a chop table with multiple count values per row, a chops table with individual counts, and a chop recovery table.
   
 **Sampling Location:** Various sampling locations on Feather River
   
@@ -316,13 +316,14 @@ feather_carcass_tags_sex_2010 <- feather_carcass_chops_and_tags_2010_raw |>
 # add columns for chop_clip_status and lifestage, which are both not in 
 # the 2010 dataset but are necessary for combining all datasets
 feather_carcass_chops_and_tags_2010 <- feather_carcass_chops_sex_2010 |> 
-  full_join(feather_carcass_tags_sex_2010, by = c("id", "tag_col", "date",
+  full_join(feather_carcass_tags_sex_2010, by = c("header_id", "tag_col", "date",
                                                   "chan_id", "sect", "chan",
                                                   "min", "sex")) |> 
   mutate(chop_clip_status = "unknown",
          tag_clip_status = "unknown",
          lifestage = "unknown",
          tag_col = as.character(tag_col)) %>%
+  rename(sec = sect) |> 
   glimpse()
 # does not contain lifestage, tag_clip_status, or chop_clip_status in data
 ```
@@ -333,18 +334,20 @@ feather_carcass_chops_and_tags_2010 <- feather_carcass_chops_sex_2010 |>
 
 ```{r}
 feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>% 
-  rename(chop_count = "count") %>% 
+  rename(chop_count = "count",
+         sec = sect) %>% 
   mutate(tag_count = NA,
          chop_clip_status = "unknown",
          tag_clip_status = "unknown",
          sex = "unknown",
-         lifestage = "unknown") %>% glimpse
+         lifestage = "unknown") %>% glimpse()
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2012 Chops and Tags
 ```{r}
 feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>% 
-  rename(chop_count = "count") %>% 
+  rename(chop_count = "count",
+         sec = sect) %>% 
   mutate(tag_count = NA,
          chop_clip_status = "unknown",
          tag_clip_status = "unknown",
@@ -356,7 +359,8 @@ feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>
 ### 2013 Chops and Tags
 ```{r}
 feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>% 
-    rename(chop_count = "count") %>% 
+    rename(chop_count = "count",
+           sec = sect) %>% 
   mutate(tag_count = NA,
          chop_clip_status = "unknown",
          tag_clip_status = "unknown",
@@ -367,7 +371,8 @@ feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>
 ### 2014 Chops and Tags
 ```{r}
 feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>% 
-    rename(chop_count = "count") %>%
+    rename(chop_count = "count",
+           sec = sect) %>%
   mutate(tag_count = NA,
          chop_clip_status = "unknown",
          tag_clip_status = "unknown",
@@ -378,7 +383,8 @@ feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>
 ### 2015 Chops and Tags
 ```{r}
 feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>% 
-  rename(chop_count = "count") %>% 
+  rename(chop_count = "count",
+         sec = sect) %>% 
   mutate(tag_count = NA,
          chop_clip_status = "unknown",
          tag_clip_status = "unknown",
@@ -390,13 +396,30 @@ feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>
 ### 2016 Chops and Tags
 ```{r}
 feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>% 
-  rename(chop_count = "count") %>% 
+  rename(chop_count = "count",
+         sec = sect) %>% 
   mutate(tag_count = NA,
          chop_clip_status = "unknown",
          tag_clip_status = "unknown",
          sex = "unknown",
          lifestage = "unknown") %>% glimpse
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
+```
+
+### 2017-2020 Chops and Tags
+```{r}
+feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","2017_2021") |> 
+  rename(chop_count = count,
+         header_id = survey_meta_id,
+         sec = section_id,
+         chop_clip_status = ad_fin_clip_status) |> 
+  transmute(tag_count = NA,
+            min = NA,
+            tag_clip_status = NA,
+            lifestage = NA,
+            header_id, date, sec, chop_count, chop_clip_status, sex) |> 
+    glimpse()
+# does not contain tag_count, tag_clip_status, lifestage, or min
 ```
 ## Combined chops and tags
 ```{r}
@@ -416,7 +439,8 @@ feather_carcass_chops_and_tags_combined <- bind_rows(feather_carcass_chops_and_t
           feather_carcass_chops_and_tags_2013,
           feather_carcass_chops_and_tags_2014,
           feather_carcass_chops_and_tags_2015,
-          feather_carcass_chops_and_tags_2016) |> 
+          feather_carcass_chops_and_tags_2016,
+          feather_carcass_chops_and_tags_2017_2021) |> 
   glimpse()
 ```
 
@@ -424,7 +448,9 @@ feather_carcass_chops_and_tags_combined <- bind_rows(feather_carcass_chops_and_t
 ```{r} 
 # add year for summarization
 feather_carcass_chops_and_tags_combined <- feather_carcass_chops_and_tags_combined |> 
-  mutate(year = year(date)) 
+  mutate(year = year(date)) |> 
+  filter(!is.na(date)) |> 
+  select(-sect) # is empty
 
 # number of observations
 feather_carcass_chops_and_tags_combined |> 
@@ -432,19 +458,12 @@ feather_carcass_chops_and_tags_combined |>
 
 # print nas
 feather_carcass_chops_and_tags_combined |> 
-  filter(year == 2000) |> 
-  map(~ mean(is.na(.))) |> unlist()
-
-feather_carcass_chops_and_tags_combined |> 
-  filter(year == 2000) |> 
-  summarize_all(funs(sum(is.na(.)) / length(.)))
+  group_by(year) |> 
+  summarize_all(funs(sum(is.na(.)) / length(.))) |> 
+  print(n=Inf)
 
 ```
 ### Data Transformation
-```{r}
-# feather_carcass_chops_and_tags_combined <- feather_carcass_chops_and_tags_combined %>% 
-#   rename(sec = "sect")
-```
 
 ### Counts
 
@@ -452,7 +471,7 @@ The `feather_carcass_chops_and_tags_combined` table contains carcass counts by c
 
 ## Explore Numeric Variables: {.tabset}
 
-### Variable: `id`, `chan_id`, `sect`, `min`
+### Variable: `header_id`, `chan_id`, `sec`, `min`, `id`, `unit`
 
 ```{r}
 feather_carcass_chops_and_tags_combined %>% 
@@ -461,18 +480,14 @@ feather_carcass_chops_and_tags_combined %>%
 ```
 
 ```{r}
+summary(feather_carcass_chops_and_tags_combined$sec)
+summary(feather_carcass_chops_and_tags_combined$unit)
+summary(feather_carcass_chops_and_tags_combined$min)
+summary(feather_carcass_chops_and_tags_combined$header_id)
+summary(feather_carcass_chops_and_tags_combined$chan_id)
 summary(feather_carcass_chops_and_tags_combined$id)
 ```
-```{r}
-summary(feather_carcass_chops_and_tags_combined$chan_id)
-```
-```{r}
-summary(feather_carcass_chops_and_tags_combined$sec)
-```
 
-```{r}
-summary(feather_carcass_chops_and_tags_combined$min)
-```
 
 ### Chop Channel Variable: `chop_count`, `tag_count`
 
@@ -516,7 +531,7 @@ feather_carcass_chops_and_tags_combined %>%
   theme_minimal() +
   theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
   theme(axis.text.y = element_text(size = 8))+
-  labs(title = "Daily Chop Count From 2000 to 2016")
+  labs(title = "Daily Chop Count From 2000 to 2020")
 ```
 
 
@@ -533,6 +548,6 @@ feather_carcass_chops_and_tags_combined %>%
   theme_minimal() +
   theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
   theme(axis.text.y = element_text(size = 8))+
-  labs(title = "Daily Tag Count From 2000 to 2016")
+  labs(title = "Daily Tag Count From 2000 to 2020")
 ```
 
