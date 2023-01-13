@@ -25,17 +25,7 @@ library(wesanderson)
 
 ## Description of Monitoring Data
 
-**Timeframe:** 
-
-**Video Season:** 
-
-**Completeness of Record throughout timeframe:** 
-
-**Sampling Location:**
-
-**Data Contact:** 
-
-Any additional info?
+See Feather Carcass Survey QC Document
 
 ## Access Cloud Data
 
@@ -52,7 +42,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # get data and save as xlsx
 ```
 
-Read in data from google cloud, glimpse raw data and domain description sheet: 
+Read in data from google cloud, glimpse raw data and domain description sheet. 
 ```{r, include=FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2017_2021/CAMP_Escapement_20210412.mdb",
                bucket = gcs_get_global_bucket(),
@@ -128,7 +118,7 @@ write_csv(CWT_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-an
 ## Raw Data Glimpse: {.tabset}
 
 ### Chops_raw
-```{r}
+```{r, message = FALSE}
 # TODO follow up to understand what this table is measuring
 Chop_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","Chops_2017_2021.csv")) |> 
   glimpse()
@@ -136,7 +126,7 @@ Chop_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-
 
 ### ChopHeader_raw
 
-```{r}
+```{r, message = FALSE}
 ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","ChopHeader_2017_2021.csv")) |>
   mutate(Date = as.Date(SurveyDate)) |> 
   select(-SurveyDate) |> 
@@ -146,7 +136,7 @@ ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding
 
 ### ChopRecov_raw
 
-```{r}
+```{r, message = FALSE}
 ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns", 
                                   "adult-holding-redd-and-carcass-surveys",
                                   "feather-river", "ChopRecov_2017_2021.csv")) |> 
@@ -155,11 +145,10 @@ ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 # adds a count column here 
 ```
 ### chops_and_tags_raw
-```{r}
-# note: disposition ID is what they did to it (not how they found it)
-# each row is likely an individual fish
+```{r, message = FALSE}
+# note: disposition ID is how they processed the fish (not how they found it)
+# adds a column here titled "count" - each row is likely an individual fish
 # Table in database was called CarcassIndividual
-# adds a column here titled "count" 
 chops_and_tags_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","CWT_2017_2021.csv")) |> 
   mutate(count = 1) |> 
   glimpse()
@@ -172,7 +161,7 @@ chops_and_tags_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-hol
 
 The `chop` table contains carcass counts ranging from 0 - 999
 
-The `chops_and_tags` table contains individual carcasses recovered
+The `chops_and_tags` table contains individual carcasses chopped and tagged.
 
 The `chop_recovery` table contains recovered carcass counts by color
 
@@ -315,7 +304,8 @@ chop_join |>
   facet_wrap(~year) +
   theme_minimal() +
   theme(text = element_text(size = 15)) +
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") +
+  xlab("Date")
 
 ```
 
@@ -357,7 +347,7 @@ summary(chop_recovery_join$fl_cm)
 ### Chop Recovery Variable: `count`
 
 **Numeric Summary of `count` over Period of Record**
-This variable was added under the assumption that each individual row of the chop recovery dataset represents an individual fish being recovered (i.e. each row of ChopRecov_raw had a count of 1).
+This variable was added under the assumption that each individual row of the chop recovery dataset represents an individual fish being recovered (i.e. each row of ```ChopRecov_raw``` had a count of 1).
 
 
 **NA and Unknown Values**
@@ -380,7 +370,8 @@ chop_recovery_join |>
   facet_wrap(~year) +
   theme_minimal() +
   theme(text = element_text(size = 15)) +
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") +
+  xlab("Date")
 ```
 
 This plot shows daily recovered chops by year and day. The colors represent "disposition" i.e. whether the fish was chopped, tagged, or not chopped after being counted in the data. Far more individual fish were chopped after being processed than not chopped. None were tagged. 
@@ -406,7 +397,7 @@ summary(chops_and_tags_join$cwt_cd)
 ### Chops and Tags Variable: `count`
 
 **Numeric Summary of `count` over Period of Record**
-This variable was added under the assumption that each individual row of the chops and tags dataset represents an individual fish being recovered (i.e. each row of chops_and_tags_raw had a count of 1).
+This variable was added under the assumption that each individual row of the chops and tags dataset represents an individual fish being recovered (i.e. each row of ```chops_and_tags_raw``` had a count of 1).
 
 **NA and Unknown Values**
 
