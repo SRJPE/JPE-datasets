@@ -13,23 +13,21 @@ Sys.setenv("GCS_AUTH_FILE" = "config.json", "GCS_DEFAULT_BUCKET" = "jpe-dev-buck
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # # # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-# # 
-View(gcs_list_objects())
-# 
-# gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "data/standard-format-data/standard_rst_catch.csv",
-#                overwrite = TRUE)
-# 
-# gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "data/standard-format-data/standard_rst_trap.csv",
-#                overwrite = TRUE)
 
-# gcs_get_object(object_name = "standard-format-data/standard_rst_catch_lad.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "data/standard-format-data/standard_rst_catch_lad.csv",
-#                overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_rst_catch.csv",
+               overwrite = TRUE)
+#
+gcs_get_object(object_name = "standard-format-data/standard_rst_trap.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_rst_trap.csv",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch_lad.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_rst_catch_lad.csv",
+               overwrite = TRUE)
 
 # use LAD one! 
 # catch <- read_csv("data/standard-format-data/standard_rst_catch.csv") %>% glimpse()
@@ -43,31 +41,26 @@ catch$site %>% unique()
 trap_operations$stream %>% unique()
 
 selected_stream = "battle creek"
-plot_windows <- function(selected_stream){
-  years <- catch |> 
+
+plot_windows <- function(selected_stream, selected_years = NULL){
+  if (selected_years == "all") {
+    year_filter <- c(1995:2022)
+  } else { year_filter <- selected_years}
+ 
+   years <- catch |> 
     filter(run == "spring", stream == selected_stream) |> 
-    filter(!is.na(date)) %>% 
     mutate(year = year(date)) |> 
     pull(year) |> 
     unique() |> 
     length()
     
-  filtered_data <- catch |> 
-    filter(run == "spring", stream == selected_stream) |> 
+  cumulative_catch <- catch |> 
+    filter(run == "spring", stream == selected_stream, year(date) %in% year_filter) |> 
     filter(!is.na(date)) %>% 
     mutate(fake_date = as.Date(paste0(ifelse(month(date) %in% c(9, 10, 11, 12), "0000-", "0001-"), 
                                       month(date), "-", day(date)))) |> 
     group_by(fake_date) |> 
-    summarise(count = sum(count, na.rm = TRUE)) 
-    
-  filtered_data |> 
-    ggplot(aes(x = fake_date, y = count)) +
-    geom_point(alpha = .3, color = "gray") + 
-    theme_minimal() 
-  
-  
-  # Goal is to give minimum number of days to capture 95% of fish 
-  cumulative_catch <- filtered_data |> 
+    summarise(count = sum(count, na.rm = TRUE)) |> 
     select(fake_date, count) |> 
     arrange(fake_date) |> 
     mutate(cumulative_catch = cumsum(count)) 
@@ -123,8 +116,18 @@ plot_windows <- function(selected_stream){
   gridExtra::grid.arrange(point_plot, cuml_plot, bottom = textGrob(caption))
 }
 
-plot_windows("battle creek")
-# could also get into shortest window (starts later)
+plot_windows("battle creek", "all")
+plot_windows("battle creek", 2010)
+plot_windows("clear creek")
+plot_windows("butte creek")
+plot_windows("yuba river")
+plot_windows("feather river")
+plot_windows("sacramento river")
+# do not work because no spring run...maybe just keep all?
+plot_windows("deer creek")
+plot_windows("mill creek")
 
 
-# Cumulative catch plot can show 5% and 95% 
+# test out for a given year 
+# 
+# 
