@@ -84,6 +84,8 @@ if(operating_system == "pc") {
   choptype_LU = sqlFetch(con, "luChopType")
   sex_LU = sqlFetch(con, "luSex")
   weather_LU = sqlFetch(con, "luWeather")
+  run_LU = sqlFetch(con, "luRun")
+  choptype_LU = sqlFetch(con, "luChopType")
 } else{
   library(Hmisc)
   mdb.get(filepath, tables = TRUE) # check for name differences
@@ -103,14 +105,15 @@ if(operating_system == "pc") {
   choptype_LU = mdb.get(filepath, "luChopType")
   sex_LU = mdb.get(filepath, "luSex")
   weather_LU = mdb.get(filepath, "luWeather")
-  # Other tables include Location, luActive, luAdFinStatus, luBoat,
-  # luBodyPart, luCentralValleyStreams, luChopType, luColor, luCondition,
-  # luDates, luDisposition, luEstimator, luLocationType, luMarkType,
+  run_LU = mdb.get(filepath, "luRun")
+  # Other tables include Location, luActive, luBoat,
+  # luBodyPart, luCentralValleyStreams, 
+  # luDates, luEstimator, luLocationType, luMarkType,
   # luOtherMarkDisposition, luOtherObservations, luPeople, luProject,
-  # luRun, luSizeClass, luSpawnStatus, luSpecies, luSubsample, luSpawnStatus,
+  # luSizeClass, luSubsample,
   # luWeather, OptionLocationSubSections, OptionSelections, CarcassOtherMarks,
   # SurveyDocuments, TrapCWTS, TrapOtherSpecies, TrapSurvey, Version, 
-  # luCWTStatus, luNoYes, luSex, luTransportType, TrapSalmon, CarcassOtherObsv,
+  # luNoYes, luTransportType, TrapSalmon, CarcassOtherObsv,
   # SurveyMetadata
   detach(package:Hmisc)
 }
@@ -126,6 +129,7 @@ write_csv(CWT_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-an
 
 ### Chops_raw
 ```{r}
+# TODO follow up to understand what this table is measuring
 Chop_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","Chops_2017_2021.csv")) |> 
   glimpse()
 ```
@@ -135,6 +139,7 @@ Chop_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-
 ```{r}
 ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","ChopHeader_2017_2021.csv")) |>
   mutate(Date = as.Date(SurveyDate)) |> 
+  select(-SurveyDate) |> 
   filter(year(Date) >= 2017) |> 
   glimpse()
 ```
@@ -145,11 +150,19 @@ ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding
 ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns", 
                                   "adult-holding-redd-and-carcass-surveys",
                                   "feather-river", "ChopRecov_2017_2021.csv")) |> 
+  mutate(count = 1) |> 
   glimpse()
+# adds a count column here 
 ```
-### cwt_raw
+### chops_and_tags_raw
 ```{r}
-cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","CWT_2017_2021.csv")) |> glimpse()
+# note: disposition ID is what they did to it (not how they found it)
+# each row is likely an individual fish
+# Table in database was called CarcassIndividual
+# adds a column here titled "count" 
+chops_and_tags_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","CWT_2017_2021.csv")) |> 
+  mutate(count = 1) |> 
+  glimpse()
 
 ```
 
@@ -157,41 +170,88 @@ cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-a
 
 ### Counts
 
-The `chop` table contains carcass counts by chop/tagged based on clips
+The `chop` table contains carcass counts ranging from 0 - 999
+
+The `chops_and_tags` table contains individual carcasses recovered
 
 The `chop_recovery` table contains recovered carcass counts by color
 
 
 ```{r}
 # Using SurveyMetaID to get Date
+# join with lu tables to get values from ids
 
 #1. chop table (with dates and tag color)
 chop_join <- full_join(ChopHeader_raw |> 
-                                 select(SurveyMetaID, Date),
+                                 select(SurveyMetaID, SurveyID, Date),
                                Chop_raw,
-                       by = "SurveyMetaID") |> 
+                       by = c("SurveyID", "SurveyMetaID")) |> 
   clean_names() |> 
+  left_join(species_LU |> 
+            mutate(species_id = as.numeric(TaxonID),
+                   species = CommonName) |> 
+            select(species_id, species), by = "species_id") |>
+  left_join(run_LU |> select(runID, run), 
+            by = c("run_id" = "runID")) |> 
+  select(-c(species_id, way_pt, r_mile, run_id)) |>
   rename(count = chop_count) |> 
-  mutate(way_pt = as.character(way_pt),
-         r_mile = as.numeric(r_mile),
-         edit_time = as.POSIXct(gsub("[()]", "", edit_time), format = "%m/%d/%y %H:%M:%S"),
-         creation_time = as.POSIXct(gsub("[()]", "", creation_time), format = "%m/%d/%y %H:%M:%S")) |> glimpse()
+  mutate(edit_time = as.POSIXct(gsub("[()]", "", edit_time), 
+                                format = "%m/%d/%y %H:%M:%S"),
+         creation_time = as.POSIXct(gsub("[()]", "", creation_time), 
+                                    format = "%m/%d/%y %H:%M:%S")) |> glimpse()
 
-#2. chop recovery
-chop_recovery_join <- full_join(ChopHeader_raw |> 
-                                  select(SurveyMetaID, Date),
-                                ChopRecov_raw) |> 
+#2. chops and tags
+chops_and_tags_join <- full_join(ChopHeader_raw |> 
+                                   select(SurveyMetaID, SurveyID, Date), 
+                                 chops_and_tags_raw, by = c("SurveyMetaID", "SurveyID")) |>
   clean_names() |> 
-  rename(fl_mm = f_lmm,
-         fl_cm = f_lcm) |> 
-  mutate(count = 1,
-         edit_time = as.POSIXct(gsub("[()]", "", edit_time), format = "%m/%d/%y %H:%M:%S"),
-         creation_time = as.POSIXct(gsub("[()]", "", creation_time), format = "%m/%d/%y %H:%M:%S"),
-         color_tag_recovered_id = as.numeric(color_tag_recovered_id),
-         sex_id = as.numeric(sex_id),
-         fl_mm = as.numeric(fl_mm),
-         fl_cm = as.numeric(fl_cm)) |> 
+  left_join(species_LU |> 
+              mutate(species_id = as.numeric(TaxonID),
+                     species = CommonName) |> 
+              select(species_id, species), by = "species_id") |>
+  left_join(run_LU |> select(runID, run), 
+            by = c("run_id" = "runID")) |>
+  left_join(color_LU |> 
+              select(colorID, color), by = c("color_tag_applied_id" = "colorID")) |> 
+  left_join(disposition_LU |> select(DispositionID, disposition = Disposition), 
+            by = c("disposition_id" = "DispositionID")) |> 
+  left_join(condition_LU |> 
+              select(ConditionID, condition = Condition), 
+            by = c("condition_id" = "ConditionID")) |> 
+  left_join(spawnstatus_LU |> select(SpawnedID, spawned = Spawned), 
+            by = c("spawned_id" = "SpawnedID")) |> 
+  left_join(adfin_LU |> select(AdFinClipID, ad_fin_clip_status = AdFinClip),
+            by = c("ad_fin_clip_id" = "AdFinClipID")) |> 
+  left_join(cwtstatus_LU |> select(CWTStatusID, cwt_status = CWTStatus),
+            by = c("cwt_status_id" = "CWTStatusID")) |> 
+  left_join(sex_LU |> select(SexID, sex = Sex), 
+            by = c("sex_id" = "SexID")) |> 
+  rename(tag_col = color, fl_mm = f_lmm, fl_cm = f_lcm,
+         cwt_cd = cw_tcd, dna_nu = dn_anu) |> 
+  select(-c(sex_id, disposition_id, color_tag_applied_id, species_id,
+            condition_id, run_id, spawned_id, ad_fin_clip_id, cwt_status_id, r_mile, way_pt)) |> 
   glimpse()
+
+#3. chop recovery
+chop_recovery_join <- full_join(ChopHeader_raw |> 
+                                  select(SurveyMetaID, SurveyID, Date),
+                                ChopRecov_raw, by = c("SurveyMetaID", "SurveyID")) |> 
+  clean_names() |> 
+  left_join(disposition_LU |> select(DispositionID, disposition = Disposition), 
+            by = c("disposition_id" = "DispositionID")) |>
+  left_join(color_LU |> 
+              select(colorID, color), by = c("color_tag_recovered_id" = "colorID")) |>  
+  left_join(sex_LU |> select(SexID, sex = Sex),
+            by = c("sex_id" = "SexID")) |> 
+  mutate(edit_time = as.POSIXct(gsub("[()]", "", edit_time), format = "%m/%d/%y %H:%M:%S"),
+         creation_time = as.POSIXct(gsub("[()]", "", creation_time), format = "%m/%d/%y %H:%M:%S"),
+         fl_mm = as.numeric(f_lmm),
+         fl_cm = as.numeric(f_lcm)) |> 
+  select(-c(f_lmm, f_lcm, way_pt, r_mile, disposition_id,
+            color_tag_recovered_id, sex_id)) |> 
+  rename(tag_col = color) |> 
+  glimpse()
+
 ```
 
 ### Survey
@@ -203,26 +263,6 @@ chop_header <- ChopHeader_raw |>
   clean_names() |> glimpse()
 ```
 
-### CWT
-The `cwt` table contains coded wire tag information and biological sampling data. 
-
-```{r}
-cwt <- full_join(ChopHeader_raw |>
-                   select(Date, SurveyMetaID), cwt_raw,
-                 by = "SurveyMetaID") |> 
-  clean_names() |> 
-  mutate(way_pt = as.character(way_pt),
-         r_mile = as.numeric(r_mile),
-         tissue_nu = as.numeric(tissue_nu),
-         dna_nu = as.numeric(dn_anu),
-         creation_time = as.POSIXct(gsub("[()]", "", creation_time), format = "%m/%d/%y %H:%M:%S"),
-         edit_time = as.POSIXct(gsub("[()]", "", edit_time), format = "%m/%d/%y %H:%M:%S")) |> 
-  rename(fl_mm = f_lmm,
-         fl_cm = f_lcm,
-         cwt_cd = cw_tcd) |> 
-  select(-dn_anu) |> 
-  glimpse()
-```
 
 
 ## Explore Numeric Variables: {.tabset}
@@ -234,7 +274,7 @@ chop_join |>
   colnames()
 ```
 
-### Chop Join Variable: `survey_meta_id`, `chops_id`, `survey_id`, `r_mile`, `species_id`, `run_id`
+### Chop Join Variables: `survey_meta_id`, `chops_id`, `survey_id`
 
 ```{r}
 summary(chop_join$survey_meta_id)
@@ -245,18 +285,7 @@ summary(chop_join$chops_id)
 ```{r}
 summary(chop_join$survey_id)
 ```
-```{r}
-# all NAs
-summary(chop_join$r_mile)
-```
 
-```{r}
-summary(chop_join$species_id)
-```
-```{r}
-# all 3s
-summary(chop_join$run_id)
-```
 
 ### Chop Join Variable: `count`
 
@@ -277,19 +306,22 @@ summary(chop_join$count)
 # daily chop count over time
 chop_join |> 
   filter(!is.na(date)) |>
-  mutate(year = year(date)) |>
-  group_by(date, year) |> 
+  mutate(year = year(date),
+         fake_date = ymd(paste0("2000-", month(date), "-", day(date)))) |>
+  group_by(fake_date, year) |>
   summarize(count = sum(count, na.rm = T)) |> 
-  ggplot(aes(x = day(date), y = count)) +
+  ggplot(aes(x = fake_date, y = count)) +
   geom_col() + 
   facet_wrap(~year) +
   theme_minimal() +
-  theme(text = element_text(size = 15))
+  theme(text = element_text(size = 15)) +
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")
+
 ```
 
-This plot shows the total daily chops collected each day from August to December from 2017-2020. Each square represents a different year. 
+This plot shows the total daily chops collected each day from August to December from 2017-2020. Chop count from this table ranges from 0 to 999 on a given day. Each square represents a different year. 
 
-#### Chop Recovery Variable: 
+#### Chop Recovery Variables: 
 
 ```{r}
 # Filter clean data to show only numeric variables 
@@ -312,9 +344,7 @@ summary(chop_recovery_join$survey_id)
 ```{r}
 summary(chop_recovery_join$tag_recovered)
 ```
-```{r}
-summary(chop_recovery_join$color_tag_recovered_id)
-```
+
 ```{r}
 # all NAs
 summary(chop_recovery_join$fl_mm)
@@ -327,32 +357,95 @@ summary(chop_recovery_join$fl_cm)
 ### Chop Recovery Variable: `count`
 
 **Numeric Summary of `count` over Period of Record**
+This variable was added under the assumption that each individual row of the chop recovery dataset represents an individual fish being recovered (i.e. each row of ChopRecov_raw had a count of 1).
 
-
-```{r}
-summary(chop_recovery_join$count)
-```
 
 **NA and Unknown Values**
 
 * `r round(sum(is.na(chop_recovery_join$count))/nrow(chop_join), 3) * 100` % of values in the `count` column are NA.
 
-**Plotting total daily chops over Period of Record**
+**Plotting total daily recovered over Period of Record**
 
 ```{r}
 # daily recovered chop count over time
 chop_recovery_join |> 
-  filter(!is.na(date)) |>
-  mutate(year = year(date)) |>
-  group_by(date, year) |> 
+  filter(!is.na(date)) |> 
+  mutate(year = year(date),
+         fake_date = ymd(paste0("2000-", month(date), "-", day(date)))) |>
+  group_by(fake_date, year, disposition) |>
   summarize(count = sum(count, na.rm = T)) |> 
-  ggplot(aes(x = day(date), y = count)) +
+  ggplot(aes(x = fake_date, y = count, fill = disposition)) +
+  scale_fill_brewer(palette = "Set1") +
   geom_col() + 
   facet_wrap(~year) +
   theme_minimal() +
-  theme(text = element_text(size = 15))
+  theme(text = element_text(size = 15)) +
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")
 ```
 
+This plot shows daily recovered chops by year and day. The colors represent "disposition" i.e. whether the fish was chopped, tagged, or not chopped after being counted in the data. Far more individual fish were chopped after being processed than not chopped. None were tagged. 
+
+### Chops and Tags Variables: `survey_meta_id`, `survey_id`, `individual_id`, `disc_tag_applied`, `fl_mm`, `head_nu`, `scale_nu`, `otolith_nu`, `cwt_cd`
+
+```{r}
+chops_and_tags_join |> 
+  select_if(is.numeric) |> 
+  colnames()
+```
+```{r}
+summary(chops_and_tags_join$survey_meta_id)
+summary(chops_and_tags_join$survey_id)
+summary(chops_and_tags_join$individual_id)
+summary(chops_and_tags_join$disc_tag_applied)
+summary(chops_and_tags_join$fl_mm)
+summary(chops_and_tags_join$head_nu)
+summary(chops_and_tags_join$scale_nu)
+summary(chops_and_tags_join$otolith_nu)
+summary(chops_and_tags_join$cwt_cd)
+```
+### Chops and Tags Variable: `count`
+
+**Numeric Summary of `count` over Period of Record**
+This variable was added under the assumption that each individual row of the chops and tags dataset represents an individual fish being recovered (i.e. each row of chops_and_tags_raw had a count of 1).
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(chops_and_tags_join$count))/nrow(chop_join), 3) * 100` % of values in the `count` column are NA.
+
+**Plotting total daily chops and tags over Period of Record**
+
+```{r}
+# daily individual chops count over time
+chops_and_tags_join |> 
+  filter(!is.na(date)) |> 
+  mutate(year = year(date),
+         fake_date = ymd(paste0("2000-", month(date), "-", day(date)))) |>
+  group_by(fake_date, year, disposition) |>
+  summarize(count = sum(count, na.rm = T)) |> 
+  ggplot(aes(x = fake_date, y = count, fill = disposition)) +
+  scale_fill_brewer(palette = "Set1") +
+  geom_col() + 
+  facet_wrap(~year) +
+  theme_minimal() +
+  theme(text = element_text(size = 15)) +
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")
+```
+This plot shows daily individual carcasses by year and day. The colors represent "disposition" i.e. whether the fish was chopped, tagged, or not chopped after being counted in the data. Far more individual fish were tagged after being processed than chopped. None were not chopped.  
+
+
+**Plotting fork length of each sex**
+
+```{r}
+# use sex lookup table
+chops_and_tags_join |>
+  filter(fl_mm < 2000) |> # outlier
+  ggplot(aes(x = sex, y = fl_mm)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(y = "FL", x = "Sex") + 
+  facet_wrap(~year(date))
+```
+This plot shows fork length (mm) of fish plotted by year. Sex categories are male, female, not recorded, and unknown.
 
 ### Chop Header Variable: `survey_meta_id`
 
@@ -363,39 +456,9 @@ chop_header |>
 ```
 ```{r}
 summary(chop_header$survey_meta_id)
+summary(chop_header$survey_week)
 ```
 
-### CWT Variable: `survey_meta_id`, `individual_id`, `fl_mm`, `survey_id`
-```{r}
-cwt |> 
-  select_if(is.numeric) |> 
-  colnames()
-```
-```{r}
-# there is an outlier here
-summary(cwt$fl_mm)
-```
-
-
-* `r round(sum(is.na(cwt$fl_mm))/nrow(cwt), 3) * 100` % of values in the `fl` column are NA.
-
-
-**Plotting fork length of each sex**
-
-```{r}
-# use sex lookup table
-cwt |> 
-  mutate(sex = case_when(sex_id == 251 ~ "unknown",
-                         sex_id == 253 ~ "not recorded", 
-                         sex_id == 1 ~ "female",
-                         sex_id == 2 ~ "male")) |> 
-  filter(fl_mm < 2000) |> 
-  ggplot(aes(x = sex, y = fl_mm)) + 
-  geom_boxplot() + 
-  theme_minimal() + 
-  labs(y = "FL", x = "Sex") + 
-  facet_wrap(~year(date))
-```
 
 ## Explore Categorical variables: {.tabset}
 
@@ -408,50 +471,60 @@ chop_join |>
   select_if(is.character) |>
   colnames()
 ```
+```{r}
+unique(chop_join$chop_type_cd)
+unique(chop_join$species)
+unique(chop_join$run)
+```
 
 ```{r}
-# TODO what is runid? run lookup table not working
 chop_cleaner <- chop_join |>
-  mutate(chop_type_cd = tolower(chop_type_cd)) |>
-  left_join(species_LU |> 
-              mutate(species_id = as.numeric(TaxonID),
-                     species = CommonName) |> 
-              select(species_id, species), by = "species_id") |> 
-  select(-species_id) |> glimpse()
-
+  mutate_if(is.character, str_to_lower) |> 
+  glimpse()
 ```
 ### Chop Recovery Clean Data
-
 
 ```{r}
 chop_recovery_join |> 
   select_if(is.character) |>
   colnames()
 ```
+```{r}
+unique(chop_recovery_join$disposition)
+unique(chop_recovery_join$tag_col)
+unique(chop_recovery_join$sex)
+```
 
 ```{r}
 chop_recovery_cleaner <- chop_recovery_join |> 
-  mutate(way_pt = as.character(way_pt),
-         r_mile = as.numeric(r_mile),
-         sex = case_when(sex_id == 251 ~ "unknown",
-                         sex_id == 253 ~ "not recorded", 
-                         sex_id == 1 ~ "female",
-                         sex_id == 2 ~ "male")) |> 
-    left_join(disposition_LU |> 
-              mutate(disposition_id = as.numeric(DispositionID),
-                     disposition = tolower(Disposition)) |> 
-              select(disposition_id, disposition), by = "disposition_id") |> 
-  mutate(chop_clip_status = ifelse(disposition == "chopped", "yes", "no"),
-         tag_col = as.character(color_tag_recovered_id)) |> 
-    select(-disposition_id, disposition, -sex_id, color_tag_recovered_id) |> 
+  mutate_if(is.character, str_to_lower) |> 
            glimpse()
-# TODO chop_recovery contains a lot of the data that is in the chop_tags from other years:
-# TODO: can we connect chop_recovery_cleaner to chop_cleaner to get chop_clip_status, sex, fl, tag col (all in chop table from other years)
-# TODO we could join on survey_meta_id, date, survey_id, way_pt r_mile
-
-# TODO no lifestage data
-# TODO can we get tag_clip_status?
 ```
+### Chops and Tags Clean Data
+
+```{r}
+chops_and_tags_join |> 
+  select_if(is.character) |>
+  colnames()
+```
+```{r}
+unique(chops_and_tags_join$species)
+unique(chops_and_tags_join$run)
+unique(chops_and_tags_join$tag_col)
+unique(chops_and_tags_join$disposition)
+unique(chops_and_tags_join$condition)
+unique(chops_and_tags_join$spawned)
+unique(chops_and_tags_join$ad_fin_clip_status)
+unique(chops_and_tags_join$cwt_status)
+unique(chops_and_tags_join$sex)
+```
+
+```{r}
+chops_and_tags_cleaner <- chops_and_tags_join |> 
+  mutate_if(is.character, str_to_lower) |> 
+           glimpse()
+```
+
 ### Chop Header Clean Data
 
 ```{r}
@@ -461,15 +534,15 @@ chop_header |>
 ```
 
 ```{r}
-unique(chop_header$weather_id)
+unique(chop_header$boat)
 ```
 
 
 
 ```{r}
-chop_header_cleaner <- chop_header |>
-  left_join(weather_LU |> 
-              select(weather_id = WeatherID, weather = Weather), by = "weather_id") |> 
+chop_header_cleaner <- chop_header |> 
+  left_join(weather_LU |> select(WeatherID, weather = Weather), 
+            by = c("weather_id" = "WeatherID")) |> 
   mutate(time_in = strftime(as.POSIXct(time_in, format = "%m/%d/%y %H:%M:%S"), "%H:%M:%S"),
          time_out = strftime(as.POSIXct(time_out, format = "%m/%d/%y %H:%M:%S"), "%H:%M:%S"),
          edit_time = as.POSIXct(edit_time, format = "%m/%d/%y %H:%M:%S"),
@@ -481,51 +554,6 @@ chop_header_cleaner <- chop_header |>
          flow_cfs = as.numeric(flow_cfs),
          turbidity_ntu = as.numeric(turbidity_ntu)) |> 
   select(-weather_id) |> 
-    glimpse()
-```
-
-### CWT Clean Data
-
-```{r}
-cwt |> 
-  select_if(is.character) |> 
-  colnames()
-```
-
-
-
-```{r}
-# connect IDs to lookup tables to get values
-cwt_cleaner <- cwt |> 
-  left_join(species_LU |> 
-              mutate(species_id = as.numeric(TaxonID),
-                     species = tolower(CommonName)) |> 
-              select(species_id, species), by = "species_id") |> 
-  left_join(disposition_LU |> 
-              mutate(disposition_id = as.numeric(DispositionID),
-                     disposition = tolower(Disposition)) |> 
-              select(disposition_id, disposition), by = "disposition_id") |> 
-  left_join(condition_LU |> 
-              mutate(condition_id = as.numeric(ConditionID),
-                     condition = tolower(Condition)) |> 
-              select(condition_id, condition), by = "condition_id") |> 
-  left_join(spawnstatus_LU |> 
-              mutate(spawned_id = as.numeric(SpawnedID),
-                     spawn_status = tolower(Spawned)) |> 
-              select(spawned_id, spawn_status), 
-            by = "spawned_id") |> 
-  left_join(adfin_LU |> 
-              mutate(ad_fin_clip_id = as.numeric(AdFinClipID),
-                     ad_clip = tolower(AdFinClip)) |> 
-              select(ad_fin_clip_id, ad_clip), by = "ad_fin_clip_id") |> 
-  left_join(cwtstatus_LU |> 
-              mutate(cwt_status_id = as.numeric(CWTStatusID),
-                     cwt_status = tolower(CWTStatus)) |> 
-              select(cwt_status_id, cwt_status), 
-            by = "cwt_status_id") |> 
-  mutate_if(is.character, str_to_lower) |> 
-  select(-c(species_id, disposition_id, condition_id, spawned_id, 
-            ad_fin_clip_id, cwt_status_id, sex_id)) |> 
   glimpse()
 ```
 
@@ -542,19 +570,17 @@ percent_na <- chop_cleaner |>
 
 counts_data_dictionary <- tibble(variables = colnames(chop_cleaner),
                           description = c("Survey Meta ID",
+                                          "Survey ID",
                                           "Date",
                                           "Chops ID",
-                                          "Survey ID",
-                                          "Waypoint",
-                                          "River Mile",
-                                          "Run ID",
-                                          "Chop Type CD",
-                                          "Count",
+                                          "Chop Type Code", 
+                                          "Count", 
                                           "Data Recorder",
                                           "Creation Time",
                                           "Editor",
                                           "Edit Time",
-                                          "Species"),
+                                          "Species",
+                                          "Run Type"),
                           percent_na = round(percent_na$value*100,
                                              digits = 1))
 
@@ -570,25 +596,21 @@ percent_na <- chop_recovery_cleaner |>
 
 recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                           description = c("Survey Meta ID",
-                                          "Date",
-                                          "Recover ID", 
                                           "Survey ID",
-                                          "Way point",
-                                          "River mile",
-                                          "Tag Recovered",
-                                          "Color of Tag Recovered ID",
-                                          "Fork length (mm)",
-                                          "Fork length (cm)",
+                                          "Date",
+                                          "Recover ID",
+                                          "Tag ID Recovered",
                                           "Comments",
                                           "Data Recorder",
                                           "Creation Time",
                                           "Editor",
                                           "Edit Time",
                                           "Count",
-                                          "Sex",
                                           "Disposition",
-                                          "Chop Clip Status",
-                                          "Tag Color"),
+                                          "Tag Color",
+                                          "Sex",
+                                          "Fork Length (mm)",
+                                          "Fork Length (cm)"),
                           percent_na = round(percent_na$value*100,
                                              digits = 1))
 
@@ -610,7 +632,6 @@ chop_header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
                                           "Survey Week",
                                           "Transport Type ID",
                                           "Subsample ID",
-                                          "Survey Date",
                                           "Time In",
                                           "Time Out",
                                           "Water Temp (F)",
@@ -634,161 +655,78 @@ chop_header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
 
 kable(chop_header_data_dictionary)
 ```
-### CWT
+### Chops and Tags Join
 ```{r}
-percent_na <- cwt_cleaner |>
+percent_na <- chops_and_tags_cleaner |>
   summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
 
-cwt_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
-                          description = c("Date",
-                                          "Survey Meta ID",
-                                          "Individual ID",
+cwt_data_dictionary <- tibble(variables = colnames(chops_and_tags_cleaner),
+                          description = c("Survey Meta ID",
                                           "Survey ID",
-                                          "Waypoint",
-                                          "River Mile",
-                                          "Run ID",
+                                          "Date",
+                                          "Individual ID",
                                           "Disc Tag Applied",
-                                          "Color Tag Applied",
                                           "Fork Length (mm)",
                                           "Fork Length (cm)",
                                           "Head Number",
                                           "Scale Number",
                                           "Tissue Number",
                                           "Otolith Number",
+                                          "DNA Number",
                                           "Comments",
                                           "Data Recorder",
                                           "Creation Time",
                                           "Editor",
                                           "Edit Time",
-                                          "CWT CD",
-                                          "DNA Number",
+                                          "CWT Code",
+                                          "Count",
                                           "Species",
+                                          "Run",
+                                          "Tag Color",
                                           "Disposition",
                                           "Condition",
                                           "Spawn Status",
                                           "Adipose fin clip",
-                                          "CWT Status"),
+                                          "CWT Status",
+                                          "Sex"),
                           percent_na = round(percent_na$value*100))
 
 kable(cwt_data_dictionary)
 ```
 ## Saved cleaned data back to google cloud
 ```{r}
-# Split into separate years for upload
-# 2017
-feather_carcass_chops_2017 <- chop_cleaner |> 
-  filter(year(date) == 2017)
-feather_carcass_cwt_2017 <- cwt_cleaner |> 
-  filter(year(date) == 2017)
-feather_carcass_chop_header_2017<- chop_header_cleaner |> 
-  filter(year(date) == 2017)
-feather_carcass_chop_recovery_2017<- chop_recovery_cleaner |> 
-  filter(year(date) == 2017)
-
-#2018
-feather_carcass_chops_2018 <- chop_cleaner |> 
-  filter(year(date) == 2018)
-feather_carcass_cwt_2018 <- cwt_cleaner |> 
-  filter(year(date) == 2018)
-feather_carcass_chop_header_2018 <- chop_header_cleaner |> 
-  filter(year(date) == 2018)
-feather_carcass_chop_recovery_2018 <- chop_recovery_cleaner |> 
-  filter(year(date) == 2018)
-#2019
-feather_carcass_chops_2019 <- chop_cleaner |> 
-  filter(year(date) == 2019)
-feather_carcass_cwt_2019 <- cwt_cleaner |> 
-  filter(year(date) == 2019)
-feather_carcass_chop_header_2019<- chop_header_cleaner |> 
-  filter(year(date) == 2019)
-feather_carcass_chop_recovery_2019 <- chop_recovery_cleaner |> 
-  filter(year(date) == 2019)
-#2020
-feather_carcass_chops_2020 <- chop_cleaner |> 
-  filter(year(date) == 2020)
-feather_carcass_cwt_2020 <- cwt_cleaner |> 
-  filter(year(date) == 2020)
-feather_carcass_chop_header_2020<- chop_header_cleaner |> 
-  filter(year(date) == 2020)
-feather_carcass_chop_recovery_2020 <- chop_recovery_cleaner |> 
-  filter(year(date) == 2020)
+feather_carcass_chops_2017_2021 <- chop_cleaner |> 
+  glimpse()
+feather_carcass_chops_and_tags_2017_2021 <- chops_and_tags_cleaner |>
+  glimpse()
+feather_carcass_chop_header_2017_2021 <- chop_header_cleaner |> 
+  glimpse()
+feather_carcass_chop_recovery_2017_2021 <- chop_recovery_cleaner |>
+  glimpse()
 
 ```
 ```{r, include=FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
 # 2017
-gcs_upload(feather_carcass_chops_2017,
+gcs_upload(feather_carcass_chops_2017_2021,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2017.csv")
-gcs_upload(feather_carcass_cwt_2017,
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2017_2021.csv")
+gcs_upload(feather_carcass_chops_and_tags_2017_2021,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2017.csv")
-gcs_upload(feather_carcass_chop_header_2017,
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2017_2021.csv")
+gcs_upload(feather_carcass_chop_header_2017_2021,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2017.csv")
-gcs_upload(feather_carcass_chop_recovery_2017,
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2017_2021.csv")
+gcs_upload(feather_carcass_chop_recovery_2017_2021,
            object_function = f,
            type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2017.csv")
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2017_2021.csv")
 
-# 2018
-gcs_upload(feather_carcass_chops_2018,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2018.csv")
-gcs_upload(feather_carcass_cwt_2018,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2018.csv")
-gcs_upload(feather_carcass_chop_header_2018,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2018.csv")
-gcs_upload(feather_carcass_chop_recovery_2018,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2018.csv")
-
-# 2019
-gcs_upload(feather_carcass_chops_2019,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2019.csv")
-gcs_upload(feather_carcass_cwt_2019,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2019.csv")
-gcs_upload(feather_carcass_chop_header_2019,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2019.csv")
-gcs_upload(feather_carcass_chop_recovery_2019,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2019.csv")
-
-# 2020
-gcs_upload(feather_carcass_chops_2020,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_and_tags_2017.csv")
-gcs_upload(feather_carcass_cwt_2020,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2020.csv")
-gcs_upload(feather_carcass_chop_header_2020,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2020.csv")
-gcs_upload(feather_carcass_chop_recovery_2020,
-           object_function = f,
-           type = "csv",
-           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2020.csv")
 ```
 
 
