@@ -7,22 +7,12 @@ Elizabeth Stebbins
 
 ## Description of Monitoring Data
 
-**Timeframe:**
-
-**Video Season:**
-
-**Completeness of Record throughout timeframe:**
-
-**Sampling Location:**
-
-**Data Contact:**
-
-Any additional info?
+See Feather Carcass Survey QC Document
 
 ## Access Cloud Data
 
 Read in data from google cloud, glimpse raw data and domain description
-sheet:
+sheet.
 
 ## Raw Data Glimpse:
 
@@ -33,16 +23,6 @@ sheet:
 Chop_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","Chops_2017_2021.csv")) |> 
   glimpse()
 ```
-
-    ## Rows: 2664 Columns: 13
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr (5): ChopTypeCD, DataRecorder, CreationTime, Editor, EditTime
-    ## dbl (6): SurveyMetaID, ChopsID, SurveyID, SpeciesID, RunID, ChopCount
-    ## lgl (2): WayPt, RMile
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
     ## Rows: 2,664
     ## Columns: 13
@@ -69,17 +49,6 @@ ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding
   filter(year(Date) >= 2017) |> 
   glimpse()
 ```
-
-    ## Rows: 4205 Columns: 26
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr  (10): Boat, TimeIn, TimeOut, FieldRecorder, Crew, Comments, DataRecorde...
-    ## dbl   (7): SurveyMetaID, SurveyID, LocationID, SectionID, SurveyWeek, Subsam...
-    ## lgl   (8): TransportTypeID, WaterTempF, WaterTempC, SecchiCM, SecchiFeet, Fl...
-    ## date  (1): SurveyDate
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
     ## Rows: 3,460
     ## Columns: 26
@@ -120,16 +89,6 @@ ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
   glimpse()
 ```
 
-    ## Rows: 10536 Columns: 16
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr (5): Comments, DataRecorder, CreationTime, Editor, EditTime
-    ## dbl (5): SurveyMetaID, RecoverID, SurveyID, DispositionID, TagRecovered
-    ## lgl (6): WayPt, RMile, ColorTagRecoveredID, SexID, FLmm, FLcm
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
     ## Rows: 10,536
     ## Columns: 17
     ## $ SurveyMetaID        <dbl> 70002, 70002, 70002, 70002, 70002, 70002, 70002, 7…
@@ -157,24 +116,13 @@ ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 ### chops_and_tags_raw
 
 ``` r
-# note: disposition ID is what they did to it (not how they found it)
-# each row is likely an individual fish
+# note: disposition ID is how they processed the fish (not how they found it)
+# adds a column here titled "count" - each row is likely an individual fish
 # Table in database was called CarcassIndividual
-# adds a column here titled "count" 
 chops_and_tags_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river","CWT_2017_2021.csv")) |> 
   mutate(count = 1) |> 
   glimpse()
 ```
-
-    ## Rows: 18262 Columns: 28
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr  (5): Comments, DataRecorder, CreationTime, Editor, EditTime
-    ## dbl (18): SurveyMetaID, IndividualID, SurveyID, SpeciesID, RunID, Dispositio...
-    ## lgl  (5): WayPt, RMile, ColorTagAppliedID, TissueNu, DNAnu
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
     ## Rows: 18,262
     ## Columns: 29
@@ -214,7 +162,8 @@ chops_and_tags_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-hol
 
 The `chop` table contains carcass counts ranging from 0 - 999
 
-The `chops_and_tags` table contains individual carcasses recovered
+The `chops_and_tags` table contains individual carcasses chopped and
+tagged.
 
 The `chop_recovery` table contains recovered carcass counts by color
 
@@ -465,7 +414,8 @@ chop_join |>
   facet_wrap(~year) +
   theme_minimal() +
   theme(text = element_text(size = 15)) +
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") +
+  xlab("Date")
 ```
 
     ## `summarise()` has grouped output by 'fake_date'. You can override using the
@@ -540,7 +490,7 @@ summary(chop_recovery_join$fl_cm)
 **Numeric Summary of `count` over Period of Record** This variable was
 added under the assumption that each individual row of the chop recovery
 dataset represents an individual fish being recovered (i.e. each row of
-ChopRecov_raw had a count of 1).
+`ChopRecov_raw` had a count of 1).
 
 **NA and Unknown Values**
 
@@ -562,7 +512,8 @@ chop_recovery_join |>
   facet_wrap(~year) +
   theme_minimal() +
   theme(text = element_text(size = 15)) +
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") +
+  xlab("Date")
 ```
 
     ## `summarise()` has grouped output by 'fake_date', 'year'. You can override using
@@ -655,7 +606,7 @@ summary(chops_and_tags_join$cwt_cd)
 **Numeric Summary of `count` over Period of Record** This variable was
 added under the assumption that each individual row of the chops and
 tags dataset represents an individual fish being recovered (i.e. each
-row of chops_and_tags_raw had a count of 1).
+row of `chops_and_tags_raw` had a count of 1).
 
 **NA and Unknown Values**
 
