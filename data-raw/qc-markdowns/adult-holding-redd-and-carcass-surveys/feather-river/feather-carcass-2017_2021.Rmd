@@ -441,9 +441,16 @@ chop_recovery_cleaner <- chop_recovery_join |>
               mutate(disposition_id = as.numeric(DispositionID),
                      disposition = tolower(Disposition)) |> 
               select(disposition_id, disposition), by = "disposition_id") |> 
-  select(-disposition_id, -sex_id) |> 
+  mutate(chop_clip_status = ifelse(disposition == "chopped", "yes", "no"),
+         tag_col = as.character(color_tag_recovered_id)) |> 
+    select(-disposition_id, disposition, -sex_id, color_tag_recovered_id) |> 
            glimpse()
+# TODO chop_recovery contains a lot of the data that is in the chop_tags from other years:
+# TODO: can we connect chop_recovery_cleaner to chop_cleaner to get chop_clip_status, sex, fl, tag col (all in chop table from other years)
+# TODO we could join on survey_meta_id, date, survey_id, way_pt r_mile
 
+# TODO no lifestage data
+# TODO can we get tag_clip_status?
 ```
 ### Chop Header Clean Data
 
@@ -452,11 +459,9 @@ chop_header |>
   select_if(is.character) |> 
   colnames()
 ```
+
 ```{r}
-unique(chop_header$crew)
-```
-```{r}
-unique(chop_header$weather)
+unique(chop_header$weather_id)
 ```
 
 
@@ -581,7 +586,9 @@ recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                                           "Edit Time",
                                           "Count",
                                           "Sex",
-                                          "Disposition"),
+                                          "Disposition",
+                                          "Chop Clip Status",
+                                          "Tag Color"),
                           percent_na = round(percent_na$value*100,
                                              digits = 1))
 
