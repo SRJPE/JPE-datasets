@@ -64,6 +64,7 @@ read_from_cloud <- function(carcass_data_type, year){
 }
 ```
 
+## Chops and Tags
 ### 2000 Chops and Tags
 *2000 and 2001 chops and tags are in different tables
 *2000 grilse has sex information
@@ -489,7 +490,7 @@ summary(feather_carcass_chops_and_tags_combined$id)
 ```
 
 
-### Chop Channel Variable: `chop_count`, `tag_count`
+### Chop Variables: `chop_count`, `tag_count`
 
 
 ```{r}
@@ -550,4 +551,141 @@ feather_carcass_chops_and_tags_combined %>%
   theme(axis.text.y = element_text(size = 8))+
   labs(title = "Daily Tag Count From 2000 to 2020")
 ```
+## Chop Recovery 
+* Chop Recovery tables are available for 2001-2004, 2006, and 2017-2021.
 
+### 2001 Chop Recovery
+* 2001 data contains chop recovery count by sex (`male`, `female`, and `grilse`). It does not contain data about `recovery tag color` or `channel id`. 
+```{r}
+feather_carcass_chop_recovery_2001 <- read_from_cloud("chop_recovery",2001) |> 
+  pivot_longer(c(male_chop, female_chop, grilse), 
+               names_to = "sex", 
+               values_to = "recov_count") |> 
+  mutate(sex = case_when(sex == "male_chop" ~ "male",
+                         sex == "female_chop" ~ "female",
+                         TRUE ~ sex),
+         chan_id = NA_integer_,
+         tag_col = NA_character_,
+         recov_color = NA_character_) |> 
+  rename(header_id = chop_env_id) |> 
+  glimpse()
+```
+### 2002 Chop Recovery
+* Chop recovery data from 2002-2004 and 2006 have the same format and variables.
+```{r}
+feather_carcass_chop_recovery_2002 <- read_from_cloud("chop_recovery",2002) |> 
+  glimpse()
+```
+### 2003 Chop Recovery
+```{r}
+feather_carcass_chop_recovery_2003 <- read_from_cloud("chop_recovery",2003) %>% 
+  glimpse()
+```
+### 2004 Chop Recovery
+```{r}
+feather_carcass_chop_recovery_2004 <- read_from_cloud("chop_recovery",2004) %>% 
+  glimpse()
+```
+### 2006 Chop Recovery
+```{r}
+feather_carcass_chop_recovery_2006 <- read_from_cloud("chop_recovery",2006) |> 
+  mutate(tag_col = as.character(tag_col),
+         recov_color = as.character(recov_color)) |> 
+  glimpse()
+```
+
+### 2017-2021 Chop Recovery
+* 2017-2021 Chop Recovery data contains variables not included in the other chop recovery tables like `sex` and `fork length`. It does not contain `channel_id`, `min`, or `recov_color`.
+```{r}
+feather_carcass_chop_recovery_2017_2021 <- read_from_cloud("chop_recovery","2017_2021") |> 
+  rename(sect = section_id,
+         recov_id = recover_id,
+         recov_count = count,
+         header_id = survey_meta_id) |> 
+  mutate(tag_col = as.character(tag_col),
+         chan_id = NA_integer_,
+         min = NA_integer_,
+         recov_color = NA_character_) |> 
+  select(-c(survey_id, tag_recovered, comments, data_recorder, creation_time,
+            editor, edit_time, disposition, sex, fl_mm, fl_cm)) |> 
+  glimpse()
+```
+
+## Combined Chop Recovery 
+```{r}
+feather_carcass_chop_recovery_combined <- bind_rows(feather_carcass_chop_recovery_2001,
+                                                    feather_carcass_chop_recovery_2002,
+                                                    feather_carcass_chop_recovery_2003,
+                                                    feather_carcass_chop_recovery_2004,
+                                                    feather_carcass_chop_recovery_2006,
+                                                    feather_carcass_chop_recovery_2017_2021
+                                                    ) |> 
+  glimpse()
+```
+
+### Data Transformation
+
+### Counts
+
+The `feather_carcass_chop_recovery_combined` table contains counts of recovered carcasses.
+
+## Explore Numeric Variables: {.tabset}
+
+### Variable: `header_id`, `chan_id`, `sect`, `min`, `recov_id`
+
+```{r}
+feather_carcass_chop_recovery_combined %>% 
+  select_if(is.numeric) %>%
+  colnames()
+```
+
+```{r}
+summary(feather_carcass_chop_recovery_combined$sect)
+summary(feather_carcass_chop_recovery_combined$recov_id)
+summary(feather_carcass_chop_recovery_combined$min)
+summary(feather_carcass_chop_recovery_combined$header_id)
+summary(feather_carcass_chop_recovery_combined$chan_id)
+```
+
+
+### Chop Recovery Variable: `recov_count`
+
+
+```{r}
+summary(feather_carcass_chop_recovery_combined$recov_count)
+```
+
+
+**NA and Unknown Values**
+Provide a stat on NA or unknown values.
+
+```{r}
+round(sum(is.na(feather_carcass_chop_recovery_combined$recov_count))/nrow(feather_carcass_chop_recovery_combined), 3) * 100
+round(sum(is.na(feather_carcass_chop_recovery_combined$header_id))/nrow(feather_carcass_chop_recovery_combined), 3) * 100
+round(sum(is.na(feather_carcass_chop_recovery_combined$recov_id))/nrow(feather_carcass_chop_recovery_combined), 3) * 100
+round(sum(is.na(feather_carcass_chop_recovery_combined$sex))/nrow(feather_carcass_chop_recovery_combined), 3) * 100
+round(sum(is.na(feather_carcass_chop_recovery_combined$tag_col))/nrow(feather_carcass_chop_recovery_combined), 3) * 100
+round(sum(is.na(feather_carcass_chop_recovery_combined$recov_color))/nrow(feather_carcass_chop_recovery_combined), 3) * 100
+```
+* `r `round(sum(is.na(feather_carcass_chop_recovery_combined$recov_count))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `recov_count` column are NA.
+* `r `round(sum(is.na(feather_carcass_chop_recovery_combined$header_id))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `header_id` column are NA.
+* `r `round(sum(is.na(feather_carcass_chop_recovery_combined$recov_id))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `recov_id` column are NA.
+* `r round(sum(is.na(feather_carcass_chop_recovery_combined$sex))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `sex` column are NA.
+* `r round(sum(is.na(feather_carcass_chop_recovery_combined$tag_col))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `tag_col` column are NA.
+* `r round(sum(is.na(feather_carcass_chop_recovery_combined$recov_color))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `recov_color` column are NA.
+
+
+**Plotting chops over Period of Record**
+
+```{r}
+feather_carcass_chops_and_tags_combined %>% 
+  mutate(date = as_date(date)) %>% 
+  ggplot(aes(x = date, y = chop_count)) +
+  geom_col() +
+  facet_wrap(~year(date), scales = "free") +
+  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
+  theme(axis.text.y = element_text(size = 8))+
+  labs(title = "Daily Chop Count From 2000 to 2020")
+```
