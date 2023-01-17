@@ -173,7 +173,7 @@ The `chop_recovery` table contains recovered carcass counts by color
 
 #1. chop table (with dates and tag color)
 chop_join <- full_join(ChopHeader_raw |> 
-                                 select(SurveyMetaID, SurveyID, Date),
+                                 select(SurveyMetaID, SurveyID, Date, SectionID),
                                Chop_raw,
                        by = c("SurveyID", "SurveyMetaID")) |> 
   clean_names() |> 
@@ -192,10 +192,11 @@ chop_join <- full_join(ChopHeader_raw |>
 ```
 
     ## Rows: 7,284
-    ## Columns: 12
+    ## Columns: 13
     ## $ survey_meta_id <dbl> 70004, 70004, 70004, 70004, 70004, 70004, 70004, 70004,…
     ## $ survey_id      <dbl> 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7…
     ## $ date           <date> 2017-09-05, 2017-09-06, 2017-09-06, 2017-09-06, 2017-0…
+    ## $ section_id     <dbl> 17, 7, 7, 7, 1, 1, 1, 17, 17, 17, 17, 17, 17, 16, 16, 1…
     ## $ chops_id       <dbl> 285, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
     ## $ chop_type_cd   <chr> "Chop", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ count          <dbl> 0, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
@@ -209,7 +210,7 @@ chop_join <- full_join(ChopHeader_raw |>
 ``` r
 #2. chops and tags
 chops_and_tags_join <- full_join(ChopHeader_raw |> 
-                                   select(SurveyMetaID, SurveyID, Date), 
+                                   select(SurveyMetaID, SurveyID, Date, SectionID), 
                                  chops_and_tags_raw, by = c("SurveyMetaID", "SurveyID")) |>
   clean_names() |> 
   left_join(species_LU |> 
@@ -241,10 +242,11 @@ chops_and_tags_join <- full_join(ChopHeader_raw |>
 ```
 
     ## Rows: 24,298
-    ## Columns: 28
+    ## Columns: 29
     ## $ survey_meta_id     <dbl> 70004, 70004, 70004, 70004, 70004, 70004, 70004, 70…
     ## $ survey_id          <dbl> 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, …
     ## $ date               <date> 2017-09-05, 2017-09-05, 2017-09-05, 2017-09-06, 20…
+    ## $ section_id         <dbl> 17, 17, 17, 7, 7, 7, 1, 1, 1, 17, 17, 17, 17, 17, 1…
     ## $ individual_id      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ disc_tag_applied   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ fl_mm              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
@@ -274,7 +276,7 @@ chops_and_tags_join <- full_join(ChopHeader_raw |>
 ``` r
 #3. chop recovery
 chop_recovery_join <- full_join(ChopHeader_raw |> 
-                                  select(SurveyMetaID, SurveyID, Date),
+                                  select(SurveyMetaID, SurveyID, Date, SectionID),
                                 ChopRecov_raw, by = c("SurveyMetaID", "SurveyID")) |> 
   clean_names() |> 
   left_join(disposition_LU |> select(DispositionID, disposition = Disposition), 
@@ -294,10 +296,11 @@ chop_recovery_join <- full_join(ChopHeader_raw |>
 ```
 
     ## Rows: 12,951
-    ## Columns: 16
+    ## Columns: 17
     ## $ survey_meta_id <dbl> 70004, 70004, 70004, 70004, 70004, 70004, 70004, 70004,…
     ## $ survey_id      <dbl> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, …
     ## $ date           <date> 2017-09-05, 2017-09-06, 2017-09-07, 2017-09-18, 2017-0…
+    ## $ section_id     <dbl> 17, 7, 1, 17, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6, …
     ## $ recover_id     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ tag_recovered  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ comments       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
@@ -359,9 +362,10 @@ chop_join |>
   colnames()
 ```
 
-    ## [1] "survey_meta_id" "survey_id"      "chops_id"       "count"
+    ## [1] "survey_meta_id" "survey_id"      "section_id"     "chops_id"      
+    ## [5] "count"
 
-### Chop Join Variables: `survey_meta_id`, `chops_id`, `survey_id`
+### Chop Join Variables: `survey_meta_id`, `section_id`, `chops_id`, `survey_id`
 
 ``` r
 summary(chop_join$survey_meta_id)
@@ -369,6 +373,13 @@ summary(chop_join$survey_meta_id)
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
     ##   70002   70004   70005   70005   70006   70007
+
+``` r
+summary(chop_join$section_id)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    1.00   12.00   21.00   20.89   30.00   38.00     743
 
 ``` r
 summary(chop_join$chops_id)
@@ -436,10 +447,10 @@ chop_recovery_join |>
   colnames()
 ```
 
-    ## [1] "survey_meta_id" "survey_id"      "recover_id"     "tag_recovered" 
-    ## [5] "count"          "fl_mm"          "fl_cm"
+    ## [1] "survey_meta_id" "survey_id"      "section_id"     "recover_id"    
+    ## [5] "tag_recovered"  "count"          "fl_mm"          "fl_cm"
 
-### Chop Recovery Variable: `survey_meta_id`, `chops_id`, `survey_id`, `r_mile`, `species_id`, `run_id`
+### Chop Recovery Variable: `survey_meta_id`, `section_id`, `chops_id`, `survey_id`, `r_mile`, `species_id`, `run_id`
 
 ``` r
 summary(chop_recovery_join$survey_meta_id)
@@ -447,6 +458,13 @@ summary(chop_recovery_join$survey_meta_id)
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
     ##   70002   70004   70006   70005   70006   70007
+
+``` r
+summary(chop_recovery_join$section_id)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    1.00    8.00   10.00   12.89   17.00   38.00    2874
 
 ``` r
 summary(chop_recovery_join$recover_id)
@@ -534,9 +552,9 @@ chops_and_tags_join |>
   colnames()
 ```
 
-    ##  [1] "survey_meta_id"   "survey_id"        "individual_id"    "disc_tag_applied"
-    ##  [5] "fl_mm"            "fl_cm"            "head_nu"          "scale_nu"        
-    ##  [9] "otolith_nu"       "cwt_cd"           "count"
+    ##  [1] "survey_meta_id"   "survey_id"        "section_id"       "individual_id"   
+    ##  [5] "disc_tag_applied" "fl_mm"            "fl_cm"            "head_nu"         
+    ##  [9] "scale_nu"         "otolith_nu"       "cwt_cd"           "count"
 
 ``` r
 summary(chops_and_tags_join$survey_meta_id)
@@ -544,6 +562,13 @@ summary(chops_and_tags_join$survey_meta_id)
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
     ##   70002   70004   70006   70005   70007   70007
+
+``` r
+summary(chops_and_tags_join$section_id)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##    1.00    8.00   10.00   13.62   19.00   38.00    3582
 
 ``` r
 summary(chops_and_tags_join$survey_id)
@@ -676,6 +701,13 @@ summary(chop_header$survey_meta_id)
     ##   70004   70005   70006   70006   70006   70007
 
 ``` r
+summary(chop_header$section_id)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    1.00   10.00   19.00   19.43   29.00   38.00
+
+``` r
 summary(chop_header$survey_week)
 ```
 
@@ -723,10 +755,11 @@ chop_cleaner <- chop_join |>
 ```
 
     ## Rows: 7,284
-    ## Columns: 12
+    ## Columns: 13
     ## $ survey_meta_id <dbl> 70004, 70004, 70004, 70004, 70004, 70004, 70004, 70004,…
     ## $ survey_id      <dbl> 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7…
     ## $ date           <date> 2017-09-05, 2017-09-06, 2017-09-06, 2017-09-06, 2017-0…
+    ## $ section_id     <dbl> 17, 7, 7, 7, 1, 1, 1, 17, 17, 17, 17, 17, 17, 16, 16, 1…
     ## $ chops_id       <dbl> 285, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
     ## $ chop_type_cd   <chr> "chop", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ count          <dbl> 0, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
@@ -773,10 +806,11 @@ chop_recovery_cleaner <- chop_recovery_join |>
 ```
 
     ## Rows: 12,951
-    ## Columns: 16
+    ## Columns: 17
     ## $ survey_meta_id <dbl> 70004, 70004, 70004, 70004, 70004, 70004, 70004, 70004,…
     ## $ survey_id      <dbl> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, …
     ## $ date           <date> 2017-09-05, 2017-09-06, 2017-09-07, 2017-09-18, 2017-0…
+    ## $ section_id     <dbl> 17, 7, 1, 17, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6, …
     ## $ recover_id     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ tag_recovered  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ comments       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
@@ -868,10 +902,11 @@ chops_and_tags_cleaner <- chops_and_tags_join |>
 ```
 
     ## Rows: 24,298
-    ## Columns: 28
+    ## Columns: 29
     ## $ survey_meta_id     <dbl> 70004, 70004, 70004, 70004, 70004, 70004, 70004, 70…
     ## $ survey_id          <dbl> 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, …
     ## $ date               <date> 2017-09-05, 2017-09-05, 2017-09-05, 2017-09-06, 20…
+    ## $ section_id         <dbl> 17, 17, 17, 7, 7, 7, 1, 1, 1, 17, 17, 17, 17, 17, 1…
     ## $ individual_id      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ disc_tag_applied   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ fl_mm              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
@@ -977,6 +1012,7 @@ counts_data_dictionary <- tibble(variables = colnames(chop_cleaner),
                           description = c("Survey Meta ID",
                                           "Survey ID",
                                           "Date",
+                                          "Section ID",
                                           "Chops ID",
                                           "Chop Type Code", 
                                           "Count", 
@@ -997,6 +1033,7 @@ kable(counts_data_dictionary)
 | survey_meta_id | Survey Meta ID |        0.0 |
 | survey_id      | Survey ID      |        0.0 |
 | date           | Date           |       10.2 |
+| section_id     | Section ID     |       10.2 |
 | chops_id       | Chops ID       |       63.4 |
 | chop_type_cd   | Chop Type Code |       63.4 |
 | count          | Count          |       63.4 |
@@ -1019,6 +1056,7 @@ recovery_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
                           description = c("Survey Meta ID",
                                           "Survey ID",
                                           "Date",
+                                          "Section ID",
                                           "Recover ID",
                                           "Tag ID Recovered",
                                           "Comments",
@@ -1043,6 +1081,7 @@ kable(recovery_data_dictionary)
 | survey_meta_id | Survey Meta ID   |        0.0 |
 | survey_id      | Survey ID        |        0.0 |
 | date           | Date             |       22.2 |
+| section_id     | Section ID       |       22.2 |
 | recover_id     | Recover ID       |       18.6 |
 | tag_recovered  | Tag ID Recovered |       18.7 |
 | comments       | Comments         |       98.5 |
@@ -1133,10 +1172,11 @@ percent_na <- chops_and_tags_cleaner |>
   summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
 
-cwt_data_dictionary <- tibble(variables = colnames(chops_and_tags_cleaner),
+chops_and_tags_data_dictionary <- tibble(variables = colnames(chops_and_tags_cleaner),
                           description = c("Survey Meta ID",
                                           "Survey ID",
                                           "Date",
+                                          "Section ID",
                                           "Individual ID",
                                           "Disc Tag Applied",
                                           "Fork Length (mm)",
@@ -1164,7 +1204,7 @@ cwt_data_dictionary <- tibble(variables = colnames(chops_and_tags_cleaner),
                                           "Sex"),
                           percent_na = round(percent_na$value*100))
 
-kable(cwt_data_dictionary)
+kable(chops_and_tags_data_dictionary)
 ```
 
 | variables          | description      | percent_na |
@@ -1172,6 +1212,7 @@ kable(cwt_data_dictionary)
 | survey_meta_id     | Survey Meta ID   |          0 |
 | survey_id          | Survey ID        |          0 |
 | date               | Date             |         15 |
+| section_id         | Section ID       |         15 |
 | individual_id      | Individual ID    |         25 |
 | disc_tag_applied   | Disc Tag Applied |         34 |
 | fl_mm              | Fork Length (mm) |         29 |
@@ -1206,10 +1247,11 @@ feather_carcass_chops_2017_2021 <- chop_cleaner |>
 ```
 
     ## Rows: 7,284
-    ## Columns: 12
+    ## Columns: 13
     ## $ survey_meta_id <dbl> 70004, 70004, 70004, 70004, 70004, 70004, 70004, 70004,…
     ## $ survey_id      <dbl> 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7…
     ## $ date           <date> 2017-09-05, 2017-09-06, 2017-09-06, 2017-09-06, 2017-0…
+    ## $ section_id     <dbl> 17, 7, 7, 7, 1, 1, 1, 17, 17, 17, 17, 17, 17, 16, 16, 1…
     ## $ chops_id       <dbl> 285, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
     ## $ chop_type_cd   <chr> "chop", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ count          <dbl> 0, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
@@ -1226,10 +1268,11 @@ feather_carcass_chops_and_tags_2017_2021 <- chops_and_tags_cleaner |>
 ```
 
     ## Rows: 24,298
-    ## Columns: 28
+    ## Columns: 29
     ## $ survey_meta_id     <dbl> 70004, 70004, 70004, 70004, 70004, 70004, 70004, 70…
     ## $ survey_id          <dbl> 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, …
     ## $ date               <date> 2017-09-05, 2017-09-05, 2017-09-05, 2017-09-06, 20…
+    ## $ section_id         <dbl> 17, 17, 17, 7, 7, 7, 1, 1, 1, 17, 17, 17, 17, 17, 1…
     ## $ individual_id      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ disc_tag_applied   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ fl_mm              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
@@ -1296,10 +1339,11 @@ feather_carcass_chop_recovery_2017_2021 <- chop_recovery_cleaner |>
 ```
 
     ## Rows: 12,951
-    ## Columns: 16
+    ## Columns: 17
     ## $ survey_meta_id <dbl> 70004, 70004, 70004, 70004, 70004, 70004, 70004, 70004,…
     ## $ survey_id      <dbl> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, …
     ## $ date           <date> 2017-09-05, 2017-09-06, 2017-09-07, 2017-09-18, 2017-0…
+    ## $ section_id     <dbl> 17, 7, 1, 17, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6, …
     ## $ recover_id     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ tag_recovered  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ comments       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…

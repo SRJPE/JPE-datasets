@@ -32,7 +32,7 @@ library(wesanderson)
   
 **Completeness of Record throughout timeframe:** 
 
-* Data collected varies between different seasons. Coded wire tag (CWT) data has the highest variability. Collection of "Chop Recovery" data is inconsistent - collected from 2000-2010 and 2017-2021. Earlier years have more detailed chops data and had separate table for tags data; later chops data and tags data combines into one. Tables from 2017-2021 include a chop table with multiple count values per row, a chops table with individual counts, and a chop recovery table.
+* Data collected varies between different seasons. Coded wire tag (CWT) data has the highest variability. Collection of `Chop Recovery` data was collected from 2000-2010 and 2017-2021. Earlier years have more detailed `chops` data and have separate table for `tags` data; later `chops` data and `tags` data combines into one. Tables from 2017-2021 include a `chop` table with multiple count values per row, a `chop_and_tags` table with individual counts, and a `chop recovery` table.
   
 **Sampling Location:** Various sampling locations on Feather River
   
@@ -65,11 +65,13 @@ read_from_cloud <- function(carcass_data_type, year){
 ```
 
 ## Chops and Tags
-### 2000 Chops and Tags
-*2000 and 2001 chops and tags are in different tables
-*2000 grilse has sex information
+* Note that within the Chops and Tags data some years have tables titled `chops` while others are titled `chops_and_tags`. For 2017-2021 data, `chops` and `chops_and_tags` are separate tables and here we read in `chops_and_tags` for the most overlap of variables.
 
-```{r}
+### 2000 Chops and Tags
+* 2000 and 2001 chops and tags are in different tables so they have to be joined.
+* 2000 grilse has sex information
+
+```{r, message = FALSE}
 feather_carcass_chops_2000 <- read_from_cloud("chops", 2000) %>% 
   rename(adult_male = "male_chop",
          adult_female = "female_chop",
@@ -95,13 +97,13 @@ feather_carcass_chops_and_tags_2000 <- full_join(feather_carcass_chops_2000, fea
     sex == "f" ~ "female",
     TRUE ~ sex
   )) %>%
-  rename(id = "recov_id") %>% glimpse
+  rename(id = "recov_id") %>% glimpse()
 
 # does not contain tag_clip_status, chop_clip_status, or tag_count in data
 ```
 
 ### 2001 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_2001 <- read_from_cloud("chops", 2001) %>% 
   rename(adult_male = "male_chop",
          adult_female = "female_chop",
@@ -133,7 +135,7 @@ feather_carcass_chops_and_tags_2001 <- full_join(feather_carcass_chops_2001, fea
 
 ### 2002 Chops and Tags
 * 2002 - 2004 dataset contains columns contains sex (m or f) and lifestage (grilse) 
-```{r}
+```{r, message = FALSE}
 # assuming all male and female are adults
 # assuming grilse was not double counted ontop of male and female
 feather_carcass_chops_and_tags_2002 <- read_from_cloud("chops_and_tags", 2002) %>% 
@@ -150,7 +152,7 @@ feather_carcass_chops_and_tags_2002 <- read_from_cloud("chops_and_tags", 2002) %
 # does not contain tag_clip_status or chop_clip_status in data
 ```
 ### 2003 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2003 <- read_from_cloud("chops_and_tags",2003) %>% 
   rename(adult_male = "male_chop",
          adult_female = "female_chop",
@@ -165,7 +167,7 @@ feather_carcass_chops_and_tags_2003 <- read_from_cloud("chops_and_tags",2003) %>
 # does not contain tag_clip_status or chop_clip_status in data
 ```
 ### 2004 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2004 <- read_from_cloud("chops_and_tags",2004) %>% 
   rename(adult_male = "male_chop",
          adult_female = "female_chop",
@@ -183,7 +185,7 @@ feather_carcass_chops_and_tags_2004 <- read_from_cloud("chops_and_tags",2004) %>
 ### 2005 Chops and Tags
 * 2005 - 2007 data set dropped sex and lifestage and instead contains clip status
 
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2005 <- read_from_cloud("chops_and_tags",2005) %>% 
   pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
                names_to = "chop_clip_status",
@@ -207,7 +209,7 @@ feather_carcass_chops_and_tags_2005 <- read_from_cloud("chops_and_tags",2005) %>
 # does not contain sex or lifestage in data
 ```
 ### 2006 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2006 <- read_from_cloud("chops_and_tags",2006) %>% 
   pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
                names_to = "chop_clip_status",
@@ -231,7 +233,7 @@ feather_carcass_chops_and_tags_2006 <- read_from_cloud("chops_and_tags",2006) %>
 # does not contain sex or lifestage in data
 ```
 ### 2007 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>% 
   pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
                names_to = "chop_clip_status",
@@ -257,7 +259,7 @@ feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>
 ### 2008 Chops and Tags
 
 * 2008 - 2016 (except for 2010) dataset dropped clip status and only has chop count and tag count
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2008 <- read_from_cloud("chops_and_tags",2008) %>% 
   rename(chop_count = "chops",
          tag_count = "tags") %>% 
@@ -271,7 +273,7 @@ glimpse
 # does not contain sex, lifestage, chop_clip_status, tag_clip_status in data
 ```
 ### 2009 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2009 <- read_from_cloud("chops_and_tags",2009) %>% 
   rename(chop_count = "chops",
          tag_count = "tags") %>% 
@@ -286,7 +288,7 @@ glimpse()
 ```
 ### 2010 Chops and Tags
 * 2010 has sex in dataset
-```{r}
+```{r, message = FALSE}
 # structure of 2010 chops_and_tags dataset has variables for tag count by sex and chop count by sex; this makes it difficult because to pivot_longer, you get two separate sex columns (one for tag count and one for chop count) that don't align by rows perfectly. To create one sex column we pivot the chop_count by sex and the tag_count by sex separately, then join on all common variables: sex, id, tag color, date, channel id, section, channel, and min.
 
 feather_carcass_chops_and_tags_2010_raw <- read_from_cloud("chops_and_tags",2010)
@@ -331,9 +333,9 @@ feather_carcass_chops_and_tags_2010 <- feather_carcass_chops_sex_2010 |>
 
 
 ### 2011 Chops and Tags
-*2011-2016 does not have Tags count
+* 2011-2016 does not have Tags count
 
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>% 
   rename(chop_count = "count",
          sec = sect) %>% 
@@ -345,7 +347,7 @@ feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2012 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>% 
   rename(chop_count = "count",
          sec = sect) %>% 
@@ -358,7 +360,7 @@ feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>
 ```
 
 ### 2013 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>% 
     rename(chop_count = "count",
            sec = sect) %>% 
@@ -370,7 +372,7 @@ feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2014 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>% 
     rename(chop_count = "count",
            sec = sect) %>%
@@ -382,7 +384,7 @@ feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2015 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>% 
   rename(chop_count = "count",
          sec = sect) %>% 
@@ -395,7 +397,7 @@ feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>
 
 ```
 ### 2016 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>% 
   rename(chop_count = "count",
          sec = sect) %>% 
@@ -408,7 +410,7 @@ feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>
 ```
 
 ### 2017-2020 Chops and Tags
-```{r}
+```{r, message = FALSE}
 feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","2017_2021") |> 
   rename(chop_count = count,
          header_id = survey_meta_id,
@@ -551,12 +553,13 @@ feather_carcass_chops_and_tags_combined %>%
   theme(axis.text.y = element_text(size = 8))+
   labs(title = "Daily Tag Count From 2000 to 2020")
 ```
+
 ## Chop Recovery 
 * Chop Recovery tables are available for 2001-2004, 2006, and 2017-2021.
 
 ### 2001 Chop Recovery
 * 2001 data contains chop recovery count by sex (`male`, `female`, and `grilse`). It does not contain data about `recovery tag color` or `channel id`. 
-```{r}
+```{r, message = FALSE}
 feather_carcass_chop_recovery_2001 <- read_from_cloud("chop_recovery",2001) |> 
   pivot_longer(c(male_chop, female_chop, grilse), 
                names_to = "sex", 
@@ -572,22 +575,22 @@ feather_carcass_chop_recovery_2001 <- read_from_cloud("chop_recovery",2001) |>
 ```
 ### 2002 Chop Recovery
 * Chop recovery data from 2002-2004 and 2006 have the same format and variables.
-```{r}
+```{r, message = FALSE}
 feather_carcass_chop_recovery_2002 <- read_from_cloud("chop_recovery",2002) |> 
   glimpse()
 ```
 ### 2003 Chop Recovery
-```{r}
+```{r, message = FALSE}
 feather_carcass_chop_recovery_2003 <- read_from_cloud("chop_recovery",2003) %>% 
   glimpse()
 ```
 ### 2004 Chop Recovery
-```{r}
+```{r, message = FALSE}
 feather_carcass_chop_recovery_2004 <- read_from_cloud("chop_recovery",2004) %>% 
   glimpse()
 ```
 ### 2006 Chop Recovery
-```{r}
+```{r, message = FALSE}
 feather_carcass_chop_recovery_2006 <- read_from_cloud("chop_recovery",2006) |> 
   mutate(tag_col = as.character(tag_col),
          recov_color = as.character(recov_color)) |> 
@@ -596,7 +599,7 @@ feather_carcass_chop_recovery_2006 <- read_from_cloud("chop_recovery",2006) |>
 
 ### 2017-2021 Chop Recovery
 * 2017-2021 Chop Recovery data contains variables not included in the other chop recovery tables like `sex` and `fork length`. It does not contain `channel_id`, `min`, or `recov_color`.
-```{r}
+```{r, message = FALSE}
 feather_carcass_chop_recovery_2017_2021 <- read_from_cloud("chop_recovery","2017_2021") |> 
   rename(sect = section_id,
          recov_id = recover_id,
@@ -621,6 +624,27 @@ feather_carcass_chop_recovery_combined <- bind_rows(feather_carcass_chop_recover
                                                     feather_carcass_chop_recovery_2017_2021
                                                     ) |> 
   glimpse()
+```
+
+### Summarization of variables by year
+
+```{r} 
+# add year for summarization
+feather_carcass_chop_recovery_combined <- feather_carcass_chop_recovery_combined |> 
+  mutate(year = year(date)) |> 
+  filter(!is.na(date)) |> 
+  select(-sect) # is empty
+
+# number of observations
+feather_carcass_chop_recovery_combined |> 
+  count(year) |> print(n=Inf)
+
+# print nas
+feather_carcass_chop_recovery_combined |> 
+  group_by(year) |> 
+  summarize_all(funs(sum(is.na(.)) / length(.))) |> 
+  print(n=Inf)
+
 ```
 
 ### Data Transformation
@@ -675,17 +699,17 @@ round(sum(is.na(feather_carcass_chop_recovery_combined$recov_color))/nrow(feathe
 * `r round(sum(is.na(feather_carcass_chop_recovery_combined$recov_color))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `recov_color` column are NA.
 
 
-**Plotting chops over Period of Record**
+**Plotting chop recovery over Period of Record**
 
 ```{r}
-feather_carcass_chops_and_tags_combined %>% 
+feather_carcass_chop_recovery_combined %>% 
   mutate(date = as_date(date)) %>% 
-  ggplot(aes(x = date, y = chop_count)) +
+  ggplot(aes(x = date, y = recov_count)) +
   geom_col() +
   facet_wrap(~year(date), scales = "free") +
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
   theme_minimal() +
   theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
   theme(axis.text.y = element_text(size = 8))+
-  labs(title = "Daily Chop Count From 2000 to 2020")
+  labs(title = "Daily Chop Recovery Count From 2001-2004, 2006, and 2017-2020")
 ```
