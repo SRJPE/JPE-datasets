@@ -58,9 +58,9 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 read_from_cloud <- function(carcass_data_type, year){
   gcs_get_object(object_name = paste0("adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_",carcass_data_type, "_",year, ".csv"),
                bucket = gcs_get_global_bucket(),
-               saveToDisk = paste0("feather_carcass_",carcass_data_type,"_",year, ".csv"),
+               saveToDisk = paste0("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_",carcass_data_type,"_",year, ".csv"),
                overwrite = TRUE)
-  data <- read.csv(paste0("feather_carcass_",carcass_data_type, "_", year, ".csv"))  
+  data <- read.csv(paste0("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_",carcass_data_type, "_", year, ".csv"))  
 }
 ```
 
