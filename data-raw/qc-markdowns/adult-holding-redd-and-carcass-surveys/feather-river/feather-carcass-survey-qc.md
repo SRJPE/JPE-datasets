@@ -7,7 +7,7 @@ Inigo Peng
 
 ## Description of Monitoring Data
 
-**Timeframe:** 2000 to 2021
+**Timeframe:** 2000 to 2020
 
 **Video Season:**
 
@@ -15,9 +15,9 @@ Inigo Peng
 
 - Data collected varies between different seasons. Coded wire tag (CWT)
   data has the highest variability. Collection of `Chop Recovery` data
-  was collected from 2000-2010 and 2017-2021. Earlier years have more
+  was collected from 2000-2010 and 2017-2020. Earlier years have more
   detailed `chops` data and have separate table for `tags` data; later
-  `chops` data and `tags` data combines into one. Tables from 2017-2021
+  `chops` data and `tags` data combine into one. Tables from 2017-2020
   include a `chop` table with multiple count values per row, a
   `chop_and_tags` table with individual counts, and a `chop recovery`
   table.
@@ -44,16 +44,16 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 read_from_cloud <- function(carcass_data_type, year){
   gcs_get_object(object_name = paste0("adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_",carcass_data_type, "_",year, ".csv"),
                bucket = gcs_get_global_bucket(),
-               saveToDisk = paste0("feather_carcass_",carcass_data_type,"_",year, ".csv"),
+               saveToDisk = paste0("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_",carcass_data_type,"_",year, ".csv"),
                overwrite = TRUE)
-  data <- read.csv(paste0("feather_carcass_",carcass_data_type, "_", year, ".csv"))  
+  data <- read.csv(paste0("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_",carcass_data_type, "_", year, ".csv"))  
 }
 ```
 
 ## Chops and Tags
 
 - Note that within the Chops and Tags data some years have tables titled
-  `chops` while others are titled `chops_and_tags`. For 2017-2021 data,
+  `chops` while others are titled `chops_and_tags`. For 2017-2020 data,
   `chops` and `chops_and_tags` are separate tables and here we read in
   `chops_and_tags` for the most overlap of variables.
 
@@ -551,7 +551,7 @@ feather_carcass_chops_and_tags_2010 <- feather_carcass_chops_sex_2010 |>
 
 ### 2011 Chops and Tags
 
-- 2011-2016 does not have Tags count
+- 2011-2016 does not have tags count
 
 ``` r
 feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>% 
@@ -1044,7 +1044,7 @@ feather_carcass_chops_and_tags_combined %>%
 
 ## Chop Recovery
 
-- Chop Recovery tables are available for 2001-2004, 2006, and 2017-2021.
+- Chop Recovery tables are available for 2001-2004, 2006, and 2017-2020.
 
 ### 2001 Chop Recovery
 
@@ -1166,9 +1166,9 @@ feather_carcass_chop_recovery_2006 <- read_from_cloud("chop_recovery",2006) |>
     ## $ recov_count <int> NA, 2, NA, NA, NA, 1, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ recov_color <chr> NA, "2", NA, NA, NA, "2", NA, NA, NA, NA, NA, NA, NA, NA, …
 
-### 2017-2021 Chop Recovery
+### 2017-2020 Chop Recovery
 
-- 2017-2021 Chop Recovery data contains variables not included in the
+- 2017-2020 Chop Recovery data contains variables not included in the
   other chop recovery tables like `sex` and `fork length`. It does not
   contain `channel_id`, `min`, or `recov_color`.
 
@@ -1378,12 +1378,9 @@ round(sum(is.na(feather_carcass_chop_recovery_combined$recov_color))/nrow(feathe
 
     ## [1] 79.3
 
-- `r`round(sum(is.na(feather_carcass_chop_recovery_combined\$recov_count))/nrow(feather_carcass_chop_recovery_combined), 3)
-  \* 100`% of values in the`recov_count\` column are NA.
-- `r`round(sum(is.na(feather_carcass_chop_recovery_combined\$header_id))/nrow(feather_carcass_chop_recovery_combined), 3)
-  \* 100`% of values in the`header_id\` column are NA.
-- `r`round(sum(is.na(feather_carcass_chop_recovery_combined\$recov_id))/nrow(feather_carcass_chop_recovery_combined), 3)
-  \* 100`% of values in the`recov_id\` column are NA.
+- 28.8 % of values in the `recov_count` column are NA.
+- 0 % of values in the `header_id` column are NA.
+- 28.8 % of values in the `recov_id` column are NA.
 - 72.5 % of values in the `sex` column are NA.
 - 57.8 % of values in the `tag_col` column are NA.
 - 79.3 % of values in the `recov_color` column are NA.

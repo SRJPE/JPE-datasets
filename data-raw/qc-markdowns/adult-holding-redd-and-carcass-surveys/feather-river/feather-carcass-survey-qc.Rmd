@@ -26,13 +26,13 @@ library(wesanderson)
 
 ## Description of Monitoring Data
 
-**Timeframe:** 2000 to 2021
+**Timeframe:** 2000 to 2020
   
 **Video Season:** 
   
 **Completeness of Record throughout timeframe:** 
 
-* Data collected varies between different seasons. Coded wire tag (CWT) data has the highest variability. Collection of `Chop Recovery` data was collected from 2000-2010 and 2017-2021. Earlier years have more detailed `chops` data and have separate table for `tags` data; later `chops` data and `tags` data combines into one. Tables from 2017-2021 include a `chop` table with multiple count values per row, a `chop_and_tags` table with individual counts, and a `chop recovery` table.
+* Data collected varies between different seasons. Coded wire tag (CWT) data has the highest variability. Collection of `Chop Recovery` data was collected from 2000-2010 and 2017-2020. Earlier years have more detailed `chops` data and have separate table for `tags` data; later `chops` data and `tags` data combine into one. Tables from 2017-2020 include a `chop` table with multiple count values per row, a `chop_and_tags` table with individual counts, and a `chop recovery` table.
   
 **Sampling Location:** Various sampling locations on Feather River
   
@@ -65,7 +65,7 @@ read_from_cloud <- function(carcass_data_type, year){
 ```
 
 ## Chops and Tags
-* Note that within the Chops and Tags data some years have tables titled `chops` while others are titled `chops_and_tags`. For 2017-2021 data, `chops` and `chops_and_tags` are separate tables and here we read in `chops_and_tags` for the most overlap of variables.
+* Note that within the Chops and Tags data some years have tables titled `chops` while others are titled `chops_and_tags`. For 2017-2020 data, `chops` and `chops_and_tags` are separate tables and here we read in `chops_and_tags` for the most overlap of variables.
 
 ### 2000 Chops and Tags
 * 2000 and 2001 chops and tags are in different tables so they have to be joined.
@@ -333,7 +333,7 @@ feather_carcass_chops_and_tags_2010 <- feather_carcass_chops_sex_2010 |>
 
 
 ### 2011 Chops and Tags
-* 2011-2016 does not have Tags count
+* 2011-2016 does not have tags count
 
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>% 
@@ -555,7 +555,7 @@ feather_carcass_chops_and_tags_combined %>%
 ```
 
 ## Chop Recovery 
-* Chop Recovery tables are available for 2001-2004, 2006, and 2017-2021.
+* Chop Recovery tables are available for 2001-2004, 2006, and 2017-2020.
 
 ### 2001 Chop Recovery
 * 2001 data contains chop recovery count by sex (`male`, `female`, and `grilse`). It does not contain data about `recovery tag color` or `channel id`. 
@@ -597,8 +597,8 @@ feather_carcass_chop_recovery_2006 <- read_from_cloud("chop_recovery",2006) |>
   glimpse()
 ```
 
-### 2017-2021 Chop Recovery
-* 2017-2021 Chop Recovery data contains variables not included in the other chop recovery tables like `sex` and `fork length`. It does not contain `channel_id`, `min`, or `recov_color`.
+### 2017-2020 Chop Recovery
+* 2017-2020 Chop Recovery data contains variables not included in the other chop recovery tables like `sex` and `fork length`. It does not contain `channel_id`, `min`, or `recov_color`.
 ```{r, message = FALSE}
 feather_carcass_chop_recovery_2017_2021 <- read_from_cloud("chop_recovery","2017_2021") |> 
   rename(sect = section_id,
@@ -691,9 +691,9 @@ round(sum(is.na(feather_carcass_chop_recovery_combined$sex))/nrow(feather_carcas
 round(sum(is.na(feather_carcass_chop_recovery_combined$tag_col))/nrow(feather_carcass_chop_recovery_combined), 3) * 100
 round(sum(is.na(feather_carcass_chop_recovery_combined$recov_color))/nrow(feather_carcass_chop_recovery_combined), 3) * 100
 ```
-* `r `round(sum(is.na(feather_carcass_chop_recovery_combined$recov_count))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `recov_count` column are NA.
-* `r `round(sum(is.na(feather_carcass_chop_recovery_combined$header_id))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `header_id` column are NA.
-* `r `round(sum(is.na(feather_carcass_chop_recovery_combined$recov_id))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `recov_id` column are NA.
+* `r round(sum(is.na(feather_carcass_chop_recovery_combined$recov_count))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `recov_count` column are NA.
+* `r round(sum(is.na(feather_carcass_chop_recovery_combined$header_id))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `header_id` column are NA.
+* `r round(sum(is.na(feather_carcass_chop_recovery_combined$recov_id))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `recov_id` column are NA.
 * `r round(sum(is.na(feather_carcass_chop_recovery_combined$sex))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `sex` column are NA.
 * `r round(sum(is.na(feather_carcass_chop_recovery_combined$tag_col))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `tag_col` column are NA.
 * `r round(sum(is.na(feather_carcass_chop_recovery_combined$recov_color))/nrow(feather_carcass_chop_recovery_combined), 3) * 100` % of values in the `recov_color` column are NA.
