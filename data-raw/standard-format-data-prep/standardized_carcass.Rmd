@@ -24,14 +24,13 @@ FlowWest received carcass data from 4 monitoring programs:
 -   Butte Creek
 -   Clear Creek
 -   Feather River
+-   Yuba River
 
 ## Standard format Carcass Data
 
 Data dictionary for standard format:
 
-(B - Battle Creek, Bu - Butte Creek, C - Clear Creek, F - Feather River,
-D - Deer Creek, F - Feather River, M - Mill Creek, S- Sacramento River,
-Y - Yuba River)
+(B - Battle Creek, Bu - Butte Creek, C - Clear Creek, F - Feather River, Y - Yuba River)
 
 | column name   | stream collects         | definition                                               |
 |:-----------------|:-------------------|:---------------------------------|
@@ -46,18 +45,17 @@ Y - Yuba River)
 #### Columns Removed
 
 ```{r, message=FALSE, warning=FALSE}
-# gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-# # Set global bucket 
-# gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-# 
-# gcs_list_objects()
-# 
-# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_carcass.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/redd-carcas-holding/battle_carcass.csv",
-#                overwrite = TRUE)
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-battle_carcass <- read_csv("../../data/redd-carcas-holding/battle_carcass.csv") %>% glimpse
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_carcass.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/redd-carcass-holding/battle_carcass.csv",
+               overwrite = TRUE)
+
+battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") %>% glimpse
+# each row is a carcass in table
 ```
 
 ### Butte Creek
@@ -66,7 +64,30 @@ battle_carcass <- read_csv("../../data/redd-carcas-holding/battle_carcass.csv") 
 
 
 ```{r, message=FALSE, warning=FALSE}
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_carcass_chops.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/redd-carcass-holding/butte_carcass.csv",
+               overwrite = TRUE)
 
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_carcass_2014-2016.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/redd-carcass-holding/butte_carcass_2014-2016.csv",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_carcass_2017-2020.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/redd-carcass-holding/butte_carcass-2017-2020.csv",
+               overwrite = TRUE)
+
+# this may contain carcasses that were chopped but did not have any biological information recorded
+butte_carcass <- read_csv("data/redd-carcass-holding/butte_carcass.csv")
+# each row is an individual for these
+butte_carcass_2014_2016 <- read_csv("data/redd-carcass-holding/butte_carcass_2014-2016.csv")
+butte_carcass_2017_2020 <- read_csv("data/redd-carcass-holding/butte_carcass-2017-2020.csv")
+
+# combine tables with individual measurements
+butte_carcass_combined <- bind_rows(butte_carcass_2014_2016, butte_carcass_2017_2020) |> 
+  glimpse()
 ```
 
 ### Clear Creek
@@ -75,10 +96,30 @@ battle_carcass <- read_csv("../../data/redd-carcas-holding/battle_carcass.csv") 
 
 
 ```{r, message=FALSE, warning=FALSE}
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_carcass.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/redd-carcass-holding/clear_carcass.csv",
+               overwrite = TRUE)
 
+clear_carcass <- read_csv("data/redd-carcass-holding/clear_carcass.csv") |> 
+  glimpse()
 ```
 
 ### Feather River
+
+#### Columns Removed
+
+```{r, message=FALSE, warning=FALSE}
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/redd-carcass-holding/feather_carcass.csv",
+               overwrite = TRUE)
+
+feather_carcass <- read_csv("data/redd-carcass-holding/feather_carcass.csv") |> 
+  glimpse()
+```
+
+### Yuba River
 
 #### Columns Removed
 
@@ -86,3 +127,7 @@ battle_carcass <- read_csv("../../data/redd-carcas-holding/battle_carcass.csv") 
 ```{r, message=FALSE, warning=FALSE}
 
 ```
+
+### Combined
+
+### For Analysis
