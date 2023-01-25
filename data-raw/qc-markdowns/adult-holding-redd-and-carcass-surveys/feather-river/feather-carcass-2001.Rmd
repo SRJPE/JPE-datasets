@@ -1,0 +1,761 @@
+---
+title: "Feather Carcass QC 2001"
+author: "Inigo Peng"
+date: '2022-07-21'
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+library(janitor)
+library(hms) #?as_hms()
+library(RODBC)
+library(knitr)
+library(wesanderson)
+```
+
+
+# Feather River Carcass Data
+
+## Description of Monitoring Data
+
+**Timeframe:** 
+
+**Video Season:** 
+
+**Completeness of Record throughout timeframe:** 
+
+**Sampling Location:**
+
+**Data Contact:** 
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, include=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+```
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r, include=FALSE}
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/Carcass_2001.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2001.mdb",
+               overwrite = TRUE)
+
+filepath <- "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/feather-river/feather_carcass_2001.mdb"
+
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
+
+# Mac and PC need to run different code to pull data from Access db
+if(operating_system == "pc") {
+  DRIVERINFO <- "Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
+  PATH <- paste0(DRIVERINFO, "DBQ=", filepath)
+  con <- odbcDriverConnect(PATH)
+  # sqlTables(con)$TABLE_NAME
+  ChopEnv_raw <- sqlFetch(con, "ChopEnvTBL")
+  RecovTag_raw <- sqlFetch(con, "RecovTagTBL")
+  ChopRecov_raw - sqlFetch(con, "ChopRecovTBL")
+  cwt_raw <- sqlFetch(con, "cwtTBL")
+  TagData_raw <- sqlFetch(con, "TagDataTBL")
+  TagEnv_raw <- sqlFetch(con, "TagEnvTBL")
+} else{
+  library(Hmisc)
+  mdb.get(filepath, tables = TRUE) # check for name differences
+  # OtoDateLU, Section Description Lookup not helpful 
+  # TagColLU contains metadata about tag colors
+  # OtoTBL contains sex, fork_length, eggs, week - not sure about any otolith information
+  ChopEnv_raw <- mdb.get(filepath, "ChopEnvTBL")
+  RecovTag_raw <- mdb.get(filepath, "RecovTagTBL")
+  ChopRecov_raw <- mdb.get(filepath, "ChopRecovTBL")
+  cwt_raw <- mdb.get(filepath, "cwtTBL")
+  TagData_raw <- mdb.get(filepath, "TagDataTBL")
+  TagEnv_raw <- mdb.get(filepath, "TagEnvTBL")
+  detach(package:Hmisc)
+}
+
+write_csv(ChopEnv_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopEnv_2001.csv"))
+write_csv(RecovTag_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "RecovTag_2001.csv"))
+write_csv(ChopRecov_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopRecov_2001.csv"))
+write_csv(cwt_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "cwt_2001.csv"))
+write_csv(TagData_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "TagData_2001.csv"))
+write_csv(TagEnv_raw, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "TagEnv_2001.csv"))
+```
+
+## Raw Data Glimpse: {.tabset}
+
+### ChopEnv_Raw
+
+```{r}
+#Heading Info for Chopped Data
+#Columns that were not in ChopEnv 2001: Flow and vis
+ChopEnv_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                   "adult-holding-redd-and-carcass-surveys",
+                                   "feather-river","ChopEnv_2001.csv")) |> 
+  # mutate("Start" = as_hms("Start")) |>
+  glimpse()
+```
+
+### ChopRecov_raw
+```{r}
+#Data collection for Chopping and Spawning to determine how many carcasses are being captured (link to the ChopEnv table using ChopEnvID)
+
+ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                                     "ChopRecov_2001.csv")) |> 
+  glimpse()
+```
+
+### RecovTag_Raw
+```{r}
+#There is Tag1 and Tag2- what is the difference?
+#What is TagComp?
+RecovTag_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                                    "RecovTag_2001.csv")) |> 
+  # rename("ID" = HeaderID) |> 
+  glimpse()
+```
+
+### TagData_raw
+```{r}
+#tag colour lookup table
+# TagCol_raw <- read_csv("TagCol_2001.csv") |> 
+  # glimpse()
+
+#Data for Tagging DataSheet - for some reason when export access table to excel, Tag Number is automatically changed to TagID
+#Link to RecovTag table
+TagData_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                                   "TagData_2001.csv")) |> 
+  rename("TagNum" = "TagID") |>
+  glimpse()
+```
+
+### TagEnv_raw
+```{r}
+#Heading Info for Tagging Data Sheet
+# Join via TagEnvID
+TagEnv_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                                  "TagEnv_2001.csv")) |> 
+  glimpse()
+```
+
+### cwt_raw
+
+```{r}
+#Coded Wiretag Info
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
+                               "cwt_2001.csv"), col_types = c("d","T","d","d","c","d","c","c")) |> 
+  glimpse()
+```
+
+## Data transformations: {.tabset}
+
+### Recovery 
+
+The `chop_recovery_join` table contains recovered carcass counts 
+
+```{r}
+#1. Link ChopRecov with ChopEnv to get the date
+chop_recovery_join <- full_join(ChopEnv_raw |> select(Date, Time, ChopEnvID), 
+                                ChopRecov_raw, 
+                                by = "ChopEnvID") |> 
+  clean_names() |> 
+  rename(male_chop = "male",
+         female_chop = "fem",
+         grilse = "gril",
+         min = "minute") |> glimpse()
+```
+
+### Tags
+
+The `tag_join` table contains additional tag information 
+
+```{r}
+tag_join <- left_join(TagData_raw, RecovTag_raw) |> # joining on Tag1, Tag2, TagComp because
+  # these are the common column, though tag_num and recov_id could be related. Because we couldn't
+  # tie them together decisively we are going with the common columns.
+  clean_names() |> 
+  select(c(tag_num, sect, fl, sex, egg_ret, recov_id)) |> 
+  glimpse()
+```
+
+### Survey
+
+The `chop_header` table contains survey metadata and covariates
+
+```{r}
+chop_header <- ChopEnv_raw |> 
+  clean_names() |> 
+  glimpse()
+```
+
+### CWT
+
+The `cwt` table contains coded wire tag information. It is not joined with the other tables.
+
+```{r}
+cwt <- cwt_raw |> 
+  clean_names() |> 
+  select(-egg_ret) |> 
+  glimpse()
+
+```
+
+## Explore Numeric Variables: {.tabset}
+
+### Chop Recovery Variable: `chop_env_id`, `sect`, `min`
+
+```{r}
+# Filter clean data to show only numeric variables 
+chop_recovery_join |> 
+  select_if(is.numeric) |>
+  colnames()
+```
+
+```{r}
+summary(chop_recovery_join$chop_env_id)
+```
+```{r}
+summary(chop_recovery_join$sect)
+```
+```{r}
+summary(chop_recovery_join$min)
+```
+* `r round(sum(is.na(chop_recovery_join$min))/nrow(chop_recovery_join), 3) * 100` % of values in the `min` column are NA.
+
+### Chop Recovery Variable: `male_chop`, `female_chop`, `grilse`
+```{r}
+summary(chop_recovery_join$male_chop)
+```
+```{r}
+summary(chop_recovery_join$female_chop)
+```
+```{r}
+summary(chop_recovery_join$grilse)
+```
+
+**Plotting male_chop  over Period of Record**
+
+```{r}
+chop_recovery_join |> 
+  ggplot(aes(x = date, y = male_chop)) +
+  geom_point(size = 1.4, alpha = .5, color = "blue") + 
+  labs(x = "Date", 
+       y = "Male Chop") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting female_chop over Period of Record**
+
+```{r}
+chop_recovery_join |> 
+  ggplot(aes(x = date, y = female_chop)) +
+  geom_point(size = 1.4, alpha = .5, color = "red") + 
+  labs(x = "Date", 
+       y = "Female Chop") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15)) 
+```
+
+**Plotting total_chops over Period of Record**
+
+```{r}
+total_chops <- chop_recovery_join |> 
+  mutate(total_chops = male_chop + female_chop + grilse,
+         date = as_date(date)) |> 
+  select(date, male_chop, female_chop, grilse,total_chops) |> glimpse()
+
+total_chops_summary <- total_chops |> 
+  group_by(date) |> 
+  summarise(total_chops = sum(total_chops, na.rm = T),
+            grilse_chops = sum(grilse, na.rm =T),
+            male_chops = sum(male_chop, na.rm = T),
+            female_chops = sum(female_chop, na.rm = T))
+```
+```{r}
+total_chops_summary |> 
+  ggplot(aes(x = date, y = total_chops)) +
+  geom_col() + 
+  theme_minimal()
+```
+**Plotting daily proportions of male and female chop**
+
+```{r}
+total_chops_summary |> 
+  pivot_longer(cols = c(male_chops, female_chops), names_to = "sex", values_to = "count") |> 
+  mutate(proportions = (count/total_chops)) |> 
+  ggplot(aes(x = date, y = proportions, fill = sex)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+This plot shows the sex proportion of chops for each day over the the period of 2001-09-10 to 2001-12-13. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. All of the Chop data have been identified for their sexes. The proportion is below 1 for some days because it does not account for the grilse that were caught as a portion of the total catch. 
+
+
+**Plotting total daily grilse over Period of Record**
+
+```{r}
+chop_recovery_join |> 
+  group_by(date) |> 
+  summarise(total_grilse_chops = sum(grilse, na.rm = T)) |> 
+  ggplot(aes(x = date, y = total_grilse_chops)) + 
+  geom_col(fill = "red") +
+  labs(x = "Date",
+       y = "Total Grilse") +
+  theme_minimal() +
+  theme(text = element_text(size = 15))
+```
+
+### Tag Join Variable: `tag_num`, `sect`, `recov_id`
+
+```{r}
+tag_join |> 
+  select_if(is.numeric) |> 
+  colnames()
+```
+
+```{r}
+summary(tag_join$tag_num)
+```
+```{r}
+summary(tag_join$sect)
+```
+
+```{r}
+summary(tag_join$recov_id)
+```
+* `r round(sum(is.na(tag_join$recov_id))/nrow(tag_join), 3) * 100` % of values in the `recov_id` column are NA.
+
+### Tag Join Variable: `sex`, `fl`, `female_tag`, `male_tag`, `unknown_tag`
+
+**Plotting proportion of sex of the tags**
+
+```{r}
+unique(tag_join$sex)
+```
+
+```{r}
+#Create a tag_count column
+#Pivot table to expand sex column to female_tag, male_tag, and unknown_tags 
+
+all_tags <- tag_join |> 
+  mutate(tag_count = 1) |> 
+  pivot_wider(names_from = sex, values_from = tag_count, values_fill = 0) |> 
+  rename("unknown_tags" = X,
+         "male_tag" = M,
+         "female_tag" = F) 
+total_tags_summary <- all_tags |> 
+  mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na
+         female_tag = ifelse(is.na(female_tag), 0, female_tag),
+         unknown_tags = ifelse(is.na(unknown_tags), 0, unknown_tags),
+         total_tags = unknown_tags + male_tag + female_tag) |> 
+  select(male_tag, female_tag, unknown_tags, total_tags) |> 
+  summarise(total_tags = sum(total_tags),
+            male_tags = sum(male_tag),
+            female_tags = sum(female_tag),
+            unknown_tags = sum(unknown_tags)) |> glimpse()
+```
+```{r}
+total_tags_summary |> 
+  pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") |> 
+  mutate(proportions = (count / total_tags)) |> 
+  ggplot(aes(x = sex, y = proportions)) +
+  geom_col() +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Sex")
+```
+
+**Plotting fork length of each sex**
+
+```{r}
+tag_join |> 
+  mutate(sex = ifelse(tag_join$sex == "X", "Unknown Tags", tag_join$sex)) |> 
+  ggplot(aes(x = sex, y = fl)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(y = "FL", x = "Sex")
+```
+
+**Numeric Summary of `female_tag`, `male_tag`,`unknown_tag`**
+
+```{r}
+summary(all_tags$male_tag)
+```
+* `r round(sum(is.na(all_tags$male_tag))/nrow(all_tags), 3) * 100` % of values in the `male_tag` column are NA.
+
+```{r}
+summary(all_tags$female_tag)
+```
+* `r round(sum(is.na(all_tags$female_tag))/nrow(all_tags), 3) * 100` % of values in the `female_tag` column are NA.
+
+```{r}
+summary(all_tags$unknown_tags)
+```
+
+* `r round(sum(is.na(all_tags$unknown_tags))/nrow(all_tags), 3) * 100` % of values in the `unknown_tags` column are NA.
+
+**Plotting tags sex proportion with dates over Period of Record**
+```{r}
+#Join tags to chops recovery using recov_id
+tags_with_dates <- left_join(all_tags, chop_recovery_join,
+                             by = c("recov_id", "sect")) |> glimpse()
+
+total_tags_with_dates <- tags_with_dates|> 
+  mutate(male_tag = ifelse(is.na(male_tag), 0, male_tag), # fill na
+         female_tag = ifelse(is.na(female_tag), 0, female_tag),
+         unknown_tags = ifelse(is.na(unknown_tags), 0, unknown_tags),
+         total_tags = unknown_tags + male_tag + female_tag) |> 
+  select(date, male_tag, female_tag, unknown_tags, total_tags)
+
+total_tags_with_dates_summary <- total_tags_with_dates |>
+  group_by(date) |>
+  summarise(total_tags = sum(total_tags, na.rm = T),
+            male_tags = sum(male_tag, na.rm = T),
+            female_tags = sum(female_tag, na.rm = T),
+            unknown_tags = sum(unknown_tags, na.rm = T))
+
+total_tags_with_dates_summary |> 
+  pivot_longer(cols = c(male_tags, female_tags, unknown_tags), names_to = "sex", values_to = "count") |> 
+  mutate(proportions = (count / total_tags)) |> 
+  ggplot(aes(x = date, y = proportions, fill = sex)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = c("Blue","Red", "Black"), 
+                    name = "Sex", 
+                    labels = c("Female", "Male", "Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+**Plotting total tags over Period of Record**
+
+```{r}
+total_tags_with_dates_summary |> 
+  ggplot(aes(x = date, y = total_tags)) +
+  geom_col() +
+  theme_minimal()
+```
+```{r}
+total_carcass <- full_join(total_chops_summary, total_tags_with_dates_summary) |> # join on date
+  select(date, total_chops, total_tags) |> 
+  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+
+full_join(total_chops_summary, total_tags_with_dates_summary) |> 
+  select(date, total_chops, total_tags) |> 
+  pivot_longer(c(total_chops, total_tags), names_to = "mark")
+
+ggplot(total_carcass, aes(x = date, y = value, fill = mark)) +
+  geom_col() +
+  theme_minimal() +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+There are significantly fewer tags than chops on a given day. However a large amount of tags do not have dates to them.
+
+### Chop Header Variable: `chop_env_id`, `flow`
+
+```{r}
+chop_header |> 
+  select_if(is.numeric) |> 
+  colnames()
+```
+
+```{r}
+summary(chop_header$chop_env_id)
+```
+```{r}
+summary(chop_header$flow)
+```
+
+* `r round(sum(is.na(chop_header$flow))/nrow(chop_header), 3) * 100` % of values in the `chop_header` column are NA.
+
+### CWT Variable:  `id`, `sect`, `fl`, `ht_num`, `sex`
+```{r}
+cwt |> 
+  select_if(is.numeric) |> 
+  colnames()
+```
+```{r}
+summary(cwt$cwt_id)
+```
+```{r}
+summary(cwt$sect)
+```
+```{r}
+summary(cwt$fl)
+```
+* `r round(sum(is.na(cwt$fl))/nrow(cwt), 3) * 100` % of values in the `fl` column are NA.
+
+```{r}
+# TODO: is this analysis necessary?
+#Create a cwt_count column
+#Pivot table to expand sex column to female_cwt, male_cwt, and unknown_cwt 
+#Is this graph helpful?
+unique(cwt$sex)
+cwt_count <- cwt |> 
+  mutate(cwt_count = 1) |> 
+  pivot_wider(names_from = sex, values_from = cwt_count, values_fill = 0) |> 
+  rename("unknown_cwt" = X,
+         "male_cwt" = M,
+         "female_cwt" = F)
+total_cwt_summary <- cwt_count |> 
+  mutate(male_cwt = ifelse(is.na(male_cwt), 0, male_cwt), # fill na
+         female_cwt = ifelse(is.na(female_cwt), 0, female_cwt),
+         unknown_cwt = ifelse(is.na(unknown_cwt), 0, unknown_cwt),
+         total_cwt = unknown_cwt + male_cwt + female_cwt) |> 
+  group_by(month(date)) |> # TODO: group by month?
+  summarise(total_cwt = sum(total_cwt),
+            male_cwt = sum(male_cwt),
+            female_cwt = sum(female_cwt),
+            unknown_cwt = sum(unknown_cwt))
+```
+```{r}
+total_cwt_summary |> 
+  pivot_longer(cols = c(male_cwt, female_cwt, unknown_cwt), names_to = "sex", values_to = "count") |> 
+  mutate(proportions = (count / total_cwt)) |> 
+  ggplot(aes(x = `month(date)`, y = proportions, fill = sex)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(name = "chops", 
+                    labels = c("CWT Male", "CWT Female", "CWT Unknown")) +
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+
+**Plotting fork length of each sex**
+
+```{r}
+cwt |> 
+  mutate(sex = ifelse(cwt$sex == "X", "Unknown cwt", cwt$sex)) |> 
+  ggplot(aes(x = sex, y = fl)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(y = "FL", x = "Sex") # TODO: there is one NA showing up on the plot here
+```
+
+## Explore Categorical variables: {.tabset}
+
+### Chop Recovery Clean Data
+
+Fix inconsistencies with spelling, capitalization, and dates
+
+```{r}
+chop_recovery_join |> 
+  select_if(is.character) |>
+  colnames() 
+```
+```{r}
+unique(chop_recovery_join$chan) # TODO: is this channel? 
+```
+
+```{r}
+chop_recovery_cleaner <- chop_recovery_join |>
+  mutate(date = as_date(date)) |> 
+  mutate_if(is.character, str_to_lower) |>
+  select(-c(time)) |> 
+  glimpse()
+```
+
+### Tag Join Clean Data
+```{r}
+tag_join |> 
+  select_if(is.character) |> 
+  colnames()
+```
+
+```{r}
+#X is unknown? Need lookup table
+# TODO: what do these values mean?
+unique(tag_join$egg_ret)
+```
+
+```{r}
+tag_cleaner <- tag_join |> 
+    mutate_if(is.character, str_to_lower) |>
+  glimpse()
+```
+
+### Chop Header Clean Data
+
+```{r}
+chop_header |> 
+  select_if(is.character) |> 
+  colnames()
+```
+
+```{r} 
+chop_header |> tabyl(time)
+chop_header_cleaner <- chop_header |> 
+  mutate(date = as_date(date)) |>
+  mutate_if(is.character, str_to_lower) |>
+  mutate(crew = str_replace_all(crew, " ", ""),
+         weather = case_when(weather == "cld" ~ "cloudy",
+                             weather == "ran" ~ "rain")) |> 
+  select(-time) |> glimpse()
+
+```
+
+### CWT Clean Data
+
+```{r}
+cwt |> 
+  select_if(is.character) |> 
+  colnames()
+```
+```{r}
+cwt_cleaner <- cwt |> 
+  mutate_if(is.character, str_to_lower) |>
+  glimpse()
+```
+
+## Comments
+
+* TagData_raw and RecovTag_raw both contain Tag 1, Tag 2, TagComp, and Relstat columns. These columns are not ubiquitous amongst tag dataset and there are no look up tables for them. Those columns have been dropped.
+* There is no lookup table for egg_ret in tag_join
+* Grilse count in chop_recovery_join is calculated as a part of the total_chops (see total_chops plot)
+* Not sure what is ht_number in cwt table
+* Current format for datetime contains NA for time. Format becomes "YYYY-mm-dd na". 
+
+
+## Data Dictionaries
+
+### Chops Data
+```{r}
+percent_na <- chop_recovery_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
+  pivot_longer(cols = everything())
+
+
+chop_counts_data_dictionary <- tibble(variables = colnames(chop_recovery_cleaner),
+                          description = c("Date of survey",
+                                          "ID",
+                                          "Sect",
+                                          "Chan", 
+                                          "Minute",
+                                          "Carcasses that were chopped and sex was male",
+                                          "Carcasses that were chopped and sex was female",
+                                          "Carcasses that were chopped and grilse",
+                                          "Recovery ID"),
+                          percent_na = round(percent_na$value*100))
+
+kable(chop_counts_data_dictionary)
+
+```
+### Tags Data
+```{r}
+percent_na <- tag_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
+  pivot_longer(cols = everything())
+
+
+tags_counts_data_dictionary <- tibble(variables = colnames(tag_cleaner),
+                          description = c("Tag number",
+                                          "Sect",
+                                          "Fork length", 
+                                          "Sex",
+                                          "Egg retained",
+                                          "Recovery ID"),
+                          percent_na = round(percent_na$value*100))
+
+kable(tags_counts_data_dictionary)
+
+```
+
+### Survey
+```{r}
+
+percent_na <- chop_header_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
+  pivot_longer(cols = everything())
+
+chop_header_data_dictionary <- tibble(variables = colnames(chop_header_cleaner),
+                          description = c("ID",
+                                          "Date of survey",
+                                          "Crew member initials that collected",
+                                          "Crew member who recorded",
+                                          "Colour of tag carcass",
+                                          "Flow",
+                                          "Vis",
+                                          "Weather",
+                                          "Comments",
+                                          "Date of survey"),
+                          percent_na = round(percent_na$value*100))
+
+kable(chop_header_data_dictionary)
+```
+
+### CWT
+```{r}
+
+percent_na <- cwt_cleaner |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
+  pivot_longer(cols = everything())
+
+chop_header_data_dictionary <- tibble(variables = colnames(cwt_cleaner),
+                          description = c("ID",
+                                          "Date of survey",
+                                          "Section",
+                                          "Fork length",
+                                          "Sex",
+                                          "Ht number",
+                                          "Comment"),
+                          percent_na = round(percent_na$value*100))
+
+kable(chop_header_data_dictionary)
+```
+## Save cleaned data back to google cloud (TBA)
+
+```{r}
+feather_carcass_chops_2001 <- chop_recovery_cleaner |> glimpse()
+feather_carcass_tags_2001 <- tag_cleaner |> glimpse()
+feather_carcass_chop_recovery_2001 <- chop_recovery_cleaner |> glimpse()
+feather_carcass_cwt_2001 <- cwt_cleaner |> glimpse()
+feather_carcass_chop_header_2001 <- chop_header_cleaner |> glimpse()
+```
+```{r, include=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(feather_carcass_chops_2001,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chops_2001.csv")
+
+gcs_upload(feather_carcass_tags_2001,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_tags_2001.csv")
+
+gcs_upload(feather_carcass_chop_recovery_2001,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_recovery_2001.csv")
+gcs_upload(feather_carcass_cwt_2001,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_cwt_2001.csv")
+gcs_upload(feather_carcass_chop_header_2001,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_chop_header_2001.csv")
+```
