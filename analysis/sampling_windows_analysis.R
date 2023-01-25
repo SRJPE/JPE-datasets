@@ -48,14 +48,14 @@ plot_windows <- function(selected_stream, selected_years = NULL){
   } else { year_filter <- selected_years}
  
    years <- catch |> 
-    filter(run == "spring", stream == selected_stream) |> 
+    # filter(run == "spring", stream == selected_stream) |> 
     mutate(year = year(date)) |> 
     pull(year) |> 
     unique() |> 
     length()
     
   cumulative_catch <- catch |> 
-    filter(run == "spring", stream == selected_stream, year(date) %in% year_filter) |> 
+    # filter(run == "spring", stream == selected_stream, year(date) %in% year_filter) |> 
     filter(!is.na(date)) %>% 
     mutate(fake_date = as.Date(paste0(ifelse(month(date) %in% c(9, 10, 11, 12), "0000-", "0001-"), 
                                       month(date), "-", day(date)))) |> 
@@ -118,14 +118,17 @@ plot_windows <- function(selected_stream, selected_years = NULL){
 
 plot_windows("battle creek", "all")
 plot_windows("battle creek", 2010)
-plot_windows("clear creek")
-plot_windows("butte creek")
+
+plot_windows("clear creek", "all")
+plot_windows("butte creek", "all")
 plot_windows("yuba river")
 plot_windows("feather river")
 plot_windows("sacramento river")
 # do not work because no spring run...maybe just keep all?
-plot_windows("deer creek")
+plot_windows("deer creek", "all")
 plot_windows("mill creek")
+
+#TODO change to percent cumulative catch 
 
 
 # test out for a given year 
