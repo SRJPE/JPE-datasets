@@ -7,6 +7,20 @@ Inigo Peng
 
 ## Description of Monitoring Data
 
+- Feather River Carcass Data is split into two categories:
+  `Chops and Tags` and `Chop Recovery`. According to sampling protocol,
+  one of three processes occurs when a carcass is encountered: if the
+  carcass is fresh and not tagged, it is tagged and returned to the
+  river (we assume this is the `tag_count` variable in some years); if
+  the carcass is not fresh and not tagged, it is chopped (we assume this
+  is the `chop_count` variable in all years); finally, if the carcass is
+  tagged, the tag is recovered (this is what is stored in the
+  `chop recovery` tables). Storage and naming of `chop count`
+  vs. `tag count` in tables is not consistent over years and so we took
+  a conservative approach to summarizing and plotting tags, only using
+  years where the `tag_count` variable was present. Not all years
+  collected `chop recovery` data.
+
 **Timeframe:** 2000 to 2020
 
 **Video Season:**

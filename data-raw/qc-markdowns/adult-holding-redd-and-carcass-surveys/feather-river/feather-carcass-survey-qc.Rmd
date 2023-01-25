@@ -25,6 +25,7 @@ library(wesanderson)
 # Feather River Carcass Data
 
 ## Description of Monitoring Data
+* Feather River Carcass Data is split into two categories: `Chops and Tags` and `Chop Recovery`. According to sampling protocol, one of three processes occurs when a carcass is encountered: if the carcass is fresh and not tagged, it is tagged and returned to the river (we assume this is the `tag_count` variable in some years); if the carcass is not fresh and not tagged, it is chopped (we assume this is the `chop_count` variable in all years); finally, if the carcass is tagged, the tag is recovered (this is what is stored in the `chop recovery` tables). Storage and naming of `chop count` vs. `tag count` in tables is not consistent over years and so we took a conservative approach to summarizing and plotting tags, only using years where the `tag_count` variable was present. Not all years collected `chop recovery` data.
 
 **Timeframe:** 2000 to 2020
   
@@ -712,4 +713,24 @@ feather_carcass_chop_recovery_combined %>%
   theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
   theme(axis.text.y = element_text(size = 8))+
   labs(title = "Daily Chop Recovery Count From 2001-2004, 2006, and 2017-2020")
+```
+
+
+** Upload to google bucket
+```{r, include = FALSE}
+f <- function(input, output) write_csv(input, file = output)
+
+# combined chops and tags
+gcs_upload(feather_carcass_chops_and_tags_combined,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass.csv",
+           predefinedAcl = "bucketLevel")
+
+# combined chop_recovery
+gcs_upload(feather_carcass_chop_recovery_combined,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass_recovery.csv",
+           predefinedAcl = "bucketLevel")
 ```
