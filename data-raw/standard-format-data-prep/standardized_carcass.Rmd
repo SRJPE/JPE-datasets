@@ -44,6 +44,8 @@ Data dictionary for standard format:
 
 #### Columns Removed
 
+`comments`, `year`, `observed_only`, `cwt_code`
+
 ```{r, message=FALSE, warning=FALSE}
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket
@@ -54,7 +56,12 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-cree
                saveToDisk = "data/redd-carcass-holding/battle_carcass.csv",
                overwrite = TRUE)
 
-battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") %>% glimpse
+battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") |> 
+  mutate(stream = "battle creek") |> 
+  rename(carcass_condition = carcass_live_status,
+         survey_method = method) |> 
+  select(-c(comments, year, observed_only, cwt_code)) |> 
+  glimpse()
 # each row is a carcass in table
 ```
 
@@ -62,6 +69,7 @@ battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") %>% g
 
 #### Columns Removed
 
+`disc_tag_applied`, `scale_nu`, `tissue_nu`, `otolith_nu`, `comments`, `year`
 
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_carcass_chops.csv",
@@ -87,6 +95,14 @@ butte_carcass_2017_2020 <- read_csv("data/redd-carcass-holding/butte_carcass-201
 
 # combine tables with individual measurements
 butte_carcass_combined <- bind_rows(butte_carcass_2014_2016, butte_carcass_2017_2020) |> 
+  rename(survey_id = survey,
+         tagged = disposition,
+         fork_length = fork_length_mm,
+         carcass_condition = condition,
+         spawn_condition = spawning_status,
+         adipose = ad_fin_clip_cd) |> 
+  mutate(stream = "butte creek") |> 
+  select(-c(scale_nu, tissue_nu, otolith_nu, comments, year, disc_tag_applied)) |> 
   glimpse()
 ```
 
@@ -94,6 +110,7 @@ butte_carcass_combined <- bind_rows(butte_carcass_2014_2016, butte_carcass_2017_
 
 #### Columns Removed
 
+`scale`, `tis_eth`, `tis_dry`, `otolith_st`, `comments`, `verification_and_cwt_comments`, `obs_only`, `run_call`, `cwt_code`, `sample_id`, `species`, `why_sex_unknown`, `why_not_sp`, `head_retrieved`, `photo`, `brood_year`, `release_location`, `hatchery`, `age`, `mark_rate`, `genetic`
 
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_carcass.csv",
@@ -101,7 +118,21 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek
                saveToDisk = "data/redd-carcass-holding/clear_carcass.csv",
                overwrite = TRUE)
 
-clear_carcass <- read_csv("data/redd-carcass-holding/clear_carcass.csv") |> 
+clear_carcass <- read_csv("data/redd-carcass-holding/clear_carcass.csv")  |> 
+  mutate(adipose = case_when(adipose == "present" ~ TRUE,
+                             adipose == "absent" ~ FALSE,
+                             is.na(adipose) ~ NA),
+         stream = "clear creek") |> 
+  rename(carcass_condition = condition,
+         spawn_condition = spawn_status,
+         survey_method = type, 
+         tag_col = tag_type) |> 
+  select(-c(scale, tis_eth, tis_dry, otolith_st, comments, 
+            verification_and_cwt_comments, obs_only, run_call, 
+            cwt_code, sample_id, species, why_sex_unknown,
+            why_not_sp, head_retrieved, photo, brood_year, 
+            release_location, hatchery, age, mark_rate, 
+            genetic)) |> 
   glimpse()
 ```
 
@@ -109,6 +140,7 @@ clear_carcass <- read_csv("data/redd-carcass-holding/clear_carcass.csv") |>
 
 #### Columns Removed
 
+`tag_count`, `chop_count`, `species`, `disc_tag_applied`, `lifestage`, `tag_clip_status`, `scale_nu`, `tissue_nu`, `otolith_nu`, `comments`, `cwt_cd`, `cwt_status`, `tag_num`, `head_nu`, `dna_nu`, `egg_ret`, `data_recorder`, `creation_time`, `editor`, `edit_time`, `individual_id`, `recov_id`, `header_id`
 ```{r, message=FALSE, warning=FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass.csv",
                bucket = gcs_get_global_bucket(),
@@ -116,7 +148,21 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-riv
                overwrite = TRUE)
 
 feather_carcass <- read_csv("data/redd-carcass-holding/feather_carcass.csv") |> 
-  glimpse()
+  filter(species %in% c("chinook salmon", NA)) |> 
+  rename(tagged = disposition, 
+         fork_length = fl,
+         carcass_condition = condition,
+         spawn_condition = spawned,
+         adipose = chop_clip_status) |> 
+  mutate(adipose = case_when(adipose == "yes" ~ TRUE,
+                              adipose == "no" ~ FALSE,
+                              adipose %in% c("unknown", "partial", "not recorded", NA) ~ NA),
+         stream = "feather river") |> 
+  select(-c(species, disc_tag_applied, 
+            lifestage, tag_clip_status, scale_nu, tissue_nu, otolith_nu, comments,
+            cwt_cd, cwt_status, tag_num, head_nu, dna_nu, egg_ret, 
+            data_recorder, creation_time, editor, edit_time, individual_id, recov_id,
+            header_id)) |> glimpse()
 ```
 
 ### Yuba River
@@ -129,5 +175,14 @@ feather_carcass <- read_csv("data/redd-carcass-holding/feather_carcass.csv") |>
 ```
 
 ### Combined
+
+```{r}
+carcass_combined <- bind_rows(battle_carcass, 
+                              butte_carcass_combined,
+                              feather_carcass,
+                              clear_carcass) |> 
+  glimpse()
+
+```
 
 ### For Analysis

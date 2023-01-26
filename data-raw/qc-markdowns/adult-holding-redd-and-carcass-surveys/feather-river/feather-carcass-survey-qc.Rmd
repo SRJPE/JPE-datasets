@@ -75,8 +75,7 @@ read_from_cloud <- function(carcass_data_type, year){
 ```{r, message = FALSE}
 feather_carcass_chops_2000 <- read_from_cloud("chops", 2000) %>% 
   rename(adult_male = "male_chop",
-         adult_female = "female_chop",
-         sec = "sect") %>% 
+         adult_female = "female_chop") %>% 
   pivot_longer(cols = c("adult_male", "adult_female", "grilse_male",
                         "grilse_female"),
                names_to = c("lifestage", "sex"),
@@ -92,13 +91,14 @@ feather_carcass_tags_2000 <- read_from_cloud("tags", 2000) %>%
 # further, not sure that renaming recov_id is accurate here? that's why we are getting id values that are NA bc of the join
 # TODO: go back into 2000 .Rmd and figure out if there is tag data w/ ids and dates (better for joining on)
 feather_carcass_chops_and_tags_2000 <- full_join(feather_carcass_chops_2000, feather_carcass_tags_2000 ) %>%
-  select(-c(chop_env_id, egg_ret, fl, tag_num)) %>%
   mutate(sex = case_when(
     sex == "m" ~ "male",
     sex == "f" ~ "female",
     TRUE ~ sex
-  )) %>%
-  rename(id = "recov_id") %>% glimpse()
+  )) %>% 
+  rename(sec = "sect",
+         header_id = chop_env_id) |> 
+  glimpse()
 
 # does not contain tag_clip_status, chop_clip_status, or tag_count in data
 ```
@@ -108,8 +108,7 @@ feather_carcass_chops_and_tags_2000 <- full_join(feather_carcass_chops_2000, fea
 feather_carcass_chops_2001 <- read_from_cloud("chops", 2001) %>% 
   rename(adult_male = "male_chop",
          adult_female = "female_chop",
-         grilse_unknown = "grilse",
-         sec = "sect") %>% 
+         grilse_unknown = "grilse") %>% 
   pivot_longer(cols = c("adult_male", "adult_female", "grilse_unknown"),
                names_to = c("lifestage", "sex"),
                names_sep ="_",
@@ -123,8 +122,8 @@ feather_carcass_tags_2001 <- read_from_cloud("tags", 2001) %>%
 # joining on recov_id, sex
 # renaming recov_id to id (is that accurate with other datasets?)
 feather_carcass_chops_and_tags_2001 <- full_join(feather_carcass_chops_2001, feather_carcass_tags_2001 ) %>% 
-  select(-c(chop_env_id, egg_ret, fl, tag_num, sect)) %>%  
-  rename(id = recov_id) %>% 
+  rename(sec = "sect",
+         header_id = chop_env_id) |> 
   mutate(sex = case_when(
     sex == "m" ~ "male",
     sex == "f" ~ "female", 
@@ -147,9 +146,7 @@ feather_carcass_chops_and_tags_2002 <- read_from_cloud("chops_and_tags", 2002) %
   pivot_longer(cols = c("adult_male", "adult_female", "grilse_unknown"),
                names_to = c("lifestage", "sex"),
                names_sep ="_",
-               values_to = "chop_count") %>% 
-  mutate(chop_clip_status = "unknown",
-           tag_clip_status = "unknown") %>% glimpse
+               values_to = "chop_count") %>%  glimpse
 # does not contain tag_clip_status or chop_clip_status in data
 ```
 ### 2003 Chops and Tags
@@ -162,9 +159,7 @@ feather_carcass_chops_and_tags_2003 <- read_from_cloud("chops_and_tags",2003) %>
   pivot_longer(cols = c("adult_male", "adult_female", "grilse_unknown"),
                names_to = c("lifestage", "sex"),
                names_sep ="_",
-               values_to = "chop_count") %>% 
-  mutate(chop_clip_status = "unknown",
-           tag_clip_status = "unknown") %>% glimpse
+               values_to = "chop_count") %>% glimpse()
 # does not contain tag_clip_status or chop_clip_status in data
 ```
 ### 2004 Chops and Tags
@@ -177,9 +172,7 @@ feather_carcass_chops_and_tags_2004 <- read_from_cloud("chops_and_tags",2004) %>
   pivot_longer(cols = c("adult_male", "adult_female", "grilse_unknown"),
                names_to = c("lifestage", "sex"),
                names_sep ="_",
-               values_to = "chop_count") %>% 
-    mutate(chop_clip_status = "unknown",
-           tag_clip_status = "unknown") %>% glimpse
+               values_to = "chop_count") %>%  glimpse
 # does not contain tag_clip_status or chop_clip_status in data
 ```
 
@@ -202,8 +195,6 @@ feather_carcass_chops_and_tags_2005 <- read_from_cloud("chops_and_tags",2005) %>
     tag_clip_status == "tag_clip" ~ "yes",
     tag_clip_status == "tag_n_clip" ~ "no",
     tag_clip_status == "tag_unk" ~ "unknown")) %>%
-  mutate(sex = "unknown",
-         lifestage = "unknown") %>%
   rename(sec = "sect") %>% 
   glimpse()
 
@@ -226,9 +217,7 @@ feather_carcass_chops_and_tags_2006 <- read_from_cloud("chops_and_tags",2006) %>
     tag_clip_status == "tag_clip" ~ "yes",
     tag_clip_status == "tag_n_clip" ~ "no",
     tag_clip_status == "tag_unk" ~ "unknown")) %>%
-  mutate(sex = "unknown",
-         lifestage = "unknown",
-         tag_col = as.character(tag_col)) %>% 
+  mutate(tag_col = as.character(tag_col)) %>% 
   rename(sec = "sect") %>% 
   glimpse()
 # does not contain sex or lifestage in data
@@ -250,9 +239,7 @@ feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>
     tag_clip_status == "tag_clip" ~ "yes",
     tag_clip_status == "tag_n_clip" ~ "no",
     tag_clip_status == "tag_unk" ~ "unknown")) %>%
-  mutate(sex = "unknown",
-         lifestage = "unknown",
-         tag_col = as.character(tag_col)) %>% 
+  mutate(tag_col = as.character(tag_col)) %>% 
   rename(sec = "sect") %>% 
   glimpse()
 # does not contain sex, lifestage in data
@@ -264,11 +251,7 @@ feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>
 feather_carcass_chops_and_tags_2008 <- read_from_cloud("chops_and_tags",2008) %>% 
   rename(chop_count = "chops",
          tag_count = "tags") %>% 
-  mutate(chop_clip_status = "unknown",
-         tag_clip_status = "unknown",
-         sex = "unknown",
-         lifestage = "unknown",
-         tag_col = as.character(tag_col)) %>% 
+  mutate(tag_col = as.character(tag_col)) %>% 
   rename(sec = "sect") %>% 
 glimpse
 # does not contain sex, lifestage, chop_clip_status, tag_clip_status in data
@@ -278,11 +261,7 @@ glimpse
 feather_carcass_chops_and_tags_2009 <- read_from_cloud("chops_and_tags",2009) %>% 
   rename(chop_count = "chops",
          tag_count = "tags") %>% 
-  mutate(chop_clip_status = "unknown",
-         tag_clip_status = "unknown",
-         sex = "unknown",
-         lifestage = "unknown",
-         tag_col = as.character(tag_col)) %>% 
+  mutate(tag_col = as.character(tag_col)) %>% 
   rename(sec = "sect") %>% 
 glimpse()
 # does not contain sex, lifestage, chop_clip_status, tag_clip_status in data
@@ -323,10 +302,7 @@ feather_carcass_chops_and_tags_2010 <- feather_carcass_chops_sex_2010 |>
   full_join(feather_carcass_tags_sex_2010, by = c("header_id", "tag_col", "date",
                                                   "chan_id", "sect", "chan",
                                                   "min", "sex")) |> 
-  mutate(chop_clip_status = "unknown",
-         tag_clip_status = "unknown",
-         lifestage = "unknown",
-         tag_col = as.character(tag_col)) %>%
+  mutate(tag_col = as.character(tag_col)) %>%
   rename(sec = sect) |> 
   glimpse()
 # does not contain lifestage, tag_clip_status, or chop_clip_status in data
@@ -339,24 +315,14 @@ feather_carcass_chops_and_tags_2010 <- feather_carcass_chops_sex_2010 |>
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>% 
   rename(chop_count = "count",
-         sec = sect) %>% 
-  mutate(tag_count = NA,
-         chop_clip_status = "unknown",
-         tag_clip_status = "unknown",
-         sex = "unknown",
-         lifestage = "unknown") %>% glimpse()
+         sec = sect)  %>% glimpse()
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2012 Chops and Tags
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>% 
   rename(chop_count = "count",
-         sec = sect) %>% 
-  mutate(tag_count = NA,
-         chop_clip_status = "unknown",
-         tag_clip_status = "unknown",
-         sex = "unknown",
-         lifestage = "unknown") %>% glimpse()
+         sec = sect) %>% glimpse()
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 
@@ -364,36 +330,21 @@ feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>% 
     rename(chop_count = "count",
-           sec = sect) %>% 
-  mutate(tag_count = NA,
-         chop_clip_status = "unknown",
-         tag_clip_status = "unknown",
-         sex = "unknown",
-         lifestage = "unknown") %>% glimpse
+           sec = sect) %>% glimpse
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2014 Chops and Tags
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>% 
     rename(chop_count = "count",
-           sec = sect) %>%
-  mutate(tag_count = NA,
-         chop_clip_status = "unknown",
-         tag_clip_status = "unknown",
-         sex = "unknown",
-         lifestage = "unknown") %>% glimpse
+           sec = sect) %>% glimpse
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2015 Chops and Tags
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>% 
   rename(chop_count = "count",
-         sec = sect) %>% 
-  mutate(tag_count = NA,
-         chop_clip_status = "unknown",
-         tag_clip_status = "unknown",
-         sex = "unknown",
-         lifestage = "unknown") %>% glimpse
+         sec = sect) %>% glimpse
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 
 ```
@@ -401,12 +352,7 @@ feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>% 
   rename(chop_count = "count",
-         sec = sect) %>% 
-  mutate(tag_count = NA,
-         chop_clip_status = "unknown",
-         tag_clip_status = "unknown",
-         sex = "unknown",
-         lifestage = "unknown") %>% glimpse
+         sec = sect) %>% glimpse
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 
@@ -417,11 +363,8 @@ feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","20
          header_id = survey_meta_id,
          sec = section_id,
          chop_clip_status = ad_fin_clip_status) |> 
-  transmute(tag_count = NA,
-            min = NA,
-            tag_clip_status = NA,
-            lifestage = NA,
-            header_id, date, sec, chop_count, chop_clip_status, sex) |> 
+  rename(fl = fl_mm) |> 
+  select(-fl_cm) |> 
     glimpse()
 # does not contain tag_count, tag_clip_status, lifestage, or min
 ```
@@ -453,8 +396,7 @@ feather_carcass_chops_and_tags_combined <- bind_rows(feather_carcass_chops_and_t
 # add year for summarization
 feather_carcass_chops_and_tags_combined <- feather_carcass_chops_and_tags_combined |> 
   mutate(year = year(date)) |> 
-  filter(!is.na(date)) |> 
-  select(-sect) # is empty
+  filter(!is.na(date)) 
 
 # number of observations
 feather_carcass_chops_and_tags_combined |> 
@@ -475,7 +417,8 @@ The `feather_carcass_chops_and_tags_combined` table contains carcass counts by c
 
 ## Explore Numeric Variables: {.tabset}
 
-### Variable: `header_id`, `chan_id`, `sec`, `min`, `id`, `unit`
+### Variable: `header_id`, `survey_id`, `chan_id`, `sec`, `min`, `unit`, `tag_num`,
+`fl`
 
 ```{r}
 feather_carcass_chops_and_tags_combined %>% 
@@ -488,8 +431,10 @@ summary(feather_carcass_chops_and_tags_combined$sec)
 summary(feather_carcass_chops_and_tags_combined$unit)
 summary(feather_carcass_chops_and_tags_combined$min)
 summary(feather_carcass_chops_and_tags_combined$header_id)
+summary(feather_carcass_chops_and_tags_combined$survey_id)
 summary(feather_carcass_chops_and_tags_combined$chan_id)
-summary(feather_carcass_chops_and_tags_combined$id)
+summary(feather_carcass_chops_and_tags_combined$tag_num)
+summary(feather_carcass_chops_and_tags_combined$fl)
 ```
 
 
@@ -510,18 +455,16 @@ Provide a stat on NA or unknown values.
 ```{r}
 round(sum(is.na(feather_carcass_chops_and_tags_combined$chop_count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
 round(sum(is.na(feather_carcass_chops_and_tags_combined$tag_count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
-round(sum(is.na(feather_carcass_chops_and_tags_combined$id))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
+round(sum(is.na(feather_carcass_chops_and_tags_combined$tag_num))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
 round(sum(is.na(feather_carcass_chops_and_tags_combined$chop_clip_status))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
 round(sum(is.na(feather_carcass_chops_and_tags_combined$tag_clip_status))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
-round(sum(is.na(feather_carcass_chops_and_tags_combined$count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
+
 ```
 * `r round(sum(is.na(feather_carcass_chops_and_tags_combined$chop_count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100` % of values in the `chop_count` column are NA.
 * `r round(sum(is.na(feather_carcass_chops_and_tags_combined$tag_count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100` % of values in the `tag_count` column are NA.
 * `r round(sum(is.na(feather_carcass_chops_and_tags_combined$id))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100` % of values in the `id` column are NA.
 * `r round(sum(is.na(feather_carcass_chops_and_tags_combined$chop_clip_status))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100` % of values in the `chop_clip_status` column are NA.
 * `r round(sum(is.na(feather_carcass_chops_and_tags_combined$tag_clip_status))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100` % of values in the `tag_clip_status` column are NA.
-* `r round(sum(is.na(feather_carcass_chops_and_tags_combined$count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100` % of values in the `count` column are NA.
-
 
 **Plotting chops over Period of Record**
 
@@ -567,10 +510,7 @@ feather_carcass_chop_recovery_2001 <- read_from_cloud("chop_recovery",2001) |>
                values_to = "recov_count") |> 
   mutate(sex = case_when(sex == "male_chop" ~ "male",
                          sex == "female_chop" ~ "female",
-                         TRUE ~ sex),
-         chan_id = NA_integer_,
-         tag_col = NA_character_,
-         recov_color = NA_character_) |> 
+                         TRUE ~ sex)) |> 
   rename(header_id = chop_env_id) |> 
   glimpse()
 ```
@@ -606,12 +546,9 @@ feather_carcass_chop_recovery_2017_2021 <- read_from_cloud("chop_recovery","2017
          recov_id = recover_id,
          recov_count = count,
          header_id = survey_meta_id) |> 
-  mutate(tag_col = as.character(tag_col),
-         chan_id = NA_integer_,
-         min = NA_integer_,
-         recov_color = NA_character_) |> 
-  select(-c(survey_id, tag_recovered, comments, data_recorder, creation_time,
-            editor, edit_time, disposition, sex, fl_mm, fl_cm)) |> 
+  mutate(tag_col = as.character(tag_col)) |> 
+  select(-c(data_recorder, creation_time,
+            editor, edit_time, fl_cm)) |> 
   glimpse()
 ```
 
@@ -633,8 +570,7 @@ feather_carcass_chop_recovery_combined <- bind_rows(feather_carcass_chop_recover
 # add year for summarization
 feather_carcass_chop_recovery_combined <- feather_carcass_chop_recovery_combined |> 
   mutate(year = year(date)) |> 
-  filter(!is.na(date)) |> 
-  select(-sect) # is empty
+  filter(!is.na(date))
 
 # number of observations
 feather_carcass_chop_recovery_combined |> 
