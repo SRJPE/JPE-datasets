@@ -195,10 +195,6 @@ carcass_combined <- bind_rows(battle_carcass,
                               feather_carcass,
                               clear_carcass) |> 
   glimpse()
-# TODO upload to jpe dev bucket standard
-# TODO check out adult plots
-# TODO sum tag counts and chop counts (grouped by year and stream)
-# TODO add carcass counts to plots
 
 ```
 # Upload standardized data to google cloud
