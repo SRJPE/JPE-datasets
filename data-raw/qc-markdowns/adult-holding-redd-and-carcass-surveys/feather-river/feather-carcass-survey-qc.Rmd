@@ -69,7 +69,8 @@ read_from_cloud <- function(carcass_data_type, year){
 * Note that within the Chops and Tags data some years have tables titled `chops` while others are titled `chops_and_tags`. For 2017-2020 data, `chops` and `chops_and_tags` are separate tables and here we read in `chops_and_tags` for the most overlap of variables.
 
 ### 2000 Chops and Tags
-* 2000 and 2001 chops and tags are in different tables so they have to be joined.
+* 2000 chops and tags are in different tables so they have to be joined.
+* 2000 `chops` table has `chop_count` values from 0:466 (i.e. not one individual per row)
 * 2000 grilse has sex information
 
 ```{r, message = FALSE}
@@ -82,13 +83,12 @@ feather_carcass_chops_2000 <- read_from_cloud("chops", 2000) %>%
                names_sep ="_",
                values_to = "chop_count") %>% 
   mutate(chop_clip_status = "unknown",
-           tag_clip_status = "unknown") |> glimpse()
+           tag_clip_status = "unknown")|> 
 
 feather_carcass_tags_2000 <- read_from_cloud("tags", 2000) %>% 
-  mutate(tag_count = 1)
+  mutate(tag_count = 1) 
 
 # this only joins on "sex" - I don't think that is robust 
-# further, not sure that renaming recov_id is accurate here? that's why we are getting id values that are NA bc of the join
 # TODO: go back into 2000 .Rmd and figure out if there is tag data w/ ids and dates (better for joining on)
 feather_carcass_chops_and_tags_2000 <- full_join(feather_carcass_chops_2000, feather_carcass_tags_2000 ) %>%
   mutate(sex = case_when(
@@ -104,6 +104,8 @@ feather_carcass_chops_and_tags_2000 <- full_join(feather_carcass_chops_2000, fea
 ```
 
 ### 2001 Chops and Tags
+* 2001 chops and tags are in different tables so they have to be joined.
+* 2001 `chops` table has `chop_count` values from 0:410 (i.e. not one individual per row)
 ```{r, message = FALSE}
 feather_carcass_chops_2001 <- read_from_cloud("chops", 2001) %>% 
   rename(adult_male = "male_chop",
@@ -134,6 +136,7 @@ feather_carcass_chops_and_tags_2001 <- full_join(feather_carcass_chops_2001, fea
 
 ### 2002 Chops and Tags
 * 2002 - 2004 dataset contains columns contains sex (m or f) and lifestage (grilse) 
+* 2002 `chops_and_tags` table has values for `chop_count` that range from 0:326 and values for `tag_count` that range from 0:34.
 ```{r, message = FALSE}
 # assuming all male and female are adults
 # assuming grilse was not double counted ontop of male and female
@@ -149,6 +152,7 @@ feather_carcass_chops_and_tags_2002 <- read_from_cloud("chops_and_tags", 2002) %
 # does not contain tag_clip_status or chop_clip_status in data
 ```
 ### 2003 Chops and Tags
+* 2003 `chops_and_tags` table has values for `chop_count` that range from 0:160 and values for `tag_count` that range from 0:25.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2003 <- read_from_cloud("chops_and_tags",2003) %>% 
   rename(adult_male = "male_chop",
@@ -162,6 +166,7 @@ feather_carcass_chops_and_tags_2003 <- read_from_cloud("chops_and_tags",2003) %>
 # does not contain tag_clip_status or chop_clip_status in data
 ```
 ### 2004 Chops and Tags
+* 2004 `chops_and_tags` table has values for `chop_count` that range from 0:129 and values for `tag_count` that range from 0:25.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2004 <- read_from_cloud("chops_and_tags",2004) %>% 
   rename(adult_male = "male_chop",
@@ -177,7 +182,7 @@ feather_carcass_chops_and_tags_2004 <- read_from_cloud("chops_and_tags",2004) %>
 
 ### 2005 Chops and Tags
 * 2005 - 2007 data set dropped sex and lifestage and instead contains clip status
-
+* 2005 `chops_and_tags` table has values for `chop_count` that range from 0:153 and values for `tag_count` that range from 0:29.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2005 <- read_from_cloud("chops_and_tags",2005) %>% 
   pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
@@ -200,6 +205,7 @@ feather_carcass_chops_and_tags_2005 <- read_from_cloud("chops_and_tags",2005) %>
 # does not contain sex or lifestage in data
 ```
 ### 2006 Chops and Tags
+* 2006 `chops_and_tags` table has values for `chop_count` that range from 0:281 and values for `tag_count` that range from 0:28.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2006 <- read_from_cloud("chops_and_tags",2006) %>% 
   pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
@@ -222,6 +228,7 @@ feather_carcass_chops_and_tags_2006 <- read_from_cloud("chops_and_tags",2006) %>
 # does not contain sex or lifestage in data
 ```
 ### 2007 Chops and Tags
+* 2007 `chops_and_tags` table has values for `chop_count` that range from 0:135 and values for `tag_count` that range from 0:17.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>% 
   pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
@@ -246,6 +253,7 @@ feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>
 ### 2008 Chops and Tags
 
 * 2008 - 2016 (except for 2010) dataset dropped clip status and only has chop count and tag count
+* 2008 `chops_and_tags` table has values for `chop_count` that range from 0:25 and values for `tag_count` that range from 0:5.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2008 <- read_from_cloud("chops_and_tags",2008) %>% 
   rename(chop_count = "chops",
@@ -256,6 +264,7 @@ glimpse
 # does not contain sex, lifestage, chop_clip_status, tag_clip_status in data
 ```
 ### 2009 Chops and Tags
+* 2009 `chops_and_tags` table has values for `chop_count` that range from 0:24 and values for `tag_count` that range from 0:4.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2009 <- read_from_cloud("chops_and_tags",2009) %>% 
   rename(chop_count = "chops",
@@ -267,6 +276,7 @@ glimpse()
 ```
 ### 2010 Chops and Tags
 * 2010 has sex in dataset
+* 2010 `chops_and_tags` table has values for `chop_count` that range from 0:364 and values for `tag_count` that range from 0:27.
 ```{r, message = FALSE}
 # structure of 2010 chops_and_tags dataset has variables for tag count by sex and chop count by sex; this makes it difficult because to pivot_longer, you get two separate sex columns (one for tag count and one for chop count) that don't align by rows perfectly. To create one sex column we pivot the chop_count by sex and the tag_count by sex separately, then join on all common variables: sex, id, tag color, date, channel id, section, channel, and min.
 
@@ -310,6 +320,7 @@ feather_carcass_chops_and_tags_2010 <- feather_carcass_chops_sex_2010 |>
 
 ### 2011 Chops and Tags
 * 2011-2016 does not have tags count
+* 2011 `chops_and_tags` table has `chop_count` values ranging from 0:348.
 
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>% 
@@ -318,6 +329,7 @@ feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2012 Chops and Tags
+* 2012 `chops_and_tags` table has `chop_count` values ranging from 0:551.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>% 
   rename(chop_count = "count",
@@ -326,6 +338,7 @@ feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>
 ```
 
 ### 2013 Chops and Tags
+* 2013 `chops_and_tags` table has `chop_count` values ranging from 0:729.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>% 
     rename(chop_count = "count",
@@ -333,6 +346,7 @@ feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2014 Chops and Tags
+* 2014 `chops_and_tags` table has `chop_count` values ranging from 0:302.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>% 
     rename(chop_count = "count",
@@ -340,6 +354,7 @@ feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>
 # does not contain sex, lifestage, tag_clip_status, chop_clip_status, or tag_count in data
 ```
 ### 2015 Chops and Tags
+* 2015 `chops_and_tags` table has `chop_count` values ranging from 0:184.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>% 
   rename(chop_count = "count",
@@ -348,6 +363,7 @@ feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>
 
 ```
 ### 2016 Chops and Tags
+* 2016 `chops_and_tags` table has `chop_count` values ranging from 0:603.
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>% 
   rename(chop_count = "count",
@@ -356,6 +372,7 @@ feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>
 ```
 
 ### 2017-2020 Chops and Tags
+* 2017-2020 `chops_and_tags` table has `chop_count` values ranging from 0:1 and `tag_count` values ranging from 0:1. 
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","2017_2021") |> 
   rename(header_id = survey_meta_id,
