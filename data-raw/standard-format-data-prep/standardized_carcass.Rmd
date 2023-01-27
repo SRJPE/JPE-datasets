@@ -224,7 +224,7 @@ carcass_combined <- bind_rows(battle_carcass,
   glimpse()
 
 ```
-# Upload standardized data to google cloud
+### Upload standardized data to google cloud
 ```{r, include = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
@@ -236,8 +236,3 @@ gcs_upload(carcass_combined,
            predefinedAcl = "bucketLevel")
 ```
 
-### For Analysis
-
-```{r}
-
-```
