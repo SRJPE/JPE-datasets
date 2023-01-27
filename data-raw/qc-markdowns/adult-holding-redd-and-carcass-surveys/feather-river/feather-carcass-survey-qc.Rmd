@@ -83,7 +83,7 @@ feather_carcass_chops_2000 <- read_from_cloud("chops", 2000) %>%
                names_sep ="_",
                values_to = "chop_count") %>% 
   mutate(chop_clip_status = "unknown",
-           tag_clip_status = "unknown")|> 
+           tag_clip_status = "unknown")
 
 feather_carcass_tags_2000 <- read_from_cloud("tags", 2000) %>% 
   mutate(tag_count = 1) 
@@ -374,7 +374,7 @@ feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>
 ### 2017-2020 Chops and Tags
 * 2017-2020 `chops_and_tags` table has `chop_count` values ranging from 0:1 and `tag_count` values ranging from 0:1. 
 ```{r, message = FALSE}
-feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","2017_2021") |> 
+feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","2017_2021") |>
   rename(header_id = survey_meta_id,
          sec = section_id,
          chop_clip_status = ad_fin_clip_status) |> 
@@ -383,7 +383,7 @@ feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","20
          chop_count = case_when(disposition == "chopped" ~ 1, 
                                 disposition %in% c("tagged", NA) ~ 0)) |> 
   rename(fl = fl_mm) |> 
-  select(-fl_cm, -disposition) |> 
+  select(-c(fl_cm, disposition, count)) |> 
     glimpse()
 # does not contain tag_count, tag_clip_status, lifestage, or min
 ```
