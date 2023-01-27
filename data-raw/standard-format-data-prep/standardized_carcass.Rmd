@@ -18,13 +18,13 @@ color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455"
 
 ## Carcass Data Standardization
 
-FlowWest received carcass data from 4 monitoring programs:
+FlowWest received carcass data from 5 monitoring programs:
 
 -   Battle Creek
 -   Butte Creek
 -   Clear Creek
 -   Feather River
--   Yuba River
+-   Yuba River (not yet in markdown)
 
 ## Standard format Carcass Data
 
@@ -36,29 +36,29 @@ Data dictionary for standard format:
 |:-----------------|:-------------------|:---------------------------------|
 | longitude      | B, C | Longitude of survey site                    |
 | latitude         | B, C | Latitude of survey site     |
-| river_mile | B, C |
-| date | B, Bu, F, C |
-| survey_method | B, C |
-| location | B |
-|sex | B, Bu, F, C |
-|fork_length | B, Bu, F, C|
-| adipose | B, Bu, F, C |
-| carcass_condition | B, Bu, F, C|
-| spawn_condition | B, Bu, F, C|
-| run | B, F, C |
-| stream | B, Bu, F, C |
-| chop_count | B, Bu, F, C |
-| survey_id | Bu, F |
-| section_cd | Bu |
-| way_pt | Bu |
-| tag_count | Bu, F |
-| tag_col | F, C |
-| sec | F |
-| unit | F |
-| chan | F |
-| min | F |
-| chan_id | F |
-| reach | C |
+| river_mile | B, C | River mile where the survey was performed |
+| date | B, Bu, F, C | Date the survey was performed |
+| survey_method | B, C | Method by which the survey was performed (i.e. snorkel survey, barrier weir trap, kayak survey, fish rescue, etc.)
+| location | B | Butte Creek's variable for location of survey |
+|sex | B, Bu, F, C | Sex of the carcass |
+|fork_length | B, Bu, F, C | Fork length of the carcass (mm) |
+| adipose | B, Bu, F, C | Whether or not the adipose fin was clipped |
+| carcass_condition | B, Bu, F, C | Condition of the carcass when sampled (i.e. fresh, decayed, non-fresh, bright, etc.) |
+| spawn_condition | B, Bu, F, C | Spawning condition of the carcass sampled (i.e. spawned, unspawned, etc.) |
+| run | B, F, C | Run of the carcass sampled, if assigned |
+| stream | B, Bu, F, C | Stream from which the data was collected |
+| chop_count | B, Bu, F, C | Count of chopped carcasses |
+| survey_id | Bu, F | ID of the survey performed |
+| section_cd | Bu | Butte creek-specific location information, section of river surveyed |
+| way_pt | Bu | Butte creek-specific location information, way point of survey |
+| tag_count | Bu, F | Count of tagged carcasses |
+| tag_col | F, C | Color of tag (generally corresponds to week of survey) |
+| sec | F | Feather river-specific location information, section of river surveyed |
+| unit | F | Feather river-specific location information, unit of river surveyed |
+| chan | F | Feather river-specific location information, channel of river surveyed |
+| min | F | Feather river-specific location information |
+| chan_id | F | Feather river-specific location information, ID of channel surveyed |
+| reach | C | Clear creek-specific location information, reach of river surveyed |
 
 
 
@@ -134,6 +134,9 @@ butte_carcass_combined <- bind_rows(butte_carcass_2014_2016, butte_carcass_2017_
                                is.na(tagged) ~ 0),
          chop_count = case_when(is.na(tagged) ~ 1,
                                 tagged == "tagged" ~ 0),
+         carcass_condition = case_when(carcass_condition == "f" ~ "fresh",
+                                       carcass_condition == "d" ~ "decayed", 
+                                       TRUE ~ carcass_condition),
          stream = "butte creek") |> 
   select(-c(scale_nu, tissue_nu, otolith_nu, comments, year, disc_tag_applied, tagged)) |> 
   glimpse()
