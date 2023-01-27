@@ -34,8 +34,32 @@ Data dictionary for standard format:
 
 | column name   | stream collects         | definition                                               |
 |:-----------------|:-------------------|:---------------------------------|
-| stream      | | Which stream the RST is located on                       |
-| site          | | site name                                                |
+| longitude      | B, C | Longitude of survey site                    |
+| latitude         | B, C | Latitude of survey site     |
+| river_mile | B, C |
+| date | B, Bu, F, C |
+| survey_method | B, C |
+| location | B |
+|sex | B, Bu, F, C |
+|fork_length | B, Bu, F, C|
+| adipose | B, Bu, F, C |
+| carcass_condition | B, Bu, F, C|
+| spawn_condition | B, Bu, F, C|
+| run | B, F, C |
+| stream | B, Bu, F, C |
+| chop_count | B, Bu, F, C |
+| survey_id | Bu, F |
+| section_cd | Bu |
+| way_pt | Bu |
+| tag_count | Bu, F |
+| tag_col | F, C |
+| sec | F |
+| unit | F |
+| chan | F |
+| min | F |
+| chan_id | F |
+| reach | C |
+
 
 
 ## Read in data {.tabset}
