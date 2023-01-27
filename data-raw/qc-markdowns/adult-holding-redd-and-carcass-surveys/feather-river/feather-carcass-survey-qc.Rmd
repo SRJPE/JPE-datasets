@@ -82,7 +82,7 @@ feather_carcass_chops_2000 <- read_from_cloud("chops", 2000) %>%
                names_sep ="_",
                values_to = "chop_count") %>% 
   mutate(chop_clip_status = "unknown",
-           tag_clip_status = "unknown")
+           tag_clip_status = "unknown") |> glimpse()
 
 feather_carcass_tags_2000 <- read_from_cloud("tags", 2000) %>% 
   mutate(tag_count = 1)
@@ -120,7 +120,6 @@ feather_carcass_tags_2001 <- read_from_cloud("tags", 2001) %>%
   mutate(tag_count = 1)
 
 # joining on recov_id, sex
-# renaming recov_id to id (is that accurate with other datasets?)
 feather_carcass_chops_and_tags_2001 <- full_join(feather_carcass_chops_2001, feather_carcass_tags_2001 ) %>% 
   rename(sec = "sect",
          header_id = chop_env_id) |> 
@@ -359,12 +358,15 @@ feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>
 ### 2017-2020 Chops and Tags
 ```{r, message = FALSE}
 feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","2017_2021") |> 
-  rename(chop_count = count,
-         header_id = survey_meta_id,
+  rename(header_id = survey_meta_id,
          sec = section_id,
          chop_clip_status = ad_fin_clip_status) |> 
+  mutate(tag_count = case_when(disposition == "tagged" ~ 1,
+                               disposition %in% c("chopped", NA) ~ 0),
+         chop_count = case_when(disposition == "chopped" ~ 1, 
+                                disposition %in% c("tagged", NA) ~ 0)) |> 
   rename(fl = fl_mm) |> 
-  select(-fl_cm) |> 
+  select(-fl_cm, -disposition) |> 
     glimpse()
 # does not contain tag_count, tag_clip_status, lifestage, or min
 ```
