@@ -47,7 +47,7 @@ Data dictionary for standard format:
 | spawn_condition | B, Bu, F, C, Y | Spawning condition of the carcass sampled (i.e. spawned, unspawned, etc.) |
 | run | B, F, C | Run of the carcass sampled, if assigned |
 | stream | B, Bu, F, C, Y | Stream from which the data was collected |
-| chop_count | B, Bu, F, C | Count of chopped carcasses |
+| chop_count | B, Bu, F, C, Y | Count of chopped carcasses |
 | survey_id | Bu, F | ID of the survey performed |
 | section_cd | Bu | Butte creek-specific location information, section of river surveyed |
 | way_pt | Bu | Butte creek-specific location information, way point of survey |
@@ -59,8 +59,6 @@ Data dictionary for standard format:
 | min | F | Feather river-specific location information |
 | chan_id | F | Feather river-specific location information, ID of channel surveyed |
 | reach | C | Clear creek-specific location information, reach of river surveyed |
-| individual_chops | Y | Yuba river-specific variable referring to chop count where biological information was taken |
-| bulk_chops | Y | Yuba river-specific variable referring to dates where carcasses were bulk counted |
 
 
 
@@ -210,8 +208,7 @@ feather_carcass <- read_csv("data/redd-carcass-holding/feather_carcass.csv") |>
 ### Yuba River
 
 #### Columns Removed
-
-Not sure yet how to standardize Yuba's `individual_chops` and `bulk_chops` columns to match the `chop_count` and `tag_count` of other streams. 
+- No columns had to be removed. 
 
 ```{r, message=FALSE, warning=FALSE, include = FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_carcass.csv",

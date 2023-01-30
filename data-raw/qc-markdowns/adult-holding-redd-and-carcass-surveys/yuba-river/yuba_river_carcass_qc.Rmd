@@ -107,10 +107,10 @@ clean_yuba_chops <- raw_carcass_counts %>% janitor::clean_names() %>%
 summary(clean_yuba_chops)
 ```
 ### Combined
+- summed `individual_chops` and `bulk_chops` from the two separate tables into one column: `chop_count`
 - Each row in the combined dataset represents a sampling event of either
-  * biological sampling of an individual carcass (count stored in `individual_chops` column). This is from the `Carcass` table.
-  * bulk sampling of chops on a given date (count stored in `bulk_chops` column). This is from the `Chop` table.
-- To get a `total_count` value for a given `date`, sum `individual_chops` and `bulk_chops`.
+  * biological sampling of an individual carcass (from the `Carcass` table) or
+  * bulk sampling of chops on a given date (from the `Chop` table).
 - converted `adipose_clip` column to a logical variable
 - modified values for `sex` and `spawned` columns to be more explicit
 - renamed `fresh` to `carcass_condition` to standardize across streams and modified values to be more explicit
@@ -131,7 +131,9 @@ clean_yuba_combined <-
          carcass_condition = case_when(fresh == "Y" ~ "fresh",
                                        fresh == "N" ~ "non fresh",
                                        is.na(fresh) ~ NA_character_)) |>
-  select(-fresh) |> 
+  group_by(river_mile, fork_length, adipose_clip, sex, spawned, date, carcass_condition) |>
+  summarise(chop_count = sum(individual_chops, bulk_chops, na.rm = T)) |>
+  ungroup() |> 
   glimpse()
 ```
 
@@ -175,36 +177,13 @@ ggplot() +
   theme_minimal()
 ```
 
-### `individual_chops` over time
-
-```{r}
-clean_yuba_combined |> 
-  group_by(date) |> 
-  summarise(count = sum(individual_chops, na.rm = T)) |> 
-  ggplot(aes(x = date, y = count)) +
-  geom_col(fill = "#74A089") + 
-  theme_minimal()
-```
-
-### `bulk_chops` over time
-
-```{r}
-clean_yuba_combined |> 
-  group_by(date) |> 
-  summarise(count = sum(bulk_chops, na.rm = T)) |> 
-  ggplot(aes(x = date, y = count)) +
-  geom_col(fill = "#74A089") + 
-  theme_minimal()
-```
-
-
-### total chops (`individual_chops` and `bulk_chops`) by year
+### `chop_count` over time
 
 ```{r}
 clean_yuba_combined |> 
   mutate(year = year(date)) |>
   group_by(year) |>
-  summarise(count = sum(individual_chops, bulk_chops, na.rm = T)) |> 
+  summarise(count = sum(chop_count, na.rm = T)) |> 
   ggplot(aes(x = year, y = count)) +
   geom_col(fill = "#74A089") + 
   theme_minimal()
@@ -214,8 +193,13 @@ clean_yuba_combined |>
 
 ```{r}
 clean_yuba_combined |> 
-  select(!is.numeric) |> 
+  select(is.character) |> 
   colnames()
+
+clean_yuba_combined |> 
+  select(is.logical) |> 
+  colnames()
+
 ```
 
 ### `date`
@@ -253,8 +237,8 @@ table(clean_yuba_combined$spawned, useNA = "ifany")
 
 ## Summary of identified issues
 
--   The data are in good shape and standardized across years. 
--   Important to be aware that bulk chop counts and individual chop counts are stored in separate variables; this can be changed easily. 
+-   The data are in good shape and standardized across years.
+-   Individual carcasses and bulk carcass counts were stored in different tables. To join them into the `chop_count` variable, data were grouped by all available variables and summed across `individual_chops` and `bulk_chops`.
 
 ## Save cleaned data back to google cloud
 
