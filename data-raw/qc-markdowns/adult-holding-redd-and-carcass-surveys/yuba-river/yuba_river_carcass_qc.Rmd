@@ -44,7 +44,7 @@ Jessica Nichols [Escapement Protocols](/data-raw/qc-markdowns/adult-holding-redd
 # Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
 # Open object from google cloud storage
 
-if(google_cloud_access = TRUE) {
+if(google_cloud_access == TRUE) {
   gcs_auth(json_file = Sys.getenv('GCS_AUTH_FILE'))
   gcs_global_bucket(bucket = Sys.getenv('GCS_DEFAULT_BUCKET'))
   
@@ -52,45 +52,95 @@ if(google_cloud_access = TRUE) {
   # git data and save as xlsx
   gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/data-raw/Carcass_datarequest07122022.xlsx",
                  bucket = gcs_get_global_bucket(),
-                 saveToDisk = "raw_carcass_yuba_river.xlsx",
+                 saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/yuba-river/raw_carcass_yuba_river.xlsx",
                  overwrite = TRUE)
 }
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet:
+- there are two tabs in the excel file: `Carcass`, which contains biological sampling (one individual per row), and `Chops`, which contains bulk chop counts that were not biologically sampled (one row is one date, and count column is total chops that day).
 
 ```{r}
 # read in data to clean 
-
-sheets <- excel_sheets("raw_carcass_yuba_river.xlsx")
-sheets 
-raw_carcass_data <- read_excel("raw_carcass_yuba_river.xlsx", 
+excel_sheets("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/yuba-river/raw_carcass_yuba_river.xlsx") 
+raw_carcass_individual <- read_excel("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/yuba-river/raw_carcass_yuba_river.xlsx", 
                                sheet = "Carcass") %>% glimpse()
+raw_carcass_counts <- read_excel("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/yuba-river/raw_carcass_yuba_river.xlsx", 
+                                 sheet = "Chop") |> glimpse()
 
 ```
 
 ## Data transformations
 
--   modified `survey_id` to `date` and converted to date format
+### `Carcass` table
+- modified `survey_id` to `date` and converted to date format
+- added `individual_chops` column (`1` for all rows)
 
 ```{r}
 # Snake case, 
 # Columns are appropriate types
 # Remove redundant columns
 
-clean_yuba_carcass <- raw_carcass_data %>% janitor::clean_names() %>% 
+clean_yuba_carcass <- raw_carcass_individual %>% janitor::clean_names() %>% 
   rename(river_mile = rm) %>%
-  mutate(date = as_date(survey_id)) %>%
+  mutate(date = as_date(survey_id),
+         individual_chops = 1) %>% 
   select(-survey_id) %>%
-  glimpse
+  glimpse()
 
 summary(clean_yuba_carcass)
+```
+### `Chop` table
+- modified `survey_id` to `date` and converted to date format
+- renamed `total_chops` column to `bulk_chops` column to distinguish from `individual_chops` column in `Carcass` table
+```{r}
+# Snake case, 
+# Columns are appropriate types
+# Remove redundant columns
+
+clean_yuba_chops <- raw_carcass_counts %>% janitor::clean_names() %>%
+  mutate(date = as_date(survey_id)) %>% 
+  select(-survey_id) %>%
+  rename(bulk_chops = total_chops) |> 
+  glimpse()
+
+summary(clean_yuba_chops)
+```
+### Combined
+- Each row in the combined dataset represents a sampling event of either
+  * biological sampling of an individual carcass (count stored in `individual_chops` column). This is from the `Carcass` table.
+  * bulk sampling of chops on a given date (count stored in `bulk_chops` column). This is from the `Chop` table.
+- To get a `total_count` value for a given `date`, sum `individual_chops` and `bulk_chops`.
+- converted `adipose_clip` column to a logical variable
+- modified values for `sex` and `spawned` columns to be more explicit
+- renamed `fresh` to `carcass_condition` to standardize across streams and modified values to be more explicit
+
+```{r}
+clean_yuba_combined <- 
+  bind_rows(clean_yuba_carcass, clean_yuba_chops) |> 
+         mutate(adipose_clip = case_when(adipose_clip == "Y" ~ TRUE,
+                                  adipose_clip == "N" ~ FALSE,
+                                  adipose_clip %in% c(NA, "Unk") ~ NA),
+         spawned = case_when(spawned == "Y" ~ "spawned",
+                             spawned == "N" ~ "unspawned",
+                             is.na(spawned) ~ NA_character_),
+         sex = case_when(sex == "F" ~ "female",
+                         sex == "M" ~ "male",
+                         sex == "U" ~ "unknown",
+                         TRUE ~ sex),
+         carcass_condition = case_when(fresh == "Y" ~ "fresh",
+                                       fresh == "N" ~ "non fresh",
+                                       is.na(fresh) ~ NA_character_)) |>
+  select(-fresh) |> 
+  glimpse()
 ```
 
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
-# Filter clean data to show only numeric variables 
+clean_yuba_combined |> 
+  select_if(is.numeric) |>
+  colnames()
 ```
 
 ### `river_mile`
@@ -98,78 +148,124 @@ summary(clean_yuba_carcass)
 **Plotting river_mile over Period of Record**
 
 ```{r}
-summary(clean_yuba_carcass$river_mile)
+summary(clean_yuba_combined$river_mile)
 
 ggplot() + 
-  geom_histogram(data = clean_yuba_carcass, aes(river_mile))
+  geom_histogram(data = clean_yuba_combined, aes(river_mile), binwidth = 0.75, fill = "#74A089") + 
+  theme_minimal()
 
 ```
 
-### `fork_lengh`
+### `fork_length`
 
 ```{r}
 
-summary(clean_yuba_carcass$fork_length)
+summary(clean_yuba_combined$fork_length)
 
 # histogram
 ggplot() + 
-  geom_histogram(data = clean_yuba_carcass, aes(fork_length))
+  geom_histogram(data = clean_yuba_combined, aes(fork_length), 
+                 fill = "#74A089") + 
+  theme_minimal()
 
 # boxplot
 ggplot() + 
-  geom_boxplot(data = clean_yuba_carcass, aes(y = fork_length, x = spawned)) +
-  geom_jitter(data = clean_yuba_carcass, aes(y = fork_length, x = spawned), alpha = 0.5)
+  geom_boxplot(data = clean_yuba_combined, aes(y = fork_length, x = spawned)) +
+  geom_jitter(data = clean_yuba_combined, aes(y = fork_length, x = spawned), alpha = 0.5) + 
+  theme_minimal()
+```
+
+### `individual_chops` over time
+
+```{r}
+clean_yuba_combined |> 
+  group_by(date) |> 
+  summarise(count = sum(individual_chops, na.rm = T)) |> 
+  ggplot(aes(x = date, y = count)) +
+  geom_col(fill = "#74A089") + 
+  theme_minimal()
+```
+
+### `bulk_chops` over time
+
+```{r}
+clean_yuba_combined |> 
+  group_by(date) |> 
+  summarise(count = sum(bulk_chops, na.rm = T)) |> 
+  ggplot(aes(x = date, y = count)) +
+  geom_col(fill = "#74A089") + 
+  theme_minimal()
+```
+
+
+### total chops (`individual_chops` and `bulk_chops`) by year
+
+```{r}
+clean_yuba_combined |> 
+  mutate(year = year(date)) |>
+  group_by(year) |>
+  summarise(count = sum(individual_chops, bulk_chops, na.rm = T)) |> 
+  ggplot(aes(x = year, y = count)) +
+  geom_col(fill = "#74A089") + 
+  theme_minimal()
 ```
 
 ## Explore Categorical variables: {.tabset}
 
+```{r}
+clean_yuba_combined |> 
+  select(!is.numeric) |> 
+  colnames()
+```
+
 ### `date`
 
 ```{r}
-summary(clean_yuba_carcass$date)
+summary(clean_yuba_combined$date)
 ```
 
-### `fresh`
+### `carcass_condition`
 
 ```{r}
-table(clean_yuba_carcass$fresh, useNA = "ifany")
+table(clean_yuba_combined$carcass_condition, useNA = "ifany")
 ```
 
 ### `adipose_clip`
 
 ```{r}
-table(clean_yuba_carcass$adipose_clip, useNA = "ifany")
+table(clean_yuba_combined$adipose_clip, useNA = "ifany")
 
 ```
 
 ### `sex`
 
 ```{r}
-table(clean_yuba_carcass$sex, useNA = "ifany")
+table(clean_yuba_combined$sex, useNA = "ifany")
 
 ```
 
 ### `spawned`
 
 ```{r}
-table(clean_yuba_carcass$spawned, useNA = "ifany")
+table(clean_yuba_combined$spawned, useNA = "ifany")
 
 ```
 
 ## Summary of identified issues
 
--   
+-   The data are in good shape and standardized across years. 
+-   Important to be aware that bulk chop counts and individual chop counts are stored in separate variables; this can be changed easily. 
 
 ## Save cleaned data back to google cloud
 
-```{r}
-yuba_carcass <- clean_yuba_carcass
+```{r, include = F}
+yuba_carcass <- clean_yuba_combined
 
 # gcs_list_objects()
 f <- function(input, output) write_csv(input, file = output)
 
-# gcs_upload(yuba_carcass,
-#            object_function = f,
-#            type = "csv",
-#            name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_carcass.csv")
+gcs_upload(yuba_carcass,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_carcass.csv")
 ```
