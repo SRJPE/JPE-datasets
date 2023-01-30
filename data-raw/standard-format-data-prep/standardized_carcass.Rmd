@@ -24,7 +24,7 @@ FlowWest received carcass data from 5 monitoring programs:
 -   Butte Creek
 -   Clear Creek
 -   Feather River
--   Yuba River (not yet in markdown)
+-   Yuba River
 
 ## Standard format Carcass Data
 
@@ -36,17 +36,17 @@ Data dictionary for standard format:
 |:-----------------|:-------------------|:---------------------------------|
 | longitude      | B, C | Longitude of survey site                    |
 | latitude         | B, C | Latitude of survey site     |
-| river_mile | B, C | River mile where the survey was performed |
-| date | B, Bu, F, C | Date the survey was performed |
+| river_mile | B, C, Y | River mile where the survey was performed |
+| date | B, Bu, F, C, Y | Date the survey was performed |
 | survey_method | B, C | Method by which the survey was performed (i.e. snorkel survey, barrier weir trap, kayak survey, fish rescue, etc.)
 | location | B | Butte Creek's variable for location of survey |
-|sex | B, Bu, F, C | Sex of the carcass |
-|fork_length | B, Bu, F, C | Fork length of the carcass (mm) |
-| adipose | B, Bu, F, C | Whether or not the adipose fin was clipped |
-| carcass_condition | B, Bu, F, C | Condition of the carcass when sampled (i.e. fresh, decayed, non-fresh, bright, etc.) |
-| spawn_condition | B, Bu, F, C | Spawning condition of the carcass sampled (i.e. spawned, unspawned, etc.) |
+|sex | B, Bu, F, C, Y | Sex of the carcass |
+|fork_length | B, Bu, F, C, Y | Fork length of the carcass (mm) |
+| adipose | B, Bu, F, C, Y | Whether or not the adipose fin was clipped |
+| carcass_condition | B, Bu, F, C, Y | Condition of the carcass when sampled (i.e. fresh, decayed, non-fresh, bright, etc.) |
+| spawn_condition | B, Bu, F, C, Y | Spawning condition of the carcass sampled (i.e. spawned, unspawned, etc.) |
 | run | B, F, C | Run of the carcass sampled, if assigned |
-| stream | B, Bu, F, C | Stream from which the data was collected |
+| stream | B, Bu, F, C, Y | Stream from which the data was collected |
 | chop_count | B, Bu, F, C | Count of chopped carcasses |
 | survey_id | Bu, F | ID of the survey performed |
 | section_cd | Bu | Butte creek-specific location information, section of river surveyed |
@@ -59,6 +59,8 @@ Data dictionary for standard format:
 | min | F | Feather river-specific location information |
 | chan_id | F | Feather river-specific location information, ID of channel surveyed |
 | reach | C | Clear creek-specific location information, reach of river surveyed |
+| individual_chops | Y | Yuba river-specific variable referring to chop count where biological information was taken |
+| bulk_chops | Y | Yuba river-specific variable referring to dates where carcasses were bulk counted |
 
 
 
@@ -209,10 +211,22 @@ feather_carcass <- read_csv("data/redd-carcass-holding/feather_carcass.csv") |>
 
 #### Columns Removed
 
+Not sure yet how to standardize Yuba's `individual_chops` and `bulk_chops` columns to match the `chop_count` and `tag_count` of other streams. 
 
-```{r, message=FALSE, warning=FALSE}
-
+```{r, message=FALSE, warning=FALSE, include = FALSE}
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_carcass.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/redd-carcass-holding/yuba_carcass.csv",
+               overwrite = TRUE)
 ```
+
+```{r, message = FALSE, warning = FALSE}
+yuba_carcass <- read_csv("data/redd-carcass-holding/yuba_carcass.csv") |> 
+  rename(adipose = adipose_clip,
+         spawn_condition = spawned) |> 
+  mutate(stream = "yuba river") |> glimpse()
+```
+    
 
 ### Combined
 
@@ -220,9 +234,9 @@ feather_carcass <- read_csv("data/redd-carcass-holding/feather_carcass.csv") |>
 carcass_combined <- bind_rows(battle_carcass, 
                               butte_carcass_combined,
                               feather_carcass,
-                              clear_carcass) |> 
+                              clear_carcass,
+                              yuba_carcass) |> 
   glimpse()
-
 ```
 ### Upload standardized data to google cloud
 ```{r, include = FALSE}
