@@ -19,7 +19,6 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 
-
 ## RST Trap Operations Data Standardization
 
 Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
@@ -226,7 +225,7 @@ butte_trap_clean_pre_2015 <- butte_rst %>%
          trap_stop_date = date,
          trap_stop_time = time) %>%
   mutate(stream = "butte creek",
-         subsite = ifelse(gear_id == "diversion fyke trap 1", "okie fyke trap", tolower(site)), 
+         subsite = ifelse(gear_id == "diversion fyke trap 1", "okie dam fyke trap", tolower(site)), 
          site = case_when(grepl("Okie Dam", site) ~ "okie dam",
                           T ~ tolower(site)),
          sample_period_revolutions = ifelse(is.nan(sample_period_revolutions), NA, sample_period_revolutions),
@@ -244,13 +243,13 @@ butte_trap_clean_camp <- butte_trap_camp |>
          trap_visit_date = as.Date(visitTime),
          trap_visit_time = as_hms(visitTime),
          trap_stop_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
-                                      T ~ NA_real_),
+                                      T ~ NA),
          trap_stop_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as_hms(visitTime),
-                                      T ~ NA_real_),
+                                      T ~ NA),
          trap_start_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as.Date(lag(visitTime2)),
-                                     T ~ NA_real_),
+                                     T ~ NA),
          trap_start_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as_hms(lag(visitTime2)),
-                                     T ~ NA_real_)) %>% 
+                                     T ~ NA)) %>% 
   rename(trap_visit_id = trapVisitID,
          rpms_start = rpmRevolutionsAtStart,
          rpms_seconds_start = rpmSecondsAtStart,
@@ -282,17 +281,26 @@ butte_trap_clean_camp <- butte_trap_camp |>
 
   
   
-butte_trap_clean <- bind_rows(butte_trap_clean_pre_2015, butte_trap_clean_camp)
+butte_trap_clean_unfiltered <- bind_rows(butte_trap_clean_pre_2015, butte_trap_clean_camp)
 
+# find all dates that a trap that is not okie dam fyke trap is running
+keep_dates <- butte_trap_clean |> 
+  filter(subsite != "okie dam fyke trap") |> 
+  pull(trap_stop_date)
 
-unique(butte_trap_clean$site)
-unique(butte_trap_clean$subsite)
 # check to make sure one row per day/time 
 # butte_trap_clean %>%
 #   group_by(date, time, site, gear_id, trap_status) %>%
 #   tally() %>%
 #   filter(n > 1)
-butte_trap_clean %>% glimpse
+
+# Filter out days that only fyke is running 
+butte_trap_clean <- 
+  butte_trap_clean_unfiltered %>% 
+  filter(trap_stop_date %in% keep_dates) |> glimpse()
+
+unique(butte_trap_clean$site)
+unique(butte_trap_clean$subsite)
 ```
 
 ### Variables removed
@@ -397,7 +405,7 @@ deer_trap_clean <- deer_rst %>%
          site = stream,
          subsite = site,
          # transforming to rpms_start to align with other locations
-         rpms_start = case_when(is.na(time_for_10_revolutions) ~ NA_real_,
+         rpms_start = case_when(is.na(time_for_10_revolutions) ~ NA,
                                 time_for_10_revolutions == 0 ~ 0,
                                 T ~ 60/(time_for_10_revolutions/10))) %>%
   select(-time_for_10_revolutions) %>%
@@ -447,13 +455,13 @@ feather_trap_clean <- feather_trap_camp %>%
          trap_visit_date = as.Date(visitTime),
          trap_visit_time = as_hms(visitTime),
          trap_stop_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
-                                      T ~ NA_real_),
+                                      T ~ NA),
          trap_stop_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as_hms(visitTime),
-                                      T ~ NA_real_),
+                                      T ~ NA),
          trap_start_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as.Date(lag(visitTime)),
-                                     T ~ NA_real_),
+                                     T ~ NA),
          trap_start_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as_hms(lag(visitTime)),
-                                     T ~ NA_real_)) %>%
+                                     T ~ NA)) %>%
   rename(trap_visit_id = trapVisitID,
          rpms_start = rpmRevolutionsAtStart,
          rpms_seconds_start = rpmSecondsAtStart,
@@ -521,7 +529,7 @@ mill_trap_clean <- mill_rst %>%
          site = stream,
          subsite = site,
          # transforming to rpms_start to align with other locations
-         rpms_start = case_when(is.na(time_for_10_revolutions) ~ NA_real_,
+         rpms_start = case_when(is.na(time_for_10_revolutions) ~ NA,
                                 time_for_10_revolutions == 0 ~ 0,
                                 T ~ 60/(time_for_10_revolutions/10))) %>%
   select(-time_for_10_revolutions) %>%
@@ -614,13 +622,13 @@ knights_trap_clean_2006 <- knights_effort %>%
          trap_visit_date = as.Date(visitTime),
          trap_visit_time = as_hms(visitTime),
          trap_stop_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
-                                      T ~ NA_real_),
+                                      T ~ NA),
          trap_stop_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as_hms(visitTime),
-                                      T ~ NA_real_),
+                                      T ~ NA),
          trap_start_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as.Date(lag(visitTime)),
-                                     T ~ NA_real_),
+                                     T ~ NA),
          trap_start_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as_hms(lag(visitTime)),
-                                     T ~ NA_real_)) %>%
+                                     T ~ NA)) %>%
   rename(trap_visit_id = trapVisitID,
          rpms_start = rpmRevolutionsAtStart,
          rpms_seconds_start = rpmSecondsAtStart,
@@ -735,13 +743,13 @@ tisdale_trap_clean <- tisdale_trap_camp %>%
          trap_visit_date = as.Date(visitTime),
          trap_visit_time = as_hms(visitTime),
          trap_stop_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
-                                      T ~ NA_real_),
+                                      T ~ NA),
          trap_stop_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as_hms(visitTime),
-                                      T ~ NA_real_),
+                                      T ~ NA),
          trap_start_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as.Date(lag(visitTime)),
-                                     T ~ NA_real_),
+                                     T ~ NA),
          trap_start_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as_hms(lag(visitTime)),
-                                     T ~ NA_real_)) %>%
+                                     T ~ NA)) %>%
   rename(trap_visit_id = trapVisitID,
          rpms_start = rpmRevolutionsAtStart,
          rpms_seconds_start = rpmSecondsAtStart,
