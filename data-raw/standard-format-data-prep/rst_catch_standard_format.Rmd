@@ -95,33 +95,33 @@ pmap(files_yuba, get_data)
 ```{r, read_csv}
 # load in data
 # catch data
-battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"))
-butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains trap data too
-butte_rst_camp <- read_csv(here::here("data", "rst", "butte_catch_camp.csv"))
-clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"))
-deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv")) # contains trap data too
-feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
-feather_rst_camp <- read_csv(here::here("data", "rst", "feather_catch_camp.csv"))
-knights_landing_rst <- read_csv(here::here("data", "rst", "knights_catch_camp.csv"))
-knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_rst_clean.csv"))
-knights_landing_pre2002 <- read_csv(here::here("data", "rst", "knights_2002_rst.csv"))
-tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"))
-tisdale_rst_camp <- read_csv(here::here("data", "rst", "tisdale_rst_catch_camp.csv"))
-mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv")) # contains trap data too
-yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
+battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"), lazy = FALSE )
+butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv"), lazy = FALSE ) # contains trap data too
+butte_rst_camp <- read_csv(here::here("data", "rst", "butte_catch_camp.csv"), lazy = FALSE )
+clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"), lazy = FALSE )
+deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv"), lazy = FALSE ) # contains trap data too
+feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"), lazy = FALSE )
+feather_rst_camp <- read_csv(here::here("data", "rst", "feather_catch_camp.csv"), lazy = FALSE )
+knights_landing_rst <- read_csv(here::here("data", "rst", "knights_catch_camp.csv"), lazy = FALSE )
+knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_rst_clean.csv"), lazy = FALSE )
+knights_landing_pre2002 <- read_csv(here::here("data", "rst", "knights_2002_rst.csv"), lazy = FALSE )
+tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"), lazy = FALSE )
+tisdale_rst_camp <- read_csv(here::here("data", "rst", "tisdale_rst_catch_camp.csv"), lazy = FALSE )
+mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv"), lazy = FALSE ) # contains trap data too
+yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"), lazy = FALSE )
 
 # sampling effort and environmental
-battle_environmental <- read_csv(here::here("data","rst", "battle_rst_environmental.csv"))
-battle_mark_recapture <- read_csv(here::here("data","rst", "battle_rst_mark_reacpture.csv"))
-butte_trap_camp <- read_csv(here::here("data", "rst", "butte_trap_camp.csv"))
-clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
-clear_mark_recapture <- read_csv(here::here("data", "rst", "clear_rst_mark_reacpture.csv"))
-feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
-feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"))
-knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
-knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
-knight_effort_pre2002 <-  read_csv(here::here("data", "rst", "knights_2002_trap.csv"))
-tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
+battle_environmental <- read_csv(here::here("data","rst", "battle_rst_environmental.csv"), lazy = FALSE )
+battle_mark_recapture <- read_csv(here::here("data","rst", "battle_rst_mark_reacpture.csv"), lazy = FALSE )
+butte_trap_camp <- read_csv(here::here("data", "rst", "butte_trap_camp.csv"), lazy = FALSE )
+clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"), lazy = FALSE )
+clear_mark_recapture <- read_csv(here::here("data", "rst", "clear_rst_mark_reacpture.csv"), lazy = FALSE )
+feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"), lazy = FALSE )
+feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"), lazy = FALSE )
+knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"), lazy = FALSE )
+knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"), lazy = FALSE )
+knight_effort_pre2002 <-  read_csv(here::here("data", "rst", "knights_2002_trap.csv"), lazy = FALSE )
+tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"), lazy = FALSE )
 ```
 
 
@@ -331,7 +331,7 @@ butte_rst_clean_pre_2015 <- butte_rst %>%
   mutate(stream = "butte creek",
          site = case_when(grepl("Okie Dam", subsite) ~ "okie dam",
                           T ~ tolower(subsite)),
-         subsite = ifelse(gear_id == "diversion fyke trap 1", "okie fyke trap", tolower(subsite)),
+         subsite = ifelse(gear_id == "diversion fyke trap 1", "okie dam fyke trap", tolower(subsite)),
          run = "spring",
          adipose_clipped = case_when(adipose_clipped == "none" ~ F,
                             adipose_clipped == "adclipped" ~ T),
@@ -362,9 +362,10 @@ butte_rst_clean_camp <- butte_rst_camp %>%
          site = siteName,
          subsite = subSiteName,
          release_id = releaseID,
-         dead = mort) %>%
+         dead = mort) %>% 
   group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site, subsite, release_id) %>%
-  summarize(count = sum(n, na.rm = T)) %>%
+  summarize(count = sum(n, na.rm = T)) %>% 
+  ungroup() |> 
   mutate(stream = "butte creek",
          site = "okie dam", # only fish okie dam site past 2015 
          subsite = ifelse(subsite == "PP RST", "okie dam 1", "okie dam fyke trap"),
@@ -415,13 +416,21 @@ butte_min_date_compare <- full_join(butte_rst_min, butte_trap_combined)
 
 
 ```{r, final_butte_edits}
+# find all dates that a trap that is not okie dam fyke trap is running
+unique(butte_rst_clean$subsite)
+keep_dates <- butte_rst_clean |> 
+  filter(subsite != "okie dam fyke trap") %>% 
+  pull(date)
+
+butte_rst_clean <- butte_rst_clean %>%
+  filter(date %in% keep_dates) # keep only dates with RST sampling - not fyke only 
 
 setDT(butte_rst_clean)
 # THIS CODE MODIFIES battle_rst_clean_final using functions that
 # mutate using data.table package
 butte_rst_clean %>% 
   # run mutate not applied because all spring
-  lifestage_encoding_dt()
+  lifestage_encoding_dt() 
 ```
 
 
@@ -659,6 +668,7 @@ feather_rst_clean <- feather_rst_camp %>%
          dead = mort) %>%
   group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site, subsite, release_id) %>%
   summarize(count = sum(n, na.rm = T)) %>%
+  ungroup() %>%
   mutate(stream = "feather river",
          subsite = tolower(subsite),
          site = case_when(subsite %in% lfc ~ "upper feather lfc",
@@ -822,6 +832,7 @@ knights_rst_clean_camp <- knights_landing_rst %>%
          dead = mort) %>%
   group_by(fork_length, weight, species, run, run_method, lifestage, adipose_clipped, date, release_id, subsite, dead) %>%
   summarize(count = sum(count, na.rm = T)) %>% 
+  ungroup() %>%  
   mutate(stream = "sacramento river",
          site = "knights landing",
          subsite = tolower(subsite),
@@ -870,7 +881,8 @@ knights_rst_clean_pre2002 <- knights_landing_pre2002 %>%
   # filter includes only fish that were unmarked (is.na or mark == F) or if the date was between 1996-11-24 and 1997-10-03 because the fish that were marked TRUE in this time period may be fish caught in trap for first time
   filter((is.na(mark) | mark == F | (mark == T & date >= "1996-11-24" & date <= "1997-10-03"))) %>% 
   group_by(date, subsite, fork_length, weight, lifestage, run, adipose_clipped, dead) %>% 
-  summarize(count = sum(count))
+  summarize(count = sum(count)) %>% 
+  ungroup()
 
 knights_rst_clean <- bind_rows(knights_rst_clean_camp,
                            knights_rst_clean_pre2006,
@@ -879,7 +891,7 @@ knights_rst_clean <- bind_rows(knights_rst_clean_camp,
 knights_rst_min <- knights_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
   group_by(wy) %>% 
-  summarize(min = min(date))
+  summarize(min = min(date)) 
 
 # Trap operations and environmental data was captured separately
 # Need to check that if data in environmental it is also in catch data
@@ -990,6 +1002,7 @@ tisdale_rst_clean <- tisdale_rst_camp %>%
          dead = mort) %>%
   group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, stream, site, subsite, release_id,) %>%
   summarize(count = sum(n, na.rm = T)) %>%
+  ungroup() %>% 
   mutate(subsite = tolower(subsite),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
