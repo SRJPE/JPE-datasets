@@ -351,7 +351,7 @@ knights_released <- read_csv(here::here("data", "rst", "knights_releases.csv")) 
   bind_rows(knights_pre2002 %>% 
               select(stream, site, date_released, week_released, year_released, release_id, number_released)) %>% 
   mutate(date_released = case_when(is.na(date_released) ~ ymd(paste0(year_released, "-01-01")) + weeks(week_released - 1), 
-                                   T ~ date_released)) |> 
+                                   T ~ date_released)) %>% 
   glimpse()
 
 knights_recaptured <- read_csv(here::here("data", "rst", "knights_recaptures.csv")) %>% 
@@ -362,7 +362,7 @@ knights_recaptured <- read_csv(here::here("data", "rst", "knights_recaptures.csv
   mutate(release_id = as.character(release_id),
          subsite = as.character(subsite)) %>% 
   bind_rows(knights_pre2002 %>% # note that pre 2002 do not have date_recaptured
-              select(stream, site, date_released, week_released, year_released, release_id, number_recaptured) |> 
+              select(stream, site, date_released, week_released, year_released, release_id, number_recaptured) %>% 
               # assume that date_recaptured is date_released + 1
               mutate(date_released = case_when(is.na(date_released) ~ ymd(paste0(year_released, "-01-01")) + weeks(week_released - 1), 
                                    T ~ date_released),

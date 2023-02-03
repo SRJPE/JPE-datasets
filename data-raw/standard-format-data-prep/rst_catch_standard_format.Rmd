@@ -346,7 +346,7 @@ Prep data from CAMP to combine with RST clean
 ```{r, butte_camp_clean}
 butte_rst_clean_camp <- butte_rst_camp %>%
   # seems like there are catch entries when it wasn't a sampling visit, remove these
-  filter(fishProcessed != "N/A; not a sampling visit") |> 
+  filter(fishProcessed != "N/A; not a sampling visit") %>% 
   # removing existing mark for now. will add all those in later
   select(-c(catchRawID, trapVisitID, visitTime2, markType_1, markColor_1, markPosition_1, markCode_1, fishProcessed)) %>%
   # combine atcapture and final run
@@ -365,7 +365,7 @@ butte_rst_clean_camp <- butte_rst_camp %>%
          dead = mort) %>% 
   group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site, subsite, release_id) %>%
   summarize(count = sum(n, na.rm = T)) %>% 
-  ungroup() |> 
+  ungroup() %>% 
   mutate(stream = "butte creek",
          site = "okie dam", # only fish okie dam site past 2015 
          subsite = ifelse(subsite == "PP RST", "okie dam 1", "okie dam fyke trap"),
@@ -376,14 +376,14 @@ butte_rst_clean_camp <- butte_rst_camp %>%
          run_method = tolower(run_method),
          run = tolower(run),
          dead = ifelse(dead == "Yes", T, F),
-         release_id = as.character(ifelse(release_id == 0 | release_id == 255, NA, release_id))) |> glimpse()
+         release_id = as.character(ifelse(release_id == 0 | release_id == 255, NA, release_id))) %>% glimpse()
 
 ```
 
 Combine butte pre 2015 (excel) and post 2015 (CAMP). No temporal overlap in datasets so we can just bind rows
 ```{r, combine_butte}
 # bind rows
-butte_rst_clean <- bind_rows(butte_rst_clean_pre_2015, butte_rst_clean_camp) |> glimpse()
+butte_rst_clean <- bind_rows(butte_rst_clean_pre_2015, butte_rst_clean_camp) %>% glimpse()
 
 ```
 
@@ -401,14 +401,14 @@ butte_trap_pre_2015 <- butte_rst %>%
   group_by(wy) %>% 
   summarize(min = min(date))
 
-butte_trap_camp_dates <-  butte_trap_camp |>
+butte_trap_camp_dates <-  butte_trap_camp %>%
   # no fish are processed on these days so don't want to include catch data
-  filter(fishProcessed != "N/A; not a sampling visit") |> 
+  filter(fishProcessed != "N/A; not a sampling visit") %>% 
   mutate(wy = ifelse(month(visitTime) %in% 10:12, year(visitTime) + 1, year(visitTime))) %>% 
   group_by(wy) %>% 
   summarize(min = min(visitTime))
 
-butte_trap_combined <- bind_rows(butte_trap_pre_2015, butte_trap_camp_dates) |>  rename(trap_min = min)
+butte_trap_combined <- bind_rows(butte_trap_pre_2015, butte_trap_camp_dates) %>%  rename(trap_min = min)
 
 # min date in catch and trap aligns 
 butte_min_date_compare <- full_join(butte_rst_min, butte_trap_combined)
@@ -418,7 +418,7 @@ butte_min_date_compare <- full_join(butte_rst_min, butte_trap_combined)
 ```{r, final_butte_edits}
 # find all dates that a trap that is not okie dam fyke trap is running
 unique(butte_rst_clean$subsite)
-keep_dates <- butte_rst_clean |> 
+keep_dates <- butte_rst_clean %>% 
   filter(subsite != "okie dam fyke trap") %>% 
   pull(date)
 
@@ -905,20 +905,20 @@ knights_trap_clean_camp <- knights_effort %>%
   select(visitTime, subSiteName) %>% 
   rename(date = visitTime,
          subsite = subSiteName) %>% 
-  distinct() |> 
+  distinct() %>% 
   mutate(subsite = as.character(subsite))
 
 knights_trap_pre2006 <- knights_effort_pre2006 %>% 
   # filter to only include data before 2006 (CAMP stores data 2006 to present)
   filter(date < "2006-10-02") %>% 
-  select(date) |> 
-  distinct() |> 
+  select(date) %>% 
+  distinct() %>% 
   mutate(subsite = "knights landing")
 
 knights_trap_pre2002 <- knight_effort_pre2002 %>% 
   select(date, trapid) %>% 
-  rename(subsite = trapid) |> 
-  mutate(subsite = ifelse(is.na(subsite), "knights landing", subsite)) |> 
+  rename(subsite = trapid) %>% 
+  mutate(subsite = ifelse(is.na(subsite), "knights landing", subsite)) %>% 
   distinct()
 
 knights_trap_clean <- bind_rows(knights_trap_clean_camp, knights_trap_pre2006, knights_trap_pre2002)

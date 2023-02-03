@@ -235,7 +235,7 @@ butte_trap_clean_pre_2015 <- butte_rst %>%
   select(-gear_id)
 
 
-butte_trap_clean_camp <- butte_trap_camp |> 
+butte_trap_clean_camp <- butte_trap_camp %>% 
     select(-c(debrisVolumeCat, debrisVolume, debrisVolumeUnits)) %>%
   mutate(stream = "butte creek",
          site = "okie dam", # Only fish at okie dam now - also refered to as parot-phelan
@@ -284,8 +284,8 @@ butte_trap_clean_camp <- butte_trap_camp |>
 butte_trap_clean_unfiltered <- bind_rows(butte_trap_clean_pre_2015, butte_trap_clean_camp)
 
 # find all dates that a trap that is not okie dam fyke trap is running
-keep_dates <- butte_trap_clean |> 
-  filter(subsite != "okie dam fyke trap") |> 
+keep_dates <- butte_trap_clean %>% 
+  filter(subsite != "okie dam fyke trap") %>% 
   pull(trap_stop_date)
 
 # check to make sure one row per day/time 
@@ -297,7 +297,7 @@ keep_dates <- butte_trap_clean |>
 # Filter out days that only fyke is running 
 butte_trap_clean <- 
   butte_trap_clean_unfiltered %>% 
-  filter(trap_stop_date %in% keep_dates) |> glimpse()
+  filter(trap_stop_date %in% keep_dates) %>% glimpse()
 
 unique(butte_trap_clean$site)
 unique(butte_trap_clean$subsite)

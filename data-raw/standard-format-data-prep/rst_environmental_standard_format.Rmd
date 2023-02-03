@@ -156,7 +156,7 @@ butte_env_unfiltered <- bind_rows(butte_env_pre_2015, butte_env_post_2015)
 
 # find all dates that a trap that is not okie dam fyke trap is running
 unique(butte_env_unfiltered$subsite)
-keep_dates <- butte_env_unfiltered |> 
+keep_dates <- butte_env_unfiltered %>% 
   filter(subsite != "okie dam fyke trap") %>% 
   pull(date)
 
