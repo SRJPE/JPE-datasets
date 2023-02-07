@@ -122,7 +122,7 @@ butte_env_pre_2015 <- read_csv(here::here("data", "rst", "butte_rst_environmenta
   select(date, site = station, 
          weather, temperature, turbidity, `light penetration` = secchi, velocity, gear_id) %>%
   mutate(stream = "butte creek",
-         subsite = ifelse(gear_id == "diversion fyke trap 1", "okie fyke trap", tolower(site)), 
+         subsite = ifelse(gear_id == "diversion fyke trap 1", "okie dam fyke trap", tolower(site)), 
          site = ifelse(site == "Adams Dam", "adams dam", "okie dam")) %>%
   distinct() %>%
   mutate_if(is.numeric, as.character) %>% 
@@ -150,9 +150,18 @@ butte_env_post_2015 <- butte_env_raw_camp %>%
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
   mutate(stream = "butte creek",
          site = "okie dam",
-         subsite = ifelse(subsite == "PP RST", "okie 1", "okie fyke trap")) 
+         subsite = ifelse(subsite == "PP RST", "okie 1", "okie dam fyke trap")) 
 
-butte_env <- bind_rows(butte_env_pre_2015, butte_env_post_2015)
+butte_env_unfiltered <- bind_rows(butte_env_pre_2015, butte_env_post_2015)
+
+# find all dates that a trap that is not okie dam fyke trap is running
+unique(butte_env_unfiltered$subsite)
+keep_dates <- butte_env_unfiltered %>% 
+  filter(subsite != "okie dam fyke trap") %>% 
+  pull(date)
+
+butte_env <- butte_env_unfiltered %>%
+  filter(date %in% keep_dates) # keep only dates with RST sampling - not fyke only 
 ```
 
 ### Clear Creek
@@ -260,6 +269,7 @@ feather_env <- feather_env_raw %>%
   group_by(date, site, subsite, parameter) %>% 
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
+  ungroup() %>% 
   mutate(stream = "feather river",
          site = case_when(subsite %in% lfc ~ "upper feather lfc",
                           subsite %in% hfc ~ "upper feather hfc"))
@@ -318,6 +328,7 @@ knights_env <- knights_env_raw %>%
   group_by(date, site, subsite, parameter) %>% 
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
+  ungroup() %>% 
   mutate(stream = "sacramento river",
          site = "knights landing",
          subsite = as.character(subsite)) %>% 
@@ -351,6 +362,7 @@ tisdale_env <- tisdale_env_raw %>%
   group_by(date, site, subsite, parameter) %>% 
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
+  ungroup() %>%
   mutate(subsite = tolower(subsite)) %>% 
   # removed because large majority did not recored units
   filter(!parameter %in% c("barometer", "conductivity"))

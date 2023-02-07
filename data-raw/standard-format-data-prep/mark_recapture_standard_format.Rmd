@@ -170,7 +170,7 @@ butte_released <- read_csv(here::here("data", "rst", "butte_releases.csv")) %>%
          run_released = ifelse(is.na(run_released), "not recorded", tolower(run_released)),
          lifestage_released = ifelse(is.na(lifestage_released), "not recorded",
                                      tolower(lifestage_released)),
-         source_released = case_when(source_released == "Parrott-Phelan canal trap box" ~ "okie fyke trap",
+         source_released = case_when(source_released == "Parrott-Phelan canal trap box" ~ "okie dam fyke trap",
                                      source_released == "Parrot-Phelan RST" ~ "okie RST", 
                                      T ~ "not recorded"),
          origin_released = ifelse(is.na(origin_released), "not recorded",
@@ -182,10 +182,13 @@ butte_released <- read_csv(here::here("data", "rst", "butte_releases.csv")) %>%
   glimpse()
 
 butte_recaptured <- read_csv(here::here("data", "rst", "butte_recaptures.csv")) %>% 
+  mutate(subsite = ifelse(subsite == "okie fyke trap", "okie dam fyke trap", subsite)) %>% 
   group_by(stream, site, subsite, release_id, date_recaptured) %>% 
   summarize(number_recaptured = sum(number_recaptured),
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
   mutate(release_id = as.character(release_id)) %>% glimpse()
+
+unique(butte_recaptured$subsite)
 
 ```
 
@@ -284,6 +287,7 @@ feather_recaptured <- read_csv(here::here("data", "rst", "feather_recaptures.csv
   group_by(stream, site, subsite, release_id, date_recaptured) %>% 
   summarize(number_recaptured = sum(number_recaptured),
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
+  ungroup() %>%
   mutate(release_id = as.character(release_id),
          site = case_when(site %in% lfc ~ "upper feather lfc",
                           site %in% hfc ~ "upper feather hfc")) %>% 
@@ -350,17 +354,18 @@ knights_released <- read_csv(here::here("data", "rst", "knights_releases.csv")) 
   bind_rows(knights_pre2002 %>% 
               select(stream, site, date_released, week_released, year_released, release_id, number_released)) %>% 
   mutate(date_released = case_when(is.na(date_released) ~ ymd(paste0(year_released, "-01-01")) + weeks(week_released - 1), 
-                                   T ~ date_released)) |> 
+                                   T ~ date_released)) %>% 
   glimpse()
 
 knights_recaptured <- read_csv(here::here("data", "rst", "knights_recaptures.csv")) %>% 
   group_by(stream, site, subsite, release_id, date_recaptured) %>% 
   summarize(number_recaptured = sum(number_recaptured),
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
+  ungroup() %>%
   mutate(release_id = as.character(release_id),
          subsite = as.character(subsite)) %>% 
   bind_rows(knights_pre2002 %>% # note that pre 2002 do not have date_recaptured
-              select(stream, site, date_released, week_released, year_released, release_id, number_recaptured) |> 
+              select(stream, site, date_released, week_released, year_released, release_id, number_recaptured) %>% 
               # assume that date_recaptured is date_released + 1
               mutate(date_released = case_when(is.na(date_released) ~ ymd(paste0(year_released, "-01-01")) + weeks(week_released - 1), 
                                    T ~ date_released),
@@ -688,6 +693,7 @@ Most trials only recapture less than 400 fish.
 combined_recapture %>% 
   group_by(release_id, stream) %>% 
   summarise(number_recaptured = sum(number_recaptured, na.rm = T)) %>% 
+  ungroup() %>%
   ggplot() + 
   geom_histogram(aes(x = number_recaptured, fill = stream), alpha = .5, binwidth = 10, position = "identity") +
   scale_fill_manual(values = color_pal) +
@@ -754,8 +760,10 @@ summarized_mark_recapture <- combined_release %>%
   left_join(combined_recapture %>% 
               group_by(stream, site, release_id) %>% 
               summarize(number_recaptured = sum(number_recaptured, na.rm = T),
-                        median_fork_length_recaptured = median(median_fork_length_recaptured, na.rm = T)), 
+                        median_fork_length_recaptured = median(median_fork_length_recaptured, na.rm = T)) %>%
+              ungroup(), 
             by = c("release_id" = "release_id", "stream" = "stream", "site" = "site")) %>%
+  
   # if no recapures for release trial then 0 recaptures
   mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
          efficiency = (number_recaptured + 1)/(number_released + 1))
