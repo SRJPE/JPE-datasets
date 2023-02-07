@@ -182,10 +182,13 @@ butte_released <- read_csv(here::here("data", "rst", "butte_releases.csv")) %>%
   glimpse()
 
 butte_recaptured <- read_csv(here::here("data", "rst", "butte_recaptures.csv")) %>% 
+  mutate(subsite = ifelse(subsite == "okie fyke trap", "okie dam fyke trap", subsite)) %>% 
   group_by(stream, site, subsite, release_id, date_recaptured) %>% 
   summarize(number_recaptured = sum(number_recaptured),
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
   mutate(release_id = as.character(release_id)) %>% glimpse()
+
+unique(butte_recaptured$subsite)
 
 ```
 
