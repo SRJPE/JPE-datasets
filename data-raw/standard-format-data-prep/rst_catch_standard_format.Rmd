@@ -1184,8 +1184,9 @@ combined_rst <- bind_rows(battle_rst_clean_final,
          #run = ifelse(run == "not recorded", run_lad_rivermodel, run),
          #run_method = ifelse(run == "not recorded", "length-at-date criteria", run_method),
          species = ifelse(is.na(species), "chinook salmon", species),
-         is_yearling = case_when(fork_length <= cutoff ~ F,
-                                 fork_length > cutoff ~ T,
+         is_yearling = case_when(fork_length <= cutoff & !run %in% c("fall","late fall", "winter") ~ F,
+                                 fork_length > cutoff & !run %in% c("fall","late fall", "winter") ~ T,
+                                 run %in% c("fall","late fall", "winter") ~ NA,
                                  T ~ NA)) %>% # few cases primarily from pre 2002 Sac that are species are NA
   select(date, run, fork_length, lifestage, dead, interpolated, count, stream, site, subsite, adipose_clipped, run_method, species, release_id, weight, is_yearling)
 
