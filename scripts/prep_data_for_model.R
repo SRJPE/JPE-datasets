@@ -31,7 +31,7 @@ write_csv(standard_catch_unmarked, "data/model-data/daily_catch_unmarked.csv")
 weekly_standard_catch_unmarked <- standard_catch_unmarked %>% 
   mutate(week = week(date),
          year = year(date)) %>% 
-  group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped) %>% 
+  group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped, is_yearling) %>% 
   summarize(mean_fork_length = mean(fork_length, na.rm = T),
             mean_weight = mean(weight, na.rm = T),
             count = sum(count)) %>% glimpse()
