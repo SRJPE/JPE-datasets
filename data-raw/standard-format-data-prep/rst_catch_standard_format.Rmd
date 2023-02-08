@@ -24,6 +24,12 @@ Data were checked and cleaned in scripts available [here](https://github.com/Flo
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
+# daily yearling ruleset
+gcs_get_object(object_name = "standard-format-data/daily_yearling_ruleset.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "daily_yearling_ruleset.csv"),
+               overwrite = TRUE)
+
 # define files to pull in (in some cases there is just one catch file while others
 # have sample and environmental data)
 files_battle <- tibble(path = rep("rst/battle-creek/data/battle_",4),
@@ -94,6 +100,7 @@ pmap(files_yuba, get_data)
 
 ```{r, read_csv}
 # load in data
+daily_yearling_ruleset <- read_csv(here::here("data", "daily_yearling_ruleset.csv"))
 # catch data
 battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"), lazy = FALSE )
 butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv"), lazy = FALSE ) # contains trap data too
@@ -1161,10 +1168,11 @@ combined_rst <- bind_rows(battle_rst_clean_final,
                           tisdale_rst_clean) %>% 
   as_tibble() %>% 
   mutate(date = as.Date(date),
-         month = month(date), # add to join with lad
-         day = day(date)) %>% # add to join with lad
+         month = month(date), # add to join with lad and yearling
+         day = day(date)) %>% # add to join with lad and yearling
+  left_join(daily_yearling_ruleset) |> 
   left_join(lad_format) %>% 
-  # if run is not recorded (e.g. mill and deer) replace with river model LAD
+  # include run_lad_rivermodel but don't apply because doesn't work for mill/deer and others
   mutate(run_lad_rivermodel = case_when((fork_length >= s_start_1 & fork_length < s_end_1) |
                                       (fork_length >= s_start_2 & fork_length < s_end_2) ~ "spring",
                                     (fork_length >= f_start_1 & fork_length < f_end_1) |
@@ -1173,10 +1181,13 @@ combined_rst <- bind_rows(battle_rst_clean_final,
                                       (fork_length >= w_start_2 & fork_length < w_end_2) ~ "winter",
                                     (fork_length >= l_start_1 & fork_length < l_end_1) |
                                       (fork_length >= l_start_2 & fork_length < l_end_2) ~ "late fall"),
-         run = ifelse(run == "not recorded", run_lad_rivermodel, run),
-         run_method = ifelse(run == "not recorded", "length-at-date criteria", run_method),
-         species = ifelse(is.na(species), "chinook salmon", species)) %>% # few cases primarily from pre 2002 Sac that are species are NA
-  select(date, run, fork_length, lifestage, dead, interpolated, count, stream, site, subsite, adipose_clipped, run_method, species, release_id, weight)
+         #run = ifelse(run == "not recorded", run_lad_rivermodel, run),
+         #run_method = ifelse(run == "not recorded", "length-at-date criteria", run_method),
+         species = ifelse(is.na(species), "chinook salmon", species),
+         is_yearling = case_when(fork_length <= cutoff ~ F,
+                                 fork_length > cutoff ~ T,
+                                 T ~ NA)) %>% # few cases primarily from pre 2002 Sac that are species are NA
+  select(date, run, fork_length, lifestage, dead, interpolated, count, stream, site, subsite, adipose_clipped, run_method, species, release_id, weight, is_yearling)
 
 unique(combined_rst$run)
 unique(combined_rst$lifestage)
@@ -1204,7 +1215,8 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                     "Method used to designate run. NA if count is 0.",
                                                     "Species of fish.",
                                                     "Release group that recaptured fish is part of. If fish is not a recaptured fish, release_id is NA.",
-                                                    "Weight in grams."
+                                                    "Weight in grams.",
+                                                    "If fish is yearling based on yearling ruleset (T/F)"
                                                     ),
                                     
                                     encoding = c(NA,
@@ -1221,7 +1233,8 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                  "not recorded, length-at-date criteria, appearance, hatchery attribute",
                                                  "chinook salmon as well as other species caught in trap",
                                                  "NA if not recapture fish",
-                                                 NA
+                                                 NA,
+                                                 "TRUE, FALSE"
                                                  ),
                                     collected = c("All",
                                                        "All but Deer, Mill",
@@ -1237,7 +1250,8 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                        "Battle, Clear, Feather, Knights, Tisdale",
                                                        "Feather, Knights, Tisdale",
                                                   "Battle, Clear, Feather, Knights, Tisdale",
-                                                       "Butte, Deer, Feather, Knights, Tisdale, Yuba"))
+                                                       "Butte, Deer, Feather, Knights, Tisdale, Yuba",
+                                                  "All"))
 ```
 
 ```{r, data_dictionary}
