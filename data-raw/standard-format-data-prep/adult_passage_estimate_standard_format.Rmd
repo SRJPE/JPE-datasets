@@ -1,0 +1,152 @@
+---
+title: "adult_upstream_passage_estimates_standard_format"
+output: html_document
+date: "2023-02-10"
+---
+
+```{r, include = F}
+library(dtplyr)
+library(data.table)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, data_pull, include = F, echo = F, eval = F}
+# # Data pull ---------------------------------------------------------------
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# pull in grandtab data. this data was extracted from https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=84381 for spring run only
+# using tabula and then cleaned up. sacramento river was not included because it is unknown where that data is coming from.
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/grandtab_spring.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "grandtab_spring.csv"),
+               overwrite = TRUE)
+
+# pull in standard format data to compare estimates
+gcs_get_object(object_name = "standard-format-data/standard_adult_upstream_passage.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "standard_adult_upstream_passage.csv"),
+               overwrite = TRUE)
+
+# pull in battle passages estimates that were scraped from 2020 report: https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring/battle-creek/data-raw/2020%20Battle%20Creek%20Adult%20Monitoring%20Report.pdf
+gcs_get_object(object_name = 
+                 "adult-upstream-passage-monitoring/battle-creek/data-raw/battle_spring_passage_estimates.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "battle_spring_passage_estimates.csv"),
+               overwrite = TRUE)
+
+# pull in yuba passage estimates that were pulled from https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring/yuba-river/data-raw/2020%20Update%20LYR%20Chinook%20Salmon%20Run%20Differentiation_December%202020.pdf
+gcs_get_object(object_name = 
+                 "adult-upstream-passage-monitoring/yuba-river/data-raw/yuba_escapement_values.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "yuba_spring_passage_estimates.csv"),
+               overwrite = TRUE)
+```
+
+```{r}
+spring_grandtab <- read_csv(here::here("data", "grandtab_spring.csv"))
+adult_passage_standard <- read_csv(here::here("data", "standard_adult_upstream_passage.csv"))
+battle_spring <- read_csv(here::here("data", "battle_spring_passage_estimates.csv")) |> 
+  rename(year = `...1`)
+yuba <- read_csv(here::here("data", "yuba_spring_passage_estimates.csv"))
+```
+
+```{r, include = F}
+# what is in grandtab is exactly the same as what is in the report for battle creek
+compare_battle <- left_join(spring_grandtab, battle_spring) |> 
+  select(year, battle, passage_estimate)
+# for the years where does has passage estimates, passage estimate data is very similar
+# to what is in grandtab, there are a few discrepancies
+# we aren't missing any days though so assume that we have estimates rather than raw
+standard_deer <- filter(adult_passage_standard, stream == "Deer Creek") |> 
+  mutate(year = year(date),
+         month = month(date),
+         day = day(date),
+         fake_date = as_date(paste0("2000-0",month,"-",day)))
+standard_deer_annual <- standard_deer |> 
+  group_by(year) |> 
+  summarize(count = sum(count))
+compare_deer <- select(spring_grandtab, year, deer) |> 
+  left_join(standard_deer_annual)
+
+ggplot(standard_deer, aes(x = fake_date, y = count)) +
+  geom_point() + 
+  facet_wrap(~year)
+
+# manual check to see if missing dates
+# dates <- seq(as.Date("2000-02-01"), as.Date("2000-08-01"), by = "day")
+# missing_date <- tibble(all_date = rep(dates,7),
+#                        year = c(rep(2014,183), rep(2015, 183), rep(2016, 183), rep(2017, 183), rep(2018, 183), rep(2019, 183), rep(2020, 183)))
+# 
+# check <- full_join(standard_deer, missing_date, by = c("fake_date"="all_date", "year"))
+
+# there are some discrepancies between the passage estimate data we have
+# and what is in grandtab
+standard_mill <- filter(adult_passage_standard, stream == "Mill Creek") |> 
+  mutate(year = year(date),
+         month = month(date),
+         day = day(date),
+         fake_date = as_date(paste0("2000-0",month,"-",day)))
+standard_mill_annual <- standard_mill |> 
+  group_by(year) |> 
+  summarize(count = sum(count))
+compare_mill <- select(spring_grandtab, year, mill) |> 
+  left_join(standard_mill_annual)
+# check <- full_join(standard_mill, missing_date, by = c("fake_date"="all_date", "year"))
+
+# looks like yuba doesn't really report to grandtab
+compare_yuba <- left_join(spring_grandtab, yuba) |> 
+  select(year, yuba, spring_run_escapement)
+```
+
+Conclusions based on comparisons:
+- use grandtab for battle, clear
+- use standard adult data for deer, mill
+- yuba we will pull from report
+
+# Create table of annual passage estimates by stream
+
+```{r}
+# decided to remove years prior to 1994 because all NA
+clear_battle <- select(spring_grandtab, year, battle, clear) |> 
+  rename(`battle creek` = battle,
+         `clear creek` = clear) |> 
+  pivot_longer(cols = c("battle creek","clear creek"), names_to = "stream", values_to = "passage_estimate") |> 
+  filter(year >= 1995)
+
+deer_mill <- filter(adult_passage_standard, stream %in% c("Deer Creek", "Mill Creek")) |> 
+  mutate(stream = tolower(stream),
+         year = year(date)) |> 
+  group_by(stream, year) |> 
+  summarize(passage_estimate = sum(count)) |> 
+  filter(!is.na(year), !is.na(passage_estimate))
+
+yuba <- select(yuba, year, spring_run_escapement) |> 
+  rename(passage_estimate = spring_run_escapement) |> 
+  mutate(stream = "yuba river")
+
+passage_estimate <- bind_rows(clear_battle,
+                              deer_mill,
+                              yuba) |> 
+  mutate(passage_estimate = round(passage_estimate, 2))
+
+write_csv(passage_estimate, here::here("data","adult_passage_estimate.csv"))
+```
+
+```{r, save_data}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(passage_estimate,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_adult_passage_estimate.csv",
+           predefinedAcl = "bucketLevel")
+```
