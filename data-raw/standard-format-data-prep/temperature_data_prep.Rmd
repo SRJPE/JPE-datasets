@@ -9,7 +9,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, root.dir = rprojroot::find_rstudio_root_file())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 
 library(tidyverse)
 library(lubridate)
@@ -22,7 +22,12 @@ library(purrr)
 library(zoo)
 library(rnoaa)
 library(data.table)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
 
+```{r, include = F}
 # token for rnoaa is added to Renviron file
 NOAA_KEY <- Sys.getenv("NOAA_KEY")
 
@@ -529,61 +534,61 @@ write_rds(MLM_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 ## Yuba River
 There is not CDEC or USGS data available for Yuba River.
 
-### Air Gage
+### Air Gage - code isn't working so comment out for now
 ```{r}
 # use this code to get the data types for the station
-ncdc_datatypes(datasetid='GHCND',stationid='GHCND:USR0000CFOR', token = NOAA_KEY)
-
-# used this code to figure out units. units for TAVG is in celsius tenths which means we need to divide by 10 to get celsisus
-with_units <- ncdc(datasetid='GHCND', stationid='GHCND:USR0000CFOR', token = NOAA_KEY, datatypeid='TAVG', startdate = '2010-05-01', enddate = '2010-10-31', limit=500, add_units = TRUE)
-head( with_units$data )
-
-get_temp_yuba <- function(start_date, end_date, year) {
-  query <- rnoaa::ncdc(datasetid = 'GHCND', stationid = 'GHCND:USR0000CFOR', 
-                       datatypeid = 'TAVG', startdate = start_date, 
-                       enddate = end_date, token = NOAA_KEY, limit = 365)
-  # Get columns of interest
-  temp_data <- query$data %>%
-    select(date, value) %>%
-    mutate(date = as.Date(date))
-  # Return
-  write_csv(temp_data, here::here("data-raw", "standard-format-data-prep", "temp_data", paste0(year, "_yuba_noaa_airtemp.csv")))
-}
-
-# list date ranges, note we can only take yearly data
-# note that there is no data after 2020
-date_ranges <- tibble(year = c(seq(from = 2001, to = 2020))) %>% 
-  mutate(start_date = paste0(year, "-01-01"),
-         end_date = paste0(year, "-12-31"))
-                      
-pmap(date_ranges, get_temp_yuba)
+# ncdc_datatypes(datasetid='GHCND', stationid='GHCND:USR0000CFOR', token = NOAA_KEY)
+# 
+# # used this code to figure out units. units for TAVG is in celsius tenths which means we need to divide by 10 to get celsisus
+# with_units <- ncdc(datasetid='GHCND', stationid='GHCND:USR0000CFOR', token = NOAA_KEY, datatypeid='TAVG', startdate = '2010-05-01', enddate = '2010-10-31', limit=500, add_units = TRUE)
+# head( with_units$data )
+# 
+# get_temp_yuba <- function(start_date, end_date, year) {
+#   query <- rnoaa::ncdc(datasetid = 'GHCND', stationid = 'GHCND:USR0000CFOR', 
+#                        datatypeid = 'TAVG', startdate = start_date, 
+#                        enddate = end_date, token = NOAA_KEY, limit = 365)
+#   # Get columns of interest
+#   temp_data <- query$data %>%
+#     select(date, value) %>%
+#     mutate(date = as.Date(date))
+#   # Return
+#   write_csv(temp_data, here::here("data-raw", "standard-format-data-prep", "temp_data", paste0(year, "_yuba_noaa_airtemp.csv")))
+# }
+# 
+# # list date ranges, note we can only take yearly data
+# # note that there is no data after 2020
+# date_ranges <- tibble(year = c(seq(from = 2001, to = 2020))) %>% 
+#   mutate(start_date = paste0(year, "-01-01"),
+#          end_date = paste0(year, "-12-31"))
+#                       
+# pmap(date_ranges, get_temp_yuba)
+# ```
+# 
+# ### QC data
+# 
+# ```{r}
+# # read in all the yuba air temp files
+# files <- list.files(path = here::here("data-raw", "standard-format-data-prep", "temp_data"), pattern = "_yuba_noaa_airtemp.csv")
+# path <- here::here("data-raw", "standard-format-data-prep", "temp_data")
+# file_path <- paste0(path, "/",files)
+# # fread uses data.table
+# yuba_air <- file_path %>% 
+#   map_df(~fread(.)) %>% 
+#   rename(air_tempC = value) %>% 
+#   mutate(date = as.Date(date),
+#          air_tempC = air_tempC/10)
+# 
+# ggplot(yuba_air, aes(x=date, y = air_tempC)) +
+#   geom_line(color = "darkred") +
+#   labs(y = "Air temperature (deg C)") +
+#   theme(axis.text = element_text(size = 12))
 ```
 
-### QC data
+<!-- ### Save data -->
 
-```{r}
-# read in all the yuba air temp files
-files <- list.files(path = here::here("data-raw", "standard-format-data-prep", "temp_data"), pattern = "_yuba_noaa_airtemp.csv")
-path <- here::here("data-raw", "standard-format-data-prep", "temp_data")
-file_path <- paste0(path, "/",files)
-# fread uses data.table
-yuba_air <- file_path %>% 
-  map_df(~fread(.)) %>% 
-  rename(air_tempC = value) %>% 
-  mutate(date = as.Date(date),
-         air_tempC = air_tempC/10)
-
-ggplot(yuba_air, aes(x=date, y = air_tempC)) +
-  geom_line(color = "darkred") +
-  labs(y = "Air temperature (deg C)") +
-  theme(axis.text = element_text(size = 12))
-```
-
-### Save data
-
-```{r}
-write_rds(yuba_air, here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp_air.rds"))
-```
+<!-- ```{r} -->
+<!-- write_rds(yuba_air, here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp_air.rds")) -->
+<!-- ``` -->
 
 ## Sacramento River - Knights Landing
 ```{r}

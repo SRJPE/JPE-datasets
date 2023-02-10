@@ -9,10 +9,8 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10, 
-                      root.dir = rprojroot::find_rstudio_root_file())
-Sys.setenv("GCS_AUTH_FILE" = "config.json")
-Sys.setenv("GCS_DEFAULT_BUCKET" = "jpe-dev-bucket")
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+
 library(tidyverse)
 library(googleCloudStorageR)
 library(CDECRetrieve)
@@ -20,6 +18,10 @@ library(lubridate)
 library(hms)
 library(weathermetrics) 
 library(forecast)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 FlowWest aggregated environmental data for temperature data from XXXX
@@ -44,7 +46,7 @@ were used in the final temperature data aggregation:
     This data can easily be built into a data pipeline because it's
     available through a query and publicly available. The data is also
     QC'd and available at precise temporal scales like hourly.
-2.  If no, is there data available through gages opperated by Fish and Wildlife?
+2.  If no, is there data available through gages operated by Fish and Wildlife?
 3.  If no, is there RST temperature monitoring data available?
 4.  If no, perform linear regression on air temperature to get modeled
     stream temperature for site
@@ -71,13 +73,19 @@ Y - Yuba River)
 
 ### All RST Environmental Data 
 
-```{r}
-# gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/rst/standard_RST_environmental.csv",
-#                overwrite = TRUE)
+```{r, include = F}
+# source file where gage data is pulled
+source(here::here("data-raw", "standard-format-data-prep", "temperature_data_prep.Rmd"))
+# set up GCS
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-rst_enviro <- read_csv('../../data/rst/standard_RST_environmental.csv') %>% glimpse()
+gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/standard_RST_environmental.csv",
+               overwrite = TRUE)
+
+rst_enviro <- read_csv('data/rst/standard_RST_environmental.csv') %>% glimpse()
 ```
 
 ## Battle Creek
