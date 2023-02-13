@@ -24,7 +24,7 @@ knitr::opts_knit$set(root.dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-FlowWest aggregated environmental data for temperature data from XXXX
+FlowWest aggregated environmental data for temperature data from all 
 monitoring programs:
 
 -   Feather River (source: RST monitoring data)
@@ -35,7 +35,7 @@ monitoring programs:
 -   Mill Creek (source: CDEC)
 -   Sacramento River (source for Tisdale: USGS; source for Knights
     Landing: RST monitoring data)
--   Yuba River (TODO)
+-   Yuba River (source: RST monitoring data)
 
 ### Rational for Data Sources:
 
@@ -71,11 +71,13 @@ Y - Yuba River)
 
 # Pull in data and format {.tabset}
 
+Initial data exploration was done `r here::here("data-raw", "qc-markdowns", "temperature_data_prep.Rmd")`
+
 ### All RST Environmental Data 
 
 ```{r, include = F}
 # source file where gage data is pulled, need to run this file first
-source(knitr::purl(here::here("data-raw", "standard-format-data-prep", "temperature_data_prep.Rmd"), quiet=TRUE))
+source(knitr::purl(here::here("data-raw", "qc-markdowns", "temperature_data_prep.Rmd"), quiet=TRUE))
 
 # set up GCS
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
