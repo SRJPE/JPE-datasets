@@ -111,7 +111,7 @@ battle_format <- ubc_temp_raw %>%
          subsite = "ubc",
          date = as.Date(date),
          source = "FWS") %>%
-  group_by(date, stream, site, source) %>%
+  group_by(date, stream, site, source, subsite) %>%
   summarise(mean_temp_degC = mean(temp_c, na.rm = T),
             max_temp_degC = max(temp_c, na.rm = T)) %>% 
   filter(mean_temp_degC > 0) %>%
@@ -438,16 +438,17 @@ ggplot() +
 
 ## Yuba
 
-In progress... 
+- There is limited USGS data and CDEC gage is far from the RST
+- Current approach is to use Yuba RST temperature data
+- Another possible option to model using air temperature
 
-```{r eval=FALSE, include=FALSE}
+```{r}
 #TODO need to do air temp modeling, check temperature_data_prep for potential gages (if not there use noaa data)
-# TODO: pull temperature from RST data 
 
 yuba_rst_format <- rst_enviro %>% 
-  filter(stream == "yuba river") %>% 
-  select(stream, site, date, temperature) %>%
-  rename(mean_temp_degC = temperature) %>%
+  filter(stream == "yuba river", parameter == "temperature") %>% 
+  select(stream, site, subsite, date, value) %>%
+  rename(mean_temp_degC = value) %>%
   mutate(source = "RST environmental") %>%
   glimpse
 
@@ -484,8 +485,6 @@ cdec_yrs_format <- cdec_yrs %>%
   glimpse
   
 summary(cdec_yrs_format)
-#save(cdec_yrs_format, file = "temp_data/yrs_cdec.Rdata")
-load('temp_data/yrs_cdec.Rdata')
 
 
 ggplot() +
@@ -496,111 +495,111 @@ ggplot() +
 
 ```{r, eval=FALSE, include=FALSE}
 
-yuba_monthly_agg <- yuba_rst_format %>% 
-  mutate(year = year(date), month = month(date)) %>%
-  group_by(year, month) %>%
-  summarise(mean_temp_degC = mean(mean_temp_degC, na.rm = TRUE)) %>%
-  ungroup() %>%
-  mutate(date = ymd(paste(year, month, '01', sep = '-'))) %>%
-  filter(!is.na(date)) %>%
-  select(date, mean_temp_degC) %>% glimpse
-
-yuba_air <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp_air.rds")) %>% 
-  mutate(year = year(date), month = month(date)) %>%
-  group_by(year, month) %>%
-  summarise(air_tempC = mean(air_tempC, na.rm = TRUE)) %>%
-  ungroup() %>%
-  mutate(date = ymd(paste(year, month, '01', sep = '-'))) %>%
-  filter(!is.na(date)) %>%
-  select(date, air_tempC) %>%
-  glimpse
-
-ggplot(yuba_air, aes(x=date, y = air_tempC)) +
-  geom_line(color = "darkred") +
-  labs(y = "Air temperature (deg C)") +
-  theme(axis.text = element_text(size = 12))
-
-# combine water and air
-
-yuba_air_water <- yuba_monthly_agg %>%
-  left_join(yuba_air) %>%
-  filter(!is.na(air_tempC)) %>% glimpse()
-
-yuba_air_water %>%
-  ggplot(aes(x = air_tempC, y = mean_temp_degC)) +
-  geom_point() +
-  geom_smooth(method = 'lm', se = FALSE)
-
-yuba_temp_model <- lm(mean_temp_degC ~ air_tempC, data = yuba_air_water)
-summary(yuba_temp_model)
-
-yuba_temp_model$coefficients
-
-# air temp thresholds
-# MR: I don't really understand this section 
-y <- c(13, 14)
-air_temp_thresholds <- (y - yuba_temp_model$coefficients[[1]]) / yuba_temp_model$coefficients[[2]]
-
-yuba_air_water %>%
-  ggplot(aes(x = air_tempC, y = mean_temp_degC)) +
-  geom_point() +
-  geom_smooth(method = 'lm', se = FALSE) +
-  geom_vline(xintercept = air_temp_thresholds[1], alpha = .2) +
-  geom_vline(xintercept = air_temp_thresholds[2], alpha = .2) +
-  geom_hline(yintercept = 13) +
-  geom_hline(yintercept = 14)
-
-pred <- broom::augment(yuba_temp_model) %>% pull(.fitted)
-truth <- yuba_monthly_agg$mean_temp_degC
-#xtab <- table(pred > 11, truth > 11)
-#xtab <- table(pred > 12, truth > 12)
-
-# new stuff
-yuba_air_more_time <- yuba_air %>%
-  bind_rows(
-    tibble(date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
-           air_tempC = 0)
-  ) %>%
-  group_by(date) %>%
-  summarise(air_tempC = max(air_tempC, na.rm = TRUE)) %>%
-  ungroup() %>%
-  mutate(air_tempC = ifelse(air_tempC == 0, NA, air_tempC)) %>% glimpse
-
-
-ts_yuba <- ts(yuba_air_more_time$air_tempC, start = c(2000, 1), end = c(2020, 12), frequency = 12)
-
-na.interp(ts_yuba) %>% autoplot(series = 'Interpolated') +
-  forecast::autolayer(ts_yuba, series = 'Original')
-
-yuba_air_temp_c <- tibble(
-  date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
-  air_tempC = as.numeric(na.interp(ts_yuba)))
-
-
-yuba_air_temp_c %>%
-  ggplot(aes(x = date, y = air_tempC)) +
-  geom_col(fill = 'darkgoldenrod2') +
-  geom_col(data = yuba_air_temp_c, aes(x = date, y = air_tempC)) +
-  theme_minimal() +
-  labs(y = 'monthly mean air temperature (°C)')
-
-yuba_pred_water_temp <- predict(yuba_temp_model, yuba_air_temp_c)
-
-yuba_water_temp_c <- tibble(
-  date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
-  stream = 'yuba river',
-  mean_temp_degC = yuba_pred_water_temp) %>% 
-  mutate(source = "predicted water temperature") %>%
-  glimpse
-
-yuba_water_temp_c %>%
-  ggplot(aes(x = date)) +
-  geom_line(aes(y = mean_temp_degC), color = 'red') +
-  geom_line(data = yuba_air_temp_c, aes(y = air_tempC))
-
-summary(yuba_water_temp_c)
-
-yuba_format <-  yuba_water_temp_c
+# yuba_monthly_agg <- yuba_rst_format %>% 
+#   mutate(year = year(date), month = month(date)) %>%
+#   group_by(year, month) %>%
+#   summarise(mean_temp_degC = mean(mean_temp_degC, na.rm = TRUE)) %>%
+#   ungroup() %>%
+#   mutate(date = ymd(paste(year, month, '01', sep = '-'))) %>%
+#   filter(!is.na(date)) %>%
+#   select(date, mean_temp_degC) %>% glimpse
+# 
+# yuba_air <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp_air.rds")) %>% 
+#   mutate(year = year(date), month = month(date)) %>%
+#   group_by(year, month) %>%
+#   summarise(air_tempC = mean(air_tempC, na.rm = TRUE)) %>%
+#   ungroup() %>%
+#   mutate(date = ymd(paste(year, month, '01', sep = '-'))) %>%
+#   filter(!is.na(date)) %>%
+#   select(date, air_tempC) %>%
+#   glimpse
+# 
+# ggplot(yuba_air, aes(x=date, y = air_tempC)) +
+#   geom_line(color = "darkred") +
+#   labs(y = "Air temperature (deg C)") +
+#   theme(axis.text = element_text(size = 12))
+# 
+# # combine water and air
+# 
+# yuba_air_water <- yuba_monthly_agg %>%
+#   left_join(yuba_air) %>%
+#   filter(!is.na(air_tempC)) %>% glimpse()
+# 
+# yuba_air_water %>%
+#   ggplot(aes(x = air_tempC, y = mean_temp_degC)) +
+#   geom_point() +
+#   geom_smooth(method = 'lm', se = FALSE)
+# 
+# yuba_temp_model <- lm(mean_temp_degC ~ air_tempC, data = yuba_air_water)
+# summary(yuba_temp_model)
+# 
+# yuba_temp_model$coefficients
+# 
+# # air temp thresholds
+# # MR: I don't really understand this section 
+# y <- c(13, 14)
+# air_temp_thresholds <- (y - yuba_temp_model$coefficients[[1]]) / yuba_temp_model$coefficients[[2]]
+# 
+# yuba_air_water %>%
+#   ggplot(aes(x = air_tempC, y = mean_temp_degC)) +
+#   geom_point() +
+#   geom_smooth(method = 'lm', se = FALSE) +
+#   geom_vline(xintercept = air_temp_thresholds[1], alpha = .2) +
+#   geom_vline(xintercept = air_temp_thresholds[2], alpha = .2) +
+#   geom_hline(yintercept = 13) +
+#   geom_hline(yintercept = 14)
+# 
+# pred <- broom::augment(yuba_temp_model) %>% pull(.fitted)
+# truth <- yuba_monthly_agg$mean_temp_degC
+# #xtab <- table(pred > 11, truth > 11)
+# #xtab <- table(pred > 12, truth > 12)
+# 
+# # new stuff
+# yuba_air_more_time <- yuba_air %>%
+#   bind_rows(
+#     tibble(date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
+#            air_tempC = 0)
+#   ) %>%
+#   group_by(date) %>%
+#   summarise(air_tempC = max(air_tempC, na.rm = TRUE)) %>%
+#   ungroup() %>%
+#   mutate(air_tempC = ifelse(air_tempC == 0, NA, air_tempC)) %>% glimpse
+# 
+# 
+# ts_yuba <- ts(yuba_air_more_time$air_tempC, start = c(2000, 1), end = c(2020, 12), frequency = 12)
+# 
+# na.interp(ts_yuba) %>% autoplot(series = 'Interpolated') +
+#   forecast::autolayer(ts_yuba, series = 'Original')
+# 
+# yuba_air_temp_c <- tibble(
+#   date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
+#   air_tempC = as.numeric(na.interp(ts_yuba)))
+# 
+# 
+# yuba_air_temp_c %>%
+#   ggplot(aes(x = date, y = air_tempC)) +
+#   geom_col(fill = 'darkgoldenrod2') +
+#   geom_col(data = yuba_air_temp_c, aes(x = date, y = air_tempC)) +
+#   theme_minimal() +
+#   labs(y = 'monthly mean air temperature (°C)')
+# 
+# yuba_pred_water_temp <- predict(yuba_temp_model, yuba_air_temp_c)
+# 
+# yuba_water_temp_c <- tibble(
+#   date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
+#   stream = 'yuba river',
+#   mean_temp_degC = yuba_pred_water_temp) %>% 
+#   mutate(source = "predicted water temperature") %>%
+#   glimpse
+# 
+# yuba_water_temp_c %>%
+#   ggplot(aes(x = date)) +
+#   geom_line(aes(y = mean_temp_degC), color = 'red') +
+#   geom_line(data = yuba_air_temp_c, aes(y = air_tempC))
+# 
+# summary(yuba_water_temp_c)
+# 
+# yuba_format <-  yuba_water_temp_c
 
 ```
 
@@ -608,14 +607,14 @@ yuba_format <-  yuba_water_temp_c
 
 ```{r}
 combined_temp <- bind_rows(battle_format,
-                           butte_format,
+                           butte_format_all,
                            clear_format,
                            deer_format,
                            feather_rst,
                            mill_format,
-                           sac_format,
+                           sac_format_all,
                            #yuba_format,
-                           #yuba_rst_format
+                           yuba_rst_format
                            ) %>%
   rename(mean_daily_temp_c  = mean_temp_degC,
          max_daily_temp_c = max_temp_degC) %>%
@@ -628,6 +627,7 @@ combined_temp <- bind_rows(battle_format,
 summary(combined_temp)
 unique(combined_temp$stream)
 unique(combined_temp$site)
+unique(combined_temp$subsite)
 ggplot(combined_temp, aes(x = date, y = mean_daily_temp_c, color = site)) +
   theme_minimal() +
   geom_line() +
@@ -648,16 +648,13 @@ unique(combined_temp_clean$stream)
 unique(combined_temp_clean$source)
 ```
 
-#TODO save to cloud in standard format data
-
-```{r, eval = FALSE}
+```{r, include = FALSE}
 f <- function(input, output) write_csv(input, file = output)
-gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
 gcs_upload(combined_temp_clean,
            object_function = f,
            type = "csv",
-           name = "standard-format-data/standard_temperature.csv.csv",
+           name = "standard-format-data/standard_temperature.csv",
            predefinedAcl = "bucketLevel")
-write_csv(combined_temp_clean, "../../data/standard-format-data/standard_temperature.csv")
+write_csv(combined_temp_clean, "data/standard-format-data/standard_temperature.csv")
 ```
