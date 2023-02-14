@@ -112,6 +112,21 @@ weekly_flow <- standard_flow |>
          year = year(date)) |> 
   group_by(week, year, stream, site, source) |> 
   summarize(mean_flow = mean(flow_cfs, na.rm = T))
+
+# Standard temperature
+unique(standard_temperature$site)
+gcs_upload(standard_temperature,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/standard_temperature.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(standard_temperature, "data/model-data/standard_temperature.csv")
+
+weekly_temperature <- standard_temperature |> 
+  mutate(week = week(date),
+         year = year(date)) |> 
+  group_by(week, year, stream, site, subsite, source) |> 
+  summarize(mean_temperature = mean(mean_daily_temp_c, na.rm = T))
 # Trap --------------------------------------------------------------------
 
 # Join trap operations data to catch data
