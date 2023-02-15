@@ -73,8 +73,9 @@ read_from_cloud <- function(carcass_data_type, year){
 
 ### 2000 Chops and Tags
 
-- 2000 and 2001 chops and tags are in different tables so they have to
-  be joined.
+- 2000 chops and tags are in different tables so they have to be joined.
+- 2000 `chops` table has `chop_count` values from 0:466 (i.e. not one
+  individual per row)
 - 2000 grilse has sex information
 
 ``` r
@@ -90,10 +91,9 @@ feather_carcass_chops_2000 <- read_from_cloud("chops", 2000) %>%
            tag_clip_status = "unknown")
 
 feather_carcass_tags_2000 <- read_from_cloud("tags", 2000) %>% 
-  mutate(tag_count = 1)
+  mutate(tag_count = 1) 
 
 # this only joins on "sex" - I don't think that is robust 
-# further, not sure that renaming recov_id is accurate here? that's why we are getting id values that are NA bc of the join
 # TODO: go back into 2000 .Rmd and figure out if there is tag data w/ ids and dates (better for joining on)
 feather_carcass_chops_and_tags_2000 <- full_join(feather_carcass_chops_2000, feather_carcass_tags_2000 ) %>%
   mutate(sex = case_when(
@@ -101,13 +101,14 @@ feather_carcass_chops_and_tags_2000 <- full_join(feather_carcass_chops_2000, fea
     sex == "f" ~ "female",
     TRUE ~ sex
   )) %>% 
-  rename(sec = "sect") |> 
+  rename(sec = "sect",
+         header_id = chop_env_id) |> 
   glimpse()
 ```
 
     ## Rows: 10,580
     ## Columns: 15
-    ## $ chop_env_id      <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
+    ## $ header_id        <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
     ## $ date             <chr> "2000-09-05", "2000-09-05", "2000-09-05", "2000-09-05…
     ## $ tag_col          <chr> "pink", "pink", "pink", "pink", "pink", "pink", "pink…
     ## $ sec              <int> 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,…
@@ -129,6 +130,10 @@ feather_carcass_chops_and_tags_2000 <- full_join(feather_carcass_chops_2000, fea
 
 ### 2001 Chops and Tags
 
+- 2001 chops and tags are in different tables so they have to be joined.
+- 2001 `chops` table has `chop_count` values from 0:410 (i.e. not one
+  individual per row)
+
 ``` r
 feather_carcass_chops_2001 <- read_from_cloud("chops", 2001) %>% 
   rename(adult_male = "male_chop",
@@ -145,9 +150,9 @@ feather_carcass_tags_2001 <- read_from_cloud("tags", 2001) %>%
   mutate(tag_count = 1)
 
 # joining on recov_id, sex
-# renaming recov_id to id (is that accurate with other datasets?)
 feather_carcass_chops_and_tags_2001 <- full_join(feather_carcass_chops_2001, feather_carcass_tags_2001 ) %>% 
-  rename(sec = "sect") |> 
+  rename(sec = "sect",
+         header_id = chop_env_id) |> 
   mutate(sex = case_when(
     sex == "m" ~ "male",
     sex == "f" ~ "female", 
@@ -159,7 +164,7 @@ feather_carcass_chops_and_tags_2001 <- full_join(feather_carcass_chops_2001, fea
     ## Rows: 14,114
     ## Columns: 15
     ## $ date             <chr> "2001-09-10", "2001-09-10", "2001-09-10", "2001-09-10…
-    ## $ chop_env_id      <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
+    ## $ header_id        <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
     ## $ sec              <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3,…
     ## $ chan             <chr> "l", "l", "l", "m", "m", "m", "r", "r", "r", "l", "l"…
     ## $ min              <dbl> 0, 0, 0, 19, 19, 19, 0, 0, 0, 7, 7, 7, 10, 10, 10, 5,…
@@ -182,6 +187,8 @@ feather_carcass_chops_and_tags_2001 <- full_join(feather_carcass_chops_2001, fea
 
 - 2002 - 2004 dataset contains columns contains sex (m or f) and
   lifestage (grilse)
+- 2002 `chops_and_tags` table has values for `chop_count` that range
+  from 0:326 and values for `tag_count` that range from 0:34.
 
 ``` r
 # assuming all male and female are adults
@@ -217,6 +224,9 @@ feather_carcass_chops_and_tags_2002 <- read_from_cloud("chops_and_tags", 2002) %
 
 ### 2003 Chops and Tags
 
+- 2003 `chops_and_tags` table has values for `chop_count` that range
+  from 0:160 and values for `tag_count` that range from 0:25.
+
 ``` r
 feather_carcass_chops_and_tags_2003 <- read_from_cloud("chops_and_tags",2003) %>% 
   rename(adult_male = "male_chop",
@@ -248,6 +258,9 @@ feather_carcass_chops_and_tags_2003 <- read_from_cloud("chops_and_tags",2003) %>
 ```
 
 ### 2004 Chops and Tags
+
+- 2004 `chops_and_tags` table has values for `chop_count` that range
+  from 0:129 and values for `tag_count` that range from 0:25.
 
 ``` r
 feather_carcass_chops_and_tags_2004 <- read_from_cloud("chops_and_tags",2004) %>% 
@@ -283,6 +296,8 @@ feather_carcass_chops_and_tags_2004 <- read_from_cloud("chops_and_tags",2004) %>
 
 - 2005 - 2007 data set dropped sex and lifestage and instead contains
   clip status
+- 2005 `chops_and_tags` table has values for `chop_count` that range
+  from 0:153 and values for `tag_count` that range from 0:29.
 
 ``` r
 feather_carcass_chops_and_tags_2005 <- read_from_cloud("chops_and_tags",2005) %>% 
@@ -324,6 +339,9 @@ feather_carcass_chops_and_tags_2005 <- read_from_cloud("chops_and_tags",2005) %>
 
 ### 2006 Chops and Tags
 
+- 2006 `chops_and_tags` table has values for `chop_count` that range
+  from 0:281 and values for `tag_count` that range from 0:28.
+
 ``` r
 feather_carcass_chops_and_tags_2006 <- read_from_cloud("chops_and_tags",2006) %>% 
   pivot_longer(cols = c("chop_clip", "chop_n_clip", "chop_uncheck"),
@@ -364,6 +382,9 @@ feather_carcass_chops_and_tags_2006 <- read_from_cloud("chops_and_tags",2006) %>
 ```
 
 ### 2007 Chops and Tags
+
+- 2007 `chops_and_tags` table has values for `chop_count` that range
+  from 0:135 and values for `tag_count` that range from 0:17.
 
 ``` r
 feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>% 
@@ -408,6 +429,8 @@ feather_carcass_chops_and_tags_2007 <- read_from_cloud("chops_and_tags",2007) %>
 
 - 2008 - 2016 (except for 2010) dataset dropped clip status and only has
   chop count and tag count
+- 2008 `chops_and_tags` table has values for `chop_count` that range
+  from 0:25 and values for `tag_count` that range from 0:5.
 
 ``` r
 feather_carcass_chops_and_tags_2008 <- read_from_cloud("chops_and_tags",2008) %>% 
@@ -435,6 +458,9 @@ glimpse
 ```
 
 ### 2009 Chops and Tags
+
+- 2009 `chops_and_tags` table has values for `chop_count` that range
+  from 0:24 and values for `tag_count` that range from 0:4.
 
 ``` r
 feather_carcass_chops_and_tags_2009 <- read_from_cloud("chops_and_tags",2009) %>% 
@@ -464,6 +490,8 @@ glimpse()
 ### 2010 Chops and Tags
 
 - 2010 has sex in dataset
+- 2010 `chops_and_tags` table has values for `chop_count` that range
+  from 0:364 and values for `tag_count` that range from 0:27.
 
 ``` r
 # structure of 2010 chops_and_tags dataset has variables for tag count by sex and chop count by sex; this makes it difficult because to pivot_longer, you get two separate sex columns (one for tag count and one for chop count) that don't align by rows perfectly. To create one sex column we pivot the chop_count by sex and the tag_count by sex separately, then join on all common variables: sex, id, tag color, date, channel id, section, channel, and min.
@@ -524,6 +552,8 @@ feather_carcass_chops_and_tags_2010 <- feather_carcass_chops_sex_2010 |>
 ### 2011 Chops and Tags
 
 - 2011-2016 does not have tags count
+- 2011 `chops_and_tags` table has `chop_count` values ranging from
+  0:348.
 
 ``` r
 feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>% 
@@ -544,6 +574,9 @@ feather_carcass_chops_and_tags_2011 <- read_from_cloud("chops_and_tags",2011) %>
 ```
 
 ### 2012 Chops and Tags
+
+- 2012 `chops_and_tags` table has `chop_count` values ranging from
+  0:551.
 
 ``` r
 feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>% 
@@ -566,6 +599,9 @@ feather_carcass_chops_and_tags_2012 <- read_from_cloud("chops_and_tags",2012) %>
 
 ### 2013 Chops and Tags
 
+- 2013 `chops_and_tags` table has `chop_count` values ranging from
+  0:729.
+
 ``` r
 feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>% 
     rename(chop_count = "count",
@@ -585,6 +621,9 @@ feather_carcass_chops_and_tags_2013 <- read_from_cloud("chops_and_tags",2013) %>
 ```
 
 ### 2014 Chops and Tags
+
+- 2014 `chops_and_tags` table has `chop_count` values ranging from
+  0:302.
 
 ``` r
 feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>% 
@@ -606,6 +645,9 @@ feather_carcass_chops_and_tags_2014 <- read_from_cloud("chops_and_tags",2014) %>
 
 ### 2015 Chops and Tags
 
+- 2015 `chops_and_tags` table has `chop_count` values ranging from
+  0:184.
+
 ``` r
 feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>% 
   rename(chop_count = "count",
@@ -625,6 +667,9 @@ feather_carcass_chops_and_tags_2015 <- read_from_cloud("chops_and_tags",2015) %>
 ```
 
 ### 2016 Chops and Tags
+
+- 2016 `chops_and_tags` table has `chop_count` values ranging from
+  0:603.
 
 ``` r
 feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>% 
@@ -646,14 +691,20 @@ feather_carcass_chops_and_tags_2016 <- read_from_cloud("chops_and_tags",2016) %>
 
 ### 2017-2020 Chops and Tags
 
+- 2017-2020 `chops_and_tags` table has `chop_count` values ranging from
+  0:1 and `tag_count` values ranging from 0:1.
+
 ``` r
-feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","2017_2021") |> 
-  rename(chop_count = count,
-         header_id = survey_meta_id,
+feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","2017_2021") |>
+  rename(header_id = survey_meta_id,
          sec = section_id,
          chop_clip_status = ad_fin_clip_status) |> 
+  mutate(tag_count = case_when(disposition == "tagged" ~ 1,
+                               disposition %in% c("chopped", NA) ~ 0),
+         chop_count = case_when(disposition == "chopped" ~ 1, 
+                                disposition %in% c("tagged", NA) ~ 0)) |> 
   rename(fl = fl_mm) |> 
-  select(-fl_cm) |> 
+  select(-c(fl_cm, disposition, count)) |> 
     glimpse()
 ```
 
@@ -677,16 +728,16 @@ feather_carcass_chops_and_tags_2017_2021 <- read_from_cloud("chops_and_tags","20
     ## $ editor           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ edit_time        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ cwt_cd           <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
-    ## $ chop_count       <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ species          <chr> "unknown salmon (not steelhead)", "centrarchidae hybr…
     ## $ run              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ tag_col          <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
-    ## $ disposition      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ condition        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ spawned          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ chop_clip_status <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ cwt_status       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ sex              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ tag_count        <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+    ## $ chop_count       <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
 
 ``` r
 # does not contain tag_count, tag_clip_status, lifestage, or min
@@ -717,15 +768,15 @@ feather_carcass_chops_and_tags_combined <- bind_rows(feather_carcass_chops_and_t
 ```
 
     ## Rows: 148,390
-    ## Columns: 39
-    ## $ chop_env_id      <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
+    ## Columns: 37
+    ## $ header_id        <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
     ## $ date             <chr> "2000-09-05", "2000-09-05", "2000-09-05", "2000-09-05…
     ## $ tag_col          <chr> "pink", "pink", "pink", "pink", "pink", "pink", "pink…
     ## $ sec              <int> 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,…
     ## $ unit             <int> 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5,…
     ## $ lifestage        <chr> "adult", "adult", "grilse", "grilse", "adult", "adult…
     ## $ sex              <chr> "male", "female", "male", "female", "male", "female",…
-    ## $ chop_count       <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+    ## $ chop_count       <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
     ## $ chop_clip_status <chr> "unknown", "unknown", "unknown", "unknown", "unknown"…
     ## $ tag_clip_status  <chr> "unknown", "unknown", "unknown", "unknown", "unknown"…
     ## $ tag_num          <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
@@ -735,7 +786,6 @@ feather_carcass_chops_and_tags_combined <- bind_rows(feather_carcass_chops_and_t
     ## $ tag_count        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ chan             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ min              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
-    ## $ header_id        <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ chan_id          <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ comments         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ survey_id        <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
@@ -753,7 +803,6 @@ feather_carcass_chops_and_tags_combined <- bind_rows(feather_carcass_chops_and_t
     ## $ cwt_cd           <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ species          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ run              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
-    ## $ disposition      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ condition        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ spawned          <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ cwt_status       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
@@ -804,37 +853,37 @@ feather_carcass_chops_and_tags_combined |>
   print(n=Inf)
 ```
 
-    ## # A tibble: 21 × 40
-    ##     year chop_env_id  date tag_col      sec  unit lifest…¹   sex chop_…² chop_…³
-    ##    <dbl>       <dbl> <dbl>   <dbl>    <dbl> <dbl>    <dbl> <dbl>   <dbl>   <dbl>
-    ##  1  2000           0     0       0 0            0        0 0     0         0    
-    ##  2  2001           0     0       1 0            1        0 0     0         0    
-    ##  3  2002           1     0       0 0.000703     1        0 0     7.03e-4   1    
-    ##  4  2003           1     0       0 0            1        0 0     0         1    
-    ##  5  2004           1     0       0 0            1        0 0     2.06e-2   1    
-    ##  6  2005           1     0       0 0.00123      1        1 1     4.09e-4   0    
-    ##  7  2006           1     0       0 0.00847      1        1 1     3.12e-3   0    
-    ##  8  2007           1     0       0 0.00312      1        1 1     1.25e-3   0    
-    ##  9  2008           1     0       0 0.000527     1        1 1     1.05e-3   1    
-    ## 10  2009           1     0       0 0.00214      1        1 1     5.34e-4   1    
-    ## 11  2010           1     0       0 0.000478     1        1 0     1.75e-3   1    
-    ## 12  2011           1     0       1 0            1        1 1     3.15e-3   1    
-    ## 13  2012           1     0       1 0.00575      1        1 1     5.75e-3   1    
-    ## 14  2013           1     0       1 0            1        1 1     0         1    
-    ## 15  2014           1     0       1 0.00284      1        1 1     4.73e-3   1    
-    ## 16  2015           1     0       1 0            1        1 1     0         1    
-    ## 17  2016           1     0       1 0.00102      1        1 1     1.02e-3   1    
-    ## 18  2017           1     0       1 0            1        1 0.648 6.48e-1   0.648
-    ## 19  2018           1     0       1 0            1        1 0.329 3.29e-1   0.329
-    ## 20  2019           1     0       1 0            1        1 0.237 2.37e-1   0.237
-    ## 21  2020           1     0       1 0            1        1 0.170 1.70e-1   0.170
-    ## # … with 30 more variables: tag_clip_status <dbl>, tag_num <dbl>, fl <dbl>,
+    ## # A tibble: 21 × 38
+    ##     year header_id  date tag_col      sec  unit lifestage   sex chop_c…¹ chop_…²
+    ##    <dbl>     <dbl> <dbl>   <dbl>    <dbl> <dbl>     <dbl> <dbl>    <dbl>   <dbl>
+    ##  1  2000         0     0       0 0            0         0 0     0          0    
+    ##  2  2001         0     0       1 0            1         0 0     0          0    
+    ##  3  2002         0     0       0 0.000703     1         0 0     0.000703   1    
+    ##  4  2003         0     0       0 0            1         0 0     0          1    
+    ##  5  2004         0     0       0 0            1         0 0     0.0206     1    
+    ##  6  2005         0     0       0 0.00123      1         1 1     0.000409   0    
+    ##  7  2006         0     0       0 0.00847      1         1 1     0.00312    0    
+    ##  8  2007         0     0       0 0.00312      1         1 1     0.00125    0    
+    ##  9  2008         0     0       0 0.000527     1         1 1     0.00105    1    
+    ## 10  2009         0     0       0 0.00214      1         1 1     0.000534   1    
+    ## 11  2010         0     0       0 0.000478     1         1 0     0.00175    1    
+    ## 12  2011         0     0       1 0            1         1 1     0.00315    1    
+    ## 13  2012         0     0       1 0.00575      1         1 1     0.00575    1    
+    ## 14  2013         0     0       1 0            1         1 1     0          1    
+    ## 15  2014         0     0       1 0.00284      1         1 1     0.00473    1    
+    ## 16  2015         0     0       1 0            1         1 1     0          1    
+    ## 17  2016         0     0       1 0.00102      1         1 1     0.00102    1    
+    ## 18  2017         0     0       1 0            1         1 0.648 0          0.648
+    ## 19  2018         0     0       1 0            1         1 0.329 0          0.329
+    ## 20  2019         0     0       1 0            1         1 0.237 0          0.237
+    ## 21  2020         0     0       1 0            1         1 0.170 0          0.170
+    ## # … with 28 more variables: tag_clip_status <dbl>, tag_num <dbl>, fl <dbl>,
     ## #   egg_ret <dbl>, recov_id <dbl>, tag_count <dbl>, chan <dbl>, min <dbl>,
-    ## #   header_id <dbl>, chan_id <dbl>, comments <dbl>, survey_id <dbl>,
-    ## #   individual_id <dbl>, disc_tag_applied <dbl>, head_nu <dbl>, scale_nu <dbl>,
-    ## #   tissue_nu <dbl>, otolith_nu <dbl>, dna_nu <dbl>, data_recorder <dbl>,
-    ## #   creation_time <dbl>, editor <dbl>, edit_time <dbl>, cwt_cd <dbl>,
-    ## #   species <dbl>, run <dbl>, disposition <dbl>, condition <dbl>, …
+    ## #   chan_id <dbl>, comments <dbl>, survey_id <dbl>, individual_id <dbl>,
+    ## #   disc_tag_applied <dbl>, head_nu <dbl>, scale_nu <dbl>, tissue_nu <dbl>,
+    ## #   otolith_nu <dbl>, dna_nu <dbl>, data_recorder <dbl>, creation_time <dbl>,
+    ## #   editor <dbl>, edit_time <dbl>, cwt_cd <dbl>, species <dbl>, run <dbl>,
+    ## #   condition <dbl>, spawned <dbl>, cwt_status <dbl>, and abbreviated …
 
 ### Data Transformation
 
@@ -845,7 +894,7 @@ counts by chop/tagged based on clips
 
 ## Explore Numeric Variables:
 
-### Variable: `header_id`, `chan_id`, `sec`, `min`, `unit`, `tag_num`,
+### Variable: `header_id`, `survey_id`, `chan_id`, `sec`, `min`, `unit`, `tag_num`,
 
 `fl`
 
@@ -855,11 +904,11 @@ feather_carcass_chops_and_tags_combined %>%
   colnames()
 ```
 
-    ##  [1] "chop_env_id"      "sec"              "unit"             "chop_count"      
+    ##  [1] "header_id"        "sec"              "unit"             "chop_count"      
     ##  [5] "tag_num"          "fl"               "recov_id"         "tag_count"       
-    ##  [9] "min"              "header_id"        "chan_id"          "survey_id"       
-    ## [13] "individual_id"    "disc_tag_applied" "head_nu"          "scale_nu"        
-    ## [17] "otolith_nu"       "cwt_cd"           "year"
+    ##  [9] "min"              "chan_id"          "survey_id"        "individual_id"   
+    ## [13] "disc_tag_applied" "head_nu"          "scale_nu"         "otolith_nu"      
+    ## [17] "cwt_cd"           "year"
 
 ``` r
 summary(feather_carcass_chops_and_tags_combined$sec)
@@ -886,8 +935,15 @@ summary(feather_carcass_chops_and_tags_combined$min)
 summary(feather_carcass_chops_and_tags_combined$header_id)
 ```
 
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##       1     105     548   11246     756   70007
+
+``` r
+summary(feather_carcass_chops_and_tags_combined$survey_id)
+```
+
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       1     113     598   12478     779   70007   13283
+    ##     1.0   333.0   463.0   474.8   631.0  1101.0  112278
 
 ``` r
 summary(feather_carcass_chops_and_tags_combined$chan_id)
@@ -917,14 +973,14 @@ summary(feather_carcass_chops_and_tags_combined$chop_count)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.000   0.000   0.000   4.243   1.000 729.000    6296
+    ##   0.000   0.000   0.000   3.956   1.000 729.000     260
 
 ``` r
 summary(feather_carcass_chops_and_tags_combined$tag_count)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##     0.0     0.0     0.0     0.4     0.0    34.0   40397
+    ##   0.000   0.000   0.000   0.441   0.000  34.000   19681
 
 **NA and Unknown Values** Provide a stat on NA or unknown values.
 
@@ -932,13 +988,13 @@ summary(feather_carcass_chops_and_tags_combined$tag_count)
 round(sum(is.na(feather_carcass_chops_and_tags_combined$chop_count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
 ```
 
-    ## [1] 4.7
+    ## [1] 0.2
 
 ``` r
 round(sum(is.na(feather_carcass_chops_and_tags_combined$tag_count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
 ```
 
-    ## [1] 30.4
+    ## [1] 14.8
 
 ``` r
 round(sum(is.na(feather_carcass_chops_and_tags_combined$tag_num))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
@@ -958,8 +1014,8 @@ round(sum(is.na(feather_carcass_chops_and_tags_combined$tag_clip_status))/nrow(f
 
     ## [1] 47.4
 
-- 4.7 % of values in the `chop_count` column are NA.
-- 30.4 % of values in the `tag_count` column are NA.
+- 0.2 % of values in the `chop_count` column are NA.
+- 14.8 % of values in the `tag_count` column are NA.
 - 0 % of values in the `id` column are NA.
 - 36.4 % of values in the `chop_clip_status` column are NA.
 - 47.4 % of values in the `tag_clip_status` column are NA.
