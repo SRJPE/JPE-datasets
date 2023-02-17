@@ -103,22 +103,20 @@ write_csv(cwt, here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-ca
 ## Raw Data Glimpse: {.tabset}
 
 ### ChopEnv_Raw
+Heading information for chops data.
 ```{r}
 # Read Data
-#Heading Info for Chopped Data
-#What is Turbot?
 ChopEnv_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
                                  "feather-river", "ChopEnv_2000.csv"),
                                  col_types = list("d", "c", "T", "c", "T", "c", "c")) |>  
-  # mutate("Start" = as_hms("Start")) |> 
   glimpse()
 ```
 
 ### ChopRecov_raw
+Recovered chop counts with no sampling information.
 ```{r}
 #Data collection for Chopping and Spawning to determine how many carcasses are being captured (link by recovID)
-#What is Unit?
 ChopRecov_raw <-read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
                                  "feather-river", "ChopRecov_2000.csv")) |>  
@@ -139,7 +137,6 @@ RecovTag_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 ### TagData_raw
 ```{r}
 #Data for Tagging DataSheet - when export access table to excel, Tag Number is automatically changed to TagID - converting it back here
-#What is EggRet? Float? Unit?
 TagData_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
                                  "feather-river", "TagData_2000.csv")) |>  
@@ -157,9 +154,9 @@ TagEnv_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 ```
 
 ### cwt_raw
-```{r}
-#Coded Wiretag Info
+This table contains all carcasses with sampling information.
 
+```{r}
 cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                  "adult-holding-redd-and-carcass-surveys",
                                  "feather-river", "cwt_2000.csv")) |>  
@@ -205,7 +202,7 @@ chop_header <- ChopEnv_raw |>
 
 ### CWT
 
-The `cwt` table contains coded wire tag information. It is not joined with the other tables.
+The `cwt` table contains sampling information on individual carcasses. It is not joined with the other tables.
 
 ```{r}
 cwt <- cwt_raw |>  

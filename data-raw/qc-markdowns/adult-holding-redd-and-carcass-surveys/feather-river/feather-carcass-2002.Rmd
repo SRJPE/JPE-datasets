@@ -117,7 +117,22 @@ write_csv(cwt_header_raw, here::here("data-raw", "qc-markdowns", "adult-holding-
 
 ## Raw Data Glimpse: {.tabset}
 
+### cwt_raw
+The CWT table contains TagIDs for carcasses with sample information and a variable `CarcStat` that indicates whether the carcass was chopped (C) or tagged (T). 
+```{r}
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
+                               "feather-river","cwt_2002.csv")) |> glimpse()
+```
+
+### CWT_Header_raw
+```{r}
+cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns",
+                                      "adult-holding-redd-and-carcass-surveys",
+                                      "feather-river","CWTHeader_2002.csv")) |> glimpse()
+```
+
 ### ChopEnv_Raw
+This table contains total chops by sex.  
 ```{r}
 ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                        "adult-holding-redd-and-carcass-surveys",
@@ -126,6 +141,7 @@ ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 ```
 
 ### ChopRecov_raw
+This table contains recovered carcasses by channel ID. 
 ```{r}
 ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
                                      "adult-holding-redd-and-carcass-surveys",
@@ -141,24 +157,13 @@ ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns",
   glimpse()
 ```
 
-### cwt_raw
-```{r}
-cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
-                               "feather-river","cwt_2002.csv")) |> glimpse()
-```
 
-### CWT_Header_raw
-```{r}
-cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns",
-                                      "adult-holding-redd-and-carcass-surveys",
-                                      "feather-river","CWTHeader_2002.csv")) |> glimpse()
-```
 
 ## Data transformations: {.tabset}
 
 ### Counts
 
-The `chop_channel` table contains carcass counts by sex, grilise and chop/tagged
+The `chop_channel` table contains chop counts by sex and a tag count column.
 ```{r}
 #1. chopchannel table (with dates and tag color)
 chop_channel_join <- full_join(ChopHeader_raw |> 
@@ -203,7 +208,7 @@ chop_header <- ChopHeader_raw |>
 
 ### CWT
 
-The `cwt` table contains coded wire tag information. 
+The `cwt` table contains sampling information on individual carcasses, including whether the carcass was tagged or chopped. Unclear whether a single `tag_id` will appear multiple times in the dataset based; there are multiples, but they seem to be mostly duplicates.
 ```{r}
 cwt <- full_join(cwt_raw |> clean_names(), cwt_header_raw |> clean_names()) |> 
   clean_names() |> 
@@ -608,16 +613,25 @@ cwt_cleaner <- cwt |>
   mutate(crew = str_replace_all(crew, " ", ""),
          tag_col = str_replace_all(tag_col, " ", ""),
          sex = case_when(sex == "nd"|is.na(sex) ~ "uk",
+                         sex == "f" ~ "female",
+                         sex == "m" ~ "male",
+                         sex == "uk" ~ "unknown",
                          TRUE ~ sex),
-         rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),  
-         spawn = ifelse(spawn == "no data", NA, spawn),
+         rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),
+         spawn = case_when(spawn %in% c("no data", "nd") ~ NA_character_,
+                           spawn == "u" ~ "unspawned",
+                           spawn == "s" ~ "spawned",
+                           spawn == "uk" ~ "unknown",
+                           TRUE ~ spawn),
          clip = case_when(clip == "no data" ~ NA_character_,
                           clip == "y" ~ "yes",
                           clip == "n" ~ "no",
                           TRUE ~ clip),
          samp_type = case_when(samp_type == "no data"| samp_type == "none" ~ NA_character_, 
                                TRUE ~ samp_type),
-         carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) |> 
+         carc_stat = case_when(carc_stat == "no data" ~ NA_character_,
+                               carc_stat == "t" ~ "tagged",
+                               carc_stat == "c" ~ "chopped")) |> 
   glimpse()
 ```
 

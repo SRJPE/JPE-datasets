@@ -189,7 +189,7 @@ The `chop_recovery` table contains recovered carcass counts by color
 The `chop_header` table contains survey metadata and covariates
 
 ### CWT
-The `cwt` table contains coded wire tag information. 
+The `cwt` table contains biological sampling data for carcasses. It does not contain information on whether these carcasses were chopped or tagged. Each `tag_id` is only represented once in the table.
 
 ```{r}
 cwt <- full_join(cwt_raw |> clean_names(), cwt_header_raw |> clean_names(), by = "header_id") |> 
@@ -645,16 +645,23 @@ cwt_cleaner <- cwt |>
   mutate_if(is.character, str_to_lower) |> 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex %in% c("uk", "nd") |is.na(sex) ~ "unknown",
-                         TRUE ~ sex),
-         spawn = case_when(spawn %in% c("uk", "no data") ~ NA_character_,
+         sex = case_when(sex == "nd" ~ NA_character_,
+                         sex == "uk" ~ "unknown", 
+                         sex == "m" ~ "male",
+                         sex == "f" ~ "female",
+                         TRUE ~ sex), 
+         spawn = case_when(spawn == "no data" ~ NA_character_,
+                           spawn == "uk" ~ "unknown",
+                           spawn == "u" ~ "unspawned",
+                           spawn == "s" ~ "spawned",
                            TRUE ~ spawn),
-         clip = case_when(clip %in% c("no data", "uk") | is.na(clip) ~ NA_character_,
+         clip = case_when(clip %in% c("no data", "uk") ~ NA_character_,
                           clip == "y" ~ "yes",
-                          clip == "n" ~ "no",
-                          TRUE ~ clip),
+                          clip == "n" ~ "no", 
+                          TRUE ~ clip
+                          ),
          samp_type = ifelse(samp_type == "none", NA, samp_type)) |> 
-  select(-comments)|>glimpse()
+  glimpse()
 
 ```
 

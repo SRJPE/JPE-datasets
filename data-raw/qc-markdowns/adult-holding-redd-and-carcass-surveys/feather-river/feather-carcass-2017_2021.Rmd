@@ -171,10 +171,10 @@ The `chop_recovery` table contains recovered carcass counts by color
 # join with lu tables to get values from ids
 
 #1. chop table (with dates and tag color)
-chop_join <- full_join(ChopHeader_raw |> 
-                                 select(SurveyMetaID, SurveyID, Date, SectionID),
-                               Chop_raw,
-                       by = c("SurveyID", "SurveyMetaID")) |> 
+chop_join <- Chop_raw |> 
+  left_join(ChopHeader_raw |> 
+              select(SurveyMetaID, SurveyID, Date, SectionID),
+            by = c("SurveyID", "SurveyMetaID")) |> 
   clean_names() |> 
   left_join(species_LU |> 
             mutate(species_id = as.numeric(TaxonID),
@@ -190,9 +190,9 @@ chop_join <- full_join(ChopHeader_raw |>
                                     format = "%m/%d/%y %H:%M:%S")) |> glimpse()
 
 #2. chops and tags
-chops_and_tags_join <- full_join(ChopHeader_raw |> 
-                                   select(SurveyMetaID, SurveyID, Date, SectionID), 
-                                 chops_and_tags_raw, by = c("SurveyMetaID", "SurveyID")) |>
+chops_and_tags_join <- chops_and_tags_raw |> 
+  left_join(ChopHeader_raw |> 
+              select(SurveyMetaID, SurveyID, Date, SectionID), by = c("SurveyMetaID", "SurveyID")) |> 
   clean_names() |> 
   left_join(species_LU |> 
               mutate(species_id = as.numeric(TaxonID),
@@ -222,9 +222,10 @@ chops_and_tags_join <- full_join(ChopHeader_raw |>
   glimpse()
 
 #3. chop recovery
-chop_recovery_join <- full_join(ChopHeader_raw |> 
-                                  select(SurveyMetaID, SurveyID, Date, SectionID),
-                                ChopRecov_raw, by = c("SurveyMetaID", "SurveyID")) |> 
+chop_recovery_join <- ChopRecov_raw |> 
+  left_join(ChopHeader_raw |> 
+               select(SurveyMetaID, SurveyID, Date, SectionID),
+             by = c("SurveyMetaID", "SurveyID")) |> 
   clean_names() |> 
   left_join(disposition_LU |> select(DispositionID, disposition = Disposition), 
             by = c("disposition_id" = "DispositionID")) |>
@@ -245,7 +246,7 @@ chop_recovery_join <- full_join(ChopHeader_raw |>
 
 ### Survey
 
-The `chop_header` table contains survey metadata and covariates
+The `chop_header` table contains survey metadata and covariates. The `chop_header` table does not contain an entry for `survey_meta_id == 70002`, which is included in many of the raw tables.
 
 ```{r}
 chop_header <- ChopHeader_raw |> 
@@ -454,7 +455,37 @@ summary(chop_header$section_id)
 summary(chop_header$survey_week)
 ```
 
+### Look at total carcasses - bind together `chops_and_tags_join`, `chop_join`, and `chop_recovery_join`
 
+```{r}
+all_carcasses <- bind_rows(chop_join |> mutate(source = "chop") |> 
+                             select(date, count, source, disposition = chop_type_cd, species, section_id, run),
+                           chop_recovery_join |> mutate(source = "recovery") |> 
+                                                          select(date, count, source, disposition, sex, fl_mm),
+                           chops_and_tags_join |> mutate(source = "chops_and_tags") |>  select(date, count, source, fl_mm, species, run, disposition, spawned, ad_fin_clip_status, sex)) |>
+  mutate_if(is.character, str_to_lower) |> 
+  mutate(disposition = case_when(disposition == "chop" ~ "chopped",
+                                 disposition == "not chopped" ~ "recaptured",
+                                 TRUE ~ disposition)) |> 
+  glimpse()
+
+all_carcasses |> 
+  mutate(year = year(date)) |> 
+  group_by(year) |> 
+  summarise(count = sum(count, na.rm = T)) |> 
+  ggplot(aes(x = year, y = count)) +
+  geom_col(fill = "blue") + 
+  theme_minimal()
+
+all_carcasses |> 
+  mutate(year = year(date),
+         month = month(date)) |> 
+  ggplot(aes(x = month, y = count, fill = disposition)) +
+  geom_col() +
+  facet_wrap(~year) + 
+  theme_minimal()
+  
+```
 ## Explore Categorical variables: {.tabset}
 
 ### Chop Clean Data

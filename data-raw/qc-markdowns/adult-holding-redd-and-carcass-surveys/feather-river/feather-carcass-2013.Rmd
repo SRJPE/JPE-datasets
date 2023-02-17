@@ -91,22 +91,6 @@ write_csv(cwt_header_raw, here::here("data-raw", "qc-markdowns", "adult-holding-
 
 ## Raw Data Glimpse: {.tabset}
 
-### Chop_raw
-```{r}
-Chops_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "Chops_2013.csv")) |> 
-  rename(Header.ID = `Chop.Header.ID`) |> 
-  select(-`Chop.ID`) |> 
-  glimpse()
-```
-
-### ChopHeader_raw
-
-```{r}
-ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2013.csv")) |> 
-  rename(Header.ID = `Chop.Header.ID`) |>
-  glimpse()
-```
-
 ### cwt_raw
 ```{r}
 cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWT_2013.csv")) |> 
@@ -133,6 +117,24 @@ cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding
   rename(Header.ID = `CWT.Header.ID` ) |> 
   glimpse()
 ```
+
+### Chop_raw
+```{r}
+Chops_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "Chops_2013.csv")) |> 
+  rename(Header.ID = `Chop.Header.ID`) |> 
+  select(-`Chop.ID`) |> 
+  glimpse()
+```
+
+### ChopHeader_raw
+
+```{r}
+ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopHeader_2013.csv")) |> 
+  rename(Header.ID = `Chop.Header.ID`) |>
+  glimpse()
+```
+
+
 
 ## Data transformations: {.tabset}
 
@@ -167,7 +169,7 @@ chop_header <- ChopHeader_raw |>
 ```
 
 ### CWT
-The `cwt` table contains coded wire tag information. 
+The `cwt` table contains biological sampling data for carcasses and whether the carcass was chopped or tagged. If a tagged carcass was tagged, recaptured, re-released, and chopped, it will be represented multiple times in this table (i.e. there can be multiple rows for one `tag_id`). 
 
 ```{r}
 cwt <- full_join(cwt_raw |> clean_names(), cwt_header_raw |> clean_names(),
@@ -381,6 +383,8 @@ cwt_cleaner <- cwt |>
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          sex = case_when(is.na(sex) ~ "unknown",
+                         sex == "f" ~ "female",
+                         sex == "m" ~ "male",
                          TRUE ~ sex),
          tag_color = case_when(str_detect(tag_color, "d=") ~ "decay",
                                str_detect(tag_color, "silver") ~ "silver",
@@ -388,9 +392,9 @@ cwt_cleaner <- cwt |>
                                tag_color == "d in comment = decayed" ~ "decay",
                                TRUE ~ tag_color),
          recapture_or_chop = case_when(recapture_or_chop == "t" ~ "tagged",
-                                       recapture_or_chop == "r" ~ "recapture",
-                                       recapture_or_chop == "c" ~ "chop",
-                                       recapture_or_chop == "t/c" ~ "recapture,chop",
+                                       recapture_or_chop == "r" ~ "recaptured",
+                                       recapture_or_chop == "c" ~ "chopped",
+                                       recapture_or_chop == "t/c" ~ "recaptured,chopped",
                                        TRUE ~ recapture_or_chop),
          adipose_fin_clipped = case_when(adipose_fin_clipped == "uk" ~ "unknown",
                                          adipose_fin_clipped == "y" ~ "yes",

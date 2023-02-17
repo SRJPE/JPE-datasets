@@ -177,7 +177,7 @@ chop_header <- ChopHeader_raw |>
 ```
 
 ### CWT
-The `cwt` table contains coded wire tag information. 
+The `cwt` table contains biological sampling data for carcasses and whether the carcass was chopped or tagged. If a tagged carcass was tagged, recaptured, re-released, and chopped, it will be represented multiple times in this table (i.e. there can be multiple rows for one `tag_id`). 
 
 ```{r}
 cwt <- full_join(cwt_raw |> clean_names(), cwt_header_raw |> clean_names()) |>  
@@ -398,16 +398,20 @@ cwt_cleaner <- cwt |>
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          sex = case_when(is.na(sex) ~ "unknown",
+                         sex == "m" ~ "male",
+                         sex == "f" ~ "female",
                          TRUE ~ sex),
          recapture_or_chop = case_when(recapture_or_chop == "t" ~ "tagged",
-                                       recapture_or_chop == "r" ~ "recapture",
-                                       recapture_or_chop == "c" ~ "chop",
+                                       recapture_or_chop == "r" ~ "recaptured",
+                                       recapture_or_chop == "c" ~ "chopped",
                                        TRUE ~ recapture_or_chop),
          adipose_fin_clipped = case_when(adipose_fin_clipped == "k" ~ "unknown",
                                          adipose_fin_clipped == "y" ~ "yes",
                                          adipose_fin_clipped == "n" ~ "no",
                                          TRUE ~ adipose_fin_clipped),
          spawning_condition = case_when(spawning_condition == "k" ~ "unknown",
+                                        spawning_condition == "s" ~ "spawned",
+                                        spawning_condition == "u" ~ "unspawned",
                                         TRUE ~ spawning_condition),
          tag_color = case_when(tag_color == "b" ~ "blue",
                                tag_color == "s" ~ "silver",

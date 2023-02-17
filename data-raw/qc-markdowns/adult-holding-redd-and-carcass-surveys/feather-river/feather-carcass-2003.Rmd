@@ -98,6 +98,16 @@ write_csv(cwt_header, here::here("data-raw", "qc-markdowns", "adult-holding-redd
 
 ## Raw Data Glimpse: {.tabset}
 
+### cwt_raw
+```{r}
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "cwt_2003.csv")) |> glimpse()
+```
+
+### CWT_Header_raw
+```{r}
+cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2003.csv")) |> glimpse()
+```
+
 ### ChopChannel_Raw
 ```{r}
 ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopChannel_2003.csv")) |>  
@@ -116,21 +126,13 @@ ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding
   glimpse()
 ```
 
-### cwt_raw
-```{r}
-cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "cwt_2003.csv")) |> glimpse()
-```
 
-### CWT_Header_raw
-```{r}
-cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2003.csv")) |> glimpse()
-```
 
 ## Data transformations: {.tabset}
 
 ### Counts
 
-The `chop_channel` table contains carcass counts by sex, grilise and chop/tagged
+The `chop_channel` table contains chop counts by sex, grilise and chop/tagged
 
 ```{r}
 #1. chopchannel table (with dates and tag color)
@@ -157,11 +159,6 @@ chop_recovery_join <- full_join(chop_channel_join |>
   clean_names() |>  
   glimpse()
 # according to Access relationships, ChanID connects the header to the Recovery table
-# chop_recovery_join <- full_join(ChopHeader_raw |> 
-#                                   select(HeaderID, Date, Time),
-#                                 ChopRecov_raw |> 
-#                                   rename(HeaderID = ChanID))  |> # join on HeaderID <-> ChanID
-#   clean_names() |> glimpse()
 ```
 
 ### Survey
@@ -173,8 +170,7 @@ chop_header <- ChopHeader_raw |>
 ```
   
 ### CWT
-The `cwt` table contains coded wire tag information. 
-
+The `cwt` table contains carcass sampling information on carcasses, both chops and tagged carcasses. Each `tag_id` is represented only once in this table.
 ```{r}
 cwt <- full_join(cwt_raw |> clean_names(), cwt_header_raw |> clean_names(),
                  by = "header_id") |> 
@@ -612,15 +608,18 @@ unique(cwt$carc_stat)
 
 ```{r}
 cwt_cleaner <- cwt |> 
-  mutate_if(is.character, str_to_lower) |> 
-  rename(datetime = "date") |> 
+  mutate_if(is.character, str_to_lower) |>
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
          sex = case_when(sex == "nd" ~ "unknown",
+                         sex == "f" ~ "female",
+                         sex == "m" ~ "male",
                          TRUE ~ sex),
          rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),  
          spawn = case_when(spawn == "no data" ~ NA_character_,
                            spawn == "uk" ~ "unknown",
+                           spawn == "u" ~ "unspawned",
+                           spawn == "s" ~ "spawned",
                            TRUE ~ spawn),
          clip = case_when(clip == "no data" ~ NA_character_,
                           clip == "y" ~ "yes",
@@ -629,7 +628,10 @@ cwt_cleaner <- cwt |>
                           TRUE ~ clip),
          samp_type = case_when(samp_type %in% c("no data", "none") ~ NA_character_,
                                TRUE ~ samp_type),
-         carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) |> 
+         carc_stat = case_when(carc_stat == "no data" ~ NA_character_,
+                               carc_stat == "t" ~ "tagged",
+                               carc_stat == "c" ~ "chopped",
+                               TRUE ~ carc_stat)) |> 
   glimpse()
 ```
 

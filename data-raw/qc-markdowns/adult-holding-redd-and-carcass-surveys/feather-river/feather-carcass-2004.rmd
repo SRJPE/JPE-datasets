@@ -100,6 +100,16 @@ write_csv(cwt_header, here::here("data-raw", "qc-markdowns", "adult-holding-redd
 
 ## Raw Data Glimpse: {.tabset}
 
+### cwt_raw
+```{r}
+cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTTag_2004.csv")) |> glimpse()
+```
+
+### CWT_Header_raw
+```{r}
+cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2004.csv")) |> glimpse()
+```
+
 ### ChopChannel_Raw
 ```{r}
 ChopChannel_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "ChopChannel_2004.csv")) |> 
@@ -117,15 +127,7 @@ ChopHeader_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding
   glimpse()
 ```
 
-### cwt_raw
-```{r}
-cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTTag_2004.csv")) |> glimpse()
-```
 
-### CWT_Header_raw
-```{r}
-cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river", "CWTHeader_2004.csv")) |> glimpse()
-```
 
 ## Data transformations: {.tabset}
 
@@ -174,7 +176,7 @@ chop_header <- ChopHeader_raw |>
 ```
   
 ### CWT
-The `cwt` table contains coded wire tag information. 
+The `cwt` table contains carcass sampling information on carcasses, both chops and tagged carcasses. Each `tag_id` is represented only once in this table.
 
 ```{r}
 cwt <- full_join(cwt_raw |> clean_names(), cwt_header_raw |> clean_names()) |> 
@@ -560,20 +562,28 @@ unique(cwt$carc_stat)
 ```{r}
 cwt_cleaner <- cwt |> 
   mutate_if(is.character, str_to_lower) |> 
-  rename(datetime = "date") |> 
   mutate(crew = str_replace_all(crew, " ", ","),
          crew = str_replace_all(crew, ",,", ","),
-         sex = case_when(sex %in% c("nd", "uk", NA) ~ "unknown",
+         sex = case_when(sex %in% c("nd", "uk") ~ "unknown",
+                         sex == "m" ~ "male",
+                         sex == "f" ~ "female",
                          TRUE ~ sex),
          rel_loc = ifelse(rel_loc == "no data", NA, rel_loc),  
-         spawn = case_when(spawn %in% c("no data", "uk") ~ NA_character_,
+         spawn = case_when(spawn %in% c("no data") ~ NA_character_,
+                           spawn == "uk" ~ "unknown",
+                           spawn == "u" ~ "unspawned",
+                           spawn == "s" ~ "spawned",
                            TRUE ~ spawn),
-         clip = case_when(clip %in% c("no data", "uk") ~ NA_character_,
+         clip = case_when(clip %in% c("no data") ~ NA_character_,
                           clip == "y" ~ "yes",
                           clip == "n" ~ "no",
+                          clip == "uk" ~ "unknown",
                           TRUE ~ clip),
          samp_type = ifelse(samp_type == "no data", NA, samp_type),
-         carc_stat = ifelse(carc_stat == "no data", NA, carc_stat)) |> 
+         carc_stat = case_when(carc_stat == "no data" ~ NA_character_,
+                               carc_stat == "c" ~ "chopped",
+                               carc_stat == "t" ~ "tagged",
+                               TRUE ~ carc_stat)) |> 
   glimpse()
 ```
 

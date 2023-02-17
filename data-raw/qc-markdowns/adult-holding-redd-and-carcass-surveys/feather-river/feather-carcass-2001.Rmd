@@ -157,7 +157,6 @@ TagEnv_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-red
 ### cwt_raw
 
 ```{r}
-#Coded Wiretag Info
 cwt_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
                                "cwt_2001.csv"), col_types = c("d","T","d","d","c","d","c","c")) |> 
   glimpse()
@@ -206,7 +205,7 @@ chop_header <- ChopEnv_raw |>
 
 ### CWT
 
-The `cwt` table contains coded wire tag information. It is not joined with the other tables.
+The `cwt` table contains information on individual carcasses. It is not joined with the other tables.
 
 ```{r}
 cwt <- cwt_raw |> 
