@@ -178,7 +178,7 @@ cwt <- cwt_raw |>
   glimpse()
 ```
 
-### Recovered chops
+### Recovered and chopped carcasses
 
 The `chop_recovery_join` table contains recovered carcass counts. Add `disposition` column to mark as chops.
 
@@ -221,6 +221,20 @@ tag_join <- left_join(TagData_raw, TagEnv_raw,
 #   select(c(tag_num, sect, unit, fl, sex, egg_ret, recov_id, disposition)) |>  glimpse()
 ```
 
+### Recovered tagged carcasses
+
+The `tag_recovery` table contains recovered tagged carcasses. Add `disposition` column to take `rel_stat` column and convert to `recovered`, `chopped`, or `NA`. Rename `mult_recov` to `count`.
+```{r}
+tag_recovery <- RecovTag_raw |> 
+  clean_names() |> 
+  mutate(disposition = case_when(rel_stat == "R" ~ "recovered",
+                                 rel_stat == "C" ~ "chopped",
+                                 rel_stat == "X" ~ NA_character_),
+         source_table = "RecovTag") |> 
+  rename(count = mult_recov) |> 
+  select(-rel_stat) |> 
+  glimpse() 
+```
 ### Survey
 
 The `chop_header` table contains survey metadata and covariates
@@ -234,13 +248,13 @@ chop_header <- ChopEnv_raw |>
 
 ### Combine tables
 ```{r}
-all_carcasses <- bind_rows(tag_join, chop_recovery_join, cwt) |> glimpse()
+all_carcasses <- bind_rows(tag_join, chop_recovery_join, cwt, tag_recovery) |> glimpse()
 ```
 ## Explore Numeric Variables: {.tabset}
 
 ### All Carcasses Variables: 
 
-### Chop Recovery Variable: `tag_num`, `sect`, `unit`, `fl`, `float`, `tag_env_id`, `rel_loc2`, `week`, `chop_env_id`, `count`, `number_spawned`, `recov_id`, `cwt_id`, `ht_num`
+### Chop Recovery Variable: `tag_num`, `sect`, `unit`, `fl`, `float`, `tag_env_id`, `rel_loc2`, `week`, `chop_env_id`, `count`, `number_spawned`, `recov_id`, `cwt_id`, `ht_num`, `recov_tag_id`
 
 ```{r}
 # Filter clean data to show only numeric variables 
@@ -263,6 +277,7 @@ summary(all_carcasses$number_spawned)
 summary(all_carcasses$recov_id)
 summary(all_carcasses$cwt_id)
 summary(all_carcasses$ht_num)
+summary(all_carcasses$recov_tag_id)
 ```
 
 
@@ -294,7 +309,7 @@ This plot shows carcass over period of record by sex and is helpful for understa
 
 ```{r}
 total_adult_chops <- all_carcasses |> 
-  filter(disposition %in% c("chopped_recovered", "chopped")) |> 
+  filter(disposition %in% c("chopped_recovered", "chopped", "recovered")) |> 
   filter(lifestage != "grilse") |> 
   select(date, count, disposition, sex) |> 
   glimpse()
@@ -321,7 +336,7 @@ This plot shows the sex proportion of adult chops for each day over the the peri
 
 ```{r}
 total_grilse_chops <- all_carcasses |> 
-  filter(disposition %in% c("chopped_recovered", "chopped")) |> 
+  filter(disposition %in% c("chopped_recovered", "chopped", "recovered")) |> 
   filter(lifestage == "grilse") |> 
   select(date, count, disposition, sex) |> 
   glimpse()
@@ -342,7 +357,7 @@ This plot shows the sex proportion of grilse chops for each day over the the per
 
 
 **Plotting all carcasses over Period of Record**
-Carcasses in the `all_carcasses` dataset are marked as either `tagged`, `chopped_recovered`, and `chopped`. `chopped` carcasses have come from the `CWT` data table and contain individual-level sampling information (i.e. sex, fork length). `chopped_recovered` carcasses come from the `ChopRecov` data table and have sex and lifestage information, but no other individual-level sampling information. `tagged` carcasses come from the `TagData` data table and have individual-level sampling information.
+Carcasses in the `all_carcasses` dataset are marked as either `tagged`, `chopped_recovered`, `recovered` and `chopped`. `chopped` carcasses have come from the `CWT` data table and contain individual-level sampling information (i.e. sex, fork length). `chopped_recovered` carcasses come from the `ChopRecov` data table and have sex and lifestage information, but no other individual-level sampling information. `tagged` carcasses come from the `TagData` data table and have individual-level sampling information. `recovered` carcasses come from the `RecovTag` data table and do not have individual-level sampling information, though they could potentially be joined by `recovID.`
 
 ```{r}
 total_carcasses_summary <- all_carcasses |> 
@@ -372,7 +387,7 @@ summary(chop_recovery_join$number_spawned)
 **Plotting number_spawned over a Period of Record**
 
 ```{r}
-all_carcasses|>  
+all_carcasses |>  
   group_by(date) |>  
   summarize(number_spawned = sum(number_spawned, na.rm = T)) |>  
   ggplot(aes(x = date, y = number_spawned)) +
@@ -510,7 +525,7 @@ chop_header_cleaner <- chop_header |>
 
 ## Comments
 
-* We combined all tables - `ChopRecov`, `TagData`, and `CWT` into `all_carcasses`. This assumes that there is no double counting, which we think is valid according to discussions with data stewards.
+* We combined all tables - `ChopRecov`, `TagData`, `RecovTag` and `CWT` into `all_carcasses`. Data from `RecovTag` may be associated with `TagData`, so there could be some double counting here (i.e. one carcass represented more than once in the dataset). This could be addressed by filtering to a unique identifier (TagNum?)
 * We assigned `disposition` based on the table from which the data came from.
 * We assigned spawning condition based on values in egg_ret. May need to confirm.
 * We kept `recov_id` because it may be able to connect some tagged individuals with chopped/recovered_chopped individuals.
@@ -549,7 +564,8 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Recovery ID",
                                           "Lifestage",
                                           "CWT ID",
-                                          "HT Number"),
+                                          "HT Number",
+                                          "Recovery Tag ID"),
                           percent_na = round(percent_na$value*100))
 
 kable(all_carcasses_data_dictionary)
