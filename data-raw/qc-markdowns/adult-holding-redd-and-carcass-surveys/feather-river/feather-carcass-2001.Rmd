@@ -123,8 +123,6 @@ ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-
 
 ### RecovTag_Raw
 ```{r}
-#There is Tag1 and Tag2- what is the difference?
-#What is TagComp?
 RecovTag_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "feather-river",
                                     "RecovTag_2001.csv")) |> 
   # rename("ID" = HeaderID) |> 
@@ -244,9 +242,7 @@ chop_header <- ChopEnv_raw |>
 
 ## Explore Numeric Variables: {.tabset}
 
-### All Carcasses Variables: 
-
-### Chop Recovery Variable: `tag_num`, `tag1`, `tag2`, `sect`, `fl`, `tag_env_id`, `tag_comp`, `flow`, `week_num`, `count`, `chop_env_id`, `minute`, `recov_id`, `recov_id`, `cwt_id`, `ht_num`, `recov_tag_id`
+### All Carcasses Variables: `tag_num`, `tag1`, `tag2`, `sect`, `fl`, `tag_env_id`, `tag_comp`, `flow`, `week_num`, `count`, `chop_env_id`, `minute`, `recov_id`, `recov_id`, `cwt_id`, `ht_num`, `recov_tag_id`
 
 ```{r}
 # Filter clean data to show only numeric variables 
