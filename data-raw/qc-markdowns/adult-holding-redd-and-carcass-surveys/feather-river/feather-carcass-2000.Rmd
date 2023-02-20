@@ -332,7 +332,7 @@ total_adult_chops_summary |>
 This plot shows the sex proportion of adult chops for each day over the the period of 2000-09-05 to 2000-12-14. The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period. 
 
 
-**Plotting grilse_male  over Period of Record**
+**Plotting grilse chops over Period of Record**
 
 ```{r}
 total_grilse_chops <- all_carcasses |> 
