@@ -72,6 +72,7 @@ sacramento <- tibble(stream = c(rep("sacramento river",5)),
                                      "rst at river right", "rst at river left")) |> 
   mutate(id = paste0("08",row_number()))
 trap_location <- bind_rows(battle, butte, clear, deer, feather, mill, yuba, sacramento)
+write_csv(trap_location, "data/model-db/trap_location.csv")
 
 
 # run ---------------------------------------------------------------------
@@ -82,7 +83,7 @@ run <- tibble(definition = c("late fall", "spring", "fall", "winter", NA, "not r
                               "run recorded as unknown likely due to uncertainty in the field")) |> 
   mutate(id = row_number())
 
-
+write_csv(run, "data/model-db/run.csv")
 # lifestage ---------------------------------------------------------------
 lifestage <- tibble(definition = c("smolt", "fry", "yolk sac fry", "not recorded", "parr", "silvery parr", 
                                    NA, "adult", "unknown", "yearling"),
@@ -90,7 +91,7 @@ lifestage <- tibble(definition = c("smolt", "fry", "yolk sac fry", "not recorded
                               "lifestage listed as NA because count is 0","adult","lifestage recorded as unknown",
                               "lifestage recorded as yearling")) |> 
   mutate(id = row_number())
-
+write_csv(lifestage, "data/model-db/lifestage.csv")
 # visit_type --------------------------------------------------------------
 visit_type <- tibble(definition = c("not recorded", "continue trapping", "end trapping", "start trapping", 
                                     "unplanned restart", "service trap", "drive by"),
@@ -99,21 +100,21 @@ visit_type <- tibble(definition = c("not recorded", "continue trapping", "end tr
                                     "trap checked visually by drive by, no catch processed")) |> 
   mutate(id = row_number())
 
-
+write_csv(visit_type, "data/model-db/visit_type.csv")
 # trap_functioning --------------------------------------------------------
 trap_functioning <- tibble(definition = c("not recorded", "trap functioning normally", "trap stopped functioning", 
                                           "trap functioning but not normally", "trap not in service"),
                      description = c("trap function not recorded", "trap functioning normally","trap stopped functioning",
                                      "trap functioning but not normally","trap not in service")) |> 
   mutate(id = row_number())
-
+write_csv(trap_functioning, "data/model-db/trap_functioning.csv")
 # fish_processed ----------------------------------------------------------
 fish_processed <- tibble(definition = c("not recorded", "processed fish", "no fish caught", "no catch data, fish released", 
                                         "no catch data, fish left in live box"),
                            description = c("not recorded", "processed fish", "no fish caught", "no catch data, fish released", 
                                            "no catch data, fish left in live box")) |> 
   mutate(id = row_number())
-
+write_csv(fish_processed, "data/model-db/fish_processed.csv")
 
 # debris_level ------------------------------------------------------------
 debris_level <- tibble(definition = c("not recorded", NA, "light", "medium", "heavy", "very heavy", 
@@ -121,14 +122,14 @@ debris_level <- tibble(definition = c("not recorded", NA, "light", "medium", "he
                          description = c("not recorded", NA, "light", "medium", "heavy", "very heavy", 
                                          "none")) |> 
   mutate(id = row_number())
-
+write_csv(debris_level, "data/model-db/debris_level.csv")
 
 # environmental_parameter -------------------------------------------------
 environmental_parameter <- tibble(definition = c("temperature", "discharge"),
                                   description = c("mean daily water temperature in C", 
                                                   "mean daily discharge in C")) |> 
   mutate(id = row_number())
-
+write_csv(environmental_parameter, "data/model-db/environmental_parameter.csv")
 
 
 # gage_source -------------------------------------------------------------
@@ -140,10 +141,14 @@ gage_source <- tibble(definition = c("FWS", "CDEC BCK", "CDEC DCV", "CDEC MLM",
                                       "USGS 11390500", "USGS 11376550", "USGS 11372000", "USGS 11383500", 
                                       "CDEC GRL", "USGS 11407000", "USGS 11381500", "USGS 11421000")) |> 
   mutate(id = row_number())
-
+write_csv(gage_source, "data/model-db/gage_source.csv")
 # hatchery ----------------------------------------------------------------
-
-
+hatchery <- tibble(definition = c("FEATHER R HATCHERY", "COLEMAN NFH", "LIVINGSTON STONE HAT", 
+                                  "NIMBUS FISH HATCHERY", "TEHAMA-COLUSA FF"),
+                      description = c("FEATHER R HATCHERY", "COLEMAN NFH", "LIVINGSTON STONE HAT", 
+                                      "NIMBUS FISH HATCHERY", "TEHAMA-COLUSA FF")) |> 
+  mutate(id = row_number())
+write_csv(hatchery, "data/model-db/hatchery.csv")
 # origin ------------------------------------------------------------------
 
 origin <- tibble(definition = c("natural", "hatchery", "not recorded", "unknown", "mixed"),
@@ -151,7 +156,7 @@ origin <- tibble(definition = c("natural", "hatchery", "not recorded", "unknown"
                                        "origin of fish used in release not recorded", "origin unknown",
                                        "both hatchery and wild fish used in release")) |> 
   mutate(id = row_number())
-
+write_csv(origin, "data/model-db/origin.csv")
 # catch -------------------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked.csv",
                bucket = gcs_get_global_bucket(),
@@ -182,7 +187,7 @@ catch <- catch_raw |>
   select(-lifestage) |> 
   mutate(actual_count = NA)
 
-
+write_csv(catch, "data/model-db/catch.csv")
 # trap --------------------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/daily_trap.csv",
                bucket = gcs_get_global_bucket(),
@@ -256,7 +261,7 @@ trap <- trap_raw |>
             rpm_start, rpm_end, total_revolutions, debris_volume, debris_level_id,
             discharge, water_velocity, water_temp, turbidity, include))
          
-
+write_csv(trap, "data/model-db/trap_visit.csv")
 # environmental_gage ------------------------------------------------------
 gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
                bucket = gcs_get_global_bucket(),
@@ -299,6 +304,7 @@ temperature <- temperature_raw |>
   select(-gage, -description)
   
 environmental_gage <- bind_rows(flow, temperature)
+write_csv(environmental_gage, "data/model-db/environmental_gage.csv")
 # release_summary ---------------------------------------------------------
 
 gcs_get_object(object_name = "standard-format-data/standard_release.csv",
@@ -325,7 +331,7 @@ release_summary <- release_raw |>
   left_join(origin, by = c("origin_released" = "definition")) |> 
   rename(origin_id = id) |> 
   select(-origin_released, -description)
-
+write_csv(release_summary, "data/model-db/release_summary.csv")
 # released_fish -----------------------------------------------------------
 # no historical data
 
@@ -363,11 +369,48 @@ recaptured_fish <- recapture_raw |>
   rename(lifestage_id = id) |> 
   select(-lifestage) |> 
   mutate(actual_count = NA)
-  
+write_csv(recaptured_fish, "data/model-db/recaptured_fish.csv")
 # hatchery_release --------------------------------------------------------
 # need to figure out this one
-gcs_get_object(object_name = "rst/RMIS_hatchery_release_Nov102022.csv",
+gcs_get_object(object_name = "standard-format-data/standard_rst_hatchery_release.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_hatchery.csv",
                overwrite = TRUE)
 hatchery_raw <- read_csv("data/standard-format-data/standard_hatchery.csv")
+
+hatchery_release <- hatchery_raw |> 
+  select(first_release_date, last_release_date, run, avg_length, avg_weight, hatchery_location_name,
+         release_location_name, total_number_released, adclip_rate) |> 
+  rename(mean_length = avg_length,
+         mean_weight = avg_weight,
+         number_released = total_number_released) |> 
+  # run_id
+  left_join(select(run, -description), by = c("run" = "definition")) |> 
+  rename(run_id = id) |> 
+  select(-run) |> 
+  # hatcher_id 
+  left_join(select(hatchery, -description), by = c("hatchery_location_name" = "definition")) |> 
+  rename(hatchery_id = id) |> 
+  select(-hatchery_location_name) |> 
+  mutate(stream = case_when(release_location_name %in% c("FEATHER BEL THRM HI FLOW", "FEATHER RIVER", "FEATHER AT GRIDLEY",
+                                                         "LAKE OROVILLE", "FEATHER AT LIVE OAK", "FEATHER R HATCHERY") ~ "feather river",
+                            # battle creek release locations are below trap but would feed into sacramento
+                            release_location_name %in% c("SAC R LAKE REDDING PARK", "SAC R BONNYVIEW BOAT RAMP", "SAC R BEL RBDD", "SAC R RED BLUFF DIV DAM",
+                                                         "COLEMAN NFH", "BATTLE CREEK BELOW CNFH") ~ "sacramento river",
+                            # boyds pump is below feather rst sites, after confluence with yuba
+                            # elkhorn is just north of sacramento
+                            # yolo bypass is south
+                            # release_location_name %in% c("FEATHER BOYDS PUMP RAMP", "SAC R ELKHORN BOAT RAMP", "YOLO BYPASS", "YOLO BYPASS ELKHORN", "AMERICAN R AT SUNRISE",
+                            #                              "COYOTE CREEK", "FEATHER AT YUBA CITY", "SAC R AT CLARKSBURG", "SAC R AT DISCOVERY PARK",
+                            #                              "AMERICAN RIVER", "SAC R AB COLLINSVILLE") ~ NA,
+                            T ~ NA_character_)) |> 
+  # trap_location_id
+  left_join(trap_location, by = "stream") |> 
+  select(-c(stream, site, subsite, site_group, description)) |> 
+  rename(trap_location_id = id) |> 
+  # remove LFC site ids for "FEATHER BEL THRM HI FLOW" "FEATHER AT GRIDLEY" "FEATHER AT LIVE OAK"
+  mutate(remove = ifelse(release_location_name %in% c("FEATHER BEL THRM HI FLOW", "FEATHER AT GRIDLEY", "FEATHER AT LIVE OAK") &
+                           trap_location_id %in% c(051, 052, 057, 058, 059, 0514, 0515, 0516, 0517), "remove", "keep")) |> 
+  filter(remove != "remove", !is.na(trap_location_id)) |> 
+  select(-c(remove, release_location_name))
+write_csv(hatchery_release, "data/model-db/hatchery_release.csv")
