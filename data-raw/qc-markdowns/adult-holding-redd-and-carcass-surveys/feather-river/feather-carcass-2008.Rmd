@@ -146,8 +146,6 @@ cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 ```
 
 
-
-
 ## Data transformations: {.tabset}
 
 ### CWT
