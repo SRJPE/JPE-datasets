@@ -136,9 +136,6 @@ cwt_header_raw <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding
 ```
 
 
-
-
-
 ## Data transformations: {.tabset}
 
 Note: for 2011-2016 data, the Access relationships are as follows:
