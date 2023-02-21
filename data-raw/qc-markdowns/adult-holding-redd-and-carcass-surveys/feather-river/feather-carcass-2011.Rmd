@@ -153,7 +153,7 @@ Note: for 2011-2016 data, the Access relationships are as follows:
 
 
 ### CWT
-The `cwt` table contains sampling information on individual carcasses. This table also contains sex, spawning condition, and adipose fin clip status. It is not joined with the other tables. Added a `count` column assuming each row represents one individual. This table contains `disposition` information in the `recapture_or_chop` variable (in previous years this was the `carc_stat` variable. f a tagged carcass was tagged, recaptured, re-released, and chopped, it will be represented multiple times in this table (i.e. there can be multiple rows for one `tag_id`).  Added `source_table` column for tracking. Each `tag_id` is represented only once in this table.
+The `cwt` table contains sampling information on individual carcasses. This table also contains sex, spawning condition, and adipose fin clip status. It is not joined with the other tables. Added a `count` column assuming each row represents one individual. This table contains `disposition` information in the `recapture_or_chop` variable (in previous years this was the `carc_stat` variable). If a tagged carcass was tagged, recaptured, re-released, and chopped, it will be represented multiple times in this table (i.e. there can be multiple rows for one `tag_id`).  Added `source_table` column for tracking.
 
 ```{r}
 cwt <- left_join(cwt_raw |> clean_names(), 
