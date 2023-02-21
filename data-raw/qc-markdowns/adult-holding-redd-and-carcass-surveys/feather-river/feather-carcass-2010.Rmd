@@ -460,7 +460,7 @@ chop_header_cleaner <- chop_header |>
 
 ## Comments
 
-* Table layout/structure same as 2002-2008.
+* Table layout/structure same as 2002-2009.
 * `Hallprint` variable in `cwt` (began collecting in 2004).
 * no more `run` variable (was collected in 2008 and 2009)
 * `ChopChannel` table this year does not contain lifestage or fin clip information.
