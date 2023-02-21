@@ -241,8 +241,7 @@ all_carcasses |>
        y = "Chops") +
   theme_minimal() + 
   scale_fill_manual(values = wes_palette("Moonrise2")) +
-  theme(text = element_text(size = 15)) +
-  ylim(c(0, 100))
+  theme(text = element_text(size = 15))
 ```
 This plot shows carcass over period of record by sex and is helpful for understanding the seasonality of the survey, i.e. chop counts peak in Oct-Nov.
 
