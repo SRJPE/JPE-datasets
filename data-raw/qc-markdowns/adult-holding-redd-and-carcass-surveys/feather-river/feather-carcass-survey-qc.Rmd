@@ -21,6 +21,12 @@ library(knitr)
 library(wesanderson)
 ```
 
+TODO
+* fork length
+* week number
+* recov_id vs recover_id vs reov_tag_id
+* tag_id vs disc_tag_applied
+* ad_fin_clip_status vs adipose_fin_clip vs adipose_fin_clipped
 
 # Feather River Carcass Data
 
@@ -332,6 +338,9 @@ feather_carcass_combined_raw <-
 ### Remove variables that are uninformative
 * filter out `NA` dates
 * create `year` column
+* Carcasses in the `feather_carcass_combined` dataset are marked as `tagged`,
+`recovered`, `chopped`, `chopped_recovered`/`recaptured, chopped`, `recaptured`/`recovered`, or `NA`. The differences in naming conventions come from different years and source tables.
+* we standardize the `disposition` variable here
 
 ```{r}
 feather_carcass_combined <- feather_carcass_combined_raw |> 
@@ -341,7 +350,10 @@ feather_carcass_combined <- feather_carcass_combined_raw |>
             time, survey_meta_id, chops_id, survey_id, data_recorder,
             creation_time, editor, edit_time, section_id, boat, time_in,
             time_out, field_recorder, individual_id, cwt_cd)) |> 
-  mutate(year = year(date)) |> 
+  mutate(year = year(date),
+         disposition = case_when(disposition == "recaptured, chopped" ~ "chopped_recovered",
+                                 disposition == "recaptured" ~ "recovered",
+                                 TRUE ~ disposition)) |> 
   filter(!is.na(date)) |> 
   glimpse()
 ```
@@ -394,10 +406,10 @@ summary(feather_carcass_combined$count)
 Provide a stat on NA or unknown values.
 
 ```{r}
-round(sum(is.na(feather_carcass_combined$count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100
+round(sum(is.na(feather_carcass_combined$count))/nrow(feather_carcass_combined), 3) * 100
 
 ```
-* `r round(sum(is.na(feather_carcass_combined$count))/nrow(feather_carcass_chops_and_tags_combined), 3) * 100` % of values in the `count` column are NA.
+* `r round(sum(is.na(feather_carcass_combined$count))/nrow(feather_carcass_combined), 3) * 100` % of values in the `count` column are NA.
 
 **Plotting chops over Period of Record**
 
@@ -415,24 +427,67 @@ feather_carcass_combined |>
 
 ### Carcass variables: `adipose_fin_clip`, `sex`, `disposition`, `fork_length`
 
-**Plotting counts by disposition over period of record**
+**Plotting total adult chops over period of record**
 
 STOPPED HERE 2-21-2023 TODO
 
 ```{r}
-feather_carcass_combined |> 
-  group_by(date, disposition) |> 
-  summarise(count = )
-  ggplot(aes(x = date, y = count)) +
-  geom_col() +
-  facet_wrap(~year, scales = "free") +
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month")+
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 10,angle = 90, vjust = 0.5, hjust=0.1)) +
-  theme(axis.text.y = element_text(size = 8))+
-  labs(title = "Daily Carcass count from 2000 to 2020")
+total_adult_chops <- feather_carcass_combined |> 
+  filter(disposition != "tagged") |>
+  filter(!is.na(date)) |> 
+  mutate(fake_date = paste0("1970-", month(date), "-", day(date)),
+         fake_date = ymd(fake_date),
+         year = year(date)) |> 
+  select(fake_date, year, count, disposition, sex) |> 
+  glimpse()
+
+total_adult_chops_summary <- total_adult_chops |> 
+  group_by(fake_date, year, sex) |> 
+  summarise(total_adult_chops = sum(count, na.rm = T)) |> 
+  glimpse()
 ```
 
+```{r}
+total_adult_chops_summary |> 
+  ggplot(aes(x = fake_date, y = total_adult_chops, fill = sex)) + 
+  geom_bar(stat = "identity", position = position_fill()) +
+  labs(y = "Proportion", x = "Date") +
+  theme_minimal() + 
+  facet_wrap(~year) +
+  scale_fill_manual(values = wes_palette("Moonrise2"))
+```
+This plot shows the sex proportion of adult chops (no `tagged` or `pre_carcass_survey` carcasses) for each day over the period of `r min(feather_carcass_combined$date, na.rm = T)` to `r max(feather_carcass_combined$date, na.rm = T)`. The plot is faceted by `year.` The data gaps that we see are a result of the data collection process in which the data was collected 2-4 days each week (with no specific period day of week) over the 4 month period.
+
+**Plotting all carcasses over Period of Record**
+
+```{r}
+total_carcasses_summary <- feather_carcass_combined |> 
+  filter(!is.na(date)) |> 
+  mutate(fake_date = paste0("1970-", month(date), "-", day(date)),
+         fake_date = ymd(fake_date),
+         year = year(date)) |> 
+  group_by(fake_date, year, disposition) |> 
+  summarise(total_carcasses = sum(count, na.rm = T)) |> 
+  glimpse()
+```
+
+```{r}
+total_carcasses_summary |> 
+  ggplot(aes(x = fake_date, y = total_carcasses, fill = disposition)) + 
+  facet_wrap(~year) +
+  geom_bar(stat = "identity", position = position_fill()) + 
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = c(wes_palette("Moonrise2"), "#eeb7d0"))
+```
+This plot shows the proportion of carcasses by `disposition` by `date`, faceted by `year`. `chopped_recovered` dominates 2000 and 2001, likely due to naming conventions. Across all years, the proportion of `chopped` carcasses tends increase as the sampling seasons goes on, and the proportion of `chopped` carcasses tends to decrease. A small proportion of carcasses across all years are `recovered`. 
+
+### Individual-level sampling information
+
+**Plotting fork length of each sex**
+```{r}
+summary(feather_carcass_combined$fl_mm)
+```
 
 ** Upload to google bucket - TODO
 ```{r, include = FALSE}
