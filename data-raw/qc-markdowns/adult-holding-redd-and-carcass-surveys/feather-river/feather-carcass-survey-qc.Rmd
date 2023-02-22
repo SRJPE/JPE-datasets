@@ -99,7 +99,8 @@ read_from_cloud <- function(carcass_data_type, year){
 ```{r, message = FALSE}
 feather_carcass_2000 <- read_from_cloud("all_carcasses", 2000) |>  
   rename(head_tag = ht_num,
-         spawn = egg_ret) |> 
+         spawning_condition = egg_ret,
+         fork_length = fl) |> 
   mutate(date = as.Date(date)) |> 
   glimpse() 
 ```
@@ -111,7 +112,9 @@ feather_carcass_2000 <- read_from_cloud("all_carcasses", 2000) |>
 feather_carcass_2001 <- read_from_cloud("all_carcasses", 2001) |> 
   mutate(date = as.Date(date)) |> 
   rename(head_tag = ht_num,
-         spawn = egg_ret) |> 
+         spawning_condition = egg_ret,
+         week = week_num,
+         fork_length = fl) |> 
   glimpse() 
 ```
 
@@ -119,6 +122,7 @@ feather_carcass_2001 <- read_from_cloud("all_carcasses", 2001) |>
 ```{r, message = FALSE}
 feather_carcass_2002 <- read_from_cloud("all_carcasses", 2002) |> 
   mutate(date = as.Date(date)) |> 
+  rename(fork_length = fl) |> 
   glimpse() 
 ```
 
@@ -126,6 +130,8 @@ feather_carcass_2002 <- read_from_cloud("all_carcasses", 2002) |>
 ```{r, message = FALSE}
 feather_carcass_2003 <- read_from_cloud("all_carcasses", 2003)  |> 
   mutate(date = as.Date(date)) |> 
+  rename(fork_length = fl,
+         adipose_fin_clipped = adipose_fin_clip) |> 
   glimpse() 
 ```
 
@@ -135,6 +141,8 @@ feather_carcass_2003 <- read_from_cloud("all_carcasses", 2003)  |>
 feather_carcass_2004 <- read_from_cloud("all_carcasses", 2004) |> 
   mutate(head_tag = as.integer(head_tag),
          date = as.Date(date)) |> 
+  rename(fork_length = fl,
+         adipose_fin_clipped = adipose_fin_clip) |> 
   glimpse() 
 ```
 
@@ -142,6 +150,8 @@ feather_carcass_2004 <- read_from_cloud("all_carcasses", 2004) |>
 ```{r, message = FALSE}
 feather_carcass_2005 <- read_from_cloud("all_carcasses", 2005) |>
   mutate(date = as.Date(date)) |> 
+  rename(fork_length = fl,
+         adipose_fin_clipped = adipose_fin_clip) |> 
   glimpse() 
 ```
 
@@ -152,6 +162,8 @@ feather_carcass_2006 <- read_from_cloud("all_carcasses", 2006) |>
   mutate(date = as.Date(date),
          tag_col = as.character(tag_col),
          recov_color = as.character(recov_color)) |> 
+  rename(fork_length = fl,
+         adipose_fin_clipped = adipose_fin_clip) |>  
   glimpse() 
 ```
 
@@ -161,7 +173,9 @@ feather_carcass_2006 <- read_from_cloud("all_carcasses", 2006) |>
 feather_carcass_2007 <- read_from_cloud("all_carcasses", 2007) |> 
   mutate(date = as.Date(date),
          tag_col = as.character(tag_col),
-         recov_color = as.character(recov_color)) |> 
+         recov_color = as.character(recov_color)) |>
+  rename(fork_length = fl,
+         adipose_fin_clipped = adipose_fin_clip) |> 
   glimpse() 
 ```
 
@@ -171,7 +185,9 @@ feather_carcass_2007 <- read_from_cloud("all_carcasses", 2007) |>
 feather_carcass_2008 <- read_from_cloud("all_carcasses", 2008) |> 
   mutate(date = as.Date(date),
          tag_col = as.character(tag_col),
-         recov_color = as.character(recov_color)) |> 
+         recov_color = as.character(recov_color)) |>
+  rename(fork_length = fl,
+         adipose_fin_clipped = adipose_fin_clip) |>  
   glimpse() 
 ```
 
@@ -181,7 +197,11 @@ feather_carcass_2008 <- read_from_cloud("all_carcasses", 2008) |>
 feather_carcass_2009 <- read_from_cloud("all_carcasses", 2009) |> 
   mutate(date = as.Date(date),
          tag_col = as.character(tag_col),
-         recov_color = as.character(recov_color)) |> 
+         recov_color = as.character(recov_color)) |>
+  rename(fork_length = fl,
+         adipose_fin_clipped = adipose_fin_clip,
+         week = week_num,
+         spawning_condition = spawn) |> 
   glimpse() 
 ```
 
@@ -191,7 +211,11 @@ feather_carcass_2009 <- read_from_cloud("all_carcasses", 2009) |>
 feather_carcass_2010 <- read_from_cloud("all_carcasses", 2010) |> 
   mutate(date = as.Date(date),
          tag_col = as.character(tag_col),
-         recov_color = as.character(recov_color)) |> 
+         recov_color = as.character(recov_color)) |>
+  rename(fork_length = fl,
+         adipose_fin_clipped = adipose_fin_clip,
+         week = week_num,
+         spawning_condition = spawn) |> 
   glimpse() 
 ```
 
@@ -200,7 +224,9 @@ feather_carcass_2010 <- read_from_cloud("all_carcasses", 2010) |>
 feather_carcass_2011 <- read_from_cloud("all_carcasses", 2011) |> 
   mutate(date = as.Date(date)) |> 
   rename(tag_col = tag_color,
-         recov_color = tag_recap_chop_color) |> 
+         recov_color = tag_recap_chop_color,
+         fork_length = fl,
+         head_tag = head_tag_number) |> 
   glimpse() 
 ```
 
@@ -220,7 +246,8 @@ feather_carcass_2013 <- read_from_cloud("all_carcasses", 2013) |>
   mutate(date = as.Date(date),
          hallprint = as.character(hallprint)) |> 
   rename(head_tag = head_tag_number,
-         tag_col = tag_color) |> 
+         tag_col = tag_color,
+         fork_length = fl) |> 
   glimpse() 
 ```
 
@@ -232,7 +259,8 @@ feather_carcass_2014 <- read_from_cloud("all_carcasses", 2014) |>
   mutate(date = as.Date(date),
          hallprint = as.character(hallprint)) |> 
   rename(head_tag = head_tag_number,
-         tag_col = tag_color) |> 
+         tag_col = tag_color,
+         fork_length = fl) |> 
   glimpse() 
 ```
 
@@ -243,7 +271,8 @@ feather_carcass_2014 <- read_from_cloud("all_carcasses", 2014) |>
 feather_carcass_2015 <- read_from_cloud("all_carcasses", 2015) |> 
   mutate(date = as.Date(date)) |> 
   rename(head_tag = head_tag_number,
-         tag_col = tag_color) |> 
+         tag_col = tag_color,
+         fork_length = fl) |> 
   glimpse() 
 ```
 
@@ -254,7 +283,9 @@ feather_carcass_2015 <- read_from_cloud("all_carcasses", 2015) |>
 feather_carcass_2016 <- read_from_cloud("all_carcasses", 2016) |> 
   mutate(date = as.Date(date)) |> 
   rename(head_tag = head_tag_number,
-         tag_col = tag_color) |> 
+         tag_col = tag_color,
+         week = week_number,
+         fork_length = fl) |> 
   glimpse() 
 ```
 
@@ -266,8 +297,13 @@ feather_carcass_2017 <- read_from_cloud("all_carcasses", 2017) |>
                                          ad_fin_clip_status == "yes" ~ "TRUE",
                                          ad_fin_clip_status == "no" ~ "FALSE",
                                          TRUE ~ ad_fin_clip_status),
-         ad_fin_clip_status = as.logical(ad_fin_clip_status)) |>
-  select(-adipose_fin_clipped) |>  
+         adipose_fin_clipped = as.logical(adipose_fin_clipped)) |>
+  select(-ad_fin_clip_status) |>  
+  rename(week = survey_week,
+         fork_length = fl_mm,
+         tag_id = disc_tag_applied,
+         recov_tag_id = tag_recovered,
+         spawning_condition = spawned) |> 
   glimpse() 
 ```
 
@@ -279,8 +315,13 @@ feather_carcass_2018 <- read_from_cloud("all_carcasses", 2018) |>
                                          ad_fin_clip_status == "yes" ~ "TRUE",
                                          ad_fin_clip_status == "no" ~ "FALSE",
                                          TRUE ~ ad_fin_clip_status),
-         ad_fin_clip_status = as.logical(ad_fin_clip_status)) |>
-  select(-adipose_fin_clipped) |> 
+         adipose_fin_clipped = as.logical(adipose_fin_clipped)) |>
+  select(-ad_fin_clip_status) |>  
+  rename(week = survey_week,
+         fork_length = fl_mm,
+         tag_id = disc_tag_applied,
+         recov_tag_id = tag_recovered,
+         spawning_condition = spawned) |> 
   glimpse() 
 ```
 
@@ -292,21 +333,31 @@ feather_carcass_2019 <- read_from_cloud("all_carcasses", 2019) |>
                                          ad_fin_clip_status == "yes" ~ "TRUE",
                                          ad_fin_clip_status == "no" ~ "FALSE",
                                          TRUE ~ ad_fin_clip_status),
-         ad_fin_clip_status = as.logical(ad_fin_clip_status)) |>
-  select(-adipose_fin_clipped) |>
+         adipose_fin_clipped = as.logical(adipose_fin_clipped)) |>
+  select(-ad_fin_clip_status) |>  
+  rename(week = survey_week,
+         fork_length = fl_mm,
+         tag_id = disc_tag_applied,
+         recov_tag_id = tag_recovered,
+         spawning_condition = spawned) |> 
   glimpse() 
 ```
 
 ## 2020
 ```{r, message = FALSE}
-feather_carcass_2020 <- read_from_cloud("all_carcasses", 2020) |>
+feather_carcass_2020 <- read_from_cloud("all_carcasses", 2020) |> 
   mutate(date = as.Date(date),
          adipose_fin_clipped = case_when(ad_fin_clip_status %in% c("unknown", "not recorded") ~ "NA", 
                                          ad_fin_clip_status == "yes" ~ "TRUE",
                                          ad_fin_clip_status == "no" ~ "FALSE",
                                          TRUE ~ ad_fin_clip_status),
-         ad_fin_clip_status = as.logical(ad_fin_clip_status)) |>
-  select(-adipose_fin_clipped) |> 
+         adipose_fin_clipped = as.logical(adipose_fin_clipped)) |>
+  select(-ad_fin_clip_status) |>  
+  rename(week = survey_week,
+         fork_length = fl_mm,
+         tag_id = disc_tag_applied,
+         recov_tag_id = tag_recovered,
+         spawning_condition = spawned) |> 
   glimpse() 
 ```
 
@@ -345,15 +396,19 @@ feather_carcass_combined_raw <-
 ```{r}
 feather_carcass_combined <- feather_carcass_combined_raw |> 
   select(-c(tag_env_id, rel_loc2, recorder, chop_env_id, number_spawned,
-            cwt_id, tag1, tag2, tag_comp, flow, week_num, vis, weather,
+            cwt_id, tag1, tag2, tag_comp, flow, vis, weather,
             samp_type, samp_num, scale_sample, crew, comments, tag, chop_id,
             time, survey_meta_id, chops_id, survey_id, data_recorder,
             creation_time, editor, edit_time, section_id, boat, time_in,
-            time_out, field_recorder, individual_id, cwt_cd)) |> 
+            time_out, field_recorder, individual_id, cwt_cd, spawn)) |> 
   mutate(year = year(date),
          disposition = case_when(disposition == "recaptured, chopped" ~ "chopped_recovered",
                                  disposition == "recaptured" ~ "recovered",
-                                 TRUE ~ disposition)) |> 
+                                 TRUE ~ disposition),
+         spawning_condition = case_when(spawning_condition == "yes" ~ "spawned",
+                                        spawning_condition == "no" ~ "unspawned",
+                                        spawning_condition %in% c("not recorded", "unknown") ~ NA_character_,
+                                        TRUE ~ spawning_condition)) |> 
   filter(!is.na(date)) |> 
   glimpse()
 ```
@@ -379,8 +434,7 @@ The `feather_carcass_combined` table has carcass counts stored in the `count` va
 
 ## Explore Numeric Variables: {.tabset}
 
-### Variable: `header_id`, `survey_id`, `chan_id`, `sec`, `min`, `unit`, `tag_num`,
-`fl`
+### Variable: `tag_num`, `sect`, `unit`, `fork_length`, `float`, `week`, `count`, `recov_id`, `head_tag`, `recov_tag_id`, `minute`, `chin_id`, `min`, `header_id`, `tag_id`, `river_section`, `scales`, `otoliths`, `fl_cm`, `head_nu`, `scale_nu`, `otolith_nu`, `recover_id`, `year`
 
 ```{r}
 feather_carcass_combined %>% 
@@ -425,11 +479,24 @@ feather_carcass_combined |>
   labs(title = "Daily Carcass count from 2000 to 2020")
 ```
 
-### Carcass variables: `adipose_fin_clip`, `sex`, `disposition`, `fork_length`
+### Carcass variables: `sex`, `spawn`, `tag_col`, `disposition`, `source_table`, `lifestage`, `chan`, `recov_color`, `hall_print1`, `hall_print2`, `run`, `spawning_condition`, `samples_collected`, `hallprint`, `hallprint_color`, `location`, `subsample`, `species`, `condition`, `cwt_status`
+
+
+```{r}
+feather_carcass_combined %>% 
+  select_if(is.character) %>%
+  colnames()
+```
+
+```{r}
+character_cols <- feather_carcass_combined |>  
+  select_if(is.character) |> 
+  colnames()
+
+sapply(feather_carcass_combined[, character_cols[! character_cols %in% c("hallprint", "hall_print1", "hall_print2", "comment")]], unique)
+```
 
 **Plotting total adult chops over period of record**
-
-STOPPED HERE 2-21-2023 TODO
 
 ```{r}
 total_adult_chops <- feather_carcass_combined |> 
@@ -482,11 +549,76 @@ total_carcasses_summary |>
 ```
 This plot shows the proportion of carcasses by `disposition` by `date`, faceted by `year`. `chopped_recovered` dominates 2000 and 2001, likely due to naming conventions. Across all years, the proportion of `chopped` carcasses tends increase as the sampling seasons goes on, and the proportion of `chopped` carcasses tends to decrease. A small proportion of carcasses across all years are `recovered`. 
 
+*** Plotting all carcasses by spawning condition ***
+```{r}
+feather_carcass_combined |> 
+  filter(!is.na(date)) |> 
+  filter(!is.na(spawning_condition)) |> 
+  mutate(fake_date = paste0("1970-", month(date), "-", day(date)),
+         fake_date = ymd(fake_date),
+         year = year(date)) |> 
+  group_by(fake_date, year, spawning_condition) |> 
+  summarise(total_carcasses = sum(count, na.rm = T)) |> 
+  ggplot(aes(x = fake_date, y = total_carcasses, fill = spawning_condition)) + 
+  facet_wrap(~year) +
+  geom_bar(stat = "identity", position = position_fill()) + 
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = c(wes_palette("Moonrise2"), "#eeb7d0"))
+```
+This plot shows all carcasses collected, filtered to those data that recorded spawning condition (many were NAs), by proportion of each spawning condition. 
+
+*** Plotting all carcasses by run ***
+```{r}
+feather_carcass_combined |> 
+  filter(!is.na(date)) |>
+  filter(!is.na(run)) |> 
+  mutate(fake_date = paste0("1970-", month(date), "-", day(date)),
+         fake_date = ymd(fake_date),
+         year = year(date)) |> 
+  group_by(fake_date, year, run) |> 
+  summarise(total_carcasses = sum(count, na.rm = T)) |> 
+  ggplot(aes(x = fake_date, y = total_carcasses, fill = run)) + 
+  facet_wrap(~year) +
+  geom_bar(stat = "identity", position = position_fill()) + 
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = c(wes_palette("Moonrise2"), "#eeb7d0"))
+```
+This plot shows all carcasses collected, filtered to those data that recorded run (many were NAs), by proportion of carcasses marked as fall or spring. 
+
+*** Plotting all carcasses by condition ***
+```{r}
+feather_carcass_combined |> 
+  filter(!is.na(date)) |>
+  filter(!is.na(condition)) |> 
+  mutate(fake_date = paste0("1970-", month(date), "-", day(date)),
+         fake_date = ymd(fake_date),
+         year = year(date)) |> 
+  group_by(fake_date, year, condition) |> 
+  summarise(total_carcasses = sum(count, na.rm = T)) |> 
+  ggplot(aes(x = fake_date, y = total_carcasses, fill = condition)) + 
+  facet_wrap(~year) +
+  geom_bar(stat = "identity", position = position_fill()) + 
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = c(wes_palette("Moonrise2"), "#eeb7d0"))
+```
+This plot shows all carcasses collected, filtered to those data that recorded condition (many were NAs), by proportion of carcasses marked as fresh, decayed, unknown, or not recorded.
+
 ### Individual-level sampling information
 
 **Plotting fork length of each sex**
 ```{r}
-summary(feather_carcass_combined$fl_mm)
+summary(feather_carcass_combined$fork_length)
+```
+```{r}
+feather_carcass_combined |> 
+  ggplot(aes(x = sex, y = fork_length)) +
+  geom_boxplot() +
+  facet_wrap(~year, scales = "free") +
+  theme_minimal() + 
+  labs(y = "fork length (mm)", x = "sex")
 ```
 
 ** Upload to google bucket - TODO
