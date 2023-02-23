@@ -114,7 +114,8 @@ feather_carcass_2001 <- read_from_cloud("all_carcasses", 2001) |>
   rename(head_tag = ht_num,
          spawning_condition = egg_ret,
          week = week_num,
-         fork_length = fl) |> 
+         fork_length = fl,
+         min = minute) |> 
   glimpse() 
 ```
 
@@ -400,7 +401,8 @@ feather_carcass_combined <- feather_carcass_combined_raw |>
             samp_type, samp_num, scale_sample, crew, comments, tag, chop_id,
             time, survey_meta_id, chops_id, survey_id, data_recorder,
             creation_time, editor, edit_time, section_id, boat, time_in,
-            time_out, field_recorder, individual_id, cwt_cd, spawn)) |> 
+            time_out, field_recorder, individual_id, cwt_cd, 
+            spawn, adipose_fin_clip)) |> # spawn and adipose_fin_clip are from survey_meta_id == 70002 and are empty oncne we filter out NA dates 
   mutate(year = year(date),
          disposition = case_when(disposition == "recaptured, chopped" ~ "chopped_recovered",
                                  disposition == "recaptured" ~ "recovered",
@@ -606,6 +608,25 @@ feather_carcass_combined |>
 ```
 This plot shows all carcasses collected, filtered to those data that recorded condition (many were NAs), by proportion of carcasses marked as fresh, decayed, unknown, or not recorded.
 
+*** Plotting all carcasses by adipose fin clip ***
+```{r}
+feather_carcass_combined |> 
+  filter(!is.na(date)) |>
+  filter(!is.na(adipose_fin_clipped)) |> 
+  mutate(fake_date = paste0("1970-", month(date), "-", day(date)),
+         fake_date = ymd(fake_date),
+         year = year(date)) |> 
+  group_by(fake_date, year, adipose_fin_clipped) |> 
+  summarise(total_carcasses = sum(count, na.rm = T)) |> 
+  ggplot(aes(x = fake_date, y = total_carcasses, fill = adipose_fin_clipped)) + 
+  facet_wrap(~year) +
+  geom_bar(stat = "identity", position = position_fill()) + 
+  theme_minimal() + 
+  labs(y = "Proportion", x = "Date") +
+  scale_fill_manual(values = c(wes_palette("Moonrise2"), "#eeb7d0"))
+```
+This plot shows all carcasses collected, filtered to those data that recorded adipose fin clip (many were NAs), by proportion of carcasses marked as `TRUE` or `FALSE`.
+
 ### Individual-level sampling information
 
 **Plotting fork length of each sex**
@@ -614,12 +635,84 @@ summary(feather_carcass_combined$fork_length)
 ```
 ```{r}
 feather_carcass_combined |> 
+  filter(!is.na(sex)) |> 
   ggplot(aes(x = sex, y = fork_length)) +
   geom_boxplot() +
   facet_wrap(~year, scales = "free") +
   theme_minimal() + 
   labs(y = "fork length (mm)", x = "sex")
 ```
+This plot shows `fork_length` plotted by `sex` and faceted by `year`, for all years where `fork_length` is not `NA`. 2002-2008 `fork_length` was not collected.
+
+## Comments
+
+* Same table/layout structure as 2011-2013. There is only a bulk chops table, `ChopJoin`, and a CWT table with individual carcass sampling data.
+* `Hallprint` variable in `cwt` (began collecting in 2004).
+* no more `run` variable (was collected in 2008 and 2009)
+* Using `recaptured` instead of `recovered` (which is the value used in 2000-2010) and can change if necessary. Thought it was important to use the variable in original data (original column is "recapture or chop")
+* can we join recovered tags on a specific `id` value?
+
+## Data Dictionaries
+
+### All Carcasses
+```{r}
+percent_na <- feather_carcass_combined |> 
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |> 
+  pivot_longer(cols = everything())
+
+
+all_carcasses_data_dictionary <- tibble(variables = colnames(feather_carcass_combined),
+                          description = c("Tag Number, recorded in 2000 and 2001 TagData table",
+                                          "Section",
+                                          "Unit",
+                                          "Fork length (mm)",
+                                          "Sex",
+                                          "Spawning condition",
+                                          "Float, recorded in 2000 TagData table",
+                                          "Rel_loc, recorded in 2000 and 2001 TagData table",
+                                          "Comment",
+                                          "Date of survey",
+                                          "Tag Color",
+                                          "Week number",
+                                          "Disposition",
+                                          "Source table",
+                                          "Count",
+                                          "Recovery ID, collected in 2000-2010",
+                                          "Lifestage",
+                                          "Head tag number",
+                                          "Recovery tag ID, renamed for some years, collected 2017-2020",
+                                          "Channel",
+                                          "Minute",
+                                          "Channel ID",
+                                          "Header ID, collected 2002-2016",
+                                          "Color of recovered tag",
+                                          "Tag ID, collected 2009-2020",
+                                          "Whether the adipose fin was clipped",
+                                          "Hall print 1, collected 2009",
+                                          "Hall print 2, collected 2009-2010",
+                                          "Run",
+                                          "River section",
+                                          "Samples collected",
+                                          "Scales",
+                                          "Otoliths",
+                                          "Hallprint tag number, collected 2011-2014",
+                                          "Color of hallprint tag number",
+                                          "Location",
+                                          "Subsample",
+                                          "Species",
+                                          "Fork length (cm)",
+                                          "Head number",
+                                          "Scale number",
+                                          "Otolith number",
+                                          "Condition",
+                                          "CWT status",
+                                          "Recover ID (collected 2017-2020)",
+                                          "Year"),
+                          percent_na = round(percent_na$value*100))
+
+kable(all_carcasses_data_dictionary)
+```
+
 
 ** Upload to google bucket - TODO
 ```{r, include = FALSE}
