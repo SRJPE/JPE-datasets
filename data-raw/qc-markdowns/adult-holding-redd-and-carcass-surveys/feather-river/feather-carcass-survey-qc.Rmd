@@ -21,13 +21,6 @@ library(knitr)
 library(wesanderson)
 ```
 
-TODO
-* fork length
-* week number
-* recov_id vs recover_id vs reov_tag_id
-* tag_id vs disc_tag_applied
-* ad_fin_clip_status vs adipose_fin_clip vs adipose_fin_clipped
-
 # Feather River Carcass Data
 
 ## Description of Monitoring Data
@@ -120,10 +113,12 @@ feather_carcass_2001 <- read_from_cloud("all_carcasses", 2001) |>
 ```
 
 ## 2002
+* remove `recov_id` because it is an ID key (not meaningful for a join)
 ```{r, message = FALSE}
 feather_carcass_2002 <- read_from_cloud("all_carcasses", 2002) |> 
   mutate(date = as.Date(date)) |> 
   rename(fork_length = fl) |> 
+  select(-recov_id) |> 
   glimpse() 
 ```
 
@@ -419,13 +414,12 @@ feather_carcass_combined <- feather_carcass_combined_raw |>
 ```{r} 
 # number of observations
 feather_carcass_combined |> 
-  count(year) |> print(n=Inf)
+  count(year)
 
 # print nas
 feather_carcass_combined |> 
   group_by(year) |> 
-  summarize_all(funs(sum(is.na(.)) / length(.))) |> 
-  print(n=Inf)
+  summarize_all(funs(sum(is.na(.)) / length(.)))
 
 ```
 ### Data Transformation
@@ -646,11 +640,9 @@ This plot shows `fork_length` plotted by `sex` and faceted by `year`, for all ye
 
 ## Comments
 
-* Same table/layout structure as 2011-2013. There is only a bulk chops table, `ChopJoin`, and a CWT table with individual carcass sampling data.
-* `Hallprint` variable in `cwt` (began collecting in 2004).
-* no more `run` variable (was collected in 2008 and 2009)
-* Using `recaptured` instead of `recovered` (which is the value used in 2000-2010) and can change if necessary. Thought it was important to use the variable in original data (original column is "recapture or chop")
-* can we join recovered tags on a specific `id` value?
+* Identify variable used to connect recovered carcasses to tagged carcasses
+* 
+* `tag_id` connects to `recov_tag_id` for 2017-2020 tables
 
 ## Data Dictionaries
 

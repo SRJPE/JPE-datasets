@@ -167,6 +167,7 @@ cwt <- cwt_raw |>
   mutate(disposition = "chopped",
          source_table = "CWT",
          count = 1) |> 
+  select(-c(cwt_id)) |> 
   glimpse()
 ```
 
@@ -192,12 +193,14 @@ chop_recovery_join <- full_join(ChopEnv_raw |>
                          sex == "grilse_chop" ~ "unknown"),
          disposition = "chopped_recovered",
          source_table = "ChopRecov") |> 
+    select(-c(recov_id, chop_env_id)) |> 
   glimpse()
 ```
 
 ### Tags
 
 The `tag_join` table contains tagged carcasses with survey metadata added.
+* remove - what is `tag1` and `tag2`?
 
 ```{r}
 tag_join <- left_join(TagData_raw, TagEnv_raw,
@@ -206,7 +209,8 @@ tag_join <- left_join(TagData_raw, TagEnv_raw,
          source_table = "TagData",
          count = 1) |> 
   clean_names() |> 
-  select(-c(recorder, crew)) |> 
+  select(-c(recorder, crew, tag_env_id, tag_comp, tag1, tag2)) |> 
+  rename(tag_id = tag_num) |> 
   glimpse()
 ```
 
@@ -214,13 +218,15 @@ tag_join <- left_join(TagData_raw, TagEnv_raw,
 ### Recovered tagged carcasses
 
 The `tag_recovery` table contains recovered tagged carcasses. Add `disposition` column to take values from `rel_stat` column, which for 2001 contains only NAs. Create `count` column with value of 1 per row.
+* renamed `recov_id` to `tag_id` to align with original tag
 ```{r}
 tag_recovery <- RecovTag_raw |> 
   clean_names() |> 
   mutate(disposition = NA_character_,
          source_table = "RecovTag",
          count = 1) |>  
-  select(-rel_stat) |> 
+  select(-c(rel_stat, tag1, tag2, recov_tag_id)) |> 
+  rename(tag_id = recov_id) |> 
   glimpse() 
 ```
 
@@ -490,6 +496,7 @@ chop_header_cleaner <- chop_header |>
 * We combined all tables - `ChopRecov`, `TagData`, `RecovTag` and `CWT` into `all_carcasses`. Data from `RecovTag` may be associated with `TagData`, so there could be some double counting here (i.e. one carcass represented more than once in the dataset). This could be addressed by filtering to a unique identifier (TagNum?)
 * We assigned `disposition` based on the table from which the data came from. However, `RecovTag_raw` does not contain any information in the `rel_stat` column, which differs from 2000 and results in 2001 RecovTag data having `NA` encoded for `disposition`.
 * We assigned spawning condition based on values in egg_ret. May need to confirm.
+* We renamed `recov_id` to `tag_id` from the `RecovTag` table so that it could be connected with the original `tag_id`
 * We kept `recov_id` because it may be able to connect some tagged individuals with chopped/recovered_chopped individuals.
 * What is `tag1`, `tag2`, `rel_loc`, `ht_num'`, and `cwt_id`?
 * Can we connect recovered tags with placed tags by a common column?
@@ -504,16 +511,12 @@ percent_na <- all_carcasses_cleaner |>
 
 
 all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_cleaner),
-                          description = c("Tag number",
-                                          "Tag1",
-                                          "Tag2",
+                          description = c("Tag ID",
                                           "Section of survey",
                                           "Sex",
                                           "Fork length (mm)", 
                                           "Egg retention (spawning condition)",
                                           "Rel_loc",
-                                          "Tag environment ID",
-                                          "Tag Comp",
                                           "Date of survey",
                                           "Tag color",
                                           "Recorded flow",
@@ -521,16 +524,13 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Disposition of carcass",
                                           "Table from which the data came",
                                           "Count",
-                                          "Chop environment ID",
                                           "Visibility on day of survey",
                                           "Weather on day of survey",
                                           "Channel",
                                           "Minute",
-                                          "Recovery ID",
                                           "Lifestage",
-                                          "CWT ID",
                                           "HT Number",
-                                          "Recovery Tag ID"),
+                                          "Tag comp"),
                           percent_na = round(percent_na$value*100))
 
 kable(all_carcasses_data_dictionary)

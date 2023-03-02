@@ -175,6 +175,7 @@ cwt <- cwt_raw |>
   mutate(disposition = "chopped",
          source_table = "CWT",
          count = 1) |> 
+  select(-c(cwt_id, cwt_code)) |> 
   glimpse()
 ```
 
@@ -188,6 +189,7 @@ chop_recovery_join <- full_join(ChopEnv_raw |>
                                   select(ChopEnvID, Date, Start, TagCol), ChopRecov_raw, 
                                 by = "ChopEnvID") |>  
   clean_names() |>  
+  select(-c(recov_id, chop_env_id)) |> 
   rename(male_chop = "adult_m",
          female_chop = "adult_f",
          grilse_male = "gril_m",
@@ -214,6 +216,7 @@ tag_join <- left_join(TagData_raw, TagEnv_raw,
          source_table = "TagData",
          count = 1) |> 
   clean_names() |> 
+  rename(tag_id = tag_num) |> 
   glimpse()
 # tag_join <- left_join(TagData_raw, RecovTag_raw) |>  
 #   clean_names() |>  
@@ -231,8 +234,9 @@ tag_recovery <- RecovTag_raw |>
                                  rel_stat == "C" ~ "chopped",
                                  rel_stat == "X" ~ NA_character_),
          source_table = "RecovTag") |> 
-  rename(count = mult_recov) |> 
-  select(-rel_stat) |> 
+  rename(count = mult_recov,
+         tag_id = tag_num) |> 
+  select(-c(rel_stat, recov_id)) |> 
   glimpse() 
 ```
 ### Survey
@@ -484,7 +488,7 @@ all_carcasses_cleaner <- all_carcasses |>
                              egg_ret == "x" ~ "unknown",
                              egg_ret == "p" ~ "prespawned",
                              TRUE ~ egg_ret)) |> 
-  select(-c(start, cwt_code)) |>  # start has time data and is removed because no stop time provided so information is not useful. cwt_code is all NAs
+  select(-c(start, tag_env_id, recov_tag_id)) |>  # start has time data and is removed because no stop time provided so information is not useful. cwt_code is all NAs
   glimpse()
 ```
 
@@ -528,7 +532,7 @@ chop_header_cleaner <- chop_header |>
 * We combined all tables - `ChopRecov`, `TagData`, `RecovTag` and `CWT` into `all_carcasses`. Data from `RecovTag` may be associated with `TagData`, so there could be some double counting here (i.e. one carcass represented more than once in the dataset). This could be addressed by filtering to a unique identifier (TagNum?)
 * We assigned `disposition` based on the table from which the data came from.
 * We assigned spawning condition based on values in egg_ret. May need to confirm.
-* We kept `recov_id` because it may be able to connect some tagged individuals with chopped/recovered_chopped individuals.
+* We kept `recov_id` and renamed it `tag_id` because it may be able to connect some tagged individuals with chopped/recovered_chopped individuals.
 * What is `float`, `rel_loc`, `rel_loc2`, 'ht_num', and `cwt_id`?
 
 ## Data Dictionaries
@@ -541,7 +545,7 @@ percent_na <- all_carcasses_cleaner |>
 
 
 all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_cleaner),
-                          description = c("Tag number",
+                          description = c("Tag ID",
                                           "Section of survey",
                                           "Unit of survey",
                                           "Fork length (mm)", 
@@ -550,7 +554,6 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Float",
                                           "Rel_loc",
                                           "Comment",
-                                          "Tag environment ID",
                                           "Rel_loc 2",
                                           "Date of survey",
                                           "Crew member recording data",
@@ -559,13 +562,9 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Disposition of carcass",
                                           "Table from which the data came",
                                           "Count",
-                                          "Chop environment ID",
                                           "Number spawned",
-                                          "Recovery ID",
                                           "Lifestage",
-                                          "CWT ID",
-                                          "HT Number",
-                                          "Recovery Tag ID"),
+                                          "HT Number"),
                           percent_na = round(percent_na$value*100))
 
 kable(all_carcasses_data_dictionary)
