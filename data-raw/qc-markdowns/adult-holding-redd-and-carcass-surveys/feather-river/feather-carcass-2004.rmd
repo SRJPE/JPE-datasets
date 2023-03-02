@@ -141,7 +141,7 @@ cwt <- cwt_raw |>
                                  TRUE ~ carc_stat),
          source_table = "CWT",
          count = 1) |> 
-  select(-carc_stat) |> 
+  select(-c(carc_stat, header_id)) |> 
   glimpse()
 ```
 
@@ -180,16 +180,19 @@ chop_recovery_join <- left_join(ChopRecov_raw |> rename(chan_id = ChanID),
                                 chan_id_lookup, 
                                 by = "chan_id") |> 
   clean_names() |> 
-  rename(count = recov_count) |> 
+  rename(count = recov_count,
+         tag_id = recov_id) |> 
   mutate(disposition = "chopped_recovered",
          source_table = "ChopRecov") |> 
+  select(-c(header_id, chan_id)) |> 
   glimpse()
 ```
 
 ### Combine tables
 
 ```{r}
-all_carcasses <- bind_rows(chops_and_tags, chop_recovery_join, cwt) |> glimpse()
+all_carcasses <- bind_rows(chops_and_tags |> 
+                             select(-c(header_id, chan_id)), chop_recovery_join, cwt) |> glimpse()
 ```
 
 ### Survey
@@ -213,11 +216,8 @@ all_carcasses |>
 ```
 
 ```{r}
-summary(all_carcasses$chan_id)
 summary(all_carcasses$sect)
 summary(all_carcasses$min)
-summary(all_carcasses$header_id)
-summary(all_carcasses$recov_id)
 summary(all_carcasses$tag_id)
 summary(all_carcasses$fl)
 summary(all_carcasses$head_tag)
@@ -458,10 +458,8 @@ percent_na <- all_carcasses_cleaner |>
 
 
 all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_cleaner),
-                          description = c("Channel ID",
-                                          "Section",
+                          description = c("Section",
                                           "Minute",
-                                          "Header ID",
                                           "Tag color",
                                           "Date of survey",
                                           "Sex",
@@ -469,9 +467,8 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Count", 
                                           "Lifestage",
                                           "Table from which the data came",
-                                          "Recovery ID",
-                                          "Recovered tag color",
                                           "Tag ID",
+                                          "Recovered tag color",
                                           "Rel Loc",
                                           "Fork length (mm)",
                                           "Spawning condition",

@@ -249,11 +249,8 @@ all_carcasses |>
 ```
 
 ```{r}
-summary(all_carcasses$header_id)
-summary(all_carcasses$chan_id)
 summary(all_carcasses$sect)
 summary(all_carcasses$min)
-summary(all_carcasses$recov_id)
 summary(all_carcasses$tag_id)
 summary(all_carcasses$fl)
 summary(all_carcasses$head_tag)
@@ -493,20 +490,17 @@ percent_na <- all_carcasses_cleaner |>
 
 
 all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_cleaner),
-                          description = c("Header ID",
+                          description = c("Section",
+                                          "Minute",
                                           "Tag color",
                                           "Date of survey",
-                                          "Channel ID",
-                                          "Section",
-                                          "Minute",
                                           "Sex",
                                           "Disposition",
                                           "Count", 
                                           "Lifestage",
                                           "Table from which the data came",
-                                          "Recovery ID",
-                                          "Recovered tag color",
                                           "Tag ID",
+                                          "Recovered tag color",
                                           "Rel Loc",
                                           "Fork length (mm)",
                                           "Spawning condition",
