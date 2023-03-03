@@ -163,7 +163,10 @@ cwt <- left_join(cwt_raw |> clean_names(),
          sex = case_when(sex == "F" ~ "female",
                          sex == "M" ~ "male",
                          TRUE ~ sex)) |>
-  select(-c(recapture_or_chop, morale, crew)) |> 
+  rename(hallprint1 = hallprint) |> 
+  select(-c(recapture_or_chop, morale, crew, section_group_1_10,
+            section_group_11_15, section_group_16_21,
+            section_group_22_38, cwt_id, header_id, tag, comments)) |> 
   glimpse()
 ```
 
@@ -189,6 +192,7 @@ chop_join <- full_join(ChopHeader_raw |>
                                  TRUE ~ week_number),
          week_number = as.numeric(week_number),
          disposition = if_else(week_number == 0, "pre_carcass_survey", disposition)) |> 
+  select(-c(header_id, chop_id)) |> 
   glimpse()
 ```
 
@@ -373,8 +377,6 @@ all_carcasses_cleaner <- all_carcasses |>
                                          adipose_fin_clipped == "uk" ~ NA_character_,
                                          TRUE ~ adipose_fin_clipped),
          adipose_fin_clipped = as.logical(adipose_fin_clipped)) |> 
-  select(-c(section_group_1_10, section_group_11_15, section_group_16_21,
-            section_group_22_38, tag, hallprint)) |>  # Not sure section_group variables are useful, tag & hallprint are empty
   glimpse()
 ```
 
@@ -429,17 +431,14 @@ percent_na <- all_carcasses_cleaner |>
 
 
 all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_cleaner),
-                          description = c("Header ID",
-                                          "Date of survey",
+                          description = c("Date of survey",
                                           "Time of survey",
                                           "Week",
-                                          "Chop ID",
                                           "Section",
                                           "Minute",
                                           "Count",
                                           "Disposition",
                                           "Table from which the data came",
-                                          "CWT ID",
                                           "River Section",
                                           "Tag ID",
                                           "Sex",
@@ -451,7 +450,7 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Scales",
                                           "Otoliths",
                                           "Hallprint tag color",
-                                          "Comments",
+                                          "Hallprint tag number",
                                           "Color of tag"),
                           percent_na = round(percent_na$value*100))
 
