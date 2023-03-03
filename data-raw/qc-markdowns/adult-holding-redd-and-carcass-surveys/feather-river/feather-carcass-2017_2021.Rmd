@@ -186,12 +186,12 @@ chop_header <- ChopHeader_raw |>
          edit_time = as.POSIXct(gsub("[()]", "", edit_time), 
                                 format = "%m/%d/%y %H:%M:%S"),
          creation_time = as.POSIXct(gsub("[()]", "", creation_time), 
-                                    format = "%m/%d/%y %H:%M:%S")) |> 
+                                    format = "%m/%d/%y %H:%M:%S")) |>
+  clean_names() |> 
   select(-c(location_id, transport_type_id, subsample_id, 
             weather_id, water_temp_f, water_temp_c, 
             secchi_cm, secchi_feet, flow_cfs, gps_unit,
             turbidity_ntu)) |> 
-  clean_names() |> 
   glimpse()
 ```
 
@@ -240,7 +240,9 @@ cwt <- left_join(cwt_raw |> clean_names(),
          edit_time = as.POSIXct(gsub("[()]", "", edit_time), 
                                 format = "%m/%d/%y %H:%M:%S"),
          creation_time = as.POSIXct(gsub("[()]", "", creation_time), 
-                                    format = "%m/%d/%y %H:%M:%S")) |> 
+                                    format = "%m/%d/%y %H:%M:%S")) |>
+  select(-c(survey_meta_id, individual_id, survey_id, fl_cm, comments, data_recorder, creation_time, editor, edit_time, cwt_cd, boat, time_in, time_out, field_recorder, crew, date, subsample)) |> 
+  rename(tag_id = disc_tag_applied) |> 
   glimpse()
 ```
 
@@ -267,6 +269,7 @@ chop_join <- left_join(Chop_raw |> clean_names(),
          creation_time = as.POSIXct(gsub("[()]", "", creation_time), 
                                     format = "%m/%d/%y %H:%M:%S"),
          source_table = "ChopJoin") |> 
+  select(-c(survey_meta_id, chops_id, survey_id, data_recorder, creation_time, editor, edit_time, boat, time_in, time_out, field_recorder, crew, subsample)) |> 
   glimpse()
 ```
 
@@ -300,8 +303,9 @@ chop_recovery_join <- left_join(ChopRecov_raw |> clean_names(),
          count = 1) |> 
   select(-c(f_lmm, f_lcm, way_pt, r_mile, disposition_id,
             color_tag_recovered_id,
-            sex_id)) |> 
-  rename(tag_col = color) |> 
+            sex_id, survey_meta_id, survey_id, recover_id, comments, data_recorder, creation_time, editor, edit_time, boat, time_in, time_out, field_recorder, crew, subsample, fl_cm)) |> 
+  rename(tag_col = color,
+         tag_id = tag_recovered) |>
   glimpse()
 ```
 
@@ -493,8 +497,7 @@ sapply(all_carcasses[, character_cols[! character_cols %in% c("comments", "field
 ```{r}
 all_carcasses_cleaner <- all_carcasses |> 
   mutate_if(is.character, str_to_lower) |> 
-  select(-tag_col) |> # is empty
-  mutate(boat = if_else(boat == "n/a", NA_character_, boat)) |> 
+  select(-c(tag_col, cwt_status)) |> 
   glimpse()
 ```
 
@@ -519,7 +522,7 @@ unique(chop_header$subsample)
 ```{r}
 chop_header_cleaner <- chop_header |> 
   mutate_if(is.character, str_to_lower) |> 
-  mutate(boat = if_else(boat == "n/a", NA_character_, boat)) |> 
+  mutate(boat = if_else(boat == "n/a", NA_character_, boat)) |>
   glimpse()
 ```
 
@@ -543,45 +546,25 @@ percent_na <- all_carcasses_cleaner |>
 
 
 all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_cleaner),
-                          description = c("Header ID",
-                                          "Chop ID",
-                                          "Survey ID",
-                                          "Disposition",
+                          description = c("Disposition",
                                           "Count",
-                                          "Crew member recording the data in the database",
-                                          "Time of data table creation",
-                                          "Editor of data table",
-                                          "Time of editing",
                                           "Section ID",
-                                          "Boat",
                                           "Week of survey",
-                                          "Time data collection began",
-                                          "Tiem data collection ended",
-                                          "Crew member recording data in field",
-                                          "Crew present during survey",
                                           "Date of survey",
                                           "Location of survey",
                                           "Weather",
-                                          "Sub-sample type",
                                           "Species",
                                           "Run",
                                           "Table from which the data came",
-                                          "Individual ID",
-                                          "Disc tag applied",
+                                          "Tag ID",
                                           "Fork length (mm)",
-                                          "Fork length (cm)",
-                                          "Head number",
+                                          "Head tag number",
                                           "Scale number",
                                           "Otolith number",
-                                          "Comments",
-                                          "CWT code",
                                           "Condition",
                                           "Spawning condition",
                                           "Adipose fin clip status",
-                                          "CWT status",
-                                          "Sex",
-                                          "Recovery ID",
-                                          "Tag number recovered"),
+                                          "Sex"),
                           percent_na = round(percent_na$value*100))
 
 kable(all_carcasses_data_dictionary)
