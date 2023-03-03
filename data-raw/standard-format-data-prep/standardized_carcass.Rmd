@@ -86,7 +86,7 @@ battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") |>
   mutate(stream = "battle creek") |> 
   rename(carcass_condition = carcass_live_status,
          survey_method = method) |> 
-  mutate(chop_count = 1) |> 
+  mutate(count = 1) |> 
   select(-c(comments, year, observed_only, cwt_code)) |> 
   glimpse()
 # each row is a carcass in table
@@ -117,36 +117,51 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek
 ```{r, message = FALSE, warning = FALSE}
 
 # this may contain carcasses that were chopped but did not have any biological information recorded
-butte_carcass <- read_csv("data/redd-carcass-holding/butte_carcass.csv")
+butte_carcass_bulk_chops <- read_csv("data/redd-carcass-holding/butte_carcass.csv") |> 
+  rename(sect = section_cd,
+         mark_recapture = disposition,
+         count = chop_count,
+         adipose_fin_clipped = ad_fin_clip,
+         carcass_condition = condition) |> 
+  mutate(source_table = "chops") |> 
+  glimpse()
 # each row is an individual for these
-butte_carcass_2014_2016 <- read_csv("data/redd-carcass-holding/butte_carcass_2014-2016.csv")
+butte_carcass_2014_2016 <- read_csv("data/redd-carcass-holding/butte_carcass_2014-2016.csv") 
 butte_carcass_2017_2020 <- read_csv("data/redd-carcass-holding/butte_carcass-2017-2020.csv")
 
-# combine tables with individual measurements
-butte_carcass_combined <- bind_rows(butte_carcass_2014_2016, butte_carcass_2017_2020) |> 
-  rename(survey_id = survey,
-         tagged = disposition,
+butte_carcass_individuals <- bind_rows(butte_carcass_2014_2016, butte_carcass_2017_2020) |> 
+  select(-c(survey, year, comments)) |> 
+  rename(mark_recapture = disposition,
+         tag_id = disc_tag_applied,
+         spawn_condition = spawning_status,
+         adipose_fin_clipped = ad_fin_clip_cd,
+         otolith_sample = otolith_nu,
+         tissue_sample = tissue_nu,
          fork_length = fork_length_mm,
          carcass_condition = condition,
-         spawn_condition = spawning_status,
-         adipose = ad_fin_clip_cd) |> 
-  mutate(tag_count = case_when(tagged == "tagged" ~ 1,
-                               is.na(tagged) ~ 0),
-         chop_count = case_when(is.na(tagged) ~ 1,
-                                tagged == "tagged" ~ 0),
+         sect = section_cd) |> 
+  mutate(spawn_condition = case_when(spawn_condition == "yes" ~ "spawned",
+                                     spawn_condition == "no" ~ "unspawned",
+                                     spawn_condition == "p" ~ "partial",
+                                     TRUE ~ spawn_condition),
          carcass_condition = case_when(carcass_condition == "f" ~ "fresh",
-                                       carcass_condition == "d" ~ "decayed", 
+                                       carcass_condition == "d" ~ "decayed",
+                                       carcass_condition == "not recorded" ~ NA_character_,
                                        TRUE ~ carcass_condition),
-         stream = "butte creek") |> 
-  select(-c(scale_nu, tissue_nu, otolith_nu, comments, year, disc_tag_applied, tagged)) |> 
+         source_table = "carcass_individual",
+         count = 1,
+         scale_sample = as.character(scale_nu)) |> 
+  select(-c(scale_nu)) |> 
   glimpse()
+
+# combine bulk chops and individual chops
+butte_carcass_combined <- bind_rows(butte_carcass_individuals, butte_carcass_bulk_chops) |> 
+  mutate(stream = "butte creek") |> glimpse()
+
 ```
 
 ### Clear Creek
 
-#### Columns Removed
-
-`scale`, `tis_eth`, `tis_dry`, `otolith_st`, `comments`, `verification_and_cwt_comments`, `obs_only`, `run_call`, `cwt_code`, `sample_id`, `species`, `why_sex_unknown`, `why_not_sp`, `head_retrieved`, `photo`, `brood_year`, `release_location`, `hatchery`, `age`, `mark_rate`, `genetic`
 
 ```{r, message=FALSE, warning=FALSE, include = FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_carcass.csv",
@@ -157,29 +172,33 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek
 ```{r, message = FALSE, warning = FALSE}
 
 clear_carcass <- read_csv("data/redd-carcass-holding/clear_carcass.csv")  |> 
-  mutate(adipose = case_when(adipose == "present" ~ TRUE,
-                             adipose == "absent" ~ FALSE,
-                             is.na(adipose) ~ NA),
-         stream = "clear creek",
-         chop_count = 1) |> 
-  rename(carcass_condition = condition,
+  select(-c(obs_only, tis_eth, why_sex_unknown, why_not_sp, photo, comments,
+            cwt_code, brood_year, release_location, hatchery, age, mark_rate,
+            verification_and_cwt_comments, run_call, genetic)) |> 
+  rename(survey_method = type,
+         tag_id = sample_id, 
+         carcass_condition = condition,
+         tissue_sample = tis_dry,
+         scale_sample = scale,
+         otolith_sample = otolith_st,
          spawn_condition = spawn_status,
-         survey_method = type, 
+         head_sample = head_retrieved,
          tag_col = tag_type) |> 
-  select(-c(scale, tis_eth, tis_dry, otolith_st, comments, 
-            verification_and_cwt_comments, obs_only, run_call, 
-            cwt_code, sample_id, species, why_sex_unknown,
-            why_not_sp, head_retrieved, photo, brood_year, 
-            release_location, hatchery, age, mark_rate, 
-            genetic)) |> 
+  mutate(adipose_fin_clipped = case_when(adipose == "present" ~ TRUE,
+                                         adipose == "absent" ~ FALSE,
+                                         is.na(adipose) ~ NA),
+         stream = "clear creek",
+         count = 1,
+         otolith_sample = as.character(otolith_sample),
+         scale_sample = as.character(scale_sample)) |> 
+  select(-c(adipose)) |> 
   glimpse()
 ```
 
 ### Feather River
 
-#### Columns Removed
+We removed a lot of variables from the feather carcass data in order to combine it with the other streams. However, some of these may still be helpful in some analyses. 
 
-`tag_count`, `chop_count`, `species`, `disc_tag_applied`, `lifestage`, `tag_clip_status`, `scale_nu`, `tissue_nu`, `otolith_nu`, `comments`, `cwt_cd`, `cwt_status`, `tag_num`, `head_nu`, `dna_nu`, `egg_ret`, `data_recorder`, `creation_time`, `editor`, `edit_time`, `individual_id`, `recov_id`, `header_id`
 ```{r, message=FALSE, warning=FALSE, include = FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass.csv",
                bucket = gcs_get_global_bucket(),
@@ -188,27 +207,18 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-riv
 ```
 ```{r, message = FALSE, warning = FALSE}
 
-feather_carcass <- read_csv("data/redd-carcass-holding/feather_carcass.csv") |> 
-  filter(species %in% c("chinook salmon", NA)) |> 
-  rename(fork_length = fl,
-         carcass_condition = condition,
-         spawn_condition = spawned,
-         adipose = chop_clip_status) |> 
-  mutate(adipose = case_when(adipose == "yes" ~ TRUE,
-                              adipose == "no" ~ FALSE,
-                              adipose %in% c("unknown", "partial", "not recorded", NA) ~ NA),
-         stream = "feather river") |> 
-  select(-c(species, disc_tag_applied, 
-            lifestage, tag_clip_status, scale_nu, tissue_nu, otolith_nu, comments,
-            cwt_cd, cwt_status, tag_num, head_nu, dna_nu, egg_ret, 
-            data_recorder, creation_time, editor, edit_time, individual_id, recov_id,
-            header_id)) |> glimpse()
+feather_carcass <- read_csv("data/redd-carcass-holding/feather_carcass.csv") |>
+  filter(species %in% c("chinook salmon", NA)) |>  
+  mutate(stream = "feather river",
+         sect = as.character(sect),
+         otolith_sample = as.character(otolith_sample),
+         scale_sample = as.character(scale_sample)) |>
+  rename(spawn_condition = spawning_condition) |> 
+  select(-c(rel_loc, hall_print2, tag_color, hallprint_color, year, lifestage, flow, vis, weather, min, recov_color, hallprint1)) |> glimpse()
 ```
 
 ### Yuba River
 
-#### Columns Removed
-- No columns had to be removed. 
 
 ```{r, message=FALSE, warning=FALSE, include = FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_carcass.csv",
@@ -219,13 +229,15 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/
 
 ```{r, message = FALSE, warning = FALSE}
 yuba_carcass <- read_csv("data/redd-carcass-holding/yuba_carcass.csv") |> 
-  rename(adipose = adipose_clip,
-         spawn_condition = spawned) |> 
+  rename(adipose_fin_clipped = adipose_clip,
+         spawn_condition = spawned,
+         count = chop_count) |> 
   mutate(stream = "yuba river") |> glimpse()
 ```
     
 
 ### Combined
+#### remove location variables so they are not in the standard dataset but can be easily included again.
 
 ```{r}
 carcass_combined <- bind_rows(battle_carcass, 
@@ -233,6 +245,9 @@ carcass_combined <- bind_rows(battle_carcass,
                               feather_carcass,
                               clear_carcass,
                               yuba_carcass) |> 
+  select(-c(species, tissue_sample, otolith_sample, source_table, scale_sample,
+            samples_collected, head_sample, way_pt, sect, longitude, latitude,
+            river_mile, location, unit, chan, river_section, reach)) |> 
   glimpse()
 ```
 ### Upload standardized data to google cloud
