@@ -36,7 +36,7 @@ Generally, the table layout/structure is similar across four periods:
 
 Though the naming changes across these periods, each year generally has a table of individual carcass samples with biological sampling data like `adipose_fin_clip`, `sex`, and `fork_length`; a bulk chops table that contains bulk chop counts without individual sampling information; and sometimes a chop recovery table that contains recovered carcass data.
 
-To standardize across these periods, we created a `source_table` variable to track the different tables and a `disposition` column to track whether the carcass was `chopped`, `tagged`, or `recovered`/`recaptured`. 
+To standardize across these periods, we created a `source_table` variable to track the different tables and a `disposition` column to track whether the carcass was `chopped`, `tagged`, or `recovered`/`recaptured`.
 
 The goal is to use the data in a modified Cormack Jolly Seber model, which requires three tables as input:
 * Individual carcasses and their recapture history
@@ -89,11 +89,13 @@ read_from_cloud <- function(carcass_data_type, year){
 ## 2000
 * rename `ht_num` to `head_tag`
 * rename `egg_ret` to `spawn`
+* rename `fl` to `fork_length`
 ```{r, message = FALSE}
-feather_carcass_2000 <- read_from_cloud("all_carcasses", 2000) |>  
+feather_carcass_2000 <- read_from_cloud("all_carcasses", 2000) |> 
   rename(head_tag = ht_num,
          spawning_condition = egg_ret,
          fork_length = fl) |> 
+  select(-c(float, rel_loc2, recorder, number_spawned)) |> 
   mutate(date = as.Date(date)) |> 
   glimpse() 
 ```
@@ -109,16 +111,16 @@ feather_carcass_2001 <- read_from_cloud("all_carcasses", 2001) |>
          week = week_num,
          fork_length = fl,
          min = minute) |> 
+  select(-c(tag_comp)) |> 
   glimpse() 
 ```
 
 ## 2002
-* remove `recov_id` because it is an ID key (not meaningful for a join)
 ```{r, message = FALSE}
 feather_carcass_2002 <- read_from_cloud("all_carcasses", 2002) |> 
   mutate(date = as.Date(date)) |> 
-  rename(fork_length = fl) |> 
-  select(-recov_id) |> 
+  rename(fork_length = fl,
+         samples_collected = samp_type) |> 
   glimpse() 
 ```
 
@@ -127,7 +129,9 @@ feather_carcass_2002 <- read_from_cloud("all_carcasses", 2002) |>
 feather_carcass_2003 <- read_from_cloud("all_carcasses", 2003)  |> 
   mutate(date = as.Date(date)) |> 
   rename(fork_length = fl,
-         adipose_fin_clipped = adipose_fin_clip) |> 
+         adipose_fin_clipped = adipose_fin_clip,
+         samples_collected = samp_type) |> 
+  select(-c(comment)) |> 
   glimpse() 
 ```
 
@@ -138,7 +142,9 @@ feather_carcass_2004 <- read_from_cloud("all_carcasses", 2004) |>
   mutate(head_tag = as.integer(head_tag),
          date = as.Date(date)) |> 
   rename(fork_length = fl,
-         adipose_fin_clipped = adipose_fin_clip) |> 
+         adipose_fin_clipped = adipose_fin_clip,
+         samples_collected = samp_type) |> 
+  select(-c(comment)) |> 
   glimpse() 
 ```
 
@@ -147,7 +153,9 @@ feather_carcass_2004 <- read_from_cloud("all_carcasses", 2004) |>
 feather_carcass_2005 <- read_from_cloud("all_carcasses", 2005) |>
   mutate(date = as.Date(date)) |> 
   rename(fork_length = fl,
-         adipose_fin_clipped = adipose_fin_clip) |> 
+         adipose_fin_clipped = adipose_fin_clip,
+         hallprint1 = hall_print1,
+         samples_collected = samp_type) |> 
   glimpse() 
 ```
 
@@ -159,7 +167,9 @@ feather_carcass_2006 <- read_from_cloud("all_carcasses", 2006) |>
          tag_col = as.character(tag_col),
          recov_color = as.character(recov_color)) |> 
   rename(fork_length = fl,
-         adipose_fin_clipped = adipose_fin_clip) |>  
+         adipose_fin_clipped = adipose_fin_clip,
+         hallprint1 = hall_print1,
+         samples_collected = samp_type) |> 
   glimpse() 
 ```
 
@@ -171,7 +181,9 @@ feather_carcass_2007 <- read_from_cloud("all_carcasses", 2007) |>
          tag_col = as.character(tag_col),
          recov_color = as.character(recov_color)) |>
   rename(fork_length = fl,
-         adipose_fin_clipped = adipose_fin_clip) |> 
+         adipose_fin_clipped = adipose_fin_clip,
+         hallprint1 = hall_print1,
+         samples_collected = samp_type) |> 
   glimpse() 
 ```
 
@@ -183,7 +195,9 @@ feather_carcass_2008 <- read_from_cloud("all_carcasses", 2008) |>
          tag_col = as.character(tag_col),
          recov_color = as.character(recov_color)) |>
   rename(fork_length = fl,
-         adipose_fin_clipped = adipose_fin_clip) |>  
+         adipose_fin_clipped = adipose_fin_clip,
+         hallprint1 = hall_print1,
+         samples_collected = samp_type) |>  
   glimpse() 
 ```
 
@@ -197,7 +211,10 @@ feather_carcass_2009 <- read_from_cloud("all_carcasses", 2009) |>
   rename(fork_length = fl,
          adipose_fin_clipped = adipose_fin_clip,
          week = week_num,
-         spawning_condition = spawn) |> 
+         spawning_condition = spawn,
+         hallprint1 = hall_print1,
+         samples_collected = samp_type) |> 
+  select(-c(comment)) |> 
   glimpse() 
 ```
 
@@ -211,7 +228,9 @@ feather_carcass_2010 <- read_from_cloud("all_carcasses", 2010) |>
   rename(fork_length = fl,
          adipose_fin_clipped = adipose_fin_clip,
          week = week_num,
-         spawning_condition = spawn) |> 
+         spawning_condition = spawn,
+         hallprint1 = hall_print1,
+         samples_collected = samp_type) |> 
   glimpse() 
 ```
 
@@ -219,10 +238,9 @@ feather_carcass_2010 <- read_from_cloud("all_carcasses", 2010) |>
 ```{r, message = FALSE}
 feather_carcass_2011 <- read_from_cloud("all_carcasses", 2011) |> 
   mutate(date = as.Date(date)) |> 
-  rename(tag_col = tag_color,
-         recov_color = tag_recap_chop_color,
-         fork_length = fl,
-         head_tag = head_tag_number) |> 
+  rename(fork_length = fl,
+         otolith_sample = otoliths,
+         scale_sample = scales) |> 
   glimpse() 
 ```
 
@@ -230,8 +248,10 @@ feather_carcass_2011 <- read_from_cloud("all_carcasses", 2011) |>
 ```{r, message = FALSE}
 feather_carcass_2012 <- read_from_cloud("all_carcasses", 2012) |> 
   mutate(date = as.Date(date),
-         hallprint = as.character(hallprint)) |> 
-  rename(tag_col = tag_color) |> 
+         hallprint1 = as.character(hallprint1),
+         tag_col = tag_color) |> 
+  rename(scale_sample = scales,
+         otolith_sample = otoliths) |> 
   glimpse() 
 ```
 
@@ -240,10 +260,12 @@ feather_carcass_2012 <- read_from_cloud("all_carcasses", 2012) |>
 ```{r, message = FALSE}
 feather_carcass_2013 <- read_from_cloud("all_carcasses", 2013) |> 
   mutate(date = as.Date(date),
-         hallprint = as.character(hallprint)) |> 
+         hallprint1 = as.character(hallprint1)) |> 
   rename(head_tag = head_tag_number,
          tag_col = tag_color,
-         fork_length = fl) |> 
+         fork_length = fl,
+         scale_sample = scales,
+         otolith_sample = otoliths) |> 
   glimpse() 
 ```
 
@@ -253,10 +275,12 @@ feather_carcass_2013 <- read_from_cloud("all_carcasses", 2013) |>
 ```{r, message = FALSE}
 feather_carcass_2014 <- read_from_cloud("all_carcasses", 2014) |> 
   mutate(date = as.Date(date),
-         hallprint = as.character(hallprint)) |> 
+         hallprint1 = as.character(hallprint1)) |> 
   rename(head_tag = head_tag_number,
          tag_col = tag_color,
-         fork_length = fl) |> 
+         fork_length = fl,
+         scale_sample = scales,
+         otolith_sample = otoliths) |> 
   glimpse() 
 ```
 
@@ -268,7 +292,10 @@ feather_carcass_2015 <- read_from_cloud("all_carcasses", 2015) |>
   mutate(date = as.Date(date)) |> 
   rename(head_tag = head_tag_number,
          tag_col = tag_color,
-         fork_length = fl) |> 
+         fork_length = fl,
+         scale_sample = scales,
+         otolith_sample = otoliths) |> 
+  select(-time) |> 
   glimpse() 
 ```
 
@@ -281,7 +308,10 @@ feather_carcass_2016 <- read_from_cloud("all_carcasses", 2016) |>
   rename(head_tag = head_tag_number,
          tag_col = tag_color,
          week = week_number,
-         fork_length = fl) |> 
+         fork_length = fl,
+         scale_sample = scales,
+         otolith_sample = otoliths) |> 
+  select(-time) |> 
   glimpse() 
 ```
 
@@ -289,70 +319,78 @@ feather_carcass_2016 <- read_from_cloud("all_carcasses", 2016) |>
 ```{r, message = FALSE}
 feather_carcass_2017 <- read_from_cloud("all_carcasses", 2017) |>
   mutate(date = as.Date(date),
-         adipose_fin_clipped = case_when(ad_fin_clip_status %in% c("unknown", "not recorded") ~ "NA", 
+         adipose_fin_clipped = case_when(ad_fin_clip_status %in% c("unknown", "not recorded") ~ "NA",
                                          ad_fin_clip_status == "yes" ~ "TRUE",
                                          ad_fin_clip_status == "no" ~ "FALSE",
                                          TRUE ~ ad_fin_clip_status),
          adipose_fin_clipped = as.logical(adipose_fin_clipped)) |>
   select(-ad_fin_clip_status) |>  
   rename(week = survey_week,
+         sect = section_id,
+         head_tag = head_nu,
+         scale_sample = scale_nu,
+         otolith_sample = otolith_nu,
          fork_length = fl_mm,
-         tag_id = disc_tag_applied,
-         recov_tag_id = tag_recovered,
          spawning_condition = spawned) |> 
   glimpse() 
 ```
 
 ## 2018
 ```{r, message = FALSE}
-feather_carcass_2018 <- read_from_cloud("all_carcasses", 2018) |> 
+feather_carcass_2018 <- read_from_cloud("all_carcasses", 2018) |>
   mutate(date = as.Date(date),
-         adipose_fin_clipped = case_when(ad_fin_clip_status %in% c("unknown", "not recorded") ~ "NA", 
+         adipose_fin_clipped = case_when(ad_fin_clip_status %in% c("unknown", "not recorded") ~ "NA",
                                          ad_fin_clip_status == "yes" ~ "TRUE",
                                          ad_fin_clip_status == "no" ~ "FALSE",
                                          TRUE ~ ad_fin_clip_status),
          adipose_fin_clipped = as.logical(adipose_fin_clipped)) |>
   select(-ad_fin_clip_status) |>  
   rename(week = survey_week,
+         sect = section_id,
+         head_tag = head_nu,
+         scale_sample = scale_nu,
+         otolith_sample = otolith_nu,
          fork_length = fl_mm,
-         tag_id = disc_tag_applied,
-         recov_tag_id = tag_recovered,
          spawning_condition = spawned) |> 
   glimpse() 
 ```
 
 ## 2019
 ```{r, message = FALSE}
-feather_carcass_2019 <- read_from_cloud("all_carcasses", 2019) |> 
+feather_carcass_2019 <- read_from_cloud("all_carcasses", 2019) |>
   mutate(date = as.Date(date),
-         adipose_fin_clipped = case_when(ad_fin_clip_status %in% c("unknown", "not recorded") ~ "NA", 
+         adipose_fin_clipped = case_when(ad_fin_clip_status %in% c("unknown", "not recorded") ~ "NA",
                                          ad_fin_clip_status == "yes" ~ "TRUE",
                                          ad_fin_clip_status == "no" ~ "FALSE",
                                          TRUE ~ ad_fin_clip_status),
          adipose_fin_clipped = as.logical(adipose_fin_clipped)) |>
   select(-ad_fin_clip_status) |>  
   rename(week = survey_week,
+         sect = section_id,
+         head_tag = head_nu,
+         scale_sample = scale_nu,
+         otolith_sample = otolith_nu,
          fork_length = fl_mm,
-         tag_id = disc_tag_applied,
-         recov_tag_id = tag_recovered,
          spawning_condition = spawned) |> 
   glimpse() 
 ```
 
 ## 2020
 ```{r, message = FALSE}
-feather_carcass_2020 <- read_from_cloud("all_carcasses", 2020) |> 
+feather_carcass_2020 <- read_from_cloud("all_carcasses", 2020) |>
   mutate(date = as.Date(date),
-         adipose_fin_clipped = case_when(ad_fin_clip_status %in% c("unknown", "not recorded") ~ "NA", 
+         adipose_fin_clipped = case_when(ad_fin_clip_status %in% c("unknown", "not recorded") ~ "NA",
                                          ad_fin_clip_status == "yes" ~ "TRUE",
                                          ad_fin_clip_status == "no" ~ "FALSE",
                                          TRUE ~ ad_fin_clip_status),
          adipose_fin_clipped = as.logical(adipose_fin_clipped)) |>
   select(-ad_fin_clip_status) |>  
   rename(week = survey_week,
+         sect = section_id,
+         head_tag = head_nu,
+         scale_sample = scale_nu,
+         otolith_sample = otolith_nu,
          fork_length = fl_mm,
-         tag_id = disc_tag_applied,
-         recov_tag_id = tag_recovered,
          spawning_condition = spawned) |> 
   glimpse() 
 ```
@@ -391,22 +429,28 @@ feather_carcass_combined_raw <-
 
 ```{r}
 feather_carcass_combined <- feather_carcass_combined_raw |> 
-  select(-c(tag_env_id, rel_loc2, recorder, chop_env_id, number_spawned,
-            cwt_id, tag1, tag2, tag_comp, flow, vis, weather,
-            samp_type, samp_num, scale_sample, crew, comments, tag, chop_id,
-            time, survey_meta_id, chops_id, survey_id, data_recorder,
-            creation_time, editor, edit_time, section_id, boat, time_in,
-            time_out, field_recorder, individual_id, cwt_cd, 
-            spawn, adipose_fin_clip)) |> # spawn and adipose_fin_clip are from survey_meta_id == 70002 and are empty oncne we filter out NA dates 
+  select(-c(spawn, adipose_fin_clip, time, comment)) |> # spawn and adipose_fin_clip are from survey_meta_id == 70002 and are empty oncne we filter out NA dates 
   mutate(year = year(date),
-         disposition = case_when(disposition == "recaptured, chopped" ~ "chopped_recovered",
+         disposition = case_when(disposition == "recaptured, chopped" ~ "chopped",
+                                 disposition == "chopped_recovered" ~ "chopped",
                                  disposition == "recaptured" ~ "recovered",
                                  TRUE ~ disposition),
          spawning_condition = case_when(spawning_condition == "yes" ~ "spawned",
                                         spawning_condition == "no" ~ "unspawned",
                                         spawning_condition %in% c("not recorded", "unknown") ~ NA_character_,
-                                        TRUE ~ spawning_condition)) |> 
+                                        TRUE ~ spawning_condition),
+         samples_collected = case_when(samples_collected == "s&o" ~ "scales, otoliths",
+                                       samples_collected == "h" ~ "head",
+                                       samples_collected == "o" ~ "otoliths",
+                                       samples_collected == "h&s" ~ "head, scales",
+                                       samples_collected == "h&o" ~ "head, otoliths",
+                                       samples_collected == "s" ~ "scales",
+                                       samples_collected == "none" ~ NA_character_,
+                                       samples_collected == "h&s&o" ~ "head, scales, otoliths",
+                                       TRUE ~ samples_collected)) |> 
   filter(!is.na(date)) |> 
+  rename(carcass_condition = condition,
+         mark_recapture = disposition) |> 
   glimpse()
 ```
 
@@ -430,7 +474,7 @@ The `feather_carcass_combined` table has carcass counts stored in the `count` va
 
 ## Explore Numeric Variables: {.tabset}
 
-### Variable: `tag_num`, `sect`, `unit`, `fork_length`, `float`, `week`, `count`, `recov_id`, `head_tag`, `recov_tag_id`, `minute`, `chin_id`, `min`, `header_id`, `tag_id`, `river_section`, `scales`, `otoliths`, `fl_cm`, `head_nu`, `scale_nu`, `otolith_nu`, `recover_id`, `year`
+### Variable: `tag_id`, `sect`, `unit`, `fork_length`, `week`, `count`, `head_tag`, `flow`, `min`, `scale_scample`, `river_section`, `otolith_sample`, `year`
 
 ```{r}
 feather_carcass_combined %>% 
@@ -475,7 +519,7 @@ feather_carcass_combined |>
   labs(title = "Daily Carcass count from 2000 to 2020")
 ```
 
-### Carcass variables: `sex`, `spawn`, `tag_col`, `disposition`, `source_table`, `lifestage`, `chan`, `recov_color`, `hall_print1`, `hall_print2`, `run`, `spawning_condition`, `samples_collected`, `hallprint`, `hallprint_color`, `location`, `subsample`, `species`, `condition`, `cwt_status`
+### Carcass variables: `sex`, `spawning_condition`, `rel_loc`, `tag_col`, `mark_recapture`, `source_table`, `lifestage`, `vis`, `weather`, `chan`, `recov_color`, `samples_collected`, `hallprint1`, `hall_print2`, `run`, `tag_color`, `hallprint_color`, `location`, `species`, `carcass_condition`
 
 
 ```{r}
@@ -489,19 +533,19 @@ character_cols <- feather_carcass_combined |>
   select_if(is.character) |> 
   colnames()
 
-sapply(feather_carcass_combined[, character_cols[! character_cols %in% c("hallprint", "hall_print1", "hall_print2", "comment")]], unique)
+sapply(feather_carcass_combined[, character_cols[! character_cols %in% c("hallprint", "hallprint1", "hall_print2")]], unique)
 ```
 
 **Plotting total adult chops over period of record**
 
 ```{r}
 total_adult_chops <- feather_carcass_combined |> 
-  filter(disposition != "tagged") |>
+  filter(mark_recapture != "tagged") |>
   filter(!is.na(date)) |> 
   mutate(fake_date = paste0("1970-", month(date), "-", day(date)),
          fake_date = ymd(fake_date),
          year = year(date)) |> 
-  select(fake_date, year, count, disposition, sex) |> 
+  select(fake_date, year, count, mark_recapture, sex) |> 
   glimpse()
 
 total_adult_chops_summary <- total_adult_chops |> 
@@ -529,14 +573,14 @@ total_carcasses_summary <- feather_carcass_combined |>
   mutate(fake_date = paste0("1970-", month(date), "-", day(date)),
          fake_date = ymd(fake_date),
          year = year(date)) |> 
-  group_by(fake_date, year, disposition) |> 
+  group_by(fake_date, year, mark_recapture) |> 
   summarise(total_carcasses = sum(count, na.rm = T)) |> 
   glimpse()
 ```
 
 ```{r}
 total_carcasses_summary |> 
-  ggplot(aes(x = fake_date, y = total_carcasses, fill = disposition)) + 
+  ggplot(aes(x = fake_date, y = total_carcasses, fill = mark_recapture)) + 
   facet_wrap(~year) +
   geom_bar(stat = "identity", position = position_fill()) + 
   theme_minimal() + 
@@ -587,13 +631,13 @@ This plot shows all carcasses collected, filtered to those data that recorded ru
 ```{r}
 feather_carcass_combined |> 
   filter(!is.na(date)) |>
-  filter(!is.na(condition)) |> 
+  filter(!is.na(carcass_condition)) |> 
   mutate(fake_date = paste0("1970-", month(date), "-", day(date)),
          fake_date = ymd(fake_date),
          year = year(date)) |> 
-  group_by(fake_date, year, condition) |> 
+  group_by(fake_date, year, carcass_condition) |> 
   summarise(total_carcasses = sum(count, na.rm = T)) |> 
-  ggplot(aes(x = fake_date, y = total_carcasses, fill = condition)) + 
+  ggplot(aes(x = fake_date, y = total_carcasses, fill = carcass_condition)) + 
   facet_wrap(~year) +
   geom_bar(stat = "identity", position = position_fill()) + 
   theme_minimal() + 
@@ -654,51 +698,40 @@ percent_na <- feather_carcass_combined |>
 
 
 all_carcasses_data_dictionary <- tibble(variables = colnames(feather_carcass_combined),
-                          description = c("Tag Number, recorded in 2000 and 2001 TagData table",
+                          description = c("Tag ID",
                                           "Section",
                                           "Unit",
                                           "Fork length (mm)",
                                           "Sex",
                                           "Spawning condition",
-                                          "Float, recorded in 2000 TagData table",
                                           "Rel_loc, recorded in 2000 and 2001 TagData table",
-                                          "Comment",
                                           "Date of survey",
                                           "Tag Color",
                                           "Week number",
-                                          "Disposition",
+                                          "Mark Recapture Description (chopped, recaptured, tagged)",
                                           "Source table",
                                           "Count",
-                                          "Recovery ID, collected in 2000-2010",
                                           "Lifestage",
                                           "Head tag number",
-                                          "Recovery tag ID, renamed for some years, collected 2017-2020",
+                                          "Flow",
+                                          "Visibility",
+                                          "Weather",
                                           "Channel",
                                           "Minute",
-                                          "Channel ID",
-                                          "Header ID, collected 2002-2016",
                                           "Color of recovered tag",
-                                          "Tag ID, collected 2009-2020",
+                                          "Samples collected",
                                           "Whether the adipose fin was clipped",
-                                          "Hall print 1, collected 2009",
-                                          "Hall print 2, collected 2009-2010",
+                                          "Hallprint tag number",
+                                          "Hallprint 2, collected 2009-2010",
+                                          "Scale sample",
                                           "Run",
                                           "River section",
-                                          "Samples collected",
-                                          "Scales",
-                                          "Otoliths",
-                                          "Hallprint tag number, collected 2011-2014",
+                                          "Otolith sample, collected 2011-2014",
+                                          "Tag color",
                                           "Color of hallprint tag number",
                                           "Location",
-                                          "Subsample",
                                           "Species",
-                                          "Fork length (cm)",
-                                          "Head number",
-                                          "Scale number",
-                                          "Otolith number",
-                                          "Condition",
-                                          "CWT status",
-                                          "Recover ID (collected 2017-2020)",
+                                          "Carcass condition (fresh, decayed, etc.)",
                                           "Year"),
                           percent_na = round(percent_na$value*100))
 

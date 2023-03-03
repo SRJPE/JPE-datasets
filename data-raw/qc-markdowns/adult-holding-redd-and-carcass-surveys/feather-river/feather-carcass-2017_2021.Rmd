@@ -241,7 +241,7 @@ cwt <- left_join(cwt_raw |> clean_names(),
                                 format = "%m/%d/%y %H:%M:%S"),
          creation_time = as.POSIXct(gsub("[()]", "", creation_time), 
                                     format = "%m/%d/%y %H:%M:%S")) |>
-  select(-c(survey_meta_id, individual_id, survey_id, fl_cm, comments, data_recorder, creation_time, editor, edit_time, cwt_cd, boat, time_in, time_out, field_recorder, crew, date, subsample)) |> 
+  select(-c(survey_meta_id, individual_id, survey_id, fl_cm, comments, data_recorder, creation_time, editor, edit_time, cwt_cd, boat, time_in, time_out, field_recorder, crew, subsample)) |> 
   rename(tag_id = disc_tag_applied) |> 
   glimpse()
 ```
