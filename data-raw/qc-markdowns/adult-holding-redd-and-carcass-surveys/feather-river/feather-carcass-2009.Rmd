@@ -159,6 +159,7 @@ cwt <- cwt_raw |>
   mutate(source_table = "CWT",
          count = 1) |>  
   rename(adipose_fin_clip = clip) |> 
+  select(-c(header_id, samp_num)) |> 
   glimpse()
 ```
 
@@ -190,16 +191,19 @@ chop_recovery_join <- left_join(ChopRecov_raw |> rename(chan_id = ChanID),
                                 chan_id_lookup, 
                                 by = "chan_id") |> 
   clean_names() |> 
-  rename(count = recov_count) |> 
+  rename(count = recov_count,
+         tag_id = recov_id) |> 
   mutate(disposition = "chopped_recovered",
          source_table = "ChopRecov") |> 
+  select(-c(chan_id, header_id)) |> 
   glimpse()
 ```
 
 ### Combine tables
 
 ```{r}
-all_carcasses <- bind_rows(chops_and_tags, chop_recovery_join, cwt) |> glimpse()
+all_carcasses <- bind_rows(chops_and_tags |> 
+                             select(-c(header_id, chan_id)), chop_recovery_join, cwt) |> glimpse()
 ```
 
 ### Survey
@@ -400,7 +404,7 @@ all_carcasses_cleaner <- all_carcasses |>
                                       adipose_fin_clip == "y" ~ "TRUE",
                                       adipose_fin_clip == "n" ~ "FALSE"),
          adipose_fin_clip = as.logical(adipose_fin_clip)) |>
-  select(-c(time)) |>  # time is removed because no stop time provided so information is not useful. chan is all NAs
+  select(-c(time, crew)) |>  # time is removed because no stop time provided so information is not useful. chan is all NAs
   glimpse()
 ```
 
@@ -450,33 +454,28 @@ percent_na <- all_carcasses_cleaner |>
 
 
 all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_cleaner),
-                          description = c("Channel ID",
-                                          "Section",
+                          description = c("Section",
                                           "Channel",
                                           "Minute",
-                                          "Header ID",
                                           "Tag color",
                                           "Date of survey",
                                           "Disposition",
                                           "Count",
                                           "Table from which the data came",
-                                          "Recovery ID",
-                                          "Recovered tag color",
                                           "Tag ID",
+                                          "Recovered tag color",
                                           "Fork length (mm)",
                                           "Sex",
                                           "Spawning condition",
                                           "Adipose fin clip status",
                                           "Sample type",
-                                          "Sample Number",
                                           "Head Tag",
                                           "Comment",
                                           "Hall Print 1",
-                                          "Hall Print 2",
+                                          "Hall Print 2", 
                                           "Scale sample",
                                           "Run",
-                                          "Crew",
-                                          "Week Number"),
+                                          "Week of survey"),
                           percent_na = round(percent_na$value*100))
 
 kable(all_carcasses_data_dictionary)

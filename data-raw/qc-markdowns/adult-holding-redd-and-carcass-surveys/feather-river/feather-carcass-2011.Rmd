@@ -159,7 +159,8 @@ The `cwt` table contains sampling information on individual carcasses. This tabl
 cwt <- left_join(cwt_raw |> clean_names(), 
                  cwt_header_raw |> clean_names(),
                  by = "header_id") |>  
-  rename(fl = "fork_length") |>
+  rename(fl = "fork_length",
+         hallprint1 = hallprint) |>
   mutate(source_table = "CWT",
          count = 1,
          disposition = case_when(recapture_or_chop == "C" ~ "chopped",
@@ -169,7 +170,7 @@ cwt <- left_join(cwt_raw |> clean_names(),
          sex = case_when(sex == "F" ~ "female",
                          sex == "M" ~ "male",
                          TRUE ~ sex)) |>
-  select(-c(recapture_or_chop)) |> 
+  select(-c(recapture_or_chop, cwt_id, header_id, crew, tag, morale, comments, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38)) |> 
   glimpse()
 ```
 
@@ -189,7 +190,8 @@ chop_join <- full_join(ChopHeader_raw |>
          count = "total_count") |> 
   mutate(sect = as.numeric(sect),
          disposition = "chopped",
-         source_table = "ChopJoin") |> glimpse()
+         source_table = "ChopJoin") |> 
+  select(-c(header_id)) |> glimpse()
 ```
 
 
@@ -378,7 +380,9 @@ all_carcasses_cleaner <- all_carcasses |>
                                 tag_color == "s" ~ "silver",
                                 tag_color == "no tag" ~ NA_character_,
                                 TRUE ~ tag_color)) |>
-  select(-c(time, section_group_1_10, section_group_11_15, section_group_16_21, section_group_22_38, morale, crew)) |>  # time is removed because no stop time provided so information is not useful. Not sure section_group variables are useful
+  rename(head_tag = head_tag_number,
+         tag_col = tag_recap_chop_color) |> 
+  select(-c(time)) |>  # time is removed because no stop time provided so information is not useful. Not sure section_group variables are useful
   glimpse()
 ```
 
@@ -425,14 +429,12 @@ percent_na <- all_carcasses_cleaner |>
 
 
 all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_cleaner),
-                          description = c("Header ID",
-                                          "Date of survey",
+                          description = c("Date of survey",
                                           "Section",
                                           "Minute",
                                           "Count",
                                           "Disposition",
                                           "Table from which the data came",
-                                          "CWT ID",
                                           "River Section",
                                           "Color of recovered tag",
                                           "Tag ID",
@@ -445,10 +447,8 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Scales",
                                           "Otoliths",
                                           "Hallprint tag number",
-                                          "Comments",
-                                          "Tag",
                                           "Week",
-                                          "Color of tag"),
+                                          "Color of tag applied"),
                           percent_na = round(percent_na$value*100))
 
 kable(all_carcasses_data_dictionary)
