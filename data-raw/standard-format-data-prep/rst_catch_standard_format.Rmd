@@ -652,10 +652,6 @@ unique(feather_rst_camp$fishOrigin)
 unique(feather_rst_camp$markType)
 filter(feather_rst_camp, visitTime != visitTime2)
 
-# organize feather subsites by high flow channel and low flow channel to make easier to understand
-lfc <- c("eye riffle_north", "eye riffle_side channel", "gateway main 400' up river", "gateway_main1", "gateway_rootball", "gateway_rootball_river_left", "#steep riffle_rst", "steep riffle_10' ext", "steep side channel")
-hfc <- c("herringer_east", "herringer_upper_west", "herringer_west", "live oak", "shawns_east", "shawns_west", "sunset east bank", "sunset west bank")
-
 feather_rst_clean <- feather_rst_camp %>%
   # removing existing mark for now. will add all those in later
   select(-c(catchRawID, trapVisitID, visitTime2, markType_1, markColor_1, markPosition_1, markCode_1)) %>%
@@ -678,8 +674,7 @@ feather_rst_clean <- feather_rst_camp %>%
   ungroup() %>%
   mutate(stream = "feather river",
          subsite = tolower(subsite),
-         site = case_when(subsite %in% lfc ~ "upper feather lfc",
-                          subsite %in% hfc ~ "upper feather hfc"),
+         site = tolower(site),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
