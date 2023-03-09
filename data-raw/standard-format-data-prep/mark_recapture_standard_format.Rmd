@@ -266,12 +266,7 @@ lfc <- c("eye riffle_north", "eye riffle_side channel", "gateway main 400' up ri
 hfc <- c("herringer_east", "herringer_upper_west", "herringer_west", "live oak", "shawns_east", "shawns_west", "sunset east bank", "sunset west bank", "live oak", "herringer riffle", "sunset pumps", "live oak_release site", "herringer_release site", "sunset_release site")
 
 feather_released <- read_csv(here::here("data", "rst", "feather_releases.csv")) %>% 
-  mutate(site = case_when(site %in% lfc ~ "upper feather lfc",
-                          site %in% hfc ~ "upper feather hfc"),
-         site_released = tolower(site_released),
-         site_released = case_when(site_released %in% lfc ~ "upper feather lfc",
-                                   site_released %in% hfc ~ "upper feather hfc",
-                                   T ~ "not recorded"),
+  mutate(site_released = tolower(site_released),
          subsite_released = tolower(subsite_released),
          subsite_released = ifelse(is.na(subsite_released) | subsite_released == "not applicable (n/a)", "not recorded", subsite_released),
          day_or_night_release = ifelse(light_condition %in% c("Twilight / dusk", "Night, dark", "Night, moonlit"), "night", "day"),
@@ -288,9 +283,7 @@ feather_recaptured <- read_csv(here::here("data", "rst", "feather_recaptures.csv
   summarize(number_recaptured = sum(number_recaptured),
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% 
   ungroup() %>%
-  mutate(release_id = as.character(release_id),
-         site = case_when(site %in% lfc ~ "upper feather lfc",
-                          site %in% hfc ~ "upper feather hfc")) %>% 
+  mutate(release_id = as.character(release_id)) %>% 
   glimpse()
 ```
 

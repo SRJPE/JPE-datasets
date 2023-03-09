@@ -252,9 +252,6 @@ gcs_get_object(object_name = "rst/feather-river/data-raw/feather_environmental_c
                overwrite = TRUE)
 
 feather_env_raw <- read_csv(here::here("data", "rst", "feather_environmental_camp.csv")) 
-# organize feather subsites by high flow channel and low flow channel to make easier to understand
-lfc <- c("eye riffle_north", "eye riffle_side channel", "gateway main 400' up river", "gateway_main1", "gateway_rootball", "gateway_rootball_river_left", "#steep riffle_rst", "steep riffle_10' ext", "steep side channel")
-hfc <- c("herringer_east", "herringer_upper_west", "herringer_west", "live oak", "shawns_east", "shawns_west", "sunset east bank", "sunset west bank")
 
 filter(feather_env_raw, parameter == "velocity") %>%  ggplot(aes(value)) + geom_histogram()
 # check those with different units
@@ -270,9 +267,7 @@ feather_env <- feather_env_raw %>%
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
   ungroup() %>% 
-  mutate(stream = "feather river",
-         site = case_when(subsite %in% lfc ~ "upper feather lfc",
-                          subsite %in% hfc ~ "upper feather hfc"))
+  mutate(stream = "feather river")
 ```
 
 ### Lower Sac - Knights Landing
