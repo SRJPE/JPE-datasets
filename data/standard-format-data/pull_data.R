@@ -61,8 +61,12 @@ gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
                saveToDisk = "data/standard-format-data/standard_flow.csv",
                overwrite = TRUE)
 standard_flow <- read_csv("data/standard-format-data/standard_flow.csv")
-
-# TODO ADD TEMP WHEN READY
+# standard temp
+gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_temperature.csv",
+               overwrite = TRUE)
+standard_temperature <- read_csv("data/standard-format-data/standard_temperature.csv")
 
 # Adult Upstream Data
 gcs_get_object(object_name = "standard-format-data/standard_adult_upstream_passage.csv",
