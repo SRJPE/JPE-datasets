@@ -27,7 +27,7 @@ holding <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_
 redd <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
                                 bucket = gcs_get_global_bucket())) |> 
   group_by(year) |>
-  rename(count = max_yearly_redd_count)
+  rename(count = max_yearly_redd_count) |> glimpse()
 
 redd_daily <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
                                       bucket = gcs_get_global_bucket())) |> 
@@ -103,7 +103,7 @@ upstream_mill <- upstream_passage |>
   mutate(year = year(date)) |> 
   group_by(year) |> 
   summarise(count = round(sum(count, na.rm = T), 0)) |> 
-  filter(!is.na(year))
+  filter(!is.na(year)) |> glimpse()
 
 range(redd_mill$year)
 range(upstream_mill$year)
@@ -120,63 +120,54 @@ N <- (max(upstream_mill$year) - min(upstream_mill$year) + 1)
 redd_count <- redd_mill |> 
   filter(year %in% min(upstream_mill$year):max(upstream_mill$year)) |> 
   distinct(year, count) |> 
-  pull(count)
+  pull(count) |> as.integer()
 year <- min(upstream_mill$year):max(upstream_mill$year)
-upstream_count <- upstream_mill |> pull(count)
+upstream_count <- upstream_mill |> pull(count) |> as.integer()
 ratio_k <- upstream_count/redd_count
 
 # write model
 mill_upstream_redd_model <- "
   data {
     int N;
-    vector[N] redd_count;
-    vector[N] upstream_count;
+    int upstream_count[N];
+    int redd_count[N];
   }
   parameters {
     real mu_k;
-    real sigma_k;
+    real <lower = 0> sigma_k;
     real mu_a;
-    real sigma_a;
+    real <lower = 0> sigma_a;
   }
   model {
     vector[N] ratio_k;
     vector[N] lambda;
     real alpha;
     real beta;
-    alpha <- square(mu_k) * sigma_k;
-    beta <- mu_k * sigma_k;
-    for(i in 1:N){
+    alpha = mu_k * mu_k * sigma_k;
+    beta = mu_k * sigma_k;
+    for(i in 1:N) {
+      upstream_count[i] ~ lognormal(mu_a, sigma_a);
+      ratio_k[i] ~ gamma(alpha, beta);
+      lambda[i] = upstream_count[i] * ratio_k[i];
       redd_count[i] ~ poisson(lambda[i]);
     }
-    lambda ~ gamma(alpha, beta);
-    upstream_count ~ lognormal(mu_a, sigma_a);
 
   }"
 
+init_list <- list()
+Nchains <- 4
+for(i in 1:Nchains){
+  init_list[[i]] <- list(mu_k = rgamma(1, 7, 16),
+                         sigma_k = rgamma(1, 0.1, 1),
+                         mu_a = runif(1, 0, 250),
+                         sigma_a = rgamma(1, 2, 1))
+}
 
-mill_upstream_redd_model <- "
-  data {
-    int N;
-    vector[N] redd_count;
-  }
-  parameters {
-    real mu_k;
-    real sigma_k;
-    vector[N] lambda;
-  }
-  model {
-    real alpha;
-    real beta;
-    alpha <- square(mu_k) * sigma_k;
-    beta <- mu_k * sigma_k;
-    for(i in 1:N){
-      redd_count[i] ~ poisson(lambda[i]);
-      lambda[i] ~ gamma(alpha, beta);
-    }
-  }"
-
-fit <- stan(model_code = mill_upstream_redd_model, data = list(N = N,
-                                                               redd_count = redd_count), 
+fit <- stan(model_code = mill_upstream_redd_model, 
+            data = list(N = N,
+                        upstream_count = upstream_count,
+                        redd_count = redd_count), 
+            init = init_list,
             chains = 4, iter = 5000*2, seed = 84735)
 
 # for(i in 1:N) {
@@ -194,68 +185,6 @@ fit <- stan(model_code = mill_upstream_redd_model, data = list(N = N,
                                                                redd_count = redd_count,
                                                                upstream_count = upstream_count), 
             chains = 4, iter = 5000*2, seed = 84735)
-
-
-
-
-# redd bayesian paper (Dauphin)
-# R(t,i) drawn from a Negative Binomial (Distributed as Poisson with 
-# rate parameter having a gamma distribution)
-
-# rate parameter lambda is a function of spawners (S), proportion of 
-# wetted area of the catchment unit (P), and a spawner:redd ratio (K) 
-
-# lambda = S * P * K
-
-# Spawners (S) is obtained from adult returns (A) subtracting rod catchment (C)
-
-# S = A - C
-
-# variation within and among K: either between rivers or between years within rivers
-# K is distributed as a gamma function
-
-# K | alpha, beta ~ Gamma(alpha, beta)
-# alpha = mean^2 * tau
-# beta = mean * tau
-
-# mean and tau do not vary between rivers (they tried this and it did not improve model fit)
-
-
-# Adults returning (A) were drawn from a river-specific lognormal distribution
-# and the mean parameter can vary among rivers
-
-# A | mean, tau ~ lognormal(mean, tau)
-
-
-# logit proportion of wetted area surveyed (P) was distributed as a normal distribution
-
-# logit(P) | mean, tau ~ Normal(logit(mean), tau)
-
-# running the model - 10 parameters with priors specified
-mill_upstream_redd_model <- "
-  data {
-    int N;
-    vector[N] redd_count;
-    vector[N] year;
-    vector[N] upstream_count;
-  }
-  parameters {
-    real mu_k;
-    real sigma_k;
-  } 
-  transformed parameters {
-    vector[N] ratio_k;
-    vector[N] lambda;
-    lambda <- upstream_count .* ratio_k;
-  } 
-  model {
-    real alpha;
-    real beta;
-    alpha <- (mu_k)^2 * sigma_k;
-    beta <- mu_k * sigma_k;
-    redd_count ~ poisson(lambda);
-    ratio_k ~ gamma(alpha, beta);
-  }"
 
 
 
