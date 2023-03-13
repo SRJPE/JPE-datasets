@@ -48,6 +48,7 @@ redd_annual <- read_csv(gcs_get_object(object_name = "standard-format-data/stand
 # first get streams != yuba
 carcass <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_carcass.csv",
                                    bucket = gcs_get_global_bucket())) |> 
+  filter(run %in% c("spring", NA, "unknown")) |> 
   glimpse()
 
 
@@ -77,7 +78,7 @@ year_ranges <- bind_rows(upstream_passage |>
 # plots by creek ----------------------------------------------------------------
 streams <- c(unique(upstream_passage$stream), "butte creek", "feather river")
 battle_clear <- c("battle creek", "clear creek")
-non_battle_clear <- streams[!streams %in% streams_filtering]
+non_battle_clear <- streams[!streams %in% battle_clear]
 
 create_stream_plots <- function(upstream_passage, holding, redd_annual, carcass, stream_name,
                                 year_ranges){
