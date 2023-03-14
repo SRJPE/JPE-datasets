@@ -3,6 +3,8 @@ library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
 library(rstan)
+library(bayesplot)
+library(shinystan)
 
 # get data ----------------------------------------------------------------
 
@@ -163,25 +165,21 @@ hist(rgamma(100, alpha, beta))
 init_list <- list()
 Nchains <- 4
 for(i in 1:Nchains){
-  init_list[[i]] <- list(mu_k = 0.5,
-                         sigma_k = 0.2,
+  init_list[[i]] <- list(mu_k = rgamma(1, 3, 1),
+                         sigma_k = rgamma(1, 1, 2),
                          mu_a = runif(1, 3, 5),
                          sigma_a = rgamma(1, 0.6, 1))
 }
+
 
 fit <- stan(model_code = mill_upstream_redd_model, 
             data = list(N = N,
                         upstream_count = upstream_count,
                         redd_count = redd_count,
                         ratio_k = ratio_k), 
-            init = init_list,
+            #init = init_list,
             chains = 4, iter = 5000*2, seed = 84735)
 
-
-
-for(i in 1:Nchains){
-  init_list[[i]] <- list(mu_k = rgamma(1, 3, 1),
-                         sigma_k = rgamma(1, 1, 2),
-                         mu_a = runif(1, 3, 5),
-                         sigma_a = rgamma(1, 0.6, 1))
-}
+mcmc_trace(fit)
+mcmc_areas(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
+launch_shinystan(fit)
