@@ -5,6 +5,7 @@ library(googleCloudStorageR)
 library(rstan)
 library(bayesplot)
 library(shinystan)
+library(rstanarm)
 
 # get data ----------------------------------------------------------------
 
@@ -160,7 +161,7 @@ mu <- 0.5
 sigma <- 0.2
 beta <- mu * sigma
 alpha <- mu * beta
-hist(rgamma(100, alpha, beta))
+summary(rgamma(10000, alpha, beta))
 
 init_list <- list()
 Nchains <- 4
@@ -180,6 +181,51 @@ fit <- stan(model_code = mill_upstream_redd_model,
             #init = init_list,
             chains = 4, iter = 5000*2, seed = 84735)
 
-mcmc_trace(fit)
+# diagnostics
+mcmc_trace(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
 mcmc_areas(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
-launch_shinystan(fit)
+mcmc_dens_overlay(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be indistinguishable
+neff_ratio(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be >0.1
+mcmc_acf(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should drop to be low
+rhat(fit, c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be close to 1
+
+#launch_shinystan(fit)
+
+# prediction using rstanarm - need to fit model in rstanarm for this to work
+
+# prediction with R code and custom function
+# get results
+pars <- as.data.frame(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
+predict_redd <- function(mu_k, sigma_k, mu_a, sigma_a) {
+  beta <- mu_k * sigma_k
+  alpha <- mu_k * beta
+  
+  upstream_count <- rlnorm(1, mu_a, sigma_a)
+  ratio_k <- rgamma(1, alpha, beta)
+  lambda <- upstream_count * ratio_k
+  redd_count <- rpois(1, lambda)
+  return(list("redd_count" = redd_count,
+              "upstream_count" = upstream_count,
+              "ratio_k" = ratio_k))
+}
+
+pred_redd <- numeric()
+pred_adult <- numeric()
+pred_ratio <- numeric()
+year <- numeric()
+for(i in 1:100){
+  predict <- predict_redd(sample(pars$mu_k, 1), sample(pars$sigma_k, 1),
+                               sample(pars$mu_a, 1), sample(pars$sigma_a, 1))
+  year[i] <- i
+  pred_redd[i] <- predict$redd_count
+  pred_adult[i] <- predict$upstream_count
+  pred_ratio[i] <- predict$ratio_k
+}
+
+pred_dat <- tibble(year = year,
+                   redd = pred_redd,
+                   adult = pred_adult,
+                   ratio = pred_ratio)
+ggplot(pred_dat) +
+  geom_line(data = pred_dat, aes(x = year, y = redd)) + 
+  geom_line(data = pred_dat, aes(x = year, y = adult),  col = "blue")
