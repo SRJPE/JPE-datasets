@@ -233,7 +233,9 @@ ggplot(pred_dat) +
   geom_line(data = pred_dat, aes(x = year, y = adult),  col = "blue")
 
 ggplot(pred_dat) +
-  geom_line(aes(x = year, y = pred_ratio/2))
+  geom_line(aes(x = year, y = pred_ratio))
+# TODO could covariate explain years where ratio is below 1 ? upstream passage has 
+# high flow? 
 
 # try predicting with bayesforecast
 bayesforecast::forecast(fit, h = 20) # not working
