@@ -6,6 +6,7 @@ library(rstan)
 library(bayesplot)
 library(shinystan)
 library(rstanarm)
+library(bayesforecast)
 
 # get data ----------------------------------------------------------------
 
@@ -192,6 +193,7 @@ rhat(fit, c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be close to 1
 #launch_shinystan(fit)
 
 # prediction using rstanarm - need to fit model in rstanarm for this to work
+# TODO wrapper for passing stan code to rstan?
 
 # prediction with R code and custom function
 # get results
@@ -229,3 +231,9 @@ pred_dat <- tibble(year = year,
 ggplot(pred_dat) +
   geom_line(data = pred_dat, aes(x = year, y = redd)) + 
   geom_line(data = pred_dat, aes(x = year, y = adult),  col = "blue")
+
+ggplot(pred_dat) +
+  geom_line(aes(x = year, y = pred_ratio/2))
+
+# try predicting with bayesforecast
+bayesforecast::forecast(fit, h = 20) # not working
