@@ -1,0 +1,355 @@
+---
+title: "Create standard format for Holding data"
+output: html_document
+---
+```{r, include = F}
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+```
+
+Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys).
+Cleaned data were saved on the jpe-dev-bucket on google cloud.
+
+```{r, data_pull, include = F, echo = F}
+# # Data pull ---------------------------------------------------------------
+
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# define files to pull in (in some cases there is just one catch file while others
+# have sample and environmental data)
+files_battle <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_holding"),
+                       name = c(""),
+                       save = rep("data/redd-carcass-holding/battle_holding"))
+files_butte <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_",17),
+                       name = c("holding_2001",
+                                "holding_2002", "holding_2003", "holding_2004", "holding_2005", "holding_2006",
+                                "holding_2007", "holding_2008", "holding_2009", "holding_2010", "holding_2011",
+                                "holding_2012", "holding_2013", "holding_2014", "holding_2015", "holding_2016",
+                                "holding_2017"),
+                      save = "data/redd-carcass-holding/butte_")
+files_clear <- tibble(path = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_holding",
+                      name = c(""),
+                      save = rep("data/redd-carcass-holding/clear_holding"))
+files_deer <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_",2),
+                     name = c("adult_holding_1986_to_1996",
+                              "adult_holding_1997_to_2020"),
+                     save = "data/redd-carcass-holding/deer_")
+# function to save file to disk
+get_data <- function(path, name, save) {
+  gcs_get_object(object_name = paste0(path, name, ".csv"),
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = paste0(save, name, ".csv"),
+                 overwrite = TRUE)
+}
+# apply function to each set of files
+pmap(files_battle, get_data)
+pmap(files_butte, get_data)
+pmap(files_clear, get_data)
+pmap(files_deer, get_data)
+
+
+# load in data
+# catch data
+battle_holding <- read_csv("data/redd-carcass-holding/battle_holding.csv")
+butte_holding_01 <- read_csv("data/redd-carcass-holding/butte_holding_2001.csv")
+butte_holding_02 <- read_csv("data/redd-carcass-holding/butte_holding_2002.csv")
+butte_holding_03 <- read_csv("data/redd-carcass-holding/butte_holding_2003.csv")
+butte_holding_04 <- read_csv("data/redd-carcass-holding/butte_holding_2004.csv")
+butte_holding_05 <- read_csv("data/redd-carcass-holding/butte_holding_2005.csv")
+butte_holding_06 <- read_csv("data/redd-carcass-holding/butte_holding_2006.csv")
+butte_holding_07 <- read_csv("data/redd-carcass-holding/butte_holding_2007.csv")
+butte_holding_08 <- read_csv("data/redd-carcass-holding/butte_holding_2008.csv")
+butte_holding_09 <- read_csv("data/redd-carcass-holding/butte_holding_2009.csv")
+butte_holding_10 <- read_csv("data/redd-carcass-holding/butte_holding_2010.csv")
+butte_holding_11 <- read_csv("data/redd-carcass-holding/butte_holding_2011.csv")
+butte_holding_12 <- read_csv("data/redd-carcass-holding/butte_holding_2012.csv")
+butte_holding_13 <- read_csv("data/redd-carcass-holding/butte_holding_2013.csv")
+butte_holding_14 <- read_csv("data/redd-carcass-holding/butte_holding_2014.csv")
+butte_holding_15 <- read_csv("data/redd-carcass-holding/butte_holding_2015.csv")
+butte_holding_16 <- read_csv("data/redd-carcass-holding/butte_holding_2016.csv")
+butte_holding_17 <- read_csv("data/redd-carcass-holding/butte_holding_2017.csv")
+clear_holding <- read_csv("data/redd-carcass-holding/clear_holding.csv")
+deer_holding_1997_2020 <- read_csv("data/redd-carcass-holding/deer_adult_holding_1997_to_2020.csv")
+deer_holding_1986_1996 <- read_csv("data/redd-carcass-holding/deer_adult_holding_1986_to_1996.csv")
+
+```
+
+# Data formatting {.tabset}
+
+## Battle Creek
+
+```{r, battle_holding_data_dictionary}
+battle_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/data-dictionaries/battle_holding_data_dictionary.rds")
+kable(battle_data_dictionary)
+```
+```{r, battle_clean}
+battle_holding_clean <- battle_holding %>%
+  select(-notes) %>%
+  mutate(stream = "battle creek",
+         year = lubridate::year(date))
+  
+
+```
+
+### Varibles removed
+
+- notes: internal use
+
+## Clear Creek
+
+```{r, clear_holding_data_dictionary}
+clear_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/data-dictionaries/clear_holding_data_dictionary.rds")
+kable(clear_data_dictionary)
+```
+```{r, clear_clean}
+clear_holding_clean <- clear_holding %>%
+  select(-comments) %>%
+  rename(jacks = jack_count) %>%
+  mutate(stream = "clear creek",
+         year = lubridate::year(date))
+```
+
+### Variables removed
+
+- comments: internal use
+
+
+## Deer Creek
+
+```{r, deer_holding_data_dictionary}
+deer_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/data-dictionaries/deer_holding_data_dictionary.rds")
+kable(deer_data_dictionary)
+```
+
+```{r, deer_clean}
+deer_holding_clean <- bind_rows(deer_holding_1986_1996,
+                                deer_holding_1997_2020) %>%
+  rename(reach = location) %>%
+  mutate(stream = "deer creek")
+```
+
+### Variables removed
+
+- none
+
+## Butte Creek
+
+```{r, butte_holding_data_dictionary}
+butte_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/data-dictionaries/butte_holding_data_dictionary.rds")
+kable(butte_data_dictionary)
+```
+
+
+```{r, butte_clean}
+butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
+                                 butte_holding_02,
+                                 butte_holding_03,
+                                 butte_holding_04,
+                                 butte_holding_05,
+                                 butte_holding_06,
+                                 butte_holding_07, 
+                                 butte_holding_08,
+                                 butte_holding_09,
+                                 butte_holding_10,
+                                 butte_holding_11,
+                                 butte_holding_12,
+                                 butte_holding_13,
+                                 butte_holding_14,
+                                 butte_holding_15,
+                                 butte_holding_16,
+                                 butte_holding_17) %>%
+  group_by(date, reach) %>%
+  summarize(avg_count = round(mean(fish_count, na.rm = T), digits = 0)) %>%
+  rename(count = avg_count) %>%
+  mutate(stream = "butte creek",
+         year = lubridate::year(date)) %>% 
+  glimpse()
+```
+
+### Variables removed
+- comments, personnel removed
+- Butte creek data has multiple observations from different personnels per day - to prevent double counting, the average of each day at each reach is used as the daily fish count
+
+# Standard format {.tabset}
+```{r, combined}
+combined_holding <- bind_rows(battle_holding_clean,
+                              butte_holding_clean,
+                              clear_holding_clean,
+                              deer_holding_clean)
+```
+
+## Data dictionary
+
+```{r, data_dictionary_prep, include = F}
+colnames(combined_holding)
+holding_catch_data_dictionary <-
+  tibble(
+    variable_name = colnames(combined_holding),
+    description = c(
+      "Date survey was conducted",
+      "Reach number within stream",
+      "River mile number",
+      "Number of fish observed: Butte Creek data has multiple observations from different personnels per day - to prevent double counting, the average of each day at each reach is used as the daily fish count",
+      "Number of jacks observed",
+      "Latitude measurement of adult holding",
+      "Longitude measurement of adult holding",
+      "Stream name",
+      "Year survey was conducted",
+      "Reason survey was conducted",
+      "Location of the Picket Weir - this is unique to Clear Creek and is either 7.4 or 8.2",
+      "Fish above or below Picket Weir"
+    ),
+    encoding = c(
+      "YYYY-MM-DD",
+      NA,
+      NA,
+      NA,
+      NA,
+      NA,
+      NA,
+      NA,
+      "YYYY",
+      "august index, spawning",
+      NA,
+      "above, below"
+    ),
+    collected = c(
+      "All but Deer",
+      "All",
+      "Battle and Clear",
+      "All",
+      "Battle and Clear",
+      "Battle and Clear",
+      "Battle and Clear",
+      "All",
+      "All",
+      "Clear",
+      "Clear",
+      "Clear"
+    )
+  )
+```
+```{r, data_dictionary}
+kable(holding_catch_data_dictionary)
+```
+
+## Exploratory plots
+
+Total count per year for each waterbody
+
+```{r}
+combined_holding %>% 
+  group_by(year, stream) %>%
+  ggplot(aes(x = year, y = count, fill = stream))+
+  geom_col()
+```
+
+Average count per month. This chart shows Battle, Butte and Clear; Deer does not have monthly count.
+
+```{r}
+combined_holding %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  group_by(month, stream) %>% 
+  summarize(average_count = mean(count, na.rm = T)) %>%
+  ggplot(aes(x = month, y = average_count, fill = stream)) +
+  geom_col()
+```
+
+Average jacks per month. Jacks is only collected at Battle and Clear.
+```{r}
+combined_holding %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  group_by(month, stream) %>% 
+  summarize(average_jacks = mean(jacks, na.rm = T)) %>% 
+  ggplot(aes(x = month, y = average_jacks, fill = stream)) + 
+  geom_col()
+```
+
+River mile distribution for Battle and Clear
+
+```{r}
+combined_holding %>% 
+  filter(!is.na(river_mile)) %>% 
+  ggplot(aes(x = stream, y = river_mile)) + 
+  geom_boxplot(
+  )
+```
+
+# QA/QC {.tabset}
+
+# Categorical Variables
+
+```{r, categorical_variables}
+unique(combined_holding$reach)
+unique(combined_holding$stream)
+unique(combined_holding$survey_intent)
+unique(combined_holding$picket_weir_relate)
+```
+
+# Count
+
+Monthly count is not recorded for Deer.
+
+Figure below shows the percentage count by month for each waterbody except Deer.
+```{r, count_qaqc}
+
+total_count <- combined_holding %>% 
+  mutate(month = month(date)) %>% 
+  group_by(stream) %>% 
+  summarize(total = sum(count, na.rm = T))
+
+combined_holding %>% 
+  mutate(month = month(date)) %>% 
+  group_by(stream, month) %>% 
+  summarize(count = sum(count, na.rm = T)) %>% 
+  left_join(total_count) %>% 
+  mutate(percent = (count/total)*100) %>% 
+  ggplot(aes(x= month, y = percent, fill = stream)) +
+  geom_col() +
+  facet_wrap(~stream, scales = "free_y")
+```
+
+*  `r round(sum(is.na(combined_holding$count))/nrow(combined_holding), 3)*100` % of values in the `count` column are NA.
+
+## Jacks
+Jacks are not recorded for Deer and Butte
+
+Figure below show the percentage count by month for Battle and Clear.
+
+```{r, jack_qa_qc}
+total_jacks <- combined_holding %>% 
+  mutate(month = month(date)) %>% 
+  group_by(stream) %>% 
+  summarize(total = sum(jacks, na.rm = T))
+
+combined_holding %>% 
+  mutate(month = month(date)) %>% 
+  group_by(stream, month) %>% 
+  summarize(count = sum(jacks, na.rm = T)) %>% 
+  left_join(total_jacks) %>% 
+  mutate(percent = (count/total)*100) %>% 
+  ggplot(aes(x= month, y = percent, fill = stream)) +
+  geom_col() +
+  facet_wrap(~stream, scales = "free_y")
+```
+
+*  `r round(sum(is.na(combined_holding$jacks))/nrow(combined_holding), 3)*100` % of values in the `jacks` column are NA.
+
+# Save data
+```{r, save_data}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(combined_holding,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_holding.csv",
+           predefinedAcl = "bucketLevel")
+
+```
+

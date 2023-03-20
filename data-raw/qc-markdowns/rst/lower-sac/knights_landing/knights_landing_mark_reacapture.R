@@ -11,6 +11,7 @@ CatchRaw <- sqlFetch(knights_landing_camp, "CatchRaw")
 TrapVisit <- sqlFetch(knights_landing_camp, "TrapVisit") %>% glimpse
 Release <- sqlFetch(knights_landing_camp, "Release") %>% glimpse
 ReleaseFish <- sqlFetch(knights_landing_camp, "ReleaseFish") %>% glimpse
+fish_origin_lu <- sqlFetch(knights_landing_camp, "luFishOrigin") %>% glimpse
 
 Release %>% glimpse
 # select relevant column
@@ -36,10 +37,14 @@ selected_released_fish <- ReleaseFish %>%
 
 selected_release <- Release %>% 
   full_join(selected_released_fish, by = c("releaseID" = "releaseID")) %>%
+  left_join(fish_origin_lu, by = c("markedFishOriginID" = "fishOriginID")) %>%
   filter(releasePurposeID == 1) %>% 
-  select(releaseID, releaseSiteID, nReleased, releaseTime, median_fork_length_released) %>% 
-  mutate(release_date = as_date(releaseTime)) %>% 
-  select(-releaseTime) %>% glimpse
+  select(releaseID, releaseSiteID, nReleased, releaseTime, median_fork_length_released, fishOrigin) %>% 
+  mutate(release_date = as_date(releaseTime),
+         release_time = hms::as_hms(releaseTime),
+         fish_origin = tolower(fishOrigin)) %>% 
+  select(-releaseTime, -fishOrigin) %>%
+  glimpse
 
 # Check catch ID 
 catch_trap_id <- CatchRaw$trapVisitID %>% unique() %>% sort()
@@ -84,5 +89,12 @@ catch_with_date %>%
   geom_point()
 
 # Save data 
-write_rds(catch_with_date, "data/rst/knights_landing_mark_recapture_data.rds")
+# write_rds(catch_with_date, "data/rst/knights_landing_mark_recapture_data.rds")
+# write_csv(catch_with_date, "data/rst/knights_landing_mark_recapture.csv")
 
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(catch_with_date,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/knights_landing_mark_recapture_data.csv")

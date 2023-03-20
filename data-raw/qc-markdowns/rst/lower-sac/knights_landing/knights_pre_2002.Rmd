@@ -1,0 +1,765 @@
+---
+title: "Knights Landing Pre 2002"
+output: html_document
+date: "2022-11-07"
+---
+
+```{r, include = F}
+library(tidyverse)
+library(foreign)
+library(googleCloudStorageR)
+library(readxl)
+library(lubridate)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = F}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+
+# Assumptions
+
+- Assuming mark or clip as "A" means adipose-clipped
+- Assuming mark as "B" or "BB" means bismark brown and is a recaptured fish in all years except 1997
+- The number of marked fish in 1997 does not seem likely that they were recaptured, waiting for efficiency data
+
+# 1996
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM96.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum96.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/MARK96.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/mark96.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/RSTFL96.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst96.DBF",
+                 overwrite = TRUE)
+```
+
+- sum table: date, trapid, time, effrt_time, rpm_averag, pt_vel
+- mark table: date, trapid, traptype, dye_type, n0_dyed, recap_type n0_recap
+- rst table: date, time, trapid, traptype, fl, ww, lifestage, rage, clip
+
+```{r}
+path <- "data-raw/qc-markdowns/rst/lower-sac/knights_landing/"
+
+sum96 <- read.dbf(paste0(path, "sum96.DBF")) %>% glimpse()
+mark96 <- read.dbf(paste0(path, "mark96.DBF")) %>% glimpse()
+rst96 <- read.dbf(paste0(path, "rst96.DBF")) %>% glimpse()
+#1996: adfl, sum, mark
+
+rst96 %>% group_by(LIFESTAGE) %>% tally()
+rst96 %>% group_by(RACE) %>% tally()
+```
+
+```{r}
+trap96_clean <- sum96 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel)
+
+efficiency96_clean <- mark96 %>% 
+  janitor::clean_names() %>% 
+  select(date, n0_dyed, no_recap) %>% 
+  group_by(date) %>% 
+  summarise(number_marked = sum(n0_dyed, na.rm = T),
+            number_recaptured = sum(no_recap, na.rm = T))
+
+rst96_clean <- rst96 %>% 
+  janitor::clean_names() %>% 
+  mutate(lifestage = as.factor(lifestage),
+         adipose_clip = ifelse(clip == "A",T, F)) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, adipose_clip)
+```
+
+# 1997
+
+What does A and B mark mean? 
+
+Assumptions: 
+- A for adipose clip
+- B for bismark brown
+- mark field is for fish marked not recapturing marked fish
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/97KLSUMT.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum97.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLFL97T.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst97.DBF",
+                 overwrite = TRUE)
+```
+
+```{r}
+sum97 <- read.dbf(paste0(path, "sum97.DBF")) %>% glimpse()
+rst97 <- read.dbf(paste0(path, "rst97.DBF")) %>% glimpse()
+
+```
+
+```{r}
+trap97_clean <- sum97 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel) |> glimpse()
+
+rst97_clean <- rst97 %>% 
+  janitor::clean_names() %>% 
+  mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race),
+         adipose_clip = ifelse(mark == "A", T, F),
+         mark = case_when(mark == "A" | mark == 0 ~ F, 
+                          mark == "B" | mark == "BB" ~ T)
+         ) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, adipose_clip) |> glimpse()
+
+rst97_clean %>% group_by(mark) %>% tally()
+```
+
+# 1998
+
+What does A and B mark mean? 
+
+Assumptions: 
+- A for adipose clip
+- B for bismark brown
+- mark field is for fish marked not recapturing marked fish
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM98.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum98.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLFL98.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst98.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/knights_1998_efficiency.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/knights_1998_efficiency.csv",
+                 overwrite = TRUE)
+```
+
+```{r}
+sum98 <- read.dbf(paste0(path, "sum98.DBF")) %>% glimpse()
+rst98 <- read.dbf(paste0(path, "rst98.DBF")) %>% glimpse()
+efficiency98 <- read_csv(paste0(path, "knights_1998_efficiency.csv"))
+
+```
+
+```{r}
+trap98_clean <- sum98 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel) |> glimpse()
+
+rst98_clean <- rst98 %>% 
+  janitor::clean_names() %>% 
+  mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race),
+         adipose_clip = ifelse(mark == "A", T, F),
+         mark = case_when(mark == "A" | mark == 0 ~ F, 
+                          mark == "B" | mark == "BB" ~ T)) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, adipose_clip) |> glimpse()
+
+rst98_clean %>% group_by(mark) %>% tally()
+
+efficiency98_clean <- efficiency98 %>% 
+  janitor::clean_names() %>% 
+  rename(number_recaptured = number_recovered) |> glimpse()
+```
+
+# 1999
+
+If we knew what mark was then we could pull out the recaptured fish.
+
+Assumes mark of B or BB is a recaptured fish.
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLSUM99.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum99.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KLFL99.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst99.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/STAIN99.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/stain99.DBF",
+                 overwrite = TRUE)
+```
+
+```{r}
+sum99 <- read.dbf(paste0(path, "sum99.DBF")) %>% glimpse()
+rst99 <- read.dbf(paste0(path, "rst99.DBF")) %>% glimpse()
+stain99 <- read.dbf(paste0(path, "stain99.DBF")) %>% glimpse()
+```
+
+```{r}
+trap99_clean <- sum99 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel)
+
+rst99_clean <- rst99 %>% 
+  janitor::clean_names() %>% 
+   mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race),
+         adipose_clip = ifelse(mark == "A", T, F),
+         mark = case_when(mark == "A" | mark == 0 ~ F, 
+                          mark == "B" | mark == "BB" ~ T)
+         ) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, adipose_clip)
+
+mark99_clean <- stain99 %>% 
+  janitor::clean_names() %>% 
+  select(date_relea, time_relea, cs_release) %>% 
+  filter(!is.na(date_relea)) %>% 
+  rename(date_released = date_relea,
+         time_released = time_relea,
+         number_released = cs_release)
+
+recap99_clean <- filter(rst99_clean, mark %in% c("B", "BB"))
+
+rst99_clean %>% group_by(mark) %>% tally()
+```
+
+
+# 2000
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/SUM00.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum00.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/CSFL00.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst00.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/csstaind00.dbf",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/stain00.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/EFFORT00.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/effort00.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/CSBISBRN00.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/bisbrn00.DBF",
+                 overwrite = TRUE)
+```
+
+```{r}
+sum00 <- read.dbf(paste0(path, "sum00.DBF")) %>% glimpse()
+rst00 <- read.dbf(paste0(path, "rst00.DBF")) %>% glimpse()
+stain00 <- read.dbf(paste0(path, "stain00.DBF")) %>% glimpse()
+bisbrn00 <- read.dbf(paste0(path, "bisbrn00.DBF")) %>% glimpse()
+# decided we don't need this because info is in the sum table
+effort00 <- read.dbf(paste0(path, "effort00.DBF")) %>% glimpse() 
+```
+
+```{r}
+trap00_clean <- sum00 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, time, effrt_time, rpm_averag, pt_vel) %>% 
+  rename(effort = effrt_time,
+         avg_rpm = rpm_averag,
+         velocity = pt_vel)
+
+rst00_clean <- rst00 %>% 
+  janitor::clean_names() %>% 
+   mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race),
+         time = as.factor(time),
+         adipose_clip = ifelse(mark == "A", T, F),
+         mark = case_when(mark == "A" | mark == 0 ~ F, 
+                          mark == "B" | mark == "BB" ~ T)) %>% 
+  select(date, time, trapid, fl, ww, lifestage, race, mark, mort, adipose_clip)
+
+mark00_clean <- stain00 %>% 
+  janitor::clean_names() %>% 
+  select(date, no_cs_rel) %>% 
+  filter(!is.na(date)) %>% 
+  rename(date_released = date,
+         number_released = no_cs_rel)
+
+recap00_clean <- bisbrn00 %>% 
+  janitor::clean_names() %>% 
+  select(date, time, trapid, fl, ww, lifestage, race) %>% 
+  mutate(time = as.factor(time),
+         lifestage = as.factor(lifestage),
+         race = as.factor(race))
+
+rst00_clean %>% group_by(mark) %>% tally()
+```
+
+# 2001
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KL01SUM.mdb",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/sum01.mdb",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/KL01CSFL.DBF",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/rst01.DBF",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/2001_RECAP.XLS",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "data-raw/qc-markdowns/rst/lower-sac/knights_landing/efficiency01.xls",
+                 overwrite = TRUE)
+```
+
+```{r}
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
+
+if(operating_system == "pc") {
+  library(RODBC)
+  connection <- odbcConnectAccess2007(paste0(path, "sum01.mdb"))
+  sum01 <- sqlFetch(connection, "KL01SUM1")
+  } else{
+    library(Hmisc)
+    sum01 <- mdb.get(paste0(path, "sum01.mdb"), tables = "KL01SUM1") %>% glimpse()
+  }
+
+rst01 <- read.dbf(paste0(path, "rst01.DBF")) %>% glimpse()
+efficiency01 <- read_excel(paste0(path, "efficiency01.xls"), sheet = 2) %>% glimpse()
+
+rst01 %>% group_by(RACE) %>% tally()
+```
+
+```{r}
+trap01_clean <- sum01 %>% 
+  janitor::clean_names() %>% 
+  select(date, trap, efft) %>% 
+  rename(trapid = trap,
+         effort = efft)
+
+rst01_clean <- rst01 %>% 
+  janitor::clean_names() %>% 
+  select(date, trapid, fl, ww, stage, race, mort) %>% 
+  rename(lifestage = stage) %>% 
+  mutate(lifestage = as.factor(lifestage),
+         race = as.factor(race))
+
+efficiency01_clean <- efficiency01 %>% 
+  janitor::clean_names() %>% 
+  select(week, number_marked, number_recovered) %>% 
+  filter(week != "Total") %>% 
+  mutate(year = 2001,
+         week = as.numeric(week)) %>% 
+  rename(number_recaptured = number_recovered)
+```
+
+# Combine 1996-2001
+
+trap: date, time, trapid, effort, avg_rpm, velocity
+rst: date, trapid, fl, ww, lifestage, race, mort, clip, mark, id_num
+efficiency: date, week, year, number_marked, number_recaptured
+marked: date_released, time_released, number_released
+recaptured: date, time, trapid, fl, ww, lifestage, race
+
+## trap
+```{r}
+trap_combined <- bind_rows(trap96_clean,
+                           trap97_clean,
+                           trap98_clean,
+                           trap99_clean,
+                           trap00_clean,
+                           trap01_clean) %>% glimpse()
+```
+### time
+```{r}
+trap_combined %>% group_by(year = year(date), time) %>% tally()
+```
+
+### trapid
+
+We will need to figure out how to assign these trapids to the current 8.3 and 
+8.4 sites for Knights Landing
+
+```{r}
+unique(trap_combined$trapid)
+trap_combined %>% group_by(year = year(date), trapid) %>% tally()
+```
+
+### effort
+```{r}
+trap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = effort)) +
+  geom_boxplot()
+```
+
+### avg_rpm
+```{r}
+trap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = avg_rpm)) +
+  geom_boxplot()
+```
+
+### velocity
+```{r}
+trap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = velocity)) +
+  geom_boxplot()
+```
+## rst 
+
+Codes for Life Stage from Jeanine Phillips:
+During the early years, the codes were explained on the datasheets, 
+but they are the ones still in use today: 1=alevin, 2=fry, 3=parr, 4=silvery parr, 5=smolt
+
+Codes for Run from Jeanine Phillips:
+1=fall, 2=spring, 3=winter, 4=late fall
+Assume 5 is unknown
+
+```{r}
+rst_combined <- bind_rows(rst96_clean,
+                          rst97_clean,
+                          rst98_clean,
+                          rst99_clean,
+                          rst00_clean,
+                          rst01_clean) %>% 
+  mutate(lifestage = case_when(lifestage == 1 ~ "alevin",
+                               lifestage == 2 ~ "fry",
+                               lifestage == 3 ~ "parr",
+                               lifestage == 4 ~ "silvery parr",
+                               lifestage == 5 ~ "smolt"),
+         run = case_when(race == 1 ~ "fall",
+                         race == 2 ~ "spring",
+                         race == 3 ~ "winter",
+                         race == 4 ~ "late fall",
+                         race == 5 ~ "unknown"),
+         # assuming -83 is a typo and they meant 83 fork length
+         fl = ifelse(fl == -83, 83, fl)) %>% 
+  select(-race) %>% 
+  glimpse()
+```
+### time
+```{r}
+rst_combined %>% group_by(year = year(date), time) %>% tally()
+```
+
+### trapid
+```{r}
+rst_combined %>% group_by(year = year(date), trapid) %>% tally()
+```
+
+### fl
+```{r}
+rst_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = fl)) +
+  geom_boxplot()
+
+rst_combined %>% 
+  filter(fl < 250) %>% 
+  ggplot(aes(x = as.factor(year(date)), y = fl)) +
+  geom_boxplot()
+```
+### ww
+```{r}
+rst_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = ww)) +
+  geom_boxplot()
+
+rst_combined %>% 
+  filter(ww < 20) %>% 
+  ggplot(aes(x = as.factor(year(date)), y = ww)) +
+  geom_boxplot()
+```
+
+### lifestage
+
+```{r}
+rst_combined %>% 
+  group_by(year = year(date), lifestage) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = lifestage)) +
+  geom_col()
+```
+
+### race
+
+```{r}
+rst_combined %>% 
+  group_by(year = year(date), run) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = run)) +
+  geom_col()
+```
+
+### adipose_clip
+```{r}
+rst_combined %>% 
+  group_by(year = year(date), adipose_clip) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = adipose_clip)) +
+  geom_col()
+```
+
+### mark
+```{r}
+unique(rst_combined$mark)
+
+rst_combined %>% 
+  group_by(year = year(date), mark) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = mark)) +
+  geom_col()
+```
+
+### mort
+```{r}
+unique(rst_combined$mort)
+
+rst_combined %>% 
+  group_by(year = year(date), mort) %>% 
+  tally() %>% 
+  ggplot(aes(x = year, y = n, fill = mort)) +
+  geom_col()
+```
+
+## efficiency 
+
+Ton of fish were marked in week 8 and 19 in 2001
+
+```{r}
+efficiency_combined <- bind_rows(efficiency96_clean,
+                                 efficiency98_clean,
+                                 efficiency01_clean) %>% glimpse()
+```
+
+```{r}
+efficiency_combined %>% 
+  mutate(year = ifelse(is.na(year), year(date), year),
+         week = ifelse(is.na(week), week(date), week)) %>% 
+  pivot_longer(cols = c(number_marked, number_recaptured), names_to = "type", values_to = "number") %>% 
+  ggplot(aes(x = week, y = number, fill = type)) +
+  geom_col() +
+  facet_wrap(~year)
+```
+
+
+## marked
+
+- Ton of fish released prior to week 10 in 2000
+- Few releases in 1998
+
+```{r}
+marked_combined <- bind_rows(mark99_clean,
+                             mark00_clean) %>% glimpse()
+```
+
+```{r}
+marked_combined %>% 
+  mutate(year = year(date_released),
+         week = week(date_released)) %>% 
+  ggplot(aes(x = week, y = number_released)) +
+  geom_col() +
+  facet_wrap(~year)
+```
+  
+
+## recap
+Codes for Life Stage from Jeanine Phillips:
+During the early years, the codes were explained on the datasheets, 
+but they are the ones still in use today: 1=alevin, 2=fry, 3=parr, 4=silvery parr, 5=smolt
+
+Codes for Run from Jeanine Phillips:
+1=fall, 2=spring, 3=winter, 4=late fall
+Assume 5 is unknown
+
+```{r}
+recap_combined <- bind_rows(recap99_clean,
+                            recap00_clean) %>% 
+  mutate(lifestage = case_when(lifestage == 1 ~ "alevin",
+                               lifestage == 2 ~ "fry",
+                               lifestage == 3 ~ "parr",
+                               lifestage == 4 ~ "silvery parr",
+                               lifestage == 5 ~ "smolt"),
+         run = case_when(race == 1 ~ "fall",
+                         race == 2 ~ "spring",
+                         race == 3 ~ "winter",
+                         race == 4 ~ "late fall",
+                         race == 5 ~ "unknown")) %>% 
+  select(-race) %>% 
+  glimpse()
+```
+
+### time
+```{r}
+recap_combined %>% group_by(year = year(date), time) %>% tally()
+```
+
+### trapid
+```{r}
+recap_combined %>% group_by(year = year(date), trapid) %>% tally()
+```
+
+### fl
+```{r}
+recap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = fl)) +
+  geom_boxplot()
+```
+### ww
+```{r}
+recap_combined %>% 
+  ggplot(aes(x = as.factor(year(date)), y = ww)) +
+  geom_boxplot()
+```
+
+### lifestage
+
+```{r}
+recap_combined %>% 
+  group_by(year = year(date), lifestage) %>% 
+  tally() %>% 
+  ggplot(aes(x = as.factor(year), y = n, fill = lifestage)) +
+  geom_col()
+```
+
+### race
+
+```{r}
+recap_combined %>% 
+  group_by(year = year(date), run) %>% 
+  tally() %>% 
+  ggplot(aes(x = as.factor(year), y = n, fill = run)) +
+  geom_col()
+```
+
+
+### mort
+```{r}
+unique(recap_combined$mort)
+
+recap_combined %>% 
+  group_by(year = year(date), mort) %>% 
+  tally() %>% 
+  ggplot(aes(x = as.factor(year), y = n, fill = mort)) +
+  geom_col()
+```
+# edits
+
+Assume that trapid is 1 or 2 is 8.3, trapid is 3 or 4 is 8.4. According to catch
+data trapid is either 2 or 3 in earlier years. Need to make consistent with later
+years.
+
+## trap
+
+```{r}
+trap_clean <- trap_combined %>% 
+  mutate(trapid = case_when(trapid %in% c(1,2) ~ 8.3,
+                            trapid %in% c(3,4) ~ 8.4))
+
+unique(trap_clean$trapid)
+```
+
+## rst
+
+reformat trapid
+
+```{r}
+rst_clean <- rst_combined %>% 
+  mutate(mort = ifelse(mort == 1, T, F),
+         trapid = case_when(trapid %in% c(1,2) ~ 8.3,
+                            trapid %in% c(3,4) ~ 8.4))
+
+unique(rst_clean$trapid)
+```
+
+## efficiency
+
+```{r}
+# add 1999 and 2000 to efficiency
+number_recaptured <- recap_combined %>% 
+  group_by(week = week(date),
+           year = year(date)) %>% 
+  tally() %>% 
+  rename(number_recaptured = n)
+
+number_marked <- marked_combined %>% 
+  mutate(week = week(date_released),
+           year = year(date_released))
+
+eff <- left_join(number_marked, number_recaptured)
+
+efficiency_clean <- left_join(number_marked, number_recaptured) %>% 
+              select(date_released, week, year, number_released, number_recaptured) %>% 
+              mutate(number_recaptured = as.numeric(ifelse(is.na(number_recaptured), 0, number_recaptured)),
+                     number_released = as.numeric(number_released)) %>% 
+  bind_rows(efficiency_combined %>% 
+  mutate(year = ifelse(is.na(year), year(date), year),
+         week = as.numeric(ifelse(is.na(week), week(date), week))) %>% 
+  rename(date_released = date,
+         number_released = number_marked))
+```
+
+# save data
+
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(trap_clean,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-trap.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(rst_clean,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-rst.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(efficiency_clean,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-efficiency.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(marked_combined,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-mark.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(recap_combined,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data/knights-landing/pre-2002-recap.csv",
+           predefinedAcl = "bucketLevel")
+```

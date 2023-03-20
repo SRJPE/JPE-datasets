@@ -1,0 +1,364 @@
+---
+title: "Estimating number of fish needed for efficiency trials"
+output: html_document
+date: '2022-07-25'
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(googleCloudStorageR)
+library(waterYearType)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# water year type
+sac_wy <- CDECRetrieve::water_year_indices %>% 
+  filter(location == "Sacramento Valley") %>% 
+  select(wy, yr_type) %>%
+  add_row(wy = 2020, yr_type = "Dry") %>%
+  add_row(wy = 2021, yr_type = "Dry")
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_recapture.csv",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "standard-format-data/standard_release.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_release.csv",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_rst_catch.csv",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_flow.csv",
+               overwrite = TRUE)
+
+release_raw <- read_csv(here::here("data","standard-format-data", "standard_release.csv"))
+recapture_raw <- read_csv(here::here("data","standard-format-data", "standard_recapture.csv"))
+
+# Load in standard RST data (with river model run)
+catch_raw <- read_csv(here::here("data", "standard-format-data", "standard_rst_catch.csv")) %>%
+  mutate(stream = case_when(site == "knights landing" ~ "knights landing",
+                            site == "tisdale" ~ "tisdale",
+                            T ~ stream))
+
+standard_flow <- read_csv(here::here("data", "standard-format-data", "standard_flow.csv")) 
+```
+
+# Number of fish needed per trial
+
+```{r, include = F, echo = F}
+number_released_flow <- release_raw %>% 
+  select(stream, site, release_id, release_date, number_released, flow_at_release)
+
+number_recaptured <- recapture_raw %>% 
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured)) %>% 
+  group_by(stream, release_id) %>% 
+  summarize(number_recaptured = sum(number_recaptured))
+
+# Use average efficiency by stream for those with historical estimates
+efficiency_stream <- left_join(number_released_flow, number_recaptured) %>% 
+  mutate(efficiency = number_recaptured/number_released) %>% 
+  # filter(efficiency > 0, efficiency < 1) %>% 
+  group_by(stream) %>% 
+  summarize(mean_efficiency = mean(efficiency, na.rm = T)) 
+
+# Use global mean for those without historical estimates
+# efficiency_global <- left_join(number_released_flow, number_recaptured) %>% 
+#   mutate(efficiency = number_recaptured/number_released) %>% 
+#   summarize(mean_efficiency = mean(efficiency, na.rm = T),
+#             median_efficiency = median(efficiency, na.rm = T)) %>% 
+#   mutate(stream = "global")
+
+efficiency_global_avg <- efficiency_stream %>% 
+  summarize(mean_efficiency = mean(mean_efficiency)) %>% 
+  mutate(stream = "global")
+
+historic_efficiency <- bind_rows(efficiency_global_avg, efficiency_stream) %>% 
+  mutate(mean_efficiency = round(mean_efficiency, 3))
+```
+
+
+```{r, echo = F}
+# Number of fish needed per trial
+number_released <- function(efficiency) {
+  cv_z <- 0.2
+  p <- efficiency
+  N <- ((1-p)/((cv_z^2)*p))
+  N <- round(N, 0)
+  N
+}
+
+efficiency <- historic_efficiency$mean_efficiency
+streams <- historic_efficiency$stream
+
+number_released_table <- tibble(stream = streams,
+                                historic_efficiency = efficiency,
+                                release_per_trial = c(485, 343, 327, 438, 6225))
+
+kable(number_released_table)
+```
+
+# Weekly historic fish
+
+```{r}
+# Summarize catch daily ---------------------------------------------------
+
+daily_catch <- catch_raw %>% 
+  group_by(stream, date, site) %>% 
+  # sum fish across fork lengths and runs
+  summarize(count = sum(count)) %>% 
+  ungroup() %>% 
+  group_by(stream, date) %>%
+  # handling multiple sites: take max catch on a given day
+  summarize(count = max(count))
+
+# Summarize catch weekly  --------------------------------------------
+
+weekly_catch <- daily_catch %>% 
+  mutate(week = week(date),
+         year = year(date),
+         month = month(date),
+         wy = ifelse(week %in% 40:53, year + 1, year)) %>% 
+  group_by(stream, week, wy, month) %>% 
+  # sum count across days in week to weekly counts
+  summarize(count = sum(count)) 
+
+weekly_catch_summary <- weekly_catch %>% 
+  group_by(stream, month) %>% 
+  summarize(catch_10 = quantile(count, 0.10),
+            catch_90 = quantile(count, 0.90))
+
+kable(weekly_catch_summary)
+
+```
+
+
+# Peak outmigration window
+
+| stream | start timing	| end timing | 
+| ----------- | ----------- | ----------- | 
+| Battle Creek | mid december | beginning february |
+| Butte Creek | mid december | beginning february |
+| Clear Creek | mid november | beginning january |
+| Deer Creek | mid march | beginning may |
+| Feather River | beginning december | mid february |
+| Mill Creek | mid march | beginning may | 
+| Sacramento - Knights Landing | mid february | beginning april |
+| Sacramento - Tisdale | mid january | beginning march |
+| Yuba River | mid november | beginning january |
+
+# Total estimate of fish needed by month
+
+
+```{r, echo = F}
+
+weeks_month <- tibble(stream = c(rep("battle creek",3),
+                                 rep("butte creek",3),
+                                 rep("clear creek",3),
+                                 rep("deer creek",3),
+                                 rep("feather river",3),
+                                 rep("mill creek",3),
+                                 rep("knights landing",3),
+                                 rep("tisdale",3),
+                                 rep("yuba river", 3)),
+                      month = c("december", "january", "february",
+                                "december", "january", "february",
+                                "november", "december", "january",
+                                "march", "april","may",
+                                "december", "january", "february",
+                                "march", "april","may",
+                                "february","march","april",
+                                "january", "february", "march",
+                                "november", "december", "january"),
+                      weeks = c(2,4,1,
+                                2,4,1,
+                                2,4,1,
+                                2,4,1,
+                                3,4,2,
+                                2,4,1,
+                                2,4,1,
+                                2,4,1,
+                                2,4,1)
+                      )
+release_window <- number_released_table %>% 
+  add_row(stream = c("butte creek",
+                     "deer creek",
+                     "mill creek",
+                     "yuba river",
+                     "knights landing",
+                     "tisdale"),
+          historic_efficiency = c(rep(0.049,4),
+                              rep(0.004, 2)),
+          release_per_trial = c(rep(485, 4),
+                            rep(6225, 2))) %>% 
+  filter(!stream %in% c("global", "sacramento river")) %>% 
+  left_join(weeks_month) %>% 
+  mutate(fish_needed = weeks * release_per_trial)
+
+release_window_historic <- release_window %>% 
+  mutate(month = case_when(month == "november" ~ 11,
+                           month == "december" ~ 12,
+                           month == "january" ~ 1,
+                           month == "february" ~ 2,
+                           month == "march" ~ 3,
+                           month == "april" ~ 4,
+                           month == "may" ~ 5)) %>% 
+  left_join(weekly_catch_summary) %>% 
+  mutate(total_fish_needed = ifelse(stream %in% c("feather river", "clear creek"), fish_needed*2, fish_needed),
+         hatchery_max = total_fish_needed - catch_10,
+         hatchery_min = total_fish_needed - catch_90,
+         hatchery_max = ifelse(hatchery_max < 0, 0, hatchery_max),
+         hatchery_min = ifelse(hatchery_min < 0, 0, hatchery_min))
+
+total_hatchery_counts <- release_window_historic %>% 
+  group_by(stream) %>% 
+  summarize(total_fish_needed = sum(total_fish_needed),
+            hatchery_max = sum(hatchery_max),
+            hatchery_min = sum(hatchery_min))
+# original table without historic catch
+total_counts <- release_window %>% 
+  select(stream, month, fish_needed) %>% 
+  pivot_wider(id_cols = stream, names_from = "month", values_from = "fish_needed", values_fill = 0) %>% 
+  mutate(total = november + december + january + february + march + april + may)
+
+total_counts <- total_counts[,c(1,5,2,3,4,6,7,8,9)]
+
+kable(total_counts)
+
+kable(total_hatchery_counts)
+```
+
+
+
+
+```{r}
+efficiency_dat <- left_join(number_released_flow, number_recaptured) %>% 
+    left_join(standard_flow %>% 
+                rename(release_date = date)) %>% 
+  mutate(efficiency = number_recaptured/number_released)
+
+effic_release_plot <- function(stream_name) {
+  efficiency_dat %>% 
+  filter(stream == stream_name, efficiency < 1) %>% 
+    ggplot(aes(x = number_released, y = efficiency, color = flow_cfs)) +
+    geom_point() +
+    labs(x = "number fish released",
+         y = "efficiency estimate") +
+    theme_minimal()
+}
+
+flow_efficiency_plot <- function(stream_name) {
+  efficiency_dat %>% 
+  filter(stream == stream_name, efficiency < 1, number_released < 5000) %>% 
+    ggplot(aes(x = flow_cfs, y = efficiency, color = number_released)) +
+    geom_point() +
+    labs(x = "flow (cfs)",
+         y = "efficiency estimate") +
+    theme_minimal()
+}
+
+flow_efficiency_plot("sacramento river")
+effic_release_plot("sacramento river")
+effic_release_plot("feather river")
+effic_release_plot("battle creek")
+effic_release_plot("clear creek")
+```
+
+```{r}
+# release_group_effic <- function(stream_name) {
+#   left_join(number_released_flow, number_recaptured) %>% 
+#   mutate(efficiency = number_recaptured/number_released,
+#          release_group = case_when(number_released <= 100 ~ "0-100",
+#                                    number_released > 100 & number_released <= 200 ~ "101-200",
+#                                    number_released > 200 & number_released <= 300 ~ "201-300",
+#                                    number_released > 300 & number_released <= 400 ~ "301-400",
+#                                    number_released > 400 & number_released <= 500 ~ "401-500",
+#                                    number_released > 500 & number_released <= 600 ~ "501-600",
+#                                    number_released > 600 & number_released <= 700 ~ "601-700",
+#                                    number_released > 700 & number_released <= 800 ~ "701-800",
+#                                    number_released > 800 & number_released <= 900 ~ "801-900",
+#                                    number_released > 900 & number_released <= 1000 ~ "901-1000",
+#                                    number_released > 1000 ~ ">1000"),
+#          release_group = factor(release_group, levels = c("0-100", "101-200", "201-300", "301-400", "401-500", "501-600", "601-700","701-800","801-900","901-1000",">1000"))) %>% 
+#   #filter(stream == stream_name) %>% 
+#     filter(efficiency < 1) %>% 
+#     ggplot(aes(x = release_group, y = efficiency)) +
+#     geom_boxplot() +
+#     labs(x = "number fish released",
+#          y = "efficiency estimate") +
+#     theme(axis.text.x = element_text(angle = 0.45)) +
+#     theme_minimal() +
+#     facet_wrap(~stream, scales = "free")
+# }
+# under_1000_effic("sacramento river")
+# under_1000_effic("feather river")
+```
+
+```{r}
+n_yrs <- number_released_flow %>% 
+  mutate(year = year(release_date)) %>% 
+  group_by(stream) %>% 
+  distinct(year) %>% 
+  tally()
+n_obs <- number_recaptured %>% 
+  group_by(stream) %>% 
+  distinct(release_id) %>% 
+  tally()
+
+n_recaptured_sac <- number_recaptured %>% 
+  filter(stream == "sacramento river")
+n_released_sac <- number_released_flow %>% 
+  filter(stream == "sacramento river") %>% 
+  summarize(mean = mean(number_released),
+            median = median(number_released),
+            min = min(number_released),
+            max = max(number_released))
+
+sac_flow <- filter(standard_flow, stream == "sacramento river", site == "knights landing") 
+
+ck <- sac_flow %>% 
+  mutate(year = year(date),
+         month = month(date)) %>% 
+  filter(month %in% 2:4) %>% 
+  group_by(year) %>% 
+  summarize(min = min(flow_cfs),
+            mean = mean(flow_cfs),
+            max = max(flow_cfs))
+
+sac_efficiency <- filter(efficiency_dat, stream == "sacramento river")
+
+filter(sac_efficiency, efficiency == 0) %>% tally()
+filter(sac_efficiency, efficiency == 0) %>% summarize(mean_released = mean(number_released),
+                                                      median_released = median(number_released))
+filter(sac_efficiency, efficiency > 0) %>% summarize(mean_released = mean(number_released),
+                                                      median_released = median(number_released))
+
+sac_compare <- sac_efficiency %>% 
+  mutate(efficiency_zero = ifelse(efficiency == 0, "0% efficiency", "greater than 0% efficiency"))
+
+sac_compare %>% 
+  ggplot(aes(x = efficiency_zero, y = number_released)) +
+  geom_boxplot() +
+  labs(x ="", 
+       y = "number of fish released") +
+  theme_minimal()
+
+ggsave("knights_efficiency_boxplot.png", width = 8, height = 4)
+
+t.test(number_released~efficiency_zero, data= sac_compare)
+```

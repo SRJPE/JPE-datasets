@@ -1,0 +1,90 @@
+---
+title: "RST efficiency trial analysis"
+author: "Ashley Vizek"
+date: "7/6/2022"
+output:
+  html_document:
+     code_folding: hide
+     theme: flatly
+---
+
+```{r setup, include = T}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(googleCloudStorageR)
+library(lubridate)
+library(plotly)
+```
+
+
+```{r}
+catch_raw <- read_csv(here::here("data","standard-format-data", "standard_rst_catch_lad.csv"))
+```
+
+```{r}
+cv_z = .2
+p = 0.02
+N = ((1-p)/cv_z^2)/p 
+N
+```
+
+```{r}
+
+daily_catch <- catch_raw %>% 
+  filter(dead == F, year(date) > 2009) %>% 
+  group_by(date, stream, site) %>% 
+  summarize(count = sum(count))
+
+weekly_catch_summary <- daily_catch %>%
+  group_by(stream, week = week(date), site) %>% 
+  summarize(mean_daily_catch = mean(count))
+
+daily_catch %>% 
+  mutate(week = week(date), 
+         year = year(date)) %>% 
+  ggplot(aes(x = week, y = count, group = week)) +
+  geom_boxplot()
+
+plot <- weekly_catch_summary %>% 
+  ggplot(aes(x = week, y = mean_daily_catch, color = site)) +
+  geom_point()
+
+ggplotly(plot)
+
+aggregated_weekly_catch <- daily_catch %>% 
+  group_by(stream, week = week(date), site, year = year(date)) %>% 
+  summarize(weekly_catch = sum(count)) %>% 
+  group_by(stream, week, site) %>% 
+  summarize(mean_weekly_catch = mean(weekly_catch))
+
+plot <- aggregated_weekly_catch %>% 
+  ggplot(aes(x = week, y = mean_weekly_catch, color = site)) +
+  geom_point() +
+  geom_hline(yintercept = N)
+
+ggplotly(plot)
+
+plot <- aggregated_weekly_catch %>% 
+  filter(stream == "battle creek") %>% 
+  ggplot(aes(x = week, y = mean_weekly_catch)) +
+  geom_point()
+
+ggplotly(plot)
+
+daily_catch %>% 
+  filter(stream == "battle creek") %>% 
+  mutate(week = week(date), 
+         year = year(date)) %>% 
+  ggplot(aes(x = week, y = count, group = week)) +
+  geom_boxplot()
+
+## default historic p (0.02)
+# calculate N (horizontal dash line)
+
+# look at the N released criteria by week and by day to see if get enough fish
+# toggle between weekly and daily
+# filter by watershed
+# options to select statistic (mean, median, max, min)
+
+
+```

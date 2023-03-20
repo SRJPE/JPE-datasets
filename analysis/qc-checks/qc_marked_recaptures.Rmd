@@ -1,0 +1,170 @@
+---
+title: "QC marked recaptures NOT included in catch data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(Hmisc)
+library(readr)
+library(purrr)
+library(lubridate)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+```
+
+# Feather
+
+```{r}
+source(here::here("data", "standard-format-data", "pull_data.R"))
+# List of all available tables
+# The Feather Access DB is currently saved outside of this repo
+# TODO decide if need to update storage
+
+mdb.get("/Users/ashleyvizek/code/CAMP_RST_29Oct2018/Data/CAMP.mdb", tables = T)
+
+feather_catch_raw <- mdb.get("/Users/ashleyvizek/code/CAMP_RST_29Oct2018/Data/CAMP.mdb", tables = "CatchRaw")
+
+feather_trap_visit_raw <- mdb.get("/Users/ashleyvizek/code/CAMP_RST_29Oct2018/Data/CAMP.mdb", tables = "TrapVisit")
+#write_csv(file, here::here("data-raw", "standard-format-data-prep", "feather_catchraw.csv"))
+
+# catch_raw <- read_csv("feather_catchraw.csv")
+
+# Todo - check that for Feather, Knights, Clear, Battle - marked fish not included
+# in the catch table
+
+# data previously used
+standard_catch <- read_csv(here::here("data", "standard-format-data", "standard_catch.csv"))
+
+standard_recapture <- read_csv(here::here("data", "standard-format-data", "standard_recapture.csv"))
+
+feather_standard_catch <- filter(standard_catch, stream == "feather river")
+feather_standard_recapture <- filter(standard_recapture, stream == "feather river")
+```
+
+
+```{r}
+# causing issues with summarize so detach
+detach(package:Hmisc)
+# pull the visit time from trapVisit table so we can merge to catch data
+feather_trap_date <- feather_trap_visit_raw %>% 
+  select(trapVisitID, visitTime)
+feather_catch <- full_join(feather_catch_raw, feather_trap_date)
+
+# query data from feather access db to see if it matches data we have been using
+# releaseid should be 0 or 255 for unmarked
+# set taxonID to chinook salmon
+feather_unmarked1 <- feather_catch %>% 
+  filter((releaseID == 0 | releaseID == 255) & taxonID == 161980) 
+# check to see how code 255 is being used
+feather_unmarked_ck <- feather_catch %>% 
+  filter(releaseID == 0)
+
+feather_marked1 <- feather_catch %>% 
+  filter(releaseID != 0 & releaseID != 255)
+# check to see how code 255 is being used
+feather_marked_ck <- feather_catch %>% 
+  filter(releaseID != 0)
+# summarize by year for comparison
+
+new_summary <- function(dat) {
+  dat %>% 
+  mutate(year = year(visitTime)) %>% 
+  group_by(year) %>% 
+  summarize(new_count = sum(n))
+}
+
+old_summary <- function(dat) {
+  dat %>% 
+  mutate(year = year(date)) %>% 
+  group_by(year) %>% 
+  summarize(old_count = sum(count))
+}
+
+old_mark_summary <- function(dat) {
+  dat %>% 
+  mutate(year = year(recaptured_date)) %>% 
+  group_by(year) %>% 
+  summarize(old_mark = sum(number_recaptured))
+}
+
+# 255 should not be included as marked. when compare there are way too many marks when include 255
+feather_unmarked_summary1 <- new_summary(feather_unmarked1)
+feather_unmarked_summaryck <- new_summary(feather_unmarked_ck)
+feather_marked_summary1 <- new_summary(feather_marked1) %>% 
+  rename(marked_count = new_count)
+feather_marked_summaryck <- new_summary(feather_marked_ck) %>% 
+  rename(marked_count = new_count)
+
+# summarize data we used previously by year for comparison
+feather_standard_summary <- old_summary(feather_standard_catch)
+feather_standard_mark_summary <- old_mark_summary(feather_standard_recapture)
+
+# when comparing catch and mark between catch data and query, feel confident that
+# the standard catch data does not include marked fish
+compare <- full_join(feather_unmarked_summary1, feather_standard_summary) %>% 
+  full_join(feather_marked_summary1) %>% 
+  full_join(feather_standard_mark_summary)
+  mutate(diff = old_count - new_count)
+```
+
+# Knights Landing
+
+```{r}
+library(Hmisc)
+mdb.get("/Users/ashleyvizek/code/CAMP_Knights.mdb", tables = T)
+
+knights_catch_raw <- mdb.get("/Users/ashleyvizek/code/CAMP_Knights.mdb", tables = "CatchRaw")
+
+knights_trap_visit_raw <- mdb.get("/Users/ashleyvizek/code/CAMP_Knights.mdb", tables = "TrapVisit")
+
+knights_standard_catch <- filter(standard_catch, stream == "sacramento river", site == "knights landing")
+knights_standard_recapture <- filter(standard_recapture, stream == "sacramento river")
+
+```
+
+```{r}
+# causing issues with summarize so detach
+detach(package:Hmisc)
+# pull the visit time from trapVisit table so we can merge to catch data
+knights_trap_date <- knights_trap_visit_raw %>% 
+  select(trapVisitID, visitTime)
+knights_catch <- full_join(knights_catch_raw, knights_trap_date)
+
+# query data from feather access db to see if it matches data we have been using
+# releaseid should be 0 or 255 for unmarked
+# set taxonID to chinook salmon
+knights_unmarked1 <- knights_catch %>% 
+  filter((releaseID == 0 | releaseID == 255) & taxonID == 161980) 
+# check to see how code 255 is being used
+knights_unmarked_ck <- knights_catch %>% 
+  filter(releaseID == 0 & taxonID == 161980) 
+
+knights_marked1 <- knights_catch %>% 
+  filter(releaseID != 0 & releaseID != 255)
+# check to see how code 255 is being used
+knights_marked_ck <- knights_catch %>% 
+  filter(releaseID != 0)
+# summarize by year for comparison
+
+# 255 should not be included as marked. when compare there are way too many marks when include 255
+knights_unmarked_summary1 <- new_summary(knights_unmarked1) %>% view
+knights_unmarked_summaryck <- new_summary(knights_unmarked_ck) %>% view
+knights_marked_summary1 <- new_summary(knights_marked1) %>% 
+  rename(marked_count = new_count)
+knights_marked_summaryck <- new_summary(knights_marked_ck) %>% 
+  rename(marked_count = new_count)
+
+# summarize data we used previously by year for comparison
+knights_standard_summary <- old_summary(knights_standard_catch)
+knights_standard_mark_summary <- old_mark_summary(knights_standard_recapture)
+
+# when comparing catch and mark between catch data and query, feel confident that
+# the standard catch data DOES include marked fish for Knights Landing
+compare <- full_join(knights_unmarked_summary1, knights_standard_summary) %>% 
+  full_join(knights_marked_summary1) %>% 
+  full_join(knights_standard_mark_summary) %>% 
+  mutate(diff = old_count - new_count)
+```

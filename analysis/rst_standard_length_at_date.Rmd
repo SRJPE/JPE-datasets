@@ -1,0 +1,294 @@
+---
+title: "Compare standard run classifications to recorded run"
+author: "Ashley Vizek"
+date: "6/3/2022"
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(lubridate)
+library(wesanderson)
+library(googleCloudStorageR)
+#library(knitr)
+#library(hms)
+```
+
+# Data pull {.tabset}
+```{r}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+#Set global bucket
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "standard-format-data", "standard_catch.csv"),
+               overwrite = TRUE)
+
+# standard catch data (formatted in rst_catch_standard_format.Rmd)
+standard_catch <- read_csv(here::here("data","standard-format-data", "standard_catch.csv"))
+# length at date table from brett harvey
+lad <- read_csv(here::here("analysis", "exploratory-analysis", "rivermodel_lengthrun_criteria.csv"))
+```
+
+## Process length at date table
+```{r}
+# format length at date table
+
+unique(lad$LENGTHRUN)
+# Format spring run. There may be multiple criteria for one date
+lad_spring <- filter(lad, LENGTHRUN == "S") %>%
+  rename(s_start = STARTFL,
+         s_end = ENDFL) %>%
+  select(-LENGTHRUN) %>%
+  group_by(SAMPLEMONTH, SAMPLEDAY) %>%
+  mutate(count = n()) 
+lad_spring_2 <- filter(lad_spring, count > 1) %>% 
+  slice_min(s_start) %>%
+  rename(s_start_1 = s_start,
+         s_end_1 = s_end) %>%
+  left_join(filter(lad_spring, count > 1) %>% 
+  slice_max(s_start) %>%
+  rename(s_start_2 = s_start,
+         s_end_2 = s_end)) %>%
+  select(-count)
+lad_spring_format <- filter(lad_spring, count == 1) %>%
+  select(-count) %>%
+  rename(s_start_1 = s_start,
+         s_end_1 = s_end) %>%
+  bind_rows(lad_spring_2)
+
+# Format fall run. There may be multiple criteria for one date
+lad_fall <- filter(lad, LENGTHRUN == "F") %>%
+  rename(f_start = STARTFL,
+         f_end = ENDFL) %>%
+  select(-LENGTHRUN) %>%
+  group_by(SAMPLEMONTH, SAMPLEDAY) %>%
+  mutate(count = n()) 
+lad_fall_2 <- filter(lad_fall, count > 1) %>% 
+  slice_min(f_start) %>%
+  rename(f_start_1 = f_start,
+         f_end_1 = f_end) %>%
+  left_join(filter(lad_fall, count > 1) %>% 
+  slice_max(f_start) %>%
+  rename(f_start_2 = f_start,
+         f_end_2 = f_end)) %>%
+  select(-count)
+lad_fall_format <- filter(lad_fall, count == 1) %>%
+  select(-count) %>%
+  rename(f_start_1 = f_start,
+         f_end_1 = f_end) %>%
+  bind_rows(lad_fall_2)
+
+# Format winter run. There may be multiple criteria for one date.
+lad_winter <- filter(lad, LENGTHRUN == "W") %>%
+  rename(w_start = STARTFL,
+         w_end = ENDFL) %>%
+  select(-LENGTHRUN) %>%
+  group_by(SAMPLEMONTH, SAMPLEDAY) %>%
+  mutate(count = n()) 
+lad_winter_2 <- filter(lad_winter, count > 1) %>% 
+  slice_min(w_start) %>%
+  rename(w_start_1 = w_start,
+         w_end_1 = w_end) %>%
+  left_join(filter(lad_winter, count > 1) %>% 
+  slice_max(w_start) %>%
+  rename(w_start_2 = w_start,
+         w_end_2 = w_end)) %>%
+  select(-count)
+lad_winter_format <- filter(lad_winter, count == 1) %>%
+  select(-count) %>%
+  rename(w_start_1 = w_start,
+         w_end_1 = w_end) %>%
+  bind_rows(lad_winter_2)
+
+# Format late fall run. There may be multiple criteria for one date.
+lad_latefall <- filter(lad, LENGTHRUN == "L") %>%
+  rename(l_start = STARTFL,
+         l_end = ENDFL) %>%
+  select(-LENGTHRUN) %>%
+  group_by(SAMPLEMONTH, SAMPLEDAY) %>%
+  mutate(count = n()) 
+lad_latefall_2 <- filter(lad_latefall, count > 1) %>% 
+  slice_min(l_start) %>%
+  rename(l_start_1 = l_start,
+         l_end_1 = l_end) %>%
+  left_join(filter(lad_latefall, count > 1) %>% 
+  slice_max(l_start) %>%
+  rename(l_start_2 = l_start,
+         l_end_2 = l_end)) %>%
+  select(-count)
+lad_latefall_format <- filter(lad_latefall, count == 1) %>%
+  select(-count) %>%
+  rename(l_start_1 = l_start,
+         l_end_1 = l_end) %>%
+  bind_rows(lad_latefall_2)
+
+lad_format <- full_join(lad_spring_format, lad_fall_format) %>%
+  full_join(lad_winter_format) %>%
+  full_join(lad_latefall_format) %>%
+  rename(month = SAMPLEMONTH,
+         day = SAMPLEDAY)
+```
+
+## Assign run based on river model
+```{r}
+standard_catch_format <- standard_catch %>%
+  mutate(month = month(date),
+         day = day(date))
+
+catch_lad <- left_join(standard_catch_format, lad_format) %>%
+  mutate(run_rivermodel = case_when((fork_length >= s_start_1 & fork_length < s_end_1) |
+                                      (fork_length >= s_start_2 & fork_length < s_end_2) ~ "spring",
+                                    (fork_length >= f_start_1 & fork_length < f_end_1) |
+                                      (fork_length >= f_start_2 & fork_length < f_end_2) ~ "fall",
+                                    (fork_length >= w_start_1 & fork_length < w_end_1) |
+                                      (fork_length >= w_start_2 & fork_length < w_end_2) ~ "winter",
+                                    (fork_length >= l_start_1 & fork_length < l_end_1) |
+                                      (fork_length >= l_start_2 & fork_length < l_end_2) ~ "late fall"))
+```
+# Statistics {.tabset}
+
+- Number of observations where fork length is NA is `r obs_fl`
+
+- Number of observations where fork length is NA and there is a run recorded is `r obs_fl_run`
+
+- Number of observations where recorded run is not the same as river model run is `r obs_mismatch`
+
+```{r, include = F}
+# Number of obs where fork length is NA
+obs_fl <- filter(catch_lad, is.na(fork_length)) %>%
+  tally()
+
+# Number of obs where fork length is NA and there is a run recorded
+obs_fl_run <- filter(catch_lad, is.na(fork_length) & run != "not recorded" & !is.na(run)) %>%
+  tally()
+
+# Number of obs where run does not equal river model run
+obs_mismatch <- filter(catch_lad, !is.na(fork_length) & run != run_rivermodel & run != "not recorded") %>%
+  tally()
+```
+
+Below are the streams where fork length is NA but run is recorded:
+
+```{r}
+# Streams where there is fork length NA but run recorded
+filter(catch_lad, is.na(fork_length) & run != "not recorded" & !is.na(run)) %>%
+  distinct(stream)
+```
+
+Below are the streams where the run recorded is not the same as the river model run
+
+```{r}
+# Streams where number of obs where run does not equal river model run
+filter(catch_lad, !is.na(fork_length) & run != run_rivermodel & run != "not recorded") %>%
+  group_by(stream) %>%
+  tally()
+```
+
+## Confusion matrix
+
+We created a confusion matrix that compares the run recorded to the river model run classifications.
+This comparison excludes data were run was "not recorded" or "unknown". The river model run classifications predict the
+recorded run to 81% accuracy.
+
+The biggest issue is that more than half of the fish recorded as spring run were classified as fall run using the
+river model.
+
+```{r}
+# confusion matrix
+catch_lad_filter <- catch_lad %>%
+  filter(!run %in% c("not recorded", "unknown")) %>%
+  mutate(run = as.factor(run),
+         run_rivermodel = as.factor(run_rivermodel))
+unique(catch_lad_filter$run)
+unique(catch_lad_filter$run_rivermodel)
+confusion_table <- confusionMatrix(data = catch_lad_filter$run_rivermodel, reference = catch_lad_filter$run)
+confusion_table
+```
+
+Below are the number of observations by stream where run was recorded as spring and classified as fall.
+
+- Butte has the most amount of mismatches. We thought that the Butte catch data was filtered to spring run; however, maybe that is not the case. According to methods documents for Butte Creek monitoring program the trapping sites may be downstream of spring run spawning habitat but upstream of fall run so only spring run are expected to be caught. Need to understand uncertainty associated with that.
+- Battle and Clear have a lot of mismatches because of local adjustments that they make to the Sheila Green LAD based on weir placement.
+- Are there any other cases where systematic local adjustments are made?
+
+**Recommendation** Use the river model except for upper Battle and Clear Creeks where all fall run are considered spring run.
+
+```{r}
+filter(catch_lad_filter, run == "spring" & run_rivermodel == "fall") %>%
+  group_by(stream) %>%
+  tally()
+```
+
+# Graphics {.tabset}
+
+Plot below shows the classified run by river model compared to the recorded run (as a percent of total observations for the recorded run)
+
+```{r}
+total_run <- catch_lad_filter %>%
+  filter(!is.na(run) & !is.na(run_rivermodel)) %>%
+  group_by(run) %>%
+  tally() %>%
+  rename(total = n)
+run_summary <- catch_lad_filter %>%
+  filter(!is.na(run) & !is.na(run_rivermodel)) %>%
+  group_by(run, run_rivermodel) %>%
+  tally() %>%
+  left_join(total_run) %>%
+  mutate(percent = round(n/total*100,0))
+
+ggplot(run_summary, aes(x = run, y = percent, fill = run_rivermodel)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = wes_palette("Royal2")) +
+  theme_minimal() +
+  labs(x = "Run classified by river model")
+
+# TODO add heat map type plot - quadrants to represent four different run types. Run is a color and location is the river model
+```
+
+Plot below shows the classified run by river model compared to the recorded run for each stream (as a percent of total observations for the recorded run)
+
+```{r}
+total_run_stream <- catch_lad_filter %>%
+  filter(!is.na(run) & !is.na(run_rivermodel)) %>%
+  group_by(run, stream) %>%
+  tally() %>%
+  rename(total = n)
+run_summary_stream <- catch_lad_filter %>%
+  filter(!is.na(run) & !is.na(run_rivermodel)) %>%
+  group_by(run, run_rivermodel, stream) %>%
+  tally() %>%
+  left_join(total_run_stream) %>%
+  mutate(percent = round(n/total*100,0))
+
+ggplot(run_summary_stream, aes(x = run, y = percent, fill = run_rivermodel)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = wes_palette("Royal2")) +
+  facet_wrap(~stream) +
+  theme_minimal() +
+  labs(x = "Run classified by river model")
+
+# TODO add heat map type plot - quadrants to represent four different run types. Run is a color and location is the river model
+```
+
+```{r, save_data}
+
+catch_standard_lad <- catch_lad %>%
+  select(-c("s_start_1", "s_end_1", "s_start_2", "s_end_2", "f_start_1", "f_end_1",
+            "f_start_2", "f_end_2", "w_start_1", "w_end_1", "w_start_2", "w_end_2",
+            "l_start_1", "l_end_1", "l_start_2", "l_end_2", "day", "month"))
+
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(catch_standard_lad,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_rst_catch_lad.csv",
+           predefinedAcl = "bucketLevel")
+```

@@ -1,0 +1,144 @@
+---
+title: "Cumulative catch for spring run"
+author: "Ashley Vizek"
+date: "6/22/2022"
+output:
+  html_document:
+     code_folding: hide
+     theme: flatly
+---
+
+Quick analyses in preparation for the RST efficiency workshop.
+
+```{r setup, include = T}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(leaflet)
+library(scales)
+library(tidyverse)
+library(googleCloudStorageR)
+library(lubridate)
+knitr::opts_knit$set(root.dir = '/JPE-datasets')
+colors_small <-  c("#9A8822", "#F5CDB4", "#F8AFA8", "#FDDDA0", "#74A089", #Royal 2
+                   "#899DA4", "#C93312", "#DC863B" # royal 1 (- 3)
+)
+
+colors_full <-  c("#9A8822", "#F5CDB4", "#F8AFA8", "#FDDDA0", "#74A089", #Royal 2
+                  "#899DA4", "#C93312", "#DC863B", # royal 1 (- 3)
+                  "#F1BB7B", "#FD6467", "#5B1A18", # Grand Budapest 1 (-4)
+                  "#D8B70A", "#02401B", "#A2A475", # Cavalcanti 1
+                  "#E6A0C4", "#C6CDF7", "#D8A499", "#7294D4", #Grand Budapest 2
+                  "#9986A5", "#EAD3BF", "#AA9486", "#B6854D", "#798E87" # Isle of dogs 2 altered slightly
+)
+
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = "standard_rst_catch.csv",
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data", "standard-format-data", "standard_flow.csv"),
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data", "standard-format-data", "standard_recapture.csv"),
+                 overwrite = TRUE)
+
+gcs_get_object(object_name = "standard-format-data/standard_release.csv",
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = here::here("data", "standard-format-data", "standard_release.csv"),
+                 overwrite = TRUE)
+```
+
+```{r}
+catch_raw <- read_csv(here::here("data","standard-format-data", "standard_rst_catch.csv"))
+flow_raw <- read_csv(here::here("data","standard-format-data", "standard_flow.csv"))
+recapture_raw <- read_csv(here::here("data","standard-format-data", "standard_recapture.csv"))
+release_raw <- read_csv(here::here("data","standard-format-data", "standard_release.csv"))
+```
+
+# EDA {.tabset}
+
+## Catch curves and day of first spring catch
+
+```{r}
+catch_sample_date <- catch_raw %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) - 1, year(date))) %>% 
+  group_by(wy, stream) %>% 
+  summarize(sample_date = min(date))
+
+catch_date <- catch_raw %>% 
+  mutate(run = case_when(run %in% c("not recorded", "unknown") | is.na(run) ~ run_rivermodel,
+                         T ~ run),
+         wy = ifelse(month(date) %in% 10:12, year(date) - 1, year(date))) %>% 
+  filter(run == "spring", count > 0) %>% 
+  group_by(wy, stream) %>% 
+  summarize(catch_date = min(date))
+
+catch_and_sample_date <- left_join(catch_sample_date, catch_date)
+
+# filter stream and years where catch_date > sample_date
+
+catch_and_sample_date_filtered <- catch_and_sample_date %>% 
+  filter(catch_date > sample_date) %>% 
+  select(wy, stream)
+
+```
+
+```{r}
+spring_run_catch <- catch_raw %>% 
+  mutate(run = case_when(run %in% c("not recorded", "unknown") | is.na(run) ~ run_rivermodel,
+                         T ~ run)) %>% 
+  filter(run == "spring", count > 0) %>%
+  mutate(day = day(date),
+         month = month(date),
+         year = year(date),
+         water_year = ifelse(month %in% 10:12, year + 1, year),
+         fake_date = as_date(paste(ifelse(month %in% 10:12, 1999, 2000), month, day))) %>%
+  group_by(fake_date, water_year, stream, date) %>%
+  # handling multiple sites: take max catch on a given day
+  summarize(count = max(count))
+
+spring_run_total_catch <- spring_run_catch %>%
+  group_by(water_year, stream) %>%
+  summarize(total = sum(count))
+
+spring_run_cumulative <- spring_run_catch %>% 
+  arrange(date) %>%
+  group_by(stream, water_year) %>%
+  mutate(count = ifelse(is.na(count), 0, count), 
+         total_count = sum(count, na.rm = T), 
+         cumulative_catch = cumsum(count),
+         prop_cuml_catch = cumulative_catch/total_count * 100)
+
+
+
+spring_run_cumulative_filtered <- left_join(spring_run_cumulative,
+                                            catch_and_sample_date_filtered %>%
+                                              rename(water_year = wy) %>% 
+                                              mutate(catch_date_greater = T)) %>% 
+  mutate(water_year = as.factor(water_year),
+         catch_date_greater = ifelse(is.na(catch_date_greater), F, T))
+
+mean_day_5 <- filter(spring_run_cumulative_filtered, prop_cuml_catch >= 5, catch_date_greater == T) %>% 
+  group_by(water_year, stream) %>% 
+  summarize(catch_5 = min(fake_date)) %>% 
+  group_by(stream) %>% 
+  summarize(mean_catch_5 = mean(catch_5)) %>%
+  mutate(mean_date_5 = format(mean_catch_5, "%b %d"))
+
+cum_catch_date <- ggplot(left_join(spring_run_cumulative_filtered, mean_day_5), aes(x = fake_date, y = prop_cuml_catch)) +
+  geom_line(aes(groups = water_year, color = catch_date_greater)) +
+  geom_vline(aes(xintercept = mean_catch_5), linetype = "dashed") +
+  facet_wrap(~stream, ncol = 4) +
+  scale_x_date(date_labels = "%b") +
+  theme_minimal() +
+  scale_color_manual(values = c("#74A089", "#9A8822")) +
+  ylab("Percent of cumulative catch") +
+  xlab("") +
+  theme(legend.position = "bottom") +
+  labs(color="First spring catch after first sample date")
+
+ggsave("analysis/figures/cumulative_catch_spring.png", width = 8, height = 5)
+```

@@ -1,0 +1,137 @@
+---
+title: "Standard release fish"
+author: "Ashley Vizek"
+date: "10/6/2022"
+output: 
+  html_document:
+    theme: flatly
+---
+This script creates a dataset with individual fork length measurements for
+all fish released in efficiency trial.
+
+Knights Landing is the only location where data is available.
+
+```{r, include = F}
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(hms)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = F}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/feather-river/data-raw/feather_release_fish_camp.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/feather_release_fish.csv",
+               overwrite = TRUE)
+feather_release_fish <- read_csv("data/rst/feather_release_fish.csv")
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/knights-landing/knights_release_fish_camp.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/knights_release_fish.csv",
+               overwrite = TRUE)
+knights_release_fish <- read_csv("data/rst/knights_release_fish.csv")
+
+gcs_get_object(object_name = "rst/lower-sac-river/data-raw/tisdale/tisdale_release_fish_camp.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/tisdale_release_fish.csv",
+               overwrite = TRUE)
+tisdale_release_fish <- read_csv("data/rst/tisdale_release_fish.csv")
+```
+
+# Tisdale
+
+Tisdale and Lower Feather do not have fork lengths for individual fish released
+
+```{r}
+filter(tisdale_release_fish, !is.na(forkLength))
+```
+
+# Feather
+
+Feather does not have fork lengths for individual fish released
+
+```{r}
+filter(feather_release_fish, !is.na(forkLength))
+```
+
+# Knights
+
+Knights Landing does have fork lengths for individual fish released
+
+```{r}
+filter(knights_release_fish, !is.na(forkLength))
+
+knights_release_fish_clean <- knights_release_fish %>% 
+  select(-projectDescriptionID) %>% 
+  mutate(stream = "sacramento river",
+         site = "knights landing",
+         subsite = "knights landing") %>% 
+  rename(release_id = releaseID,
+         count = nMarked,
+         fork_length = forkLength)
+```
+
+# Combined data
+
+```{r}
+combined_release_fish <- knights_release_fish_clean
+```
+
+# QC
+
+## fork_length
+
+Knights Landing only measures 50-100 released fish although they may release more
+
+```{r}
+combined_release_fish %>% 
+  ggplot(aes(fork_length)) +
+  geom_histogram()
+
+ggplot(data = combined_release_fish, aes(
+  x = as.factor(release_id),
+  y = fork_length,
+  color = stream
+)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(size = 8, angle = 45))
+```
+
+
+## weight
+
+Weight is measured in one release trial
+
+```{r}
+filter(combined_release_fish, !is.na(weight))
+
+ggplot(data = combined_release_fish, aes(
+  x = as.factor(release_id),
+  y = weight,
+  color = stream
+)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(size = 8, angle = 45))
+```
+
+
+# Save data
+
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(combined_release_fish,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_rst_release_fish.csv",
+           predefinedAcl = "bucketLevel")
+```
