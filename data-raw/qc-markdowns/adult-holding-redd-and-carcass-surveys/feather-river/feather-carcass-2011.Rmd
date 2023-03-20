@@ -160,7 +160,8 @@ cwt <- left_join(cwt_raw |> clean_names(),
                  cwt_header_raw |> clean_names(),
                  by = "header_id") |>  
   rename(fl = "fork_length",
-         hallprint1 = hallprint) |>
+         hallprint1 = hallprint,
+         sect = river_section) |>
   mutate(source_table = "CWT",
          count = 1,
          disposition = case_when(recapture_or_chop == "C" ~ "chopped",
@@ -435,7 +436,6 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Count",
                                           "Disposition",
                                           "Table from which the data came",
-                                          "River Section",
                                           "Color of recovered tag",
                                           "Tag ID",
                                           "Sex",

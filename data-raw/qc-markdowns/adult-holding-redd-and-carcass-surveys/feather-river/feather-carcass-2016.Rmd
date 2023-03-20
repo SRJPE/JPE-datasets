@@ -163,7 +163,8 @@ cwt <- left_join(cwt_raw |> clean_names(),
          sex = case_when(sex == "F" ~ "female",
                          sex == "M" ~ "male",
                          TRUE ~ sex)) |>
-  rename(hallprint1 = hallprint) |> 
+  rename(hallprint1 = hallprint,
+         sect = river_section) |> 
   select(-c(recapture_or_chop, morale, crew, section_group_1_10,
             section_group_11_15, section_group_16_21,
             section_group_22_38, cwt_id, header_id, tag, comments)) |> 
@@ -439,7 +440,6 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Count",
                                           "Disposition",
                                           "Table from which the data came",
-                                          "River Section",
                                           "Tag ID",
                                           "Sex",
                                           "Spawning condition",

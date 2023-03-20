@@ -34,12 +34,9 @@ Data dictionary for standard format:
 
 | column name   | stream collects         | definition                                               |
 |:-----------------|:-------------------|:---------------------------------|
-| longitude      | B, C | Longitude of survey site                    |
-| latitude         | B, C | Latitude of survey site     |
-| river_mile | B, C, Y | River mile where the survey was performed |
 | date | B, Bu, F, C, Y | Date the survey was performed |
 | survey_method | B, C | Method by which the survey was performed (i.e. snorkel survey, barrier weir trap, kayak survey, fish rescue, etc.)
-| location | B | Butte Creek's variable for location of survey |
+| reach | B, Bu, C, F | Variable for reach, meaning is specific to each stream. Yuba does not yet have a categorical location variable |
 |sex | B, Bu, F, C, Y | Sex of the carcass |
 |fork_length | B, Bu, F, C, Y | Fork length of the carcass (mm) |
 | adipose | B, Bu, F, C, Y | Whether or not the adipose fin was clipped |
@@ -47,18 +44,13 @@ Data dictionary for standard format:
 | spawn_condition | B, Bu, F, C, Y | Spawning condition of the carcass sampled (i.e. spawned, unspawned, etc.) |
 | run | B, F, C | Run of the carcass sampled, if assigned |
 | stream | B, Bu, F, C, Y | Stream from which the data was collected |
-| chop_count | B, Bu, F, C, Y | Count of chopped carcasses |
-| survey_id | Bu, F | ID of the survey performed |
-| section_cd | Bu | Butte creek-specific location information, section of river surveyed |
-| way_pt | Bu | Butte creek-specific location information, way point of survey |
-| tag_count | Bu, F | Count of tagged carcasses |
-| tag_col | F, C | Color of tag (generally corresponds to week of survey) |
-| sec | F | Feather river-specific location information, section of river surveyed |
-| unit | F | Feather river-specific location information, unit of river surveyed |
-| chan | F | Feather river-specific location information, channel of river surveyed |
-| min | F | Feather river-specific location information |
-| chan_id | F | Feather river-specific location information, ID of channel surveyed |
-| reach | C | Clear creek-specific location information, reach of river surveyed |
+| count | B, Bu, F, C, Y | Count of carcasses |
+| mark_recapture | Bu, F | variable identifying how the carcass was processed (i.e. "chopped", "tagged", "recovered") |
+| tag_id | Bu, C, F | Unique identifier for a carcass, used to create the Cormack Jolly-Seber capture history matrix |
+| adipose_fin_clipped | Bu, C, F, Y | Whether or not the adipose fin was clipped, indicating hatchery origin |
+| tag_col | C, F | Color of tag (generally corresponds to week of survey) |
+| week | F | Week of survey |
+| head_tag | F | Identifier of head tag |
 
 
 
@@ -85,7 +77,8 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-cree
 battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") |> 
   mutate(stream = "battle creek") |> 
   rename(carcass_condition = carcass_live_status,
-         survey_method = method) |> 
+         survey_method = method,
+         reach = location) |> 
   mutate(count = 1) |> 
   select(-c(comments, year, observed_only, cwt_code)) |> 
   glimpse()
@@ -96,7 +89,7 @@ battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") |>
 
 #### Columns Removed
 
-`disc_tag_applied`, `scale_nu`, `tissue_nu`, `otolith_nu`, `comments`, `year`
+`scale_nu`, `tissue_nu`, `otolith_nu`, `comments`, `year`
 
 ```{r, message=FALSE, warning=FALSE, include = FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_carcass_chops.csv",
@@ -116,13 +109,15 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek
 ```
 ```{r, message = FALSE, warning = FALSE}
 
-# this may contain carcasses that were chopped but did not have any biological information recorded
+# this contains carcasses that were chopped. Variables for biological information exist in
+# raw files but were not populated.
 butte_carcass_bulk_chops <- read_csv("data/redd-carcass-holding/butte_carcass.csv") |> 
   rename(sect = section_cd,
          mark_recapture = disposition,
          count = chop_count,
          adipose_fin_clipped = ad_fin_clip,
-         carcass_condition = condition) |> 
+         carcass_condition = condition,
+         reach = way_pt) |> 
   mutate(source_table = "chops") |> 
   glimpse()
 # each row is an individual for these
@@ -139,7 +134,8 @@ butte_carcass_individuals <- bind_rows(butte_carcass_2014_2016, butte_carcass_20
          tissue_sample = tissue_nu,
          fork_length = fork_length_mm,
          carcass_condition = condition,
-         sect = section_cd) |> 
+         sect = section_cd, 
+         reach = way_pt) |> 
   mutate(spawn_condition = case_when(spawn_condition == "yes" ~ "spawned",
                                      spawn_condition == "no" ~ "unspawned",
                                      spawn_condition == "p" ~ "partial",
@@ -156,7 +152,9 @@ butte_carcass_individuals <- bind_rows(butte_carcass_2014_2016, butte_carcass_20
 
 # combine bulk chops and individual chops
 butte_carcass_combined <- bind_rows(butte_carcass_individuals, butte_carcass_bulk_chops) |> 
-  mutate(stream = "butte creek") |> glimpse()
+  mutate(stream = "butte creek") |> 
+  select(-sect) |> # section information is already stored in the way_pt variable
+  glimpse()
 
 ```
 
@@ -197,7 +195,7 @@ clear_carcass <- read_csv("data/redd-carcass-holding/clear_carcass.csv")  |>
 
 ### Feather River
 
-We removed a lot of variables from the feather carcass data in order to combine it with the other streams. However, some of these may still be helpful in some analyses. 
+We removed a lot of variables from the feather carcass data in order to combine it with the other streams. However, some of these may still be helpful in some analyses (i.e. `tag_color` or `hallprint1`. 
 
 ```{r, message=FALSE, warning=FALSE, include = FALSE}
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data/feather_carcass.csv",
@@ -213,8 +211,11 @@ feather_carcass <- read_csv("data/redd-carcass-holding/feather_carcass.csv") |>
          sect = as.character(sect),
          otolith_sample = as.character(otolith_sample),
          scale_sample = as.character(scale_sample)) |>
-  rename(spawn_condition = spawning_condition) |> 
-  select(-c(rel_loc, hall_print2, tag_color, hallprint_color, year, lifestage, flow, vis, weather, min, recov_color, hallprint1)) |> glimpse()
+  rename(spawn_condition = spawning_condition,
+         reach = sect) |>
+  select(-c(rel_loc, hall_print2, tag_color, hallprint_color, year, 
+            lifestage, flow, vis, weather, min, recov_color, hallprint1)) |> 
+  glimpse()
 ```
 
 ### Yuba River
@@ -228,6 +229,7 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/yuba-river/
 ```
 
 ```{r, message = FALSE, warning = FALSE}
+# TODO try to find categorical location variable
 yuba_carcass <- read_csv("data/redd-carcass-holding/yuba_carcass.csv") |> 
   rename(adipose_fin_clipped = adipose_clip,
          spawn_condition = spawned,
@@ -242,14 +244,18 @@ yuba_carcass <- read_csv("data/redd-carcass-holding/yuba_carcass.csv") |>
 ```{r}
 carcass_combined <- bind_rows(battle_carcass, 
                               butte_carcass_combined,
-                              feather_carcass,
                               clear_carcass,
+                              feather_carcass,
                               yuba_carcass) |> 
   select(-c(species, tissue_sample, otolith_sample, source_table, scale_sample,
-            samples_collected, head_sample, way_pt, sect, longitude, latitude,
-            river_mile, location, unit, chan, river_section, reach)) |> 
+            samples_collected, head_sample, 
+            # location variables
+            longitude, latitude,
+            river_mile, unit, chan, location)) |> 
   glimpse()
 ```
+
+
 ### Upload standardized data to google cloud
 ```{r, include = FALSE}
 f <- function(input, output) write_csv(input, file = output)

@@ -167,7 +167,8 @@ cwt <- left_join(cwt_raw |> clean_names(),
          source_table = "CWT",
          count = 1) |> 
   filter(!is.na(tag_id)) |> 
-  rename(hallprint1 = hallprint) |> 
+  rename(hallprint1 = hallprint,
+         sect = river_section) |> 
   select(-c(morale, lfc, hfc, radio_tag_id, cwt_id, header_id, chop_id, comments, crew))  |> # lfc, hfc, radio tag empty; morale not helpful
   glimpse()
 
@@ -431,7 +432,6 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(all_carcasses_clean
                                           "Count",
                                           "Disposition",
                                           "Table from which the data came",
-                                          "River Section",
                                           "Sex",
                                           "Spawning condition",
                                           "Adipose fin clip status",

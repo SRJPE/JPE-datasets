@@ -474,7 +474,7 @@ The `feather_carcass_combined` table has carcass counts stored in the `count` va
 
 ## Explore Numeric Variables: {.tabset}
 
-### Variable: `tag_id`, `sect`, `unit`, `fork_length`, `week`, `count`, `head_tag`, `flow`, `min`, `scale_scample`, `river_section`, `otolith_sample`, `year`
+### Variable: `tag_id`, `sect`, `unit`, `fork_length`, `week`, `count`, `head_tag`, `flow`, `min`, `scale_scample`, `otolith_sample`, `year`
 
 ```{r}
 feather_carcass_combined %>% 
@@ -725,7 +725,6 @@ all_carcasses_data_dictionary <- tibble(variables = colnames(feather_carcass_com
                                           "Hallprint 2, collected 2009-2010",
                                           "Scale sample",
                                           "Run",
-                                          "River section",
                                           "Otolith sample, collected 2011-2014",
                                           "Tag color",
                                           "Color of hallprint tag number",
