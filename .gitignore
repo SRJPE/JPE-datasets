@@ -8,7 +8,9 @@ config.json
 *.csv
 *.html
 *.xls
+.DS_Store
 *.mdb
-*.DS_Store
+*.accdb
 *.DBF
 *.doc
+
