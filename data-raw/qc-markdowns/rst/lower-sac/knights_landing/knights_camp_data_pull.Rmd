@@ -44,7 +44,7 @@ gcs_get_object(object_name = "rst/CAMP/knights_landing/CAMP_Knights.mdb",
 
 ```{r}
 # runs the mac or pc version of the query tables file depending on operating system
-operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']), "mac", "pc")
+operating_system <- ifelse(grepl("Mac", Sys.info()['nodename']) | grepl("MBP", Sys.info()['nodename']), "mac", "pc")
 
 if(operating_system == "pc") {
   source(here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "knights_landing", "query_knights_camp_4pc.R"))
@@ -66,15 +66,15 @@ site_subsite <- full_join(site_lu, subsite_lu) %>% glimpse()
 ```{r}
 detach(package:Hmisc)
 # all NA
-filter(trap_visit, !is.na(timeSampleStarted))
-filter(trap_visit, !is.na(timeSampleEnded))
-filter(trap_visit, !is.na(coneDepthAtStart))
-filter(trap_visit, !is.na(coneDepthAtEnd))
-filter(trap_visit, !is.na(debrisVolume))
-
-# not NA
-filter(trap_visit, !is.na(inThalwegID))
-filter(trap_visit, !is.na(sampleGearID))
+# filter(trap_visit, !is.na(timeSampleStarted))
+# filter(trap_visit, !is.na(timeSampleEnded))
+# filter(trap_visit, !is.na(coneDepthAtStart))
+# filter(trap_visit, !is.na(coneDepthAtEnd))
+# filter(trap_visit, !is.na(debrisVolume))
+# 
+# # not NA
+# filter(trap_visit, !is.na(inThalwegID))
+# filter(trap_visit, !is.na(sampleGearID))
 
 trap_visit_format <- trap_visit %>% 
   select(projectDescriptionID, trapVisitID, trapPositionID, visitTime, visitTime2, visitTypeID, fishProcessedID, inThalwegID, trapFunctioningID, counterAtStart, counterAtEnd, rpmRevolutionsAtStart, rpmSecondsAtStart, rpmRevolutionsAtEnd, rpmSecondsAtEnd, halfConeID, includeCatchID, debrisVolumeCatID, debrisVolume, debrisVolumeUnits, comments) %>% 
@@ -107,7 +107,7 @@ gcs_upload(trap_visit_format,
            predefinedAcl = "bucketLevel")
 ```
 
-# Catch (not including recaptures)
+# Catch (including recaptures)
 
 ```{r}
 mark_existing_w_joins <- mark %>% 
@@ -131,7 +131,7 @@ mark_existing_w_joins <- mark %>%
 
 selected_catch <- catch_raw %>% 
   select(projectDescriptionID, catchRawID, trapVisitID, taxonID, atCaptureRunID, atCaptureRunMethodID, finalRunID, finalRunMethodID, fishOriginID, lifeStageID, forkLength, totalLength, weight, n, randomID, actualCountID, releaseID, mortID, comments) %>% 
-  left_join(filter(trap_visit_format, fishProcessed %in% c("Processed fish", "Processed fish")) %>% 
+  left_join(trap_visit_format %>% 
               select(projectDescriptionID, trapVisitID, visitTime, visitTime2, visitType, siteName, subSiteName), by = c("trapVisitID" = "trapVisitID", "projectDescriptionID" = "projectDescriptionID")) %>% 
   left_join(mark_existing_w_joins, by = c("catchRawID" = "catchRawID", "projectDescriptionID" = "projectDescriptionID")) %>% 
   mutate(taxonID = as.character(taxonID)) %>% 
@@ -163,7 +163,7 @@ selected_catch <- catch_raw %>%
   select(-actualCountID) %>% 
   left_join(no_yes_lu, by = c("mortID" = "noYesID")) %>% 
   rename(mort = noYes) %>% 
-  select(-mortID)
+  select(-mortID) %>% glimpse()
 
 # Save data to google cloud
 f <- function(input, output) write_csv(input, file = output)
@@ -177,11 +177,8 @@ gcs_upload(selected_catch,
 # Recaptures
 
 ```{r}
-trap_visit_recaptures <- trap_visit %>%
-  select(trapVisitID, visitTime, visitTime2, visitTypeID, halfConeID) %>%
-  left_join(visit_type_lu, by = c("visitTypeID" = "visitTypeID")) %>% 
-  mutate(halfCone = ifelse(halfConeID == 1, T, F)) %>% 
-  select(-visitTypeID, -halfConeID)
+trap_visit_recaptures <- trap_visit_format %>%
+  select(trapVisitID, visitTime, visitTime2, visitType, halfCone, siteName, subSiteName)
 
 # add atcapturerun
 selected_recaptured <- catch_raw %>% 
@@ -202,7 +199,6 @@ selected_recaptured <- catch_raw %>%
   rename(dead = noYes) %>% 
   select(-lifeStageID, -finalRunMethodID, -finalRunID, -atCaptureRunMethodID, -atCaptureRunID, -taxonID, -fishOriginID, - mortID) %>%
   left_join(trap_visit_recaptures) %>%
-  # filter out marked and recapture fish by selecting for only fish where release trial does not exist
   filter(releaseID != 0 & releaseID != 255) %>% 
   glimpse()
 
@@ -234,7 +230,7 @@ selected_release <- release %>%
   select(-markedLifeStageID) %>% 
   left_join(origin_lu, by = c("markedFishOriginID" = "fishOriginID")) %>% 
   rename(markedFishOrigin = fishOrigin) %>% 
-  select(-markedFishOrigin) %>% 
+  select(-markedFishOriginID) %>% 
   left_join(site_subsite %>% 
               select(siteID, siteName), by = c("sourceOfFishSiteID" = "siteID")) %>% 
   rename(sourceOfFishSite = siteName) %>% 
@@ -263,31 +259,43 @@ gcs_upload(selected_release,
            predefinedAcl = "bucketLevel")
 ```
 
+# ReleaseFish
 
+```{r}
+selected_release_fish <- release_fish %>% 
+  select(projectDescriptionID, releaseID, nMarked, forkLength, weight)
+  
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(selected_release_fish,
+           object_function = f,
+           type = "csv",
+           name = "rst/lower-sac-river/data-raw/knights-landing/knights_release_fish_camp.csv",
+           predefinedAcl = "bucketLevel")  
+```
 
 # Environmental
 
 ```{r}
 # all NA
-filter(environmental, !is.na(waterVelReadingStart))
-filter(environmental, !is.na(waterVelReadingEnd))
-filter(environmental, !is.na(waterVelTime))
-filter(environmental, !is.na(airTemp))
-filter(environmental, !is.na(cloudCover))
-filter(environmental, !is.na(waterDepth))
-filter(environmental, !is.na(dissolvedOxygen))
-filter(environmental, !is.na(conductivity))
-filter(environmental, !is.na(barometer))
-
-# contains data
-filter(environmental, !is.na(discharge))
-filter(environmental, !is.na(dischargeUnitID))
-filter(environmental, !is.na(dischargeSampleGearID))
-filter(environmental, !is.na(waterVel))
-filter(environmental, !is.na(waterTemp))
-filter(environmental, !is.na(lightPenetration))
-filter(environmental, !is.na(turbidity))
-filter(environmental, !is.na(weather))
+# filter(environmental, !is.na(waterVelReadingStart))
+# filter(environmental, !is.na(waterVelReadingEnd))
+# filter(environmental, !is.na(waterVelTime))
+# filter(environmental, !is.na(airTemp))
+# filter(environmental, !is.na(cloudCover))
+# filter(environmental, !is.na(waterDepth))
+# filter(environmental, !is.na(dissolvedOxygen))
+# filter(environmental, !is.na(conductivity))
+# filter(environmental, !is.na(barometer))
+# 
+# # contains data
+# filter(environmental, !is.na(discharge))
+# filter(environmental, !is.na(dischargeUnitID))
+# filter(environmental, !is.na(dischargeSampleGearID))
+# filter(environmental, !is.na(waterVel))
+# filter(environmental, !is.na(waterTemp))
+# filter(environmental, !is.na(lightPenetration))
+# filter(environmental, !is.na(turbidity))
+# filter(environmental, !is.na(weather))
 
 # select relevant variables from envDataRaw table
 

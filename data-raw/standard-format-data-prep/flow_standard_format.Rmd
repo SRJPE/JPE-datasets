@@ -86,27 +86,21 @@ glimpse()
 feather_hfc <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", 
                                    "flow_data", "feather_hfc_flow.rds"))
 
-# There are 4 sites that map to this flow data so set up table to merge
-feather_hfc_sites <- tibble(stream = c(rep("feather river", 4)),
-                           site = c("herringer riffle", "live oak", "sunset pumps", "shawns beach"))
 feather_hfc_format <- feather_hfc %>%
   mutate(stream = "feather river",
-         source = "CDEC GRL") %>%
-  full_join(feather_hfc_sites) %>%
-glimpse()
+         source = "CDEC GRL",
+         site = "upper feather hfc") %>%
+  glimpse()
 
 # source USGS
 feather_lfc <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", 
                                    "flow_data", "feather_lfc_flow.rds"))
 
-# There are 3 sites that map to this flow data so set up table to merge
-feather_lfc_sites <- tibble(stream = c(rep("feather river", 3)),
-                           site = c("gateway riffle", "eye riffle", "steep riffle"))
 feather_lfc_format <- feather_lfc %>%
   mutate(stream = "feather river",
-         source = "USGS 11407000") %>%
-  full_join(feather_lfc_sites) %>%
-glimpse()
+         source = "USGS 11407000",
+         site = "upper feather lfc") %>%
+  glimpse()
 ```
 
 ## Mill
@@ -188,7 +182,7 @@ filter(combined_flow, is.na(date))
 combined_flow_clean <- filter(combined_flow, !is.na(date))
 ```
 
-```{r, eval = FALSE}
+```{r}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))

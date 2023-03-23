@@ -16,7 +16,7 @@ viewing via an open section of stream. Beginning in 2009 to the present,
 fish are viewed via a crowder video setup as they pass through the fish
 ladder.
 
-**Timeframe:** 1998 - 2012
+**Timeframe:** 1998 - 2019
 
 **Video Season:** Video is run all year.
 

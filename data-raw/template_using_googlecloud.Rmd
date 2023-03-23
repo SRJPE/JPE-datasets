@@ -1,0 +1,17 @@
+---
+title: "Template"
+output: html_document
+date: "2022-09-12"
+---
+
+```{r setup, include=FALSE}
+library(googleCloudStorageR)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r GCB_setup, include=FALSE}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
