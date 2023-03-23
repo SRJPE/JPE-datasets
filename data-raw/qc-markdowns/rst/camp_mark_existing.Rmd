@@ -1,0 +1,145 @@
+---
+title: ""
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, include = F}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(Hmisc)
+library(pheatmap)
+library(RColorBrewer)
+library(kableExtra)
+library(ComplexHeatmap)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+```
+
+```{r, include = F}
+tisdale_camp <- here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "tisdale", "CAMP.mdb")
+knights_camp <- here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "knights_landing", "CAMP.mdb")
+feather_camp <- (here::here("data-raw", "qc-markdowns", "rst", "feather-river", "CAMP.mdb"))
+```
+
+```{r, include = F}
+project_description <- mdb.get(tisdale_camp, tables = "ProjectDescription") %>%
+  select(projectName, projectDescriptionID) %>% 
+  bind_rows(mdb.get(knights_camp, tables = "ProjectDescription")) %>% 
+  select(projectName, projectDescriptionID) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "ProjectDescription")) %>%  
+  select( projectName, projectDescriptionID) 
+
+project_id <- project_description %>% 
+  distinct() %>% 
+  filter(projectDescriptionID != 0) %>% 
+  mutate(projectName = case_when(projectName == "Butte Creek Parrot-Phelan Diversion Dam\n-\nPhelan Diversion \nDam" ~ "Butte",
+                                 projectName == "Lower Feather River RST" ~ "L Feather", 
+                                 projectName == "Sacramento River Knights Landing RST" ~ "Knights",
+                                 projectName == "Sacramento River Tisdale RST" ~ "Tisdale",
+                                 projectName == "Feather River RST Program" ~ "U Feather")) %>% 
+  filter(projectName != "Butte")
+```
+
+```{r, include = F}
+make_percent_complete <- function(data) {
+  data %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na") %>% 
+  mutate(percent_nonNA = (1-prop_na) * 100)
+    
+}
+
+make_heatmap_data <- function(percent_complete_data) {
+  percent_complete_data %>% 
+  select(-prop_na) %>% 
+  pivot_wider(id_cols = "projectName", names_from = "field", values_from = "percent_nonNA")
+}
+
+make_heatmap <- function(df_num) {
+  ComplexHeatmap::pheatmap(t(df_num), cluster_rows = F, cluster_cols = F,
+                         display_numbers = T, 
+                         number_format = "%.0f",
+                         color = colorRampPalette(brewer.pal(n = 7, name =
+  "Purples"))(100), 
+                         border_color = "black", number_color = "black",
+                         fontsize_number = 8, row_names_side = c("left"),
+                         angle_col = c("0"), heatmap_legend_param = list(title ="Percent Complete"))
+}
+
+mark_existing <- mdb.get(tisdale_camp, tables = "MarkExisting") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "MarkExisting")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "MarkExisting") %>% 
+              mutate(markCode = as.character(markCode))) %>% 
+  full_join(project_id) 
+  
+
+percent_complete_data <- mark_existing %>% 
+  make_percent_complete()
+
+heatmap_data <- percent_complete_data %>% 
+  make_heatmap_data()
+
+df_num <- as.matrix(heatmap_data[,2:15])
+rownames(df_num) <- heatmap_data$projectName
+```
+
+### MarkExisting
+
+```{r, echo = F}
+make_heatmap(df_num)
+```
+
+#### MarkExisting - Useful fields
+
+These fields contain useful information to identify the release group that corresponds with an existing mark. This information can be joined to other tables using the projectDescriptionID and catchRawID.
+
+```{r, echo = F}
+table <- tibble(Keep = c("projectDescriptionID",
+                         "catchRawID",
+                         "markTypeID",
+                         "markColorID",
+                         "markPositionID",
+                         "markCode",
+                         "markExistingID"),
+                Rationale = c("unique identifier for monitoring program",
+                              "unique identifier for fish caught in trap, useful for joining with CatchRaw table",
+                              "type of existing mark, useful for identification of release group",
+                              "color of existing mark, useful for identification of release group",
+                              "position of existing mark, useful for identification of release group",
+                              "code of existing mark (e.g., PIT, CWT), useful to connect with other studies and releases",
+                              "unique identifier for record in table"))
+kbl(table) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), font_size = 14)
+```
+
+#### MarkExisting - Are all fields needed?
+
+All fields are not needed. There are 7 fields that are primarily for internal use
+when performing QC. When sharing data it is assumed that these QC checks have already
+been performed and this information is no longer needed.
+
+```{r, echo = F}
+table <- tibble(Exclude = c("dataRecorder",
+                         "dataRecorderAgencyID",
+                         "creationTime",
+                         "updateTime",
+                         "qcDone",
+                         "qcDoneTime",
+                         "qcComments"),
+                Rationale = c("used internally for QC",
+                              "used internally for QC",
+                              "used internally for QC",
+                              "not used",
+                              "not used",
+                              "not used",
+                              "not used by majority"))
+kbl(table) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), font_size = 14)
+```

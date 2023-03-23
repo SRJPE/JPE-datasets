@@ -136,6 +136,7 @@ filter(trap_visit, !is.na(ConeDebrisIntake2))
 filter(trap_visit, !is.na(debrisVolumeCatID))
 filter(trap_visit, !is.na(debrisVolume))
 filter(trap_visit, !is.na(debrisType))
+unique(trap_visit$dataCollectedID)
 ```
 
 # CatchRaw
@@ -169,7 +170,8 @@ filter(catch_raw, !is.na(stdLength))
 filter(catch_raw, !is.na(weight))
 filter(catch_raw, !is.na(randomID))
 filter(catch_raw, !is.na(subsampleMethodID))
-filter(catch_raw, subsampleMethodID != 1)
+unique(catch_raw$subsampleMethodID)
+#filter(catch_raw, subsampleMethodID != 1)
 filter(catch_raw, !is.na(subsampleNumerator))
 filter(catch_raw, !is.na(actualCountID))
 filter(catch_raw, actualCountID != 1)

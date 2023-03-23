@@ -1,0 +1,208 @@
+---
+title: ""
+output: 
+  html_document:
+  theme: flatly
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, include = F}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(Hmisc)
+library(pheatmap)
+library(RColorBrewer)
+library(kableExtra)
+library(ComplexHeatmap)
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(fig.width=7, fig.height=6) 
+```
+
+```{r, include = F}
+tisdale_camp <- here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "tisdale", "CAMP.mdb")
+knights_camp <- here::here("data-raw", "qc-markdowns", "rst", "lower-sac", "knights_landing", "CAMP.mdb")
+feather_camp <- (here::here("data-raw", "qc-markdowns", "rst", "feather-river", "CAMP.mdb"))
+```
+
+```{r, include = F}
+project_description <- mdb.get(tisdale_camp, tables = "ProjectDescription") %>%
+  select(projectName, projectDescriptionID) %>% 
+  bind_rows(mdb.get(knights_camp, tables = "ProjectDescription")) %>% 
+  select(projectName, projectDescriptionID) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "ProjectDescription")) %>%  
+  select( projectName, projectDescriptionID) 
+
+project_id <- project_description %>% 
+  distinct() %>% 
+  filter(projectDescriptionID != 0) %>% 
+  mutate(projectName = case_when(projectName == "Butte Creek Parrot-Phelan Diversion Dam\n-\nPhelan Diversion \nDam" ~ "Butte",
+                                 projectName == "Lower Feather River RST" ~ "L Feather", 
+                                 projectName == "Sacramento River Knights Landing RST" ~ "Knights",
+                                 projectName == "Sacramento River Tisdale RST" ~ "Tisdale",
+                                 projectName == "Feather River RST Program" ~ "U Feather")) %>% 
+  filter(projectName != "Butte")
+```
+
+```{r, include = F}
+make_percent_complete <- function(data) {
+  data %>% 
+  group_by(projectName) %>% 
+  summarise_all(list(~sum(is.na(.))/length(.))) %>% 
+  pivot_longer(!projectName, names_to = "field", values_to = "prop_na") %>% 
+  mutate(percent_nonNA = (1-prop_na) * 100)
+    
+}
+
+make_heatmap_data <- function(percent_complete_data) {
+  percent_complete_data %>% 
+  select(-prop_na) %>% 
+  pivot_wider(id_cols = "projectName", names_from = "field", values_from = "percent_nonNA")
+}
+
+make_heatmap <- function(df_num) {
+  ComplexHeatmap::pheatmap(t(df_num), cluster_rows = F, cluster_cols = F,
+                         display_numbers = T, 
+                         number_format = "%.0f",
+                         color = colorRampPalette(brewer.pal(n = 7, name =
+  "Purples"))(100), 
+                         border_color = "black", number_color = "black",
+                         fontsize_number = 8, row_names_side = c("left"),
+                         angle_col = c("0"), heatmap_legend_param = list(title ="Percent Complete"))
+}
+
+trap_visit <- mdb.get(tisdale_camp, tables = "TrapVisit") %>% 
+  bind_rows(mdb.get(knights_camp, tables = "TrapVisit")) %>% 
+  bind_rows(mdb.get(feather_camp, tables = "TrapVisit")) %>% 
+  full_join(project_id)
+  
+
+percent_complete_data <- trap_visit %>% 
+  make_percent_complete()
+
+heatmap_data <- percent_complete_data %>% 
+  make_heatmap_data()
+
+df_num <- as.matrix(heatmap_data[,2:46])
+rownames(df_num) <- heatmap_data$projectName
+```
+
+### TrapVisit
+
+```{r, echo = F}
+make_heatmap(df_num)
+```
+
+#### TrapVisit - Useful fields
+
+These fields contain useful information describing trap visit. This information can be joined to other tables using the projectDescriptionID, trapVisitID.
+
+```{r, echo = F}
+table <- tibble(Keep = c("projectDescriptionID",
+                         "trapVisitID",
+                         "trapPositionID",
+                         "visitTime",
+                         "visitTime2",
+                         "visitTypeID",
+                         "fishProcessedID",
+                         "inThalwegID",
+                         "trapFunctioningID",
+                         "counterAtStart",
+                         "counterAtEnd",
+                         "rpmRevolutionsAtStart",
+                         "rpmSecondsAtStart",
+                         "rpmRevolutionsAtEnd",
+                         "rpmSecondsAtEnd",
+                         "halfConeID",
+                         "includeCatchID",
+                         "debrisVolumeCatID",
+                         "debrisVolume",
+                         "debrisVolumeUnits",
+                         "comments"
+                     ),
+                Rationale = c("unique identifier for monitoring program",
+                              "unique identifier for record in table (trap visit), useful for joining with CatchRaw table",
+                              "description of trap position, joins with subSite table",
+                              "sample time",
+                              "trap start time",
+                              "describes type of visit, useful in correct handling of visitTime and visitTime2",
+                              "describes if fish were processed",
+                              "describes if trap fishing in thalweg, although not used by all is important to describe sampling effort",
+                              "describes if trap functioning",
+                              "revolutions on counter at start of trap visit",
+                              "revolutions on counter at end of trap visit",
+                              "revolutions per minute at start of trap visit",
+                              "number of seconds used to measure rpmRevolutionsAtStart, almost always 60",
+                              "revolutions per minute at end of trap visit",
+                              "number of seconds used to measure rpmRevolutionsAtEnd, almost always 60",
+                              "describes if trap fished at half cone, useful for sampling effort",
+                              "describes if this record should be included in analysis or if is low quality and should be excluded",
+                              "categorical assessment of debris in trap",
+                              "volume of debris in trap",
+                              "units used to measure volume of debris in trap",
+                              "qualitative comments"))
+kbl(table) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), font_size = 14)
+```
+
+#### TrapVisit - Are all fields needed?
+
+All fields are not needed. Some fields are not being used. There are 7 fields that are primarily for internal use
+when performing QC. When sharing data it is assumed that these QC checks have already
+been performed and this information is no longer needed.
+
+```{r, echo = F}
+table <- tibble(Exclude = c("crew",
+                            "sampleGearID",
+                            "timeSampleStarted",
+                            "timeSampleEnded",
+                            "batchDate",
+                            "counterOld",
+                            "counterOldTime",
+                            "counterAtEndTime",
+                            "counterNew",
+                            "coneDepthAtStart",
+                            "coneDepthAtEnd",
+                            "includeCatchComments",
+                            "coneDebrisIntake1",
+                            "coneDebrisIntake2",
+                            "debrisType",
+                            "dataCollectedID",
+                            "dataSheetNumber",
+                            "dataRecorder",
+                            "dataRecorderAgencyID",
+                            "creationTime",
+                            "updateTime",
+                            "qcDone",
+                            "qcDoneTime",
+                            "qcComments"),
+                Rationale = c("used internally for QC",
+                              "this is metadata",
+                              "not used",
+                              "not used",
+                              "not used",
+                              "not used",
+                              "not used",
+                              "not used",
+                              "not used",
+                              "not used",
+                              "not used",
+                              "used internally for QC",
+                              "not used",
+                              "not used",
+                              "not used by majority",
+                              "always 1 meaning data was successfull collected, field not being used",
+                              "not used",
+                              "used internally for QC",
+                              "used internally for QC",
+                              "used internally for QC",
+                              "not used",
+                              "not used by majority",
+                              "not used",
+                              "not used by majority"))
+kbl(table) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), font_size = 14)
+```
