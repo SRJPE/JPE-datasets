@@ -39,7 +39,6 @@ Data dictionary for standard format:
 | reach | B, Bu, C, F | Variable for reach, meaning is specific to each stream. Yuba does not yet have a categorical location variable |
 |sex | B, Bu, F, C, Y | Sex of the carcass |
 |fork_length | B, Bu, F, C, Y | Fork length of the carcass (mm) |
-| adipose | B, Bu, F, C, Y | Whether or not the adipose fin was clipped |
 | carcass_condition | B, Bu, F, C, Y | Condition of the carcass when sampled (i.e. fresh, decayed, non-fresh, bright, etc.) |
 | spawn_condition | B, Bu, F, C, Y | Spawning condition of the carcass sampled (i.e. spawned, unspawned, etc.) |
 | run | B, F, C | Run of the carcass sampled, if assigned |
@@ -78,7 +77,8 @@ battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") |>
   mutate(stream = "battle creek") |> 
   rename(carcass_condition = carcass_live_status,
          survey_method = method,
-         reach = location) |> 
+         reach = location,
+         adipose_fin_clipped = adipose) |> 
   mutate(count = 1) |> 
   select(-c(comments, year, observed_only, cwt_code)) |> 
   glimpse()
