@@ -125,8 +125,8 @@ create_stream_plots <- function(upstream_passage, holding, redd_annual, carcass,
     holding <- holding |> 
       filter(stream == stream_name) |> 
       group_by(year) |> 
-      summarise(count) |> 
-      select(year, count) |> 
+      summarise(count = sum(count, na.rm = T)) |> 
+      select(year, count) |>
       mutate(data_type = "holding")
   } else {
     holding <- NULL
@@ -192,8 +192,9 @@ create_stream_plots <- function(upstream_passage, holding, redd_annual, carcass,
           legend.position="bottom")
 }
 
+# note: butte plot in the report uses estimates, not raw counts (see adult_plots_butte_estimates.R)
 create_stream_plots(upstream_passage, holding, redd_annual, carcass, "battle creek", year_ranges)
-create_stream_plots(upstream_passage, holding, redd_annual, carcass, "butte creek", year_ranges)
+#create_stream_plots(upstream_passage, holding, redd_annual, carcass, "butte creek", year_ranges)
 create_stream_plots(upstream_passage, holding, redd_annual, carcass, "clear creek", year_ranges)
 create_stream_plots(upstream_passage, holding, redd_annual, carcass, "deer creek", year_ranges)
 create_stream_plots(upstream_passage, holding, redd_annual, carcass, "feather river", year_ranges)
