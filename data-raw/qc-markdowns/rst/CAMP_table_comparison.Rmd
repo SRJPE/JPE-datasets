@@ -33,6 +33,7 @@ ggplot(dat, aes(x = projectName, y = field, fill = prop_na)) +
        title = table,
        fill = "Proportion NA")
 }
+#test
 ```
 
 # CAMP data tables {.tabset}
