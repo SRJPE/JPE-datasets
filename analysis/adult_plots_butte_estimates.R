@@ -43,7 +43,13 @@ holding_butte <- holding_butte_raw |>
 
 
 # join estimates with raw holding -----------------------------------------
-butte <- bind_rows(holding_butte, butte_estimates) |> 
+# add blank rows for holding for later years
+holding_blanks <- tibble(year = seq(2018,2022),
+                         data_type = "holding",
+                         stream = "butte creek",
+                         count = 0)
+butte <- bind_rows(holding_butte, butte_estimates,
+                   holding_blanks) |> 
   glimpse()
 
 
