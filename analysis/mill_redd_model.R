@@ -47,12 +47,14 @@ redd_daily <- read_csv(gcs_get_object(object_name = "standard-format-data/standa
 threshold <- 21
 
 temp <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
-                                bucket = gcs_get_global_bucket())) |>
+                                bucket = gcs_get_global_bucket())) |> 
   filter(stream == "sacramento river") |> 
-  filter(month(date) %in% 6:7) |> 
+  filter(month(date) %in% 6:8) |> 
   group_by(year(date)) |> 
   mutate(above_threshold = ifelse(mean_daily_temp_c > threshold, TRUE, FALSE)) |> 
-  summarise(no_days_exceed_threshold = sum(above_threshold, na.rm = T)/length(above_threshold)) |> 
+  summarise(prop_days_exceed_threshold = round(sum(above_threshold, na.rm = T)/length(above_threshold), 2)) |> 
+  ungroup() |> 
+  mutate(prop_days_below_threshold = 1 - prop_days_exceed_threshold) |> 
   rename(year = `year(date)`) |> 
   glimpse()
 
@@ -62,16 +64,16 @@ temp <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_tem
 # join (1999:2020)
 data <- holding |> 
   left_join(temp, by = "year") |> 
-  filter(!is.na(no_days_exceed_threshold)) |> 
+  filter(!is.na(prop_days_exceed_threshold)) |> 
   glimpse()
 
 # explore
 data |> 
-  ggplot(aes(x = count, y = no_days_exceed_threshold)) +
+  ggplot(aes(x = prop_days_exceed_threshold, y = count)) +
   geom_point()
 
 
-holding_model <- stan_glm(count ~ no_days_exceed_threshold, data = data,
+holding_model <- stan_glm(count ~ prop_days_exceed_threshold, data = data,
                        family = gaussian,
                        #prior_intercept = normal(22, 2),
                        #prior = normal(1, 0.5),
@@ -83,7 +85,7 @@ launch_shinystan(holding_model)
 # poisson: https://mc-stan.org/rstanarm/articles/count.html
 # also: https://stats.libretexts.org/Bookshelves/Introductory_Statistics/Book%3A_Introductory_Statistics_(OpenStax)/04%3A_Discrete_Random_Variables/4.07%3A_Poisson_Distribution
 
-holding_model_poisson <- stan_glm(count ~ no_days_exceed_threshold, data = data,
+holding_model_poisson <- stan_glm(count ~ prop_days_exceed_threshold, data = data,
                                   family = poisson,
                                   #prior_intercept = normal(22, 2),
                                   #prior = normal(1, 0.5),
@@ -125,9 +127,11 @@ redd_count <- redd_mill |>
   filter(year %in% min(upstream_mill$year):max(upstream_mill$year)) |> 
   distinct(year, count) |> 
   pull(count) |> as.integer()
-year <- min(upstream_mill$year):max(upstream_mill$year)
+years <- min(upstream_mill$year):max(upstream_mill$year)
 upstream_count <- upstream_mill |> pull(count) |> as.integer()
 ratio_k <- upstream_count/redd_count
+temp_subset <- temp |> filter(year %in% years) |> pull(prop_days_below_threshold)
+temp_subset <- append(temp_subset, 0.15, 2) # add in fake value for 2013 (filtered out)
 
 # write model
 mill_upstream_redd_model <- "
@@ -136,6 +140,7 @@ mill_upstream_redd_model <- "
     int upstream_count[N];
     int redd_count[N];
     real ratio_k[N];
+    real temp[N];
   }
   parameters {
     real mu_k;
@@ -152,7 +157,7 @@ mill_upstream_redd_model <- "
     for(i in 1:N) {
       upstream_count[i] ~ lognormal(mu_a, sigma_a);
       ratio_k[i] ~ gamma(alpha, beta);
-      lambda[i] = upstream_count[i] * ratio_k[i];
+      lambda[i] = upstream_count[i] * ratio_k[i] * temp[N];
       redd_count[i] ~ poisson(lambda[i]);
     }
 
@@ -178,7 +183,8 @@ fit <- stan(model_code = mill_upstream_redd_model,
             data = list(N = N,
                         upstream_count = upstream_count,
                         redd_count = redd_count,
-                        ratio_k = ratio_k), 
+                        ratio_k = ratio_k, 
+                        temp = temp_subset), 
             #init = init_list,
             chains = 4, iter = 5000*2, seed = 84735)
 
