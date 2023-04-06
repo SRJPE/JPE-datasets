@@ -12,7 +12,7 @@ library(bayesplot)
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-# upstream passage
+# upstream passage total counts
 upstream_passage <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_adult_upstream_passage.csv",
                                             bucket = gcs_get_global_bucket())) |>
   filter(!is.na(date)) |> 
@@ -34,6 +34,7 @@ upstream_passage <- read_csv(gcs_get_object(object_name = "standard-format-data/
   select(year, count, stream) |> 
   ungroup() |> 
   glimpse()
+  
 
 
 # holding
@@ -82,12 +83,14 @@ carcass <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_
 
 # threshold
 # https://www.noaa.gov/sites/default/files/legacy/document/2020/Oct/07354626766.pdf 
-threshold <- 21
+threshold <- 20
 
-temp <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
+# migratory temps - sac, months = 3:5
+# holding temps - trib specific; 5-7
+migratory_temp <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
                                 bucket = gcs_get_global_bucket())) |> 
   filter(stream == "sacramento river") |> 
-  filter(month(date) %in% 6:8) |> 
+  filter(month(date) %in% 3:5) |> 
   group_by(year(date)) |> 
   mutate(above_threshold = ifelse(mean_daily_temp_c > threshold, TRUE, FALSE)) |> 
   summarise(prop_days_exceed_threshold = round(sum(above_threshold, na.rm = T)/length(above_threshold), 2)) |> 
@@ -97,6 +100,67 @@ temp <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_tem
   rename(year = `year(date)`) |> 
   glimpse()
 
+holding_temp <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
+                                          bucket = gcs_get_global_bucket())) |> 
+  filter(month(date) %in% 5:7) |> 
+  group_by(year(date), stream) |> 
+  mutate(above_threshold = ifelse(mean_daily_temp_c > threshold, TRUE, FALSE)) |> 
+  summarise(prop_days_exceed_threshold = round(sum(above_threshold, na.rm = T)/length(above_threshold), 2)) |> 
+  ungroup() |> 
+  mutate(prop_days_below_threshold = 1 - prop_days_exceed_threshold,
+         prop_days_below_threshold = ifelse(prop_days_below_threshold == 0, 0.001, prop_days_below_threshold)) |> 
+  rename(year = `year(date)`) |> 
+  glimpse()
+
+# linear model of prespawn mortality (upstream - redd) to get intercept
+upstream_passage_clear <- upstream_passage |> 
+  filter(stream %in% c("battle creek", "clear creek", "yuba river")) |> 
+  rename(upstream_count = count)
+
+redd_clear <- redd |> 
+  filter(stream %in% c("battle creek", "clear creek", "yuba river")) |> 
+  rename(redd_count = count)
+
+clear_prespawn <- upstream_passage_clear |> 
+  left_join(redd_clear, by = c("year", "stream")) |> 
+  mutate(female_upstream = upstream_count * 0.5,
+         prespawn_survival = redd_count / female_upstream,
+         prespawn_survival = ifelse(prespawn_survival > 1, 1, prespawn_survival)) |> 
+  glimpse()
+
+temp_prespawn <- left_join(clear_prespawn, migratory_temp |> 
+                             select(year, migratory_prop_days_exceed_threshold = prop_days_exceed_threshold),
+                           by = "year") |> 
+  left_join(holding_temp |> 
+              select(year, stream, holding_prop_days_exceed_threshold = prop_days_exceed_threshold)) |> 
+  mutate(total_prop_days_exceed_threshold = ifelse(is.na(holding_prop_days_exceed_threshold), migratory_prop_days_exceed_threshold, 
+                                                   holding_prop_days_exceed_threshold + migratory_prop_days_exceed_threshold)) |> 
+  glimpse()
+
+temp_prespawn |> 
+  ggplot(aes(x = total_prop_days_exceed_threshold, y = prespawn_survival, fill = stream)) + 
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm") 
+
+m <- lm(data = temp_prespawn, prespawn_survival ~ total_prop_days_exceed_threshold + stream)
+summary(m)
+
+# TODO try median 7-day maximum temps (pull from gauges)
+
+surv_factor <- coef(m)[1] # TODO find estimates
+
+temp_prespawn_scaled <- temp_prespawn |> 
+  select(year, stream, prespawn_survival, total_prop_days_exceed_threshold) |> 
+  mutate(scaled_prop_days_exceed = total_prop_days_exceed_threshold * surv_factor) |> 
+  glimpse()
+
+temp_index <- temp_prespawn_scaled |> 
+  group_by(year) |> 
+  summarise(temp_index = mean(scaled_prop_days_exceed, na.rm = T)) |> 
+  ungroup() |> 
+  mutate(temp_index = ifelse(is.na(temp_index), 1, temp_index))
+
+
+# TODO input is prop_days_over_threshold * coefficient * ratio_k
 
 # write base model in stan --------------------------------------------------
 
@@ -106,7 +170,7 @@ mill_model_temp_prop <- "
     int upstream_count[N];
     int redd_count[N];
     real ratio_k[N];
-    real temp[N];
+    real temp_index[N];
     real prop_surveyed[N];
   }
   parameters {
@@ -117,14 +181,14 @@ mill_model_temp_prop <- "
   }
   model {
     vector[N] lambda;
-    real alpha;
+    real alpha[N];
     real beta;
     beta = mu_k * sigma_k;
-    alpha = mu_k * beta;
-    for(i in 1:N) {
+    for(i in 1:N) { 
+      alpha[i] = mu_k * beta * temp_index[i];
       upstream_count[i] ~ lognormal(mu_a, sigma_a);
-      ratio_k[i] ~ gamma(alpha, beta);
-      lambda[i] = upstream_count[i] * ratio_k[i] * temp[i] * prop_surveyed[i];
+      ratio_k[i] ~ gamma(alpha[i], beta);
+      lambda[i] = upstream_count[i] * ratio_k[i] * prop_surveyed[i];
       redd_count[i] ~ poisson(lambda[i]);
     }
 
@@ -142,37 +206,99 @@ all_mill <- redd |>
             by = "year") |> 
   glimpse()
 
-years <- min(upstream_mill$year):max(upstream_mill$year)
+years <- all_mill |> filter(!is.na(redd_count) & !is.na(upstream_count)) |> 
+                              pull(year)
 N <- length(years)
 redd_count <- all_mill |> 
-  filter(!is.na(upstream_count)) |> 
+  filter(year %in% years) |> 
   pull(redd_count)
 upstream_count <- all_mill |> 
-  filter(!is.na(upstream_count)) |> 
+  filter(year %in% years) |> 
   pull(upstream_count)
 ratio_k <- upstream_count / redd_count
-model_temp <- temp |> 
+temp_index <- temp_index |> 
   filter(year %in% years) |> 
-  pull(prop_days_below_threshold) |> 
-  append(0.15, 2) # placehlder for 2013 temp (got filtered out)
-prop_surveyed <- rep(1.0, 9) # assume all of spawning population is surveyed
+  pull(temp_index)
+prop_surveyed <- rep(1.0, N) # assume all of spawning population is surveyed
 
 
 
 # fit model ---------------------------------------------------------------
-
-
 fit <- stan(model_code = mill_model_temp_prop, 
             data = list(N = N,
+                        
                         upstream_count = upstream_count,
                         redd_count = redd_count,
                         ratio_k = ratio_k,
-                        temp = model_temp,
+                        temp_index = temp_index,
                         prop_surveyed = prop_surveyed), 
             #init = init_list,
             chains = 4, iter = 5000*2, seed = 84735)
 
+mcmc_trace(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
+mcmc_areas(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
+mcmc_dens_overlay(fit, pars = c("mu_k", "sigma_k",  "mu_a", "sigma_a")) # should be indistinguishable
+neff_ratio(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be >0.1
+mcmc_acf(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should drop to be low
+rhat(fit, c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be close to 1
 
+
+# fix bayesian logic -------------------------------------------------
+
+test <- "
+  data {
+    int N;
+    int upstream_count[N];
+    int redd_count[N];
+    real ratio_k[N];
+    real temp_index[N];
+  }
+  parameters {
+    real <lower = 0> mu_k;
+    real <lower = 0> sigma_k;
+    real mu_a;
+    real <lower = 0> sigma_a;
+  }
+  model {
+    // priors
+    mu_k ~ gamma(3,1);
+    sigma_k ~ gamma(1,2);
+    mu_a ~ uniform(0, 1000);
+    sigma_a ~ gamma(0.001,0.001);
+    
+    real alpha[N];
+    real beta;
+    
+    beta = mu_k * sigma_k;
+
+    vector[N] lambda;
+    
+    // calibration between upstream adults and redd count
+    for(i in 1:N) { 
+      alpha[i] = mu_k * beta * temp_index[i];
+      upstream_count[i] ~ lognormal(mu_a, sigma_a);
+      ratio_k[i] ~ gamma(alpha[i], beta);
+      lambda[i] = upstream_count[i] * ratio_k[i];
+      redd_count[i] ~ poisson(lambda[i]);
+    }
+
+  }"
+
+test_fit <- stan(model_code = test, 
+                  data = list(N = N,
+                              upstream_count = upstream_count,
+                              redd_count = redd_count,
+                              ratio_k = ratio_k,
+                              temp_index = temp_index), 
+                  #init = init_list,
+                  chains = 4, iter = 5000*2, seed = 84735)
+
+mcmc_trace(test_fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
+mcmc_areas(test_fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
+mcmc_dens_overlay(test_fit, pars = c("mu_k", "sigma_k",  "mu_a", "sigma_a")) # should be indistinguishable
+neff_ratio(test_fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be >0.1
+mcmc_acf(test_fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should drop to be low
+rhat(test_fit, c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be close to 1
 
 # try hierarchical structure ----------------------------------------------
 
@@ -183,14 +309,15 @@ all_tribs_all_data <- upstream_passage |>
             by = c("year", "stream")) |> 
   full_join(holding |> rename(holding = count),
             by = c("year", "stream")) |> 
+  select(year, stream, upstream = upstream_count, redd, holding) |> 
   glimpse()
 
 # just try redd and upstream for battle & yuba
 upstream_hierarchical <- all_tribs_all_data |> 
   filter(stream %in% c("yuba river", "battle creek"),
          year %in% 2011:2019) |> 
-  select(year, upstream_count, stream) |> 
-  pivot_wider(names_from = stream, values_from = upstream_count) |> 
+  select(year, upstream, stream) |> 
+  pivot_wider(names_from = stream, values_from = upstream) |> 
   select(-year) |> 
   as.matrix() |> 
   unname()
@@ -249,12 +376,12 @@ fit_hierarchical <- stan(model_code = mill_model_hierarchical,
 
 # diagnostics -------------------------------------------------------------
 
-mcmc_trace(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
-mcmc_areas(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a"))
-mcmc_dens_overlay(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be indistinguishable
-neff_ratio(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be >0.1
-mcmc_acf(fit, pars = c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should drop to be low
-rhat(fit, c("mu_k", "sigma_k", "mu_a", "sigma_a")) # should be close to 1
+mcmc_trace(fit_hierarchical, pars = c("mu_k", "mu_a", "sigma_a"))
+mcmc_areas(fit_hierarchical, pars = c("mu_k", "mu_a", "sigma_a"))
+mcmc_dens_overlay(fit_hierarchical, pars = c("mu_k",  "mu_a", "sigma_a")) # should be indistinguishable
+neff_ratio(fit_hierarchical, pars = c("mu_k", "mu_a", "sigma_a")) # should be >0.1
+mcmc_acf(fit_hierarchical, pars = c("mu_k",  "mu_a", "sigma_a")) # should drop to be low
+rhat(fit_hierarchical, c("mu_k",  "mu_a", "sigma_a")) # should be close to 1
 
 
 # scratch -----------------------------------------------------------------
@@ -315,7 +442,7 @@ mu <- 0.5
 sigma <- 0.2
 beta <- mu * sigma
 alpha <- mu * beta
-summary(rgamma(10000, alpha, beta))
+hist(rgamma(10000, alpha, beta))
 
 init_list <- list()
 Nchains <- 4
