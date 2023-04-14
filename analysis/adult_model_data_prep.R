@@ -6,6 +6,8 @@ library(lubridate)
 library(googleCloudStorageR)
 library(rstan)
 library(bayesplot)
+library(GGally) # pairs plot
+library(waterYearType)
 
 # pull adult data & process ----------------------------------------------------------------
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
@@ -56,27 +58,11 @@ redd <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_ann
   select(year, stream, count) |> 
   glimpse()
 
-redd_daily <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
-                                      bucket = gcs_get_global_bucket())) |> 
-  filter(run %in% c("spring", NA, "not recorded")) |> 
-  mutate(count = 1) |> 
-  group_by(year, stream) |> 
-  summarise(count = sum(count)) |> 
-  ungroup() |> 
-  glimpse()
+# TODO holding time by stream and year
+# TODO pull in standard flow
 
-# carcass
-carcass <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_carcass.csv",
-                                   bucket = gcs_get_global_bucket())) |>
-  filter(run %in% c("spring", "unknown", NA)) |> 
-  select(date, stream, count) |> 
-  mutate(year = year(date)) |> 
-  group_by(year, stream) |> 
-  summarise(count = sum(count, na.rm = T)) |> 
-  ungroup() |> 
-  glimpse()
 
-# temperature
+# temperature -------------------------------------------------------------
 
 # threshold
 # https://www.noaa.gov/sites/default/files/legacy/document/2020/Oct/07354626766.pdf 
@@ -117,6 +103,16 @@ holding_temp <- standard_temp |>
   glimpse()
 
 
+
+# flow --------------------------------------------------------------------
+
+standard_flow <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
+                                         bucket = gcs_get_global_bucket())) |> 
+  mutate(year = year(date)) |> 
+  group_by(stream, year) |> 
+  summarise(mean_flow = mean(flow_cfs, na.rm = T)) |> 
+  glimpse()
+
 # prespawn survival -------------------------------------------------------
 
 streams <- c("battle creek", "clear creek", "deer creek", "mill creek")
@@ -132,32 +128,84 @@ prespawn_survival <- inner_join(upstream_passage |>
   filter(stream %in% streams) |> 
   glimpse()
 
-survival_temp_data <- left_join(prespawn_survival, 
+
+# passage timing ----------------------------------------------------------
+upstream_passage_timing <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_adult_upstream_passage.csv",
+                                            bucket = gcs_get_global_bucket())) |> 
+  filter(!is.na(date)) |> 
+  mutate(stream = tolower(stream),
+         year = year(date),
+         week = week(date)) |>
+  filter(run %in% c("spring","not recorded")) |> 
+  group_by(year, passage_direction, stream) |>
+  summarise(count = sum(count, na.rm = T),
+            median_passage_timing = median(week, na.rm = T)) |> 
+  ungroup() |> # TODO worry about up-down
+  select(-c(passage_direction, count)) |> 
+  glimpse()
+
+
+
+# water year --------------------------------------------------------------
+
+water_year_data <- waterYearType::water_year_indices
+
+# combine -----------------------------------------------------------------
+
+survival_model_data <- left_join(prespawn_survival, 
                                 migratory_temp, 
                                 by = c("year")) |> 
   left_join(holding_temp,
             by = c("year", "stream")) |> 
-  mutate(total_prop_days_exceed_threshold = prop_days_exceed_threshold_migratory + prop_days_exceed_threshold_holding) |> 
+  mutate(total_prop_days_exceed_threshold = ifelse(is.na(prop_days_exceed_threshold_migratory), prop_days_exceed_threshold_holding, 
+                                                   (prop_days_exceed_threshold_migratory + prop_days_exceed_threshold_holding) / 2)) |>
+  left_join(standard_flow, 
+            by = c("year", "stream")) |> 
+  left_join(upstream_passage_timing, 
+            by = c("year", "stream")) |> 
+  left_join(water_year_data |> 
+              select(WY, water_year_type = Yr_type),
+            by = c("year" = "WY")) |> # TODO add water year (keep month in this dataset) |> 
+  mutate(water_year_type = tolower(water_year_type)) |> 
   glimpse()
 
-survival_temp_data |> 
+
+
+survival_model_data |> 
   ggplot(aes(x = total_prop_days_exceed_threshold, y = prespawn_survival, fill = stream)) + 
-  geom_point(aes(color = stream)) + geom_smooth(method = "lm") +
-  theme_minimal() +
-  ggtitle("prespawn survival and proportion of days exceeding threshold")
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm")
+
+survival_model_data |> 
+  ggplot(aes(x = mean_flow, y = prespawn_survival, fill = stream)) + 
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm") 
+
+survival_model_data |> 
+  filter(stream == "mill creek") |> 
+  ggplot(aes(x = mean_flow, y = prespawn_survival)) + 
+  geom_point(aes(color = stream))
+
+survival_model_data |> 
+  filter(stream != "mill creek") |> 
+  ggplot(aes(x = median_passage_timing, y = prespawn_survival, fill = stream)) + 
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm")
+
+survival_model_data |> 
+  ggplot(aes(x = upstream_count, y = prespawn_survival, fill = stream)) + 
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm")
   
+
 
 
 # draft model for each of the four streams --------------------------------
 
-m1 <- lm(prespawn_survival ~ upstream_count + prop_days_exceed_threshold_migratory + prop_days_exceed_threshold_holding,
-         data = survival_temp_data)
+battle_model_data <- survival_model_data |> 
+  filter(stream == "battle creek")
 
-m2 <- lm(prespawn_survival ~ upstream_count * total_prop_days_exceed_threshold ,
-         data = survival_temp_data)
-
-m3 <- lm(prespawn_survival ~ upstream_count + total_prop_days_exceed_threshold + (1 | year),
-         data = survival_temp_data)
+ggpairs(battle_model_data)
+m1 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold + mean_flow + median_passage_timing + water_year_type,
+         data = battle_model_data)
+summary(m1)
+m2 <- 
 
 
 # simple linear regression: prespawn mortality vs temperature
