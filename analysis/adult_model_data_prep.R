@@ -99,6 +99,7 @@ migratory_temp <- standard_temp |>
   mutate(prop_days_below_threshold = 1 - prop_days_exceed_threshold,
          prop_days_below_threshold = ifelse(prop_days_below_threshold == 0, 0.001, prop_days_below_threshold)) |> 
   rename(year = `year(date)`) |> 
+  select(year, prop_days_exceed_threshold_migratory = prop_days_exceed_threshold) |> 
   glimpse()
 
 # temperature covariates: migratory temperature (may - july by tributary)
@@ -111,12 +112,53 @@ holding_temp <- standard_temp |>
   mutate(prop_days_below_threshold = 1 - prop_days_exceed_threshold,
          prop_days_below_threshold = ifelse(prop_days_below_threshold == 0, 0.001, prop_days_below_threshold)) |> 
   rename(year = `year(date)`) |> 
+  select(prop_days_exceed_threshold_holding = prop_days_exceed_threshold,
+         stream, year) |> 
   glimpse()
+
+
+# prespawn survival -------------------------------------------------------
+
+streams <- c("battle creek", "clear creek", "deer creek", "mill creek")
+
+prespawn_survival <- inner_join(upstream_passage |> 
+                                  rename(upstream_count = count), 
+                                redd |> 
+                                  rename(redd_count = count), 
+                                by = c("year", "stream")) |> 
+  mutate(female_upstream = upstream_count * 0.5,
+         prespawn_survival = redd_count / female_upstream,
+         prespawn_survival = ifelse(prespawn_survival > 1, 1, prespawn_survival)) |>
+  filter(stream %in% streams) |> 
+  glimpse()
+
+survival_temp_data <- left_join(prespawn_survival, 
+                                migratory_temp, 
+                                by = c("year")) |> 
+  left_join(holding_temp,
+            by = c("year", "stream")) |> 
+  mutate(total_prop_days_exceed_threshold = prop_days_exceed_threshold_migratory + prop_days_exceed_threshold_holding) |> 
+  glimpse()
+
+survival_temp_data |> 
+  ggplot(aes(x = total_prop_days_exceed_threshold, y = prespawn_survival, fill = stream)) + 
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm") +
+  theme_minimal() +
+  ggtitle("prespawn survival and proportion of days exceeding threshold")
+  
 
 
 # draft model for each of the four streams --------------------------------
 
-streams <- c("battle creek", "clear creek", "deer creek", "mill creek")
+m1 <- lm(prespawn_survival ~ upstream_count + prop_days_exceed_threshold_migratory + prop_days_exceed_threshold_holding,
+         data = survival_temp_data)
+
+m2 <- lm(prespawn_survival ~ upstream_count * total_prop_days_exceed_threshold ,
+         data = survival_temp_data)
+
+m3 <- lm(prespawn_survival ~ upstream_count + total_prop_days_exceed_threshold + (1 | year),
+         data = survival_temp_data)
+
 
 # simple linear regression: prespawn mortality vs temperature
 
