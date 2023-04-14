@@ -34,8 +34,6 @@ upstream_passage <- read_csv(gcs_get_object(object_name = "standard-format-data/
   ungroup() |> 
   glimpse()
 
-
-
 # holding
 holding <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_holding.csv",
                                    bucket = gcs_get_global_bucket()))|> 
@@ -86,8 +84,12 @@ threshold <- 20
 
 # migratory temps - sac, months = 3:5
 # holding temps - trib specific; 5-7
-migratory_temp <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
-                                          bucket = gcs_get_global_bucket())) |> 
+
+standard_temp <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
+                                         bucket = gcs_get_global_bucket()))
+
+# temperature covariates: migratory temperature (march - may in sacramento river)
+migratory_temp <- standard_temp |> 
   filter(stream == "sacramento river") |> 
   filter(month(date) %in% 3:5) |> 
   group_by(year(date)) |> 
@@ -99,8 +101,8 @@ migratory_temp <- read_csv(gcs_get_object(object_name = "standard-format-data/st
   rename(year = `year(date)`) |> 
   glimpse()
 
-holding_temp <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
-                                        bucket = gcs_get_global_bucket())) |> 
+# temperature covariates: migratory temperature (may - july by tributary)
+holding_temp <- standard_temp |> 
   filter(month(date) %in% 5:7) |> 
   group_by(year(date), stream) |> 
   mutate(above_threshold = ifelse(mean_daily_temp_c > threshold, TRUE, FALSE)) |> 
@@ -110,6 +112,23 @@ holding_temp <- read_csv(gcs_get_object(object_name = "standard-format-data/stan
          prop_days_below_threshold = ifelse(prop_days_below_threshold == 0, 0.001, prop_days_below_threshold)) |> 
   rename(year = `year(date)`) |> 
   glimpse()
+
+
+# draft model for each of the four streams --------------------------------
+
+streams <- c("battle creek", "clear creek", "deer creek", "mill creek")
+
+# simple linear regression: prespawn mortality vs temperature
+
+# provide exploratory plots to evaluate the variation across streams
+
+# plots showing relationships between redd and passage, ratio to temp (or redd to temp, passage to temp)
+# cumulative normal plots of passage
+# additional thinking and exploration of year effect
+
+
+
+# scratch -----------------------------------------------------------------
 
 # linear model of prespawn mortality (upstream - redd) to get intercept
 upstream_passage_clear <- upstream_passage |> 
