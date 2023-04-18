@@ -59,7 +59,8 @@ redd <- read_csv(gcs_get_object(object_name = "standard-format-data/standard_ann
   glimpse()
 
 # TODO holding time by stream and year
-# TODO pull in standard flow
+# TODO look at hatchery/natural fish
+# TODO run identification
 
 
 # temperature -------------------------------------------------------------
@@ -137,18 +138,30 @@ upstream_passage_timing <- read_csv(gcs_get_object(object_name = "standard-forma
          year = year(date),
          week = week(date)) |>
   filter(run %in% c("spring","not recorded")) |> 
-  group_by(year, passage_direction, stream) |>
+  group_by(year, stream) |>
   summarise(count = sum(count, na.rm = T),
-            median_passage_timing = median(week, na.rm = T)) |> 
-  ungroup() |> # TODO worry about up-down
-  select(-c(passage_direction, count)) |> 
-  glimpse()
+            median_passage_timing = median(week, na.rm = T),
+            mean_passage_timing = mean(week, na.rm = T),
+            min_passage_timing = min(week, na.rm = T)) |> 
+  ungroup() |># TODO worry about up-down 
+  select(-c(count)) |> glimpse()
 
 
 
 # water year --------------------------------------------------------------
 
-water_year_data <- waterYearType::water_year_indices
+water_year_data <- waterYearType::water_year_indices |> 
+  mutate(water_year_type = case_when(Yr_type %in% c("Wet", "Above Normal") ~ "wet",
+                               Yr_type %in% c("Dry", "Below Normal", "Critical") ~ "dry",
+                               TRUE ~ Yr_type)) |> 
+  filter(location == "Sacramento Valley") |> 
+  dplyr::select(WY, water_year_type) |> 
+  glimpse()
+
+later_years <- tibble(WY = 2018:2021,
+                      water_year_type = c("dry", "wet", "dry", "dry"))
+
+water_year_data <- rbind(water_year_data, later_years)
 
 # combine -----------------------------------------------------------------
 
@@ -163,21 +176,26 @@ survival_model_data <- left_join(prespawn_survival,
             by = c("year", "stream")) |> 
   left_join(upstream_passage_timing, 
             by = c("year", "stream")) |> 
-  left_join(water_year_data |> 
-              select(WY, water_year_type = Yr_type),
-            by = c("year" = "WY")) |> # TODO add water year (keep month in this dataset) |> 
-  mutate(water_year_type = tolower(water_year_type)) |> 
+  left_join(water_year_data,
+            by = c("year" = "WY")) |> 
+  dplyr::select(-c(upstream_count, redd_count, female_upstream)) |> 
   glimpse()
 
 
 
 survival_model_data |> 
   ggplot(aes(x = total_prop_days_exceed_threshold, y = prespawn_survival, fill = stream)) + 
-  geom_point(aes(color = stream)) + geom_smooth(method = "lm")
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm") +
+  theme_minimal() + ggtitle("Prespawn survival and temperature by stream") +
+  xlab("Proportion of days exceeding threshold temperature") +
+  ylab("Prespawn survival")
 
 survival_model_data |> 
   ggplot(aes(x = mean_flow, y = prespawn_survival, fill = stream)) + 
-  geom_point(aes(color = stream)) + geom_smooth(method = "lm") 
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm")  +
+  theme_minimal() + ggtitle("Prespawn survival and mean flow by stream") +
+  xlab("Mean flow (cfs)") +
+  ylab("Prespawn survival")
 
 survival_model_data |> 
   filter(stream == "mill creek") |> 
@@ -187,25 +205,251 @@ survival_model_data |>
 survival_model_data |> 
   filter(stream != "mill creek") |> 
   ggplot(aes(x = median_passage_timing, y = prespawn_survival, fill = stream)) + 
-  geom_point(aes(color = stream)) + geom_smooth(method = "lm")
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm")   +
+  theme_minimal() + ggtitle("Prespawn survival and median passage time by stream") +
+  xlab("Median passage time (weeks)") +
+  ylab("Prespawn survival")
 
 survival_model_data |> 
-  ggplot(aes(x = upstream_count, y = prespawn_survival, fill = stream)) + 
-  geom_point(aes(color = stream)) + geom_smooth(method = "lm")
+  ggplot(aes(x = total_prop_days_exceed_threshold, y = prespawn_survival, fill = stream)) + 
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm") +
+  facet_wrap(~water_year_type, scales = "free") +
+  theme_minimal() + ggtitle("Prespawn survival and temperature by stream and water year type") +
+  xlab("Proportion of days exceeding temperature threshold") +
+  ylab("Prespawn survival")
+
+survival_model_data |> 
+  ggplot(aes(x = year, y = prespawn_survival, fill = stream)) + 
+  geom_point(aes(color = stream)) + geom_smooth(method = "lm") +
+  theme_minimal() + ggtitle("Prespawn survival and year")
   
 
+# identify variables for each stream --------------------------------
+battle_data <- survival_model_data |> 
+  filter(stream == "battle creek") |> 
+  select(-c(year, stream, prop_days_exceed_threshold_migratory, 
+            prop_days_exceed_threshold_holding))
+ggpairs(battle_data)
+
+clear_data <- survival_model_data |> 
+  filter(stream == "clear creek") |> 
+  select(-c(year, stream, prop_days_exceed_threshold_migratory, 
+            prop_days_exceed_threshold_holding))
+ggpairs(clear_data)
+
+mill_data <- survival_model_data |> 
+  filter(stream == "mill creek") |> 
+  select(-c(year, stream, prop_days_exceed_threshold_migratory, 
+            prop_days_exceed_threshold_holding, 
+            median_passage_timing, mean_passage_timing, min_passage_timing)) # mill does not have passage timing
+ggpairs(mill_data)
+
+# use step function: https://www.statology.org/multiple-linear-regression-r/
+
+# BATTLE
+intercept_only <- lm(prespawn_survival ~ 1, data = battle_data)
+all <- lm(prespawn_survival ~ ., data = battle_data)
+forward <- step(intercept_only, 
+                direction = "forward",
+                scope = formula(all))
+forward$anova
+forward$coefficients
+
+backward <- step(all, 
+                 direction = "backward",
+                 scope = formula(all))
+backward$anova
+backward$coefficients
+
+both_directions <- step(intercept_only, 
+                        direction = "both",
+                        scope = formula(all))
+both_directions$anova
+both_directions$coefficients
+
+# min passage timing
+
+# CLEAR
+intercept_only <- lm(prespawn_survival ~ 1, data = clear_data)
+all <- lm(prespawn_survival ~ ., data = clear_data)
+forward <- step(intercept_only, 
+                direction = "forward",
+                scope = formula(all))
+forward$anova
+forward$coefficients
+
+backward <- step(all, 
+                 direction = "backward",
+                 scope = formula(all))
+backward$anova
+backward$coefficients
+
+both_directions <- step(intercept_only, 
+                        direction = "both",
+                        scope = formula(all))
+both_directions$anova
+both_directions$coefficients
+
+# mean flow
+
+# MILL
+intercept_only <- lm(prespawn_survival ~ 1, data = mill_data)
+all <- lm(prespawn_survival ~ ., data = mill_data)
+forward <- step(intercept_only, 
+                direction = "forward",
+                scope = formula(all))
+forward$anova
+forward$coefficients
+
+backward <- step(all, 
+                 direction = "backward",
+                 scope = formula(all))
+backward$anova
+backward$coefficients
+
+both_directions <- step(intercept_only, 
+                        direction = "both",
+                        scope = formula(all))
+both_directions$anova
+both_directions$coefficients
+# according to backward, water_year_type
+
+# ALL
+intercept_only <- lm(prespawn_survival ~ 1, data = survival_model_data)
+all <- lm(prespawn_survival ~ ., data = survival_model_data)
+forward <- step(intercept_only, 
+                direction = "forward",
+                scope = formula(all))
+forward$anova
+forward$coefficients
+
+backward <- step(all, 
+                 direction = "backward",
+                 scope = formula(all))
+backward$anova
+backward$coefficients
+
+both_directions <- step(intercept_only, 
+                        direction = "both",
+                        scope = formula(all))
+both_directions$anova
+both_directions$coefficients
+# TODO what is most important variable when all data included together?
+
+# next steps --------------------------------------------------------------
 
 
-# draft model for each of the four streams --------------------------------
+# TODO passage timing/mean flow - choose one
+# TODO best way to summarize timing
+# TODO then can we get rid of year effect (or absorb it)
 
-battle_model_data <- survival_model_data |> 
-  filter(stream == "battle creek")
+# use mean flow (based on m5 r squared > m6 ?)
+# recommended models - variation among streams
+
+
+# custom function for trying different models (replaced by step) ----------
+
+# model 1: temperature
+# model 2: flow
+# model 3: median passage timing
+# model 4: water year type
+# model 5: temperature + flow
+# model 6: temperature + median passage timing
+# model 7: temperature + water year type
+# model 8: flow + median passage timing
+# model 9: flow + water year type
+# model 10: temperature + flow + median passage timing
+# model 11: temperature + flow + median passage timing + water year type
+# model 12: temperature + median passage timing + water year type
+# model 13: temperature + flow + water year type
+# TODO: interactions? random effects? water year type?
+# TODO model 13
 
 ggpairs(battle_model_data)
-m1 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold + mean_flow + median_passage_timing + water_year_type,
-         data = battle_model_data)
-summary(m1)
-m2 <- 
+
+compare_models <- function(stream_name) {
+  r_squared_tibble <- tibble("model" = seq(1:13),
+                             "r_squared" = rep(NA, 13),
+                             "stream" = stream_name)
+  
+  stream_model_data <- survival_model_data |> 
+    filter(stream == stream_name)
+  
+  
+  m1 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold,
+           data = stream_model_data)
+  r_squared_tibble$r_squared[1] <- summary(m1)$r.squared
+  
+  m2 <- lm(prespawn_survival ~ mean_flow,
+           data = stream_model_data)
+  r_squared_tibble$r_squared[2] <- summary(m2)$r.squared
+  
+  m3 <- lm(prespawn_survival ~ median_passage_timing, 
+           data = stream_model_data)
+  r_squared_tibble$r_squared[3] <- summary(m3)$r.squared
+  
+  m4 <- lm(prespawn_survival ~ water_year_type, 
+           data = stream_model_data)
+  r_squared_tibble$r_squared[4] <- summary(m4)$r.squared
+  
+  m5 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold + mean_flow, 
+           data = stream_model_data)
+  r_squared_tibble$r_squared[5] <- summary(m5)$r.squared
+  
+  m6 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold + median_passage_timing, 
+           data = stream_model_data)
+  r_squared_tibble$r_squared[6] <- summary(m6)$r.squared
+  
+  m7 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold + water_year_type, 
+           data = stream_model_data)
+  r_squared_tibble$r_squared[7] <- summary(m7)$r.squared
+  
+  m8 <- lm(prespawn_survival ~ mean_flow + median_passage_timing, 
+           data = stream_model_data)
+  r_squared_tibble$r_squared[8] <- summary(m8)$r.squared
+  
+  m9 <- lm(prespawn_survival ~ mean_flow + water_year_type, 
+           data = stream_model_data)
+  r_squared_tibble$r_squared[9] <- summary(m9)$r.squared
+  
+  m10 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold + mean_flow + median_passage_timing, 
+            data = stream_model_data)
+  r_squared_tibble$r_squared[10] <- summary(m10)$r.squared
+  
+  m11 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold + mean_flow + median_passage_timing + water_year_type, 
+            data = stream_model_data)
+  r_squared_tibble$r_squared[11] <- summary(m11)$r.squared
+  
+  m12 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold + median_passage_timing + water_year_type, 
+            data = stream_model_data)
+  r_squared_tibble$r_squared[12] <- summary(m12)$r.squared
+  
+  m13 <- lm(prespawn_survival ~ total_prop_days_exceed_threshold + mean_flow + water_year_type, 
+            data = stream_model_data)
+  r_squared_tibble$r_squared[13] <- summary(m13)$r.squared
+  
+  # for(i in 1:11) {
+  #   model_name <- get((paste0("m",i)))
+  #   r_squared_tibble$r_squared[i] <- summary(model_name)$r.squared
+  # }
+  # 
+  # if(stream == "mill creek"){
+  #   stream_model_data$median_passage_timing = NA
+  # }
+  
+  return(arrange(r_squared_tibble, desc(r_squared)))
+}
+
+streams <- c("battle creek", 
+             "clear creek", 
+             "mill creek")
+
+all_streams <- purrr::map(streams, compare_models) |> 
+  reduce(bind_rows)
+
+compare_models("battle creek")
+
+
 
 
 # simple linear regression: prespawn mortality vs temperature
@@ -218,7 +462,7 @@ m2 <-
 
 
 
-# scratch -----------------------------------------------------------------
+# scratch for temp index -----------------------------------------------------------------
 
 # linear model of prespawn mortality (upstream - redd) to get intercept
 upstream_passage_clear <- upstream_passage |> 
@@ -237,12 +481,12 @@ clear_prespawn <- upstream_passage_clear |>
   glimpse()
 
 temp_prespawn <- left_join(clear_prespawn, migratory_temp |> 
-                             select(year, migratory_prop_days_exceed_threshold = prop_days_exceed_threshold),
+                             select(year, prop_days_exceed_threshold_migratory),
                            by = "year") |> 
   left_join(holding_temp |> 
-              select(year, stream, holding_prop_days_exceed_threshold = prop_days_exceed_threshold)) |> 
-  mutate(total_prop_days_exceed_threshold = ifelse(is.na(holding_prop_days_exceed_threshold), migratory_prop_days_exceed_threshold, 
-                                                   holding_prop_days_exceed_threshold + migratory_prop_days_exceed_threshold)) |> 
+              select(year, stream, prop_days_exceed_threshold_holding)) |> 
+  mutate(total_prop_days_exceed_threshold = ifelse(is.na(prop_days_exceed_threshold_holding), prop_days_exceed_threshold_migratory, 
+                                                   prop_days_exceed_threshold_holding + prop_days_exceed_threshold_migratory)) |> 
   glimpse()
 
 temp_prespawn |> 
