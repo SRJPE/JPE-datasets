@@ -4,7 +4,7 @@ library(readxl)
 library(googleCloudStorageR)
 
 # read in data ------------------------------------------------------------
-
+# TODO pull in from cloud
 butte_estimates_raw <- read_xlsx(here::here("data-raw", "qc-markdowns", 
                                             "adult-holding-redd-and-carcass-surveys", "butte-creek",
                                             "butte_creek_historic_estimates.xlsx"),
