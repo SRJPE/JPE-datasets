@@ -13,4 +13,4 @@ config.json
 *.accdb
 *.DBF
 *.doc
-
+*.accdb
