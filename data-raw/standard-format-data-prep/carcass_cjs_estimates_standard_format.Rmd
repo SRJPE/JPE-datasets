@@ -1,0 +1,66 @@
+---
+title: "carcass estimates using Cormack-Jolly-Seber model"
+output: html_document
+date: "2023-04-20"
+---
+
+```{r, include = F}
+library(dtplyr)
+library(data.table)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, data_pull, include = F, echo = F}
+# # Data pull ---------------------------------------------------------------
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# pull in butte creek escapement estimates
+# https://www.calfish.org/ProgramsData/ConservationandManagement/CentralValleyMonitoring/SacramentoValleyTributaryMonitoring/ButteCreek.aspx
+gcs_get_object(object_name = 
+                 "adult-holding-redd-and-carcass-surveys/butte-creek/Butte_Creek_Historic_Escapement.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "butte_escapement.csv"),
+               overwrite = TRUE)
+
+butte <- read_csv(here::here("data", "butte_escapement.csv")) |> 
+  select(year = Year, spawner_abundance_estimate = `Post Spawn Est.`) |> 
+  mutate(stream = "butte creek")
+
+# pull in yuba cjs estimates
+# Notes from Colin Laubach about the Yuba River CJS estimates
+# I'm Colin, the Project Manager for the PSMFC office in Marysville.  I began working for PSMFC in 2020 and stepped into the PM position last fall, so I'm still a little new to Escapement Survey data.  From what I could find, population estimation using the CJS model began in 2012, however I was only able to find old reports starting in 2014.  Between then and now there have been a handful of survey years where we did not recaptured sufficient carcasses to accurately run our CJS model, including last year and 2021.
+gcs_get_object(object_name = 
+                 "adult-holding-redd-and-carcass-surveys/yuba-river/yuba_cjs_estimates.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "yuba_escapement.csv"),
+               overwrite = TRUE)
+
+yuba <- read_csv(here::here("data", "yuba_escapement.csv")) |> 
+  rename(spawner_abundance_estimate = estimate) |> 
+  mutate(stream = "yuba river")
+
+```
+
+```{r, data_pull, include = F, echo = F}
+cjs_estimates <- bind_rows(butte, yuba)
+write_csv(cjs_estimates, "data/cjs_estimates.csv")
+```
+
+```{r, save_data, include = F}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(cjs_estimates,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_carcass_cjs_estimate.csv",
+           predefinedAcl = "bucketLevel")
+```
