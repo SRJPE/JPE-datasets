@@ -37,6 +37,13 @@ min_max_week <- daily_catch |>
 include <- min_max_week |> 
   left_join(exclude) |> 
   filter(is.na(exclude)) |> 
-  select(-min_date, -max_date, -exclude)
+  select(-exclude)
 
 write_csv(include, "analysis/data/stream_week_year_include.csv")
+
+gcs_upload(include,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/stream_week_year_include.csv",
+           predefinedAcl = "bucketLevel")
+

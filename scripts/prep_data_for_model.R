@@ -151,18 +151,21 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # read in data
-# years to include file containing subsites from ashley 
-# TODO identify which branch this file creation was on
-
-years_to_include <- gcs_get_object(object_name = "jpe-model-data/stream_week_year_include.csv",
-                                            bucket = gcs_get_global_bucket()) |> 
-  glimpse()
+# this file was created in analysis/generate_sample_window.R
+gcs_get_object(object_name = "jpe-model-data/stream_week_year_include.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/stream_week_year_include.csv",
+               overwrite = TRUE)
+years_to_include <- read_csv("data/standard-format-data/stream_week_year_include.csv")
 
 stream_week_site_year_include <- years_to_include |>
   group_by(monitoring_year, stream, site) |> 
   # decided to go inclusively 
-  summarise(min_week = ifelse(any(min_week >= 1), min(min_week), max(min_week)),
-            max_week = max(max_week)) |> 
+  # if just take min week does not account for the monitoring year so need to find min date first
+  summarise(min_date = min(min_date),
+            min_week = week(min_date),
+            max_date = max(max_date),
+            max_week = week(max_date)) |> 
   glimpse()
 
 View(stream_week_site_year_include)
