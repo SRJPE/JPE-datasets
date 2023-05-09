@@ -166,6 +166,14 @@ stream_week_site_year_include <- years_to_include |>
             min_week = week(min_date),
             max_date = max(max_date),
             max_week = week(max_date)) |> 
+  # identified as excluded due to incomplete sampling
+  mutate(exclude = case_when(monitoring_year == 2022 & stream == "battle creek" ~ T,
+                             monitoring_year == 2005 & site == "yuba river" ~ T,
+                             monitoring_year == 2008 & site == "yuba river" ~ T,
+                             monitoring_year == 2007 & site == "sunset pumps" ~ T,
+                             monitoring_year == 2009 & site == "sunset pumps" ~ T,
+                             T ~ F)) |> 
+  filter(exclude == F) |> 
   glimpse()
 
 View(stream_week_site_year_include)
