@@ -144,6 +144,36 @@ standard_catch_unmarked_trap <- standard_catch_unmarked %>%
                                   "site" = "site", 
                                   "subsite" = "subsite"))
 
+# RST years to include ----------------------------------------------------
+# 
+# upload data
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# read in data
+# years to include file containing subsites from ashley 
+# TODO identify which branch this file creation was on
+
+years_to_include <- gcs_get_object(object_name = "jpe-model-data/stream_week_year_include.csv",
+                                            bucket = gcs_get_global_bucket()) |> 
+  glimpse()
+
+stream_week_site_year_include <- years_to_include |>
+  group_by(monitoring_year, stream, site) |> 
+  # decided to go inclusively 
+  summarise(min_week = ifelse(any(min_week >= 1), min(min_week), max(min_week)),
+            max_week = max(max_week)) |> 
+  glimpse()
+
+View(stream_week_site_year_include)
+
+gcs_upload(stream_week_site_year_include,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/stream_week_site_year_include.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(stream_week_site_year_include, "data/model-data/stream_week_site_year_include.csv")
+
 # Efficiency --------------------------------------------------------------
 
 # Summarize releases and recaptures
@@ -312,3 +342,4 @@ gcs_upload(standard_daily_redd,
            name = "jpe-model-data/daily_redd.csv",
            predefinedAcl = "bucketLevel")
 write_csv(standard_annual_redd, "data/model-data/daily_redd.csv")
+
