@@ -216,7 +216,7 @@ gcs_upload(release_combined,
            name = "rst/mill-creek/data/mill_2021_release.csv",
            predefinedAcl = "bucketLevel")
 
-gcs_upload(recap_site,
+gcs_upload(release_site,
            object_function = f,
            type = "csv",
            name = "rst/mill-creek/data/mill_2021_release_site.csv",
