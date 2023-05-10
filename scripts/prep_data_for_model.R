@@ -53,19 +53,30 @@ unique(standard_catch$subsite)
 unique(standard_catch$release_id)
 unique(standard_catch$species)
 filter(standard_catch, grepl("chinook", species)) %>% distinct(species)
+gcs_get_object(object_name = "standard-format-data/daily_yearling_ruleset.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "daily_yearling_ruleset.csv"),
+               overwrite = TRUE)
+daily_yearling_ruleset <- read_csv(here::here("data", "daily_yearling_ruleset.csv"))
+
 
 standard_catch_unmarked <- standard_catch %>% 
   filter(species == "chinook salmon", # filter for only chinook
          is.na(release_id)) %>%  # filter for only unmarked fish, exclude recaptured fish that were part of efficiency trial
-  select(-species, -release_id)
+  mutate(month = month(date), # add to join with lad and yearling
+         day = day(date)) |> 
+  left_join(daily_yearling_ruleset) |> 
+  mutate(lifestage_for_model = case_when(fork_length > cutoff & !run %in% c("fall","late fall", "winter") ~ "yearling",
+                                  fork_length <= cutoff & fork_length > 45 & !run %in% c("fall","late fall", "winter") ~ "smolt",
+                                  fork_length > 45 & run %in% c("fall", "late fall", "winter", "not recorded") ~ "smolt",
+                                  fork_length > 45 & stream == "sacramento river" ~ "smolt",
+                                  fork_length <= 45 ~ "fry", # logic from flora includes week (all weeks but 7, 8, 9 had this threshold) but I am not sure this is necessary, worth talking through
+                                  T ~ NA)) |> 
+  select(-species, -release_id, -is_yearling, -month, -day, -cutoff) |> 
+  glimpse()
+
 
 # add logic to assign lifestage_for_model 
-# TODO confirm with Ashley that this is where we want it 
-# TODO see if we can come up with simplified faster approach - approach that comes 
-# to mind would be to assign weekly based on props that week but we would loose granularity on run, ect.
-# seems like current approach is less biased
-
-
 # extrapolate lifestage for model for plus count fish/fish without fork lenghts based on weekly fl probabilities
 # Create table with prob fry, smolt, and yearlings for each stream, site, week, year
 weekly_lifestage_bins <- standard_catch_unmarked |> 
@@ -79,83 +90,31 @@ weekly_lifestage_bins <- standard_catch_unmarked |>
   glimpse() 
 
 # create table of all na values that need to be filled
-na_to_fill <- standard_catch_unmarked |> 
+# 39,141 rows 
+na_filled_lifestage <- standard_catch_unmarked |> 
   mutate(week = week(date), year = year(date)) |> 
-  filter(is.na(fork_length), count != 0) |>
-  uncount(count) |> 
-  glimpse() 
-
-# create helper function that selects week, year, stream, site from prob table and na to fill table 
-fill_na_lifestage <- function(week, year, stream, site) {
-  # rename to avoid funky behavior with filter statement
-  selected_week <- week
-  selected_year <- year
-  selected_stream <- stream
-  selected_site <- site
-  
-  # filter prob table
-  prob_tb <- weekly_lifestage_bins |> 
-    filter(week == selected_week, 
-           year == selected_year, 
-           stream == selected_stream, 
-           site == selected_site)
-  
-  # create prob vector
-  probs <- c(prob_tb$percent_fry, prob_tb$percent_smolt, prob_tb$percent_yearling)
-  
-  # add conditional for times when we do not have probs for a week 
-  if (length(probs) == 3) {
-    # if we do have probs for a week, filter na to fill table, and assign lifestage_for_model 
-    # based on sample of c("fry", "smolt", "yearling) based off of the prob for that year, week, stream, site
-    to_fill <- na_to_fill |> 
-      filter(week == selected_week, year == selected_year, 
-             stream == selected_stream, site == selected_site) |> 
-      mutate(lifestage_for_model = sample(x = c("fry", "smolt", "yearling"), 
-                                          size = 1, prob = probs, replace = TRUE))
-  } else {
-    # if no prob for that week, leave na_to_fill table as is but filter to week, year, stream, site
-    # lifestage_for_model will remain NA
-    to_fill <- na_to_fill |> 
-      filter(week == selected_week, year == selected_year, 
-             stream == selected_stream, site == selected_site)
-  }
-  return(to_fill)
-}
-
-week_year_stream_site_combos <- na_to_fill |> 
-  select(week, year, stream, site) |> 
-  distinct() |> glimpse()
-
-# takes super long for all 3250 distinct week, year, stream, site combos 
-# TODO improve performance - way to slow (1 minute for 100 rows) total of 3250 that we need to map through 
-filled_na_lifstage_for_model_one <- purrr::pmap(week_year_stream_site_combos[1:500,], fill_na_lifestage) |> reduce(bind_rows)
-filled_na_lifstage_for_model_two <- purrr::pmap(week_year_stream_site_combos[501:1000,], fill_na_lifestage) |> reduce(bind_rows)
-filled_na_lifstage_for_model_three <- purrr::pmap(week_year_stream_site_combos[1001:1500,], fill_na_lifestage) |> reduce(bind_rows)
-filled_na_lifstage_for_model_four <- purrr::pmap(week_year_stream_site_combos[1501:2000,], fill_na_lifestage) |> reduce(bind_rows)
-filled_na_lifstage_for_model_five <- purrr::pmap(week_year_stream_site_combos[2001:2500,], fill_na_lifestage) |> reduce(bind_rows)
-filled_na_lifstage_for_model_six <- purrr::pmap(week_year_stream_site_combos[2501:3000,], fill_na_lifestage) |> reduce(bind_rows)
-filled_na_lifstage_for_model_seven <- purrr::pmap(week_year_stream_site_combos[3001:3250,], fill_na_lifestage) |> reduce(bind_rows)
+  filter(is.na(fork_length)) |> 
+  left_join(weekly_lifestage_bins) |> 
+  mutate(fry = round(count * percent_fry), 
+         smolt = round(count * percent_smolt), 
+         yearling = round(count * percent_yearling)) |> 
+  select(-lifestage_for_model, -count, -week, -year) |> # remove because all na, assigning in next line
+  pivot_longer(fry:yearling, names_to = 'lifestage_for_model', values_to = 'count') |> 
+  select(-c(percent_fry, percent_smolt, percent_yearling)) |>  
+  filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
+  mutate(model_lifestage_method = "assign count based on weekly distribution") |> 
+  glimpse()
 
 # add filled values back into combined_rst 
 # first filter combined rst to exclude rows in na_to_fill
+# total of 
 combined_rst_wo_na_fl <- standard_catch_unmarked |>   
   filter(!is.na(fork_length)) |> 
   mutate(model_lifestage_method = "assigned from fl cutoffs") |> 
   glimpse()
 
-daily_total_filled_na_lifestage <- bind_rows(filled_na_lifstage_for_model_one, 
-                                             filled_na_lifstage_for_model_two,
-                                             filled_na_lifstage_for_model_three,
-                                             filled_na_lifstage_for_model_four,
-                                             filled_na_lifstage_for_model_five,
-                                             filled_na_lifstage_for_model_six,
-                                             filled_na_lifstage_for_model_seven) |> 
-  group_by(date, run, dead, interpolated, stream, site, subsite, adipose_clipped, 
-           run_method, species, weight, lifestage_for_model) |> 
-  mutate(model_lifestage_method = "sampled from weekly distribution") |> 
-  summarise(count = n())
-
-updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, total_filled_na_lifestage) |> glimpse()
+# less rows now than in origional, has to do with removing count != 0 in line 104, is there any reason not to do this?
+updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage) |> glimpse()
 
 # add include_in_model variable based on sampling window criteria
 # read in years to include produced in prep data for model
@@ -164,14 +123,13 @@ gcs_get_object(object_name = "jpe-model-data/stream_week_site_year_include.csv",
                saveToDisk = here::here("data", "model-data", "stream_week_site_year_include.csv"), overwrite = TRUE)
 
 years_to_include <- read_csv(here::here("data", "model-data", "stream_week_site_year_include.csv")) |> 
-  select(min_date, max_date) |> glimpse()
-
+  select(stream, site, monitoring_year, min_date, max_date) |> glimpse()
 
 rst_with_inclusion_criteria <- updated_standard_catch |> 
   mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
   left_join(years_to_include) |> 
-  mutate(include_in_mode = ifelse(date > min_date & date < max_date, TRUE, FALSE)) |> 
-  select(-c(monitoring_year, min_date, min_week, max_date, max_week, exclude)) |> 
+  mutate(include_in_model = ifelse(date > min_date & date < max_date, TRUE, FALSE)) |> 
+  select(-c(monitoring_year, min_date, max_date)) |> 
   glimpse()
 
 gcs_upload(rst_with_inclusion_criteria,
@@ -180,14 +138,14 @@ gcs_upload(rst_with_inclusion_criteria,
            name = "jpe-model-data/daily_catch_unmarked.csv",
            predefinedAcl = "bucketLevel")
 
-write_csv(updated_standard_rst, "data/model-data/daily_catch_unmarked.csv")
+write_csv(rst_with_inclusion_criteria, "data/model-data/daily_catch_unmarked.csv")
 
 # Summarize standard_catch by week
 # stream, site, subsite, week, year, run, lifestage, adipose_clipped
-weekly_standard_catch_unmarked <- standard_catch_unmarked %>% 
+weekly_standard_catch_unmarked <- rst_with_inclusion_criteria %>% 
   mutate(week = week(date),
          year = year(date)) %>% 
-  group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped, is_yearling) %>% 
+  group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped, lifestage_for_model, include_in_model) %>% 
   summarize(mean_fork_length = mean(fork_length, na.rm = T),
             mean_weight = mean(weight, na.rm = T),
             count = sum(count)) %>% glimpse()
