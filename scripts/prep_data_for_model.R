@@ -3,6 +3,46 @@ library(lubridate)
 source("data/standard-format-data/pull_data.R") # pulls in all standard datasets on GCP
 f <- function(input, output) write_csv(input, file = output)
 
+# RST years to include ----------------------------------------------------
+# 
+# upload data
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# read in data
+# this file was created in analysis/generate_sample_window.R
+gcs_get_object(object_name = "jpe-model-data/stream_week_year_include.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/stream_week_year_include.csv",
+               overwrite = TRUE)
+years_to_include <- read_csv("data/standard-format-data/stream_week_year_include.csv")
+
+stream_week_site_year_include <- years_to_include |>
+  group_by(monitoring_year, stream, site) |> 
+  # decided to go inclusively 
+  # if just take min week does not account for the monitoring year so need to find min date first
+  summarise(min_date = min(min_date),
+            min_week = week(min_date),
+            max_date = max(max_date),
+            max_week = week(max_date)) |> 
+  # identified as excluded due to incomplete sampling
+  mutate(exclude = case_when(monitoring_year == 2022 & stream == "battle creek" ~ T,
+                             monitoring_year == 2005 & site == "yuba river" ~ T,
+                             monitoring_year == 2008 & site == "yuba river" ~ T,
+                             monitoring_year == 2007 & site == "sunset pumps" ~ T,
+                             monitoring_year == 2009 & site == "sunset pumps" ~ T,
+                             T ~ F)) |> 
+  filter(exclude == F) |> 
+  glimpse()
+
+View(stream_week_site_year_include)
+
+gcs_upload(stream_week_site_year_include,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/stream_week_site_year_include.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(stream_week_site_year_include, "data/model-data/stream_week_site_year_include.csv")
 
 # Catch -------------------------------------------------------------------
 
@@ -19,12 +59,128 @@ standard_catch_unmarked <- standard_catch %>%
          is.na(release_id)) %>%  # filter for only unmarked fish, exclude recaptured fish that were part of efficiency trial
   select(-species, -release_id)
 
-gcs_upload(standard_catch_unmarked,
+# add logic to assign lifestage_for_model 
+# TODO confirm with Ashley that this is where we want it 
+# TODO see if we can come up with simplified faster approach - approach that comes 
+# to mind would be to assign weekly based on props that week but we would loose granularity on run, ect.
+# seems like current approach is less biased
+
+
+# extrapolate lifestage for model for plus count fish/fish without fork lenghts based on weekly fl probabilities
+# Create table with prob fry, smolt, and yearlings for each stream, site, week, year
+weekly_lifestage_bins <- standard_catch_unmarked |> 
+  filter(!is.na(fork_length), count != 0) |> 
+  mutate(year = year(date), week = week(date)) |> 
+  group_by(year, week, stream, site) |> 
+  summarize(percent_fry = sum(lifestage_for_model == "fry")/n(),
+            percent_smolt = sum(lifestage_for_model == "smolt")/n(),
+            percent_yearling = sum(lifestage_for_model == "yearling")/n()) |> 
+  ungroup() |> 
+  glimpse() 
+
+# create table of all na values that need to be filled
+na_to_fill <- standard_catch_unmarked |> 
+  mutate(week = week(date), year = year(date)) |> 
+  filter(is.na(fork_length), count != 0) |>
+  uncount(count) |> 
+  glimpse() 
+
+# create helper function that selects week, year, stream, site from prob table and na to fill table 
+fill_na_lifestage <- function(week, year, stream, site) {
+  # rename to avoid funky behavior with filter statement
+  selected_week <- week
+  selected_year <- year
+  selected_stream <- stream
+  selected_site <- site
+  
+  # filter prob table
+  prob_tb <- weekly_lifestage_bins |> 
+    filter(week == selected_week, 
+           year == selected_year, 
+           stream == selected_stream, 
+           site == selected_site)
+  
+  # create prob vector
+  probs <- c(prob_tb$percent_fry, prob_tb$percent_smolt, prob_tb$percent_yearling)
+  
+  # add conditional for times when we do not have probs for a week 
+  if (length(probs) == 3) {
+    # if we do have probs for a week, filter na to fill table, and assign lifestage_for_model 
+    # based on sample of c("fry", "smolt", "yearling) based off of the prob for that year, week, stream, site
+    to_fill <- na_to_fill |> 
+      filter(week == selected_week, year == selected_year, 
+             stream == selected_stream, site == selected_site) |> 
+      mutate(lifestage_for_model = sample(x = c("fry", "smolt", "yearling"), 
+                                          size = 1, prob = probs, replace = TRUE))
+  } else {
+    # if no prob for that week, leave na_to_fill table as is but filter to week, year, stream, site
+    # lifestage_for_model will remain NA
+    to_fill <- na_to_fill |> 
+      filter(week == selected_week, year == selected_year, 
+             stream == selected_stream, site == selected_site)
+  }
+  return(to_fill)
+}
+
+week_year_stream_site_combos <- na_to_fill |> 
+  select(week, year, stream, site) |> 
+  distinct() |> glimpse()
+
+# takes super long for all 3250 distinct week, year, stream, site combos 
+# TODO improve performance - way to slow (1 minute for 100 rows) total of 3250 that we need to map through 
+filled_na_lifstage_for_model_one <- purrr::pmap(week_year_stream_site_combos[1:500,], fill_na_lifestage) |> reduce(bind_rows)
+filled_na_lifstage_for_model_two <- purrr::pmap(week_year_stream_site_combos[501:1000,], fill_na_lifestage) |> reduce(bind_rows)
+filled_na_lifstage_for_model_three <- purrr::pmap(week_year_stream_site_combos[1001:1500,], fill_na_lifestage) |> reduce(bind_rows)
+filled_na_lifstage_for_model_four <- purrr::pmap(week_year_stream_site_combos[1501:2000,], fill_na_lifestage) |> reduce(bind_rows)
+filled_na_lifstage_for_model_five <- purrr::pmap(week_year_stream_site_combos[2001:2500,], fill_na_lifestage) |> reduce(bind_rows)
+filled_na_lifstage_for_model_six <- purrr::pmap(week_year_stream_site_combos[2501:3000,], fill_na_lifestage) |> reduce(bind_rows)
+filled_na_lifstage_for_model_seven <- purrr::pmap(week_year_stream_site_combos[3001:3250,], fill_na_lifestage) |> reduce(bind_rows)
+
+# add filled values back into combined_rst 
+# first filter combined rst to exclude rows in na_to_fill
+combined_rst_wo_na_fl <- standard_catch_unmarked |>   
+  filter(!is.na(fork_length)) |> 
+  mutate(model_lifestage_method = "assigned from fl cutoffs") |> 
+  glimpse()
+
+daily_total_filled_na_lifestage <- bind_rows(filled_na_lifstage_for_model_one, 
+                                             filled_na_lifstage_for_model_two,
+                                             filled_na_lifstage_for_model_three,
+                                             filled_na_lifstage_for_model_four,
+                                             filled_na_lifstage_for_model_five,
+                                             filled_na_lifstage_for_model_six,
+                                             filled_na_lifstage_for_model_seven) |> 
+  group_by(date, run, dead, interpolated, stream, site, subsite, adipose_clipped, 
+           run_method, species, weight, lifestage_for_model) |> 
+  mutate(model_lifestage_method = "sampled from weekly distribution") |> 
+  summarise(count = n())
+
+updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, total_filled_na_lifestage) |> glimpse()
+
+# add include_in_model variable based on sampling window criteria
+# read in years to include produced in prep data for model
+gcs_get_object(object_name = "jpe-model-data/stream_week_site_year_include.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "model-data", "stream_week_site_year_include.csv"), overwrite = TRUE)
+
+years_to_include <- read_csv(here::here("data", "model-data", "stream_week_site_year_include.csv")) |> 
+  select(min_date, max_date) |> glimpse()
+
+
+rst_with_inclusion_criteria <- updated_standard_catch |> 
+  mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
+  left_join(years_to_include) |> 
+  mutate(include_in_mode = ifelse(date > min_date & date < max_date, TRUE, FALSE)) |> 
+  select(-c(monitoring_year, min_date, min_week, max_date, max_week, exclude)) |> 
+  glimpse()
+
+gcs_upload(rst_with_inclusion_criteria,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/daily_catch_unmarked.csv",
            predefinedAcl = "bucketLevel")
-write_csv(standard_catch_unmarked, "data/model-data/daily_catch_unmarked.csv")
+
+write_csv(updated_standard_rst, "data/model-data/daily_catch_unmarked.csv")
 
 # Summarize standard_catch by week
 # stream, site, subsite, week, year, run, lifestage, adipose_clipped
@@ -143,47 +299,6 @@ standard_catch_unmarked_trap <- standard_catch_unmarked %>%
                                   "stream" ="stream", 
                                   "site" = "site", 
                                   "subsite" = "subsite"))
-
-# RST years to include ----------------------------------------------------
-# 
-# upload data
-gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
-gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-
-# read in data
-# this file was created in analysis/generate_sample_window.R
-gcs_get_object(object_name = "jpe-model-data/stream_week_year_include.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/standard-format-data/stream_week_year_include.csv",
-               overwrite = TRUE)
-years_to_include <- read_csv("data/standard-format-data/stream_week_year_include.csv")
-
-stream_week_site_year_include <- years_to_include |>
-  group_by(monitoring_year, stream, site) |> 
-  # decided to go inclusively 
-  # if just take min week does not account for the monitoring year so need to find min date first
-  summarise(min_date = min(min_date),
-            min_week = week(min_date),
-            max_date = max(max_date),
-            max_week = week(max_date)) |> 
-  # identified as excluded due to incomplete sampling
-  mutate(exclude = case_when(monitoring_year == 2022 & stream == "battle creek" ~ T,
-                             monitoring_year == 2005 & site == "yuba river" ~ T,
-                             monitoring_year == 2008 & site == "yuba river" ~ T,
-                             monitoring_year == 2007 & site == "sunset pumps" ~ T,
-                             monitoring_year == 2009 & site == "sunset pumps" ~ T,
-                             T ~ F)) |> 
-  filter(exclude == F) |> 
-  glimpse()
-
-View(stream_week_site_year_include)
-
-gcs_upload(stream_week_site_year_include,
-           object_function = f,
-           type = "csv",
-           name = "jpe-model-data/stream_week_site_year_include.csv",
-           predefinedAcl = "bucketLevel")
-write_csv(stream_week_site_year_include, "data/model-data/stream_week_site_year_include.csv")
 
 # Efficiency --------------------------------------------------------------
 
