@@ -93,7 +93,7 @@ weekly_lifestage_bins <- standard_catch_unmarked |>
 # 39,141 rows 
 na_filled_lifestage <- standard_catch_unmarked |> 
   mutate(week = week(date), year = year(date)) |> 
-  filter(is.na(fork_length)) |> 
+  filter(is.na(fork_length) & count > 0) |> 
   left_join(weekly_lifestage_bins) |> 
   mutate(fry = round(count * percent_fry), 
          smolt = round(count * percent_smolt), 
@@ -113,8 +113,11 @@ combined_rst_wo_na_fl <- standard_catch_unmarked |>
   mutate(model_lifestage_method = "assigned from fl cutoffs") |> 
   glimpse()
 
+no_catch <- standard_catch_unmarked |> 
+  filter(is.na(fork_length) & count == 0)
+
 # less rows now than in origional, has to do with removing count != 0 in line 104, is there any reason not to do this?
-updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage) |> glimpse()
+updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage, no_catch) |> glimpse()
 
 # add include_in_model variable based on sampling window criteria
 # read in years to include produced in prep data for model
@@ -128,7 +131,9 @@ years_to_include <- read_csv(here::here("data", "model-data", "stream_week_site_
 rst_with_inclusion_criteria <- updated_standard_catch |> 
   mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
   left_join(years_to_include) |> 
-  mutate(include_in_model = ifelse(date > min_date & date < max_date, TRUE, FALSE)) |> 
+  mutate(include_in_model = ifelse(date >= min_date & date <= max_date, TRUE, FALSE),
+         # if the year was not included in the list of years to include then should be FALSE
+         include_in_model = ifelse(is.na(min_date), FALSE, include_in_model)) |> 
   select(-c(monitoring_year, min_date, max_date)) |> 
   glimpse()
 
