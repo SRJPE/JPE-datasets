@@ -1184,6 +1184,7 @@ combined_rst <- bind_rows(battle_rst_clean_final,
          #run = ifelse(run == "not recorded", run_lad_rivermodel, run),
          #run_method = ifelse(run == "not recorded", "length-at-date criteria", run_method),
          species = ifelse(is.na(species), "chinook salmon", species),
+         count = ifelse(count == 0 & !is.na(fork_length), 1, count), # add handeling for when count is 0 but fl specified, confirmed cound 0 in fieldsheets
          is_yearling = case_when(fork_length <= cutoff & !run %in% c("fall","late fall", "winter") ~ F,
                                  fork_length > cutoff & !run %in% c("fall","late fall", "winter") ~ T,
                                  run %in% c("fall","late fall", "winter") ~ NA,

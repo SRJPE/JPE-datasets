@@ -3,6 +3,46 @@ library(lubridate)
 source("data/standard-format-data/pull_data.R") # pulls in all standard datasets on GCP
 f <- function(input, output) write_csv(input, file = output)
 
+# RST years to include ----------------------------------------------------
+# 
+# upload data
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# read in data
+# this file was created in analysis/generate_sample_window.R
+gcs_get_object(object_name = "jpe-model-data/stream_week_year_include.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/stream_week_year_include.csv",
+               overwrite = TRUE)
+years_to_include <- read_csv("data/standard-format-data/stream_week_year_include.csv")
+
+stream_week_site_year_include <- years_to_include |>
+  group_by(monitoring_year, stream, site) |> 
+  # decided to go inclusively 
+  # if just take min week does not account for the monitoring year so need to find min date first
+  summarise(min_date = min(min_date),
+            min_week = week(min_date),
+            max_date = max(max_date),
+            max_week = week(max_date)) |> 
+  # identified as excluded due to incomplete sampling
+  mutate(exclude = case_when(monitoring_year == 2022 & stream == "battle creek" ~ T,
+                             monitoring_year == 2005 & site == "yuba river" ~ T,
+                             monitoring_year == 2008 & site == "yuba river" ~ T,
+                             monitoring_year == 2007 & site == "sunset pumps" ~ T,
+                             monitoring_year == 2009 & site == "sunset pumps" ~ T,
+                             T ~ F)) |> 
+  filter(exclude == F) |> 
+  glimpse()
+
+View(stream_week_site_year_include)
+
+gcs_upload(stream_week_site_year_include,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/stream_week_site_year_include.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(stream_week_site_year_include, "data/model-data/stream_week_site_year_include.csv")
 
 # Catch -------------------------------------------------------------------
 
@@ -13,25 +53,104 @@ unique(standard_catch$subsite)
 unique(standard_catch$release_id)
 unique(standard_catch$species)
 filter(standard_catch, grepl("chinook", species)) %>% distinct(species)
+gcs_get_object(object_name = "standard-format-data/daily_yearling_ruleset.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "daily_yearling_ruleset.csv"),
+               overwrite = TRUE)
+daily_yearling_ruleset <- read_csv(here::here("data", "daily_yearling_ruleset.csv"))
+
 
 standard_catch_unmarked <- standard_catch %>% 
   filter(species == "chinook salmon", # filter for only chinook
          is.na(release_id)) %>%  # filter for only unmarked fish, exclude recaptured fish that were part of efficiency trial
-  select(-species, -release_id)
+  mutate(month = month(date), # add to join with lad and yearling
+         day = day(date)) |> 
+  left_join(daily_yearling_ruleset) |> 
+  mutate(lifestage_for_model = case_when(fork_length > cutoff & !run %in% c("fall","late fall", "winter") ~ "yearling",
+                                  fork_length <= cutoff & fork_length > 45 & !run %in% c("fall","late fall", "winter") ~ "smolt",
+                                  fork_length > 45 & run %in% c("fall", "late fall", "winter", "not recorded") ~ "smolt",
+                                  fork_length > 45 & stream == "sacramento river" ~ "smolt",
+                                  fork_length <= 45 ~ "fry", # logic from flora includes week (all weeks but 7, 8, 9 had this threshold) but I am not sure this is necessary, worth talking through
+                                  T ~ NA)) |> 
+  select(-species, -release_id, -is_yearling, -month, -day, -cutoff) |> 
+  glimpse()
 
-gcs_upload(standard_catch_unmarked,
+
+# add logic to assign lifestage_for_model 
+# extrapolate lifestage for model for plus count fish/fish without fork lenghts based on weekly fl probabilities
+# Create table with prob fry, smolt, and yearlings for each stream, site, week, year
+weekly_lifestage_bins <- standard_catch_unmarked |> 
+  filter(!is.na(fork_length), count != 0) |> 
+  mutate(year = year(date), week = week(date)) |> 
+  group_by(year, week, stream, site) |> 
+  summarize(percent_fry = sum(lifestage_for_model == "fry")/n(),
+            percent_smolt = sum(lifestage_for_model == "smolt")/n(),
+            percent_yearling = sum(lifestage_for_model == "yearling")/n()) |> 
+  ungroup() |> 
+  glimpse() 
+
+# create table of all na values that need to be filled
+# 39,141 rows 
+na_filled_lifestage <- standard_catch_unmarked |> 
+  mutate(week = week(date), year = year(date)) |> 
+  filter(is.na(fork_length) & count > 0) |> 
+  left_join(weekly_lifestage_bins) |> 
+  mutate(fry = round(count * percent_fry), 
+         smolt = round(count * percent_smolt), 
+         yearling = round(count * percent_yearling)) |> 
+  select(-lifestage_for_model, -count, -week, -year) |> # remove because all na, assigning in next line
+  pivot_longer(fry:yearling, names_to = 'lifestage_for_model', values_to = 'count') |> 
+  select(-c(percent_fry, percent_smolt, percent_yearling)) |>  
+  filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
+  mutate(model_lifestage_method = "assign count based on weekly distribution") |> 
+  glimpse()
+
+# add filled values back into combined_rst 
+# first filter combined rst to exclude rows in na_to_fill
+# total of 
+combined_rst_wo_na_fl <- standard_catch_unmarked |>   
+  filter(!is.na(fork_length)) |> 
+  mutate(model_lifestage_method = "assigned from fl cutoffs") |> 
+  glimpse()
+
+no_catch <- standard_catch_unmarked |> 
+  filter(is.na(fork_length) & count == 0)
+
+# less rows now than in origional, has to do with removing count != 0 in line 104, is there any reason not to do this?
+updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage, no_catch) |> glimpse()
+
+# add include_in_model variable based on sampling window criteria
+# read in years to include produced in prep data for model
+gcs_get_object(object_name = "jpe-model-data/stream_week_site_year_include.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "model-data", "stream_week_site_year_include.csv"), overwrite = TRUE)
+
+years_to_include <- read_csv(here::here("data", "model-data", "stream_week_site_year_include.csv")) |> 
+  select(stream, site, monitoring_year, min_date, max_date) |> glimpse()
+
+rst_with_inclusion_criteria <- updated_standard_catch |> 
+  mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
+  left_join(years_to_include) |> 
+  mutate(include_in_model = ifelse(date >= min_date & date <= max_date, TRUE, FALSE),
+         # if the year was not included in the list of years to include then should be FALSE
+         include_in_model = ifelse(is.na(min_date), FALSE, include_in_model)) |> 
+  select(-c(monitoring_year, min_date, max_date)) |> 
+  glimpse()
+
+gcs_upload(rst_with_inclusion_criteria,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/daily_catch_unmarked.csv",
            predefinedAcl = "bucketLevel")
-write_csv(standard_catch_unmarked, "data/model-data/daily_catch_unmarked.csv")
+
+write_csv(rst_with_inclusion_criteria, "data/model-data/daily_catch_unmarked.csv")
 
 # Summarize standard_catch by week
 # stream, site, subsite, week, year, run, lifestage, adipose_clipped
-weekly_standard_catch_unmarked <- standard_catch_unmarked %>% 
+weekly_standard_catch_unmarked <- rst_with_inclusion_criteria %>% 
   mutate(week = week(date),
          year = year(date)) %>% 
-  group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped, is_yearling) %>% 
+  group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped, lifestage_for_model, include_in_model) %>% 
   summarize(mean_fork_length = mean(fork_length, na.rm = T),
             mean_weight = mean(weight, na.rm = T),
             count = sum(count)) %>% glimpse()
@@ -312,3 +431,4 @@ gcs_upload(standard_daily_redd,
            name = "jpe-model-data/daily_redd.csv",
            predefinedAcl = "bucketLevel")
 write_csv(standard_annual_redd, "data/model-data/daily_redd.csv")
+
