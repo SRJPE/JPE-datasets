@@ -139,9 +139,7 @@ TODO
 
 ```{r}
 trap_liz <- readxl::read_excel("raw_2021_rst_deer_and_mill_liz.xlsx", sheet = "Trap Operations & Env") |> 
-  rename(debris_gal = `debris_code...6`,
-         debris_code = `debris_code...13`) |> 
-  relocate(debris_code, .before = debris_gal)
+  mutate(hours_fished = as.numeric(hours_fished))
 trap_erin <- readxl::read_excel("raw_2021_rst_deer_and_mill_erin.xlsx", sheet = "Trap Operations & Env") |> 
   mutate(hours_fished = as.numeric(hours_fished),
          debris_gal = as.numeric(debris_gal),
