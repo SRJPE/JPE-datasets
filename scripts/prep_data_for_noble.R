@@ -19,14 +19,15 @@ tisdale_2021_present <- tisdale_raw |>
 
 # Knights Landing
 # https://github.com/FlowWest/jpe-knights-edi/blob/main/data/catch.csv
-# knights_raw <- read_csv(here::here("data", "knights_catch_edi.csv"))
-# knights_2021_present <- knights_raw |> 
-#   filter(commonName == "Chinook salmon") |> 
-#   select(-c(ProjectDescriptionID, catchRawID, trapVisitID, commonName, releaseID, finalRun, totalLength, visitType, actualCount)) |> 
-#   filter(as.Date(visitTime) > as.Date("2021-09-01")) |> 
-#   rename(run = atCaptureRun) |> 
-#   mutate(stream = "sacramento river")
-# only includes through June 2021
+knights_raw <- read_csv(here::here("data", "knights_catch_edi.csv"))
+knights_2021_present <- knights_raw |>
+  filter(commonName == "Chinook salmon", releaseID %in% c(0, 255)) |>
+  mutate(subSiteName = ifelse(trapPositionID == 63004, "8.4", "8.3"),
+         siteName = "knights landing") |> 
+  select(-c(projectDescriptionID, catchRawID, trapVisitID, commonName, releaseID, finalRun, totalLength, visitType, actualCount, visitTime2, atCaptureRunMethod, random, siteID, trapPositionID, finalRunMethod)) |>
+  filter(as.Date(visitTime) > as.Date("2021-09-01")) |>
+  rename(run = atCaptureRun) |>
+  mutate(stream = "sacramento river")
 
 
 # Butte
@@ -74,12 +75,12 @@ battle_clear_raw <- read_csv("data/battle_clear_catch_2021_2022.csv")
 battle_2021_present <- battle_clear_raw |> 
   rename(stream = river,
          siteName = station_code,
-         subSiteName = station_code,
          visitTime = sample_date,
          lifeStage = life_stage,
          n = count, 
          forkLenth = fork_length) |> 
-  mutate(fishOrigin = "not recorded") |> 
+  mutate(fishOrigin = "not recorded",
+         subSiteName = siteName) |> 
   select(-common_name)
 # Yuba - just started in 2022/2023
 
@@ -87,7 +88,9 @@ current_data <- bind_rows(butte_2021_present,
                           feather_2021_present,
                           tisdale_2021_present,
                           mill_2021_present,
-                          battle_2021_present)
+                          battle_2021_present,
+                          knights_2021_present) |> 
+  select(-sample_time)
 write_csv(current_data, here::here("data", "PLAD-data","catch_2021_current.csv"))
 
 # upload to google cloud bucket
