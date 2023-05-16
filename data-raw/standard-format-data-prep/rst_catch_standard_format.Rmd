@@ -652,6 +652,7 @@ unique(feather_rst_camp$fishOrigin)
 unique(feather_rst_camp$markType)
 filter(feather_rst_camp, visitTime != visitTime2)
 
+# multiple back and forth about how to treat this - decided to add site group variable
 # organize feather subsites by high flow channel and low flow channel to make easier to understand
 lfc <- c("eye riffle_north", "eye riffle_side channel", "gateway main 400' up river", "gateway_main1", "gateway_rootball", "gateway_rootball_river_left", "#steep riffle_rst", "steep riffle_10' ext", "steep side channel")
 hfc <- c("herringer_east", "herringer_upper_west", "herringer_west", "live oak", "shawns_east", "shawns_west", "sunset east bank", "sunset west bank")
@@ -678,8 +679,10 @@ feather_rst_clean <- feather_rst_camp %>%
   ungroup() %>%
   mutate(stream = "feather river",
          subsite = tolower(subsite),
-         site = case_when(subsite %in% lfc ~ "upper feather lfc",
-                          subsite %in% hfc ~ "upper feather hfc"),
+         site = tolower(site),
+         site_group = case_when(subsite %in% lfc ~ "feather river lfc",
+                                subsite %in% hfc ~ "feather river hfc",
+                                T ~ NA),
          adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
                                      adipose_clipped == "Hatchery" ~ T),
          lifestage = tolower(lifestage),
@@ -1189,7 +1192,7 @@ combined_rst <- bind_rows(battle_rst_clean_final,
                                  fork_length > cutoff & !run %in% c("fall","late fall", "winter") ~ T,
                                  run %in% c("fall","late fall", "winter") ~ NA,
                                  T ~ NA)) %>% # few cases primarily from pre 2002 Sac that are species are NA
-  select(date, run, fork_length, lifestage, dead, interpolated, count, stream, site, subsite, adipose_clipped, run_method, species, release_id, weight, is_yearling)
+  select(date, run, fork_length, lifestage, dead, interpolated, count, stream, site_group, site, subsite, adipose_clipped, run_method, species, release_id, weight, is_yearling)
 
 unique(combined_rst$run)
 unique(combined_rst$lifestage)
@@ -1211,6 +1214,7 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                     "Describes if data were interpolated (T/F).",
                                                     "Number of fish caught.",
                                                     "Mainstem/tributary location of trap.",
+                                                    "Site group is used for Feather River to denote if the site is in the High Flow Channel (hfc) or Low Flow Channel (lfc)",
                                                     "Site of trap within location. Some locations do not have multiples sites in which stream = site. Site names are specific to the tributary.",
                                                     "Name of trap where fish were caught.",
                                                     "Describes if adipose fin is clipped (T/F). This is used to determine if the fish is natural or hatchery origin. In some cases this information may be unknown.",
@@ -1229,6 +1233,7 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                  "TRUE, FALSE",
                                                  NA,
                                                  "battle creek, butte creek, clear creek, deer creek, feather river, mill creek, yuba river, sacramento river",
+                                                 "feather hfc, feather lfc",
                                                  "battle creek, okie dam, adams dam, lcc, ucc, deer creek, eye riffle, live oak, herringer riffle, steep riffle, sunset pumps, shawns beach, gateway riffle, mill creek, yuba river, hallwood, knights landing, tisdale",
                                                  "see readme",
                                                  "TRUE, FALSE",
@@ -1246,6 +1251,7 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                        "Battle, Clear",
                                                        "All",
                                                        "All",
+                                                  "Feather",
                                                        "All",
                                                        "All",
                                                        "Butte, Feather, Knights, Tisdale",
