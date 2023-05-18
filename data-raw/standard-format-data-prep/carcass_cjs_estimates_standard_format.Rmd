@@ -48,10 +48,24 @@ yuba <- read_csv(here::here("data", "yuba_escapement.csv")) |>
   rename(spawner_abundance_estimate = estimate) |> 
   mutate(stream = "yuba river")
 
+
+# Keith Landrum provided PDFs of carcass estimates using CJS which can be found in the google drive. In 2018 there was the Camp Fire and a lot of missing weeks. They used some interpolation methods - we chose the 5 year method.
+
+gcs_get_object(object_name = 
+                 "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/cjs_estimates/feather_cjs_estimates.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "feather_escapement.xlsx"),
+               overwrite = TRUE)
+
+feather <- readxl::read_excel(here::here("data", "feather_escapement.xlsx")) |> 
+  rename(spawner_abundance_estimate = estimate) |> 
+  mutate(stream = "feather river")
+
+
 ```
 
 ```{r, data_pull, include = F, echo = F}
-cjs_estimates <- bind_rows(butte, yuba)
+cjs_estimates <- bind_rows(butte, yuba, feather)
 write_csv(cjs_estimates, "data/cjs_estimates.csv")
 ```
 
