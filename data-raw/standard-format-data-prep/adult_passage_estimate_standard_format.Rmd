@@ -49,6 +49,15 @@ gcs_get_object(object_name =
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "yuba_spring_passage_estimates.csv"),
                overwrite = TRUE)
+
+# pull in butte creek vaki estimates
+# https://www.calfish.org/ProgramsData/ConservationandManagement/CentralValleyMonitoring/SacramentoValleyTributaryMonitoring/ButteCreek.aspx
+gcs_get_object(object_name = 
+                 "adult-holding-redd-and-carcass-surveys/butte-creek/Butte_Creek_Historic_Escapement.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "butte_escapement.csv"),
+               overwrite = TRUE)
+
 ```
 
 ```{r}
@@ -57,6 +66,10 @@ adult_passage_standard <- read_csv(here::here("data", "standard_adult_upstream_p
 battle_spring <- read_csv(here::here("data", "battle_spring_passage_estimates.csv")) |> 
   rename(year = `...1`)
 yuba <- read_csv(here::here("data", "yuba_spring_passage_estimates.csv"))
+# need to pull vaki numbers
+butte <- read_csv(here::here("data", "butte_escapement.csv")) |> 
+  select(Year, Vaki) |> 
+  filter(!is.na(Vaki))
 ```
 
 ```{r, include = F}
@@ -133,9 +146,15 @@ yuba <- select(yuba, year, spring_run_escapement) |>
   rename(passage_estimate = spring_run_escapement) |> 
   mutate(stream = "yuba river")
 
+butte <- butte |> 
+  rename(year = Year,
+         passage_estimate = Vaki) |> 
+  mutate(stream = "butte creek")
+
 passage_estimate <- bind_rows(clear_battle,
                               deer_mill,
-                              yuba) |> 
+                              yuba,
+                              butte) |> 
   mutate(passage_estimate = round(passage_estimate, 2))
 
 write_csv(passage_estimate, here::here("data","adult_passage_estimate.csv"))
