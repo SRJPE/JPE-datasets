@@ -43,6 +43,51 @@ gcs_upload(weekly_standard_catch_unmarked,
            predefinedAcl = "bucketLevel")
 write_csv(weekly_standard_catch_unmarked, "data/model-data/weekly_catch_unmarked.csv")
 
+
+# fork length distributions -----------------------------------------------
+
+# In order to apply PLAD run assignments to historical juvenile abundance
+# Need fork length distributions by week and lifestage (fry/smolt)
+# Provide as raw data, small size bins, larger size bins
+
+catch_fl_summary_site <- catch_raw |> 
+  # only want to include those weeks being included in model
+  filter(include_in_model == T) |> 
+  mutate(week = week(date),
+         wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) |> 
+  # summarize by week 
+  # can also summarize to the site level as subsites can be added together (e.g. river left + river right)
+  group_by(week, wy, fork_length, stream, site, site_group, lifestage_for_model) |> 
+  summarize(count = sum(count))
+
+gcs_upload(catch_fl_summary_site,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/fork_length_summary_site.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(catch_fl_summary_site, "data/model-data/fork_length_summary_site.csv")
+
+catch_fl_summary_stream <- catch_raw |> 
+  # only want to include those weeks being included in model
+  filter(include_in_model == T) |> 
+  mutate(week = week(date),
+         wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) |> 
+  # summarize by week 
+  # can also summarize to the site level as subsites can be added together (e.g. river left + river right)
+  group_by(week, wy, fork_length, stream, site, site_group, lifestage_for_model) |> 
+  summarize(count = sum(count)) |> 
+  # if want to summarize at the stream level need to either select one site to use or could take the average
+  # can't sum across sites or will result in double counting (e.g. upper clear creek and lower clear creek, same fish passing through)
+  group_by(week, wy, fork_length, stream, lifestage_for_model) |> 
+  summarize(count = mean(count))
+
+gcs_upload(catch_fl_summary_stream,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/fork_length_summary_stream.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(catch_fl_summary_stream, "data/fork_length_summary_stream.csv")
+
 # Effort ------------------------------------------------------------------
 
 # Summarize effort data by week
