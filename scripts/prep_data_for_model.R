@@ -169,7 +169,7 @@ write_csv(weekly_standard_catch_unmarked, "data/model-data/weekly_catch_unmarked
 # Need fork length distributions by week and lifestage (fry/smolt)
 # Provide as raw data, small size bins, larger size bins
 
-catch_fl_summary_site <- catch_raw |> 
+catch_fl_summary_site <- rst_with_inclusion_criteria |> 
   # only want to include those weeks being included in model
   filter(include_in_model == T) |> 
   mutate(week = week(date),
@@ -186,7 +186,7 @@ gcs_upload(catch_fl_summary_site,
            predefinedAcl = "bucketLevel")
 write_csv(catch_fl_summary_site, "data/model-data/fork_length_summary_site.csv")
 
-catch_fl_summary_stream <- catch_raw |> 
+catch_fl_summary_stream <- rst_with_inclusion_criteria |> 
   # only want to include those weeks being included in model
   filter(include_in_model == T) |> 
   mutate(week = week(date),
