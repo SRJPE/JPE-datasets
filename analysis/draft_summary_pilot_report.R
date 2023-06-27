@@ -30,7 +30,7 @@ effort_raw <- read_csv(here::here("data", "model-data", "daily_effort.csv"))
 
 # data prep
 efficiency <- efficiency_raw |> 
-  left_join(release |> 
+  left_join(release_raw |> 
               select(release_id, date_released)) |> 
   mutate(week = week(date_released),
          wy = ifelse(month(date_released) %in% 10:12, year(date_released) + 1, year(date_released))) |> 
@@ -48,8 +48,7 @@ environmental <- environmental_raw |>
          wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) |> 
   filter(stream == "battle creek", 
          wy == 2018,
-         parameter %in% c("turbidity")) |>  # select for discharge, turbidity, temperature
-  pivot_wider(id_cols = )
+         parameter %in% c("turbidity"))   # select for discharge, turbidity, temperature
   
 # Biweekly report
 # decided that adipose_clipped fish will be summarized with unclipped fish
@@ -86,7 +85,7 @@ daily_passage <- catch_summary |>
          passage = round(count/efficiency)) |> 
   filter(!is.na(run)) |> 
   select(date, run, passage) |> # select species when available
-  pivot_wider(id_cols = date, names_from = "run", values_from = "passage", values_fill = 0)
+  pivot_wider(id_cols = date, names_from = "run", values_from = "passage", values_fill = 0) |> view()
 
 # Brood Year Total
 # We won't be able to pull in historical data yet but we can do a running total
@@ -104,3 +103,7 @@ daily_passage <- catch_summary |>
 # 4. Note about data being preliminary
 # 5. Contact
 # 6. Once we get data on EDI could include link
+# 
+# 
+# # TODO would be really helpful to have some understanding of the percent catch based on historical timing - see new report ryan sent
+
