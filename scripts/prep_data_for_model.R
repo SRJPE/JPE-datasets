@@ -1,5 +1,6 @@
 # Scripts to prepare data for model
 library(lubridate)
+library(tidyverse)
 source("data/standard-format-data/pull_data.R") # pulls in all standard datasets on GCP
 f <- function(input, output) write_csv(input, file = output)
 
@@ -83,11 +84,11 @@ standard_catch_unmarked <- standard_catch %>%
          day = day(date)) |> 
   left_join(daily_yearling_ruleset) |> 
   mutate(lifestage_for_model = case_when(fork_length > cutoff & !run %in% c("fall","late fall", "winter") ~ "yearling",
-                                  fork_length <= cutoff & fork_length > 45 & !run %in% c("fall","late fall", "winter") ~ "smolt",
-                                  fork_length > 45 & run %in% c("fall", "late fall", "winter", "not recorded") ~ "smolt",
-                                  fork_length > 45 & stream == "sacramento river" ~ "smolt",
-                                  fork_length <= 45 ~ "fry", # logic from flora includes week (all weeks but 7, 8, 9 had this threshold) but I am not sure this is necessary, worth talking through
-                                  T ~ NA)) |> 
+                                         fork_length <= cutoff & fork_length > 45 & !run %in% c("fall","late fall", "winter") ~ "smolt",
+                                         fork_length > 45 & run %in% c("fall", "late fall", "winter", "not recorded") ~ "smolt",
+                                         fork_length > 45 & stream == "sacramento river" ~ "smolt",
+                                         fork_length <= 45 ~ "fry", # logic from flora includes week (all weeks but 7, 8, 9 had this threshold) but I am not sure this is necessary, worth talking through
+                                         T ~ NA)) |> 
   select(-species, -release_id, -is_yearling, -month, -day, -cutoff) |> 
   glimpse()
 
@@ -95,6 +96,11 @@ standard_catch_unmarked <- standard_catch %>%
 # add logic to assign lifestage_for_model 
 # extrapolate lifestage for model for plus count fish/fish without fork lenghts based on weekly fl probabilities
 # Create table with prob fry, smolt, and yearlings for each stream, site, week, year
+
+# TODO - figure out how to handle weeks where we do not have fl data 
+# options 
+# - use historical percentages for a specific week if a year week does not have fl data 
+# or specificy as unknown 
 weekly_lifestage_bins <- standard_catch_unmarked |> 
   filter(!is.na(fork_length), count != 0) |> 
   mutate(year = year(date), week = week(date)) |> 
@@ -105,15 +111,36 @@ weekly_lifestage_bins <- standard_catch_unmarked |>
   ungroup() |> 
   glimpse() 
 
+# Use when no FL data for a year 
+proxy_weekly_fl <- standard_catch_unmarked |> 
+  mutate(year = year(date), week = week(date)) |> 
+  filter(!is.na(lifestage_for_model)) |> 
+  group_by(week, stream) |> 
+  summarize(percent_fry = sum(lifestage_for_model == "fry")/n(),
+            percent_smolt = sum(lifestage_for_model == "smolt")/n(),
+            percent_yearling = sum(lifestage_for_model == "yearling")/n()) |> 
+  ungroup() |> 
+  glimpse() 
+
+# Years without FL data 
+proxy_lifestage_bins_for_weeks_without_fl <- standard_catch_unmarked |> 
+  group_by(year = year(date), week = week(date), stream, site) |> 
+  summarise(fork_length = mean(fork_length, na.rm = TRUE)) |> 
+  filter(is.na(fork_length)) |> 
+  left_join(proxy_weekly_fl, by = c("week" = "week", "stream" = "stream")) |> 
+  select(-fork_length) |> 
+  glimpse() 
+
+all_lifestage_bins <- bind_rows(weekly_lifestage_bins, proxy_lifestage_bins_for_weeks_without_fl)
+
 # create table of all na values that need to be filled
-# 39,141 rows 
 na_filled_lifestage <- standard_catch_unmarked |> 
   mutate(week = week(date), year = year(date)) |> 
   filter(is.na(fork_length) & count > 0) |> 
-  left_join(weekly_lifestage_bins) |> 
-  mutate(fry = round(count * percent_fry), 
-         smolt = round(count * percent_smolt), 
-         yearling = round(count * percent_yearling)) |> 
+  left_join(all_lifestage_bins, by = c("week" = "week", "year" = "year", "stream" = "stream", "site" = "site")) |> 
+  mutate(fry = count * percent_fry, 
+         smolt = count * percent_smolt, 
+         yearling = count * percent_yearling) |> 
   select(-lifestage_for_model, -count, -week, -year) |> # remove because all na, assigning in next line
   pivot_longer(fry:yearling, names_to = 'lifestage_for_model', values_to = 'count') |> 
   select(-c(percent_fry, percent_smolt, percent_yearling)) |>  
@@ -129,11 +156,30 @@ combined_rst_wo_na_fl <- standard_catch_unmarked |>
   mutate(model_lifestage_method = "assigned from fl cutoffs") |> 
   glimpse()
 
+# weeks we cannot predict lifestage
+gap_weeks <- proxy_lifestage_bins_for_weeks_without_fl |> 
+  filter(is.na(percent_fry) & is.na(percent_smolt) & is.na(percent_yearling)) |> 
+  select(year, week, stream, site)
+
+formatted_standard_catch <- standard_catch_unmarked |> 
+  mutate(week = week(date), year = year(date)) |> glimpse()
+
+weeks_wo_lifestage <- gap_weeks |> 
+  left_join(formatted_standard_catch, by = c("year" = "year", "stream" = "stream", "week" = "week", "site" = "site")) |> 
+  filter(!is.na(count), count > 0) |> 
+  mutate(model_lifestage_method = "Not able to determine, no weekly fl data ever") |> 
+  glimpse()
+
 no_catch <- standard_catch_unmarked |> 
   filter(is.na(fork_length) & count == 0)
 
 # less rows now than in origional, has to do with removing count != 0 in line 104, is there any reason not to do this?
-updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage, no_catch) |> glimpse()
+updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage, no_catch, weeks_wo_lifestage) |> glimpse()
+
+# Quick plot to check that we are not missing data 
+updated_standard_catch |> 
+  ggplot() + 
+  geom_line(aes(x = date, y = count, color = site)) + facet_wrap(~stream, scales = "free")
 
 # add include_in_model variable based on sampling window criteria
 # read in years to include produced in prep data for model
