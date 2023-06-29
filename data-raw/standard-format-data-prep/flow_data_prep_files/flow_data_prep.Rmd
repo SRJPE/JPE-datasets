@@ -518,12 +518,12 @@ min(oroville_daily_flows$flow_cfs)
 ```{r}
 # Find CDEC gage nearby the Lower Feather RST site
 # Use this code to see what data are available
-cdec_datasets("FSB") 
+# cdec_datasets("FSB") 
 # For reference - this mapping tool shows CDEC sites: https://cdec.water.ca.gov/webgis/?appid=cdecstation
 
 # Use this code to pull the data from CDEC. 
 boyds_landing_CDEC <- cdec_query(station = "FSB", dur_code = "H", 
-                                 sensor_num = "20", start_date = "1996-01-01")
+                                 sensor_num = "20", start_date = "2010-01-01")
 
 # Format data
 boyds_landing_hourly_flows <- boyds_landing_CDEC %>%
@@ -549,12 +549,10 @@ boyds_landing_hourly_flows |> nrow()
 #### Clean data
 
 ```{r}
-boyds_landing_hourly_flows_clean <- boyds_landing_hourly_flows |> 
-  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs))
-
-boyds_landing_hourly_flows_clean_mean <- boyds_landing_hourly_flows_clean |> 
+boyds_landing_mean_daily_flows <- boyds_landing_hourly_flows |> 
+  mutate(flow_cfs = ifelse(flow_cfs < 0, NA_real_, flow_cfs)) |> 
+  filter(!is.na(flow_cfs), !is.na(date)) |> 
   group_by(date) |> 
-  filter(!is.na(flow_cfs)) |> 
   summarize(flow_cfs = mean(flow_cfs, na.rm = T)) |> 
   glimpse()
 ```
@@ -568,7 +566,7 @@ We will use the CDEC GRL gage for HFC, the USGS Oroville gage for LFC, and the C
 ```{r}
 saveRDS(gridley_hourly_flows_clean_mean, "data-raw/standard-format-data-prep/flow_data/feather_hfc_flow.rds")
 saveRDS(oroville_daily_flows, "data-raw/standard-format-data-prep/flow_data/feather_lfc_flow.rds")
-saveRDS(boyds_landing_hourly_flows_clean_mean, 
+saveRDS(boyds_landing_mean_daily_flows, 
         "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/lower_feather_flow.rds")
 ```
 
