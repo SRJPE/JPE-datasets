@@ -4,6 +4,19 @@ library(tidyverse)
 source("data/standard-format-data/pull_data.R") # pulls in all standard datasets on GCP
 f <- function(input, output) write_csv(input, file = output)
 
+
+# site handling -----------------------------------------------------------
+
+# Based on multiple conversations about site handling, we will be adding a field
+# called site_group that only applies to feather river. This will handle the 
+# hfc/lfc grouping while retaining site/subsite variables.
+
+lfc_subsites <- c("eye riffle_north", "eye riffle_side channel", "gateway main 400' up river", "gateway_main1", "gateway_rootball", "gateway_rootball_river_left", "#steep riffle_rst", "steep riffle_10' ext", "steep side channel")
+hfc_subsites <- c("herringer_east", "herringer_upper_west", "herringer_west", "live oak", "shawns_east", "shawns_west", "sunset east bank", "sunset west bank")
+
+lfc_sites <- c("eye riffle", "gateway riffle", "steep riffle")
+hfc_sites <- c("herringer riffle", "live oak", "shawn's beach", "sunset pumps")
+
 # RST years to include ----------------------------------------------------
 # 
 # upload data
@@ -32,9 +45,12 @@ stream_week_site_year_include <- years_to_include |>
                              monitoring_year == 2008 & site == "yuba river" ~ T,
                              monitoring_year == 2007 & site == "sunset pumps" ~ T,
                              monitoring_year == 2009 & site == "sunset pumps" ~ T,
-                             T ~ F)) |> 
+                             T ~ F),
+         site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                                site %in% hfc_sites ~ "feather river hfc",
+                                T ~ NA)) |> 
   filter(exclude == F) |> 
-  glimpse()
+  select(monitoring_year, stream, site_group, site, min_date, min_week, max_date, max_week)
 
 View(stream_week_site_year_include)
 
@@ -191,20 +207,40 @@ gcs_upload(rst_with_inclusion_criteria,
 
 write_csv(rst_with_inclusion_criteria, "data/model-data/daily_catch_unmarked.csv")
 
+# Summarize standard_catch by week
+# stream, site, subsite, week, year, run, lifestage, adipose_clipped
+weekly_standard_catch_unmarked <- rst_with_inclusion_criteria %>% 
+  mutate(week = week(date),
+         year = year(date)) %>% 
+  group_by(week, year, stream, site_group, site, subsite, run, lifestage, adipose_clipped, lifestage_for_model, include_in_model) %>% 
+  summarize(mean_fork_length = mean(fork_length, na.rm = T),
+            mean_weight = mean(weight, na.rm = T),
+            count = sum(count)) %>% glimpse()
+
+gcs_upload(weekly_standard_catch_unmarked,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/weekly_catch_unmarked.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(weekly_standard_catch_unmarked, "data/model-data/weekly_catch_unmarked.csv")
+
 # Effort ------------------------------------------------------------------
 
 # Summarize effort data by week
-standard_effort %>% glimpse()
-gcs_upload(standard_effort,
+standard_effort_w_site_group <- standard_effort |> 
+  mutate(site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                                site %in% hfc_sites ~ "feather river hfc",
+                                T ~ NA))
+gcs_upload(standard_effort_w_site_group,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/daily_effort.csv",
            predefinedAcl = "bucketLevel")
-write_csv(standard_effort, "data/model-data/daily_effort.csv")
-weekly_standard_effort <- standard_effort %>% 
+write_csv(standard_effort_w_site_group, "data/model-data/daily_effort.csv")
+weekly_standard_effort <- standard_effort_w_site_group %>% 
   mutate(week = week(date),
          year = year(date)) %>% 
-  group_by(stream, site, subsite, week, year) %>% 
+  group_by(stream, site_group, site, subsite, week, year) %>% 
   summarize(hours_fished = sum(hours_fished))
 
 gcs_upload(weekly_standard_effort,
@@ -236,59 +272,75 @@ write_csv(weekly_catch_effort, "data/model-data/weekly_catch_effort.csv")
 # Environmental -----------------------------------------------------------
 
 # Join environmental data to catch data
-standard_environmental %>% glimpse()
-gcs_upload(standard_environmental,
+standard_environmental_w_site_group <- standard_environmental |> 
+  mutate(site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                                site %in% hfc_sites ~ "feather river hfc",
+                                T ~ NA))
+gcs_upload(standard_environmental_w_site_group,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/daily_environmental.csv",
            predefinedAcl = "bucketLevel")
-write_csv(standard_environmental, "data/model-data/daily_environmental.csv")
+write_csv(standard_environmental_w_site_group, "data/model-data/daily_environmental.csv")
 standard_catch_unmarked_environmental <- standard_catch_unmarked %>% 
-  left_join(standard_environmental)
+  left_join(standard_environmental_w_site_group)
 
 # Standard flow
 unique(standard_flow$site)
- gcs_upload(standard_flow,
+
+standard_flow_w_site_group <- standard_flow |> 
+  mutate(site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                                site %in% hfc_sites ~ "feather river hfc",
+                                T ~ NA))
+ gcs_upload(standard_flow_w_site_group,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/standard_flow.csv",
            predefinedAcl = "bucketLevel")
-write_csv(standard_flow, "data/model-data/standard_flow.csv")
+write_csv(standard_flow_w_site_group, "data/model-data/standard_flow.csv")
 
-weekly_flow <- standard_flow |> 
+weekly_flow <- standard_flow_w_site_group |> 
   mutate(week = week(date),
          year = year(date)) |> 
-  group_by(week, year, stream, site, source) |> 
+  group_by(week, year, stream, site_group, site, source) |> 
   summarize(mean_flow = mean(flow_cfs, na.rm = T))
 
 # Standard temperature
 unique(standard_temperature$site)
-gcs_upload(standard_temperature,
+standard_temperature_w_site_group <- standard_temperature |> 
+  mutate(site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                                site %in% hfc_sites ~ "feather river hfc",
+                                T ~ NA))
+gcs_upload(standard_temperature_w_site_group,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/standard_temperature.csv",
            predefinedAcl = "bucketLevel")
-write_csv(standard_temperature, "data/model-data/standard_temperature.csv")
+write_csv(standard_temperature_w_site_group, "data/model-data/standard_temperature.csv")
 
-weekly_temperature <- standard_temperature |> 
+weekly_temperature <- standard_temperature_w_site_group |> 
   mutate(week = week(date),
          year = year(date)) |> 
-  group_by(week, year, stream, site, subsite, source) |> 
+  group_by(week, year, stream, site_group, site, subsite, source) |> 
   summarize(mean_temperature = mean(mean_daily_temp_c, na.rm = T))
 # Trap --------------------------------------------------------------------
 
 # Join trap operations data to catch data
 # improvement that could be made is making counter and sample revolutions easier to understand
-standard_trap %>% glimpse()
-gcs_upload(standard_trap,
+standard_trap_w_site_group <- standard_trap |> 
+  mutate(site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                                site %in% hfc_sites ~ "feather river hfc",
+                                T ~ NA))
+gcs_upload(standard_trap_w_site_group,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/daily_trap.csv",
            predefinedAcl = "bucketLevel")
-write_csv(standard_trap, "data/model-data/daily_trap.csv")
+write_csv(standard_trap_w_site_group, "data/model-data/daily_trap.csv")
 standard_catch_unmarked_trap <- standard_catch_unmarked %>% 
-  left_join(standard_trap, by = c("date" = "trap_stop_date", 
+  left_join(standard_trap_w_site_group, by = c("date" = "trap_stop_date", 
                                   "stream" ="stream", 
+                                  "site_group" = "site_group",
                                   "site" = "site", 
                                   "subsite" = "subsite"))
 
@@ -299,7 +351,10 @@ standard_recapture %>% glimpse()
 standard_release %>% glimpse()
 release_summary <- standard_release |> 
   mutate(week_released = ifelse(is.na(week_released), week(date_released), week_released),
-         year_released = ifelse(is.na(year_released), year(date_released), year_released)) 
+         year_released = ifelse(is.na(year_released), year(date_released), year_released),
+         site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                                site %in% hfc_sites ~ "feather river hfc",
+                                T ~ NA)) 
 gcs_upload(release_summary,
            object_function = f,
            type = "csv",
@@ -310,7 +365,7 @@ write_csv(release_summary, "data/model-data/release_summary.csv")
 # number of efficiency trials by week
 release_summary_metadata <- release_summary |> 
   filter(include == "yes") |> 
-  group_by(stream, site, week_released, year_released) |> 
+  group_by(stream, site_group, site, week_released, year_released) |> 
   distinct(release_id) |> 
   tally()
 total_trials <- sum(release_summary_metadata$n)
@@ -318,13 +373,13 @@ multiple_trials <- filter(release_summary_metadata, n > 1)
 
 compare_flow <- multiple_trials |> 
   left_join(release_summary) |> 
-  select(stream, site, week_released, year_released, release_id, date_released) |> 
-  left_join(standard_flow |> 
+  select(stream, site_group, site, week_released, year_released, release_id, date_released) |> 
+  left_join(standard_flow_w_site_group |> 
               rename(date_released = date) |> 
               select(-source)) |> 
-  group_by(week_released, year_released, stream, site) |> 
+  group_by(week_released, year_released, stream, site_group, site) |> 
   mutate(number = row_number()) |> 
-  pivot_wider(id_cols = c(week_released, year_released, stream, site),
+  pivot_wider(id_cols = c(week_released, year_released, stream, site_group, site),
               names_from = number, values_from = flow_cfs) 
 
 compare_flow |> 
@@ -349,7 +404,10 @@ compare_flow |>
 # add zero recaptures
 recapture_summary <- select(standard_release, stream, site, release_id, date_released, week_released, year_released) |> 
   full_join(select(standard_recapture, -c(date_released, week_released, year_released))) |> 
-  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured))
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
+         site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                                site %in% hfc_sites ~ "feather river hfc",
+                                T ~ NA))
 gcs_upload(recapture_summary,
            object_function = f,
            type = "csv",
@@ -363,7 +421,10 @@ efficiency_summary <- standard_release %>%
               select(stream, site, subsite, release_id, number_recaptured) %>% 
               group_by(stream, site, subsite, release_id) %>% 
               summarize(number_recaptured = sum(number_recaptured))) %>% 
-  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured))
+  mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
+         site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                                site %in% hfc_sites ~ "feather river hfc",
+                                T ~ NA))
 gcs_upload(efficiency_summary,
            object_function = f,
            type = "csv",
@@ -374,10 +435,10 @@ write_csv(efficiency_summary, "data/model-data/efficiency_summary.csv")
 # weekly release
 ## Summarize origin by week
 weekly_release_origin <- release_summary |> 
-  group_by(stream, site, week_released, year_released, origin_released) |> 
+  group_by(stream, site_group, site, week_released, year_released, origin_released) |> 
   tally() |> 
   mutate(percent = n/sum(n)) |> 
-  pivot_wider(id_cols = c(stream, site, week_released, year_released),
+  pivot_wider(id_cols = c(stream, site_group, site, week_released, year_released),
               names_from = origin_released, values_from = percent) |> 
   # logic here is that if hatchery or natural is less than 100% (all trials within that week)
   # then origin is mixed
@@ -391,16 +452,16 @@ weekly_release_origin <- release_summary |>
   select(-c(natural, hatchery, `not recorded`, unknown, mixed))
 weekly_release <- release_summary |> 
   filter(include == "yes") |> 
-  select(stream, site, release_id, date_released, week_released, year_released, 
+  select(stream, site_group, site, release_id, date_released, week_released, year_released, 
          number_released, median_fork_length_released, flow_at_release, temperature_at_release, 
          turbidity_at_release) |> 
-  left_join(standard_flow |> 
+  left_join(standard_flow_w_site_group |> 
               mutate(date_released = date + 1,
                      flow_release = lag(flow_cfs),
                      week_released = week(date_released),
                      year_released = year(date_released)) |> 
               select(-date, -flow_cfs)) |> 
-  group_by(stream, site, week_released, year_released) |> 
+  group_by(stream, site_group, site, week_released, year_released) |> 
   summarise(number_released = sum(number_released),
             median_fork_length_released = median(median_fork_length_released, na.rm = T),
             flow_at_recapture_day1 = mean(flow_release, na.rm = T)) |> 
@@ -411,11 +472,11 @@ weekly_release <- release_summary |>
 # # More recaps than releases because we removed include == F from release data to 
 # remove trials that we should exclude 
 weekly_recapture <- recapture_summary |> 
-  select(stream, site, release_id, date_released, week_released, year_released, 
+  select(stream, site_group, site, release_id, date_released, week_released, year_released, 
          number_recaptured, median_fork_length_recaptured) |> 
   mutate(week_released = ifelse(is.na(week_released), week(date_released), week_released),
          year_released = ifelse(is.na(year_released), year(date_released), year_released)) |> 
-  group_by(stream, site, week_released, year_released) |> 
+  group_by(stream, site_group, site, week_released, year_released) |> 
   summarise(number_recaptured = sum(number_recaptured),
             median_fork_length_recaptured = median(median_fork_length_recaptured, na.rm = T))
 # weekly efficiency

@@ -383,7 +383,7 @@ sac_usgs_format <- WLK_USGS %>%
 
 # Plot
 ggplot() +
-  geom_line(data = sac_tisdale_usgs_format, aes(x = date, y = mean_temp_degC), color = "black") +
+  geom_line(data = sac_usgs_format, aes(x = date, y = mean_temp_degC), color = "black") +
   labs(x = "date",
        y = "Temperature (deg C)", 
        caption = "USGS 11390500")
