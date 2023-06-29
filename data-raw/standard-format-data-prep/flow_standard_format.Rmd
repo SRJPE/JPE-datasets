@@ -85,23 +85,58 @@ glimpse()
 # source CDEC
 feather_hfc <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", 
                                    "flow_data", "feather_hfc_flow.rds"))
-
-feather_hfc_format <- feather_hfc %>%
+# Add in all feather sites
+# hfc_sites <- c("herringer riffle", "live oak", "shawn's beach", "sunset pumps")
+feather_herringer <- feather_hfc %>%
   mutate(stream = "feather river",
          source = "CDEC GRL",
-         site = "upper feather hfc") %>%
+         site = "herringer riffle") %>%
   glimpse()
+
+feather_live_oak <- feather_hfc %>%
+  mutate(stream = "feather river",
+         source = "CDEC GRL",
+         site = "live oak") %>%
+  glimpse()
+
+feather_shawns_beach <- feather_hfc %>%
+  mutate(stream = "feather river",
+         source = "CDEC GRL",
+         site = "shawn's beach") %>%
+  glimpse()
+
+feather_sunset_pumps <- feather_hfc %>%
+  mutate(stream = "feather river",
+         source = "CDEC GRL",
+         site = "sunset pumps") %>%
+  glimpse()
+
+feather_hfc_format <- bind_rows(feather_herringer, feather_live_oak, feather_shawns_beach, feather_sunset_pumps)
 
 # source USGS
 feather_lfc <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", 
                                    "flow_data", "feather_lfc_flow.rds"))
-
-feather_lfc_format <- feather_lfc %>%
+# Add in all feather sites
+# lfc_sites <- c("eye riffle", "gateway riffle", "steep riffle")
+feather_eye_riffle <- feather_lfc %>%
   mutate(stream = "feather river",
          source = "USGS 11407000",
-         site = "upper feather lfc") %>%
+         site = "eye riffle") %>%
   glimpse()
 
+feather_gateway_riffle <- feather_lfc %>%
+  mutate(stream = "feather river",
+         source = "USGS 11407000",
+         site = "gateway riffle") %>%
+  glimpse()
+
+feather_steep_riffle <- feather_lfc %>%
+  mutate(stream = "feather river",
+         source = "USGS 11407000",
+         site = "steep riffle") %>%
+  glimpse()
+
+feather_lfc_format <- bind_rows(feather_eye_riffle, feather_gateway_riffle, feather_steep_riffle)
 # source lower feather
 lower_feather <- read_rds(here::here("data-raw", "standard-format-data-prep", 
                                      "flow_data_prep_files", "flow_data",
