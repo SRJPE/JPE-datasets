@@ -105,7 +105,7 @@ feather_lfc_format <- feather_lfc %>%
 # source lower feather
 lower_feather <- read_rds(here::here("data-raw", "standard-format-data-prep", 
                                      "flow_data_prep_files", "flow_data",
-                                     "feather_lfc_flow.rds"))
+                                     "lower_feather_flow.rds"))
 
 lower_feather_format <- lower_feather |> 
   mutate(stream = "feather river",
