@@ -52,7 +52,7 @@ stream_week_site_year_include <- years_to_include |>
   filter(exclude == F) |> 
   select(monitoring_year, stream, site_group, site, min_date, min_week, max_date, max_week)
 
-View(stream_week_site_year_include)
+# View(stream_week_site_year_include)
 
 gcs_upload(stream_week_site_year_include,
            object_function = f,
@@ -138,20 +138,23 @@ na_filled_lifestage <- standard_catch_unmarked |>
   mutate(week = week(date), year = year(date)) |> 
   filter(is.na(fork_length) & count > 0) |> 
   left_join(all_lifestage_bins, by = c("week" = "week", "year" = "year", "stream" = "stream", "site" = "site")) |> 
-  mutate(fry = count * percent_fry, 
-         smolt = count * percent_smolt, 
-         yearling = count * percent_yearling) |> 
+  mutate(fry = round(count * percent_fry), 
+         smolt = round(count * percent_smolt), 
+         yearling = round(count * percent_yearling)) |> 
   select(-lifestage_for_model, -count, -week, -year) |> # remove because all na, assigning in next line
   pivot_longer(fry:yearling, names_to = 'lifestage_for_model', values_to = 'count') |> 
   select(-c(percent_fry, percent_smolt, percent_yearling)) |>  
   filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
-  mutate(model_lifestage_method = "assign count based on weekly distribution") |> 
+  mutate(model_lifestage_method = "assign count based on weekly distribution",
+         week = week(date), 
+         year = year(date)) |> 
   glimpse()
 
 # add filled values back into combined_rst 
 # first filter combined rst to exclude rows in na_to_fill
 # total of 
-combined_rst_wo_na_fl <- standard_catch_unmarked |>   
+combined_rst_wo_na_fl <- standard_catch_unmarked |> 
+  mutate(week = week(date), year = year(date)) |> 
   filter(!is.na(fork_length)) |> 
   mutate(model_lifestage_method = "assigned from fl cutoffs") |> 
   glimpse()
@@ -171,6 +174,7 @@ weeks_wo_lifestage <- gap_weeks |>
   glimpse()
 
 no_catch <- standard_catch_unmarked |> 
+  mutate(week = week(date), year = year(date)) |>
   filter(is.na(fork_length) & count == 0)
 
 # less rows now than in origional, has to do with removing count != 0 in line 104, is there any reason not to do this?
@@ -196,7 +200,7 @@ rst_with_inclusion_criteria <- updated_standard_catch |>
   mutate(include_in_model = ifelse(date >= min_date & date <= max_date, TRUE, FALSE),
          # if the year was not included in the list of years to include then should be FALSE
          include_in_model = ifelse(is.na(min_date), FALSE, include_in_model)) |> 
-  select(-c(monitoring_year, min_date, max_date)) |> 
+  select(-c(monitoring_year, min_date, max_date, year, week)) |> 
   glimpse()
 
 gcs_upload(rst_with_inclusion_criteria,
