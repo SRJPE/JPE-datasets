@@ -270,9 +270,7 @@ feather_env <- feather_env_raw %>%
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
   ungroup() %>% 
-  mutate(stream = "feather river",
-         site = case_when(subsite %in% lfc ~ "upper feather lfc",
-                          subsite %in% hfc ~ "upper feather hfc"))
+  mutate(stream = "feather river")
 ```
 
 ### Lower Sac - Knights Landing
