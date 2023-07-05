@@ -177,13 +177,118 @@ no_catch <- standard_catch_unmarked |>
   mutate(week = week(date), year = year(date)) |>
   filter(is.na(fork_length) & count == 0)
 
-# less rows now than in origional, has to do with removing count != 0 in line 104, is there any reason not to do this?
+# less rows now than in original, has to do with removing count != 0 in line 104, is there any reason not to do this?
 updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage, no_catch, weeks_wo_lifestage) |> glimpse()
 
 # Quick plot to check that we are not missing data 
 updated_standard_catch |> 
   ggplot() + 
   geom_line(aes(x = date, y = count, color = site)) + facet_wrap(~stream, scales = "free")
+
+
+# fill in run for all streams ------------------------------------------
+# how many records have no information for run?
+# ~15% of battle creek have no run; ~3% of clear creek have no run
+updated_standard_catch |> 
+  #filter(stream %in% c("battle creek", "clear creek")) |> 
+  mutate(run = ifelse(run == "not recorded", NA_character_, run)) |> 
+  group_by(stream, run) |> 
+  summarise(n = n()) |> 
+  mutate(freq = n / sum(n)) |> 
+  filter(is.na(run))
+
+# create weekly proportion bins for run (spring / not spring / unknown)
+weekly_run_bins <- updated_standard_catch |> 
+  mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run)) |> 
+  filter(!is.na(run), count != 0) |> 
+  mutate(year = year(date), week = week(date)) |> 
+  group_by(year, week, stream) |> # not grouping by site
+  summarize(percent_spring = sum(run == "spring")/n(),
+            percent_not_spring = sum(run != "spring") / n()) |> 
+  ungroup() |> 
+  glimpse()
+
+# Use when no run data for a year 
+proxy_weekly_run <- updated_standard_catch |> 
+  mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run),
+         year = year(date), week = week(date)) |> 
+  filter(!is.na(run)) |> 
+  group_by(week, stream) |> 
+  summarize(percent_spring = sum(run == "spring")/n(),
+            percent_not_spring = sum(run != "spring")/n()) |> 
+  ungroup() |> 
+  glimpse() 
+
+# Years without run data 
+proxy_run_bins_for_weeks_without_run <- updated_standard_catch |> 
+  mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run)) |> 
+  group_by(year = year(date), week = week(date), stream) |> 
+  filter(is.na(run)) |> 
+  left_join(proxy_weekly_run, by = c("week", "stream")) |> 
+  select(year, week, stream, site, percent_spring, percent_not_spring) |> 
+  glimpse() 
+
+all_run_bins <- bind_rows(weekly_run_bins, proxy_run_bins_for_weeks_without_run) |> 
+  select(-site) |> 
+  glimpse()
+  
+
+# create table of all na values that need to be filled
+na_filled_run <- updated_standard_catch |> 
+  mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run),
+         week = week(date), year = year(date)) |> 
+  filter(is.na(run) & count > 0) |> 
+  left_join(all_run_bins |> 
+              distinct_all(), by = c("year", "week", "stream")) |> 
+  mutate(spring_run = round(count * percent_spring),
+         not_spring_run = round(count * percent_not_spring)) |> 
+  select(-c(count, week, year, run)) |> # remove bc all NA, assigning in next line
+  pivot_longer(spring_run:not_spring_run, names_to = 'run_for_model', values_to = 'count') |> 
+  select(-c(percent_spring, percent_not_spring)) |>  
+  filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
+  mutate(model_run_method = "assign run based on weekly distribution",
+         week = week(date), 
+         year = year(date)) |> 
+  glimpse()
+
+# add filled values back into combined_rst 
+# first filter combined rst to exclude rows in na_to_fill
+# total of 
+combined_rst_wo_na_run <- updated_standard_catch |> 
+  mutate(week = week(date), year = year(date)) |> 
+  filter(!is.na(run)) |> 
+  rename(model_run_method = run_method) |> 
+  glimpse()
+
+# weeks we cannot predict lifestage
+gap_weeks_run <- proxy_run_bins_for_weeks_without_run |>
+  filter(is.na(percent_spring) & is.na(percent_not_spring)) |> 
+  select(year, week, stream) |> 
+  distinct(year, week, stream)
+
+formatted_standard_catch_with_run <- updated_standard_catch |> 
+  mutate(week = week(date), year = year(date)) |> glimpse()
+
+weeks_wo_run <- gap_weeks_run |> 
+  left_join(formatted_standard_catch, by = c("year", "week", "stream")) |> 
+  filter(!is.na(count), count > 0) |> 
+  mutate(model_run_method = "Not able to determine, no run data ever") |> 
+  glimpse()
+
+no_catch_run <- updated_standard_catch |> 
+  mutate(week = week(date), year = year(date)) |>
+  filter(is.na(run) & count == 0)
+
+# TODO we added lots of records here. I think it has to do with joining on site - all joins in this section
+# have increased nrow()
+updated_standard_catch_with_run <- bind_rows(combined_rst_wo_na_run, na_filled_run, no_catch_run, weeks_wo_run) |> glimpse()
+
+# Quick plot to check that we are not missing data 
+updated_standard_catch_with_run |> 
+  ggplot() + 
+  geom_line(aes(x = date, y = count, color = run_for_model)) + facet_wrap(~stream, scales = "free")
+
+
 
 # add include_in_model variable based on sampling window criteria
 # read in years to include produced in prep data for model
