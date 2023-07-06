@@ -197,14 +197,25 @@ updated_standard_catch |>
   mutate(freq = n / sum(n)) |> 
   filter(is.na(run))
 
+updated_standard_catch |> 
+  filter(stream == "clear creek") |> 
+  mutate(run = ifelse(run == "not recorded", NA_character_, run)) |> 
+  group_by(site, week) |> 
+  summarise(n = n(),
+            prop_spring = sum(run == "spring", na.rm = T) / n,
+            prop_other = sum(run %in% c("fall", "late fall", "winter", NA_character_) / n)) |> 
+  ggplot(aes(x = week, y = prop_spring)) + 
+  geom_bar(stat = "identity") +
+  facet_wrap(~site, scales = "free")
+
 # create weekly proportion bins for run (spring / not spring / unknown)
 weekly_run_bins <- updated_standard_catch |> 
   mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run)) |> 
   filter(!is.na(run), count != 0) |> 
   mutate(year = year(date), week = week(date)) |> 
-  group_by(year, week, stream) |> # not grouping by site
-  summarize(percent_spring = sum(run == "spring")/n(),
-            percent_not_spring = sum(run != "spring") / n()) |> 
+  group_by(year, week, stream, site) |>
+  summarize(percent_spring = sum(run == "spring", na.rm = T)/n(),
+            percent_not_spring = sum(run != "spring", na.rm = T) / n()) |> 
   ungroup() |> 
   glimpse()
 
@@ -213,9 +224,9 @@ proxy_weekly_run <- updated_standard_catch |>
   mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run),
          year = year(date), week = week(date)) |> 
   filter(!is.na(run)) |> 
-  group_by(week, stream) |> 
-  summarize(percent_spring = sum(run == "spring")/n(),
-            percent_not_spring = sum(run != "spring")/n()) |> 
+  group_by(week, stream, site) |> 
+  summarize(percent_spring = sum(run == "spring", na.rm = T)/n(),
+            percent_not_spring = sum(run != "spring", na.rm = T)/n()) |> 
   ungroup() |> 
   glimpse() 
 
@@ -224,12 +235,12 @@ proxy_run_bins_for_weeks_without_run <- updated_standard_catch |>
   mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run)) |> 
   group_by(year = year(date), week = week(date), stream) |> 
   filter(is.na(run)) |> 
-  left_join(proxy_weekly_run, by = c("week", "stream")) |> 
+  left_join(proxy_weekly_run, by = c("week", "stream", "site")) |> 
   select(year, week, stream, site, percent_spring, percent_not_spring) |> 
+  ungroup() |> 
   glimpse() 
 
 all_run_bins <- bind_rows(weekly_run_bins, proxy_run_bins_for_weeks_without_run) |> 
-  select(-site) |> 
   glimpse()
   
 
@@ -238,8 +249,9 @@ na_filled_run <- updated_standard_catch |>
   mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run),
          week = week(date), year = year(date)) |> 
   filter(is.na(run) & count > 0) |> 
+  ungroup() |> 
   left_join(all_run_bins |> 
-              distinct_all(), by = c("year", "week", "stream")) |> 
+              ungroup(), by = c("year", "week", "stream", "site")) |> 
   mutate(spring_run = round(count * percent_spring),
          not_spring_run = round(count * percent_not_spring)) |> 
   select(-c(count, week, year, run)) |> # remove bc all NA, assigning in next line
