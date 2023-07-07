@@ -189,17 +189,18 @@ updated_standard_catch |>
 # fill in run for all streams ------------------------------------------
 # how many records have no information for run?
 # ~15% of battle creek have no run; ~3% of clear creek have no run
-updated_standard_catch |> 
+updated_standard_catch_na_run <- updated_standard_catch |> 
+  mutate(run = ifelse(run %in% c("not recorded", "unknown", NA_character_), NA_character_, run)) |> glimpse()
+
+updated_standard_catch_na_run |> 
   #filter(stream %in% c("battle creek", "clear creek")) |> 
-  mutate(run = ifelse(run == "not recorded", NA_character_, run)) |> 
   group_by(stream, run) |> 
   summarise(n = n()) |> 
   mutate(freq = n / sum(n)) |> 
   filter(is.na(run))
 
-updated_standard_catch |> 
+updated_standard_catch_na_run |> 
   filter(stream == "clear creek") |> 
-  mutate(run = ifelse(run == "not recorded", NA_character_, run)) |> 
   group_by(site, week) |> 
   summarise(n = n(),
             prop_spring = sum(run == "spring", na.rm = T) / n,
@@ -209,8 +210,7 @@ updated_standard_catch |>
   facet_wrap(~site, scales = "free")
 
 # create weekly proportion bins for run (spring / not spring / unknown)
-weekly_run_bins <- updated_standard_catch |> 
-  mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run)) |> 
+weekly_run_bins <- updated_standard_catch_na_run |> 
   filter(!is.na(run), count != 0) |> 
   mutate(year = year(date), week = week(date)) |> 
   group_by(year, week, stream, site) |>
@@ -220,38 +220,36 @@ weekly_run_bins <- updated_standard_catch |>
   glimpse()
 
 # Use when no run data for a year 
-proxy_weekly_run <- updated_standard_catch |> 
-  mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run),
-         year = year(date), week = week(date)) |> 
-  filter(!is.na(run)) |> 
-  group_by(week, stream, site) |> 
-  summarize(percent_spring = sum(run == "spring", na.rm = T)/n(),
-            percent_not_spring = sum(run != "spring", na.rm = T)/n()) |> 
-  ungroup() |> 
-  glimpse() 
+proxy_weekly_run <- updated_standard_catch_na_run |>
+  mutate(year = year(date), week = week(date)) |>
+  filter(!stream %in% c("mill creek", "deer creek"), count > 0, !is.na(run)) |> 
+  group_by(week, stream, site) |>
+  summarise(percent_spring = sum(run == "spring", na.rm = T)/n(),
+            percent_not_spring = sum(run != "spring", na.rm = T)/n()) |>
+  ungroup() |>
+  glimpse()
 
-# Years without run data 
-proxy_run_bins_for_weeks_without_run <- updated_standard_catch |> 
-  mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run)) |> 
-  group_by(year = year(date), week = week(date), stream) |> 
-  filter(is.na(run)) |> 
-  left_join(proxy_weekly_run, by = c("week", "stream", "site")) |> 
-  select(year, week, stream, site, percent_spring, percent_not_spring) |> 
+# # Years without run data 
+proxy_run_bins_for_weeks_without_run <- updated_standard_catch_na_run |>
+  filter(!stream %in% c("mill creek", "deer creek"), count > 0) |> 
+  group_by(year = year(date), week = week(date), stream, site) |>
+  summarise(all_na = sum(is.na(run)) == n()) |> 
+  filter(all_na) |> 
   ungroup() |> 
-  glimpse() 
+  left_join(proxy_weekly_run, by = c("week", "stream", "site")) |>
+  select(year, week, stream, site, percent_spring, percent_not_spring) |>
+  glimpse()
 
-all_run_bins <- bind_rows(weekly_run_bins, proxy_run_bins_for_weeks_without_run) |> 
+all_run_bins <- bind_rows(weekly_run_bins, proxy_run_bins_for_weeks_without_run) |>
+  distinct_all() |>
   glimpse()
   
 
 # create table of all na values that need to be filled
-na_filled_run <- updated_standard_catch |> 
-  mutate(run = ifelse(run %in% c("not recorded", "unknown"), NA_character_, run),
-         week = week(date), year = year(date)) |> 
+na_filled_run <- updated_standard_catch_na_run |> 
+  mutate(week = week(date), year = year(date)) |> 
   filter(is.na(run) & count > 0) |> 
-  ungroup() |> 
-  left_join(all_run_bins |> 
-              ungroup(), by = c("year", "week", "stream", "site")) |> 
+  left_join(all_run_bins, by = c("year", "week", "stream", "site")) |> 
   mutate(spring_run = round(count * percent_spring),
          not_spring_run = round(count * percent_not_spring)) |> 
   select(-c(count, week, year, run)) |> # remove bc all NA, assigning in next line
@@ -266,34 +264,27 @@ na_filled_run <- updated_standard_catch |>
 # add filled values back into combined_rst 
 # first filter combined rst to exclude rows in na_to_fill
 # total of 
-combined_rst_wo_na_run <- updated_standard_catch |> 
-  mutate(week = week(date), year = year(date)) |> 
-  filter(!is.na(run)) |> 
+combined_rst_wo_na_run <- updated_standard_catch_na_run |> 
+  mutate(week = week(date), year = year(date)) |>   
+  filter(!is.na(run) & count > 0) |> 
+  mutate(run_for_model = if_else(run == "spring", "spring", "not spring")) |> 
   rename(model_run_method = run_method) |> 
   glimpse()
 
-# weeks we cannot predict lifestage
-gap_weeks_run <- proxy_run_bins_for_weeks_without_run |>
-  filter(is.na(percent_spring) & is.na(percent_not_spring)) |> 
-  select(year, week, stream) |> 
-  distinct(year, week, stream)
+mill_and_deer <- updated_standard_catch_na_run |> 
+  filter(stream %in% c("mill creek", "deer creek")) |> 
+  mutate(run_for_model = NA)
 
-formatted_standard_catch_with_run <- updated_standard_catch |> 
-  mutate(week = week(date), year = year(date)) |> glimpse()
-
-weeks_wo_run <- gap_weeks_run |> 
-  left_join(formatted_standard_catch, by = c("year", "week", "stream")) |> 
-  filter(!is.na(count), count > 0) |> 
-  mutate(model_run_method = "Not able to determine, no run data ever") |> 
-  glimpse()
-
-no_catch_run <- updated_standard_catch |> 
-  mutate(week = week(date), year = year(date)) |>
-  filter(is.na(run) & count == 0)
+no_catch_run <- updated_standard_catch_na_run |> 
+  filter(!stream %in% c("mill creek", "deer creek")) |> 
+  mutate(week = week(date), 
+         year = year(date),
+         run_for_model = NA) |>
+  filter(count == 0)
 
 # TODO we added lots of records here. I think it has to do with joining on site - all joins in this section
 # have increased nrow()
-updated_standard_catch_with_run <- bind_rows(combined_rst_wo_na_run, na_filled_run, no_catch_run, weeks_wo_run) |> glimpse()
+updated_standard_catch_with_run <- bind_rows(combined_rst_wo_na_run, na_filled_run, no_catch_run, mill_and_deer) |> glimpse()
 
 # Quick plot to check that we are not missing data 
 updated_standard_catch_with_run |> 
