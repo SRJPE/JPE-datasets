@@ -187,6 +187,11 @@ updated_standard_catch |>
 
 # historical lifestage-based logic ---------------------------------------
 
+# create df that assigns all "unknown" and "not recorded" lifestages NA
+standard_catch_unmarked_field <- standard_catch_unmarked |> 
+  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", "not recorded", NA_character_), 
+                            NA_character_, lifestage)) 
+  
 # plot to compare proportion of NAs by lifestage method (field vs. FL cutoff model)
 updated_standard_catch |> 
   group_by(stream, year) |> 
@@ -237,9 +242,7 @@ updated_standard_catch |>
   theme(legend.position = "bottom")
 
 # now fill in based on field-assigned lifestages (same method as above)
-weekly_field_lifestage_bins <- standard_catch_unmarked |> 
-  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", "not recorded", NA_character_), 
-                            NA_character_, lifestage)) |> 
+weekly_field_lifestage_bins <- standard_catch_unmarked_field |> 
   filter(!is.na(lifestage), count != 0) |> 
   mutate(year = year(date), week = week(date)) |> 
   group_by(year, week, stream, site) |> 
@@ -253,11 +256,9 @@ weekly_field_lifestage_bins <- standard_catch_unmarked |>
   ungroup() |> 
   glimpse() 
 
-# Use when no FL data for a year 
-proxy_weekly_field <- standard_catch_unmarked |> 
-  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", "not recorded", NA_character_), 
-                            NA_character_, lifestage),
-         year = year(date), week = week(date)) |> 
+# Use when no lifestage data for a year 
+proxy_weekly_field <- standard_catch_unmarked_field |> 
+  mutate(year = year(date), week = week(date)) |> 
   filter(!is.na(lifestage)) |> 
   group_by(week, stream) |> 
   summarize(percent_adult = sum(lifestage == "adult") / n(),
@@ -270,25 +271,22 @@ proxy_weekly_field <- standard_catch_unmarked |>
   ungroup() |> 
   glimpse() 
 
-# Years without FL data 
-proxy_lifestage_bins_for_weeks_without_lifestage <- standard_catch_unmarked |> 
-  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", "not recorded", NA_character_), 
-                            NA_character_, lifestage)) |> 
+# years with no lifestage data
+proxy_lifestage_bins_for_weeks_without_lifestage <- standard_catch_unmarked_field |> 
   group_by(year = year(date), week = week(date), stream, site) |> 
   summarise(lifestage_na = sum(is.na(lifestage)) / n()) |> 
   filter(lifestage_na > 0) |> 
   left_join(proxy_weekly_field, by = c("week", "stream")) |> 
   select(-lifestage_na) |> 
+  ungroup() |> 
   glimpse() 
 
 all_lifestage_bins_field <- bind_rows(weekly_field_lifestage_bins, 
                                 proxy_lifestage_bins_for_weeks_without_lifestage)
 
-# create table of all na values that need to be filled
-na_filled_lifestage_field <- standard_catch_unmarked |> 
-  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", "not recorded", NA_character_), 
-                            NA_character_, lifestage),
-         week = week(date), year = year(date)) |> 
+# create table of all NA values that need to be filled
+na_filled_lifestage_field <- standard_catch_unmarked_field |> 
+         mutate(week = week(date), year = year(date)) |> 
   filter(is.na(lifestage) & count > 0) |> 
   left_join(all_lifestage_bins_field, by = c("week", "year", "stream", "site")) |> 
   mutate(adult = round(count * percent_adult),
@@ -298,7 +296,7 @@ na_filled_lifestage_field <- standard_catch_unmarked |>
          smolt = round(count * percent_smolt),
          yearling = round(count * percent_yearling),
          yolk_sac_fry = round(count * percent_yolk_sac_fry)) |> 
-  select(-c(lifestage, lifestage_for_model, count, week, year)) |> # remove because all na, assigning in next line
+  select(-c(lifestage, count, week, year)) |> # remove because all na, assigning in next line
   pivot_longer(adult:yolk_sac_fry, names_to = "lifestage", values_to = "count") |> 
   select(-c(percent_adult, percent_fry, percent_parr, percent_silvery_parr,
             percent_smolt, percent_yearling, percent_yolk_sac_fry)) |>  
@@ -310,10 +308,8 @@ na_filled_lifestage_field <- standard_catch_unmarked |>
 
 # add filled values back into combined_rst 
 # first filter combined rst to exclude rows in na_to_fill
-combined_rst_wo_na_lifestage <- standard_catch_unmarked |> 
-  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", "not recorded", NA_character_), 
-                            NA_character_, lifestage),
-         week = week(date), year = year(date)) |> 
+combined_rst_wo_na_lifestage <- standard_catch_unmarked_field |> 
+  mutate(week = week(date), year = year(date)) |> 
   filter(!is.na(lifestage)) |> 
   mutate(model_lifestage_method = "field-assigned lifestage") |> 
   glimpse()
@@ -325,9 +321,7 @@ gap_weeks_field <- proxy_lifestage_bins_for_weeks_without_lifestage |>
          is.na(percent_yolk_sac_fry)) |> 
   select(year, week, stream, site)
 
-formatted_standard_catch_field <- standard_catch_unmarked |> 
-  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", "not recorded", NA_character_), 
-                            NA_character_, lifestage)) |> 
+formatted_standard_catch_field <- standard_catch_unmarked_field |> 
   mutate(week = week(date), year = year(date)) |> glimpse()
 
 weeks_wo_lifestage_field <- gap_weeks_field |> 
@@ -336,11 +330,10 @@ weeks_wo_lifestage_field <- gap_weeks_field |>
   mutate(model_lifestage_method = "Not able to determine, no weekly lifestage data") |> 
   glimpse()
 
-no_catch_field <- standard_catch_unmarked |> 
-  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", "not recorded", NA_character_), 
-                            NA_character_, lifestage),
-         week = week(date), year = year(date)) |>
-  filter(is.na(lifestage) & count == 0)
+no_catch_field <- standard_catch_unmarked_field |> 
+  mutate(week = week(date), year = year(date)) |>
+  filter(is.na(lifestage) & count == 0) |> 
+  mutate(model_lifestage_method = "no catch")
 
 updated_standard_catch_field <- bind_rows(combined_rst_wo_na_lifestage, na_filled_lifestage_field, 
                                           no_catch_field, weeks_wo_lifestage_field) |> glimpse()
