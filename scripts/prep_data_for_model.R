@@ -243,7 +243,7 @@ updated_standard_catch |>
 
 # now fill in based on field-assigned lifestages (same method as above)
 weekly_field_lifestage_bins <- standard_catch_unmarked_field |> 
-  filter(!is.na(lifestage), count != 0) |> 
+  filter(!is.na(lifestage), count > 0) |> 
   mutate(year = year(date), week = week(date)) |> 
   group_by(year, week, stream, site) |> 
   summarize(percent_adult = sum(lifestage == "adult") / n(),
@@ -275,7 +275,8 @@ proxy_weekly_field <- standard_catch_unmarked_field |>
 proxy_lifestage_bins_for_weeks_without_lifestage <- standard_catch_unmarked_field |> 
   group_by(year = year(date), week = week(date), stream, site) |> 
   summarise(lifestage_na = sum(is.na(lifestage)) / n()) |> 
-  filter(lifestage_na > 0) |> 
+  #filter(lifestage_na > 0) |> 
+  filter(lifestage_na == 1) |> 
   left_join(proxy_weekly_field, by = c("week", "stream")) |> 
   select(-lifestage_na) |> 
   ungroup() |> 
@@ -285,10 +286,14 @@ all_lifestage_bins_field <- bind_rows(weekly_field_lifestage_bins,
                                 proxy_lifestage_bins_for_weeks_without_lifestage)
 
 # create table of all NA values that need to be filled
+# drops 77615 rows
 na_filled_lifestage_field <- standard_catch_unmarked_field |> 
-         mutate(week = week(date), year = year(date)) |> 
-  filter(is.na(lifestage) & count > 0) |> 
-  left_join(all_lifestage_bins_field, by = c("week", "year", "stream", "site")) |> 
+  ungroup() |> 
+  mutate(week = week(date), year = year(date)) |> 
+  filter(is.na(lifestage)) |> 
+  #filter(is.na(lifestage) & count > 0) |> 
+  left_join(all_lifestage_bins_field, by = c("week", "year", "stream", "site"),
+            multiple = "all") |>
   mutate(adult = round(count * percent_adult),
          fry = round(count * percent_fry),
          percent_parr = round(count * percent_parr),
@@ -326,13 +331,14 @@ formatted_standard_catch_field <- standard_catch_unmarked_field |>
 
 weeks_wo_lifestage_field <- gap_weeks_field |> 
   left_join(formatted_standard_catch_field, by = c("year", "stream", "week", "site")) |> 
-  filter(!is.na(count), count > 0) |> 
+  filter(!is.na(count) & count > 0) |> 
   mutate(model_lifestage_method = "Not able to determine, no weekly lifestage data") |> 
   glimpse()
 
 no_catch_field <- standard_catch_unmarked_field |> 
   mutate(week = week(date), year = year(date)) |>
-  filter(is.na(lifestage) & count == 0) |> 
+  filter(count == 0) |> 
+  #filter(is.na(lifestage) & count == 0) |> 
   mutate(model_lifestage_method = "no catch")
 
 updated_standard_catch_field <- bind_rows(combined_rst_wo_na_lifestage, na_filled_lifestage_field, 
