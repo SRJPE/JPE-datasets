@@ -193,7 +193,6 @@ updated_standard_catch_na_run <- updated_standard_catch |>
   mutate(run = ifelse(run %in% c("not recorded", "unknown", NA_character_), NA_character_, run)) |> glimpse()
 
 updated_standard_catch_na_run |> 
-  #filter(stream %in% c("battle creek", "clear creek")) |> 
   group_by(stream, run) |> 
   summarise(n = n()) |> 
   mutate(freq = n / sum(n)) |> 
@@ -209,8 +208,12 @@ updated_standard_catch_na_run |>
   geom_bar(stat = "identity") +
   facet_wrap(~site, scales = "free")
 
+updated_standard_catch_na_run_no_deer_mill <- updated_standard_catch_na_run |> 
+  filter(!stream %in% c("deer creek", "mill creek")) |> 
+  glimpse()
+
 # create weekly proportion bins for run (spring / not spring / unknown)
-weekly_run_bins <- updated_standard_catch_na_run |> 
+weekly_run_bins <- updated_standard_catch_na_run_no_deer_mill |> 
   filter(!is.na(run), count != 0) |> 
   mutate(year = year(date), week = week(date)) |> 
   group_by(year, week, stream, site) |>
@@ -220,9 +223,9 @@ weekly_run_bins <- updated_standard_catch_na_run |>
   glimpse()
 
 # Use when no run data for a year 
-proxy_weekly_run <- updated_standard_catch_na_run |>
+proxy_weekly_run <- updated_standard_catch_na_run_no_deer_mill |>
   mutate(year = year(date), week = week(date)) |>
-  filter(!stream %in% c("mill creek", "deer creek"), count > 0, !is.na(run)) |> 
+  filter(count > 0, !is.na(run)) |> 
   group_by(week, stream, site) |>
   summarise(percent_spring = sum(run == "spring", na.rm = T)/n(),
             percent_not_spring = sum(run != "spring", na.rm = T)/n()) |>
@@ -230,24 +233,22 @@ proxy_weekly_run <- updated_standard_catch_na_run |>
   glimpse()
 
 # # Years without run data 
-proxy_run_bins_for_weeks_without_run <- updated_standard_catch_na_run |>
-  filter(!stream %in% c("mill creek", "deer creek"), count > 0) |> 
-  group_by(year = year(date), week = week(date), stream, site) |>
+proxy_run_bins_for_weeks_without_run <- updated_standard_catch_na_run_no_deer_mill |>
+  filter(count > 0) |> 
+  group_by(year, week, stream, site) |>
   summarise(all_na = sum(is.na(run)) == n()) |> 
-  filter(all_na) |> 
   ungroup() |> 
+  filter(all_na) |> 
   left_join(proxy_weekly_run, by = c("week", "stream", "site")) |>
-  select(year, week, stream, site, percent_spring, percent_not_spring) |>
+  select(-all_na) |>
   glimpse()
 
 all_run_bins <- bind_rows(weekly_run_bins, proxy_run_bins_for_weeks_without_run) |>
-  distinct_all() |>
   glimpse()
   
 
 # create table of all na values that need to be filled
-na_filled_run <- updated_standard_catch_na_run |> 
-  mutate(week = week(date), year = year(date)) |> 
+na_filled_run <- updated_standard_catch_na_run_no_deer_mill |> 
   filter(is.na(run) & count > 0) |> 
   left_join(all_run_bins, by = c("year", "week", "stream", "site")) |> 
   mutate(spring_run = round(count * percent_spring),
@@ -264,10 +265,9 @@ na_filled_run <- updated_standard_catch_na_run |>
 # add filled values back into combined_rst 
 # first filter combined rst to exclude rows in na_to_fill
 # total of 
-combined_rst_wo_na_run <- updated_standard_catch_na_run |> 
-  mutate(week = week(date), year = year(date)) |>   
+combined_rst_wo_na_run <- updated_standard_catch_na_run_no_deer_mill |> 
   filter(!is.na(run) & count > 0) |> 
-  mutate(run_for_model = if_else(run == "spring", "spring", "not spring")) |> 
+  mutate(run_for_model = if_else(run == "spring", "spring_run", "not_spring_run")) |> 
   rename(model_run_method = run_method) |> 
   glimpse()
 
@@ -275,12 +275,9 @@ mill_and_deer <- updated_standard_catch_na_run |>
   filter(stream %in% c("mill creek", "deer creek")) |> 
   mutate(run_for_model = NA)
 
-no_catch_run <- updated_standard_catch_na_run |> 
-  filter(!stream %in% c("mill creek", "deer creek")) |> 
-  mutate(week = week(date), 
-         year = year(date),
-         run_for_model = NA) |>
-  filter(count == 0)
+no_catch_run <- updated_standard_catch_na_run_no_deer_mill |> 
+  filter(count == 0) |> 
+  mutate(run_for_model = NA)
 
 # TODO we added lots of records here. I think it has to do with joining on site - all joins in this section
 # have increased nrow()
