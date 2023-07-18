@@ -189,14 +189,15 @@ updated_standard_catch |>
 
 # create df that assigns all "unknown" and "not recorded" lifestages NA
 standard_catch_unmarked_field <- standard_catch_unmarked |> 
-  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", "not recorded", NA_character_), 
+  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", NA_character_), 
                             NA_character_, lifestage)) 
   
 # plot to compare proportion of NAs by lifestage method (field vs. FL cutoff model)
-updated_standard_catch |> 
+standard_catch_unmarked |> 
+  mutate(year = year(date)) |> 
   group_by(stream, year) |> 
   summarise(prop_na_model = sum(is.na(lifestage_for_model)) / n()) |> 
-  full_join(standard_catch_unmarked |> 
+  full_join(standard_catch_unmarked_field |> 
               mutate(year = year(date)) |> 
               group_by(stream, year) |> 
               summarise(#n = n(), 
@@ -204,41 +205,16 @@ updated_standard_catch |>
                         prop_na_historical = sum(is.na(lifestage)) / n()),
               by = c("stream", "year")) |> 
   pivot_longer(prop_na_model:prop_na_historical, 
-               names_to = "lifestage_method",
+               names_to = "available data",
                values_to = "proportion_na") |> 
-  mutate(lifestage_method = ifelse(lifestage_method == "prop_na_model", "cutoff", "field"),
+  mutate(`available data` = ifelse(`available data` == "prop_na_model", "Fork length", "Field-assigned lifestage"),
          stream = str_to_title(stream)) |> 
-  ggplot(aes(x = year, y = proportion_na, color = lifestage_method)) +
+  ggplot(aes(x = year, y = proportion_na, color = `available data`)) +
   geom_line(alpha = 0.8) + 
   theme_minimal() +
   facet_wrap(~stream, scales = "free") +
   xlab("Year") + ylab("Proportion of records where lifestage is NA") +
-  ggtitle("Field lifestage vs. FL cutoff-based lifestage") +
-  theme(legend.position = "bottom")
-
-updated_standard_catch |> 
-  group_by(stream, year) |> 
-  summarise(prop_na_model = sum(is.na(lifestage_for_model)) / n()) |> 
-  full_join(standard_catch_unmarked |> 
-              mutate(year = year(date)) |> 
-              group_by(stream, year) |> 
-              summarise(#n = n(), 
-                #n_na = sum(is.na(lifestage)),
-                prop_na_historical = sum(is.na(lifestage)) / n()),
-            by = c("stream", "year")) |> 
-  # negative values mean there are more NAs with the model
-  mutate(difference = prop_na_historical - prop_na_model) |> 
-  pivot_longer(difference, 
-               names_to = "lifestage_method",
-               values_to = "prop_na_difference") |>
-  mutate(stream = str_to_title(stream)) |> 
-  ggplot(aes(x = year, y = prop_na_difference)) +
-  geom_line(alpha = 0.8) + 
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  theme_minimal() +
-  facet_wrap(~stream, scales = "free") +
-  xlab("Year") + ylab("Difference in proportion of NAs by method") +
-  ggtitle("Field lifestage vs. FL cutoff-based lifestage") +
+  ggtitle("Data availability: field lifestage vs. FL cutoff-based lifestage") +
   theme(legend.position = "bottom")
 
 # now fill in based on field-assigned lifestages (same method as above)
