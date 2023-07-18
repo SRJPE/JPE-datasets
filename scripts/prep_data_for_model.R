@@ -260,6 +260,7 @@ na_filled_run <- updated_standard_catch_na_run_no_deer_mill |>
   mutate(model_run_method = "assign run based on weekly distribution",
          week = week(date), 
          year = year(date)) |> 
+  select(-run_method) |> 
   glimpse()
 
 # add filled values back into combined_rst 
@@ -268,16 +269,21 @@ na_filled_run <- updated_standard_catch_na_run_no_deer_mill |>
 combined_rst_wo_na_run <- updated_standard_catch_na_run_no_deer_mill |> 
   filter(!is.na(run) & count > 0) |> 
   mutate(run_for_model = if_else(run == "spring", "spring_run", "not_spring_run")) |> 
-  rename(model_run_method = run_method) |> 
-  glimpse()
+  mutate(model_run_method = ifelse(is.na(run_method), "not recorded", run_method)) |> 
+  select(-run_method) |> 
+  glimpse() 
 
 mill_and_deer <- updated_standard_catch_na_run |> 
   filter(stream %in% c("mill creek", "deer creek")) |> 
-  mutate(run_for_model = NA)
+  mutate(run_for_model = NA,
+         model_run_method = "mill and deer - no data to interpolate") |> 
+  select(-run_method)
 
 no_catch_run <- updated_standard_catch_na_run_no_deer_mill |> 
   filter(count == 0) |> 
-  mutate(run_for_model = NA)
+  mutate(run_for_model = NA,
+         model_run_method = "count is 0") |> 
+  select(-run_method)
 
 # TODO we added lots of records here. I think it has to do with joining on site - all joins in this section
 # have increased nrow()
