@@ -177,13 +177,124 @@ no_catch <- standard_catch_unmarked |>
   mutate(week = week(date), year = year(date)) |>
   filter(is.na(fork_length) & count == 0)
 
-# less rows now than in origional, has to do with removing count != 0 in line 104, is there any reason not to do this?
+# less rows now than in original, has to do with removing count != 0 in line 104, is there any reason not to do this?
 updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage, no_catch, weeks_wo_lifestage) |> glimpse()
 
 # Quick plot to check that we are not missing data 
 updated_standard_catch |> 
   ggplot() + 
   geom_line(aes(x = date, y = count, color = site)) + facet_wrap(~stream, scales = "free")
+
+
+# fill in run for all streams ------------------------------------------
+# how many records have no information for run?
+# ~15% of battle creek have no run; ~3% of clear creek have no run
+updated_standard_catch_na_run <- updated_standard_catch |> 
+  mutate(run = ifelse(run %in% c("not recorded", "unknown", NA_character_), NA_character_, run)) |> glimpse()
+
+updated_standard_catch_na_run |> 
+  group_by(stream, run) |> 
+  summarise(n = n()) |> 
+  mutate(freq = n / sum(n)) |> 
+  filter(is.na(run))
+
+updated_standard_catch_na_run |> 
+  filter(stream == "clear creek") |> 
+  group_by(site, week) |> 
+  summarise(n = n(),
+            prop_spring = sum(run == "spring", na.rm = T) / n,
+            prop_other = sum(run %in% c("fall", "late fall", "winter", NA_character_) / n)) |> 
+  ggplot(aes(x = week, y = prop_spring)) + 
+  geom_bar(stat = "identity") +
+  facet_wrap(~site, scales = "free")
+
+updated_standard_catch_na_run_no_deer_mill <- updated_standard_catch_na_run |> 
+  filter(!stream %in% c("deer creek", "mill creek")) |> 
+  glimpse()
+
+# create weekly proportion bins for run (spring / not spring / unknown)
+weekly_run_bins <- updated_standard_catch_na_run_no_deer_mill |> 
+  filter(!is.na(run), count != 0) |> 
+  mutate(year = year(date), week = week(date)) |> 
+  group_by(year, week, stream, site) |>
+  summarize(percent_spring = sum(run == "spring", na.rm = T)/n(),
+            percent_not_spring = sum(run != "spring", na.rm = T) / n()) |> 
+  ungroup() |> 
+  glimpse()
+
+# Use when no run data for a year 
+proxy_weekly_run <- updated_standard_catch_na_run_no_deer_mill |>
+  mutate(year = year(date), week = week(date)) |>
+  filter(count > 0, !is.na(run)) |> 
+  group_by(week, stream, site) |>
+  summarise(percent_spring = sum(run == "spring", na.rm = T)/n(),
+            percent_not_spring = sum(run != "spring", na.rm = T)/n()) |>
+  ungroup() |>
+  glimpse()
+
+# # Years without run data 
+proxy_run_bins_for_weeks_without_run <- updated_standard_catch_na_run_no_deer_mill |>
+  filter(count > 0) |> 
+  group_by(year, week, stream, site) |>
+  summarise(all_na = sum(is.na(run)) == n()) |> 
+  ungroup() |> 
+  filter(all_na) |> 
+  left_join(proxy_weekly_run, by = c("week", "stream", "site")) |>
+  select(-all_na) |>
+  glimpse()
+
+all_run_bins <- bind_rows(weekly_run_bins, proxy_run_bins_for_weeks_without_run) |>
+  glimpse()
+  
+
+# create table of all na values that need to be filled
+na_filled_run <- updated_standard_catch_na_run_no_deer_mill |> 
+  filter(is.na(run) & count > 0) |> 
+  left_join(all_run_bins, by = c("year", "week", "stream", "site")) |> 
+  mutate(spring_run = round(count * percent_spring),
+         not_spring_run = round(count * percent_not_spring)) |> 
+  select(-c(count, week, year, run)) |> # remove bc all NA, assigning in next line
+  pivot_longer(spring_run:not_spring_run, names_to = 'run_for_model', values_to = 'count') |> 
+  select(-c(percent_spring, percent_not_spring)) |>  
+  filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
+  mutate(model_run_method = "assign run based on weekly distribution",
+         week = week(date), 
+         year = year(date)) |> 
+  select(-run_method) |> 
+  glimpse()
+
+# add filled values back into combined_rst 
+# first filter combined rst to exclude rows in na_to_fill
+# total of 
+combined_rst_wo_na_run <- updated_standard_catch_na_run_no_deer_mill |> 
+  filter(!is.na(run) & count > 0) |> 
+  mutate(run_for_model = if_else(run == "spring", "spring_run", "not_spring_run")) |> 
+  mutate(model_run_method = ifelse(is.na(run_method), "not recorded", run_method)) |> 
+  select(-run_method) |> 
+  glimpse() 
+
+mill_and_deer <- updated_standard_catch_na_run |> 
+  filter(stream %in% c("mill creek", "deer creek")) |> 
+  mutate(run_for_model = NA,
+         model_run_method = "mill and deer - no data to interpolate") |> 
+  select(-run_method)
+
+no_catch_run <- updated_standard_catch_na_run_no_deer_mill |> 
+  filter(count == 0) |> 
+  mutate(run_for_model = NA,
+         model_run_method = "count is 0") |> 
+  select(-run_method)
+
+# TODO we added lots of records here. I think it has to do with joining on site - all joins in this section
+# have increased nrow()
+updated_standard_catch_with_run <- bind_rows(combined_rst_wo_na_run, na_filled_run, no_catch_run, mill_and_deer) |> glimpse()
+
+# Quick plot to check that we are not missing data 
+updated_standard_catch_with_run |> 
+  ggplot() + 
+  geom_line(aes(x = date, y = count, color = run_for_model)) + facet_wrap(~stream, scales = "free")
+
+
 
 # add include_in_model variable based on sampling window criteria
 # read in years to include produced in prep data for model
