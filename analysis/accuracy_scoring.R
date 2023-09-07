@@ -31,10 +31,10 @@ produce_summarized_score <- function(approach_name){
   future_score <- summarized_scores |> 
     filter(approach == approach_name, 
            needed_for_subobjective,
-           future) |> 
+           future) |>
     group_by(approach, subobjective) |> 
     summarize(future_score = case_when("Low" %in% future_score ~ "Low", 
-                                        "Med" %in% future_score ~ "Med", 
+                                        "Medium" %in% future_score ~ "Medium", 
                                         "High" %in% future_score ~ "High")) |> glimpse()
   return(left_join(current_score, future_score))
 }
