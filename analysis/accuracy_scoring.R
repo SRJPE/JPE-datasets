@@ -13,7 +13,7 @@ gcs_get_object(object_name = "sdm-resources/accuracy_scoring.xlsx",
                overwrite = TRUE)
 
 # Load in scoring sheet 
-scores <- readxl::read_excel("analysis/acuracy_scoring.xlsx", 
+scores <- readxl::read_excel("analysis/accuracy_scoring.xlsx", 
                              sheet = 1,
                              col_types = c("text", "text", "text", 
                                            "logical", "logical", "logical", 
@@ -21,7 +21,7 @@ scores <- readxl::read_excel("analysis/acuracy_scoring.xlsx",
 #### Warnings triggered by logical cells that are NA 
 
 # Load in lookup sheet that maps submodels and tribs to approaches 
-lookup <- readxl::read_excel("analysis/acuracy_scoring.xlsx", 
+lookup <- readxl::read_excel("analysis/accuracy_scoring.xlsx", 
                              sheet = 2,
                              col_types = c("text", "text", "text", 
                                            "logical", "logical")) |> glimpse()
