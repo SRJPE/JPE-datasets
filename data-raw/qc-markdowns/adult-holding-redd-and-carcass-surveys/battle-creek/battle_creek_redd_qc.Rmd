@@ -45,14 +45,17 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
-
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_adult_spawn_hold_carcass.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"))
+               # Overwrite = TRUE)
 ```
 
 Read in data from google cloud, glimpse sheets and raw data: 
 ```{r}
-sheets <- excel_sheets("raw_adult_spawn_hold_carcass.xlsx")
+sheets <- excel_sheets(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"))
 sheets 
-raw_redd_data <-read_excel("raw_adult_spawn_hold_carcass.xlsx", 
+raw_redd_data <-read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"), 
                            sheet = "Redd Survey",
                            col_types = c("text", "numeric", "numeric", "numeric", "date", 
                                          "text", "numeric", "text", "text", "text", "text", 

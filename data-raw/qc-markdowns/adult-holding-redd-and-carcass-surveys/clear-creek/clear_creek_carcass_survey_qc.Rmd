@@ -48,7 +48,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # git data and save as xlsx
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data-raw/FlowWest SCS JPE Data Request_Clear Creek.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_redd_holding_carcass_data.xlsx")
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "clear-creek", "raw_redd_holding_carcass_data.xlsx"))
                # Overwrite = TRUE)
 ```
 
@@ -56,7 +56,8 @@ Read in data from google cloud, glimpse raw data sheet:
 
 ```{r}
  
-raw_carcass_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Carcass") %>% glimpse()
+raw_carcass_data <-readxl::read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "clear-creek", "raw_redd_holding_carcass_data.xlsx"), 
+                                      sheet = "Carcass") %>% glimpse()
 ```
 ```{r}
 cleaner_data <- raw_carcass_data %>% 

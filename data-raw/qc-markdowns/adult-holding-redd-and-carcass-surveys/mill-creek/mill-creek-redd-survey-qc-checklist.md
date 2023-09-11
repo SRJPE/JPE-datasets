@@ -7,8 +7,8 @@ Inigo Peng
 
 **Description of Monitoring Data**
 
--   Redd surveys Buckhorn Gulch to Upper Dam are conducted by air
-    (helicopter). All other survey sections completed on foot
+- Redd surveys Buckhorn Gulch to Upper Dam are conducted by air
+  (helicopter). All other survey sections completed on foot
 
 **Timeframe:**
 
@@ -16,29 +16,29 @@ Inigo Peng
 
 **Completeness of Record throughout timeframe:**
 
--   Missing some elevation data
--   Buckhorn Gulch To Upper Dam missing significant count data
--   Canyon Camp to Sooner Place missing redd count data from 1997 - 2006
--   McCarthy Place to Savercool Place and Savercool Place to Black Rock
-    reaches combined 1997 to 2006
+- Missing some elevation data
+- Buckhorn Gulch To Upper Dam missing significant count data
+- Canyon Camp to Sooner Place missing redd count data from 1997 - 2006
+- McCarthy Place to Savercool Place and Savercool Place to Black Rock
+  reaches combined 1997 to 2006
 
 **Sampling Location:**
 
--   Above Hwy 36
--   Hwy 36 to Little Hole-in-Ground
--   Litte Hole-in-Ground to Hole-in-Ground
--   Hole-in-Ground to Ishi Trail Head  
--   Ishi Trail Head to Big Bend  
--   Big Bend to Canyon Camp  
--   Canyon Camp to Sooner Place
--   Sooner Place to McCarthy Place
--   McCarthy Place to Savercool Place
--   Savercool Place to Black Rock
--   Black Rock to below Ranch House
--   Below Ranch House to above Avery  
--   Above Avery to Pape Place
--   Pape Place to Buckhorn Gulch
--   Buckhorn Gulch to Upper Dam (aerial survey)
+- Above Hwy 36
+- Hwy 36 to Little Hole-in-Ground
+- Litte Hole-in-Ground to Hole-in-Ground
+- Hole-in-Ground to Ishi Trail Head  
+- Ishi Trail Head to Big Bend  
+- Big Bend to Canyon Camp  
+- Canyon Camp to Sooner Place
+- Sooner Place to McCarthy Place
+- McCarthy Place to Savercool Place
+- Savercool Place to Black Rock
+- Black Rock to below Ranch House
+- Below Ranch House to above Avery  
+- Above Avery to Pape Place
+- Pape Place to Buckhorn Gulch
+- Buckhorn Gulch to Upper Dam (aerial survey)
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 
@@ -55,12 +55,14 @@ gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/mill-creek/data-raw/Mill Creek SRCS Redd Counts by Section 1997-2020 Reformatted.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "mill_creek_redd_raw.xlsx")
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "mill-creek",
+                                       "mill_creek_redd_raw.xlsx"))
                # Overwrite = TRUE)
 ```
 
 ``` r
-raw_data = readxl::read_excel('mill_creek_redd_raw.xlsx',
+raw_data = readxl::read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "mill-creek",
+                                       "mill_creek_redd_raw.xlsx"),
                               sheet = '2007-2020 SR redds') %>% 
   glimpse()
 ```
@@ -171,12 +173,12 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
 kable(data_dictionary)
 ```
 
-| variables               | description                              | data\_type | encoding | percent\_na |
-|:------------------------|:-----------------------------------------|:-----------|:---------|------------:|
-| location                | Nominal description of sampling location | character  | NA       |           0 |
-| starting\_elevation\_ft | Elevation at sample start point          | integer    | NA       |          53 |
-| year                    | Survey year                              | year       | NA       |           0 |
-| redd\_count             | Number of redds observed                 | numeric    | NA       |          11 |
+| variables             | description                              | data_type | encoding | percent_na |
+|:----------------------|:-----------------------------------------|:----------|:---------|-----------:|
+| location              | Nominal description of sampling location | character | NA       |          0 |
+| starting_elevation_ft | Elevation at sample start point          | integer   | NA       |         53 |
+| year                  | Survey year                              | year      | NA       |          0 |
+| redd_count            | Number of redds observed                 | numeric   | NA       |         11 |
 
 ``` r
 #saveRDS(data_dictionary, file = "data/mill_redd_data_dictionary.rds")
@@ -212,7 +214,7 @@ table(cleaner_data$location)
 
 **NA and Unknown Values**
 
--   0 % of values in the `location` column are NA.
+- 0 % of values in the `location` column are NA.
 
 ## Explore Numeric Variables
 
@@ -246,7 +248,7 @@ cleaner_data %>%
 
 ![](mill-creek-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-**Numeric Annual Summary of redd\_count From 1997 to 2020**
+**Numeric Annual Summary of redd_count From 1997 to 2020**
 
 ``` r
 cleaner_data %>%
@@ -261,7 +263,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   11.4 % of values in the `redd_count` column are NA.
+- 11.4 % of values in the `redd_count` column are NA.
 
 ### Variable `starting_elevation_ft`
 
@@ -277,7 +279,7 @@ cleaner_data %>%
 
 ![](mill-creek-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-**Numeric Summary of starting\_elevation\_ft From 1997 to 2020**
+**Numeric Summary of starting_elevation_ft From 1997 to 2020**
 
 ``` r
 cleaner_data %>%
@@ -291,12 +293,12 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   53.3 % of values in the `starting_elevation_ft` column are NA.
+- 53.3 % of values in the `starting_elevation_ft` column are NA.
 
 ## Next steps
 
--   Suggest transforming the nominal location variable into `latitude`
-    and `longitude`
+- Suggest transforming the nominal location variable into `latitude` and
+  `longitude`
 
 ### Add cleaned data back onto google cloud
 

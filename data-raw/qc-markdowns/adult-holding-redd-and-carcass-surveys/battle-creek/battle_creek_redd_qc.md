@@ -40,7 +40,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 Read in data from google cloud, glimpse sheets and raw data:
 
 ``` r
-sheets <- excel_sheets("raw_adult_spawn_hold_carcass.xlsx")
+sheets <- excel_sheets(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"))
 sheets 
 ```
 
@@ -48,7 +48,7 @@ sheets
     ## [4] "Live Holding Spawning"
 
 ``` r
-raw_redd_data <-read_excel("raw_adult_spawn_hold_carcass.xlsx", 
+raw_redd_data <-read_excel(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"), 
                            sheet = "Redd Survey",
                            col_types = c("text", "numeric", "numeric", "numeric", "date", 
                                          "text", "numeric", "text", "text", "text", "text", 
@@ -239,33 +239,33 @@ data_dictionary <- tibble(variables = colnames(cleaner_redd_data),
 kable(data_dictionary)
 ```
 
-| variables                      | description                                                                                   | data\_type     | encoding                                                                                             | percent\_na |
-|:-------------------------------|:----------------------------------------------------------------------------------------------|:---------------|:-----------------------------------------------------------------------------------------------------|------------:|
-| longitude                      | GPS X point                                                                                   | numeric        | NA                                                                                                   |           0 |
-| latitude                       | GPS Y point                                                                                   | numeric        | NA                                                                                                   |           0 |
-| date                           | Date of sample                                                                                | date           | NA                                                                                                   |           0 |
-| reach                          | Reach number (1-7)                                                                            | integer        | NA                                                                                                   |           0 |
-| river\_mile                    | River mile number                                                                             | integer        | NA                                                                                                   |           0 |
-| pre\_redd\_substrate\_size     | Size of pre-redd substrate. Originally reported in inches; standardized to meters             | ordered factor | &lt;0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, &gt;12 |          39 |
-| redd\_substrate\_size          | Size of side of redd substrate. Originally reported in inches; standardized to meters         | ordered factor | &lt;0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, &gt;12 |          39 |
-| tail\_substrate\_size          | Size of gravel in tail of redd. Originally reported in inches; standardized to meters         | ordered factor | 0.1 to 1, 1, 1 to 2, 1 to 3, 2 to 3, 2 to 4, 3 to 4, 3 to 5                                          |          39 |
-| fish\_guarding                 | Fish gaurding the redd (T/F)                                                                  | boolean        | NA                                                                                                   |           0 |
-| redd\_measured                 | Redd measured (T/F)                                                                           | boolean        | NA                                                                                                   |           0 |
-| why\_not\_measured             | If the redd was not measured, reason why not (sub sample, too deep, fish on redd)             | factor         | fish on redd, sub sample, too deep                                                                   |           4 |
-| pre\_redd\_depth               | Pre-redd depth. Originally reported in inches; standardized to meters                         | numeric        | NA                                                                                                   |          62 |
-| redd\_pit\_depth               | Redd pit depth. Originally reported in inches; standardized to meters                         | numeric        | NA                                                                                                   |          62 |
-| redd\_tail\_depth              | Redd tailspill depth. Originally reported in inches; standardized to meters                   | numeric        | NA                                                                                                   |          62 |
-| redd\_length                   | Overall length of disturbed area. Originally reported in inches; standardized to meters       | numeric        | NA                                                                                                   |          55 |
-| redd\_width                    | Overall width of disturbed area. Originally reported in inches; standardized to meters        | numeric        | NA                                                                                                   |          55 |
-| flow\_meter                    | Flow meter used (digital, flow bomb, flow watch, marsh)                                       | factor         | digital, flow bomb, flow watch, marsh                                                                |          64 |
-| flow\_fps                      | Flow immediately upstream of the redd in feet per second.                                     | numeric        | NA                                                                                                   |          64 |
-| start\_number\_flow\_meter     | Start number for flow bomb                                                                    | integer        | NA                                                                                                   |          66 |
-| end\_number\_flow\_meter       | End number for flow bomb                                                                      | integer        | NA                                                                                                   |          66 |
-| flow\_meter\_time              | Number of seconds elapsed for flow bomb                                                       | integer        | NA                                                                                                   |          66 |
-| start\_number\_flow\_meter\_80 | Start number for flow bomb at 80% depth; 80% depth was measured when redd was &gt; 22 ft deep | integer        | NA                                                                                                   |          91 |
-| end\_number\_flow\_meter\_80   | End number for flow bomb at 80% depth; 80% depth was measured when redd was &gt; 22 ft deep   | integer        | NA                                                                                                   |          91 |
-| flow\_meter\_time\_80          | Number of seconds elapsed for flow bomb at 80% depth                                          | integer        | NA                                                                                                   |          91 |
-| comments                       | Qualitative comments on data collection                                                       | character      | NA                                                                                                   |          44 |
+| variables                  | description                                                                                 | data_type      | encoding                                                                                         | percent_na |
+|:---------------------------|:--------------------------------------------------------------------------------------------|:---------------|:-------------------------------------------------------------------------------------------------|-----------:|
+| longitude                  | GPS X point                                                                                 | numeric        | NA                                                                                               |          0 |
+| latitude                   | GPS Y point                                                                                 | numeric        | NA                                                                                               |          0 |
+| date                       | Date of sample                                                                              | date           | NA                                                                                               |          0 |
+| reach                      | Reach number (1-7)                                                                          | integer        | NA                                                                                               |          0 |
+| river_mile                 | River mile number                                                                           | integer        | NA                                                                                               |          0 |
+| pre_redd_substrate_size    | Size of pre-redd substrate. Originally reported in inches; standardized to meters           | ordered factor | \<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, \>12 |         39 |
+| redd_substrate_size        | Size of side of redd substrate. Originally reported in inches; standardized to meters       | ordered factor | \<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, \>12 |         39 |
+| tail_substrate_size        | Size of gravel in tail of redd. Originally reported in inches; standardized to meters       | ordered factor | 0.1 to 1, 1, 1 to 2, 1 to 3, 2 to 3, 2 to 4, 3 to 4, 3 to 5                                      |         39 |
+| fish_guarding              | Fish gaurding the redd (T/F)                                                                | boolean        | NA                                                                                               |          0 |
+| redd_measured              | Redd measured (T/F)                                                                         | boolean        | NA                                                                                               |          0 |
+| why_not_measured           | If the redd was not measured, reason why not (sub sample, too deep, fish on redd)           | factor         | fish on redd, sub sample, too deep                                                               |          4 |
+| pre_redd_depth             | Pre-redd depth. Originally reported in inches; standardized to meters                       | numeric        | NA                                                                                               |         62 |
+| redd_pit_depth             | Redd pit depth. Originally reported in inches; standardized to meters                       | numeric        | NA                                                                                               |         62 |
+| redd_tail_depth            | Redd tailspill depth. Originally reported in inches; standardized to meters                 | numeric        | NA                                                                                               |         62 |
+| redd_length                | Overall length of disturbed area. Originally reported in inches; standardized to meters     | numeric        | NA                                                                                               |         55 |
+| redd_width                 | Overall width of disturbed area. Originally reported in inches; standardized to meters      | numeric        | NA                                                                                               |         55 |
+| flow_meter                 | Flow meter used (digital, flow bomb, flow watch, marsh)                                     | factor         | digital, flow bomb, flow watch, marsh                                                            |         64 |
+| flow_fps                   | Flow immediately upstream of the redd in feet per second.                                   | numeric        | NA                                                                                               |         64 |
+| start_number_flow_meter    | Start number for flow bomb                                                                  | integer        | NA                                                                                               |         66 |
+| end_number_flow_meter      | End number for flow bomb                                                                    | integer        | NA                                                                                               |         66 |
+| flow_meter_time            | Number of seconds elapsed for flow bomb                                                     | integer        | NA                                                                                               |         66 |
+| start_number_flow_meter_80 | Start number for flow bomb at 80% depth; 80% depth was measured when redd was \> 22 ft deep | integer        | NA                                                                                               |         91 |
+| end_number_flow_meter_80   | End number for flow bomb at 80% depth; 80% depth was measured when redd was \> 22 ft deep   | integer        | NA                                                                                               |         91 |
+| flow_meter_time_80         | Number of seconds elapsed for flow bomb at 80% depth                                        | integer        | NA                                                                                               |         91 |
+| comments                   | Qualitative comments on data collection                                                     | character      | NA                                                                                               |         44 |
 
 ``` r
 # saveRDS(data_dictionary, file = "data/battle_redd_data_dictionary.rds")
@@ -306,8 +306,8 @@ All values look within an expected range
 
 **NA and Unknown Values**
 
--   0 % of values in the `latitude` column are NA.
--   0 % of values in the `longitude` column are NA.
+- 0 % of values in the `latitude` column are NA.
+- 0 % of values in the `longitude` column are NA.
 
 ### Variable: `river_mile`
 
@@ -352,7 +352,7 @@ summary(cleaner_redd_data$river_mile)
 
 **NA and Unknown Values**
 
--   0 % of values in the `river_mile` column are NA.
+- 0 % of values in the `river_mile` column are NA.
 
 ### Variable: `pre_redd_depth`
 
@@ -391,8 +391,8 @@ summary(cleaner_redd_data$pre_redd_depth)
 
 **NA and Unknown Values**
 
--   62.2 % of values in the `pre_redd_depth` column are NA.
--   There are a lot of 0 values. Could these also be NA?
+- 62.2 % of values in the `pre_redd_depth` column are NA.
+- There are a lot of 0 values. Could these also be NA?
 
 ### Variable: `redd_pit_depth`
 
@@ -429,8 +429,8 @@ summary(cleaner_redd_data$redd_pit_depth)
 
 **NA and Unknown Values**
 
--   62.4 % of values in the `redd_pit_depth` column are NA.
--   There are a lot of 0 values. Could these be NA?
+- 62.4 % of values in the `redd_pit_depth` column are NA.
+- There are a lot of 0 values. Could these be NA?
 
 ### Variable: `redd_tail_depth`
 
@@ -467,8 +467,8 @@ summary(cleaner_redd_data$redd_tail_depth)
 
 **NA and Unknown Values**
 
--   62.4 % of values in the `redd_tail_depth` column are NA.
--   There are a lot of 0 values. Could these be NA?
+- 62.4 % of values in the `redd_tail_depth` column are NA.
+- There are a lot of 0 values. Could these be NA?
 
 ### Variable: `redd_length`
 
@@ -505,8 +505,8 @@ summary(cleaner_redd_data$redd_length)
 
 **NA and Unknown Values**
 
--   55.1 % of values in the `redd_length` column are NA.
--   There are a lot of 0 values. Could these be NA?
+- 55.1 % of values in the `redd_length` column are NA.
+- There are a lot of 0 values. Could these be NA?
 
 ### Variable: `redd_width`
 
@@ -543,8 +543,8 @@ summary(cleaner_redd_data$redd_width)
 
 **NA and Unknown Values**
 
--   55.1 % of values in the `redd_width` column are NA.
--   There are a lot of 0 values. Could these be NA?
+- 55.1 % of values in the `redd_width` column are NA.
+- There are a lot of 0 values. Could these be NA?
 
 ### Variable: `flow_fps`
 
@@ -586,8 +586,8 @@ summary(cleaner_redd_data$flow_fps)
 
 **NA and Unknown Values**
 
--   64.1 % of values in the `flow_fps` column are NA.
--   There are a lot of 0 values. Could these be NA?
+- 64.1 % of values in the `flow_fps` column are NA.
+- There are a lot of 0 values. Could these be NA?
 
 ### Variables: `start_flow_meter`, `start_flow_meter_80`
 
@@ -638,9 +638,9 @@ summary(cleaner_redd_data$start_number_flow_meter_80)
 
 **NA and Unknown Values**
 
--   65.7 % of values in the `start_number_flow_meter` column are NA.
--   91 % of values in the `start_number_flow_meter_80` column are NA.
--   There are a lot of 0 values. Could these be NA?
+- 65.7 % of values in the `start_number_flow_meter` column are NA.
+- 91 % of values in the `start_number_flow_meter_80` column are NA.
+- There are a lot of 0 values. Could these be NA?
 
 ### Variables: `end_number_flow_meter`, `end_number_flow_meter_80`
 
@@ -691,14 +691,14 @@ summary(cleaner_redd_data$end_number_flow_meter_80)
 
 **NA and Unknown Values**
 
--   65.7 % of values in the `end_number_flow_meter` column are NA.
--   91 % of values in the `end_number_flow_meter_80` column are NA.
--   There are a lot of 0 values. Could these be NA?
+- 65.7 % of values in the `end_number_flow_meter` column are NA.
+- 91 % of values in the `end_number_flow_meter_80` column are NA.
+- There are a lot of 0 values. Could these be NA?
 
 ### Variables: `flow_meter_time`, `flow_meter_time_80`
 
 Start number for flow bomb at 80% depth; 80% depth was measured when the
-redd was &gt;22" deep
+redd was \>22” deep
 
 **Plotting distribution of flow meter end number per second**
 
@@ -747,8 +747,8 @@ summary(cleaner_redd_data$flow_meter_time_80)
 
 **NA and Unknown Values**
 
--   65.7 % of values in the `flow_meter_time` column are NA.
--   91 % of values in the `flow_meter_time_80` column are NA.
+- 65.7 % of values in the `flow_meter_time` column are NA.
+- 91 % of values in the `flow_meter_time_80` column are NA.
 
 ## Explore Categorical variables:
 
@@ -774,7 +774,7 @@ table(cleaner_redd_data$reach)
 
 **NA and Unknown Values**
 
--   0 % of values in the `reach`column are NA.
+- 0 % of values in the `reach`column are NA.
 
 ### Variable: `pre_redd_substrate_size`
 
@@ -810,7 +810,7 @@ table(cleaner_redd_data$pre_redd_substrate_size)
 
 **NA and Unknown Values**
 
--   39.4 % of values in the `pre_redd_substrate_size` column are NA.
+- 39.4 % of values in the `pre_redd_substrate_size` column are NA.
 
 ### Variable: `redd_substrate_size`
 
@@ -850,7 +850,7 @@ table(cleaner_redd_data$redd_substrate_size)
 
 **NA and Unknown Values**
 
--   39.4 % of values in the `redd_substrate_size` column are NA.
+- 39.4 % of values in the `redd_substrate_size` column are NA.
 
 ### Variable: `tail_substrate_size`
 
@@ -885,7 +885,7 @@ table(cleaner_redd_data$tail_substrate_size)
 
 **NA and Unknown Values**
 
--   39.4 % of values in the `tail_substrate_size` column are NA.
+- 39.4 % of values in the `tail_substrate_size` column are NA.
 
 ### Variable: `fish_guarding`
 
@@ -914,7 +914,7 @@ table(cleaner_redd_data$fish_guarding)
 
 **NA and Unknown Values**
 
--   20.1 % of values in the `fish_guarding` column are NA.
+- 20.1 % of values in the `fish_guarding` column are NA.
 
 ### Variable: `redd_measured`
 
@@ -943,7 +943,7 @@ table(cleaner_redd_data$redd_measured)
 
 **NA and Unknown Values**
 
--   0 % of values in the `redd_measured` column are NA.
+- 0 % of values in the `redd_measured` column are NA.
 
 ### Variable: `why_not_measured`
 
@@ -975,7 +975,7 @@ table(cleaner_redd_data$why_not_measured)
 
 **NA and Unknown Values**
 
--   91.1 % of values in the `why_not_measured` column are NA.
+- 91.1 % of values in the `why_not_measured` column are NA.
 
 ### Variable: `flow_meter`
 
@@ -1008,7 +1008,7 @@ table(cleaner_redd_data$flow_meter)
 
 **NA and Unknown Values**
 
--   64.2 % of values in the `flow_meter` column are NA.
+- 64.2 % of values in the `flow_meter` column are NA.
 
 ### Variable: `comments`
 
@@ -1029,25 +1029,24 @@ unique(cleaner_redd_data$comments)[1:10]
 
 **NA and Unknown Values**
 
--   43.6 % of values in the `comments` column are NA.
+- 43.6 % of values in the `comments` column are NA.
 
 ## Summary of identified issues
 
--   there are a lot of zero values for the physical characteristics of
-    redds, need to figure out if these are not measured values or are
-    actually zero
+- there are a lot of zero values for the physical characteristics of
+  redds, need to figure out if these are not measured values or are
+  actually zero
 
 ## Next steps
 
 ### Columns to remove
 
--   `comments`, `why_not_measured`, `flow_meter`, `flow_fps`,
-    `start_number_flow_meter`, `end_number_flow_meter`,
-    `flow_meter_time`, `start_number_flow_meter_80`,
-    `end_number_flow_meter_80`, `flow_meter_time_80` have little data
-    and may not be needed.
--   The most important variables are `longitude`, `latitude`, `date`,
-    `redd_measured`
+- `comments`, `why_not_measured`, `flow_meter`, `flow_fps`,
+  `start_number_flow_meter`, `end_number_flow_meter`, `flow_meter_time`,
+  `start_number_flow_meter_80`, `end_number_flow_meter_80`,
+  `flow_meter_time_80` have little data and may not be needed.
+- The most important variables are `longitude`, `latitude`, `date`,
+  `redd_measured`
 
 ## Save cleaned data back to google cloud
 

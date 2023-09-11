@@ -46,7 +46,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # git data and save as xlsx
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data-raw/FlowWest SCS JPE Data Request_Clear Creek.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_redd_holding_carcass_data.xlsx")
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "clear-creek", "raw_redd_holding_carcass_data.xlsx"))
                # Overwrite = TRUE)
 ```
 
@@ -62,8 +62,8 @@ classification during survey (2-9)”. Age\[1-9\] is also described as
 survey*\[2-9\]\_age and age\[1-9\] for now until further review. Will
 likely want to pick one age to keep.
 
-TODO: The last 4 variables observation\_reach, observation\_date,
-observation\_age, and survey\_observed need further description.
+TODO: The last 4 variables observation_reach, observation_date,
+observation_age, and survey_observed need further description.
 
 ``` r
 cleaner_data <- raw_redds_data %>% 
@@ -295,51 +295,55 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
 knitr::kable(data_dictionary)
 ```
 
-| variables                  | description                                                                                                                                                                                  | data\_type     | encoding                                                                                                                                     | percent\_na |
-|:---------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------|------------:|
-| method                     | Survey method                                                                                                                                                                                | factor         | pw, rstr, snorkel                                                                                                                            |           0 |
-| longitude                  | GPS X point                                                                                                                                                                                  | numeric        | NA                                                                                                                                           |           0 |
-| latitude                   | GPS Y point                                                                                                                                                                                  | numeric        | NA                                                                                                                                           |           0 |
-| survey                     | Survey Number, TODO figure out what this number means                                                                                                                                        | numeric        | NA                                                                                                                                           |          10 |
-| river\_mile                | River mile Number                                                                                                                                                                            | numeric        | NA                                                                                                                                           |           0 |
-| x1000ftbreak               | ?TODO                                                                                                                                                                                        | numeric        | NA                                                                                                                                           |          14 |
-| ucc\_relate                | Above or below Upper Clear Creek Rotary Screw Trap                                                                                                                                           | factor         | above, below                                                                                                                                 |           0 |
-| picket\_weir\_location     | Picket weir location                                                                                                                                                                         | numeric        | NA                                                                                                                                           |           0 |
-| picket\_weir\_relation     | Above or below picket weir                                                                                                                                                                   | factor         | above, below                                                                                                                                 |           0 |
-| date                       | Date survey occured                                                                                                                                                                          | date           | NA                                                                                                                                           |           0 |
-| surveyed\_reach            | Reach number                                                                                                                                                                                 | ordered factor | R1, R2, R3, R4, R5, R5A, R5B, R5C, R6, R6A, R7                                                                                               |           0 |
-| redd\_id                   | Unique ID number for a Redd                                                                                                                                                                  | integer        | NA                                                                                                                                           |          11 |
-| age                        | Age of Redd                                                                                                                                                                                  | integer        | NA                                                                                                                                           |          31 |
-| redd\_loc                  | Latitudinal location of the redd in the creek (RL: river left, RR: river right, RC: river center)                                                                                            | factor         | river left, river right, river center, river center to river right                                                                           |          37 |
-| gravel                     | predominant type of gravel used in redd construction: injection, native, or combo (native and injection)                                                                                     | factor         | injection, native, or combination                                                                                                            |           0 |
-| inj\_site                  | source of the injection gravel (site on Clear Creek)                                                                                                                                         | factor         | above need camp, above peltier, below dog gulch, clear creek road bridge, guardian rock, paige bar, placer, r6, r7, reading bar, whiskeytown |           4 |
-| pre\_redd\_substrate\_size | Dominant substrate size in the pre-redd (area just of stream of the disturbance)                                                                                                             | ordered factor | 0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5, 4-6, 6-8, &gt;12                                                                                   |          50 |
-| redd\_substrate\_size      | Dominant substrate size on the sides of the redd                                                                                                                                             | ordered factor | 0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5, 4-6, 6-8, 8-10, &gt;12                                                                             |          50 |
-| tail\_substrate\_size      | Dominant substrate size in the tailspill (excavated material behind the pit)                                                                                                                 | ordered factor | 0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5                                                                                                     |          50 |
-| fish\_on\_redd             | TRUE if fish is seen on Redd (TRUE/FALSE)                                                                                                                                                    | boolean        | boolean                                                                                                                                      |          52 |
-| measured                   | TRUE if redd is measured (TRUE/FALSE)                                                                                                                                                        | boolean        | boolean                                                                                                                                      |           0 |
-| why\_not\_measured         | Description of why the reddd was not measured if applicable                                                                                                                                  | factor         | fall run, fish on redd, fish on redd when first observed measured next survey, flow too high, time constraints, too deep, too old            |          98 |
-| date\_measured             | Date the redd was measured                                                                                                                                                                   | date           | NA                                                                                                                                           |          54 |
-| pre\_redd\_depth           | Depth in the pre-redd (area just of stream of the disturbance)                                                                                                                               | numeric        | NA                                                                                                                                           |          56 |
-| redd\_pit\_depth           | Depth at the deepest part of the pit                                                                                                                                                         | numeric        | NA                                                                                                                                           |          56 |
-| redd\_tail\_depth          | Depth at the shallowest part of the tailspill                                                                                                                                                | numeric        | NA                                                                                                                                           |          54 |
-| redd\_length\_in           | Length of the longest part of the disturbed area, measured parallel to streamflow (in inches)                                                                                                | numeric        | NA                                                                                                                                           |          54 |
-| redd\_width\_in            | Width of the widest part of the disturbed area, perpendicular to streamflow.                                                                                                                 | numeric        | NA                                                                                                                                           |          54 |
-| velocity                   | Mean water column velocity measured at 60 percent depth from the water surface or the average of the 60% depth and 80/20% depth, if the redd depth is ≥ 30 inches (Allan and Castillo 2007). | numeric        | NA                                                                                                                                           |          65 |
-| start\_60                  | starting values on the mechanical flow meter at 60% depth                                                                                                                                    | integer        | NA                                                                                                                                           |          65 |
-| end\_60                    | ending values on the mechanical flow meter at 60% depth                                                                                                                                      | integer        | NA                                                                                                                                           |          65 |
-| sec\_60                    | time the meter was in the water                                                                                                                                                              | integer        | NA                                                                                                                                           |          64 |
-| start\_80                  | Starting values on the mechanical flow meter at 80/20% depth                                                                                                                                 | integer        | NA                                                                                                                                           |          95 |
-| end\_80                    | End values on the mechanical flow meter at 80/20% depth                                                                                                                                      | integer        | NA                                                                                                                                           |          95 |
-| secs\_80                   | time the meter was in the water                                                                                                                                                              | interger       | NA                                                                                                                                           |          95 |
-| bomb\_vel60                | Mean water column velocity measured at 60 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007).                            | numeric        | NA                                                                                                                                           |          77 |
-| bomb\_vel80                | Mean water column velocity measured at 80 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007).                            | numeric        | NA                                                                                                                                           |          98 |
-| comments                   | Comments from survey crew                                                                                                                                                                    | character      | NA                                                                                                                                           |          76 |
-| run                        | Run call based on field data                                                                                                                                                                 | factor         | spring, fall, late fall                                                                                                                      |          90 |
-| observation\_reach         | Reach of observation                                                                                                                                                                         | ordered factor | R1, R2, R3, R4, R5, R5A, R5B, R5C, R6, R6A, R7                                                                                               |          78 |
-| observation\_date          | Date of observation                                                                                                                                                                          | date           | NA                                                                                                                                           |          78 |
-| observation\_age           | Age at observation                                                                                                                                                                           | integer        | NA                                                                                                                                           |          78 |
-| survey\_observed           | ?TODO                                                                                                                                                                                        | numeric        | NA                                                                                                                                           |          78 |
+| variables               | description                                                                                                                                                                                  | data_type      | encoding                                                                                                                                     | percent_na |
+|:------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------|-----------:|
+| method                  | Survey method                                                                                                                                                                                | factor         | pw, rstr, snorkel                                                                                                                            |          0 |
+| longitude               | GPS X point                                                                                                                                                                                  | numeric        | NA                                                                                                                                           |          0 |
+| latitude                | GPS Y point                                                                                                                                                                                  | numeric        | NA                                                                                                                                           |          0 |
+| survey                  | Survey Number, TODO figure out what this number means                                                                                                                                        | numeric        | NA                                                                                                                                           |         10 |
+| river_mile              | River mile Number                                                                                                                                                                            | numeric        | NA                                                                                                                                           |          0 |
+| x1000ftbreak            | ?TODO                                                                                                                                                                                        | numeric        | NA                                                                                                                                           |         14 |
+| ucc_relate              | Above or below Upper Clear Creek Rotary Screw Trap                                                                                                                                           | factor         | above, below                                                                                                                                 |          0 |
+| picket_weir_location    | Picket weir location                                                                                                                                                                         | numeric        | NA                                                                                                                                           |          0 |
+| picket_weir_relation    | Above or below picket weir                                                                                                                                                                   | factor         | above, below                                                                                                                                 |          0 |
+| date                    | Date survey occured                                                                                                                                                                          | date           | NA                                                                                                                                           |          0 |
+| surveyed_reach          | Reach number                                                                                                                                                                                 | ordered factor | R1, R2, R3, R4, R5, R5A, R5B, R5C, R6, R6A, R7                                                                                               |          0 |
+| redd_id                 | Unique ID number for a Redd                                                                                                                                                                  | integer        | NA                                                                                                                                           |         11 |
+| age                     | Age of Redd                                                                                                                                                                                  | integer        | NA                                                                                                                                           |         31 |
+| redd_loc                | Latitudinal location of the redd in the creek (RL: river left, RR: river right, RC: river center)                                                                                            | factor         | river left, river right, river center, river center to river right                                                                           |         37 |
+| gravel                  | predominant type of gravel used in redd construction: injection, native, or combo (native and injection)                                                                                     | factor         | injection, native, or combination                                                                                                            |          0 |
+| inj_site                | source of the injection gravel (site on Clear Creek)                                                                                                                                         | factor         | above need camp, above peltier, below dog gulch, clear creek road bridge, guardian rock, paige bar, placer, r6, r7, reading bar, whiskeytown |          4 |
+| pre_redd_substrate_size | Dominant substrate size in the pre-redd (area just of stream of the disturbance)                                                                                                             | ordered factor | 0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5, 4-6, 6-8, \>12                                                                                     |         50 |
+| redd_substrate_size     | Dominant substrate size on the sides of the redd                                                                                                                                             | ordered factor | 0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5, 4-6, 6-8, 8-10, \>12                                                                               |         50 |
+| tail_substrate_size     | Dominant substrate size in the tailspill (excavated material behind the pit)                                                                                                                 | ordered factor | 0.1-1, 1-2, 1-3, 2-3, 2-4, 3-4, 3-5, 4-5                                                                                                     |         50 |
+| fish_on_redd            | TRUE if fish is seen on Redd (TRUE/FALSE)                                                                                                                                                    | boolean        | boolean                                                                                                                                      |         52 |
+| measured                | TRUE if redd is measured (TRUE/FALSE)                                                                                                                                                        | boolean        | boolean                                                                                                                                      |          0 |
+| why_not_measured        | Description of why the reddd was not measured if applicable                                                                                                                                  | factor         | fall run, fish on redd, fish on redd when first observed measured next survey, flow too high, time constraints, too deep, too old            |         98 |
+| date_measured           | Date the redd was measured                                                                                                                                                                   | date           | NA                                                                                                                                           |         54 |
+| pre_redd_depth          | Depth in the pre-redd (area just of stream of the disturbance)                                                                                                                               | numeric        | NA                                                                                                                                           |         56 |
+| redd_pit_depth          | Depth at the deepest part of the pit                                                                                                                                                         | numeric        | NA                                                                                                                                           |         56 |
+| redd_tail_depth         | Depth at the shallowest part of the tailspill                                                                                                                                                | numeric        | NA                                                                                                                                           |         54 |
+| redd_length_in          | Length of the longest part of the disturbed area, measured parallel to streamflow (in inches)                                                                                                | numeric        | NA                                                                                                                                           |         54 |
+| redd_width_in           | Width of the widest part of the disturbed area, perpendicular to streamflow.                                                                                                                 | numeric        | NA                                                                                                                                           |         54 |
+| velocity                | Mean water column velocity measured at 60 percent depth from the water surface or the average of the 60% depth and 80/20% depth, if the redd depth is ≥ 30 inches (Allan and Castillo 2007). | numeric        | NA                                                                                                                                           |         65 |
+| start_60                | starting values on the mechanical flow meter at 60% depth                                                                                                                                    | integer        | NA                                                                                                                                           |         65 |
+| end_60                  | ending values on the mechanical flow meter at 60% depth                                                                                                                                      | integer        | NA                                                                                                                                           |         65 |
+| sec_60                  | time the meter was in the water                                                                                                                                                              | integer        | NA                                                                                                                                           |         64 |
+| start_80                | Starting values on the mechanical flow meter at 80/20% depth                                                                                                                                 | integer        | NA                                                                                                                                           |         95 |
+| end_80                  | End values on the mechanical flow meter at 80/20% depth                                                                                                                                      | integer        | NA                                                                                                                                           |         95 |
+| secs_80                 | time the meter was in the water                                                                                                                                                              | interger       | NA                                                                                                                                           |         95 |
+| bomb_vel60              | Mean water column velocity measured at 60 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007).                            | numeric        | NA                                                                                                                                           |         77 |
+| bomb_vel80              | Mean water column velocity measured at 80 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007).                            | numeric        | NA                                                                                                                                           |         98 |
+| comments                | Comments from survey crew                                                                                                                                                                    | character      | NA                                                                                                                                           |         76 |
+| run                     | Run call based on field data                                                                                                                                                                 | factor         | spring, fall, late fall                                                                                                                      |         90 |
+| observation_reach       | Reach of observation                                                                                                                                                                         | ordered factor | R1, R2, R3, R4, R5, R5A, R5B, R5C, R6, R6A, R7                                                                                               |         78 |
+| observation_date        | Date of observation                                                                                                                                                                          | date           | NA                                                                                                                                           |         78 |
+| observation_age         | Age at observation                                                                                                                                                                           | integer        | NA                                                                                                                                           |         78 |
+| survey_observed         | ?TODO                                                                                                                                                                                        | numeric        | NA                                                                                                                                           |         78 |
+
+``` r
+#saveRDS(data_dictionary, file = "data/clear_redd_data_dictionary.rds")
+```
 
 ## Explore `date`
 
@@ -352,7 +356,7 @@ summary(cleaner_data$date)
 
 **NA and Unknown Values**
 
--   0 % of values in the `date` column are NA.
+- 0 % of values in the `date` column are NA.
 
 ## Explore `observation_date`
 
@@ -371,7 +375,7 @@ summary(cleaner_data$observation_date)
 
 **NA and Unknown Values**
 
--   77.7 % of values in the `observation_date` column are NA.
+- 77.7 % of values in the `observation_date` column are NA.
 
 ## Explore `date_measured`
 
@@ -386,7 +390,7 @@ summary(cleaner_data$date_measured)
 
 **NA and Unknown Values**
 
--   54.4 % of values in the `date_measured` column are NA.
+- 54.4 % of values in the `date_measured` column are NA.
 
 Note: observation date and date measured have different levels of
 completeness.
@@ -425,7 +429,7 @@ table(cleaner_data$method)
 
 **NA and Unknown Values**
 
--   0 % of values in the `method` column are NA.
+- 0 % of values in the `method` column are NA.
 
 ### Variable: `ucc_relate`
 
@@ -442,7 +446,7 @@ table(cleaner_data$ucc_relate)
 
 **NA and Unknown Values**
 
--   0 % of values in the `ucc_relate` column are NA.
+- 0 % of values in the `ucc_relate` column are NA.
 
 ### Variable: `picket_weir_relation`
 
@@ -459,7 +463,7 @@ table(cleaner_data$picket_weir_relation)
 
 **NA and Unknown Values**
 
--   0 % of values in the `picket_weir_relation` column are NA.
+- 0 % of values in the `picket_weir_relation` column are NA.
 
 ### Variable: `surveyed_reach`
 
@@ -475,7 +479,7 @@ table(cleaner_data$surveyed_reach)
 
 **NA and Unknown Values**
 
--   0 % of values in the `surveyed_reach` column are NA.
+- 0 % of values in the `surveyed_reach` column are NA.
 
 ### Variable: `redd_id`
 
@@ -494,7 +498,7 @@ There are 648 unique redd ID numbers.
 
 **NA and Unknown Values**
 
--   11 % of values in the `redd_id` column are NA.
+- 11 % of values in the `redd_id` column are NA.
 
 ### Variable: `redd_loc`
 
@@ -526,7 +530,7 @@ table(cleaner_data$redd_loc)
 
 **NA and Unknown Values**
 
--   38.5 % of values in the `redd_loc` column are NA.
+- 38.5 % of values in the `redd_loc` column are NA.
 
 ### Variable: `gravel`
 
@@ -544,7 +548,7 @@ table(cleaner_data$gravel)
 
 **NA and Unknown Values**
 
--   0 % of values in the `gravel` column are NA.
+- 0 % of values in the `gravel` column are NA.
 
 ### Variable: `inj_site`
 
@@ -567,7 +571,7 @@ table(cleaner_data$inj_site)
 
 **NA and Unknown Values**
 
--   3.9 % of values in the `inj_site` column are NA.
+- 3.9 % of values in the `inj_site` column are NA.
 
 ### Variable: `pre_redd_substrate_size`
 
@@ -584,7 +588,7 @@ table(cleaner_data$pre_redd_substrate_size)
 
 **NA and Unknown Values**
 
--   50.2 % of values in the `pre_redd_substrate_size` column are NA.
+- 50.2 % of values in the `pre_redd_substrate_size` column are NA.
 
 ### Variable: `redd_substrate_size`
 
@@ -600,7 +604,7 @@ table(cleaner_data$redd_substrate_size)
 
 **NA and Unknown Values**
 
--   50.2 % of values in the `redd_substrate_size` column are NA.
+- 50.2 % of values in the `redd_substrate_size` column are NA.
 
 ### Variable: `tail_redd_substrate_size`
 
@@ -619,7 +623,7 @@ table(cleaner_data$tail_substrate_size)
 
 **NA and Unknown Values**
 
--   0 % of values in the `tail_redd_substrate_size` column are NA.
+- 0 % of values in the `tail_redd_substrate_size` column are NA.
 
 ### Variable: `fish_on_redd`
 
@@ -651,7 +655,7 @@ table(cleaner_data$fish_on_redd)
 
 **NA and Unknown Values**
 
--   52.4 % of values in the `fish_on_redd` column are NA.
+- 52.4 % of values in the `fish_on_redd` column are NA.
 
 ### Variable: `measured`
 
@@ -679,7 +683,7 @@ table(cleaner_data$measured)
 
 **NA and Unknown Values**
 
--   0 % of values in the `measured` column are NA.
+- 0 % of values in the `measured` column are NA.
 
 ### Variable: `why_not_measured`
 
@@ -737,7 +741,7 @@ table(cleaner_data$why_not_measured)
 
 **NA and Unknown Values**
 
--   97.9 % of values in the `why_not_measured` column are NA.
+- 97.9 % of values in the `why_not_measured` column are NA.
 
 ### Variable: `comments`
 
@@ -755,7 +759,7 @@ unique(cleaner_data$comments)[1:10]
 
 **NA and Unknown Values**
 
--   76.1 % of values in the `comments` column are NA.
+- 76.1 % of values in the `comments` column are NA.
 
 ### Variable: `run`
 
@@ -773,7 +777,7 @@ table(cleaner_data$run)
 
 **NA and Unknown Values**
 
--   90 % of values in the `run` column are NA.
+- 90 % of values in the `run` column are NA.
 
 ### Variable: `observation_reach`
 
@@ -806,7 +810,7 @@ There are 15 unique survey numbers.
 
 **NA and Unknown Values**
 
--   9.8 % of values in the `survey` column are NA.
+- 9.8 % of values in the `survey` column are NA.
 
 ### Variable: `survey_observed`
 
@@ -821,7 +825,7 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   77.7 % of values in the `survey_observed` column are NA.
+- 77.7 % of values in the `survey_observed` column are NA.
 
 ## Explore Numerical Data
 
@@ -857,9 +861,9 @@ Note longitude has 1 decimal place - not very exact.
 
 **NA and Unknown Values**
 
--   0.1 % of values in the `longitude` column are NA.
+- 0.1 % of values in the `longitude` column are NA.
 
--   0.1 % of values in the `latitude` column are NA.
+- 0.1 % of values in the `latitude` column are NA.
 
 ### Variable: `river_mile`
 
@@ -874,7 +878,7 @@ cleaner_data %>%
   labs(title = "River Mile Over The Years")
 ```
 
-    ## Warning: Removed 1 rows containing missing values (geom_point).
+    ## Warning: Removed 1 rows containing missing values (`geom_point()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 
@@ -890,11 +894,11 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 1 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 1 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
-**Numeric Summary of river\_mile Over Period of Record**
+**Numeric Summary of river_mile Over Period of Record**
 
 ``` r
 summary(cleaner_data$river_mile)
@@ -905,7 +909,7 @@ summary(cleaner_data$river_mile)
 
 **NA and Unknown Values**
 
--   0.1 % of values in the `river_mile` column are NA.
+- 0.1 % of values in the `river_mile` column are NA.
 
 ### Variable: `x1000ftbreak`
 
@@ -921,7 +925,7 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 214 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 214 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
@@ -936,7 +940,7 @@ summary(cleaner_data$x1000ftbreak)
 
 **NA and Unknown Values**
 
--   14.3 % of values in the `x1000ftbreak` column are NA.
+- 14.3 % of values in the `x1000ftbreak` column are NA.
 
 ### Variable: `picket_weir_location`
 
@@ -946,7 +950,7 @@ Need description for what locations the numbers represent
 
 There are 2 unique picket weir locations.
 
-**Numeric Summary of picket\_weir\_location Over Period of Record**
+**Numeric Summary of picket_weir_location Over Period of Record**
 
 ``` r
 summary(cleaner_data$picket_weir_location)
@@ -957,7 +961,7 @@ summary(cleaner_data$picket_weir_location)
 
 **NA and Unknown Values**
 
--   0 % of values in the `picket_weir_location` column are NA.
+- 0 % of values in the `picket_weir_location` column are NA.
 
 ### Variable: `age`
 
@@ -999,7 +1003,7 @@ tibble(age = clear_creek_redd_age,
 
 **NA and Unknown Values**
 
--   30.8 % of values in the `age` column are NA.
+- 30.8 % of values in the `age` column are NA.
 
 ### Variable: `redd_pit_depth`
 
@@ -1015,11 +1019,11 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 837 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 837 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
 
-**Numeric Summary of redd\_pit\_depth**
+**Numeric Summary of redd_pit_depth**
 
 ``` r
 summary(cleaner_data$redd_pit_depth)
@@ -1030,7 +1034,7 @@ summary(cleaner_data$redd_pit_depth)
 
 **NA and Unknown Values**
 
--   56 % of values in the `redd_pit_depth` column are NA.
+- 56 % of values in the `redd_pit_depth` column are NA.
 
 ### Variable: `redd_tail_depth`
 
@@ -1046,7 +1050,7 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 813 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 813 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-43-1.png)<!-- -->
 
@@ -1059,7 +1063,7 @@ summary(cleaner_data$redd_tail_depth)
 
 **NA and Unknown Values**
 
--   54.4 % of values in the `redd_tail_depth` column are NA.
+- 54.4 % of values in the `redd_tail_depth` column are NA.
 
 ### Variable: `redd_length_in`
 
@@ -1076,11 +1080,11 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 806 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 806 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
 
-**Numeric Summary of redd\_length\_in over Period of Time**
+**Numeric Summary of redd_length_in over Period of Time**
 
 ``` r
 summary(cleaner_data$redd_length_in)
@@ -1091,7 +1095,7 @@ summary(cleaner_data$redd_length_in)
 
 **NA and Unknown Values**
 
--   53.9 % of values in the `redd_length_in` column are NA.
+- 53.9 % of values in the `redd_length_in` column are NA.
 
 ### Variable: `redd_width_in`
 
@@ -1108,7 +1112,7 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 807 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 807 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-47-1.png)<!-- -->
 
@@ -1120,11 +1124,11 @@ cleaner_data %>%
   theme_minimal()
 ```
 
-    ## Warning: Removed 808 rows containing missing values (geom_point).
+    ## Warning: Removed 808 rows containing missing values (`geom_point()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
 
-**Numeric Summary of redd\_width\_in over Period of Time**
+**Numeric Summary of redd_width_in over Period of Time**
 
 ``` r
 summary(cleaner_data$redd_width_in)
@@ -1135,7 +1139,7 @@ summary(cleaner_data$redd_width_in)
 
 **NA and Unknown Values**
 
--   54 % of values in the `redd_width_in` column are NA.
+- 54 % of values in the `redd_width_in` column are NA.
 
 ### Variable: `velocity`
 
@@ -1155,7 +1159,7 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 979 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 979 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-50-1.png)<!-- -->
 
@@ -1170,7 +1174,7 @@ summary(cleaner_data$velocity)
 
 **NA and Unknown Values**
 
--   65.5 % of values in the `velocity` column are NA.
+- 65.5 % of values in the `velocity` column are NA.
 
 ### Variable:`start_60`,`end_60`
 
@@ -1188,15 +1192,15 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 967 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 967 rows containing non-finite values (`stat_bin()`).
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 967 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 967 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-52-1.png)<!-- -->
 
-**Numeric Summary of start\_60 and end\_60 over Period of Time**
+**Numeric Summary of start_60 and end_60 over Period of Time**
 
 ``` r
 summary(cleaner_data$start_60)
@@ -1214,9 +1218,9 @@ summary(cleaner_data$end_60)
 
 **NA and Unknown Values**
 
--   64.7 % of values in the `start_60` column are NA.
+- 64.7 % of values in the `start_60` column are NA.
 
--   64.7 % of values in the `end_60` column are NA.
+- 64.7 % of values in the `end_60` column are NA.
 
 ### Variable: `sec_60`
 
@@ -1232,11 +1236,11 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 963 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 963 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-55-1.png)<!-- -->
 
-**Numeric Summary of sec\_60 over Period of Time**
+**Numeric Summary of sec_60 over Period of Time**
 
 ``` r
 summary(cleaner_data$sec_60)
@@ -1247,7 +1251,7 @@ summary(cleaner_data$sec_60)
 
 **NA and Unknown Values**
 
--   64.4 % of values in the `sec_60` column are NA.
+- 64.4 % of values in the `sec_60` column are NA.
 
 ### Variable: `start_80`, `end_80`
 
@@ -1265,15 +1269,15 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 1414 rows containing non-finite values (`stat_bin()`).
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 1414 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-57-1.png)<!-- -->
 
-**Numeric Summary of start\_80 and end\_80 over Period of Time**
+**Numeric Summary of start_80 and end_80 over Period of Time**
 
 ``` r
 summary(cleaner_data$start_80)
@@ -1291,9 +1295,9 @@ summary(cleaner_data$end_80)
 
 **NA and Unknown Values**
 
--   94.6 % of values in the `start_80` column are NA.
+- 94.6 % of values in the `start_80` column are NA.
 
--   94.6 % of values in the `end_80` column are NA.
+- 94.6 % of values in the `end_80` column are NA.
 
 ### Variable: `secs_80`
 
@@ -1307,15 +1311,15 @@ cleaner_data %>%
   theme_minimal()
 ```
 
-    ## Warning: Ignoring unknown parameters: bin
+    ## Warning in geom_histogram(bin = 10): Ignoring unknown parameters: `bin`
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 1414 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 1414 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-60-1.png)<!-- -->
 
-**Numeric Summary of secs\_80 over Period of Time**
+**Numeric Summary of secs_80 over Period of Time**
 
 ``` r
 summary(cleaner_data$secs_80)
@@ -1326,7 +1330,7 @@ summary(cleaner_data$secs_80)
 
 **NA and Unknown Values**
 
--   94.6 % of values in the `secs_80` column are NA.
+- 94.6 % of values in the `secs_80` column are NA.
 
 ### Variable: `bomb_vel60`, `bomb_vel80`
 
@@ -1357,15 +1361,15 @@ gridExtra::grid.arrange(v60, v80)
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 1155 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 1155 rows containing non-finite values (`stat_bin()`).
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 1471 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 1471 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-62-1.png)<!-- -->
 
-**Numeric Summary of bomb\_vel60 and bomb\_vel80 over Period of Time**
+**Numeric Summary of bomb_vel60 and bomb_vel80 over Period of Time**
 
 ``` r
 summary(cleaner_data$bomb_vel60)
@@ -1382,13 +1386,13 @@ summary(cleaner_data$bomb_vel80)
     ##  0.4708  1.6214  2.0064  2.8995  2.9177 20.1574    1471
 
 Note: 0 velocity at 60 percent depth is NA? There’s significant more
-measurement of redd measurement &lt;30 inches from water.
+measurement of redd measurement \<30 inches from water.
 
 **NA and Unknown Values**
 
--   0 % of values in the `vel60` column are NA.
+- 0 % of values in the `vel60` column are NA.
 
--   0 % of values in the `vel80` column are NA.
+- 0 % of values in the `vel80` column are NA.
 
 ### Variable: `observation_age`
 
@@ -1404,11 +1408,11 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 1162 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 1162 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_redds_survey_qc_files/figure-gfm/unnamed-chunk-65-1.png)<!-- -->
 
-**Numeric Summary of observation\_age over Period of Time**
+**Numeric Summary of observation_age over Period of Time**
 
 ``` r
 summary(cleaner_data$observation_age)
@@ -1419,20 +1423,19 @@ summary(cleaner_data$observation_age)
 
 **NA and Unknown Values**
 
--   77.7 % of values in the `observation_age` column are NA.
+- 77.7 % of values in the `observation_age` column are NA.
 
 ### Summary of Identified Issues
 
--   There are multiple metadata that needs more descriptions
-    (x1000ftbreak, method, survey\_observed, )
+- There are multiple metadata that needs more descriptions
+  (x1000ftbreak, method, survey_observed, )
 
--   There are multiple columns that seem redundant. For example: survey
-    vs survey observed, age vs observation age, three different date
-    columns
+- There are multiple columns that seem redundant. For example: survey vs
+  survey observed, age vs observation age, three different date columns
 
--   Need to email Ryan to ask what how all the age columns work.
+- Need to email Ryan to ask what how all the age columns work.
 
--   Non standard units (in) change to m below
+- Non standard units (in) change to m below
 
 ``` r
 # Convert all measures in inches to meters and rename accordingly 
@@ -1447,21 +1450,20 @@ cleaner_data <- cleaner_data %>%
 
 ## Next steps
 
--   Work on data modeling to identify important variables needed for
-    redd datasets.
+- Work on data modeling to identify important variables needed for redd
+  datasets.
 
 ### Columns to remove
 
--   Suggest removing some of the location variables we currently have:
-    `longitude`, `latitude`, `reach`, `river_mile`, `ucc_relate`,
-    `picket_weir_relation` `surveyed_reach`, and `observed_reach`. We
-    can probably use a subset of these.
--   Suggest removing flow meter metadata: `start_60`, `end_60`,
-    `sec_60`, `start_80`, `end_80`, `secs_80`. And only keeping 1
-    velocity measure out of the three taken: `velocity`, `bomb_vel60`,
-    `bomb_vel80`.
--   Unless we want to do any sort of habitat suitability analysis we
-    probably do not need the substrate, depth, and gravel columns.
+- Suggest removing some of the location variables we currently have:
+  `longitude`, `latitude`, `reach`, `river_mile`, `ucc_relate`,
+  `picket_weir_relation` `surveyed_reach`, and `observed_reach`. We can
+  probably use a subset of these.
+- Suggest removing flow meter metadata: `start_60`, `end_60`, `sec_60`,
+  `start_80`, `end_80`, `secs_80`. And only keeping 1 velocity measure
+  out of the three taken: `velocity`, `bomb_vel60`, `bomb_vel80`.
+- Unless we want to do any sort of habitat suitability analysis we
+  probably do not need the substrate, depth, and gravel columns.
 
 ### Save Cleaned data back to google cloud
 
