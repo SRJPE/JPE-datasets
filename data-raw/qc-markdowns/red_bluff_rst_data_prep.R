@@ -41,6 +41,7 @@ rb_catch <- rb_catch_raw |>
                                lifestage == "RBT - silvery parr" ~ "silvery parr",
                                lifestage == "RBT - smolt" ~ "smolt",
                                lifestage == "RBT - yolk sac fry" ~ "yolk sac fry",
+                               lifestage == "RBT - fry" ~ "fry",
                                T ~ lifestage),
          species = tolower(common_name),
          stream = "sacramento river",
