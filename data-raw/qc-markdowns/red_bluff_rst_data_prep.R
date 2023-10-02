@@ -133,7 +133,10 @@ rb_release <- rb_release_raw |>
   select(stream, site, release_id, date_released, time_released, site_released,
          number_released, median_fork_length_released, run_released, origin_released,
          source_released, turbidity_at_release)
-
+rb_release %>%
+  group_by(stream, site, release_id) %>%
+  tally() %>%
+  filter(n > 1)
 gcs_upload(rb_release,
            object_function = f,
            type = "csv",
@@ -149,7 +152,15 @@ rb_recapture <- rb_recapture_raw |>
          date_recaptured = sample_date,
          number_recaptured = count) |> 
   select(stream, site, subsite, release_id, date_recaptured, number_recaptured,
-         fork_length)
+         fork_length) |> 
+  group_by(stream, site, subsite, release_id, date_recaptured) |> 
+  summarize(number_recaptured = sum(number_recaptured),
+            median_fork_length_recaptured = median(fork_length))
+
+rb_recapture %>%
+  group_by(stream, site, subsite, release_id, date_recaptured) %>%
+  tally() %>%
+  filter(n > 1)
 
 gcs_upload(rb_recapture,
            object_function = f,
