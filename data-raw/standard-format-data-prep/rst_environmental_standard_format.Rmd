@@ -361,7 +361,8 @@ tisdale_env <- tisdale_env_raw %>%
   summarise(value = mean(value, na.rm = T),
             value = ifelse(is.nan(value), NA_real_, value)) %>% 
   ungroup() %>%
-  mutate(subsite = tolower(subsite)) %>% 
+  mutate(subsite = tolower(subsite),
+         stream = "sacramento river") %>% 
   # removed because large majority did not recored units
   filter(!parameter %in% c("barometer", "conductivity"))
 ```
@@ -439,12 +440,22 @@ unique(yuba_env$subsite)
 unique(yuba_env$site)
 ```
 
+### Red Bluff
+
+```{r, include = F}
+gcs_get_object(object_name = "rst/rbdd/data/environmental.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/rbdd_environmental.csv",
+               overwrite = TRUE)
+rbdd_environmental <- read_csv(here::here("data", "rst","rbdd_environmental.csv"))
+```
+
 ## Combine data:
 
 ```{r}
 combined_env <- bind_rows(battle_env, butte_env, clear_env, deer_env,
                           feather_env, knights_env, tisdale_env, 
-                          mill_env, yuba_env) %>% 
+                          mill_env, yuba_env, rbdd_environmental) %>% 
   mutate(text = case_when(parameter == "weather" & text == "partially cloudy" ~ "partly cloudy",
                           parameter == "weather" & text == "foggy" ~ "fog",
                           parameter == "weather" & text %in% c("precipitation", "rain", "rainy", "windy and precipitation") ~ "precipitation",
