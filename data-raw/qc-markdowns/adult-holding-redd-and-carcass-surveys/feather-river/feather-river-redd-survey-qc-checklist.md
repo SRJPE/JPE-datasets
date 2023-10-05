@@ -11,9 +11,9 @@ Inigo Peng
 
 **Completeness of Record throughout timeframe:**
 
--   Longitude and latitude data are not available for 2009-2012,
-    2019-2020. NA values will be filled in for these data sets in final
-    cleaned data set.
+- Longitude and latitude data are not available for 2009-2012,
+  2019-2020. NA values will be filled in for these data sets in final
+  cleaned data set.
 
 **Sampling Location:** Various sampling locations on Feather River.
 
@@ -24,11 +24,11 @@ Additional Info:
 is observed visually and an estimate of the percentage of 5 size classes
 is recorded:
 
--   fine &lt;1cm  
--   small 1-5cm  
--   medium 6-15cm  
--   large 16-30cm  
--   boulder &gt;30cm
+- fine \<1cm  
+- small 1-5cm  
+- medium 6-15cm  
+- large 16-30cm  
+- boulder \>30cm
 
 ``` r
 # Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
@@ -143,25 +143,25 @@ data_dictionary <- tibble(variables = colnames(clean_data),
 kable(data_dictionary)
 ```
 
-| variables                  | description                                                               | data\_type | encoding                         | percent\_na |
-|:---------------------------|:--------------------------------------------------------------------------|:-----------|:---------------------------------|------------:|
-| date                       | Sample date                                                               | date       | NA                               |           0 |
-| location                   | Nominal description of location                                           | character  | NA                               |           0 |
-| type                       | Type of observation. A = polygon/area, P = point, Q = questionnable redd  | factor     | Area, Point, Questionnable redds |           0 |
-| redd\_count                | Number of redds observed                                                  | integer    | NA                               |           0 |
-| salmon\_count              | Number of salmon observed                                                 | integer    | NA                               |           0 |
-| depth\_m                   | Depth of water at observation location in meters                          | numeric    | NA                               |          85 |
-| pot\_depth\_m              | Depth of the pot in meters                                                | numeric    | NA                               |          86 |
-| velocity                   | Velocity of water at observation location in m/s but standardized to ft/s | numeric    | NA                               |          88 |
-| percent\_fine\_substrate   | Percent of fine substrate (fine &lt;1cm)                                  | integer    | NA                               |          86 |
-| percent\_small\_substrate  | Percent of small substrate (small 1-5cm)                                  | integer    | NA                               |          86 |
-| percent\_medium\_substrate | Percent of medium substrate (medium 6-15cm)                               | integer    | NA                               |          86 |
-| percent\_large\_substrate  | Percent of large substrate (large 16-30cm)                                | integer    | NA                               |          86 |
-| percent\_boulder           | Percent boulder (boulder &gt;30cm)                                        | integer    | NA                               |          86 |
-| redd\_width\_m             | Width of redd in meters                                                   | numeric    | NA                               |          85 |
-| redd\_length\_m            | Length of redd in meters                                                  | numeric    | NA                               |          86 |
-| latitude                   | GPS X point                                                               | numeric    | NA                               |          67 |
-| longitude                  | GPX Y point                                                               | numeric    | NA                               |          67 |
+| variables                | description                                                               | data_type | encoding                         | percent_na |
+|:-------------------------|:--------------------------------------------------------------------------|:----------|:---------------------------------|-----------:|
+| date                     | Sample date                                                               | date      | NA                               |          0 |
+| location                 | Nominal description of location                                           | character | NA                               |          0 |
+| type                     | Type of observation. A = polygon/area, P = point, Q = questionnable redd  | factor    | Area, Point, Questionnable redds |          0 |
+| redd_count               | Number of redds observed                                                  | integer   | NA                               |          0 |
+| salmon_count             | Number of salmon observed                                                 | integer   | NA                               |          0 |
+| depth_m                  | Depth of water at observation location in meters                          | numeric   | NA                               |         85 |
+| pot_depth_m              | Depth of the pot in meters                                                | numeric   | NA                               |         86 |
+| velocity                 | Velocity of water at observation location in m/s but standardized to ft/s | numeric   | NA                               |         88 |
+| percent_fine_substrate   | Percent of fine substrate (fine \<1cm)                                    | integer   | NA                               |         86 |
+| percent_small_substrate  | Percent of small substrate (small 1-5cm)                                  | integer   | NA                               |         86 |
+| percent_medium_substrate | Percent of medium substrate (medium 6-15cm)                               | integer   | NA                               |         86 |
+| percent_large_substrate  | Percent of large substrate (large 16-30cm)                                | integer   | NA                               |         86 |
+| percent_boulder          | Percent boulder (boulder \>30cm)                                          | integer   | NA                               |         86 |
+| redd_width_m             | Width of redd in meters                                                   | numeric   | NA                               |         85 |
+| redd_length_m            | Length of redd in meters                                                  | numeric   | NA                               |         86 |
+| latitude                 | GPS X point                                                               | numeric   | NA                               |         67 |
+| longitude                | GPX Y point                                                               | numeric   | NA                               |         67 |
 
 ``` r
 # saveRDS(data_dictionary, file = "data/feather_redd_data_dictionary.rds")
@@ -180,7 +180,7 @@ summary(clean_data$date)
 
 **NA and Unknown Values**
 
--   0.4 % of values in the `date` column are NA.
+- 0.4 % of values in the `date` column are NA.
 
 ## Explore Categorical Variables
 
@@ -321,19 +321,19 @@ table(clean_data$location)
 
 **NA and Unknown Values**
 
--   0 % of values in the `location` column are NA.
+- 0 % of values in the `location` column are NA.
 
 ## Variable:`type`
 
 # Description:
 
--   Area - polygon mapped with Trimble GPS unit
+- Area - polygon mapped with Trimble GPS unit
 
--   Point - points mapped with Trimble GPS unit
+- Point - points mapped with Trimble GPS unit
 
--   Questionable redds - polygon mapped with Trimble GPS unit where the
-    substrate was disturbed but did not have the proper characteristics
-    to be called a redd - it was no longer recorded after 2011
+- Questionable redds - polygon mapped with Trimble GPS unit where the
+  substrate was disturbed but did not have the proper characteristics to
+  be called a redd - it was no longer recorded after 2011
 
 ``` r
 table(clean_data$type)
@@ -394,7 +394,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-**Numeric Daily Summary of salmon\_count from 2009 to 2020**
+**Numeric Daily Summary of salmon_count from 2009 to 2020**
 
 ``` r
 clean_data %>%
@@ -409,7 +409,7 @@ clean_data %>%
 
 **NA and Unknown Values**
 
--   0.004 % of values in the `salmon_count` column are NA.
+- 0.004 % of values in the `salmon_count` column are NA.
 
 ### Variable:`redd_count`
 
@@ -447,7 +447,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
-**Numeric Daily Summary of total redd\_count From 2009 to 2020**
+**Numeric Daily Summary of total redd_count From 2009 to 2020**
 
 ``` r
 clean_data %>%
@@ -462,7 +462,7 @@ clean_data %>%
 
 **NA and Unknown Values**
 
--   0 % of values in the `redd_count` column are NA.
+- 0 % of values in the `redd_count` column are NA.
 
 ### Variable:`redd_width_m`
 
@@ -477,7 +477,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
-**Numeric Summary of redd\_width\_m from 2009 to 2020**
+**Numeric Summary of redd_width_m from 2009 to 2020**
 
 ``` r
 summary(clean_data$redd_width_m)
@@ -488,7 +488,7 @@ summary(clean_data$redd_width_m)
 
 **NA and Unknown Values**
 
--   85.5 % of values in the `redd_width_m` column are NA.
+- 85.5 % of values in the `redd_width_m` column are NA.
 
 ### Variable: `redd_length_m`
 
@@ -503,7 +503,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
-**Numeric Summary of redd\_length\_m 2009 to 2020**
+**Numeric Summary of redd_length_m 2009 to 2020**
 
 ``` r
 summary(clean_data$redd_length_m)
@@ -514,7 +514,7 @@ summary(clean_data$redd_length_m)
 
 **NA and Unknown Values**
 
--   85.5 % of values in the `redd_length_m` column are NA.
+- 85.5 % of values in the `redd_length_m` column are NA.
 
 ### Physical Attributes
 
@@ -537,7 +537,7 @@ clean_data %>%
   # guides(fill = guide_legend(nrow = 40))
 ```
 
-**Numeric Summary of percent\_fine\_substrate from 2009 to 2020**
+**Numeric Summary of percent_fine_substrate from 2009 to 2020**
 
 ``` r
 summary(clean_data$percent_fine_substrate)
@@ -548,7 +548,7 @@ summary(clean_data$percent_fine_substrate)
 
 **NA and Unknown Values**
 
--   86.1 % of values in the `percent_fine_substrate` column are NA.
+- 86.1 % of values in the `percent_fine_substrate` column are NA.
 
 ### Variable:`percent_small_substrate`
 
@@ -561,7 +561,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
-**Numeric Summary of percent\_small\_substrate from 2009 to 2020**
+**Numeric Summary of percent_small_substrate from 2009 to 2020**
 
 ``` r
 summary(clean_data$percent_small_substrate)
@@ -572,7 +572,7 @@ summary(clean_data$percent_small_substrate)
 
 **NA and Unknown Values**
 
--   86.1 % of values in the `percent_small_substrate` column are NA.
+- 86.1 % of values in the `percent_small_substrate` column are NA.
 
 ### Variable:`percent_medium_substrate`
 
@@ -585,7 +585,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
-**Numeric Summary of percent\_medium\_substrate from 2009 to 2020**
+**Numeric Summary of percent_medium_substrate from 2009 to 2020**
 
 ``` r
 summary(clean_data$percent_medium_substrate)
@@ -596,7 +596,7 @@ summary(clean_data$percent_medium_substrate)
 
 **NA and Unknown Values**
 
--   86.1 % of values in the `percent_medium_substrate` column are NA.
+- 86.1 % of values in the `percent_medium_substrate` column are NA.
 
 ### Variable:`percent_large_substrate`
 
@@ -609,7 +609,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
-**Numeric Summary of percent\_large\_substrate from 2009 to 2020**
+**Numeric Summary of percent_large_substrate from 2009 to 2020**
 
 ``` r
 summary(clean_data$percent_large_substrate)
@@ -620,7 +620,7 @@ summary(clean_data$percent_large_substrate)
 
 **NA and Unknown Values**
 
--   86.1 % of values in the `percent_large_substrate` column are NA.
+- 86.1 % of values in the `percent_large_substrate` column are NA.
 
 ### Variable:`percent_boulder`
 
@@ -633,7 +633,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
-**Numeric Summary of percent\_boulder from 2009 to 2020**
+**Numeric Summary of percent_boulder from 2009 to 2020**
 
 ``` r
 summary(clean_data$percent_boulder)
@@ -644,7 +644,7 @@ summary(clean_data$percent_boulder)
 
 **NA and Unknown Values**
 
--   86.3 % of values in the `percent_large_substrate` column are NA.
+- 86.3 % of values in the `percent_large_substrate` column are NA.
 
 ### Summary of Mean Percent Substrate In Each Location
 
@@ -684,7 +684,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
-**Numeric Summary of depth\_m from 2009 to 2020**
+**Numeric Summary of depth_m from 2009 to 2020**
 
 ``` r
 summary(clean_data$depth_m)
@@ -695,7 +695,7 @@ summary(clean_data$depth_m)
 
 **NA and Unknown Values**
 
--   85.2 % of values in the `depth_m` column are NA.
+- 85.2 % of values in the `depth_m` column are NA.
 
 ### Variable: `pot_depth_m`
 
@@ -709,7 +709,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
-**Numeric Summary of pot\_depth\_m from 2009 to 2020**
+**Numeric Summary of pot_depth_m from 2009 to 2020**
 
 ``` r
 summary(clean_data$pot_depth_m)
@@ -720,7 +720,7 @@ summary(clean_data$pot_depth_m)
 
 **NA and Unknown Values**
 
--   85.9 % of values in the `pot_depth_m` column are NA.
+- 85.9 % of values in the `pot_depth_m` column are NA.
 
 ### Variable: `velocity`
 
@@ -739,7 +739,7 @@ clean_data %>%
 
 ![](feather-river-redd-survey-qc-checklist_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
-**Numeric Summary of velocity\_m\_per\_s from 2009 to 2020**
+**Numeric Summary of velocity_m_per_s from 2009 to 2020**
 
 ``` r
 summary(clean_data$velocity)
@@ -750,7 +750,7 @@ summary(clean_data$velocity)
 
 **NA and Unknown Values**
 
--   88.5 % of values in the `velocity` column are NA.
+- 88.5 % of values in the `velocity` column are NA.
 
 ### Variable: `latitude and longitude`
 
@@ -774,14 +774,14 @@ summary(clean_data$longitude)
 
 ### Notes and Issues:
 
--   latitude and longitude were not converted to WGS84
--   2012,2013,2015 latitude and longitude shows inconsistencies and
-    large variations (refer to specific year Markdown for more info)
+- latitude and longitude were not converted to WGS84
+- 2012,2013,2015 latitude and longitude shows inconsistencies and large
+  variations (refer to specific year Markdown for more info)
 
 ## Next steps
 
--   Most important variables for the JPE are `date`, `latitude`,
-    `longitude`, `type`, `redd_count`, `salmon_count`
+- Most important variables for the JPE are `date`, `latitude`,
+  `longitude`, `type`, `redd_count`, `salmon_count`
 
 ### Add cleaned data back onto google cloud
 
