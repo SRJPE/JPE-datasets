@@ -291,6 +291,7 @@ updated_standard_catch_with_run <- bind_rows(combined_rst_wo_na_run, na_filled_r
 
 # Quick plot to check that we are not missing data 
 updated_standard_catch_with_run |> 
+  filter(model_run_method != "count is 0") |> 
   ggplot() + 
   geom_line(aes(x = date, y = count, color = run_for_model)) + facet_wrap(~stream, scales = "free")
 
@@ -469,7 +470,10 @@ release_summary <- standard_release |>
          year_released = ifelse(is.na(year_released), year(date_released), year_released),
          site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
                                 site %in% hfc_sites ~ "feather river hfc",
-                                T ~ NA)) 
+                                T ~ NA),
+         origin_released = ifelse(origin_released == "natural", "wild", origin_released)) 
+
+ck <- filter(release_summary, site == "red bluff diversion dam")
 gcs_upload(release_summary,
            object_function = f,
            type = "csv",
@@ -540,6 +544,7 @@ efficiency_summary <- standard_release %>%
          site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
                                 site %in% hfc_sites ~ "feather river hfc",
                                 T ~ NA))
+ck <- filter(efficiency_summary, site == "red bluff diversion dam")
 gcs_upload(efficiency_summary,
            object_function = f,
            type = "csv",
@@ -559,14 +564,14 @@ weekly_release_origin <- release_summary |>
   # then origin is mixed
   # if any reported as unknown or not recorded then origin is unknown or not reported
   mutate(origin_released = case_when(hatchery == 1 ~ "hatchery",
-                                     natural == 1 ~ "natural",
+                                     wild == 1 ~ "wild",
                                      !is.na(`not recorded`) ~ "not recorded",
                                      !is.na(unknown) ~ "unknown",
                                      !is.na(mixed) ~ "mixed",
-                                     hatchery < 1 | natural < 1 ~ "mixed")) |> 
-  select(-c(natural, hatchery, `not recorded`, unknown, mixed))
+                                     hatchery < 1 | wild < 1 ~ "mixed")) |> 
+  select(-c(wild, hatchery, `not recorded`, unknown, mixed))
 weekly_release <- release_summary |> 
-  filter(include == "yes") |> 
+  filter(include == "yes" | is.na(include)) |> 
   select(stream, site_group, site, release_id, date_released, week_released, year_released, 
          number_released, median_fork_length_released, flow_at_release, temperature_at_release, 
          turbidity_at_release) |> 

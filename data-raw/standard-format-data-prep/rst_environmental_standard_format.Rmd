@@ -680,7 +680,7 @@ table(combined_env$subsite, useNA = "ifany")
 
 ## Save data to google cloud 
 
-```{r, eval = FALSE}
+```{r}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(combined_env,
