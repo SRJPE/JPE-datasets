@@ -1,0 +1,177 @@
+---
+title: "mill_2022_2023_qc"
+output: html_document
+date: "2023-10-10"
+---
+
+```{r, include = F}
+library(dtplyr)
+library(data.table)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = F}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+f <- function(input, output) write_csv(input, file = output)
+```
+
+```{r, include = F}
+gcs_get_object(object_name = 
+              "rst/mill-creek/data-raw/2022_2023/raw_2022_rst_mill_liz.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_2022_rst_mill_liz.xlsx",
+               overwrite = TRUE)
+```
+
+## Catch
+
+TODO 
+- standardize species and lifestage 
+- add morts to new rows
+
+```{r, include = F}
+catch_liz <- readxl::read_excel("raw_2022_rst_mill_liz.xlsx", sheet = "Catch") |> 
+  mutate(is_plus_count = ifelse(is_plus_count == "T", T, F))
+```
+
+```{r}
+catch_clean <- catch_liz |> 
+  # standardize chinook - others can worry about later
+  mutate(species = ifelse(species == "chisal", "chinook salmon", species),
+         count = ifelse(!is.na(fork_length) & is.na(count), 1, count)) |> 
+  filter(date != as.Date("2023-12-13")) |> # TODO find out what this date actually is
+  select(-c(ad_clip)) |> 
+  glimpse()
+```
+
+### simple checks: stream, date
+
+```{r}
+unique(catch_clean$stream)
+range(catch_clean$date)
+```
+
+### species
+
+```{r}
+catch_clean |> 
+  group_by(species) |> 
+  summarize(count = sum(count))
+```
+
+### fork length
+
+```{r}
+catch_clean |> 
+  filter(species == "chinook salmon") |> 
+  group_by(fork_length) |> 
+  summarize(count = sum(count)) |> 
+  ggplot(aes(x = fork_length, y = count)) +
+  geom_point()
+```
+
+```{r}
+catch_clean |> 
+  filter(species == "chinook salmon") |> 
+  group_by(date) |> 
+  summarize(fork_length = mean(fork_length, na.rm = T)) |> 
+  ggplot(aes(x = date, y = fork_length)) +
+  geom_point()
+```
+### lifestage
+
+```{r}
+# TODO standardize - lifestage code and text
+catch_clean |> 
+  group_by(lifestage) |> 
+  summarize(count = sum(count))
+```
+
+##  Recapture
+
+```{r}
+recap_liz <- readxl::read_excel("raw_2022_rst_mill_liz.xlsx", sheet = "Recapture") |> 
+  glimpse()
+
+recap_clean <- recap_liz |> 
+  mutate(lifestage = case_when(lifestage == "p" ~ "parr",
+                               lifestage == "s" ~ "smolt",
+                               TRUE ~ lifestage))
+
+```
+
+
+## Trap
+
+TODO
+- Make sure all debris_gallons are in gallons and not tubs; remove debris_code
+- Make sure water temp is all in the same unit or just remove and use the gage temp
+- Find weather code and encode
+
+```{r}
+trap_liz <- readxl::read_excel("raw_2022_rst_mill_liz.xlsx", sheet = "Trap Operations & Env") |> 
+  mutate(hours_fished = as.numeric(hours_fished))
+
+```
+
+
+## Release
+
+```{r}
+# TODO empty
+release_liz <- readxl::read_excel("raw_2022_rst_mill_liz.xlsx", sheet = "Release Summary") |> glimpse()
+
+```
+
+## Release site location
+
+```{r}
+# TODO empty
+release_site <- readxl::read_excel("raw_2022_rst_mill_liz.xlsx", sheet = "release site location") |> 
+  glimpse()
+
+
+```
+
+## Upload to google cloud
+
+```{r}
+# gcs_upload(catch_combined,
+#            object_function = f,
+#            type = "csv",
+#            name = "rst/mill-creek/data/mill_2021_catch.csv",
+#            predefinedAcl = "bucketLevel")
+# 
+# gcs_upload(recap_combined,
+#            object_function = f,
+#            type = "csv",
+#            name = "rst/mill-creek/data/mill_2021_recaptures.csv",
+#            predefinedAcl = "bucketLevel")
+# 
+# gcs_upload(trap_combined,
+#            object_function = f,
+#            type = "csv",
+#            name = "rst/mill-creek/data/mill_2021_trap.csv",
+#            predefinedAcl = "bucketLevel")
+# 
+# gcs_upload(release_combined,
+#            object_function = f,
+#            type = "csv",
+#            name = "rst/mill-creek/data/mill_2021_release.csv",
+#            predefinedAcl = "bucketLevel")
+# 
+# gcs_upload(release_site,
+#            object_function = f,
+#            type = "csv",
+#            name = "rst/mill-creek/data/mill_2021_release_site.csv",
+#            predefinedAcl = "bucketLevel")
+```
