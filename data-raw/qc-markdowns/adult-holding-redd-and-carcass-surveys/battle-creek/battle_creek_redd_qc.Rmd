@@ -45,30 +45,27 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
-gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_adult_spawn_hold_carcass.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"))
+# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_adult_spawn_hold_carcass.xlsx",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"))
                # Overwrite = TRUE)
+
+# read in updated table with redd ids (sent 10-12-2023)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_redds_raw.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx"))
 ```
 
 Read in data from google cloud, glimpse sheets and raw data: 
 ```{r}
-sheets <- excel_sheets(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"))
-sheets 
-raw_redd_data <-read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"), 
-                           sheet = "Redd Survey",
-                           col_types = c("text", "numeric", "numeric", "numeric", "date", 
-                                         "text", "numeric", "text", "text", "text", "text", 
-                                         "text", "text", "text", "date", "numeric", "numeric", 
-                                         "numeric", "numeric", "numeric", "text", "numeric", "numeric",
-                                         "numeric", "numeric", "numeric", "numeric", "numeric", "text")) %>% glimpse()
+raw_redd_data <-read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx")) |> glimpse()
 ```
 
 ## Data transformations
 
 ```{r}
-cleaner_redd_data <- raw_redd_data %>% 
-  janitor::clean_names() %>% 
+cleaner_redd_data <- raw_redd_data |>  
+  janitor::clean_names() |> 
   rename("date" = sample_date,
          "fish_guarding" = `for`, 
          "redd_measured" = measure, 
@@ -88,10 +85,15 @@ cleaner_redd_data <- raw_redd_data %>%
          "start_number_flow_meter_80" = start_80, 
          "end_number_flow_meter_80" = end_80,
          "flow_meter_time_80" = secs_80) %>%
-  mutate(date = as.Date(date)) %>%
-  select(-project, -year, -date_measured, 
-         -species_run) %>% #All are spring run 
+  mutate(date = as.Date(date, format = "%m/%d/%Y"),
+         ) |> 
+  select(-c(project, year, date_measured, species_run)) |> # all are spring run
   glimpse()
+
+# TODO pivot age columns to get more than one row for different ages
+
+# TODO what is serial, corr_type, horz_prec, corr_date, fines_pres, 
+# overhead_v, instream_c, cover_comm, stream_fea, tributary, trib_comm
 ```
 
 ## Data Dictionary
