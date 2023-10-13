@@ -568,10 +568,10 @@ summary(clean_redd_data_with_age$flow_meter_time_80)
 
 ### Variables: `age_index`
 
-Age Index refers to the number of times a unique redd has been surveyed. If `age_index == 1` it could either be no redd sampled or one redd sampled; any value for `age_index` over `2` indicates a unique redd has been sampled.			
+Age Index refers to the number of times a unique redd has been surveyed. If `age_index == 0`, the redd was not aged.		
 
 
-**Plotting distribution of flow meter end number per second**
+**Plotting distribution of age index**
 
 ```{r}
 clean_redd_data_with_age |> 
@@ -584,19 +584,50 @@ clean_redd_data_with_age |>
 
 ```
 
-Most redds are sampled 0 times or once.
+Most redds are aged at least once.
 
-**Numeric Summary of flow over Period of Record**
+**Numeric Summary of age index over Period of Record**
 
 ```{r}
-summary(clean_redd_data_with_age$flow_meter_time)
-summary(clean_redd_data_with_age$flow_meter_time_80)
+summary(clean_redd_data_with_age$age_index)
+summary(clean_redd_data_with_age$age_index)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(clean_redd_data_with_age$flow_meter_time))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `flow_meter_time` column are NA. 
-* `r round(sum(is.na(clean_redd_data_with_age$flow_meter_time_80))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `flow_meter_time_80` column are NA.
+* `r round(sum(is.na(clean_redd_data_with_age$age_index))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `age_index` column are NA. 
+* `r round(sum(is.na(clean_redd_data_with_age$age_index))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `age_index` column are NA.
+
+### Variables: `age`
+
+Age refers to the assigned age of a redd. 	
+
+**Plotting distribution of age**
+
+```{r}
+clean_redd_data_with_age |> 
+  ggplot(aes(x = age)) +
+  geom_histogram() +
+  labs(x = "Redd age", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))
+
+```
+
+Most redds are age `2` to `3`.
+
+**Numeric Summary of ageover Period of Record**
+
+```{r}
+summary(clean_redd_data_with_age$age)
+summary(clean_redd_data_with_age$age)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(clean_redd_data_with_age$age))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `age` column are NA. 
+* `r round(sum(is.na(clean_redd_data_with_age$age))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `age` column are NA.
 
 ## Explore Categorical variables: {.tabset}
 
