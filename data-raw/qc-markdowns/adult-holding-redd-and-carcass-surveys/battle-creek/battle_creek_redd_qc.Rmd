@@ -45,15 +45,11 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
-# gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_adult_spawn_hold_carcass.xlsx",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"))
-               # Overwrite = TRUE)
-
 # read in updated table with redd ids (sent 10-12-2023)
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_redds_raw.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx"))
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx"),
+               overwrite = TRUE)
 ```
 
 Read in data from google cloud, glimpse sheets and raw data: 
@@ -84,14 +80,43 @@ cleaner_redd_data <- raw_redd_data |>
          "flow_meter_time" = time,
          "start_number_flow_meter_80" = start_80, 
          "end_number_flow_meter_80" = end_80,
-         "flow_meter_time_80" = secs_80) %>%
-  mutate(date = as.Date(date, format = "%m/%d/%Y"),
-         ) |> 
-  select(-c(project, year, date_measured, species_run)) |> # all are spring run
+         "flow_meter_time_80" = secs_80) |> 
+    select(-c(project, year, date_measured, species_run,
+            corr_type, horz_prec, corr_date, fines_pres,
+            overhead_v, instream_c, cover_comm, stream_fea, 
+            tributary, trib_comm))  # all are spring run
+
+clean_redd_data_with_age <- cleaner_redd_data |> 
+  # clean up dates
+  mutate(date_a = as.Date(date, format = "%m/%d/%Y"), # assign date to date_a (for first redd encounter)
+         date_b = as.Date(date_b, format = "%m/%d/%Y"), # second redd encounter (if happens)
+         date_c = as.Date(date_c, format = "%m/%d/%Y"), # etc.
+         date_d = as.Date(date_d, format = "%m/%d/%Y"),
+         age_b = ifelse(age_b == "Initial", "2", age_b), # TODO double check what "Initial" is coded as
+         age_c = case_when(age_c == "Initial" ~ "2", 
+                           age_c == "UNK" ~ NA_character_,
+                           TRUE ~ age_c),
+         age_d = ifelse(age_d == "NA", NA_character_, age_d),
+         age_a = age, # assign age_a the value for age (they record first redd encounter age in "age")
+         age_b = as.numeric(age_b),
+         age_c = as.numeric(age_c),
+         age_d = as.numeric(age_d)) |> 
+  select(-c(age)) |> # don't need anymore
+  pivot_longer(cols = c(age_a, age_b, age_c, age_d), # pivot all aging instances to age column
+               values_to = "new_age",
+               names_to = "age_index") |> 
+  # for all aging instances, take the date where that aging occurred.
+  # check for what aging instance it was and pull that date (if present)
+  mutate(new_date = case_when(age_index == "age_b" & !is.na(date_b) ~ date_b,
+                          age_index == "age_c" & !is.na(date_c) ~ date_c,
+                          age_index == "age_d" & !is.na(date_d) ~ date_d,
+                          age_index == "age_a" ~ date_a,
+                          TRUE ~ NA)) |> 
+  filter(!is.na(new_date)) |> 
+  select(-c(date, date_a, date_b, date_c, date_d)) |> 
+  rename(age = new_age, date = new_date) |> 
+  relocate(date, .before = id) |> 
   glimpse()
-
-# TODO pivot age columns to get more than one row for different ages
-
 # TODO what is serial, corr_type, horz_prec, corr_date, fines_pres, 
 # overhead_v, instream_c, cover_comm, stream_fea, tributary, trib_comm
 ```
@@ -101,8 +126,8 @@ cleaner_redd_data <- raw_redd_data |>
 The following table describes the variables included in this dataset and the percent that do not include data.
 
 ```{r data_dictionary}
-percent_na <- cleaner_redd_data %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+percent_na <- cleaner_redd_data |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
   
 data_dictionary <- tibble(variables = colnames(cleaner_redd_data),
@@ -191,7 +216,7 @@ kable(data_dictionary)
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
-cleaner_redd_data %>% select_if(is.numeric) %>% colnames()
+cleaner_redd_data |> select_if(is.numeric) |> colnames()
 ```
 
 ### Variable: `longitude`, `latitude`
@@ -213,7 +238,7 @@ All values look within an expected range
 **Plotting river mile over Period of Record**
 
 ```{r}
-cleaner_redd_data %>% 
+cleaner_redd_data |> 
   ggplot(aes(x = river_mile, y =as.factor(year(date)))) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "River Mile", 
@@ -225,7 +250,7 @@ cleaner_redd_data %>%
 It looks like river miles 0 - 4 and 11 - 12 most commonly have redds. In most recent years almost all the redds are before mile 5. 
 
 ```{r}
-cleaner_redd_data %>% 
+cleaner_redd_data |> 
   ggplot(aes(x = river_mile)) +
   geom_histogram(alpha = .75) + 
   labs(x = "River Mile") +
@@ -258,7 +283,7 @@ cleaner_redd_data$pre_redd_depth <- cleaner_redd_data$pre_redd_depth*0.0254
 **Plotting distribution of pre redd depth**
 
 ```{r}
-cleaner_redd_data %>%
+cleaner_redd_data |>
   ggplot(aes(x = pre_redd_depth)) +
   geom_histogram() +
   labs(x = "Redd Depth", 
@@ -289,7 +314,7 @@ cleaner_redd_data$redd_pit_depth <- cleaner_redd_data$redd_pit_depth*0.0254
 **Plotting distribution of redd pit depth**
 
 ```{r}
-cleaner_redd_data %>% 
+cleaner_redd_data |> 
   ggplot(aes(x = redd_pit_depth)) +
   geom_histogram() +
   labs(x = "River Pit Depth", 
@@ -321,7 +346,7 @@ cleaner_redd_data$redd_tail_depth <- cleaner_redd_data$redd_tail_depth*0.0254
 **Plotting distribution of redd tail depth**
 
 ```{r}
-cleaner_redd_data %>% 
+cleaner_redd_data |> 
   ggplot(aes(x = redd_tail_depth)) +
   geom_histogram() +
   labs(x = "Redd tail depth", 
@@ -353,7 +378,7 @@ cleaner_redd_data$redd_length <- cleaner_redd_data$redd_length*0.0254
 **Plotting distribution of redd length**
 
 ```{r}
-cleaner_redd_data %>% 
+cleaner_redd_data |> 
   ggplot(aes(x = redd_length)) +
   geom_histogram() +
   labs(x = "Redd Length (m)", 
@@ -386,7 +411,7 @@ cleaner_redd_data$redd_width <- cleaner_redd_data$redd_width*0.0254
 **Plotting distribution of redd width**
 
 ```{r}
-cleaner_redd_data %>% 
+cleaner_redd_data |> 
   ggplot(aes(x = redd_width)) +
   geom_histogram() +
   labs(x = "Redd Width (m)", 
@@ -414,7 +439,7 @@ summary(cleaner_redd_data$redd_width)
 **Plotting distribution of flow feet per second**
 
 ```{r}
-cleaner_redd_data %>% 
+cleaner_redd_data |> 
   ggplot(aes(x = flow_fps)) +
   geom_histogram() +
   labs(x = "Flow Feet per second", 
@@ -424,7 +449,7 @@ cleaner_redd_data %>%
 ```
 
 ```{r}
-cleaner_redd_data %>% 
+cleaner_redd_data |> 
   ggplot(aes(x = flow_fps, y = reach)) +
   geom_boxplot() +
   labs(x = "Flow Feet Per Second", 
@@ -449,7 +474,7 @@ summary(cleaner_redd_data$flow_fps)
 **Plotting distribution of flow number start per second**
 
 ```{r}
-p1 <- cleaner_redd_data %>% 
+p1 <- cleaner_redd_data |> 
   ggplot(aes(x = start_number_flow_meter)) +
   geom_histogram() +
   labs(x = "Start Number", 
@@ -457,7 +482,7 @@ p1 <- cleaner_redd_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 
-p2 <- cleaner_redd_data %>% 
+p2 <- cleaner_redd_data |> 
   ggplot(aes(x = start_number_flow_meter_80)) +
   geom_histogram() +
   labs(x = "Start Number 80%", 
@@ -490,7 +515,7 @@ summary(cleaner_redd_data$start_number_flow_meter_80)
 **Plotting distribution of flow meter end number per second**
 
 ```{r}
-p1 <- cleaner_redd_data %>% 
+p1 <- cleaner_redd_data |> 
   ggplot(aes(x = end_number_flow_meter)) +
   geom_histogram() +
   labs(x = "End Number", 
@@ -498,7 +523,7 @@ p1 <- cleaner_redd_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 
-p2 <- cleaner_redd_data %>% 
+p2 <- cleaner_redd_data |> 
   ggplot(aes(x = end_number_flow_meter_80)) +
   geom_histogram() +
   labs(x = "End Number 80%", 
@@ -533,7 +558,7 @@ Start number for flow bomb at 80% depth; 80% depth was measured when the redd wa
 **Plotting distribution of flow meter end number per second**
 
 ```{r}
-p1 <- cleaner_redd_data %>% 
+p1 <- cleaner_redd_data |> 
   ggplot(aes(x = flow_meter_time)) +
   geom_histogram() +
   labs(x = "Time Seconds", 
@@ -541,7 +566,7 @@ p1 <- cleaner_redd_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 
-p2 <- cleaner_redd_data %>% 
+p2 <- cleaner_redd_data |> 
   ggplot(aes(x = flow_meter_time_80)) +
   geom_histogram() +
   labs(x = "Time Seconds 80%", 
@@ -570,7 +595,7 @@ summary(cleaner_redd_data$flow_meter_time_80)
 
 
 ```{r}
-cleaner_redd_data %>% select_if(is.character) %>% colnames()
+cleaner_redd_data |> select_if(is.character) |> colnames()
 ```
 
 
@@ -784,7 +809,7 @@ unique(cleaner_redd_data$comments)[1:10]
 ## Save cleaned data back to google cloud 
 
 ```{r}
-battle_redd <- cleaner_redd_data %>% glimpse
+battle_redd <- cleaner_redd_data |> glimpse
 ```
 
 
