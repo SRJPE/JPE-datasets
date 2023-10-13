@@ -121,8 +121,8 @@ clean_redd_data_with_age <- cleaner_redd_data |>
          age_index = case_when(age_index == "age_a" ~ 1,
                                age_index == "age_b" ~ 2,
                                age_index == "age_c" ~ 3,
-                               age_index == "age_d" ~ 4,
-                               TRUE ~ 99)) |> 
+                               age_index == "age_d" ~ 4),
+         age_index = ifelse(is.na(new_age) & age_index == 1, 0, age_index)) |> 
   filter(!is.na(new_date)) |> 
   select(-c(date, date_a, date_b, date_c, date_d)) |> 
   rename(age = new_age, date = new_date) |> 
@@ -173,7 +173,7 @@ data_dictionary <- tibble(variables = colnames(clean_redd_data_with_age),
                                           "Number of seconds elapsed for flow bomb at 80% depth",
                                           "Survey number",
                                           "Redd age assigned",
-                                          "If greater than 1, number of times that unique redd has been sampled"),
+                                          "Number of times that unique redd has been aged: 0 (no redd aged) - 3 (aged 3x)"),
                           data_type = c("Date", "character", "numeric", "numeric", "character",
                                         "character", "numeric", "character", "character", "character",
                                         "character", "character", "character", "character", "logical",
@@ -222,7 +222,7 @@ clean_redd_data_with_age |>
   theme(text = element_text(size = 15)) 
 ```
 
-It looks like river miles 0 - 4 and 11 - 12 most commonly have redds. In most recent years almost all the redds are before mile 5. 
+It looks like river miles 0 - 4 and 11 - 15 most commonly have redds. In most recent years almost all the redds are before mile 5. 
 
 ```{r}
 clean_redd_data_with_age |> 
@@ -553,6 +553,38 @@ gridExtra::grid.arrange(p1, p2)
 ```
 
 Most (all for Time 80) of the flow meter times are at 100 seconds. 
+
+**Numeric Summary of flow over Period of Record**
+
+```{r}
+summary(clean_redd_data_with_age$flow_meter_time)
+summary(clean_redd_data_with_age$flow_meter_time_80)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(clean_redd_data_with_age$flow_meter_time))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `flow_meter_time` column are NA. 
+* `r round(sum(is.na(clean_redd_data_with_age$flow_meter_time_80))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `flow_meter_time_80` column are NA.
+
+### Variables: `age_index`
+
+Age Index refers to the number of times a unique redd has been surveyed. If `age_index == 1` it could either be no redd sampled or one redd sampled; any value for `age_index` over `2` indicates a unique redd has been sampled.			
+
+
+**Plotting distribution of flow meter end number per second**
+
+```{r}
+clean_redd_data_with_age |> 
+  ggplot(aes(x = age_index)) +
+  geom_histogram() +
+  labs(x = "Number of times sampled", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))
+
+```
+
+Most redds are sampled 0 times or once.
 
 **Numeric Summary of flow over Period of Record**
 
