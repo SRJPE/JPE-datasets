@@ -636,6 +636,15 @@ summary(clean_redd_data_with_age$age)
 clean_redd_data_with_age |> select_if(is.character) |> colnames()
 ```
 
+### Variable: `survey_method`
+```{r}
+table(clean_redd_data_with_age$survey_method) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(clean_redd_data_with_age$survey_method))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `survey_method` column are NA. 
+
 
 ### Variable: `reach`
 ```{r}
@@ -645,6 +654,44 @@ table(clean_redd_data_with_age$reach)
 **NA and Unknown Values**
 
 * `r round(sum(is.na(clean_redd_data_with_age$reach))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `reach`column are NA. 
+
+### Variable: `reach_sub_unit`
+```{r}
+table(clean_redd_data_with_age$reach_sub_unit) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(clean_redd_data_with_age$reach_sub_unit))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `reach_sub_unit`column are NA. 
+
+### Variable: `run`
+```{r}
+table(clean_redd_data_with_age$run) 
+```
+All records are for spring run fish.
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(clean_redd_data_with_age$run))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `run`column are NA. 
+
+
+### Variable: `redd_id`
+```{r}
+length(unique(clean_redd_data_with_age$redd_id))
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(clean_redd_data_with_age$redd_id))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `redd_id`column are NA. 
+
+### Variable: `redd_loc``
+```{r}
+table(clean_redd_data_with_age$redd_loc) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(clean_redd_data_with_age$redd_loc))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `redd_loc`column are NA. 
 
 
 ### Variable: `pre_redd_substrate_size`
@@ -699,9 +746,6 @@ table(clean_redd_data_with_age$redd_substrate_size)
 * `r round(sum(is.na(clean_redd_data_with_age$redd_substrate_size))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `redd_substrate_size` column are NA. 
 
 
-
-
-
 ### Variable: `tail_substrate_size`
 ```{r}
 table(clean_redd_data_with_age$tail_substrate_size) 
@@ -725,8 +769,6 @@ table(clean_redd_data_with_age$tail_substrate_size)
 **NA and Unknown Values**
 
 * `r round(sum(is.na(clean_redd_data_with_age$tail_substrate_size))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `tail_substrate_size` column are NA. 
-
-
 
 
 
@@ -824,14 +866,14 @@ table(clean_redd_data_with_age$flow_meter)
 * `r round(sum(is.na(clean_redd_data_with_age$flow_meter))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `flow_meter` column are NA. 
 
 
-### Variable: `comments`
+### Variable: `survey`
 ```{r}
-unique(clean_redd_data_with_age$comments)[1:10]
+table(clean_redd_data_with_age$survey)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(clean_redd_data_with_age$comments))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `comments` column are NA. 
+* `r round(sum(is.na(clean_redd_data_with_age$survey))/nrow(clean_redd_data_with_age), 3) * 100` % of values in the `survey` column are NA. 
 
 ## Summary of identified issues
 
@@ -842,12 +884,12 @@ unique(clean_redd_data_with_age$comments)[1:10]
 ### Columns to remove
 
 - `comments`, `why_not_measured`, `flow_meter`, `flow_fps`, `start_number_flow_meter`, `end_number_flow_meter`, `flow_meter_time`, `start_number_flow_meter_80`, `end_number_flow_meter_80`, `flow_meter_time_80` have little data and may not be needed.
-- The most important variables are `longitude`, `latitude`, `date`, `redd_measured`
+- The most important variables are `longitude`, `latitude`, `date`, `redd_measured`, `redd_id`, `age`, and `age_index`
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-battle_redd <- clean_redd_data_with_age |> glimpse
+battle_redd <- clean_redd_data_with_age |> glimpse()
 ```
 
 
