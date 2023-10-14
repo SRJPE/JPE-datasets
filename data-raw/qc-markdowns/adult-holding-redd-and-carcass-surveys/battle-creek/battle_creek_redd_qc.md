@@ -35,65 +35,84 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
+# read in updated table with redd ids (sent 10-12-2023)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_redds_raw.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx"),
+               overwrite = TRUE)
 ```
 
 Read in data from google cloud, glimpse sheets and raw data:
 
 ``` r
-sheets <- excel_sheets(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"))
-sheets 
-```
-
-    ## [1] "Notes and Metadata"    "Redd Survey"           "Carcass"              
-    ## [4] "Live Holding Spawning"
-
-``` r
-raw_redd_data <-read_excel(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"), 
-                           sheet = "Redd Survey",
-                           col_types = c("text", "numeric", "numeric", "numeric", "date", 
-                                         "text", "numeric", "text", "text", "text", "text", 
-                                         "text", "text", "text", "date", "numeric", "numeric", 
-                                         "numeric", "numeric", "numeric", "text", "numeric", "numeric",
-                                         "numeric", "numeric", "numeric", "numeric", "numeric", "text")) %>% glimpse()
+raw_redd_data <-read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx")) |> glimpse()
 ```
 
     ## Rows: 1,605
-    ## Columns: 29
-    ## $ Project     <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel", "Snorkel", "Sn…
-    ## $ LONGITUDE   <dbl> -121.9688, -121.9742, -121.9742, -121.9688, -121.9688, -12…
-    ## $ LATITUDE    <dbl> 40.40218, 40.40279, 40.40279, 40.40218, 40.40218, 40.41850…
-    ## $ YEAR        <dbl> 2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001…
-    ## $ Sample_Date <dttm> 2001-09-18, 2001-10-03, 2001-10-03, 2001-10-03, 2001-10-0…
-    ## $ REACH       <chr> "R3", "R3", "R3", "R3", "R3", "R1", "R1", "R1", "R1", "R2"…
-    ## $ RIVER_MILE  <dbl> 2.48, 2.14, 2.14, 2.48, 2.48, 2.94, 2.91, 2.88, 2.85, 1.64…
-    ## $ Species_Run <chr> "SCS", "SCS", "SCS", "SCS", "SCS", "SCS", "SCS", "SCS", "S…
-    ## $ PRE_SUB     <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ SIDES_SUB   <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ TAIL_SUB    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ FOR_        <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "U…
-    ## $ MEASURE     <chr> "NO", "YES", "YES", "YES", "YES", "NO", "NO", "NO", "NO", …
-    ## $ WHY_NOT_ME  <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "U…
-    ## $ DATE_MEASU  <dttm> NA, 2001-10-03, 2001-10-03, 2001-10-03, 2001-10-03, NA, N…
-    ## $ PRE_DEPTH   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 18, 16, NA, NA, NA, NA…
-    ## $ PIT_DEPTH   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 23, 21, NA, NA, NA, NA…
-    ## $ TAIL_DEPTH  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 11, 10, NA, NA, NA, NA…
-    ## $ LENGTH_IN   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 77, 166, NA, NA, NA, N…
-    ## $ WIDTH_IN    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 37, 129, NA, NA, NA, N…
-    ## $ FLOW_METER  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ FLOW_FPS    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ START       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ END_        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ TIME_       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ START_80    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ END_80      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ SECS_80_    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-    ## $ Comments    <chr> "wp 66", "wp 65; unable to associate measurements with ind…
+    ## Columns: 57
+    ## $ ID                   <dbl> 14598, 14599, 14600, 14601, 14602, 14603, 14604, …
+    ## $ OBJECT_ID            <dbl> 35, 36, 37, 38, 39, 40, 41, 42, 141, 142, 143, 14…
+    ## $ DATABASE_ID          <chr> "Redd_0035", "Redd_0036", "Redd_0037", "Redd_0038…
+    ## $ Date_ReachU_Reach_SU <chr> "37530R2", "37530R2", "37530R2", "37530R2", "3753…
+    ## $ Project              <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel", "Snor…
+    ## $ SUR_METHOD           <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel", "Snor…
+    ## $ LONGITUDE            <dbl> -122, -122, -122, -122, -122, -122, -122, -122, -…
+    ## $ LATITUDE             <dbl> 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 4…
+    ## $ YEAR                 <chr> "2002", "2002", "2002", "2002", "2002", "2002", "…
+    ## $ Sample_Date          <chr> "10/1/2002", "10/1/2002", "10/1/2002", "10/1/2002…
+    ## $ REACH                <chr> "R2", "R2", "R2", "R2", "R2", "R2", "R3", "R3", "…
+    ## $ Reach_SubUnit        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ RIVER_MILE           <dbl> 2, 2, 1, 1, 0, 0, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2…
+    ## $ Species_Run          <chr> "SCS", "SCS", "SCS", "SCS", "SCS", "SCS", "SCS", …
+    ## $ REDD_ID              <chr> "10102R2#1", "10102R2#2", "10102R2#3", "10102R2#4…
+    ## $ FORK                 <chr> "NF", "NF", "NF", "NF", "NF", "NF", "SF", "SF", "…
+    ## $ AGE                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ REDD_LOC             <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", …
+    ## $ PRE_SUB              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ SIDES_SUB            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ TAIL_SUB             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ FOR_                 <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", …
+    ## $ MEASURE              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, …
+    ## $ WHY_NOT_ME           <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", …
+    ## $ DATE_MEASU           <dttm> NA, NA, NA, NA, NA, NA, NA, NA, 2003-10-01, 2003…
+    ## $ PRE_DEPTH            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 10, 15, 15, NA, N…
+    ## $ PIT_DEPTH            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 16, 24, 19, NA, N…
+    ## $ TAIL_DEPTH           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 8, 13, 13, NA, NA…
+    ## $ LENGTH_IN            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 182, 66, 80, NA, …
+    ## $ WIDTH_IN             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 72, 43, 42, NA, N…
+    ## $ FLOW_METER           <chr> NA, NA, NA, NA, NA, NA, NA, NA, "Flow Bomb", "Flo…
+    ## $ FLOW_FPS             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 2, 2, 2, NA, NA, …
+    ## $ START                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 862000, 877300, 8…
+    ## $ END_                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 864537, 880150, 8…
+    ## $ TIME_                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 100, 100, 100, NA…
+    ## $ START_80             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ END_80               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ SECS_80_             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ SERIAL               <chr> NA, NA, NA, NA, NA, NA, NA, NA, "16765", NA, NA, …
+    ## $ Comments             <chr> "wp 193", "wp 194", "wp 195", "wp 196", "wp 197",…
+    ## $ SURVEY               <chr> "11", "11", "11", "11", "11", "11", "11", "11", "…
+    ## $ AGE_B                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ DATE_B               <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ AGE_C                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ DATE_C               <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ AGE_D                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ DATE_D               <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ Corr_Type            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ Horz_Prec            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ Corr_Date            <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ FINES_PRES           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ OVERHEAD_V           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ INSTREAM_C           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ COVER_COMM           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ STREAM_FEA           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ TRIBUTARY_           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ TRIB_COMM            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
 
 ## Data transformations
 
 ``` r
-cleaner_redd_data <- raw_redd_data %>% 
-  janitor::clean_names() %>% 
+cleaner_redd_data <- raw_redd_data |>  
+  janitor::clean_names() |> 
   rename("date" = sample_date,
          "fish_guarding" = `for`, 
          "redd_measured" = measure, 
@@ -112,40 +131,95 @@ cleaner_redd_data <- raw_redd_data %>%
          "flow_meter_time" = time,
          "start_number_flow_meter_80" = start_80, 
          "end_number_flow_meter_80" = end_80,
-         "flow_meter_time_80" = secs_80) %>%
-  mutate(date = as.Date(date)) %>%
-  select(-project, -year, -date_measured, 
-         -species_run) %>% #All are spring run 
+         "flow_meter_time_80" = secs_80,
+         "survey_method" = sur_method,
+         "run" = species_run) |> 
+  mutate(reach_sub_unit = toupper(reach_sub_unit),
+         run = ifelse(run == "SCS", "spring", run),
+         redd_loc = ifelse(redd_loc == "NA", NA_character_, redd_loc)) |> 
+    select(-c(id, object_id, database_id, date_reach_u_reach_su, 
+              project, year, date_measured, 
+            corr_type, horz_prec, corr_date, fines_pres,
+            overhead_v, instream_c, cover_comm, stream_fea, 
+            tributary, trib_comm, serial, comments, fork))  # all are spring run
+
+clean_redd_data_with_age <- cleaner_redd_data |> 
+  # clean up dates
+  mutate(date_a = as.Date(date, format = "%m/%d/%Y"), # assign date to date_a (for first redd encounter)
+         date_b = as.Date(date_b, format = "%m/%d/%Y"), # second redd encounter (if happens)
+         date_c = as.Date(date_c, format = "%m/%d/%Y"), # etc.
+         date_d = as.Date(date_d, format = "%m/%d/%Y"),
+         age_b = ifelse(age_b == "Initial", "2", age_b), # TODO double check what "Initial" is coded as
+         age_c = case_when(age_c == "Initial" ~ "2", 
+                           age_c == "UNK" ~ NA_character_,
+                           TRUE ~ age_c),
+         age_d = ifelse(age_d == "NA", NA_character_, age_d),
+         age_a = age, # assign age_a the value for age (they record first redd encounter age in "age")
+         age_b = as.numeric(age_b),
+         age_c = as.numeric(age_c),
+         age_d = as.numeric(age_d)) |> 
+  select(-c(age)) |> # don't need anymore
+  pivot_longer(cols = c(age_a, age_b, age_c, age_d), # pivot all aging instances to age column
+               values_to = "new_age",
+               names_to = "age_index") |> 
+  # for all aging instances, take the date where that aging occurred.
+  # check for what aging instance it was and pull that date (if present)
+  mutate(new_date = case_when(age_index == "age_b" & !is.na(date_b) ~ date_b,
+                          age_index == "age_c" & !is.na(date_c) ~ date_c,
+                          age_index == "age_d" & !is.na(date_d) ~ date_d,
+                          age_index == "age_a" ~ date_a,
+                          TRUE ~ NA),
+         age_index = case_when(age_index == "age_a" ~ 1,
+                               age_index == "age_b" ~ 2,
+                               age_index == "age_c" ~ 3,
+                               age_index == "age_d" ~ 4),
+         age_index = ifelse(is.na(new_age) & age_index == 1, 0, age_index)) |> 
+  filter(!is.na(new_date)) |> 
+  select(-c(date, date_a, date_b, date_c, date_d)) |> 
+  rename(age = new_age, date = new_date) |> 
+  relocate(date, .before = survey_method) |> 
   glimpse()
 ```
 
-    ## Rows: 1,605
-    ## Columns: 25
-    ## $ longitude                  <dbl> -121.9688, -121.9742, -121.9742, -121.9688,…
-    ## $ latitude                   <dbl> 40.40218, 40.40279, 40.40279, 40.40218, 40.…
-    ## $ date                       <date> 2001-09-18, 2001-10-03, 2001-10-03, 2001-1…
-    ## $ reach                      <chr> "R3", "R3", "R3", "R3", "R3", "R1", "R1", "…
-    ## $ river_mile                 <dbl> 2.48, 2.14, 2.14, 2.48, 2.48, 2.94, 2.91, 2…
+    ## Rows: 2,129
+    ## Columns: 32
+    ## $ date                       <date> 2002-10-01, 2002-10-01, 2002-10-01, 2002-1…
+    ## $ survey_method              <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel",…
+    ## $ longitude                  <dbl> -122, -122, -122, -122, -122, -122, -122, -…
+    ## $ latitude                   <dbl> 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,…
+    ## $ reach                      <chr> "R2", "R2", "R2", "R2", "R2", "R2", "R3", "…
+    ## $ reach_sub_unit             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ river_mile                 <dbl> 2, 2, 1, 1, 0, 0, 2, 2, 2, 1, 1, 1, 1, 2, 2…
+    ## $ run                        <chr> "spring", "spring", "spring", "spring", "sp…
+    ## $ redd_id                    <chr> "10102R2#1", "10102R2#2", "10102R2#3", "101…
+    ## $ redd_loc                   <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "…
     ## $ pre_redd_substrate_size    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ redd_substrate_size        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ tail_substrate_size        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ fish_guarding              <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "…
-    ## $ redd_measured              <chr> "NO", "YES", "YES", "YES", "YES", "NO", "NO…
+    ## $ redd_measured              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F…
     ## $ why_not_measured           <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "…
-    ## $ pre_redd_depth             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 18, 16,…
-    ## $ redd_pit_depth             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 23, 21,…
-    ## $ redd_tail_depth            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 11, 10,…
-    ## $ redd_length                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 77, 166…
-    ## $ redd_width                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 37, 129…
-    ## $ flow_meter                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ flow_fps                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ start_number_flow_meter    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ end_number_flow_meter      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ flow_meter_time            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ pre_redd_depth             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 10, 15, 15,…
+    ## $ redd_pit_depth             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 16, 24, 19,…
+    ## $ redd_tail_depth            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 8, 13, 13, …
+    ## $ redd_length                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 182, 66, 80…
+    ## $ redd_width                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 72, 43, 42,…
+    ## $ flow_meter                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, "Flow Bomb"…
+    ## $ flow_fps                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 2, 2, 2, NA…
+    ## $ start_number_flow_meter    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 862000, 877…
+    ## $ end_number_flow_meter      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 864537, 880…
+    ## $ flow_meter_time            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 100, 100, 1…
     ## $ start_number_flow_meter_80 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ end_number_flow_meter_80   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ flow_meter_time_80         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ comments                   <chr> "wp 66", "wp 65; unable to associate measur…
+    ## $ survey                     <chr> "11", "11", "11", "11", "11", "11", "11", "…
+    ## $ age_index                  <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+    ## $ age                        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+
+``` r
+# TODO what is id, fork, serial, corr_type, horz_prec, corr_date, fines_pres, 
+# overhead_v, instream_c, cover_comm, stream_fea, tributary, trib_comm, serial
+```
 
 ## Data Dictionary
 
@@ -153,16 +227,21 @@ The following table describes the variables included in this dataset and
 the percent that do not include data.
 
 ``` r
-percent_na <- cleaner_redd_data %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+percent_na <- clean_redd_data_with_age |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
   
-data_dictionary <- tibble(variables = colnames(cleaner_redd_data),
-                          description = c("GPS X point",
+data_dictionary <- tibble(variables = colnames(clean_redd_data_with_age),
+                          description = c("Date of sample",
+                                          "Survey method", 
+                                          "GPS X point",
                                           "GPS Y point",
-                                          "Date of sample",
                                           "Reach number (1-7)",
+                                          "Reach subunit (A-B)",
                                           "River mile number",
+                                          "Run designation",
+                                          "Unique identifier assigned to redd",
+                                          "Redd location (RL, RR, RC)",
                                           "Size of pre-redd substrate. Originally reported in inches; standardized to meters",
                                           "Size of side of redd substrate. Originally reported in inches; standardized to meters",
                                           "Size of gravel in tail of redd. Originally reported in inches; standardized to meters",
@@ -182,90 +261,56 @@ data_dictionary <- tibble(variables = colnames(cleaner_redd_data),
                                           "Start number for flow bomb at 80% depth; 80% depth was measured when redd was > 22 ft deep",
                                           "End number for flow bomb at 80% depth; 80% depth was measured when redd was > 22 ft deep",
                                           "Number of seconds elapsed for flow bomb at 80% depth",
-                                          "Qualitative comments on data collection"),
-                          data_type = c("numeric",
-                                       "numeric",
-                                       "date",
-                                          "integer",
-                                          "integer",
-                                          "ordered factor",
-                                          "ordered factor",
-                                          "ordered factor",
-                                          "boolean",
-                                          "boolean",
-                                          "factor",
-                                          "numeric",
-                                          "numeric",
-                                          "numeric",
-                                          "numeric",
-                                          "numeric",
-                                          "factor",
-                                          "numeric",
-                                          "integer",
-                                          "integer",
-                                          "integer",
-                                          "integer",
-                                          "integer",
-                                          "integer",
-                                          "character"),
-                           encoding = c(NA,
-                                       NA,
-                                       NA,
-                                          NA,
-                                          NA,
-                                          "<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, >12",
-                                          "<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, >12",
-                                          "0.1 to 1, 1, 1 to 2, 1 to 3, 2 to 3, 2 to 4, 3 to 4, 3 to 5",
-                                          NA,
-                                          NA,
-                                          "fish on redd, sub sample, too deep",
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          "digital, flow bomb, flow watch, marsh",
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA),
+                                          "Survey number",
+                                          "Redd age assigned",
+                                          "Number of times that unique redd has been aged: 0 (no redd aged) - 3 (aged 3x)"),
+                          data_type = c("Date", "character", "numeric", "numeric", "character",
+                                        "character", "numeric", "character", "character", "character",
+                                        "character", "character", "character", "character", "logical",
+                                        "character", "numeric", "numeric", "numeric", "numeric",
+                                        "numeric","character", "numeric", "numeric", "numeric",
+                                        "numeric", "numeric", "numeric", "numeric", "character",
+                                        "numeric", "numeric"),
                           percent_na = round(percent_na$value*100)
                           
 )
 kable(data_dictionary)
 ```
 
-| variables                  | description                                                                                 | data_type      | encoding                                                                                         | percent_na |
-|:---------------------------|:--------------------------------------------------------------------------------------------|:---------------|:-------------------------------------------------------------------------------------------------|-----------:|
-| longitude                  | GPS X point                                                                                 | numeric        | NA                                                                                               |          0 |
-| latitude                   | GPS Y point                                                                                 | numeric        | NA                                                                                               |          0 |
-| date                       | Date of sample                                                                              | date           | NA                                                                                               |          0 |
-| reach                      | Reach number (1-7)                                                                          | integer        | NA                                                                                               |          0 |
-| river_mile                 | River mile number                                                                           | integer        | NA                                                                                               |          0 |
-| pre_redd_substrate_size    | Size of pre-redd substrate. Originally reported in inches; standardized to meters           | ordered factor | \<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, \>12 |         39 |
-| redd_substrate_size        | Size of side of redd substrate. Originally reported in inches; standardized to meters       | ordered factor | \<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, \>12 |         39 |
-| tail_substrate_size        | Size of gravel in tail of redd. Originally reported in inches; standardized to meters       | ordered factor | 0.1 to 1, 1, 1 to 2, 1 to 3, 2 to 3, 2 to 4, 3 to 4, 3 to 5                                      |         39 |
-| fish_guarding              | Fish gaurding the redd (T/F)                                                                | boolean        | NA                                                                                               |          0 |
-| redd_measured              | Redd measured (T/F)                                                                         | boolean        | NA                                                                                               |          0 |
-| why_not_measured           | If the redd was not measured, reason why not (sub sample, too deep, fish on redd)           | factor         | fish on redd, sub sample, too deep                                                               |          4 |
-| pre_redd_depth             | Pre-redd depth. Originally reported in inches; standardized to meters                       | numeric        | NA                                                                                               |         62 |
-| redd_pit_depth             | Redd pit depth. Originally reported in inches; standardized to meters                       | numeric        | NA                                                                                               |         62 |
-| redd_tail_depth            | Redd tailspill depth. Originally reported in inches; standardized to meters                 | numeric        | NA                                                                                               |         62 |
-| redd_length                | Overall length of disturbed area. Originally reported in inches; standardized to meters     | numeric        | NA                                                                                               |         55 |
-| redd_width                 | Overall width of disturbed area. Originally reported in inches; standardized to meters      | numeric        | NA                                                                                               |         55 |
-| flow_meter                 | Flow meter used (digital, flow bomb, flow watch, marsh)                                     | factor         | digital, flow bomb, flow watch, marsh                                                            |         64 |
-| flow_fps                   | Flow immediately upstream of the redd in feet per second.                                   | numeric        | NA                                                                                               |         64 |
-| start_number_flow_meter    | Start number for flow bomb                                                                  | integer        | NA                                                                                               |         66 |
-| end_number_flow_meter      | End number for flow bomb                                                                    | integer        | NA                                                                                               |         66 |
-| flow_meter_time            | Number of seconds elapsed for flow bomb                                                     | integer        | NA                                                                                               |         66 |
-| start_number_flow_meter_80 | Start number for flow bomb at 80% depth; 80% depth was measured when redd was \> 22 ft deep | integer        | NA                                                                                               |         91 |
-| end_number_flow_meter_80   | End number for flow bomb at 80% depth; 80% depth was measured when redd was \> 22 ft deep   | integer        | NA                                                                                               |         91 |
-| flow_meter_time_80         | Number of seconds elapsed for flow bomb at 80% depth                                        | integer        | NA                                                                                               |         91 |
-| comments                   | Qualitative comments on data collection                                                     | character      | NA                                                                                               |         44 |
+| variables                  | description                                                                                 | data_type | percent_na |
+|:---------------------------|:--------------------------------------------------------------------------------------------|:----------|-----------:|
+| date                       | Date of sample                                                                              | Date      |          0 |
+| survey_method              | Survey method                                                                               | character |          0 |
+| longitude                  | GPS X point                                                                                 | numeric   |          0 |
+| latitude                   | GPS Y point                                                                                 | numeric   |          0 |
+| reach                      | Reach number (1-7)                                                                          | character |          0 |
+| reach_sub_unit             | Reach subunit (A-B)                                                                         | character |         64 |
+| river_mile                 | River mile number                                                                           | numeric   |          0 |
+| run                        | Run designation                                                                             | character |          0 |
+| redd_id                    | Unique identifier assigned to redd                                                          | character |          0 |
+| redd_loc                   | Redd location (RL, RR, RC)                                                                  | character |          1 |
+| pre_redd_substrate_size    | Size of pre-redd substrate. Originally reported in inches; standardized to meters           | character |         35 |
+| redd_substrate_size        | Size of side of redd substrate. Originally reported in inches; standardized to meters       | character |         35 |
+| tail_substrate_size        | Size of gravel in tail of redd. Originally reported in inches; standardized to meters       | character |         35 |
+| fish_guarding              | Fish gaurding the redd (T/F)                                                                | character |          0 |
+| redd_measured              | Redd measured (T/F)                                                                         | logical   |          0 |
+| why_not_measured           | If the redd was not measured, reason why not (sub sample, too deep, fish on redd)           | character |          3 |
+| pre_redd_depth             | Pre-redd depth. Originally reported in inches; standardized to meters                       | numeric   |         70 |
+| redd_pit_depth             | Redd pit depth. Originally reported in inches; standardized to meters                       | numeric   |         70 |
+| redd_tail_depth            | Redd tailspill depth. Originally reported in inches; standardized to meters                 | numeric   |         70 |
+| redd_length                | Overall length of disturbed area. Originally reported in inches; standardized to meters     | numeric   |         63 |
+| redd_width                 | Overall width of disturbed area. Originally reported in inches; standardized to meters      | numeric   |         63 |
+| flow_meter                 | Flow meter used (digital, flow bomb, flow watch, marsh)                                     | character |         71 |
+| flow_fps                   | Flow immediately upstream of the redd in feet per second.                                   | numeric   |         72 |
+| start_number_flow_meter    | Start number for flow bomb                                                                  | numeric   |         73 |
+| end_number_flow_meter      | End number for flow bomb                                                                    | numeric   |         73 |
+| flow_meter_time            | Number of seconds elapsed for flow bomb                                                     | numeric   |         73 |
+| start_number_flow_meter_80 | Start number for flow bomb at 80% depth; 80% depth was measured when redd was \> 22 ft deep | numeric   |         93 |
+| end_number_flow_meter_80   | End number for flow bomb at 80% depth; 80% depth was measured when redd was \> 22 ft deep   | numeric   |         93 |
+| flow_meter_time_80         | Number of seconds elapsed for flow bomb at 80% depth                                        | numeric   |         93 |
+| survey                     | Survey number                                                                               | character |          0 |
+| age_index                  | Redd age assigned                                                                           | numeric   |          0 |
+| age                        | Number of times that unique redd has been aged: 0 (no redd aged) - 3 (aged 3x)              | numeric   |          3 |
 
 ``` r
 # saveRDS(data_dictionary, file = "data/battle_redd_data_dictionary.rds")
@@ -274,7 +319,7 @@ kable(data_dictionary)
 ## Explore Numeric Variables:
 
 ``` r
-cleaner_redd_data %>% select_if(is.numeric) %>% colnames()
+clean_redd_data_with_age |> select_if(is.numeric) |> colnames()
 ```
 
     ##  [1] "longitude"                  "latitude"                  
@@ -284,23 +329,24 @@ cleaner_redd_data %>% select_if(is.numeric) %>% colnames()
     ##  [9] "flow_fps"                   "start_number_flow_meter"   
     ## [11] "end_number_flow_meter"      "flow_meter_time"           
     ## [13] "start_number_flow_meter_80" "end_number_flow_meter_80"  
-    ## [15] "flow_meter_time_80"
+    ## [15] "flow_meter_time_80"         "age_index"                 
+    ## [17] "age"
 
 ### Variable: `longitude`, `latitude`
 
 ``` r
-summary(cleaner_redd_data$latitude)
+summary(clean_redd_data_with_age$latitude)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##   40.39   40.42   40.42   40.42   40.42   40.43
+    ##      40      40      40      40      40      40
 
 ``` r
-summary(cleaner_redd_data$longitude)
+summary(clean_redd_data_with_age$longitude)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##  -122.2  -122.0  -122.0  -122.0  -122.0  -121.9
+    ##    -122    -122    -122    -122    -122    -122
 
 All values look within an expected range
 
@@ -314,7 +360,7 @@ All values look within an expected range
 **Plotting river mile over Period of Record**
 
 ``` r
-cleaner_redd_data %>% 
+clean_redd_data_with_age |> 
   ggplot(aes(x = river_mile, y =as.factor(year(date)))) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "River Mile", 
@@ -325,11 +371,11 @@ cleaner_redd_data %>%
 
 ![](battle_creek_redd_qc_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-It looks like river miles 0 - 4 and 11 - 12 most commonly have redds. In
+It looks like river miles 0 - 4 and 11 - 15 most commonly have redds. In
 most recent years almost all the redds are before mile 5.
 
 ``` r
-cleaner_redd_data %>% 
+clean_redd_data_with_age |> 
   ggplot(aes(x = river_mile)) +
   geom_histogram(alpha = .75) + 
   labs(x = "River Mile") +
@@ -344,11 +390,11 @@ cleaner_redd_data %>%
 **Numeric Summary of river mile over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$river_mile)
+summary(clean_redd_data_with_age$river_mile)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ##   0.000   1.390   2.270   5.054   7.410  16.790
+    ##   0.000   2.000   3.000   4.985   5.000  17.000
 
 **NA and Unknown Values**
 
@@ -361,13 +407,13 @@ pre redd depth - depth measurement before redd was created (in inches)
 Convert to meters to standardize.
 
 ``` r
-cleaner_redd_data$pre_redd_depth <- cleaner_redd_data$pre_redd_depth*0.0254
+clean_redd_data_with_age$pre_redd_depth <- clean_redd_data_with_age$pre_redd_depth*0.0254
 ```
 
 **Plotting distribution of pre redd depth**
 
 ``` r
-cleaner_redd_data %>%
+clean_redd_data_with_age |>
   ggplot(aes(x = pre_redd_depth)) +
   geom_histogram() +
   labs(x = "Redd Depth", 
@@ -383,15 +429,15 @@ cleaner_redd_data %>%
 **Numeric Summary of pre redd depth over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$pre_redd_depth)
+summary(clean_redd_data_with_age$pre_redd_depth)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.0000  0.2794  0.3810  0.3846  0.5080  1.2700     999
+    ##  0.0000  0.2794  0.3810  0.3847  0.5080  1.2700    1493
 
 **NA and Unknown Values**
 
-- 62.2 % of values in the `pre_redd_depth` column are NA.
+- 70.1 % of values in the `pre_redd_depth` column are NA.
 - There are a lot of 0 values. Could these also be NA?
 
 ### Variable: `redd_pit_depth`
@@ -399,13 +445,13 @@ summary(cleaner_redd_data$pre_redd_depth)
 Convert to meters to standardize.
 
 ``` r
-cleaner_redd_data$redd_pit_depth <- cleaner_redd_data$redd_pit_depth*0.0254
+clean_redd_data_with_age$redd_pit_depth <- clean_redd_data_with_age$redd_pit_depth*0.0254
 ```
 
 **Plotting distribution of redd pit depth**
 
 ``` r
-cleaner_redd_data %>% 
+clean_redd_data_with_age |> 
   ggplot(aes(x = redd_pit_depth)) +
   geom_histogram() +
   labs(x = "River Pit Depth", 
@@ -421,15 +467,15 @@ cleaner_redd_data %>%
 **Numeric Summary of Redd pit depth over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$redd_pit_depth)
+summary(clean_redd_data_with_age$redd_pit_depth)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.0000  0.4064  0.5334  0.5011  0.6604  1.4224    1001
+    ##  0.0000  0.4064  0.5334  0.5046  0.6604  1.4224    1495
 
 **NA and Unknown Values**
 
-- 62.4 % of values in the `redd_pit_depth` column are NA.
+- 70.2 % of values in the `redd_pit_depth` column are NA.
 - There are a lot of 0 values. Could these be NA?
 
 ### Variable: `redd_tail_depth`
@@ -437,13 +483,13 @@ summary(cleaner_redd_data$redd_pit_depth)
 Convert to meters to standardize.
 
 ``` r
-cleaner_redd_data$redd_tail_depth <- cleaner_redd_data$redd_tail_depth*0.0254
+clean_redd_data_with_age$redd_tail_depth <- clean_redd_data_with_age$redd_tail_depth*0.0254
 ```
 
 **Plotting distribution of redd tail depth**
 
 ``` r
-cleaner_redd_data %>% 
+clean_redd_data_with_age |> 
   ggplot(aes(x = redd_tail_depth)) +
   geom_histogram() +
   labs(x = "Redd tail depth", 
@@ -459,15 +505,15 @@ cleaner_redd_data %>%
 **Numeric Summary of Redd tail depth over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$redd_tail_depth)
+summary(clean_redd_data_with_age$redd_tail_depth)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.0000  0.1524  0.2286  0.2365  0.3302  0.9398    1002
+    ##  0.0000  0.1524  0.2286  0.2394  0.3302  0.9398    1496
 
 **NA and Unknown Values**
 
-- 62.4 % of values in the `redd_tail_depth` column are NA.
+- 70.3 % of values in the `redd_tail_depth` column are NA.
 - There are a lot of 0 values. Could these be NA?
 
 ### Variable: `redd_length`
@@ -475,13 +521,13 @@ summary(cleaner_redd_data$redd_tail_depth)
 Convert to meters to standardize.
 
 ``` r
-cleaner_redd_data$redd_length <- cleaner_redd_data$redd_length*0.0254
+clean_redd_data_with_age$redd_length <- clean_redd_data_with_age$redd_length*0.0254
 ```
 
 **Plotting distribution of redd length**
 
 ``` r
-cleaner_redd_data %>% 
+clean_redd_data_with_age |> 
   ggplot(aes(x = redd_length)) +
   geom_histogram() +
   labs(x = "Redd Length (m)", 
@@ -497,15 +543,15 @@ cleaner_redd_data %>%
 **Numeric Summary of Redd length over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$redd_length)
+summary(clean_redd_data_with_age$redd_length)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.000   2.489   3.861   3.780   5.156  11.557     884
+    ##   0.000   2.515   3.810   3.783   5.131  11.557    1342
 
 **NA and Unknown Values**
 
-- 55.1 % of values in the `redd_length` column are NA.
+- 63 % of values in the `redd_length` column are NA.
 - There are a lot of 0 values. Could these be NA?
 
 ### Variable: `redd_width`
@@ -513,13 +559,13 @@ summary(cleaner_redd_data$redd_length)
 Convert to meters to standardize.
 
 ``` r
-cleaner_redd_data$redd_width <- cleaner_redd_data$redd_width*0.0254
+clean_redd_data_with_age$redd_width <- clean_redd_data_with_age$redd_width*0.0254
 ```
 
 **Plotting distribution of redd width**
 
 ``` r
-cleaner_redd_data %>% 
+clean_redd_data_with_age |> 
   ggplot(aes(x = redd_width)) +
   geom_histogram() +
   labs(x = "Redd Width (m)", 
@@ -535,15 +581,15 @@ cleaner_redd_data %>%
 **Numeric Summary of Redd width over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$redd_width)
+summary(clean_redd_data_with_age$redd_width)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.000   1.346   1.981   2.076   2.749   6.858     885
+    ##   0.000   1.346   1.981   2.071   2.718   6.858    1343
 
 **NA and Unknown Values**
 
-- 55.1 % of values in the `redd_width` column are NA.
+- 63.1 % of values in the `redd_width` column are NA.
 - There are a lot of 0 values. Could these be NA?
 
 ### Variable: `flow_fps`
@@ -551,7 +597,7 @@ summary(cleaner_redd_data$redd_width)
 **Plotting distribution of flow feet per second**
 
 ``` r
-cleaner_redd_data %>% 
+clean_redd_data_with_age |> 
   ggplot(aes(x = flow_fps)) +
   geom_histogram() +
   labs(x = "Flow Feet per second", 
@@ -565,7 +611,7 @@ cleaner_redd_data %>%
 ![](battle_creek_redd_qc_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 ``` r
-cleaner_redd_data %>% 
+clean_redd_data_with_age |> 
   ggplot(aes(x = flow_fps, y = reach)) +
   geom_boxplot() +
   labs(x = "Flow Feet Per Second", 
@@ -578,15 +624,15 @@ cleaner_redd_data %>%
 **Numeric Summary of flow over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$flow_fps)
+summary(clean_redd_data_with_age$flow_fps)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   0.000   0.978   1.501   1.479   1.986   5.240    1029
+    ##   0.000   1.000   1.500   1.475   2.000   5.000    1525
 
 **NA and Unknown Values**
 
-- 64.1 % of values in the `flow_fps` column are NA.
+- 71.6 % of values in the `flow_fps` column are NA.
 - There are a lot of 0 values. Could these be NA?
 
 ### Variables: `start_flow_meter`, `start_flow_meter_80`
@@ -594,7 +640,7 @@ summary(cleaner_redd_data$flow_fps)
 **Plotting distribution of flow number start per second**
 
 ``` r
-p1 <- cleaner_redd_data %>% 
+p1 <- clean_redd_data_with_age |> 
   ggplot(aes(x = start_number_flow_meter)) +
   geom_histogram() +
   labs(x = "Start Number", 
@@ -602,7 +648,7 @@ p1 <- cleaner_redd_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 
-p2 <- cleaner_redd_data %>% 
+p2 <- clean_redd_data_with_age |> 
   ggplot(aes(x = start_number_flow_meter_80)) +
   geom_histogram() +
   labs(x = "Start Number 80%", 
@@ -623,23 +669,23 @@ Very few records of start number at 80% depth. Most of these are 0.
 **Numeric Summary of flow over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$start_number_flow_meter)
+summary(clean_redd_data_with_age$start_number_flow_meter)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       0   88750  332000  379253  604500  998000    1055
+    ##       0   99110  336000  389252  645750  998000    1551
 
 ``` r
-summary(cleaner_redd_data$start_number_flow_meter_80)
+summary(clean_redd_data_with_age$start_number_flow_meter_80)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       0       0       0    9299       0  496000    1461
+    ##       0       0       0    9299       0  496000    1985
 
 **NA and Unknown Values**
 
-- 65.7 % of values in the `start_number_flow_meter` column are NA.
-- 91 % of values in the `start_number_flow_meter_80` column are NA.
+- 72.9 % of values in the `start_number_flow_meter` column are NA.
+- 93.2 % of values in the `start_number_flow_meter_80` column are NA.
 - There are a lot of 0 values. Could these be NA?
 
 ### Variables: `end_number_flow_meter`, `end_number_flow_meter_80`
@@ -647,7 +693,7 @@ summary(cleaner_redd_data$start_number_flow_meter_80)
 **Plotting distribution of flow meter end number per second**
 
 ``` r
-p1 <- cleaner_redd_data %>% 
+p1 <- clean_redd_data_with_age |> 
   ggplot(aes(x = end_number_flow_meter)) +
   geom_histogram() +
   labs(x = "End Number", 
@@ -655,7 +701,7 @@ p1 <- cleaner_redd_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 
-p2 <- cleaner_redd_data %>% 
+p2 <- clean_redd_data_with_age |> 
   ggplot(aes(x = end_number_flow_meter_80)) +
   geom_histogram() +
   labs(x = "End Number 80%", 
@@ -676,23 +722,23 @@ Very few records of end number at 80% depth. Most of these are 0.
 **Numeric Summary of flow over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$start_number_flow_meter)
+summary(clean_redd_data_with_age$start_number_flow_meter)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       0   88750  332000  379253  604500  998000    1055
+    ##       0   99110  336000  389252  645750  998000    1551
 
 ``` r
-summary(cleaner_redd_data$end_number_flow_meter_80)
+summary(clean_redd_data_with_age$end_number_flow_meter_80)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       0       0       0    9332       0  497472    1461
+    ##       0       0       0    9332       0  497472    1985
 
 **NA and Unknown Values**
 
-- 65.7 % of values in the `end_number_flow_meter` column are NA.
-- 91 % of values in the `end_number_flow_meter_80` column are NA.
+- 72.9 % of values in the `end_number_flow_meter` column are NA.
+- 93.2 % of values in the `end_number_flow_meter_80` column are NA.
 - There are a lot of 0 values. Could these be NA?
 
 ### Variables: `flow_meter_time`, `flow_meter_time_80`
@@ -703,7 +749,7 @@ redd was \>22” deep
 **Plotting distribution of flow meter end number per second**
 
 ``` r
-p1 <- cleaner_redd_data %>% 
+p1 <- clean_redd_data_with_age |> 
   ggplot(aes(x = flow_meter_time)) +
   geom_histogram() +
   labs(x = "Time Seconds", 
@@ -711,7 +757,7 @@ p1 <- cleaner_redd_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 
-p2 <- cleaner_redd_data %>% 
+p2 <- clean_redd_data_with_age |> 
   ggplot(aes(x = flow_meter_time_80)) +
   geom_histogram() +
   labs(x = "Time Seconds 80%", 
@@ -732,241 +778,398 @@ Most (all for Time 80) of the flow meter times are at 100 seconds.
 **Numeric Summary of flow over Period of Record**
 
 ``` r
-summary(cleaner_redd_data$flow_meter_time)
+summary(clean_redd_data_with_age$flow_meter_time)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00  100.00  100.00   99.38  100.00  150.00    1055
+    ##    0.00  100.00  100.00   99.41  100.00  150.00    1551
 
 ``` r
-summary(cleaner_redd_data$flow_meter_time_80)
+summary(clean_redd_data_with_age$flow_meter_time_80)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##     100     100     100     100     100     100    1461
+    ##     100     100     100     100     100     100    1985
 
 **NA and Unknown Values**
 
-- 65.7 % of values in the `flow_meter_time` column are NA.
-- 91 % of values in the `flow_meter_time_80` column are NA.
+- 72.9 % of values in the `flow_meter_time` column are NA.
+- 93.2 % of values in the `flow_meter_time_80` column are NA.
+
+### Variables: `age_index`
+
+Age Index refers to the number of times a unique redd has been surveyed.
+If `age_index == 0`, the redd was not aged.
+
+**Plotting distribution of age index**
+
+``` r
+clean_redd_data_with_age |> 
+  ggplot(aes(x = age_index)) +
+  geom_histogram() +
+  labs(x = "Number of times sampled", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](battle_creek_redd_qc_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+
+Most redds are aged at least once.
+
+**Numeric Summary of age index over Period of Record**
+
+``` r
+summary(clean_redd_data_with_age$age_index)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   0.000   1.000   1.000   1.289   1.000   3.000
+
+``` r
+summary(clean_redd_data_with_age$age_index)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   0.000   1.000   1.000   1.289   1.000   3.000
+
+**NA and Unknown Values**
+
+- 0 % of values in the `age_index` column are NA.
+- 0 % of values in the `age_index` column are NA.
+
+### Variables: `age`
+
+Age refers to the assigned age of a redd.
+
+**Plotting distribution of age**
+
+``` r
+clean_redd_data_with_age |> 
+  ggplot(aes(x = age)) +
+  geom_histogram() +
+  labs(x = "Redd age", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](battle_creek_redd_qc_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+
+Most redds are age `2` to `3`.
+
+**Numeric Summary of ageover Period of Record**
+
+``` r
+summary(clean_redd_data_with_age$age)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.000   2.000   2.000   2.045   2.000   5.000      69
+
+``` r
+summary(clean_redd_data_with_age$age)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+    ##   0.000   2.000   2.000   2.045   2.000   5.000      69
+
+**NA and Unknown Values**
+
+- 3.2 % of values in the `age` column are NA.
+- 3.2 % of values in the `age` column are NA.
 
 ## Explore Categorical variables:
 
 ``` r
-cleaner_redd_data %>% select_if(is.character) %>% colnames()
+clean_redd_data_with_age |> select_if(is.character) |> colnames()
 ```
 
-    ## [1] "reach"                   "pre_redd_substrate_size"
-    ## [3] "redd_substrate_size"     "tail_substrate_size"    
-    ## [5] "fish_guarding"           "redd_measured"          
-    ## [7] "why_not_measured"        "flow_meter"             
-    ## [9] "comments"
+    ##  [1] "survey_method"           "reach"                  
+    ##  [3] "reach_sub_unit"          "run"                    
+    ##  [5] "redd_id"                 "redd_loc"               
+    ##  [7] "pre_redd_substrate_size" "redd_substrate_size"    
+    ##  [9] "tail_substrate_size"     "fish_guarding"          
+    ## [11] "why_not_measured"        "flow_meter"             
+    ## [13] "survey"
+
+### Variable: `survey_method`
+
+``` r
+table(clean_redd_data_with_age$survey_method) 
+```
+
+    ## 
+    ## Snorkel Walking 
+    ##    2116      13
+
+**NA and Unknown Values**
+
+- 0 % of values in the `survey_method` column are NA.
 
 ### Variable: `reach`
 
 ``` r
-table(cleaner_redd_data$reach) 
+table(clean_redd_data_with_age$reach) 
 ```
 
     ## 
     ##  R1  R2  R3  R4  R5  R6  R7 
-    ## 325 597 256 280  81  49  17
+    ## 559 674 353 354 112  60  17
 
 **NA and Unknown Values**
 
 - 0 % of values in the `reach`column are NA.
 
+### Variable: `reach_sub_unit`
+
+``` r
+table(clean_redd_data_with_age$reach_sub_unit) 
+```
+
+    ## 
+    ##   A   B 
+    ## 470 298
+
+**NA and Unknown Values**
+
+- 63.9 % of values in the `reach_sub_unit`column are NA.
+
+### Variable: `run`
+
+``` r
+table(clean_redd_data_with_age$run) 
+```
+
+    ## 
+    ## spring 
+    ##   2129
+
+All records are for spring run fish.
+
+**NA and Unknown Values**
+
+- 0 % of values in the `run`column are NA.
+
+### Variable: `redd_id`
+
+``` r
+length(unique(clean_redd_data_with_age$redd_id))
+```
+
+    ## [1] 722
+
+**NA and Unknown Values**
+
+- 0 % of values in the `redd_id`column are NA.
+
+### Variable: \`redd_loc\`\`
+
+``` r
+table(clean_redd_data_with_age$redd_loc) 
+```
+
+    ## 
+    ##  RC  RL  RR UNK 
+    ## 662 583 663 191
+
+**NA and Unknown Values**
+
+- 1.4 % of values in the `redd_loc`column are NA.
+
 ### Variable: `pre_redd_substrate_size`
 
 ``` r
-table(cleaner_redd_data$pre_redd_substrate_size) 
+table(clean_redd_data_with_age$pre_redd_substrate_size) 
 ```
 
     ## 
     ##  .1 to 1      <.1     <0.1      >12 0.1 to 1    0.1-1        1   1 to 2 
-    ##       14        1        3        4      105        5       44      283 
+    ##       24        1        8        7      171        5       44      405 
     ##   1 to 3   1 to 5   2 to 3   2 to 4   3 to 4   3 to 5   4 to 5   4 to 6 
-    ##      293        1       60      111       17       21        4        7
+    ##      428        3       87      147       18       29        5       11
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-cleaner_redd_data$pre_redd_substrate_size <- if_else(
-  cleaner_redd_data$pre_redd_substrate_size == ".1 to 1" | 
-  cleaner_redd_data$pre_redd_substrate_size == "0.1-1", "0.1 to 1", cleaner_redd_data$pre_redd_substrate_size
+clean_redd_data_with_age$pre_redd_substrate_size <- if_else(
+  clean_redd_data_with_age$pre_redd_substrate_size == ".1 to 1" | 
+  clean_redd_data_with_age$pre_redd_substrate_size == "0.1-1", "0.1 to 1", clean_redd_data_with_age$pre_redd_substrate_size
 )
 
-cleaner_redd_data$pre_redd_substrate_size <- if_else(
-  cleaner_redd_data$pre_redd_substrate_size == "<.1", "<0.1", cleaner_redd_data$pre_redd_substrate_size
+clean_redd_data_with_age$pre_redd_substrate_size <- if_else(
+  clean_redd_data_with_age$pre_redd_substrate_size == "<.1", "<0.1", clean_redd_data_with_age$pre_redd_substrate_size
 )
-table(cleaner_redd_data$pre_redd_substrate_size) 
+table(clean_redd_data_with_age$pre_redd_substrate_size) 
 ```
 
     ## 
     ##     <0.1      >12 0.1 to 1        1   1 to 2   1 to 3   1 to 5   2 to 3 
-    ##        4        4      124       44      283      293        1       60 
+    ##        9        7      200       44      405      428        3       87 
     ##   2 to 4   3 to 4   3 to 5   4 to 5   4 to 6 
-    ##      111       17       21        4        7
+    ##      147       18       29        5       11
 
 **NA and Unknown Values**
 
-- 39.4 % of values in the `pre_redd_substrate_size` column are NA.
+- 34.6 % of values in the `pre_redd_substrate_size` column are NA.
 
 ### Variable: `redd_substrate_size`
 
 ``` r
-table(cleaner_redd_data$redd_substrate_size) 
+table(clean_redd_data_with_age$redd_substrate_size) 
 ```
 
     ## 
     ##  .1 to 1      <.1      >12 0.1 to 1    0.1-1        1   1 to 2   1 to 3 
-    ##       10        1        9       69        1       36      291      322 
+    ##       14        1       16      108        1       36      447      458 
     ##   1 to 5   2 to 3   2 to 4   3 to 4   3 to 5   4 to 5   4 to 6       NA 
-    ##        2       83      115       12       15        1        5        1
+    ##        4      116      147       13       24        1        6        1
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-cleaner_redd_data$redd_substrate_size <- if_else(
-  cleaner_redd_data$redd_substrate_size == ".1 to 1" | 
-  cleaner_redd_data$redd_substrate_size == "0.1-1", "0.1 to 1", cleaner_redd_data$redd_substrate_size
+clean_redd_data_with_age$redd_substrate_size <- if_else(
+  clean_redd_data_with_age$redd_substrate_size == ".1 to 1" | 
+  clean_redd_data_with_age$redd_substrate_size == "0.1-1", "0.1 to 1", clean_redd_data_with_age$redd_substrate_size
 )
 
-cleaner_redd_data$redd_substrate_size <- if_else(
-  cleaner_redd_data$redd_substrate_size == "<.1", "<0.1", cleaner_redd_data$redd_substrate_size
+clean_redd_data_with_age$redd_substrate_size <- if_else(
+  clean_redd_data_with_age$redd_substrate_size == "<.1", "<0.1", clean_redd_data_with_age$redd_substrate_size
 )
 
-cleaner_redd_data$redd_substrate_size <- ifelse(
-  cleaner_redd_data$redd_substrate_size == "NA", NA, cleaner_redd_data$redd_substrate_size
+clean_redd_data_with_age$redd_substrate_size <- ifelse(
+  clean_redd_data_with_age$redd_substrate_size == "NA", NA, clean_redd_data_with_age$redd_substrate_size
 )
-table(cleaner_redd_data$redd_substrate_size) 
+table(clean_redd_data_with_age$redd_substrate_size) 
 ```
 
     ## 
     ##     <0.1      >12 0.1 to 1        1   1 to 2   1 to 3   1 to 5   2 to 3 
-    ##        1        9       80       36      291      322        2       83 
+    ##        1       16      123       36      447      458        4      116 
     ##   2 to 4   3 to 4   3 to 5   4 to 5   4 to 6 
-    ##      115       12       15        1        5
+    ##      147       13       24        1        6
 
 **NA and Unknown Values**
 
-- 39.4 % of values in the `redd_substrate_size` column are NA.
+- 34.6 % of values in the `redd_substrate_size` column are NA.
 
 ### Variable: `tail_substrate_size`
 
 ``` r
-table(cleaner_redd_data$tail_substrate_size) 
+table(clean_redd_data_with_age$tail_substrate_size) 
 ```
 
     ## 
     ##  .1 to 1 0.1 to 1    0.1-1        1   1 to 2   1 to 3   2 to 3   2 to 4 
-    ##        2        4        2        3      344      431       82       94 
+    ##        4        5        2        3      548      616       99      102 
     ##   3 to 4   3 to 5       NA 
-    ##        7        3        1
+    ##       10        3        1
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-cleaner_redd_data$tail_substrate_size <- if_else(
-  cleaner_redd_data$tail_substrate_size == ".1 to 1" | 
-  cleaner_redd_data$tail_substrate_size == "0.1-1", "0.1 to 1", cleaner_redd_data$tail_substrate_size
+clean_redd_data_with_age$tail_substrate_size <- if_else(
+  clean_redd_data_with_age$tail_substrate_size == ".1 to 1" | 
+  clean_redd_data_with_age$tail_substrate_size == "0.1-1", "0.1 to 1", clean_redd_data_with_age$tail_substrate_size
 )
 
 
-cleaner_redd_data$tail_substrate_size <- ifelse(
-  cleaner_redd_data$tail_substrate_size == "NA", NA, cleaner_redd_data$tail_substrate_size
+clean_redd_data_with_age$tail_substrate_size <- ifelse(
+  clean_redd_data_with_age$tail_substrate_size == "NA", NA, clean_redd_data_with_age$tail_substrate_size
 )
-table(cleaner_redd_data$tail_substrate_size) 
+table(clean_redd_data_with_age$tail_substrate_size) 
 ```
 
     ## 
     ## 0.1 to 1        1   1 to 2   1 to 3   2 to 3   2 to 4   3 to 4   3 to 5 
-    ##        8        3      344      431       82       94        7        3
+    ##       11        3      548      616       99      102       10        3
 
 **NA and Unknown Values**
 
-- 39.4 % of values in the `tail_substrate_size` column are NA.
+- 34.6 % of values in the `tail_substrate_size` column are NA.
 
 ### Variable: `fish_guarding`
 
 ``` r
-table(cleaner_redd_data$fish_guarding) 
+table(clean_redd_data_with_age$fish_guarding) 
 ```
 
     ## 
-    ##  No  NO UNK Yes YES 
-    ##  27 989 321   1 266
+    ##   No   NO  UNK  Yes  YES 
+    ##   27 1370  342    1  388
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-cleaner_redd_data$fish_guarding <- case_when(
-  cleaner_redd_data$fish_guarding == "No" | cleaner_redd_data$fish_guarding == "NO" ~FALSE, 
-  cleaner_redd_data$fish_guarding == "Yes" | cleaner_redd_data$fish_guarding == "YES" ~TRUE
+clean_redd_data_with_age$fish_guarding <- case_when(
+  clean_redd_data_with_age$fish_guarding == "No" | clean_redd_data_with_age$fish_guarding == "NO" ~FALSE, 
+  clean_redd_data_with_age$fish_guarding == "Yes" | clean_redd_data_with_age$fish_guarding == "YES" ~TRUE
 )
 
-table(cleaner_redd_data$fish_guarding) 
+table(clean_redd_data_with_age$fish_guarding) 
 ```
 
     ## 
     ## FALSE  TRUE 
-    ##  1016   267
+    ##  1397   389
 
 **NA and Unknown Values**
 
-- 20.1 % of values in the `fish_guarding` column are NA.
+- 16.1 % of values in the `fish_guarding` column are NA.
 
 ### Variable: `redd_measured`
 
 ``` r
-table(cleaner_redd_data$redd_measured) 
-```
-
-    ## 
-    ##  NO YES 
-    ## 944 661
-
-Fix inconsistencies with spelling, capitalization, and abbreviations.
-
-``` r
-cleaner_redd_data$redd_measured <- case_when(
-  cleaner_redd_data$redd_measured == "NO"  ~ FALSE, 
-  cleaner_redd_data$redd_measured == "YES" ~ TRUE
-)
-
-table(cleaner_redd_data$redd_measured) 
+table(clean_redd_data_with_age$redd_measured) 
 ```
 
     ## 
     ## FALSE  TRUE 
-    ##   944   661
-
-**NA and Unknown Values**
-
-- 0 % of values in the `redd_measured` column are NA.
-
-### Variable: `why_not_measured`
-
-``` r
-table(cleaner_redd_data$why_not_measured) 
-```
-
-    ## 
-    ## Fish on redd FISH ON REDD   Sub-Sample   SUB-SAMPLE     Too Deep          UNK 
-    ##            5            3           80           54            1         1391
+    ##  1402   727
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-cleaner_redd_data$why_not_measured <- case_when(
-  cleaner_redd_data$why_not_measured == "Fish on redd" | 
-    cleaner_redd_data$why_not_measured == "FISH ON REDD"  ~ "fish on redd", 
-  cleaner_redd_data$why_not_measured == "Sub-Sample" | 
-    cleaner_redd_data$why_not_measured == "SUB-SAMPLE"  ~ "sub sample", 
-  cleaner_redd_data$why_not_measured == "Too Deep" ~ "too deep", 
+clean_redd_data_with_age$redd_measured <- case_when(
+  clean_redd_data_with_age$redd_measured == "NO"  ~ FALSE, 
+  clean_redd_data_with_age$redd_measured == "YES" ~ TRUE
 )
 
-table(cleaner_redd_data$why_not_measured) 
+table(clean_redd_data_with_age$redd_measured) 
+```
+
+    ## < table of extent 0 >
+
+**NA and Unknown Values**
+
+- 100 % of values in the `redd_measured` column are NA.
+
+### Variable: `why_not_measured`
+
+``` r
+table(clean_redd_data_with_age$why_not_measured) 
+```
+
+    ## 
+    ## Fish on redd FISH ON REDD   Sub-Sample   SUB-SAMPLE     Too Deep          UNK 
+    ##            5            3           80           54            1         1915
+
+Fix inconsistencies with spelling, capitalization, and abbreviations.
+
+``` r
+clean_redd_data_with_age$why_not_measured <- case_when(
+  clean_redd_data_with_age$why_not_measured == "Fish on redd" | 
+    clean_redd_data_with_age$why_not_measured == "FISH ON REDD"  ~ "fish on redd", 
+  clean_redd_data_with_age$why_not_measured == "Sub-Sample" | 
+    clean_redd_data_with_age$why_not_measured == "SUB-SAMPLE"  ~ "sub sample", 
+  clean_redd_data_with_age$why_not_measured == "Too Deep" ~ "too deep", 
+)
+
+table(clean_redd_data_with_age$why_not_measured) 
 ```
 
     ## 
@@ -975,61 +1178,54 @@ table(cleaner_redd_data$why_not_measured)
 
 **NA and Unknown Values**
 
-- 91.1 % of values in the `why_not_measured` column are NA.
+- 93.3 % of values in the `why_not_measured` column are NA.
 
 ### Variable: `flow_meter`
 
 ``` r
-table(cleaner_redd_data$flow_meter) 
+table(clean_redd_data_with_age$flow_meter) 
 ```
 
     ## 
     ##    Digital  flow bomb  Flow bomb  Flow Bomb Flow Watch      Marsh        Unk 
-    ##         17         35          1        515          4          2          2 
+    ##         17         35          1        543          4          2          2 
     ##        UNK 
     ##          3
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
 ``` r
-cleaner_redd_data$flow_meter <- case_when(
-  cleaner_redd_data$flow_meter %in% c("flow bomb", "Flow Bomb", "Flow bomb")  ~ "flow bomb", 
-  cleaner_redd_data$flow_meter == "Digital" ~ "digital",
-  cleaner_redd_data$flow_meter == "Flow Watch"  ~ "flow watch", 
-  cleaner_redd_data$flow_meter == "Marsh" ~ "marsh", 
+clean_redd_data_with_age$flow_meter <- case_when(
+  clean_redd_data_with_age$flow_meter %in% c("flow bomb", "Flow Bomb", "Flow bomb")  ~ "flow bomb", 
+  clean_redd_data_with_age$flow_meter == "Digital" ~ "digital",
+  clean_redd_data_with_age$flow_meter == "Flow Watch"  ~ "flow watch", 
+  clean_redd_data_with_age$flow_meter == "Marsh" ~ "marsh", 
 )
 
-table(cleaner_redd_data$flow_meter) 
+table(clean_redd_data_with_age$flow_meter) 
 ```
 
     ## 
     ##    digital  flow bomb flow watch      marsh 
-    ##         17        551          4          2
+    ##         17        579          4          2
 
 **NA and Unknown Values**
 
-- 64.2 % of values in the `flow_meter` column are NA.
+- 71.7 % of values in the `flow_meter` column are NA.
 
-### Variable: `comments`
+### Variable: `survey`
 
 ``` r
-unique(cleaner_redd_data$comments)[1:10]
+table(clean_redd_data_with_age$survey)
 ```
 
-    ##  [1] "wp 66"                                                       
-    ##  [2] "wp 65; unable to associate measurements with individual redd"
-    ##  [3] "wp 66; unable to associate measurements with individual redd"
-    ##  [4] "wp 11"                                                       
-    ##  [5] "wp 12"                                                       
-    ##  [6] "wp 13"                                                       
-    ##  [7] "wp 14"                                                       
-    ##  [8] "wp 17; pebble count #4"                                      
-    ##  [9] "wp 18; pebble count #4"                                      
-    ## [10] "wp 19; unable to associate measurements with individual redd"
+    ## 
+    ##   0   1  10  11  12  13  14   2   3   4   5   6   7   8   9 
+    ## 918 249  57  15  10  38  15 228 164  83 112  44  53  55  88
 
 **NA and Unknown Values**
 
-- 43.6 % of values in the `comments` column are NA.
+- 0 % of values in the `survey` column are NA.
 
 ## Summary of identified issues
 
@@ -1046,41 +1242,48 @@ unique(cleaner_redd_data$comments)[1:10]
   `start_number_flow_meter_80`, `end_number_flow_meter_80`,
   `flow_meter_time_80` have little data and may not be needed.
 - The most important variables are `longitude`, `latitude`, `date`,
-  `redd_measured`
+  `redd_measured`, `redd_id`, `age`, and `age_index`
 
 ## Save cleaned data back to google cloud
 
 ``` r
-battle_redd <- cleaner_redd_data %>% glimpse
+battle_redd <- clean_redd_data_with_age |> glimpse()
 ```
 
-    ## Rows: 1,605
-    ## Columns: 25
-    ## $ longitude                  <dbl> -121.9688, -121.9742, -121.9742, -121.9688,…
-    ## $ latitude                   <dbl> 40.40218, 40.40279, 40.40279, 40.40218, 40.…
-    ## $ date                       <date> 2001-09-18, 2001-10-03, 2001-10-03, 2001-1…
-    ## $ reach                      <chr> "R3", "R3", "R3", "R3", "R3", "R1", "R1", "…
-    ## $ river_mile                 <dbl> 2.48, 2.14, 2.14, 2.48, 2.48, 2.94, 2.91, 2…
+    ## Rows: 2,129
+    ## Columns: 32
+    ## $ date                       <date> 2002-10-01, 2002-10-01, 2002-10-01, 2002-1…
+    ## $ survey_method              <chr> "Snorkel", "Snorkel", "Snorkel", "Snorkel",…
+    ## $ longitude                  <dbl> -122, -122, -122, -122, -122, -122, -122, -…
+    ## $ latitude                   <dbl> 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,…
+    ## $ reach                      <chr> "R2", "R2", "R2", "R2", "R2", "R2", "R3", "…
+    ## $ reach_sub_unit             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ river_mile                 <dbl> 2, 2, 1, 1, 0, 0, 2, 2, 2, 1, 1, 1, 1, 2, 2…
+    ## $ run                        <chr> "spring", "spring", "spring", "spring", "sp…
+    ## $ redd_id                    <chr> "10102R2#1", "10102R2#2", "10102R2#3", "101…
+    ## $ redd_loc                   <chr> "UNK", "UNK", "UNK", "UNK", "UNK", "UNK", "…
     ## $ pre_redd_substrate_size    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ redd_substrate_size        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ tail_substrate_size        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ fish_guarding              <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ redd_measured              <lgl> FALSE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE…
+    ## $ redd_measured              <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ why_not_measured           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ pre_redd_depth             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 0.4572,…
-    ## $ redd_pit_depth             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 0.5842,…
-    ## $ redd_tail_depth            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 0.2794,…
-    ## $ redd_length                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 1.9558,…
-    ## $ redd_width                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, 0.9398,…
-    ## $ flow_meter                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ flow_fps                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ start_number_flow_meter    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ end_number_flow_meter      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ flow_meter_time            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ pre_redd_depth             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 0.2540, 0.3…
+    ## $ redd_pit_depth             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 0.4064, 0.6…
+    ## $ redd_tail_depth            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 0.2032, 0.3…
+    ## $ redd_length                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 4.6228, 1.6…
+    ## $ redd_width                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 1.8288, 1.0…
+    ## $ flow_meter                 <chr> NA, NA, NA, NA, NA, NA, NA, NA, "flow bomb"…
+    ## $ flow_fps                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 2, 2, 2, NA…
+    ## $ start_number_flow_meter    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 862000, 877…
+    ## $ end_number_flow_meter      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 864537, 880…
+    ## $ flow_meter_time            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, 100, 100, 1…
     ## $ start_number_flow_meter_80 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ end_number_flow_meter_80   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
     ## $ flow_meter_time_80         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-    ## $ comments                   <chr> "wp 66", "wp 65; unable to associate measur…
+    ## $ survey                     <chr> "11", "11", "11", "11", "11", "11", "11", "…
+    ## $ age_index                  <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+    ## $ age                        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
 
 ``` r
 # gcs_list_objects()
