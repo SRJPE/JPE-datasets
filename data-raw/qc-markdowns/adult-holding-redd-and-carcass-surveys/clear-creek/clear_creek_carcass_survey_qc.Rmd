@@ -20,7 +20,7 @@ library (RColorBrewer)
 
 ## Description of Monitoring Data
 
-This carcass data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program.This data encompass spring-run Chinook Salmon carcasses retrieved on redd and escapement index surveys from 2008 to 2019 on Clear Creek. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude) near the confluence with the Sacramento River.						
+This carcass data were collected by the U.S. Fish and Wildlife Service's, Red Bluff Fish and Wildlife Office's, Clear Creek Monitoring Program. These data encompass spring-run Chinook Salmon carcasses retrieved on redd and escapement index surveys from 2008 to 2019 on Clear Creek. Data were collected on lower Clear Creek from Whiskeytown Dam located at river mile 18.1, (40.597786N latitude, -122.538791W longitude) to the Clear Creek Video Station located at river mile 0.0 (40.504836N latitude, -122.369693W longitude) near the confluence with the Sacramento River.						
 
 
 **Timeframe:** 2008 - 2019
