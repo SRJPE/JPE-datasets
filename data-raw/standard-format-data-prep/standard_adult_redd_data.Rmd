@@ -123,13 +123,14 @@ unique(battle_redd$flow_meter)
 
 clean_battle_redd <- battle_redd  |>
   select(date, latitude, longitude, 
-         reach, river_mile, fish_guarding, 
+         reach, river_mile, fish_guarding, redd_id,
          redd_measured, redd_width, redd_length, age,
          age_index, pre_redd_substrate_size, 
          redd_substrate_size, tail_substrate_size, flow_fps,
          survey_method)  |>
-  # TODO how to add redd_count ?
   mutate(stream = 'battle creek', 
+         # adding redd count for only those redds surveyed and not aged, or aged once
+         redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
          year = lubridate::year(date))  |>
   rename(velocity = flow_fps)  |>
   glimpse()
@@ -182,12 +183,13 @@ unique(clear_redd$flow_meter)
 clean_clear_redd <- clear_redd  |>
   select(date, latitude, longitude, 
          reach = surveyed_reach, river_mile, fish_guarding = fish_on_redd, 
-         redd_measured = measured, redd_width, redd_length, age,
+         redd_id, redd_measured = measured, redd_width, redd_length, age,
          age_index, pre_redd_substrate_size, 
          redd_substrate_size, tail_substrate_size, velocity,
          survey_method)  |>
-  # TODO how to add redd_count ?
   mutate(stream = 'battle creek', 
+         # adding redd count for only those redds surveyed and not aged, or aged once
+         redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
          year = lubridate::year(date))  |>
   glimpse()
 
