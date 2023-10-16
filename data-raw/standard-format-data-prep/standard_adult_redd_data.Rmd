@@ -43,11 +43,11 @@ F - Feather River, Y - Yuba River)
 | reach                    | B, C, F            | Unique name identifier of reach sampled                            |
 | river_mile               | B, C               | River mile associated with redd measured                           |
 | redd_measured            | B, C               | Whether or not a redd was measured (T/F)                           |
-| age                      | C                  | integer ranging from 1 - 5; redd age                               |
+| age                      | B, C               | integer ranging from 1 - 5; redd age                               |
 | fish_guarding            | B, C               | Whether or not a fish is on redd when measured ??                  |
 | redd_length              | B, C, F            | Length of measured redd (m)                                        |
 | redd_width               | B, C, F            | Width of measured redd (m)                                         |
-| run                      | C                  | `spring`, `fall`, `late-fall`                                      |
+| run                      | B, C               | `spring`, `fall`, `late-fall`                                      |
 | stream                   | B, C, F, Y         | Unique stream associated with redd data collected                  |
 | redd_substrate_class     | B, C               | categorical; size class determined by millimeter size of substrate |
 | pre_redd_substrate_class | B, C               | categorical; size class determined by millimeter size of substrate |
@@ -106,11 +106,12 @@ gcs_get_object(
 # Redd data for Battle Creek
 battle_redd <- read_csv(here::here("data", "redd-carcass-holding", "battle_redd.csv"), 
                         col_names = TRUE, 
-                        col_types = list("n", "n", "D", "c", "n", "c", 
-                                         "c", "c", "l", "l", "l", "n", 
-                                         "n", "n", "n", "n", "c", "n", 
-                                         "n", "n", "n", "n", "n", "n", 
-                                         "c"))  |> glimpse()
+                        col_types = list("D", "c", "n", "n", "c", "c", "n",
+                                         "c", "c", "c", "c", "c", "c", "c", 
+                                         "l", "c", "n", "n", "n", "n", 
+                                         "n", "c", "n", "n", "n", "n", 
+                                         "n", "n", "n", "n", "n", "n")) |> 
+                          glimpse()
 
 summary(battle_redd)
 
@@ -123,12 +124,12 @@ unique(battle_redd$flow_meter)
 clean_battle_redd <- battle_redd  |>
   select(date, latitude, longitude, 
          reach, river_mile, fish_guarding, 
-         redd_measured, redd_width, redd_length, 
-         pre_redd_substrate_size, redd_substrate_size, 
-         tail_substrate_size, 
-         flow_fps)  |>
-  mutate(redd_count = 1, # each row is a redd observation
-         stream = 'battle creek', 
+         redd_measured, redd_width, redd_length, age,
+         age_index, pre_redd_substrate_size, 
+         redd_substrate_size, tail_substrate_size, flow_fps,
+         survey_method)  |>
+  # TODO how to add redd_count ?
+  mutate(stream = 'battle creek', 
          year = lubridate::year(date))  |>
   rename(velocity = flow_fps)  |>
   glimpse()
@@ -144,24 +145,51 @@ O. mykiss data is included in this dataset.
 #### Columns Removed
 
 ```{r}
-# TODO: just use CVPIA data
+# TODO confirm that we want to use the original clear data and not the CVPIA? CVPIA does not seem to have redd age
 
 # load in aggregated clear creek data from other runs 
 # this data was pulled from CVPIA-EDA repo (CVPIA-EDA/jim_data_requests/redd_monitoring_data/all_redd_data_for_clear_creek.csv)
 # and saved to jpe google cloud for easy access
-gcs_get_object(
-  object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/all_redd_data_for_clear_creek.csv",
-  bucket = gcs_get_global_bucket(),
-  saveToDisk = here::here("data", "redd-carcass-holding", "all_redd_data_for_clear_creek.csv"),
-  overwrite = TRUE
-)
-clear_all_runs <- read_csv(here::here("data", "redd-carcass-holding", "all_redd_data_for_clear_creek.csv"))
 
-clean_clear_redd <- clear_all_runs  |> 
-  mutate(stream = "clear creek",
-         redd_count = 1)  |> # each row is a redd observation
-   mutate(run = case_when(run == "late-fall" ~ "late fall",
-                         TRUE ~ as.character(run)))
+# data directly from Natasha
+gcs_get_object(
+  object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_redd.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "redd-carcass-holding", "clear_redd.csv"),
+  overwrite = TRUE
+) 
+
+# Redd data for Clear Creek
+clear_redd <- read_csv(here::here("data", "redd-carcass-holding", "clear_redd.csv"), 
+                        col_names = TRUE, 
+                        col_types = list("D", "c", "n", "n", "n", "n", 
+                                         "n", "c", "n", "c", "c", "c",
+                                         'c', "n", "n", "c", "c", "c",
+                                         "c", "c", "l", "l", "c", "D",
+                                         "n", "n", "n", "n", "n", "n",
+                                         "n", "n", "n", "n", "n", "n",
+                                         "c", "c", "n", "n")) |> 
+                          glimpse()
+
+summary(clear_redd)
+
+table(clear_redd$pre_redd_substrate_size, useNA = "ifany")
+table(clear_redd$redd_substrate_size, useNA = "ifany")
+table(clear_redd$tail_substrate_size, useNA = "ifany")
+unique(clear_redd$why_not_measured)
+unique(clear_redd$flow_meter)
+
+clean_clear_redd <- clear_redd  |>
+  select(date, latitude, longitude, 
+         reach = surveyed_reach, river_mile, fish_guarding = fish_on_redd, 
+         redd_measured = measured, redd_width, redd_length, age,
+         age_index, pre_redd_substrate_size, 
+         redd_substrate_size, tail_substrate_size, velocity,
+         survey_method)  |>
+  # TODO how to add redd_count ?
+  mutate(stream = 'battle creek', 
+         year = lubridate::year(date))  |>
+  glimpse()
 
 ```
 
