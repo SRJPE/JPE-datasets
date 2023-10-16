@@ -354,9 +354,10 @@ unique(all_redd_data$redd_substrate_size)
 
 redd_substrate_size_lookup <- 
   data.frame("redd_substrate_size" = unique(all_redd_data$redd_substrate_size),
-             "standardized_size_range" = c(NA, "1-2", "2-4", "1-2", "2-4",
-                                           "2-4", "1-2", "2-4", "0.25-0.5", 
-                                           "<0.25", "4-8", "4-8", ">16", "2-4")) |> 
+             "standardized_size_range" = c(NA, "1-2", "1-2", "2-4", "2-4", 
+                                           "0.5-1", "2-4", "2-4", ">16", "4-6",
+                                           "2-4", "1-2", "4-8", "0.5-1", "0.5-1",
+                                           "4-8", "8-16")) |> 
   left_join(substrate_class)
                     
 tail_substrate_size_lookup <- all_redd_data  |> 
