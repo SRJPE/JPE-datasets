@@ -66,9 +66,11 @@ Note on age in the dataset:
 
 There are several columns for recording age and date of aging. `Age` and `Survey....78` are defined in the metadata as "age at observation" and "survey observed". These are the ideal columns but as they are recorded, there is only one row per `redd_id` and so all the additional information about whether a redd was viewed in subsequent surveys, etc. is lost. 
 
-Columns `survey_[2-9]_age` is described as "Age of redd based on age classification during survey (2-9)". `Age[1-9]` is also described as "age of redd based on age classification during survey (1-9)". `Date[1-9]` is described as "date of observation". While this is helpful, it is hard to tell why sometimes `Age[1-9]` is recorded but `survey_[2-9]_age` is empty for the affiliated survey.
+Columns `survey_[2-9]_age` are described as "Age of redd based on age classification during survey (2-9)". According to meetings with monitoring programs, this is how they recorded redd age in `2010`.
 
-Initial QC process dropped `survey_[2-9]_age` and `age[1-9]` for now until further review. These columns were not used before `2013`. 
+Columns `Age[1-9]` are described as "age of redd based on age classification during survey (1-9)". `Date[1-9]` columns are described as "date of observation". These begin being populated in `2013` and according to monitoring programs are how they record redd age now and going forward.
+
+It is unclear how these columns interact with `Age` and `Survey...78`.
 
 Moving forward, we will use `Age[1-9]` and `Date[1-9]` as this keeps the date affiliated with the assigned age. Pivoting this table longer will result in multiple rows per redd id with additional rows for additional ages. This aligns with how the Battle redd data were QC'd. 
 
