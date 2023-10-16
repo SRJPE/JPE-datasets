@@ -188,7 +188,7 @@ clean_clear_redd <- clear_redd  |>
          age_index, pre_redd_substrate_size, 
          redd_substrate_size, tail_substrate_size, velocity,
          survey_method, run)  |>
-  mutate(stream = 'battle creek', 
+  mutate(stream = 'clear creek', 
          # adding redd count for only those redds surveyed and not aged, or aged once
          redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
          year = lubridate::year(date))  |>
@@ -472,30 +472,42 @@ table(all_redd_data$tail_substrate_class, useNA = "ifany")
 
 ## By Year Aggregation
 
-All redd data was aggregated by sampled reach and date to get a count of redds. In order to not potentially double count, the maximum of a daily count is reported as the yearly redd count. Since Mill Creek is aggregated by year already, this dataset includes Mill Creek.
+Redd data for Feather River and Yuba River was aggregated by sampled reach and date to get a count of redds. In order to not potentially double count, the maximum of a daily count is reported as the yearly redd count. 
+
+For Battle and Clear Creeks, `redd_count` is 1 for every row where the redd was aged either `0` times or `1` time (recorded in `age_index` column). These were then summed by reach and year.
+
+Since Mill Creek is aggregated by year already, this dataset includes Mill Creek.
 
 ```{r}
-redd_count_by_year <- bind_rows(clean_battle_redd, 
-                           clean_clear_redd,
-                           clean_feather_redd, 
-                           clean_yuba_redd)  |> 
+redd_count_by_year <- bind_rows(clean_feather_redd, 
+                                clean_yuba_redd)  |> 
   # find the redd count by date/stream/reach/species/run
-  group_by(reach, date, stream, year, species, run)  |>
+  group_by(reach, date, stream, year, species)  |>
   summarize(redd_count = sum(redd_count))  |>
-  ungroup() |> 
+  ungroup() |>
   # since some redds may be double counted, summarize yearly count by date
   # as we learn more about methods we can summarize using a better method
-  group_by(year, stream, reach, species, run)  |>
+  group_by(year, stream, reach, species)  |>
   summarize(max_yearly_redd_count = max(redd_count, na.rm = T))  |>  # maximum per year 
   bind_rows(clean_mill_redd  |> 
               rename(max_yearly_redd_count = redd_count) |> 
               select(-starting_elevation_ft)) |> 
+  bind_rows(clean_battle_redd |> 
+              group_by(reach, date, stream, year, run) |> 
+              summarise(annual_redd_count = sum(redd_count)) |> 
+              ungroup(), 
+            clean_clear_redd |> 
+              group_by(reach, date, stream, year, run) |> 
+              summarise(annual_redd_count = sum(redd_count)) |> 
+              ungroup()) |> 
+  mutate(annual_redd_count = ifelse(stream %in% c("mill creek", "yuba river", "feather river"),
+                                    max_yearly_redd_count, annual_redd_count),
+         annual_summarization_method = ifelse(stream %in% c("mill creek", "yuba river", "feather river"), "maximum yearly redd count", "summed by redd id")) |> 
   mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
                              species == "SH" ~ "steelhead",
                              is.na(species) ~ "not recorded"),
          run = ifelse(is.na(run), "not recorded", run))
-
 
 ```
 
