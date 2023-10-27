@@ -137,52 +137,30 @@ trap_liz <- readxl::read_excel("raw_2022_rst_mill_liz.xlsx", sheet = "Trap Opera
 
 ## Release
 
-```{r}
-# TODO empty
-release_liz <- readxl::read_excel("raw_2022_rst_mill_liz.xlsx", sheet = "Release Summary") |> glimpse()
-
-```
+No release sheet.
 
 ## Release site location
 
-```{r}
-# TODO empty
-release_site <- readxl::read_excel("raw_2022_rst_mill_liz.xlsx", sheet = "release site location") |> 
-  glimpse()
-
-
-```
+No release site sheet.
 
 ## Upload to google cloud
 
 ```{r}
-# gcs_upload(catch_combined,
-#            object_function = f,
-#            type = "csv",
-#            name = "rst/mill-creek/data/mill_2021_catch.csv",
-#            predefinedAcl = "bucketLevel")
-# 
-# gcs_upload(recap_combined,
-#            object_function = f,
-#            type = "csv",
-#            name = "rst/mill-creek/data/mill_2021_recaptures.csv",
-#            predefinedAcl = "bucketLevel")
-# 
-# gcs_upload(trap_combined,
-#            object_function = f,
-#            type = "csv",
-#            name = "rst/mill-creek/data/mill_2021_trap.csv",
-#            predefinedAcl = "bucketLevel")
-# 
-# gcs_upload(release_combined,
-#            object_function = f,
-#            type = "csv",
-#            name = "rst/mill-creek/data/mill_2021_release.csv",
-#            predefinedAcl = "bucketLevel")
-# 
-# gcs_upload(release_site,
-#            object_function = f,
-#            type = "csv",
-#            name = "rst/mill-creek/data/mill_2021_release_site.csv",
-#            predefinedAcl = "bucketLevel")
+gcs_upload(catch_clean,
+           object_function = f,
+           type = "csv",
+           name = "rst/mill-creek/data/mill_2022_catch.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(recap_clean,
+           object_function = f,
+           type = "csv",
+           name = "rst/mill-creek/data/mill_2022_recaptures.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(trap_liz,
+           object_function = f,
+           type = "csv",
+           name = "rst/mill-creek/data/mill_2022_trap.csv",
+           predefinedAcl = "bucketLevel")
 ```
