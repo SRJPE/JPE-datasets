@@ -177,6 +177,8 @@ Looks like baileys efficiency is anywhere from .22 - 100.
 
 ## Select relevent data, & save cleaned data to cloud
 ```{r}
+# identified a typo where release_date == "2018-02-14": caught_day_1 should be 11 not 1180 because totaly of 11 recaps and 299 released so 1180 does not make sensing.
+# Fixing typo here: 10/27/2023
 battle_mark_reacpture <- mark_recapture_data %>% 
   select(release_date, day_or_night_release = d_ay_or_n_ight_release, release_time, no_marked,
          no_released, recaps, mortality, mark_med_fork_length_mm, recap_med_fork_length_mm, 
@@ -191,12 +193,16 @@ battle_mark_reacpture <- mark_recapture_data %>%
                                 origin_h_n == "N" ~ "natural"),
          release_temp = as.numeric(release_temp),
          cone_status = case_when(cone_status_h_f == "H" ~ "half", 
-                                 cone_status_h_f == "F" ~ "full")) %>% 
-  select(-origin_h_n, -cone_status_h_f) %>% glimpse
+                                 cone_status_h_f == "F" ~ "full"),
+         # FIX TYPO
+         caught_day_1 = ifelse(release_date == "2018-02-14",11,caught_day_1)) %>% 
+  select(-origin_h_n, -cone_status_h_f)
+# check to make sure typo fixed
+filter(battle_mark_reacpture, release_date == "2018-02-14") |> select(caught_day_1)
 ```
 
 
-```{r, eval = FALSE}
+```{r}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(battle_mark_reacpture,
