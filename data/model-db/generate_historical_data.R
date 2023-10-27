@@ -2,154 +2,79 @@
 library(googleCloudStorageR)
 library(tidyverse)
 library(lubridate)
-
+f <- function(input, output) write_csv(input, file = output)
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-# trap_location -----------------------------------------------------------
 
-battle <- tibble(stream = c("battle creek"),
-                 site = c("ubc"),
-                 subsite = c("ubc"),
-                 site_group = c("battle creek"),
-                 description = c("upper battle creek rst site location")) 
-butte <- tibble(stream = c(rep("butte creek", 5)),
-                site = c(rep("okie dam",4), "adams dam"),
-                subsite = c("okie dam 1", "okie dam 2", "okie dam fyke trap", NA, "adams dam"),
-                site_group = c("butte creek"),
-                description = c("rst 1 at okie dam (aka parrott-phalean)", "rst 2 at okie dam (aka parrott-phalean)",
-                                "fyke trap at okie dam located in diversion canal", "trap unknown", 
-                                "rst at adams dam, only used historically")) 
-clear <- tibble(stream = c(rep("clear creek",2)),
-                site = c("lcc", "ucc"),
-                subsite = c("lcc", "ucc"),
-                site_group = c("clear creek"),
-                description = c("lower clear creek rst site", "upper clear creek rst site")) 
-deer <- tibble(stream = c("deer creek"),
-               site = c("deer creek"),
-               subsite = c("deer creek"),
-               site_group = c("deer creek"),
-               description = c("deer creek rst site location")) 
-feather <- tibble(stream = c(rep("feather river",19)),
-                  site = c(rep("eye riffle",2), "live oak", rep("herringer riffle",3), rep("steep riffle",3), 
-                           rep("sunset pumps",2), rep("shawn's beach",2), rep("gateway riffle",4), 
-                           rep("lower feather river",2)),
-                  subsite = c("eye riffle_north", "eye riffle_side channel", "live oak",
-                              "herringer_west", "herringer_east", "herringer_upper_west",
-                              "#steep riffle_rst", "steep riffle_10' ext", "steep side channel",
-                              "sunset west bank", "sunset east bank", "shawns_west", "shawns_east",
-                              "gateway_main1", "gateway main 400' up river", "gateway_rootball", 
-                              "gateway_rootball_river_left", "rr", "rl"),
-                  site_group = c(rep("upper feather lfc",2), rep("upper feather hfc", 4),
-                                 rep("upper feather lfc",3), rep("upper feather hfc", 4),
-                                 rep("upper feather lfc",4), rep("lower feather river",2)),
-                  description = c(rep("low flow channel rst sites",2), rep("high flow channel rst sites", 4),
-                                  rep("low flow channel rst sites",3), rep("high flow channel rst sites", 4),
-                                  rep("low flow channel rst sites",4), "rst at river right", "rst at river left")) 
-mill <- tibble(stream = c("mill creek"),
-               site = c("mill creek"),
-               subsite = c("mill creek"),
-               site_group = c("mill creek"),
-               description = c("mill creek rst site location")) 
-yuba <- tibble(stream = c(rep("yuba river",4)),
-               site = c("yuba river", rep("hallwood",3)),
-               subsite = c("yub","hal","hal2","hal3"),
-               site_group = c("yuba river"),
-               description = c("rst at yuba river, only used historically", 
-                               "rst 1 at hallwood", "rst 2 at hallwood", "rst 3 at hallwood")) 
-sacramento <- tibble(stream = c(rep("sacramento river",5)),
-                     site = c(rep("knights landing",3), rep("tisdale",2)),
-                     subsite = c("8.3", "8.4", "knights landing", "rr","rl"),
-                     site_group = c(rep("knights landing",3) , rep("tisdale",2)),
-                     description = c(rep("rst at knights landing",2), "rst location unknown", 
-                                     "rst at river right", "rst at river left")) 
-trap_location <- bind_rows(battle, butte, clear, deer, feather, mill, yuba, sacramento) |> 
-  mutate(id = row_number())
-write_csv(trap_location, "data/model-db/trap_location.csv")
-
-
-# run ---------------------------------------------------------------------
-run <- tibble(definition = c("late fall", "spring", "fall", "winter", NA, "not recorded", "unknown"),
-              description = c("chinook salmon categorized as late fall", "chinook salmon categorized as spring",
-                              "chinook salmon categorized as fall", "chinook salmon categorized as winter",
-                              "run listed as NA because count is 0", "run not recorded likely because length at date model does not apply",
-                              "run recorded as unknown likely due to uncertainty in the field")) |> 
-  mutate(id = row_number())
-
-write_csv(run, "data/model-db/run.csv")
-# lifestage ---------------------------------------------------------------
-lifestage <- tibble(definition = c("smolt", "fry", "yolk sac fry", "not recorded", "parr", "silvery parr", 
-                                   NA, "adult", "unknown", "yearling", "juvenile"),
-              description = c("smolt", "fry", "yolk sac fry", "lifestage not recorded", "parr", "silvery parr",
-                              "lifestage listed as NA because count is 0","adult","lifestage recorded as unknown",
-                              "lifestage recorded as yearling", "used for lifestage of fish in release trials")) |> 
-  mutate(id = row_number())
-write_csv(lifestage, "data/model-db/lifestage.csv")
-# visit_type --------------------------------------------------------------
-visit_type <- tibble(definition = c("not recorded", "continue trapping", "end trapping", "start trapping", 
-                                    "unplanned restart", "service trap", "drive by"),
-                    description = c("visit type not record", "continued trapping", "trap ended at end of trap visit",
-                                    "trap started during trap visit", "trap restarted during trap visit", "trap serviced",
-                                    "trap checked visually by drive by, no catch processed")) |> 
-  mutate(id = row_number())
-
-write_csv(visit_type, "data/model-db/visit_type.csv")
-# trap_functioning --------------------------------------------------------
-trap_functioning <- tibble(definition = c("not recorded", "trap functioning normally", "trap stopped functioning", 
-                                          "trap functioning but not normally", "trap not in service"),
-                     description = c("trap function not recorded", "trap functioning normally","trap stopped functioning",
-                                     "trap functioning but not normally","trap not in service")) |> 
-  mutate(id = row_number())
-write_csv(trap_functioning, "data/model-db/trap_functioning.csv")
-# fish_processed ----------------------------------------------------------
-fish_processed <- tibble(definition = c("not recorded", "processed fish", "no fish caught", "no catch data, fish released", 
-                                        "no catch data, fish left in live box"),
-                           description = c("not recorded", "processed fish", "no fish caught", "no catch data, fish released", 
-                                           "no catch data, fish left in live box")) |> 
-  mutate(id = row_number())
-write_csv(fish_processed, "data/model-db/fish_processed.csv")
-
-# debris_level ------------------------------------------------------------
-debris_level <- tibble(definition = c("not recorded", NA, "light", "medium", "heavy", "very heavy", 
-                                      "none"),
-                         description = c("not recorded", NA, "light", "medium", "heavy", "very heavy", 
-                                         "none")) |> 
-  mutate(id = row_number())
-write_csv(debris_level, "data/model-db/debris_level.csv")
-
-# environmental_parameter -------------------------------------------------
-environmental_parameter <- tibble(definition = c("temperature", "discharge"),
-                                  description = c("mean daily water temperature in C", 
-                                                  "mean daily discharge in C")) |> 
-  mutate(id = row_number())
+# read in lookups ---------------------------------------------------------
+# trap_location
+gcs_get_object(object_name = "model-db/trap_location.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/trap_location.csv",
+               overwrite = TRUE)
+trap_location <- read_csv("data/model-db/trap_location.csv")
+# run
+gcs_get_object(object_name = "model-db/run.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/run.csv",
+               overwrite = TRUE)
+run <- read_csv("data/model-db/run.csv")
+#lifestage
+gcs_get_object(object_name = "model-db/lifestage.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/lifestage.csv",
+               overwrite = TRUE)
+lifestage <- read_csv("data/model-db/lifestage.csv")
+#visit_type
+gcs_get_object(object_name = "model-db/visit_type.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/visit_type.csv",
+               overwrite = TRUE)
+visit_type <- read_csv("data/model-db/visit_type.csv")
+#trap_functioning
+gcs_get_object(object_name = "model-db/trap_functioning.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/trap_functioning.csv",
+               overwrite = TRUE)
+trap_functioning <- read_csv("data/model-db/trap_functioning.csv")
+#fish_processed
+gcs_get_object(object_name = "model-db/fish_processed.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/fish_processed.csv",
+               overwrite = TRUE)
+fish_processed <- read_csv("data/model-db/fish_processed.csv")
+#debris_level
+gcs_get_object(object_name = "model-db/debris_level.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/debris_level.csv",
+               overwrite = TRUE)
+debris_level <- read_csv("data/model-db/debris_level.csv")
+#environmental_parameter
+gcs_get_object(object_name = "model-db/environmental_parameter.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/environmental_parameter.csv",
+               overwrite = TRUE)
 write_csv(environmental_parameter, "data/model-db/environmental_parameter.csv")
+#gage_source
+gcs_get_object(object_name = "model-db/gage_source.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/gage_source.csv",
+               overwrite = TRUE)
+gage_source <- read_csv("data/model-db/gage_source.csv")
+#hatchery
+gcs_get_object(object_name = "model-db/hatchery.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/hatchery.csv",
+               overwrite = TRUE)
+hatchery <- read_csv("data/model-db/hatchery.csv")
+# origin
+gcs_get_object(object_name = "model-db/origin.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/origin.csv",
+               overwrite = TRUE)
+origin <- read_csv("data/model-db/origin.csv")
 
-
-# gage_source -------------------------------------------------------------
-
-gage_source <- tibble(definition = c("FWS", "CDEC BCK", "CDEC DCV", "CDEC MLM", 
-                                     "USGS 11390500", "USGS 11376550", "USGS 11372000", "USGS 11383500", 
-                                     "CDEC GRL", "USGS 11407000", "USGS 11381500", "USGS 11421000"),
-                      description = c("FWS", "CDEC BCK", "CDEC DCV", "CDEC MLM", 
-                                      "USGS 11390500", "USGS 11376550", "USGS 11372000", "USGS 11383500", 
-                                      "CDEC GRL", "USGS 11407000", "USGS 11381500", "USGS 11421000")) |> 
-  mutate(id = row_number())
-write_csv(gage_source, "data/model-db/gage_source.csv")
-# hatchery ----------------------------------------------------------------
-hatchery <- tibble(definition = c("FEATHER R HATCHERY", "COLEMAN NFH", "LIVINGSTON STONE HAT", 
-                                  "NIMBUS FISH HATCHERY", "TEHAMA-COLUSA FF"),
-                      description = c("FEATHER R HATCHERY", "COLEMAN NFH", "LIVINGSTON STONE HAT", 
-                                      "NIMBUS FISH HATCHERY", "TEHAMA-COLUSA FF")) |> 
-  mutate(id = row_number())
-write_csv(hatchery, "data/model-db/hatchery.csv")
-# origin ------------------------------------------------------------------
-
-origin <- tibble(definition = c("natural", "hatchery", "not recorded", "unknown", "mixed"),
-                       description = c("wild fish used in release", "hatchery fish used in release", 
-                                       "origin of fish used in release not recorded", "origin unknown",
-                                       "both hatchery and wild fish used in release")) |> 
-  mutate(id = row_number())
-write_csv(origin, "data/model-db/origin.csv")
 # catch -------------------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked.csv",
                bucket = gcs_get_global_bucket(),
@@ -184,7 +109,11 @@ unique(catch$trap_location_id)
 unique(catch$lifestage_id)
 unique(catch$run_id)
 
-write_csv(catch, "data/model-db/catch.csv")
+gcs_upload(catch,
+           object_function = f,
+           type = "csv",
+           name = "model-db/catch.csv",
+           predefinedAcl = "bucketLevel")
 # trap --------------------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/daily_trap.csv",
                bucket = gcs_get_global_bucket(),
@@ -276,7 +205,11 @@ unique(trap$trap_functioning_id)
 unique(trap$fish_processed_id)
 unique(trap$debris_level_id)
 
-write_csv(trap, "data/model-db/trap_visit.csv")
+gcs_upload(trap,
+           object_function = f,
+           type = "csv",
+           name = "model-db/trap.csv",
+           predefinedAcl = "bucketLevel")
 # environmental_gage ------------------------------------------------------
 gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
                bucket = gcs_get_global_bucket(),
@@ -329,7 +262,11 @@ unique(temperature$parameter_id)
 unique(temperature$gage_id)
 
 environmental_gage <- bind_rows(flow, temperature)
-write_csv(environmental_gage, "data/model-db/environmental_gage.csv")
+gcs_upload(environmental_gage,
+           object_function = f,
+           type = "csv",
+           name = "model-db/environmental_gage.csv",
+           predefinedAcl = "bucketLevel")
 # release_summary ---------------------------------------------------------
 
 # TODO efficiency raw has rows for each subsite which i don't think we want
@@ -366,7 +303,11 @@ release_summary <- release_raw |>
   left_join(lifestage, by = c("lifestage_released" = "definition")) |> 
   rename(lifestage_id = id) |> 
   select(-lifestage_released, -description)
-write_csv(release_summary, "data/model-db/release_summary.csv")
+gcs_upload(release_summary,
+           object_function = f,
+           type = "csv",
+           name = "model-db/release_summary.csv",
+           predefinedAcl = "bucketLevel")
 # released_fish -----------------------------------------------------------
 # no historical data
 
@@ -409,7 +350,11 @@ unique(recaptured_fish$trap_location_id)
 unique(recaptured_fish$run_id)
 unique(recaptured_fish$lifestage_id)
 
-write_csv(recaptured_fish, "data/model-db/recaptured_fish.csv")
+gcs_upload(recaptured_fish,
+           object_function = f,
+           type = "csv",
+           name = "model-db/recaptured_fish.csv",
+           predefinedAcl = "bucketLevel")
 
 # check difference between 2 data pulls
 recaptured_fish <- read_csv("data/standard-format-data/standard_catch.csv") |> 
@@ -471,4 +416,8 @@ hatchery_release <- hatchery_raw |>
   select(-c(remove, release_location_name))
 
 unique(hatchery_release$trap_location_id)
-write_csv(hatchery_release, "data/model-db/hatchery_release.csv")
+gcs_upload(hatchery_release,
+           object_function = f,
+           type = "csv",
+           name = "model-db/hatchery_release.csv",
+           predefinedAcl = "bucketLevel")
