@@ -355,7 +355,7 @@ release_summary <- release_raw |>
          run_released = ifelse(run_released == "other", "unknown", run_released)) |> 
   select(-time_released) |> 
   left_join(trap_location, by = c("stream", "site"), multiple = "all") |> 
-  select(-c(stream, site, subsite, site_group, description)) |> 
+  select(-c(stream, site, description)) |> 
   rename(trap_location_id = id) |> 
   left_join(origin, by = c("origin_released" = "definition")) |> 
   rename(origin_id = id) |> 
@@ -410,6 +410,22 @@ unique(recaptured_fish$run_id)
 unique(recaptured_fish$lifestage_id)
 
 write_csv(recaptured_fish, "data/model-db/recaptured_fish.csv")
+
+# check difference between 2 data pulls
+recaptured_fish <- read_csv("data/standard-format-data/standard_catch.csv") |> 
+  filter(species == "chinook salmon", # filter for only chinook
+         !is.na(release_id)) |> 
+  group_by(stream, site, subsite, release_id, date) |> 
+  summarize(number_recaptured_ck = sum(count),
+            median_fork_length_recaptured_ck = median(fork_length, na.rm = T)) |> 
+  rename(date_recaptured = date)
+standard_recapture <- read_csv("data/standard-format-data/standard_recapture.csv") |> 
+  group_by(stream, site, subsite, release_id, date_recaptured, median_fork_length_recaptured) |> 
+  summarize(number_recaptured = sum(number_recaptured, na.rm=T)) |> 
+  filter(number_recaptured > 0)
+ck <- full_join(recaptured_fish, standard_recapture)
+mismatch <- filter(ck, site != "red bluff diversion dam", number_recaptured != number_recaptured_ck)
+
 # hatchery_release --------------------------------------------------------
 # need to figure out this one
 gcs_get_object(object_name = "standard-format-data/standard_rst_hatchery_release.csv",
