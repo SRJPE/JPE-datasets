@@ -122,6 +122,7 @@ table(battle_redd$tail_substrate_size, useNA = "ifany")
 unique(battle_redd$why_not_measured)
 unique(battle_redd$flow_meter)
 
+# TODO do distinct redd id
 clean_battle_redd <- battle_redd  |>
   select(date, latitude, longitude, 
          reach, river_mile, fish_guarding, redd_id,
