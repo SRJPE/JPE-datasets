@@ -23,7 +23,7 @@ library(knitr)
 These data were acquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019. Red location, size, substrate and flow were measured. Annual monitoring questions and conditions drove the frequency and detail of individual redd measurements. 						
 
 
-**Timeframe:** 2001 - 2019
+**Timeframe:** 2001 - 2022
 
 **Survey Season:** September - October 
 
@@ -46,18 +46,53 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
 # read in updated table with redd ids (sent 10-12-2023)
+# 2001-2019
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_redds_raw.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx"),
+               overwrite = TRUE)
+
+# 2020
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_snorkel_survey_2020.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2020.xlsx"),
+               overwrite = TRUE)
+
+# 2021
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_snorkel_survey_2021.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2021.xlsx"),
+               overwrite = TRUE)
+
+# 2022
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_snorkel_survey_2022.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2022.xlsx"),
                overwrite = TRUE)
 ```
 
 Read in data from google cloud, glimpse sheets and raw data: 
 ```{r}
-raw_redd_data <-read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx")) |> glimpse()
+# 2001-2019
+raw_redd_data <- read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx")) |> glimpse()
+
+# 2020
+raw_redd_2020 <- read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2020.xlsx"),
+                            sheet = "Redds") |> glimpse()
+
+# 2021
+raw_redd_2021 <- read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2021.xlsx"),
+                            sheet = "Redds") |> glimpse()
+
+# 2022
+raw_redd_2022 <- read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2022.xlsx"),
+                            sheet = "Redds") |> glimpse()
+
 ```
 
 ## Data transformations
+
+### 2001-2019
 
 ```{r}
 cleaner_redd_data <- raw_redd_data |>  
@@ -168,6 +203,26 @@ clean_redd_data_with_age <- cleaner_redd_data |>
   glimpse()
 # TODO what is id, fork, serial, corr_type, horz_prec, corr_date, fines_pres, 
 # overhead_v, instream_c, cover_comm, stream_fea, tributary, trib_comm, serial
+```
+
+### 2020-2022
+```{r}
+# does not have matching age columns with 2021 and 2022
+clean_2020_data <- raw_redd_2020 |> 
+  janitor::clean_names() |> 
+  glimpse()
+
+# has add'l age data in age/date columns
+clean_2021_data <- raw_redd_2021 |> 
+  janitor::clean_names() |> 
+  glimpse()
+
+# has add'l age data in age/date columns
+clean_2022_data <- raw_redd_2022 |> 
+  janitor::clean_names() |> 
+  glimpse()
+
+# TODO bind and figure out age assignment
 ```
 
 ## Data Dictionary
