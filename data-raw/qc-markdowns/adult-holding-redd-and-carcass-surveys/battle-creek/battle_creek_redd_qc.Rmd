@@ -287,7 +287,7 @@ clean_2021_2022_data <- bind_rows(clean_2021_data, clean_2022_data) |>
 
 clean_2020_2022_data <- bind_rows(clean_2020_data, clean_2021_2022_data) |> 
   select(-c(year, corr_type, horz_prec, redd_call, redd_id, comments,
-            survey_id)) |> # use JPE_redd_id 
+            survey_id, gravel, inj_site)) |> # use JPE_redd_id 
   rename(latitude = point_y, longitude = point_x,
          pre_redd_substrate_size = pre_sub,
          tail_substrate_size = tail_sub, fish_guarding = fish_on_re,
@@ -302,7 +302,8 @@ clean_2020_2022_data <- bind_rows(clean_2020_data, clean_2021_2022_data) |>
          flow_fps = water_velo,
          start_number_flow_meter = bomb_start,
          end_number_flow_meter = bomb_end,
-         flow_meter_time = bomb_secon) |> 
+         flow_meter_time = bomb_secon,
+         redd_substrate_size = side_sub) |> 
   mutate(redd_measured = ifelse(redd_measured == "y", TRUE, redd_measured))
 
 ```
@@ -324,7 +325,8 @@ percent_na <- all_redd_data |>
   pivot_longer(cols = everything())
   
 data_dictionary <- tibble(variables = colnames(all_redd_data),
-                          description = c("Date of sample",
+                          description = c("Unique redd ID",
+                                          "Date of sample",
                                           "Survey method", 
                                           "GPS X point",
                                           "GPS Y point",
@@ -332,7 +334,6 @@ data_dictionary <- tibble(variables = colnames(all_redd_data),
                                           "Reach subunit (A-B)",
                                           "River mile number",
                                           "Run designation",
-                                          "Unique identifier assigned to redd",
                                           "Redd location (RL, RR, RC)",
                                           "Size of pre-redd substrate. Originally reported in inches; standardized to meters",
                                           "Size of side of redd substrate. Originally reported in inches; standardized to meters",
@@ -354,15 +355,19 @@ data_dictionary <- tibble(variables = colnames(all_redd_data),
                                           "End number for flow bomb at 80% depth; 80% depth was measured when redd was > 22 ft deep",
                                           "Number of seconds elapsed for flow bomb at 80% depth",
                                           "Survey number",
+                                          "Number of times that unique redd has been aged: 0 (no redd aged) - 3 (aged 3x)",
                                           "Redd age assigned",
-                                          "Number of times that unique redd has been aged: 0 (no redd aged) - 3 (aged 3x)"),
-                          data_type = c("Date", "character", "numeric", "numeric", "character",
-                                        "character", "numeric", "character", "character", "character",
-                                        "character", "character", "character", "character", "logical",
-                                        "character", "numeric", "numeric", "numeric", "numeric",
-                                        "numeric","character", "numeric", "numeric", "numeric",
-                                        "numeric", "numeric", "numeric", "numeric", "character",
-                                        "numeric", "numeric"),
+                                          "Date measured",
+                                          "Tail spill",
+                                          "Fork"),
+                          data_type = c("character", "Date", "character", "numeric", "numeric",                                         "character", "character", "numeric", "character",
+                                        "character", "character", "character", "character",
+                                        "character", "logical", "character", "numeric",
+                                        "numeric", "numeric", "numeric", "numeric",
+                                        "character", "numeric", "numeric", "numeric",
+                                        "numeric", "numeric", "numeric", 
+                                        "numeric", "character", "numeric", "numeric",
+                                        "POSIXct", "numeric", "character"),
                           percent_na = round(percent_na$value*100)
                           
 )
@@ -962,10 +967,9 @@ table(all_redd_data$fish_guarding)
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-all_redd_data$fish_guarding <- case_when(
-  all_redd_data$fish_guarding == "No" | all_redd_data$fish_guarding == "NO" ~FALSE, 
-  all_redd_data$fish_guarding == "Yes" | all_redd_data$fish_guarding == "YES" ~TRUE
-)
+all_redd_data$fish_guarding <- case_when(all_redd_data$fish_guarding %in% c("No", "NO") ~ FALSE,
+                                         all_redd_data$fish_guarding %in% c("Yes", "YES") ~ TRUE,
+                                         all_redd_data$fish_guarding == "UNK" ~ NA)
 
 table(all_redd_data$fish_guarding) 
 
@@ -981,17 +985,6 @@ table(all_redd_data$fish_guarding)
 table(all_redd_data$redd_measured) 
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-all_redd_data$redd_measured <- case_when(
-  all_redd_data$redd_measured == "NO"  ~ FALSE, 
-  all_redd_data$redd_measured == "YES" ~ TRUE
-)
-
-table(all_redd_data$redd_measured) 
-
-```
 
 **NA and Unknown Values**
 
