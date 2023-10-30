@@ -64,17 +64,23 @@ raw_redds_data <-readxl::read_excel(here::here("data-raw", "qc-markdowns","adult
 
 Note on age in the dataset:
 
-There are several columns for recording age and date of aging. `Age` and `Survey....78` are defined in the metadata as "age at observation" and "survey observed". These are the ideal columns but as they are recorded, there is only one row per `redd_id` and so all the additional information about whether a redd was viewed in subsequent surveys, etc. is lost. 
+There are several columns for recording age and date of aging, and whether/how these were filled in varies considerably by year: 
 
-Columns `survey_[2-9]_age` are described as "Age of redd based on age classification during survey (2-9)". According to meetings with monitoring programs, this is how they recorded redd age in `2010`.
+* Age was not recorded from `2002-2013`
+* According to notes from meetings with monitoring programs, redd age in `2010` was recorded in the columns `survey_[2-9]_age`, described as "Age of redd based on age classification during survey (2-9)". 
+* Age was recorded in `Age[1-9]` and `Date[1-9]` for years `2014-2015` and `2019`
+* Age was recorded in the `Age[1-9]` and `Date[1-9]` columns *and* `survey_x_age` columns for 2016:2018. 
+* `Age` and `Survey....78` are defined in the metadata as "age at observation" and "survey observed". These are the ideal columns but as they are recorded, there is only one row per `redd_id` and so all the additional information about whether a redd was viewed in subsequent surveys, etc. is lost. 
+* Columns `Age[1-9]` are described as "age of redd based on age classification during survey (1-9)". `Date[1-9]` columns are described as "date of observation". According to monitoring programs are how they record redd age now and going forward.
+* It is unclear how these columns interact with `Age` and `Survey...78`.
 
-Columns `Age[1-9]` are described as "age of redd based on age classification during survey (1-9)". `Date[1-9]` columns are described as "date of observation". These begin being populated in `2013` and according to monitoring programs are how they record redd age now and going forward.
+Assumptions we made to process the dataset:
 
-It is unclear how these columns interact with `Age` and `Survey...78`.
-
-Moving forward, we will use `Age[1-9]` and `Date[1-9]` as this keeps the date affiliated with the assigned age. Pivoting this table longer will result in multiple rows per redd id with additional rows for additional ages. This aligns with how the Battle redd data were QC'd. 
-
-When summarizing by year, we can take all redds aged 2 and sum for a year.
+* Each row is a unique redd - created new redd ID from year and row number called `JPE_redd_id`
+* We cannot use data from the `survey_[2-9]_age` columns because they have no associated date.
+* We will use the `Age[1-9]` and `Date[1-9]` columns.This keeps the date affiliated with the assigned age. Pivoting this table longer will result in multiple rows per redd id with additional rows for additional ages. This aligns with how the Battle redd data were QC'd. 
+* When summarizing by year, we can take all redds aged 2 and sum for a year.
+* All redds surveyed above the picket weir are `spring run`.
 
 TODO: The last 4 variables observation_reach, observation_date, observation_age, and survey_observed need further description.
 
@@ -106,8 +112,9 @@ cleaner_data <- raw_redds_data |>
          survey = as.character(survey),
          fish_on_redd = case_when(fish_on_redd %in% c("YES", "Yes") ~ TRUE,
                                   fish_on_redd %in% c("No", "NO") ~ FALSE),
-         measured = ifelse(measured == "YES", TRUE, FALSE)) |> 
-  filter(species %in% c('CHINOOK', 'Chinook')) |>
+         measured = ifelse(measured == "YES", TRUE, FALSE),
+         run = ifelse(picket_weir_relation == "Above", "Spring", run)) |> 
+  filter(species %in% c('CHINOOK', 'Chinook'), run == "Spring") |> 
   select(-c('qc_type','qc_date','inspector','year', 'rm_latlong', 'rm_diff','flow_devic','bomb_id', 'species')) |> #all method is snorkel, year could be extracted from date, river_latlong same as rivermile
   select(-c(reach_2, date_2_2, age_2_2, survey_78, survey_2_age,
             survey_3_age, survey_4_age, survey_5_age, survey_6_age, survey_7_age, survey_8_age, survey_9_age)) |>
@@ -116,10 +123,13 @@ cleaner_data <- raw_redds_data |>
  
 
 ```{r}
+# TODO can't age_x and date_x columns using survey_x_age for 2016:2018 because they don't have the dates affiated with the additional surveys
 redd_with_age <- cleaner_data |> 
+  mutate(year = year(date),
+         JPE_redd_id = paste0(year, "_", row_number()),
   # take date and age columns and assign to age_1 and survey_1
-  mutate(age_1 = ifelse(is.na(age_1), age, age_1),
-         date_1 = date) |> 
+         age_1 = ifelse(is.na(age_1), age, age_1),
+         date_1 = date) |> # they are the same
   pivot_longer(cols = c(age_1, age_2, age_3, age_4, age_5, age_6, age_7, age_8, age_9), # pivot all aging instances to age column
                values_to = "new_age",
                names_to = "age_index") |> 
@@ -139,10 +149,11 @@ redd_with_age <- cleaner_data |>
          age_index = ifelse(is.na(new_age) & age_index == 1, 0, age_index)) |> 
   filter(!is.na(new_date)) |> 
   select(-c(date, age, date_1, date_2, date_3, date_4, date_5,
-            date_6, date_7, date_8, date_9)) |> 
+            date_6, date_7, date_8, date_9, redd_id, comments, year)) |> 
   rename(age = new_age, date = new_date) |> 
   relocate(date, .before = survey_method) |> 
   relocate(c(age, age_index), .before = gravel) |> 
+  relocate(JPE_redd_id, .before = date) |> 
   glimpse()
 ```
 
@@ -156,7 +167,8 @@ percent_na <- redd_with_age |>
   pivot_longer(cols = everything())
   
 data_dictionary <- tibble(variables = colnames(redd_with_age),
-                          description = c("Date",
+                          description = c("Unique redd ID",
+                                          "Date",
                                           "Survey method", 
                                           "GPS X point",
                                           "GPS Y point",
@@ -167,7 +179,6 @@ data_dictionary <- tibble(variables = colnames(redd_with_age),
                                           "Picket weir location", 
                                           "Above or below picket weir",
                                           "Reach number", 
-                                          "Unique ID number for a Redd",
                                           "Latitudinal location of the redd in the creek (RL: river left, RR: river right, RC: river center)", 
                                           "Redd age assigned",
                                           "Number of times that unique redd has been aged: 0 (no redd aged) - 3 (aged 3x)",
@@ -193,17 +204,9 @@ data_dictionary <- tibble(variables = colnames(redd_with_age),
                                           "End values on the mechanical flow meter at 80/20% depth", 
                                           "time the meter was in the water", 
                                           "Mean water column velocity measured at 60 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007). ", 
-                                          "Mean water column velocity measured at 80 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007). ", 
-                                          "Comments from survey crew", 
-                                          "Run call based on field data"),
-                          data_type = c("Date", "character", "numeric", "numeric", "character", "numeric", 
-"numeric", "character", "numeric", "character", "character", 
-"character", "character", "numeric", "numeric", "character", 
-"character", "character", "character", "character", "logical", 
-"logical", "character", "Date", "numeric", "numeric", "numeric", 
-"numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
-"numeric", "numeric", "numeric", "numeric", "numeric", "character", 
-"character"),
+                                          "Mean water column velocity measured at 80 percent depth from the water surface if the redd depth is ≤ 30 inches from the water surface (Allan and Castillo 2007). ",  
+                                          "Run call based on field data and position relative to picket weir"),
+                          data_type = c("character", "Date", "character", "numeric", "numeric", "character",  "numeric", "numeric", "character", "numeric", "character", "character",  "character", "numeric", "numeric", "character", "character",  "character", "character", "character", "logical", "logical",  "character", "Date", "numeric", "numeric", "numeric", "numeric",  "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",  "numeric", "numeric", "numeric", "numeric", "character"),
                           
                           percent_na = round(percent_na$value*100)
                           
@@ -279,18 +282,18 @@ table(redd_with_age$surveyed_reach)
 
 * `r round(sum(is.na(redd_with_age$survyed_reach))/nrow(redd_with_age), 3) * 100` % of values in the `surveyed_reach` column are NA.
 
-### Variable: `redd_id`
+### Variable: `JPE_redd_id`
 
 **Description:** ID assigned to redds by data collection device for each survey day
 
 ```{r}
-unique(redd_with_age$redd_id)[1:10]
+unique(redd_with_age$JPE_redd_id)[1:10]
 ```
-There are `r length(unique(redd_with_age$redd_id))` unique redd ID numbers.
+There are `r length(unique(redd_with_age$JPE_redd_id))` unique redd ID numbers.
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(redd_with_age$redd_id))/nrow(redd_with_age), 3) * 100` % of values in the `redd_id` column are NA.
+* `r round(sum(is.na(redd_with_age$JPE_redd_id))/nrow(redd_with_age), 3) * 100` % of values in the `JPE_redd_id` column are NA.
 
 ### Variable: `redd_loc`
 
@@ -425,16 +428,6 @@ table(redd_with_age$why_not_measured)
 
 * `r round(sum(is.na(redd_with_age$why_not_measured))/nrow(redd_with_age), 3) * 100` % of values in the `why_not_measured` column are NA.
 
-### Variable: `comments`
-
-**Description:** 
-```{r}
-unique(redd_with_age$comments)[1:10]
-```
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(redd_with_age$comments))/nrow(redd_with_age), 3) * 100` % of values in the `comments` column are NA.
 
 ### Variable: `run`
 
