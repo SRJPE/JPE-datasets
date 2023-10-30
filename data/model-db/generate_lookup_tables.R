@@ -59,12 +59,15 @@ yuba <- tibble(stream = c(rep("yuba river",4)),
                site_group = c("yuba river"),
                description = c("rst at yuba river, only used historically", 
                                "rst 1 at hallwood", "rst 2 at hallwood", "rst 3 at hallwood")) 
-sacramento <- tibble(stream = c(rep("sacramento river",5)),
-                     site = c(rep("knights landing",3), rep("tisdale",2)),
-                     subsite = c("8.3", "8.4", "knights landing", "rr","rl"),
-                     site_group = c(rep("knights landing",3) , rep("tisdale",2)),
+sacramento <- tibble(stream = c(rep("sacramento river",20)),
+                     site = c(rep("knights landing",3), rep("tisdale",2), rep("red bluff diversion dam", 15)),
+                     subsite = c("8.3", "8.4", "knights landing", "rr","rl",
+                                 "gate 6", "gate 3", "gate 7", "gate 8", "gate 4", "gate 9", 
+                                   "gate 5", "gate 2", "gate 1", "gate 11", "gate 10", "gate 6 e", 
+                                   "gate 6 w", "gate 5 w", "gate 7 e"),
+                     site_group = c(rep("knights landing",3) , rep("tisdale",2), rep("red bluff diversion dam", 15)),
                      description = c(rep("rst at knights landing",2), "rst location unknown", 
-                                     "rst at river right", "rst at river left")) 
+                                     "rst at river right", "rst at river left", rep("rst at red bluff diversion dam", 15))) 
 trap_location <- bind_rows(battle, butte, clear, deer, feather, mill, yuba, sacramento) |> 
   mutate(id = row_number())
 
