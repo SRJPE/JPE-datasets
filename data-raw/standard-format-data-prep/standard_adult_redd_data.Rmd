@@ -77,6 +77,8 @@ Below we read in the adult redd data for each monitoring program and rename or s
 
 ### Battle Creek
 
+This contains only spring run chinook.
+
 #### Columns Removed
 
 -   `why_not_measured`: enumerated; `NA`, `fish_on_redd`, `sub sample`, `too deep` Deemed unnecessary.
@@ -89,7 +91,6 @@ Below we read in the adult redd data for each monitoring program and rename or s
 -   `flow_meter_time_80`: deemed unnecessary for final dataset
 -   `redd_pit_depth`: deemed unnecessary for final dataset
 -   `redd_tail_depth`: deemed unnecessary for final dataset
--   `comments`: deemed unnecessary for final dataset
 
 columns created:
 
@@ -106,12 +107,10 @@ gcs_get_object(
 # Redd data for Battle Creek
 battle_redd <- read_csv(here::here("data", "redd-carcass-holding", "battle_redd.csv"), 
                         col_names = TRUE, 
-                        col_types = list("D", "c", "n", "n", "c", "c", 
-                                         "n", "c", "c", "c", "c", "c", 
-                                         "c", "l", "l", "c", "n", "n", 
-                                         "n", "n", "n", "c", "n", "n", 
-                                         "n", "n", "n", "n", "n", "n", 
-                                         "n", "n")) |> 
+                        col_types = c("c", "D", "c", "n", "n", "c", "c", "n", "c",
+                                      "c", "c", "c", "c", "l", "l", "c", "n", "n",
+                                      "n", "n", "n", "c", "n", "n", "n", "n", "n",
+                                      "n", "n", "n", "n", "n", "l", "l", "l")) |> 
                           glimpse()
 
 summary(battle_redd)
@@ -122,10 +121,9 @@ table(battle_redd$tail_substrate_size, useNA = "ifany")
 unique(battle_redd$why_not_measured)
 unique(battle_redd$flow_meter)
 
-# TODO do distinct redd id
 clean_battle_redd <- battle_redd  |>
   select(date, latitude, longitude, 
-         reach, river_mile, fish_guarding, redd_id,
+         reach, river_mile, fish_guarding, JPE_redd_id,
          redd_measured, redd_width, redd_length, age,
          age_index, pre_redd_substrate_size, 
          redd_substrate_size, tail_substrate_size, flow_fps,
@@ -135,6 +133,7 @@ clean_battle_redd <- battle_redd  |>
          redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
          year = lubridate::year(date))  |>
   rename(velocity = flow_fps)  |>
+  relocate(JPE_redd_id, .before = fish_guarding) |> 
   glimpse()
 
 ```
@@ -143,17 +142,11 @@ clean_battle_redd <- battle_redd  |>
 
 FlowWest acquired Clear Creek redd data for late fall and spring runs through CVPIA.
 
-O. mykiss data is included in this dataset.
+This contains only spring run chinook.
 
 #### Columns Removed
 
 ```{r}
-# TODO confirm that we want to use the original clear data and not the CVPIA? CVPIA does not seem to have redd age
-
-# load in aggregated clear creek data from other runs 
-# this data was pulled from CVPIA-EDA repo (CVPIA-EDA/jim_data_requests/redd_monitoring_data/all_redd_data_for_clear_creek.csv)
-# and saved to jpe google cloud for easy access
-
 # data directly from Natasha
 gcs_get_object(
   object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_redd.csv",
@@ -165,13 +158,11 @@ gcs_get_object(
 # Redd data for Clear Creek
 clear_redd <- read_csv(here::here("data", "redd-carcass-holding", "clear_redd.csv"), 
                         col_names = TRUE, 
-                        col_types = list("D", "c", "n", "n", "n", "n", 
-                                         "n", "c", "n", "c", "c", "c",
-                                         'c', "n", "n", "c", "c", "c",
-                                         "c", "c", "l", "l", "c", "D",
-                                         "n", "n", "n", "n", "n", "n",
-                                         "n", "n", "n", "n", "n", "n",
-                                         "c", "c", "n", "n")) |> 
+                        col_types = c("c", "D", "c", "n", "n", "n", "n", "n", "c",
+                                      "n", "c", "c", "c", "n", "n", "c", "c", "c",
+                                      "c", "c", "l", "l", "c", "D", "n", "n", "n",
+                                      "n", "n", "n", "n", "n", "n", "n", "n", "n",
+                                      "c", "n", "n")) |> 
                           glimpse()
 
 summary(clear_redd)
@@ -184,9 +175,9 @@ unique(clear_redd$flow_meter)
 
 clean_clear_redd <- clear_redd  |>
   select(date, latitude, longitude, 
-         reach = surveyed_reach, river_mile, fish_guarding = fish_on_redd, 
-         redd_id, redd_measured = measured, redd_width, redd_length, age,
-         age_index, pre_redd_substrate_size, 
+         reach = surveyed_reach, river_mile, JPE_redd_id, 
+         fish_guarding = fish_on_redd, redd_measured = measured, redd_width,
+         redd_length, age, age_index, pre_redd_substrate_size, 
          redd_substrate_size, tail_substrate_size, velocity,
          survey_method, run)  |>
   mutate(stream = 'clear creek', 
