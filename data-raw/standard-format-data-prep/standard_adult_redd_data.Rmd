@@ -67,8 +67,8 @@ Data dictionary for standard format for `annual_redd_count`:
 |year                        |B, C, F, M, Y      |Calendar year sampling occurred                                                                           |
 |stream                      |B, C, F, M, Y      |Unique stream associated with redd data collected                                                         |
 |reach                       |B, C, F, M         |Unique name identifier of reach sampled                                                                   |
-|species                     |B, C, F, M, Y      |Species associated with redd sampled                                                                      |
-|run                         |B, C, F, M, Y      |spring, fall, late_fall                                                                                   |
+|species                     |B, C, Y      |Species associated with redd sampled                                                                      |
+|run                         |B, C     |spring, fall, late_fall                                                                                   |
 |annual_redd_count           |B, C, F, M, Y      |Number of redds counted in a year by reach and stream                                                     |
 |annual_summarization_method |B, C, F, M, Y      |Summarization method used to get the annual number: either summed by redd id or maximum yearly redd count |
 
@@ -508,6 +508,7 @@ redd_count_by_year <- bind_rows(clean_feather_redd,
   mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
                              species == "SH" ~ "steelhead",
+                             is.na(species) & stream %in% c("battle creek", "clear creek") ~ "chinook",
                              is.na(species) ~ "not recorded"),
          run = ifelse(is.na(run), "not recorded", run)) |> 
   select(-max_yearly_redd_count) |> 
