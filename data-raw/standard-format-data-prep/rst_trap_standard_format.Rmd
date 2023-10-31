@@ -835,6 +835,10 @@ combined_trap <- combined_trap_raw %>%
                                       fish_processed == "no catch data; fish released" ~ "no catch data, fish released",
                                       fish_processed == "no catch data; fish left in live box" ~ "no catch data, fish left in live box",
                                     T ~ "not recorded"),
+         trap_start_date = case_when(is.na(trap_start_date) ~ as.Date(trap_visit_date), 
+                                     T ~ as.Date(trap_start_date)),
+         trap_start_time = case_when(is.na(trap_start_time) ~ as_hms(trap_visit_time),
+                                     T ~ as_hms(trap_start_time)),
          gear_type = ifelse(is.na(gear_type), "rotary screw trap", gear_type),
          # convert ft to m and inches to cm
          depth_adjust = depth_adjust*2.54,
