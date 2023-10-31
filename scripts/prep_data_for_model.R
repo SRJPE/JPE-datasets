@@ -327,7 +327,7 @@ write_csv(rst_with_inclusion_criteria, "data/model-data/daily_catch_unmarked.csv
 weekly_standard_catch_unmarked <- rst_with_inclusion_criteria %>% 
   mutate(week = week(date),
          year = year(date)) %>% 
-  group_by(week, year, stream, site_group, site, subsite, run, lifestage, adipose_clipped, lifestage_for_model, include_in_model) %>% 
+  group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped, lifestage_for_model, include_in_model) %>% 
   summarize(mean_fork_length = mean(fork_length, na.rm = T),
             mean_weight = mean(weight, na.rm = T),
             count = sum(count)) %>% glimpse()
@@ -382,6 +382,45 @@ gcs_upload(weekly_catch_effort,
            name = "jpe-model-data/weekly_catch_effort.csv",
            predefinedAcl = "bucketLevel")
 write_csv(weekly_catch_effort, "data/model-data/weekly_catch_effort.csv")
+
+# feather annual site list to use -----------------------------------------
+# Describe for feather river which site to use each year, in years that there 
+# are multiple sites fished, use the site with the most reccords
+
+# Use weekly catch effort to summarize sites fished for each year 
+annual_sites_trapped <- weekly_catch_effort |> 
+  filter(stream == "feather river") |> 
+  mutate(site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                         site %in% hfc_sites ~ "feather river hfc",
+                         T ~ NA)) |> 
+  group_by(year, site_group, site) |> 
+  tally() |> 
+  rename(reccords_per_site = n)
+
+# Filter to only include site with most records per year and site group 
+filtered_annual_sites <- annual_sites_trapped |> 
+  group_by(year, site_group) |> 
+  mutate(x = rank(desc(reccords_per_site), ties.method = "first"),
+         stream = "feather river") |> 
+  filter(x == 1) |>
+  select(year, stream, site_group, site) |> glimpse()
+  
+# Confirm only one site per site group 
+filtered_annual_sites |> 
+  group_by(year, site_group) |> 
+  tally() |> 
+  rename(traps_per_site_group = n) |> 
+  pull(traps_per_site_group) |> unique()
+
+# save to cloud 
+gcs_upload(filtered_annual_sites,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/feather_annual_site_selection.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(filtered_annual_sites, "data/model-data/feather_annual_site_selection.csv")
+
+
 
 
 # Environmental -----------------------------------------------------------
