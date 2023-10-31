@@ -1,0 +1,222 @@
+---
+title: "mill 2021-2022 data"
+output: html_document
+date: "2023-05-09"
+---
+
+
+```{r, include = F}
+library(dtplyr)
+library(data.table)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(knitr)
+library(hms)
+
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = F}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+f <- function(input, output) write_csv(input, file = output)
+```
+
+```{r, include = F}
+gcs_get_object(object_name = 
+              "rst/mill-creek/data-raw/2021_2022/mill_deer_2021_data_Liz.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_2021_rst_deer_and_mill_liz.xlsx",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = 
+              "rst/mill-creek/data-raw/2021_2022/mill_deer_2021_data_av.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_2021_rst_deer_and_mill_ashley.xlsx",
+               overwrite = TRUE)
+
+gcs_get_object(object_name = 
+              "rst/mill-creek/data-raw/2021_2022/mill_deer_2021_data_erin.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "raw_2021_rst_deer_and_mill_erin.xlsx",
+               overwrite = TRUE)
+```
+
+## Catch
+
+TODO 
+- standardize species and lifestage 
+- add morts to new rows
+
+```{r, include = F}
+catch_liz <- readxl::read_excel("raw_2021_rst_deer_and_mill_liz.xlsx", sheet = "Catch") |> 
+  mutate(is_plus_count = ifelse(is_plus_count == "T", T, F))
+catch_erin <- readxl::read_excel("raw_2021_rst_deer_and_mill_erin.xlsx", sheet = "Catch") |> 
+  mutate(fork_length = as.numeric(fork_length),
+         weight = as.numeric(weight),
+         count = as.numeric(count))
+catch_ashley <- readxl::read_excel("raw_2021_rst_deer_and_mill_ashley.xlsx", sheet = "Catch") |> 
+  mutate(is_plus_count = ifelse(is_plus_count == "T", T, F))
+```
+
+```{r}
+catch_combined <- bind_rows(catch_liz, catch_erin, catch_ashley) |> 
+  # standardize chinook - others can worry about later
+  mutate(species = case_when(species == "CHISAL" ~ "chinook salmon",
+                             T ~ species),
+         count = ifelse(!is.na(fork_length) & is.na(count), 1, count)) |> 
+  select(-pdf_page_number, -ad_clip) |> 
+  # there was one NA count decided to filter out
+  filter(!is.na(count)) |> 
+  glimpse()
+```
+
+### simple checks: stream, date
+
+```{r}
+unique(catch_combined$stream)
+range(catch_combined$date)
+```
+
+### species
+
+```{r}
+catch_combined |> 
+  group_by(species) |> 
+  summarize(count = sum(count))
+```
+
+### fork length
+
+```{r}
+catch_combined |> 
+  filter(species == "chinook salmon") |> 
+  group_by(fork_length) |> 
+  summarize(count = sum(count)) |> 
+  ggplot(aes(x = fork_length, y = count)) +
+  geom_point()
+```
+
+```{r}
+catch_combined |> 
+  filter(species == "chinook salmon") |> 
+  group_by(date) |> 
+  summarize(fork_length = mean(fork_length, na.rm = T)) |> 
+  ggplot(aes(x = date, y = fork_length)) +
+  geom_point()
+```
+### lifestage
+
+```{r}
+catch_combined |> 
+  group_by(lifestage) |> 
+  summarize(count = sum(count))
+```
+
+##  Recapture
+
+```{r}
+recap_liz <- readxl::read_excel("raw_2021_rst_deer_and_mill_liz.xlsx", sheet = "Recapture") |> glimpse()
+recap_erin <- readxl::read_excel("raw_2021_rst_deer_and_mill_erin.xlsx", sheet = "recapture_fish") |> glimpse()
+recap_ashley <- readxl::read_excel("raw_2021_rst_deer_and_mill_ashley.xlsx", sheet = "recapture_fish") |> glimpse()
+
+recap_combined <- bind_rows(recap_liz, recap_ashley) |> 
+  mutate(lifestage = ifelse(lifestage == "p", "parr", lifestage))
+
+
+```
+
+
+## Trap
+
+TODO
+- Make sure all debris_gallons are in gallons and not tubs; remove debris_code
+- Make sure water temp is all in the same unit or just remove and use the gage temp
+- Find weather code and encode
+
+```{r}
+trap_liz <- readxl::read_excel("raw_2021_rst_deer_and_mill_liz.xlsx", sheet = "Trap Operations & Env") |> 
+  mutate(hours_fished = as.numeric(hours_fished))
+trap_erin <- readxl::read_excel("raw_2021_rst_deer_and_mill_erin.xlsx", sheet = "Trap Operations & Env") |> 
+  mutate(hours_fished = as.numeric(hours_fished),
+         debris_gal = as.numeric(debris_gal),
+         weather_code = as.numeric(weather_code),
+         staff_gage_ft = as.numeric(staff_gage_ft),
+         water_velocity_m_per_s = as.numeric(water_velocity_m_per_s),
+         turbidity_ntu = as.numeric(turbidity_ntu),
+         total_revs = as.numeric(total_revs),
+         before_rpms = as.numeric(before_rpms),
+         after_rpms = as.numeric(after_rpms)) |> 
+  relocate(debris_code, .before = debris_gal) |> 
+  rename(flow_cfs = flow_csf) |> 
+  select(-page_number)
+trap_ashley <- readxl::read_excel("raw_2021_rst_deer_and_mill_ashley.xlsx", sheet = "Trap Operations & Env") |> 
+  relocate(debris_code, .before = debris_gal) |> 
+  rename(flow_cfs = flow_csf)
+
+trap_combined <- bind_rows(trap_liz, trap_erin, trap_ashley) |> 
+  mutate(trap_location = "upper mill creek",
+         flow_cfs = ifelse(is.na(flow_cfs), staff_gage_ft, flow_cfs)) |> 
+  # all are NA
+  select(-c(water_velocity_m_per_s, staff_gage_ft))
+
+
+```
+
+
+## Release
+
+```{r}
+release_liz <- readxl::read_excel("raw_2021_rst_deer_and_mill_liz.xlsx", sheet = "Release Summary") |> glimpse()
+release_erin <- readxl::read_excel("raw_2021_rst_deer_and_mill_erin.xlsx", sheet = "Efficiency summary") |> glimpse()
+release_ashley <- readxl::read_excel("raw_2021_rst_deer_and_mill_ashley.xlsx", sheet = "Release Summary") |> glimpse()
+
+release_combined <- release_erin
+
+
+```
+
+## Release site location
+
+```{r}
+release_site <- readxl::read_excel("raw_2021_rst_deer_and_mill_erin.xlsx", sheet = "release site location") |> glimpse()
+
+
+```
+
+## Upload to google cloud
+
+```{r}
+gcs_upload(catch_combined,
+           object_function = f,
+           type = "csv",
+           name = "rst/mill-creek/data/mill_2021_catch.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(recap_combined,
+           object_function = f,
+           type = "csv",
+           name = "rst/mill-creek/data/mill_2021_recaptures.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(trap_combined,
+           object_function = f,
+           type = "csv",
+           name = "rst/mill-creek/data/mill_2021_trap.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(release_combined,
+           object_function = f,
+           type = "csv",
+           name = "rst/mill-creek/data/mill_2021_release.csv",
+           predefinedAcl = "bucketLevel")
+
+gcs_upload(release_site,
+           object_function = f,
+           type = "csv",
+           name = "rst/mill-creek/data/mill_2021_release_site.csv",
+           predefinedAcl = "bucketLevel")
+```
