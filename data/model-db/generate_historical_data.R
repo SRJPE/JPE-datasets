@@ -425,3 +425,65 @@ gcs_upload(hatchery_release,
            type = "csv",
            name = "model-db/hatchery_release.csv",
            predefinedAcl = "bucketLevel")
+
+
+# carcass -----------------------------------------------------------------
+# This currently contains both bulk counts and individual carcasses
+gcs_get_object(object_name = "standard-format-data/standard_carcass.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_carcass.csv",
+               overwrite = TRUE)
+carcass_raw <- read_csv("data/standard-format-data/standard_carcass.csv")
+
+
+# carcass_estimates -------------------------------------------------------
+gcs_get_object(object_name = "standard-format-data/standard_carcass_cjs_estimate.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_carcass_cjs_estimate.csv",
+               overwrite = TRUE)
+carcass_estimates_raw <- read_csv("data/standard-format-data/standard_carcass_cjs_estimate.csv")
+
+# bulk carcass ------------------------------------------------------------
+# currently not going to use this table. originally designed to separate
+# out bulk counts from individual estimates
+
+# daily_redd --------------------------------------------------------------
+gcs_get_object(object_name = "jpe-model-data/daily_redd.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/jpe-model-data/daily_redd.csv",
+               overwrite = TRUE)
+daily_redd_raw <- read_csv("data/jpe-model-data/daily_redd.csv")
+
+
+# annual_redd -------------------------------------------------------------
+gcs_get_object(object_name = "jpe-model-data/annual_redd.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/jpe-model-data/annual_redd.csv",
+               overwrite = TRUE)
+annual_redd_raw <- read_csv("data/jpe-model-data/annual_redd.csv")
+
+
+# passage_counts ----------------------------------------------------------
+gcs_get_object(object_name = "jpe-model-data/upstream_passage.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/jpe-model-data/upstream_passage.csv",
+               overwrite = TRUE)
+passage_raw <- read_csv("data/jpe-model-data/upstream_passage.csv")
+
+
+# passage_estimates -------------------------------------------------------
+gcs_get_object(object_name = "standard-format-data/standard_adult_passage_estimate.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_adult_passage_estimate.csv",
+               overwrite = TRUE)
+passage_estimates_raw <- read_csv("data/standard-format-data/standard_adult_passage_estimate.csv")
+
+
+# holding -----------------------------------------------------------------
+gcs_get_object(object_name = "jpe-model-data/holding.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/jpe-model-data/holding.csv",
+               overwrite = TRUE)
+holding_raw <- read_csv("data/jpe-model-data/holding.csv")
+
+
