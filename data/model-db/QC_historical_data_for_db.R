@@ -1,5 +1,5 @@
 # Script to QC db data generation
-
+source("data/model-db/generate_historical_data.R")
 # catch -------------------------------------------------------------------
 gcs_get_object(object_name = "model-db/catch.csv",
                bucket = gcs_get_global_bucket(),
@@ -11,6 +11,16 @@ catch <- read_csv("data/model-db/catch.csv")
 # check run, lifestage match lookup
 # one time check - compare to last table provided josh with
 
+try(if(any((unique(catch$trap_location_id) %in% trap_location$id) == F)) 
+  stop("Missing Trap Location ID! Please fix!"))
+try(if(any((unique(catch$run_id) %in% run$id) == F))
+  stop("Missing Run ID! Please fix!"))
+try(if(any((unique(catch$lifestage_id) %in% lifestage$id) == F))
+  stop("Missing Lifestage ID! Please fix!"))
+
+# load in table we sent to josh
+# we are using daily_catch_unmarked which is the table we give to Josh so don't
+# need to do any checks here
 
 # trap --------------------------------------------------------------------
 gcs_get_object(object_name = "model-db/trap.csv",

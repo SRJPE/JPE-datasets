@@ -105,6 +105,7 @@ catch <- catch_raw |>
   select(-lifestage) |> 
   mutate(actual_count = NA)
 
+ck <- filter(catch, is.na(id))
 unique(catch$trap_location_id)
 unique(catch$lifestage_id)
 unique(catch$run_id)
@@ -205,6 +206,9 @@ unique(trap$trap_functioning_id)
 unique(trap$fish_processed_id)
 unique(trap$debris_level_id)
 
+ck <- filter(trap, is.na(trap_visit_time_start) & is.na(trap_visit_time_end))
+
+unique(ck$visit_type)
 gcs_upload(trap,
            object_function = f,
            type = "csv",
