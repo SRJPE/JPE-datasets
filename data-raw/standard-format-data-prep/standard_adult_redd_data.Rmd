@@ -58,18 +58,19 @@ F - Feather River, Y - Yuba River)
 
 ## Standard format for Adult Redd Data Aggregated by Year
 
-This dataset includes `max_yearly_redd_count` which is the maximum number of redds counted on a single day per year per reach.
+This dataset includes `annual_redd_count` which is the total number of redds sampled. This can be summarized by `redd_id` or by `max_yearly_redd_count` (maximum number of redds counted on a single day per year per reach).
 
-Data dictionary for standard format for `max_yearly_redd_count`:
+Data dictionary for standard format for `annual_redd_count`:
 
-| column name           | tributary collects | definition                                                          |
-|:-----------------|:-----------------|:----------------------------------|
-| date                  | B, C, F, Y         | Date in which redd data was collected                               |
-| reach                 | B, C, F, M         | Unique name identifier of reach sampled                             |
-| stream                | B, C, F, M         | Unique stream associated with redd data collected                   |
-| year                  | B, C, F, M, Y      | Calendar year sampling occurred                                     |
-| max_yearly_redd_count | B, C, F, M, Y      | maximum number of redds counted on a day in a unique reach per year |
-| run                   | C                  | `spring`, `fall`, `late-fall`                                       |
+|column_name                 |tributary_collects |definition                                                                                                |
+|:---------------------------|:------------------|:---------------------------------------------------------------------------------------------------------|
+|year                        |B, C, F, M, Y      |Calendar year sampling occurred                                                                           |
+|stream                      |B, C, F, M, Y      |Unique stream associated with redd data collected                                                         |
+|reach                       |B, C, F, M         |Unique name identifier of reach sampled                                                                   |
+|species                     |B, C, F, M, Y      |Species associated with redd sampled                                                                      |
+|run                         |B, C, F, M, Y      |spring, fall, late_fall                                                                                   |
+|annual_redd_count           |B, C, F, M, Y      |Number of redds counted in a year by reach and stream                                                     |
+|annual_summarization_method |B, C, F, M, Y      |Summarization method used to get the annual number: either summed by redd id or maximum yearly redd count |
 
 ## Read in data {.tabset}
 
@@ -132,8 +133,9 @@ clean_battle_redd <- battle_redd  |>
          # adding redd count for only those redds surveyed and not aged, or aged once
          redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
          year = lubridate::year(date))  |>
-  rename(velocity = flow_fps)  |>
-  relocate(JPE_redd_id, .before = fish_guarding) |> 
+  rename(velocity = flow_fps,
+         redd_id = JPE_redd_id)  |>
+  relocate(redd_id, .before = fish_guarding) |> 
   glimpse()
 
 ```
@@ -184,7 +186,8 @@ clean_clear_redd <- clear_redd  |>
          # adding redd count for only those redds surveyed and not aged, or aged once
          redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
          year = lubridate::year(date))  |>
-  glimpse()
+  rename(redd_id = JPE_redd_id) |> 
+  glimpse() 
 
 ```
 
@@ -303,6 +306,7 @@ all_redd_data <- bind_rows(clean_battle_redd,
   mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
                              species == "SH" ~ "steelhead",
+                             is.na(species) & stream %in% c("battle creek", "clear creek") ~ "chinook",
                              is.na(species) ~ "not recorded"),
          run = ifelse(is.na(run), "not recorded", run))
 ```
@@ -348,7 +352,9 @@ redd_substrate_size_lookup <-
   data.frame("redd_substrate_size" = unique(all_redd_data$redd_substrate_size),
              "standardized_size_range" = c(NA, "1-2", "1-2", "2-4", "2-4", 
                                            "0.5-1", "2-4", "2-4", ">16", "4-6",
-                                           "2-4", "1-2", "4-8", "0.5-1", "0.5-1",
+                                           "2-4", "1-2", "4-8", "0.5-1", "1-2", 
+                                           "2-4", "0.5-1", "1-2", "2-4", "2-4", 
+                                           "<0.25", "4-8", "4-8", "0.5-1",
                                            "4-8", "8-16")) |> 
   left_join(substrate_class)
                     
@@ -466,15 +472,15 @@ table(all_redd_data$tail_substrate_class, useNA = "ifany")
 
 Redd data for Feather River and Yuba River was aggregated by sampled reach and date to get a count of redds. In order to not potentially double count, the maximum of a daily count is reported as the yearly redd count. 
 
-For Battle and Clear Creeks, `redd_count` is 1 for every row where the redd was aged either `0` times or `1` time (recorded in `age_index` column). These were then summed by reach and year.
+For Battle and Clear Creeks, the dataset was filtered to unique `redd_id` and these were summed by reach and year.
 
 Since Mill Creek is aggregated by year already, this dataset includes Mill Creek.
 
 ```{r}
 redd_count_by_year <- bind_rows(clean_feather_redd, 
                                 clean_yuba_redd)  |> 
-  # find the redd count by date/stream/reach/species/run
-  group_by(reach, date, stream, year, species)  |>
+  # find the redd count by stream/reach/species/run
+  group_by(reach, stream, year, species)  |>
   summarize(redd_count = sum(redd_count))  |>
   ungroup() |>
   # since some redds may be double counted, summarize yearly count by date
@@ -485,11 +491,15 @@ redd_count_by_year <- bind_rows(clean_feather_redd,
               rename(max_yearly_redd_count = redd_count) |> 
               select(-starting_elevation_ft)) |> 
   bind_rows(clean_battle_redd |> 
-              group_by(reach, date, stream, year, run) |> 
+              distinct(redd_id, .keep_all = TRUE) |> 
+              mutate(redd_count = 1) |> 
+              group_by(reach, stream, year, run) |> 
               summarise(annual_redd_count = sum(redd_count)) |> 
               ungroup(), 
             clean_clear_redd |> 
-              group_by(reach, date, stream, year, run) |> 
+              distinct(redd_id, .keep_all = TRUE) |> 
+              mutate(redd_count = 1) |> 
+              group_by(reach, stream, year, run) |> 
               summarise(annual_redd_count = sum(redd_count)) |> 
               ungroup()) |> 
   mutate(annual_redd_count = ifelse(stream %in% c("mill creek", "yuba river", "feather river"),
@@ -499,7 +509,9 @@ redd_count_by_year <- bind_rows(clean_feather_redd,
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
                              species == "SH" ~ "steelhead",
                              is.na(species) ~ "not recorded"),
-         run = ifelse(is.na(run), "not recorded", run))
+         run = ifelse(is.na(run), "not recorded", run)) |> 
+  select(-max_yearly_redd_count) |> 
+  ungroup()
 
 ```
 
@@ -520,9 +532,9 @@ all_redd_data  |>
 # feather does survey a lot of reaches. this may be an artificat of the methodology
 redd_count_by_year  |> 
   group_by(year, stream)  |> # add across reaches
-  summarize(max_yearly_redd_count = sum(max_yearly_redd_count, na.rm = T)) |> 
+  summarize(annual_redd_count = sum(annual_redd_count, na.rm = T)) |> 
 ggplot() + 
-  geom_col(aes(x = year, y = max_yearly_redd_count, fill = stream)) + 
+  geom_col(aes(x = year, y = annual_redd_count, fill = stream)) + 
   facet_wrap(~stream) +
   scale_fill_manual(values = color_pal) + 
   theme_minimal()
