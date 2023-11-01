@@ -466,11 +466,33 @@ annual_redd_raw <- read_csv("data/jpe-model-data/annual_redd.csv")
 # passage_counts ----------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/upstream_passage.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/jpe-model-data/upstream_passage.csv",
+               saveToDisk = "data/model-data/upstream_passage.csv",
                overwrite = TRUE)
-passage_raw <- read_csv("data/jpe-model-data/upstream_passage.csv")
+passage_raw <- read_csv("data/model-data/upstream_passage.csv")
 
-
+passage <- passage_raw |> 
+  mutate(date = case_when(!is.na(time) ~ ymd_hms(paste0(date,time)),
+                           T ~ ymd_hms(paste0(date, " 00:00:00")))) |> 
+  rename(hours_sampled = hours) |> 
+  select(-c(time, viewing_condition, spawning_condition, jack_size, ladder, 
+            flow, temperature, comments)) |> 
+  # survey_location_id
+  # left_join(survey_location, by = c("stream")) |> 
+  # #select(-c(stream, site, subsite, site_group, description)) |> 
+  # rename(survey_location_id = id) |> 
+  # run_id
+  left_join(run, by = c("run" = "definition")) |> 
+  rename(run_id = id) |> 
+  select(-run, -description) |> 
+  # sex_id
+  left_join(sex, by = c("sex" = "definition")) |> 
+  rename(sex_id = id) |> 
+  select(-sex, -description) |> 
+  #direction_id
+  left_join(direction, by = c("passage_direction" = "definition")) |> 
+  rename(direction_id = id) |> 
+  select(-passage_direction, -description)
+  
 # passage_estimates -------------------------------------------------------
 gcs_get_object(object_name = "standard-format-data/standard_adult_passage_estimate.csv",
                bucket = gcs_get_global_bucket(),
@@ -478,12 +500,15 @@ gcs_get_object(object_name = "standard-format-data/standard_adult_passage_estima
                overwrite = TRUE)
 passage_estimates_raw <- read_csv("data/standard-format-data/standard_adult_passage_estimate.csv")
 
-
+# TODO check the run and adipose_clipped of these
+passage_estimate <- passage_estimates_raw |> 
+  # survey_location_id
+  
 # holding -----------------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/holding.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/jpe-model-data/holding.csv",
+               saveToDisk = "data/model-data/holding.csv",
                overwrite = TRUE)
-holding_raw <- read_csv("data/jpe-model-data/holding.csv")
+holding_raw <- read_csv("data/model-data/holding.csv")
 
 

@@ -77,6 +77,20 @@ gcs_upload(trap_location,
            name = "model-db/trap_location.csv",
            predefinedAcl = "bucketLevel")
 
+
+# survey_location ---------------------------------------------------------
+
+battle_s <- tibble(stream = "battle creek",
+                   reach = ,
+                   min_river_mile = ,
+                   max_river_mile = ,
+                   description = ,
+                   # north_bounding_coordinate = ,
+                   # south_bounding_coordinate = ,
+                   # east_bounding_coordinate = ,
+                   # south_bounding_coordinate = ,
+                   )
+
 # run ---------------------------------------------------------------------
 run <- tibble(definition = c("late fall", "spring", "fall", "winter", NA, "not recorded", "unknown"),
               description = c("chinook salmon categorized as late fall", "chinook salmon categorized as spring",
@@ -91,6 +105,16 @@ gcs_upload(run,
            name = "model-db/run.csv",
            predefinedAcl = "bucketLevel")
 
+# sex ---------------------------------------------------------------------
+sex <- tibble(definition = c("male", "female", "unknown", "not recorded"),
+                    description = c("male", "female", "sex is unknown", "sex not recorded")) |> 
+  mutate(id = row_number())
+
+gcs_upload(sex,
+           object_function = f,
+           type = "csv",
+           name = "model-db/sex.csv",
+           predefinedAcl = "bucketLevel")
 # lifestage ---------------------------------------------------------------
 lifestage <- tibble(definition = c("smolt", "fry", "yolk sac fry", "not recorded", "parr", "silvery parr", 
                                    NA, "adult", "unknown", "yearling", "juvenile"),
@@ -208,3 +232,16 @@ gcs_upload(origin,
            name = "model-db/origin.csv",
            predefinedAcl = "bucketLevel")
 write_csv(origin, "data/model-db/origin.csv")
+
+# direction -------------------------------------------------------
+direction <- tibble(definition = c("up", "down", "not recorded"),
+                 description = c("passage up to spawning grounds", "passage down 
+                                 and should be removed from passage count", 
+                                 "direction not recorded")) |> 
+  mutate(id = row_number())
+gcs_upload(direction,
+           object_function = f,
+           type = "csv",
+           name = "model-db/direction.csv",
+           predefinedAcl = "bucketLevel")
+
