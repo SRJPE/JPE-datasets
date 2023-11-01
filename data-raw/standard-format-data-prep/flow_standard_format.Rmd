@@ -197,6 +197,16 @@ tisdale_format <- tisdale %>%
          site = "tisdale",
          source = "USGS 11390500") %>%
 glimpse()
+
+# source USGS (red bluff)
+
+red_bluff <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data", "rb_flow.rds"))
+
+red_bluff_format <- red_bluff |> 
+   mutate(stream = "sacramento river",
+         site = "red bluff diversion dam",
+         source = "USGS 11377100") %>%
+glimpse()
 ```
 
 # Combine flow data {.tabset}
@@ -212,7 +222,8 @@ combined_flow <- bind_rows(battle_format,
                            mill_format,
                            yuba_format,
                            knights_format,
-                           tisdale_format) %>%
+                           tisdale_format,
+                           red_bluff_format) %>%
   glimpse()
 ```
 ## QA/QC

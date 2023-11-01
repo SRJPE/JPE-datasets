@@ -20,10 +20,10 @@ library(knitr)
 
 ## Description of Monitoring Data
 
-These data were acquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019. Red location, size, substrate and flow were measured. Annual monitoring questions and conditions drove the frequency and detail of individual redd measurements. 						
+These data were acquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019. Red location, size, substrate and flow were measured. Annual monitoring questions and conditions drove the frequency and detail of individual redd measurements. We received new data from Natasha wingerter in October 2023 after identifying that age data was not included.				
 
 
-**Timeframe:** 2001 - 2019
+**Timeframe:** 2001 - 2022
 
 **Survey Season:** September - October 
 
@@ -45,27 +45,58 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # git data and save as xlsx
+# read in updated table with redd ids (sent 10-12-2023)
+# 2001-2019
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_redds_raw.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx"),
+               overwrite = TRUE)
 
+# 2020
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_snorkel_survey_2020.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2020.xlsx"),
+               overwrite = TRUE)
+
+# 2021
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_snorkel_survey_2021.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2021.xlsx"),
+               overwrite = TRUE)
+
+# 2022
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-creek/data-raw/battle_creek_snorkel_survey_2022.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2022.xlsx"),
+               overwrite = TRUE)
 ```
 
 Read in data from google cloud, glimpse sheets and raw data: 
 ```{r}
-sheets <- excel_sheets("raw_adult_spawn_hold_carcass.xlsx")
-sheets 
-raw_redd_data <-read_excel("raw_adult_spawn_hold_carcass.xlsx", 
-                           sheet = "Redd Survey",
-                           col_types = c("text", "numeric", "numeric", "numeric", "date", 
-                                         "text", "numeric", "text", "text", "text", "text", 
-                                         "text", "text", "text", "date", "numeric", "numeric", 
-                                         "numeric", "numeric", "numeric", "text", "numeric", "numeric",
-                                         "numeric", "numeric", "numeric", "numeric", "numeric", "text")) %>% glimpse()
+# 2001-2019
+raw_redd_data <- read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_redd.xlsx")) |> glimpse()
+
+# 2020
+raw_redd_2020 <- read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2020.xlsx"),
+                            sheet = "Redds") |> glimpse()
+
+# 2021
+raw_redd_2021 <- read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2021.xlsx"),
+                            sheet = "Redds") |> glimpse()
+
+# 2022
+raw_redd_2022 <- read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "battle-creek", "battle_creek_snorkel_survey_2022.xlsx"),
+                            sheet = "Redds") |> glimpse()
+
 ```
 
 ## Data transformations
 
+### 2001-2019
+
 ```{r}
-cleaner_redd_data <- raw_redd_data %>% 
-  janitor::clean_names() %>% 
+cleaner_redd_data <- raw_redd_data |>  
+  janitor::clean_names() |> 
   rename("date" = sample_date,
          "fish_guarding" = `for`, 
          "redd_measured" = measure, 
@@ -84,28 +115,226 @@ cleaner_redd_data <- raw_redd_data %>%
          "flow_meter_time" = time,
          "start_number_flow_meter_80" = start_80, 
          "end_number_flow_meter_80" = end_80,
-         "flow_meter_time_80" = secs_80) %>%
-  mutate(date = as.Date(date)) %>%
-  select(-project, -year, -date_measured, 
-         -species_run) %>% #All are spring run 
+         "flow_meter_time_80" = secs_80,
+         "survey_method" = sur_method,
+         "run" = species_run) |> 
+  mutate(reach_sub_unit = toupper(reach_sub_unit),
+         run = ifelse(run == "SCS", "spring", run),
+         redd_loc = ifelse(redd_loc == "NA", NA_character_, redd_loc),
+         pre_redd_substrate_size = case_when(pre_redd_substrate_size == "1 to 2" ~ "1-2",
+                                             pre_redd_substrate_size == 
+                                               "3 to 5" ~ "3-5",
+                                             pre_redd_substrate_size == "1 to 3" ~ "1-3",
+                                             pre_redd_substrate_size == "2 to 4" ~ "2-4",
+                                             pre_redd_substrate_size %in% c(".1 to 1", "0.1 to 1") ~ "0.1-1",
+                                             pre_redd_substrate_size == "2 to 3" ~ "2-3",
+                                             pre_redd_substrate_size == "4 to 6" ~ "4-6",
+                                             pre_redd_substrate_size == "3 to 4" ~ "3-4",
+                                             pre_redd_substrate_size == "4 to 5" ~ "4-5",
+                                             pre_redd_substrate_size == "1 to 5" ~ "1-5",
+                                             TRUE ~ pre_redd_substrate_size),
+         redd_substrate_size = case_when(redd_substrate_size == "1 to 2" ~ "1-2",
+                                             redd_substrate_size == 
+                                               "3 to 5" ~ "3-5",
+                                             redd_substrate_size == "1 to 3" ~ "1-3",
+                                             redd_substrate_size == "2 to 4" ~ "2-4",
+                                             redd_substrate_size %in% c(".1 to 1", "0.1 to 1") ~ "0.1-1",
+                                             redd_substrate_size == "2 to 3" ~ "2-3",
+                                             redd_substrate_size == "4 to 6" ~ "4-6",
+                                             redd_substrate_size == "3 to 4" ~ "3-4",
+                                             redd_substrate_size == "4 to 5" ~ "4-5",
+                                             redd_substrate_size == "1 to 5" ~ "1-5",
+                                         redd_substrate_size == "NA" ~ NA_character_,
+                                             TRUE ~ redd_substrate_size),
+         tail_substrate_size = case_when(tail_substrate_size == "1 to 2" ~ "1-2",
+                                             tail_substrate_size == 
+                                               "3 to 5" ~ "3-5",
+                                             tail_substrate_size == "1 to 3" ~ "1-3",
+                                             tail_substrate_size == "2 to 4" ~ "2-4",
+                                             tail_substrate_size %in% c(".1 to 1", "0.1 to 1") ~ "0.1-1",
+                                             tail_substrate_size == "2 to 3" ~ "2-3",
+                                             tail_substrate_size == "4 to 6" ~ "4-6",
+                                             tail_substrate_size == "3 to 4" ~ "3-4",
+                                             tail_substrate_size == "4 to 5" ~ "4-5",
+                                             tail_substrate_size == "1 to 5" ~ "1-5",
+                                         tail_substrate_size == "NA" ~ NA_character_,
+                                             TRUE ~ tail_substrate_size)) |> 
+    select(-c(id, object_id, redd_id, date_reach_u_reach_su, 
+              project, year, date_measured, 
+              corr_type, horz_prec, corr_date, fines_pres,
+              overhead_v, instream_c, cover_comm, stream_fea, 
+              tributary, trib_comm, serial, comments, fork)) |> 
+  rename(JPE_redd_id = database_id)
+
+clean_redd_data_with_age <- cleaner_redd_data |> 
+  # clean up dates
+  mutate(date_a = as.Date(date, format = "%m/%d/%Y"), # assign date to date_a (for first redd encounter)
+         date_b = as.Date(date_b, format = "%m/%d/%Y"), # second redd encounter (if happens)
+         date_c = as.Date(date_c, format = "%m/%d/%Y"), # etc.
+         date_d = as.Date(date_d, format = "%m/%d/%Y"),
+         age_b = ifelse(age_b == "Initial", "2", age_b), # TODO double check what "Initial" is coded as
+         age_c = case_when(age_c == "Initial" ~ "2", 
+                           age_c == "UNK" ~ NA_character_,
+                           TRUE ~ age_c),
+         age_d = ifelse(age_d == "NA", NA_character_, age_d),
+         age_a = age, # assign age_a the value for age (they record first redd encounter age in "age")
+         age_b = as.numeric(age_b),
+         age_c = as.numeric(age_c),
+         age_d = as.numeric(age_d)) |> 
+  select(-c(age)) |> # don't need anymore
+  pivot_longer(cols = c(age_a, age_b, age_c, age_d), # pivot all aging instances to age column
+               values_to = "new_age",
+               names_to = "age_index") |> 
+  # for all aging instances, take the date where that aging occurred.
+  # check for what aging instance it was and pull that date (if present)
+  mutate(new_date = case_when(age_index == "age_b" & !is.na(date_b) ~ date_b,
+                          age_index == "age_c" & !is.na(date_c) ~ date_c,
+                          age_index == "age_d" & !is.na(date_d) ~ date_d,
+                          age_index == "age_a" ~ date_a,
+                          TRUE ~ NA),
+         age_index = case_when(age_index == "age_a" ~ 1,
+                               age_index == "age_b" ~ 2,
+                               age_index == "age_c" ~ 3,
+                               age_index == "age_d" ~ 4),
+         age_index = ifelse(is.na(new_age) & age_index == 1, 0, age_index)) |> 
+  filter(!is.na(new_date)) |> 
+  select(-c(date, date_a, date_b, date_c, date_d)) |> 
+  rename(age = new_age, date = new_date) |> 
+  relocate(date, .before = survey_method) |> 
   glimpse()
+# TODO what is id, fork, serial, corr_type, horz_prec, corr_date, fines_pres, 
+# overhead_v, instream_c, cover_comm, stream_fea, tributary, trib_comm, serial
 ```
 
+### 2020-2022
+```{r}
+# 2020 has unique redd IDs by survey and date
+# survey dates for 2020
+survey_1 <- c(as.Date("2020-07-20"), as.Date("2020-07-21"))
+survey_2 <- c(as.Date("2020-09-02"), as.Date("2020-10-15"))
+survey_3 <- c(as.Date("2020-11-02"), as.Date("2020-11-06"))
+
+# assign JPE_redd_id (unique by survey and date)
+# no aging or resampling in 2020
+# TODO double check that no resampling in 2020
+clean_2020_data <- raw_redd_2020 |> 
+  janitor::clean_names() |> 
+  filter(species == "Chinook") |>
+  mutate(survey_id = case_when(between(date, survey_1[1], survey_1[2]) ~ 1,
+                               between(date, survey_2[1], survey_2[2]) ~ 2,
+                               between(date, survey_3[1], survey_3[2]) ~ 3),
+         JPE_redd_id = paste0(date, "_", reach, "_", redd_id),
+         date = as.Date(date),
+         reach = as.character(reach),
+         age = as.numeric(age),
+         run = "spring") |> 
+         relocate(JPE_redd_id, .before = point_x) |> 
+  select(-c(age_survey_3, age_survey_4, age_survey_5, species)) # empty
+
+# create unique redd ID based on row 
+clean_2021_data <- raw_redd_2021 |> 
+  janitor::clean_names() |> 
+  mutate(year = year(date),
+         JPE_redd_id = paste0(year, "_", row_number()),
+         reach = as.character(reach)) |>
+  rename(date_3 = dat_3) |> 
+  glimpse()
+
+clean_2022_data <- raw_redd_2022 |> 
+  janitor::clean_names() |> 
+  mutate(year = year(date),
+         JPE_redd_id = paste0(year, "_", row_number())) |> 
+  glimpse()
+
+clean_2021_2022_data <- bind_rows(clean_2021_data, clean_2022_data) |> 
+  # clean up dates
+  mutate(date_1 = as.Date(date, format = "%m/%d/%Y"), # assign date to date_a (for first redd encounter)
+         date_2 = as.Date(date_2, format = "%m/%d/%Y"), # second redd encounter (if happens)
+         date_3 = as.Date(date_3, format = "%m/%d/%Y"), # etc.
+         date_4 = as.Date(date_4, format = "%m/%d/%Y"),
+         date_5 = as.Date(date_5, format = "%m/%d/%Y"),
+         age_1 = age, # assign age_1 the value for age (they record first redd encounter age in "age")
+         age_2 = age_2,
+         age_3 = age_3,
+         age_4 = age_4,
+         age_5 = age_5) |> 
+  select(-c(age)) |> # don't need anymore
+  pivot_longer(cols = c(age_1, age_2, age_3, age_4, age_5), # pivot all aging instances to age column
+               values_to = "new_age",
+               names_to = "age_index") |> 
+  # for all aging instances, take the date where that aging occurred.
+  # check for what aging instance it was and pull that date (if present)
+  mutate(new_date = case_when(age_index == "age_2" & !is.na(date_2) ~ date_2,
+                          age_index == "age_3" & !is.na(date_3) ~ date_3,
+                          age_index == "age_4" & !is.na(date_4) ~ date_4,
+                          age_index == "age_5" & !is.na(date_5) ~ date_5,
+                          age_index == "age_1" ~ date_1,
+                          TRUE ~ NA),
+         age_index = case_when(age_index == "age_1" ~ 1,
+                               age_index == "age_2" ~ 2,
+                               age_index == "age_3" ~ 3,
+                               age_index == "age_4" ~ 4,
+                               age_index == "age_5" ~ 5),
+         age_index = ifelse(is.na(new_age) & age_index == 1, 0, age_index)) |> 
+  filter(!is.na(new_date), species == "Chinook") |> 
+  select(-c(date, date_1, date_2, date_3, date_4, date_5, x40, x41, x42,
+            qa_qc, qa_qc_date, redd_id, species)) |> 
+  rename(age = new_age, date = new_date) |> 
+  relocate(date, .before = point_x) |> 
+  relocate(JPE_redd_id, .before = date) |> 
+  mutate(run = "spring") |> 
+  glimpse()
+
+clean_2020_2022_data <- bind_rows(clean_2020_data, clean_2021_2022_data) |> 
+  select(-c(year, corr_type, horz_prec, redd_call, redd_id, comments,
+            survey_id, gravel, inj_site)) |> # use JPE_redd_id 
+  rename(latitude = point_y, longitude = point_x,
+         pre_redd_substrate_size = pre_sub,
+         tail_substrate_size = tail_sub, fish_guarding = fish_on_re,
+         redd_measured = measure,
+         why_not_measured = why_not_me,
+         date_measured = date_mea, pre_redd_depth = pre_redd,
+         redd_pit_depth = pit_in, redd_length = length_in, 
+         redd_width = width_in, 
+         start_number_flow_meter_80 = start_80,
+         end_number_flow_meter_80 = end_80,
+         flow_meter_time_80 = secs_80,
+         flow_fps = water_velo,
+         start_number_flow_meter = bomb_start,
+         end_number_flow_meter = bomb_end,
+         flow_meter_time = bomb_secon,
+         redd_substrate_size = side_sub) |> 
+  mutate(redd_measured = ifelse(redd_measured == "y", TRUE, redd_measured))
+
+```
+
+### Bind 2009-2019 and 2020-2022 data together
+```{r}
+all_redd_data <- bind_rows(clean_redd_data_with_age, 
+                           clean_2020_2022_data) |> 
+  glimpse()
+
+```
 ## Data Dictionary
 
 The following table describes the variables included in this dataset and the percent that do not include data.
 
 ```{r data_dictionary}
-percent_na <- cleaner_redd_data %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+percent_na <- all_redd_data |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
   
-data_dictionary <- tibble(variables = colnames(cleaner_redd_data),
-                          description = c("GPS X point",
-                                          "GPS Y point",
+data_dictionary <- tibble(variables = colnames(all_redd_data),
+                          description = c("Unique redd ID",
                                           "Date of sample",
+                                          "Survey method", 
+                                          "GPS X point",
+                                          "GPS Y point",
                                           "Reach number (1-7)",
+                                          "Reach subunit (A-B)",
                                           "River mile number",
+                                          "Run designation",
+                                          "Redd location (RL, RR, RC)",
                                           "Size of pre-redd substrate. Originally reported in inches; standardized to meters",
                                           "Size of side of redd substrate. Originally reported in inches; standardized to meters",
                                           "Size of gravel in tail of redd. Originally reported in inches; standardized to meters",
@@ -125,57 +354,20 @@ data_dictionary <- tibble(variables = colnames(cleaner_redd_data),
                                           "Start number for flow bomb at 80% depth; 80% depth was measured when redd was > 22 ft deep",
                                           "End number for flow bomb at 80% depth; 80% depth was measured when redd was > 22 ft deep",
                                           "Number of seconds elapsed for flow bomb at 80% depth",
-                                          "Qualitative comments on data collection"),
-                          data_type = c("numeric",
-                                       "numeric",
-                                       "date",
-                                          "integer",
-                                          "integer",
-                                          "ordered factor",
-                                          "ordered factor",
-                                          "ordered factor",
-                                          "boolean",
-                                          "boolean",
-                                          "factor",
-                                          "numeric",
-                                          "numeric",
-                                          "numeric",
-                                          "numeric",
-                                          "numeric",
-                                          "factor",
-                                          "numeric",
-                                          "integer",
-                                          "integer",
-                                          "integer",
-                                          "integer",
-                                          "integer",
-                                          "integer",
-                                          "character"),
-                           encoding = c(NA,
-                                       NA,
-                                       NA,
-                                          NA,
-                                          NA,
-                                          "<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, >12",
-                                          "<0.1, 0.1 to 1, 1, 1 to 2, 1 to 3, 1 to 5, 2 to 3, 2 to 4, 3 to 4, 3 to 5, 4 to 5, 4 to 6, >12",
-                                          "0.1 to 1, 1, 1 to 2, 1 to 3, 2 to 3, 2 to 4, 3 to 4, 3 to 5",
-                                          NA,
-                                          NA,
-                                          "fish on redd, sub sample, too deep",
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          "digital, flow bomb, flow watch, marsh",
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA,
-                                          NA),
+                                          "Survey number",
+                                          "Number of times that unique redd has been aged: 0 (no redd aged) - 3 (aged 3x)",
+                                          "Redd age assigned",
+                                          "Date measured",
+                                          "Tail spill",
+                                          "Fork"),
+                          data_type = c("character", "Date", "character", "numeric", "numeric",                                         "character", "character", "numeric", "character",
+                                        "character", "character", "character", "character",
+                                        "character", "logical", "character", "numeric",
+                                        "numeric", "numeric", "numeric", "numeric",
+                                        "character", "numeric", "numeric", "numeric",
+                                        "numeric", "numeric", "numeric", 
+                                        "numeric", "character", "numeric", "numeric",
+                                        "POSIXct", "numeric", "character"),
                           percent_na = round(percent_na$value*100)
                           
 )
@@ -186,29 +378,29 @@ kable(data_dictionary)
 ## Explore Numeric Variables: {.tabset}
 
 ```{r}
-cleaner_redd_data %>% select_if(is.numeric) %>% colnames()
+all_redd_data |> select_if(is.numeric) |> colnames()
 ```
 
 ### Variable: `longitude`, `latitude`
 
 ```{r}
-summary(cleaner_redd_data$latitude)
-summary(cleaner_redd_data$longitude)
+summary(all_redd_data$latitude)
+summary(all_redd_data$longitude)
 ```
 
 All values look within an expected range 
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$latitude))/nrow(cleaner_redd_data), 3) * 100` % of values in the `latitude` column are NA.
-* `r round(sum(is.na(cleaner_redd_data$longitude))/nrow(cleaner_redd_data), 3) * 100` % of values in the `longitude` column are NA.
+* `r round(sum(is.na(all_redd_data$latitude))/nrow(all_redd_data), 3) * 100` % of values in the `latitude` column are NA.
+* `r round(sum(is.na(all_redd_data$longitude))/nrow(all_redd_data), 3) * 100` % of values in the `longitude` column are NA.
 
 ### Variable: `river_mile`
 
 **Plotting river mile over Period of Record**
 
 ```{r}
-cleaner_redd_data %>% 
+all_redd_data |> 
   ggplot(aes(x = river_mile, y =as.factor(year(date)))) +
   geom_point(size = 1.4, alpha = .5, color = "blue") + 
   labs(x = "River Mile", 
@@ -217,10 +409,10 @@ cleaner_redd_data %>%
   theme(text = element_text(size = 15)) 
 ```
 
-It looks like river miles 0 - 4 and 11 - 12 most commonly have redds. In most recent years almost all the redds are before mile 5. 
+It looks like river miles 0 - 4 and 11 - 15 most commonly have redds. In most recent years almost all the redds are before mile 5. 
 
 ```{r}
-cleaner_redd_data %>% 
+all_redd_data |> 
   ggplot(aes(x = river_mile)) +
   geom_histogram(alpha = .75) + 
   labs(x = "River Mile") +
@@ -231,12 +423,12 @@ cleaner_redd_data %>%
 **Numeric Summary of river mile over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$river_mile)
+summary(all_redd_data$river_mile)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$river_mile))/nrow(cleaner_redd_data), 3) * 100` % of values in the `river_mile` column are NA. 
+* `r round(sum(is.na(all_redd_data$river_mile))/nrow(all_redd_data), 3) * 100` % of values in the `river_mile` column are NA. 
 
 
 ### Variable: `pre_redd_depth`
@@ -246,14 +438,14 @@ pre redd depth - depth measurement before redd was created (in inches)
 Convert to meters to standardize.
 
 ```{r} 
-cleaner_redd_data$pre_redd_depth <- cleaner_redd_data$pre_redd_depth*0.0254
+all_redd_data$pre_redd_depth <- all_redd_data$pre_redd_depth*0.0254
 ```
 
 
 **Plotting distribution of pre redd depth**
 
 ```{r}
-cleaner_redd_data %>%
+all_redd_data |>
   ggplot(aes(x = pre_redd_depth)) +
   geom_histogram() +
   labs(x = "Redd Depth", 
@@ -265,12 +457,12 @@ cleaner_redd_data %>%
 **Numeric Summary of pre redd depth over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$pre_redd_depth)
+summary(all_redd_data$pre_redd_depth)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$pre_redd_depth))/nrow(cleaner_redd_data), 3) * 100` % of values in the `pre_redd_depth` column are NA. 
+* `r round(sum(is.na(all_redd_data$pre_redd_depth))/nrow(all_redd_data), 3) * 100` % of values in the `pre_redd_depth` column are NA. 
 * There are a lot of 0 values. Could these also be NA?
 
 ### Variable: `redd_pit_depth`
@@ -278,13 +470,13 @@ summary(cleaner_redd_data$pre_redd_depth)
 Convert to meters to standardize.
 
 ```{r} 
-cleaner_redd_data$redd_pit_depth <- cleaner_redd_data$redd_pit_depth*0.0254
+all_redd_data$redd_pit_depth <- all_redd_data$redd_pit_depth*0.0254
 ```
 
 **Plotting distribution of redd pit depth**
 
 ```{r}
-cleaner_redd_data %>% 
+all_redd_data |> 
   ggplot(aes(x = redd_pit_depth)) +
   geom_histogram() +
   labs(x = "River Pit Depth", 
@@ -296,12 +488,12 @@ cleaner_redd_data %>%
 **Numeric Summary of Redd pit depth over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$redd_pit_depth)
+summary(all_redd_data$redd_pit_depth)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$redd_pit_depth))/nrow(cleaner_redd_data), 3) * 100` % of values in the `redd_pit_depth` column are NA. 
+* `r round(sum(is.na(all_redd_data$redd_pit_depth))/nrow(all_redd_data), 3) * 100` % of values in the `redd_pit_depth` column are NA. 
 * There are a lot of 0 values. Could these be NA?
 
 
@@ -310,13 +502,13 @@ summary(cleaner_redd_data$redd_pit_depth)
 Convert to meters to standardize.
 
 ```{r} 
-cleaner_redd_data$redd_tail_depth <- cleaner_redd_data$redd_tail_depth*0.0254
+all_redd_data$redd_tail_depth <- all_redd_data$redd_tail_depth*0.0254
 ```
 
 **Plotting distribution of redd tail depth**
 
 ```{r}
-cleaner_redd_data %>% 
+all_redd_data |> 
   ggplot(aes(x = redd_tail_depth)) +
   geom_histogram() +
   labs(x = "Redd tail depth", 
@@ -328,12 +520,12 @@ cleaner_redd_data %>%
 **Numeric Summary of Redd tail depth over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$redd_tail_depth)
+summary(all_redd_data$redd_tail_depth)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$redd_tail_depth))/nrow(cleaner_redd_data), 3) * 100` % of values in the `redd_tail_depth` column are NA. 
+* `r round(sum(is.na(all_redd_data$redd_tail_depth))/nrow(all_redd_data), 3) * 100` % of values in the `redd_tail_depth` column are NA. 
 * There are a lot of 0 values. Could these be NA?
 
 
@@ -342,13 +534,13 @@ summary(cleaner_redd_data$redd_tail_depth)
 Convert to meters to standardize.
 
 ```{r} 
-cleaner_redd_data$redd_length <- cleaner_redd_data$redd_length*0.0254
+all_redd_data$redd_length <- all_redd_data$redd_length*0.0254
 ```
 
 **Plotting distribution of redd length**
 
 ```{r}
-cleaner_redd_data %>% 
+all_redd_data |> 
   ggplot(aes(x = redd_length)) +
   geom_histogram() +
   labs(x = "Redd Length (m)", 
@@ -360,12 +552,12 @@ cleaner_redd_data %>%
 **Numeric Summary of Redd length over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$redd_length)
+summary(all_redd_data$redd_length)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$redd_length))/nrow(cleaner_redd_data), 3) * 100` % of values in the `redd_length` column are NA. 
+* `r round(sum(is.na(all_redd_data$redd_length))/nrow(all_redd_data), 3) * 100` % of values in the `redd_length` column are NA. 
 * There are a lot of 0 values. Could these be NA?
 
 
@@ -375,13 +567,13 @@ summary(cleaner_redd_data$redd_length)
 Convert to meters to standardize.
 
 ```{r} 
-cleaner_redd_data$redd_width <- cleaner_redd_data$redd_width*0.0254
+all_redd_data$redd_width <- all_redd_data$redd_width*0.0254
 ```
 
 **Plotting distribution of redd width**
 
 ```{r}
-cleaner_redd_data %>% 
+all_redd_data |> 
   ggplot(aes(x = redd_width)) +
   geom_histogram() +
   labs(x = "Redd Width (m)", 
@@ -393,12 +585,12 @@ cleaner_redd_data %>%
 **Numeric Summary of Redd width over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$redd_width)
+summary(all_redd_data$redd_width)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$redd_width))/nrow(cleaner_redd_data), 3) * 100` % of values in the `redd_width` column are NA. 
+* `r round(sum(is.na(all_redd_data$redd_width))/nrow(all_redd_data), 3) * 100` % of values in the `redd_width` column are NA. 
 * There are a lot of 0 values. Could these be NA?
 
 
@@ -409,7 +601,7 @@ summary(cleaner_redd_data$redd_width)
 **Plotting distribution of flow feet per second**
 
 ```{r}
-cleaner_redd_data %>% 
+all_redd_data |> 
   ggplot(aes(x = flow_fps)) +
   geom_histogram() +
   labs(x = "Flow Feet per second", 
@@ -419,7 +611,7 @@ cleaner_redd_data %>%
 ```
 
 ```{r}
-cleaner_redd_data %>% 
+all_redd_data |> 
   ggplot(aes(x = flow_fps, y = reach)) +
   geom_boxplot() +
   labs(x = "Flow Feet Per Second", 
@@ -430,12 +622,12 @@ cleaner_redd_data %>%
 **Numeric Summary of flow over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$flow_fps)
+summary(all_redd_data$flow_fps)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$flow_fps))/nrow(cleaner_redd_data), 3) * 100` % of values in the `flow_fps` column are NA. 
+* `r round(sum(is.na(all_redd_data$flow_fps))/nrow(all_redd_data), 3) * 100` % of values in the `flow_fps` column are NA. 
 * There are a lot of 0 values. Could these be NA?
 
 ### Variables: `start_flow_meter`, `start_flow_meter_80`
@@ -444,7 +636,7 @@ summary(cleaner_redd_data$flow_fps)
 **Plotting distribution of flow number start per second**
 
 ```{r}
-p1 <- cleaner_redd_data %>% 
+p1 <- all_redd_data |> 
   ggplot(aes(x = start_number_flow_meter)) +
   geom_histogram() +
   labs(x = "Start Number", 
@@ -452,7 +644,7 @@ p1 <- cleaner_redd_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 
-p2 <- cleaner_redd_data %>% 
+p2 <- all_redd_data |> 
   ggplot(aes(x = start_number_flow_meter_80)) +
   geom_histogram() +
   labs(x = "Start Number 80%", 
@@ -468,14 +660,14 @@ Very few records of start number at 80% depth. Most of these are 0.
 **Numeric Summary of flow over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$start_number_flow_meter)
-summary(cleaner_redd_data$start_number_flow_meter_80)
+summary(all_redd_data$start_number_flow_meter)
+summary(all_redd_data$start_number_flow_meter_80)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$start_number_flow_meter))/nrow(cleaner_redd_data), 3) * 100` % of values in the `start_number_flow_meter` column are NA. 
-* `r round(sum(is.na(cleaner_redd_data$start_number_flow_meter_80))/nrow(cleaner_redd_data), 3) * 100` % of values in the `start_number_flow_meter_80` column are NA.
+* `r round(sum(is.na(all_redd_data$start_number_flow_meter))/nrow(all_redd_data), 3) * 100` % of values in the `start_number_flow_meter` column are NA. 
+* `r round(sum(is.na(all_redd_data$start_number_flow_meter_80))/nrow(all_redd_data), 3) * 100` % of values in the `start_number_flow_meter_80` column are NA.
 * There are a lot of 0 values. Could these be NA?
 
 
@@ -485,7 +677,7 @@ summary(cleaner_redd_data$start_number_flow_meter_80)
 **Plotting distribution of flow meter end number per second**
 
 ```{r}
-p1 <- cleaner_redd_data %>% 
+p1 <- all_redd_data |> 
   ggplot(aes(x = end_number_flow_meter)) +
   geom_histogram() +
   labs(x = "End Number", 
@@ -493,7 +685,7 @@ p1 <- cleaner_redd_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 
-p2 <- cleaner_redd_data %>% 
+p2 <- all_redd_data |> 
   ggplot(aes(x = end_number_flow_meter_80)) +
   geom_histogram() +
   labs(x = "End Number 80%", 
@@ -509,14 +701,14 @@ Very few records of end number at 80% depth. Most of these are 0.
 **Numeric Summary of flow over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$start_number_flow_meter)
-summary(cleaner_redd_data$end_number_flow_meter_80)
+summary(all_redd_data$start_number_flow_meter)
+summary(all_redd_data$end_number_flow_meter_80)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$end_number_flow_meter))/nrow(cleaner_redd_data), 3) * 100` % of values in the `end_number_flow_meter` column are NA. 
-* `r round(sum(is.na(cleaner_redd_data$end_number_flow_meter_80))/nrow(cleaner_redd_data), 3) * 100` % of values in the `end_number_flow_meter_80` column are NA.
+* `r round(sum(is.na(all_redd_data$end_number_flow_meter))/nrow(all_redd_data), 3) * 100` % of values in the `end_number_flow_meter` column are NA. 
+* `r round(sum(is.na(all_redd_data$end_number_flow_meter_80))/nrow(all_redd_data), 3) * 100` % of values in the `end_number_flow_meter_80` column are NA.
 * There are a lot of 0 values. Could these be NA?
 
 
@@ -528,7 +720,7 @@ Start number for flow bomb at 80% depth; 80% depth was measured when the redd wa
 **Plotting distribution of flow meter end number per second**
 
 ```{r}
-p1 <- cleaner_redd_data %>% 
+p1 <- all_redd_data |> 
   ggplot(aes(x = flow_meter_time)) +
   geom_histogram() +
   labs(x = "Time Seconds", 
@@ -536,7 +728,7 @@ p1 <- cleaner_redd_data %>%
   theme_minimal() + 
   theme(text = element_text(size = 15)) 
 
-p2 <- cleaner_redd_data %>% 
+p2 <- all_redd_data |> 
   ggplot(aes(x = flow_meter_time_80)) +
   geom_histogram() +
   labs(x = "Time Seconds 80%", 
@@ -552,218 +744,311 @@ Most (all for Time 80) of the flow meter times are at 100 seconds.
 **Numeric Summary of flow over Period of Record**
 
 ```{r}
-summary(cleaner_redd_data$flow_meter_time)
-summary(cleaner_redd_data$flow_meter_time_80)
+summary(all_redd_data$flow_meter_time)
+summary(all_redd_data$flow_meter_time_80)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$flow_meter_time))/nrow(cleaner_redd_data), 3) * 100` % of values in the `flow_meter_time` column are NA. 
-* `r round(sum(is.na(cleaner_redd_data$flow_meter_time_80))/nrow(cleaner_redd_data), 3) * 100` % of values in the `flow_meter_time_80` column are NA.
+* `r round(sum(is.na(all_redd_data$flow_meter_time))/nrow(all_redd_data), 3) * 100` % of values in the `flow_meter_time` column are NA. 
+* `r round(sum(is.na(all_redd_data$flow_meter_time_80))/nrow(all_redd_data), 3) * 100` % of values in the `flow_meter_time_80` column are NA.
+
+### Variables: `age_index`
+
+Age Index refers to the number of times a unique redd has been surveyed. If `age_index == 0`, the redd was not aged.		
+
+
+**Plotting distribution of age index**
+
+```{r}
+all_redd_data |> 
+  ggplot(aes(x = age_index)) +
+  geom_histogram() +
+  labs(x = "Number of times sampled", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))
+
+```
+
+Most redds are aged at least once.
+
+**Numeric Summary of age index over Period of Record**
+
+```{r}
+summary(all_redd_data$age_index)
+summary(all_redd_data$age_index)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(all_redd_data$age_index))/nrow(all_redd_data), 3) * 100` % of values in the `age_index` column are NA. 
+* `r round(sum(is.na(all_redd_data$age_index))/nrow(all_redd_data), 3) * 100` % of values in the `age_index` column are NA.
+
+### Variables: `age`
+
+Age refers to the assigned age of a redd. 	
+
+**Plotting distribution of age**
+
+```{r}
+all_redd_data |> 
+  ggplot(aes(x = age)) +
+  geom_histogram() +
+  labs(x = "Redd age", 
+       y = "Count") +
+  theme_minimal() + 
+  theme(text = element_text(size = 15))
+
+```
+
+Most redds are age `2` to `3`.
+
+**Numeric Summary of ageover Period of Record**
+
+```{r}
+summary(all_redd_data$age)
+summary(all_redd_data$age)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(all_redd_data$age))/nrow(all_redd_data), 3) * 100` % of values in the `age` column are NA. 
+* `r round(sum(is.na(all_redd_data$age))/nrow(all_redd_data), 3) * 100` % of values in the `age` column are NA.
 
 ## Explore Categorical variables: {.tabset}
 
 
 ```{r}
-cleaner_redd_data %>% select_if(is.character) %>% colnames()
+all_redd_data |> select_if(is.character) |> colnames()
 ```
+
+### Variable: `survey_method`
+```{r}
+table(all_redd_data$survey_method) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(all_redd_data$survey_method))/nrow(all_redd_data), 3) * 100` % of values in the `survey_method` column are NA. 
 
 
 ### Variable: `reach`
 ```{r}
-table(cleaner_redd_data$reach) 
+table(all_redd_data$reach) 
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$reach))/nrow(cleaner_redd_data), 3) * 100` % of values in the `reach`column are NA. 
+* `r round(sum(is.na(all_redd_data$reach))/nrow(all_redd_data), 3) * 100` % of values in the `reach`column are NA. 
+
+### Variable: `reach_sub_unit`
+```{r}
+table(all_redd_data$reach_sub_unit) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(all_redd_data$reach_sub_unit))/nrow(all_redd_data), 3) * 100` % of values in the `reach_sub_unit`column are NA. 
+
+### Variable: `run`
+```{r}
+table(all_redd_data$run) 
+```
+All records are for spring run fish.
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(all_redd_data$run))/nrow(all_redd_data), 3) * 100` % of values in the `run`column are NA. 
+
+
+### Variable: `redd_id`
+```{r}
+length(unique(all_redd_data$redd_id))
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(all_redd_data$redd_id))/nrow(all_redd_data), 3) * 100` % of values in the `redd_id`column are NA. 
+
+### Variable: `redd_loc``
+```{r}
+table(all_redd_data$redd_loc) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(all_redd_data$redd_loc))/nrow(all_redd_data), 3) * 100` % of values in the `redd_loc`column are NA. 
 
 
 ### Variable: `pre_redd_substrate_size`
 ```{r}
-table(cleaner_redd_data$pre_redd_substrate_size) 
+table(all_redd_data$pre_redd_substrate_size) 
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-cleaner_redd_data$pre_redd_substrate_size <- if_else(
-  cleaner_redd_data$pre_redd_substrate_size == ".1 to 1" | 
-  cleaner_redd_data$pre_redd_substrate_size == "0.1-1", "0.1 to 1", cleaner_redd_data$pre_redd_substrate_size
+all_redd_data$pre_redd_substrate_size <- if_else(
+  all_redd_data$pre_redd_substrate_size == ".1 to 1" | 
+  all_redd_data$pre_redd_substrate_size == "0.1-1", "0.1 to 1", all_redd_data$pre_redd_substrate_size
 )
 
-cleaner_redd_data$pre_redd_substrate_size <- if_else(
-  cleaner_redd_data$pre_redd_substrate_size == "<.1", "<0.1", cleaner_redd_data$pre_redd_substrate_size
+all_redd_data$pre_redd_substrate_size <- if_else(
+  all_redd_data$pre_redd_substrate_size == "<.1", "<0.1", all_redd_data$pre_redd_substrate_size
 )
-table(cleaner_redd_data$pre_redd_substrate_size) 
+table(all_redd_data$pre_redd_substrate_size) 
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$pre_redd_substrate_size))/nrow(cleaner_redd_data), 3) * 100` % of values in the `pre_redd_substrate_size` column are NA. 
+* `r round(sum(is.na(all_redd_data$pre_redd_substrate_size))/nrow(all_redd_data), 3) * 100` % of values in the `pre_redd_substrate_size` column are NA. 
 
 
 ### Variable: `redd_substrate_size`
 ```{r}
-table(cleaner_redd_data$redd_substrate_size) 
+table(all_redd_data$redd_substrate_size) 
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-cleaner_redd_data$redd_substrate_size <- if_else(
-  cleaner_redd_data$redd_substrate_size == ".1 to 1" | 
-  cleaner_redd_data$redd_substrate_size == "0.1-1", "0.1 to 1", cleaner_redd_data$redd_substrate_size
+all_redd_data$redd_substrate_size <- if_else(
+  all_redd_data$redd_substrate_size == ".1 to 1" | 
+  all_redd_data$redd_substrate_size == "0.1-1", "0.1 to 1", all_redd_data$redd_substrate_size
 )
 
-cleaner_redd_data$redd_substrate_size <- if_else(
-  cleaner_redd_data$redd_substrate_size == "<.1", "<0.1", cleaner_redd_data$redd_substrate_size
+all_redd_data$redd_substrate_size <- if_else(
+  all_redd_data$redd_substrate_size == "<.1", "<0.1", all_redd_data$redd_substrate_size
 )
 
-cleaner_redd_data$redd_substrate_size <- ifelse(
-  cleaner_redd_data$redd_substrate_size == "NA", NA, cleaner_redd_data$redd_substrate_size
+all_redd_data$redd_substrate_size <- ifelse(
+  all_redd_data$redd_substrate_size == "NA", NA, all_redd_data$redd_substrate_size
 )
-table(cleaner_redd_data$redd_substrate_size) 
+table(all_redd_data$redd_substrate_size) 
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$redd_substrate_size))/nrow(cleaner_redd_data), 3) * 100` % of values in the `redd_substrate_size` column are NA. 
-
-
-
+* `r round(sum(is.na(all_redd_data$redd_substrate_size))/nrow(all_redd_data), 3) * 100` % of values in the `redd_substrate_size` column are NA. 
 
 
 ### Variable: `tail_substrate_size`
 ```{r}
-table(cleaner_redd_data$tail_substrate_size) 
+table(all_redd_data$tail_substrate_size) 
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-cleaner_redd_data$tail_substrate_size <- if_else(
-  cleaner_redd_data$tail_substrate_size == ".1 to 1" | 
-  cleaner_redd_data$tail_substrate_size == "0.1-1", "0.1 to 1", cleaner_redd_data$tail_substrate_size
+all_redd_data$tail_substrate_size <- if_else(
+  all_redd_data$tail_substrate_size == ".1 to 1" | 
+  all_redd_data$tail_substrate_size == "0.1-1", "0.1 to 1", all_redd_data$tail_substrate_size
 )
 
 
-cleaner_redd_data$tail_substrate_size <- ifelse(
-  cleaner_redd_data$tail_substrate_size == "NA", NA, cleaner_redd_data$tail_substrate_size
+all_redd_data$tail_substrate_size <- ifelse(
+  all_redd_data$tail_substrate_size == "NA", NA, all_redd_data$tail_substrate_size
 )
-table(cleaner_redd_data$tail_substrate_size) 
+table(all_redd_data$tail_substrate_size) 
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$tail_substrate_size))/nrow(cleaner_redd_data), 3) * 100` % of values in the `tail_substrate_size` column are NA. 
-
-
+* `r round(sum(is.na(all_redd_data$tail_substrate_size))/nrow(all_redd_data), 3) * 100` % of values in the `tail_substrate_size` column are NA. 
 
 
 
 ### Variable: `fish_guarding`
 ```{r}
-table(cleaner_redd_data$fish_guarding) 
+table(all_redd_data$fish_guarding) 
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-cleaner_redd_data$fish_guarding <- case_when(
-  cleaner_redd_data$fish_guarding == "No" | cleaner_redd_data$fish_guarding == "NO" ~FALSE, 
-  cleaner_redd_data$fish_guarding == "Yes" | cleaner_redd_data$fish_guarding == "YES" ~TRUE
-)
+all_redd_data$fish_guarding <- case_when(all_redd_data$fish_guarding %in% c("No", "NO") ~ FALSE,
+                                         all_redd_data$fish_guarding %in% c("Yes", "YES") ~ TRUE,
+                                         all_redd_data$fish_guarding == "UNK" ~ NA)
 
-table(cleaner_redd_data$fish_guarding) 
+table(all_redd_data$fish_guarding) 
 
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$fish_guarding))/nrow(cleaner_redd_data), 3) * 100` % of values in the `fish_guarding` column are NA. 
+* `r round(sum(is.na(all_redd_data$fish_guarding))/nrow(all_redd_data), 3) * 100` % of values in the `fish_guarding` column are NA. 
 
 
 ### Variable: `redd_measured`
 ```{r}
-table(cleaner_redd_data$redd_measured) 
+table(all_redd_data$redd_measured) 
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-cleaner_redd_data$redd_measured <- case_when(
-  cleaner_redd_data$redd_measured == "NO"  ~ FALSE, 
-  cleaner_redd_data$redd_measured == "YES" ~ TRUE
-)
-
-table(cleaner_redd_data$redd_measured) 
-
-```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$redd_measured))/nrow(cleaner_redd_data), 3) * 100` % of values in the `redd_measured` column are NA. 
+* `r round(sum(is.na(all_redd_data$redd_measured))/nrow(all_redd_data), 3) * 100` % of values in the `redd_measured` column are NA. 
 
 
 
 ### Variable: `why_not_measured`
 ```{r}
-table(cleaner_redd_data$why_not_measured) 
+table(all_redd_data$why_not_measured) 
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-cleaner_redd_data$why_not_measured <- case_when(
-  cleaner_redd_data$why_not_measured == "Fish on redd" | 
-    cleaner_redd_data$why_not_measured == "FISH ON REDD"  ~ "fish on redd", 
-  cleaner_redd_data$why_not_measured == "Sub-Sample" | 
-    cleaner_redd_data$why_not_measured == "SUB-SAMPLE"  ~ "sub sample", 
-  cleaner_redd_data$why_not_measured == "Too Deep" ~ "too deep", 
+all_redd_data$why_not_measured <- case_when(
+  all_redd_data$why_not_measured == "Fish on redd" | 
+    all_redd_data$why_not_measured == "FISH ON REDD"  ~ "fish on redd", 
+  all_redd_data$why_not_measured == "Sub-Sample" | 
+    all_redd_data$why_not_measured == "SUB-SAMPLE"  ~ "sub sample", 
+  all_redd_data$why_not_measured == "Too Deep" ~ "too deep", 
 )
 
-table(cleaner_redd_data$why_not_measured) 
+table(all_redd_data$why_not_measured) 
 
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$why_not_measured))/nrow(cleaner_redd_data), 3) * 100` % of values in the `why_not_measured` column are NA. 
+* `r round(sum(is.na(all_redd_data$why_not_measured))/nrow(all_redd_data), 3) * 100` % of values in the `why_not_measured` column are NA. 
 
 
 ### Variable: `flow_meter`
 ```{r}
-table(cleaner_redd_data$flow_meter) 
+table(all_redd_data$flow_meter) 
 ```
 
 Fix inconsistencies with spelling, capitalization, and abbreviations. 
 
 ```{r}
-cleaner_redd_data$flow_meter <- case_when(
-  cleaner_redd_data$flow_meter %in% c("flow bomb", "Flow Bomb", "Flow bomb")  ~ "flow bomb", 
-  cleaner_redd_data$flow_meter == "Digital" ~ "digital",
-  cleaner_redd_data$flow_meter == "Flow Watch"  ~ "flow watch", 
-  cleaner_redd_data$flow_meter == "Marsh" ~ "marsh", 
+all_redd_data$flow_meter <- case_when(
+  all_redd_data$flow_meter %in% c("flow bomb", "Flow Bomb", "Flow bomb")  ~ "flow bomb", 
+  all_redd_data$flow_meter == "Digital" ~ "digital",
+  all_redd_data$flow_meter == "Flow Watch"  ~ "flow watch", 
+  all_redd_data$flow_meter == "Marsh" ~ "marsh", 
 )
 
-table(cleaner_redd_data$flow_meter) 
+table(all_redd_data$flow_meter) 
 
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$flow_meter))/nrow(cleaner_redd_data), 3) * 100` % of values in the `flow_meter` column are NA. 
+* `r round(sum(is.na(all_redd_data$flow_meter))/nrow(all_redd_data), 3) * 100` % of values in the `flow_meter` column are NA. 
 
 
-### Variable: `comments`
+### Variable: `survey`
 ```{r}
-unique(cleaner_redd_data$comments)[1:10]
+table(all_redd_data$survey)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_redd_data$comments))/nrow(cleaner_redd_data), 3) * 100` % of values in the `comments` column are NA. 
+* `r round(sum(is.na(all_redd_data$survey))/nrow(all_redd_data), 3) * 100` % of values in the `survey` column are NA. 
 
 ## Summary of identified issues
 
@@ -774,16 +1059,16 @@ unique(cleaner_redd_data$comments)[1:10]
 ### Columns to remove
 
 - `comments`, `why_not_measured`, `flow_meter`, `flow_fps`, `start_number_flow_meter`, `end_number_flow_meter`, `flow_meter_time`, `start_number_flow_meter_80`, `end_number_flow_meter_80`, `flow_meter_time_80` have little data and may not be needed.
-- The most important variables are `longitude`, `latitude`, `date`, `redd_measured`
+- The most important variables are `longitude`, `latitude`, `date`, `redd_measured`, `redd_id`, `age`, and `age_index`
 
 ## Save cleaned data back to google cloud 
 
 ```{r}
-battle_redd <- cleaner_redd_data %>% glimpse
+battle_redd <- all_redd_data |> glimpse()
 ```
 
 
-```{r, eval=FALSE}
+```{r}
 # gcs_list_objects()
 f <- function(input, output) write_csv(input, file = output)
 

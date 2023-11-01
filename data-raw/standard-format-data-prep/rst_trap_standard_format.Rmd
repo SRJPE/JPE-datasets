@@ -34,6 +34,7 @@ FlowWest received trap operations data from 9 monitoring programs:
 -   Knights Landing
 -   Yuba River
 -   Tisdale (and Lower Feather River)
+-   Red BLuff Diversion Dam
 
 ## Standard format for RST Trap Operations Data
 
@@ -76,6 +77,10 @@ T - Tisdale, Y - Yuba River)
 ```{r, data_pull, include = F}
 # Data pulled in from google cloud in rst_catch_standard_format
 # load in data
+gcs_get_object(object_name = "rst/rbdd/data/trap.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/rbdd_trap.csv",
+               overwrite = TRUE)
 # catch data
 battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"))
 butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains trap data too
@@ -88,6 +93,7 @@ knights_landing_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_r
 tisdale_rst_camp <- read_csv(here::here("data", "rst", "tisdale_rst_catch_camp.csv"))
 mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv")) # contains trap data too
 yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
+rbdd_rst <- read_csv(here::here("data", "rst", "rbdd_rst.csv"))
 
 # sampling effort and environmental
 battle_environmental <- read_csv(here::here("data", "rst", "battle_rst_environmental.csv"))
@@ -99,6 +105,7 @@ knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"))
 knights_effort_pre2006 <- read_csv(here::here("data", "rst", "knights_combine_sampling_effort_clean.csv"))
 knight_trap_pre2002 <-  read_csv(here::here("data", "rst", "knights_2002_trap.csv"))
 tisdale_trap_camp <- read_csv(here::here("data", "rst", "tisdale_rst_trap_camp.csv"))
+rbdd_trap <- read_csv(here::here("data", "rst", "rbdd_trap.csv"))
 ```
 
 # Data formatting {.tabset}
@@ -819,9 +826,13 @@ combined_trap <- combined_trap_raw %>%
   rename(trap_functioning = gear_condition_code,
          visit_type = trap_status) %>%
   mutate(
-         trap_functioning = case_when(trap_functioning %in% c("trap not in service") ~ "trap not in service",
-                                         trap_functioning %in% c("total block", "total blockage","not rotating", "cone stopped", "trap stopped functioning") ~ "trap stopped functioning",
-                                           trap_functioning %in% c("partial block", "partial blockage", "trap functioning, but not normally") ~ "trap functioning but not normally",
+         trap_functioning = case_when(trap_functioning %in% c("trap not in service") ~ 
+                                        "trap not in service",
+                                         trap_functioning %in% c("total block", "total blockage",
+                                                                 "not rotating", "cone stopped", 
+                                                                 "trap stopped functioning") ~ "trap stopped functioning",
+                                           trap_functioning %in% c("partial block", "partial blockage", 
+                                                                   "trap functioning, but not normally") ~ "trap functioning but not normally",
                                            trap_functioning %in% c("normal", "trap functioning normally") ~ "trap functioning normally",
                                     T ~ "not recorded"),
          debris_level = case_when(debris_level == "veryheavy" ~ "very heavy", 
@@ -851,7 +862,8 @@ combined_trap <- combined_trap_raw %>%
          partial_sample = ifelse(is.na(partial_sample), F, partial_sample),
          is_half_cone_configuration = ifelse(is.na(is_half_cone_configuration), F, is_half_cone_configuration),
          include = ifelse(is.na(include), T, include)) %>% 
-  select(-rpms_seconds_end, -rpms_seconds_start)
+  select(-rpms_seconds_end, -rpms_seconds_start) |> 
+  bind_rows(rbdd_trap)
          
 
 
@@ -879,11 +891,11 @@ combined_trap_final <- combined_trap %>%
 
 ```{r}
 combined_trap %>% 
-  ggplot(aes(x = trap_stop_date, y = stream, color = stream)) +
+  ggplot(aes(x = trap_stop_date, y = site, color = site)) +
   geom_point()
 
 combined_trap %>% 
-  ggplot(aes(x = trap_start_date, y = stream, color = stream)) +
+  ggplot(aes(x = trap_start_date, y = site, color = site)) +
   geom_point()
 ```
 
@@ -893,11 +905,11 @@ Does not appear that traps are checked at a specific time
 
 ```{r}
 combined_trap %>% 
-  ggplot(aes(x = trap_stop_time, y = stream, color = stream)) +
+  ggplot(aes(x = trap_stop_time, y = site, color = site)) +
   geom_point()
 
 combined_trap %>% 
-  ggplot(aes(x = trap_start_time, y = stream, color = stream)) +
+  ggplot(aes(x = trap_start_time, y = site, color = site)) +
   geom_point()
 ```
 

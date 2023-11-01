@@ -635,6 +635,38 @@ yuba_rev_method %>%
   geom_histogram()
 ```
 
+## redd bluff
+
+```{r}
+rbdd_hours_fished <- filter(trap, site == "red bluff diversion dam") %>%
+  distinct(trap_start_date, trap_start_time, site, subsite, stream) %>%
+  rename(trap_stop_date = trap_start_date,
+         trap_stop_time = trap_start_time) |>
+  mutate(start_datetime = ymd_hms(paste0(trap_stop_date, " ", trap_stop_time))) %>%
+  mutate(hours_fished_methodology = "using only start time") %>% 
+  hours_fished_one_date() |> 
+  mutate(hours_fished = as.numeric(hours_fished),
+         hours_fished = ifelse(hours_fished < 0, 24, hours_fished),
+         hours_fished = ifelse(hours_fished > 200, 24, hours_fished)) 
+
+```
+
+### QC
+
+```{r}
+rbdd_hours_fished %>% 
+  filter(hours_fished < 72 & hours_fished > 0) |> 
+  ggplot(aes(x = end_datetime, y = hours_fished)) +
+  geom_point()
+
+rbdd_hours_fished %>% 
+  ggplot(aes(x = hours_fished)) +
+  geom_histogram()
+
+filter(rbdd_hours_fished, hours_fished > 80)
+```
+
+
 # Combine data
 
 ```{r}
@@ -681,6 +713,11 @@ yuba_final <- yuba_hours_fished %>%
   select(stream, site, subsite, trap_stop_date, trap_stop_time, hours_fished) %>% 
   mutate(hours_fished = as.numeric(hours_fished))
 
+rbdd_hours_fished |> glimpse()
+rbdd_final <- rbdd_hours_fished |> 
+  select(stream, site, subsite, trap_stop_date, trap_stop_time, hours_fished) |> 
+  mutate(hours_fished = as.numeric(hours_fished))
+
 hours_fished_combined <- bind_rows(battle_final,
                                    butte_final,
                                    clear_final,
@@ -689,7 +726,8 @@ hours_fished_combined <- bind_rows(battle_final,
                                    knights_final,
                                    tisdale_final,
                                    mill_final,
-                                   yuba_final) %>% 
+                                   yuba_final,
+                                   rbdd_final) %>% 
   # if hours fished NA assumed 24 hours
   mutate(hours_fished = ifelse(is.na(hours_fished), 24, hours_fished)) %>% 
   rename(date = trap_stop_date) %>% 

@@ -176,13 +176,14 @@ no_catch <- standard_catch_unmarked |>
   mutate(week = week(date), year = year(date)) |>
   filter(is.na(fork_length) & count == 0)
 
-# less rows now than in origional, has to do with removing count != 0 in line 104, is there any reason not to do this?
+# less rows now than in original, has to do with removing count != 0 in line 104, is there any reason not to do this?
 updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage, no_catch, weeks_wo_lifestage) |> glimpse()
 
 # Quick plot to check that we are not missing data 
 updated_standard_catch |> 
   ggplot() + 
   geom_line(aes(x = date, y = count, color = site)) + facet_wrap(~stream, scales = "free")
+
 
 
 # historical lifestage-based logic ---------------------------------------
@@ -285,10 +286,87 @@ na_filled_lifestage_field <- standard_catch_unmarked_field |>
   mutate(model_lifestage_method = "assign count based on weekly distribution of field assigned lifestage",
          week = week(date), 
          year = year(date)) |> 
+
+# fill in run for all streams ------------------------------------------
+# how many records have no information for run?
+# ~15% of battle creek have no run; ~3% of clear creek have no run
+updated_standard_catch_na_run <- updated_standard_catch |> 
+  mutate(run = ifelse(run %in% c("not recorded", "unknown", NA_character_), NA_character_, run)) |> glimpse()
+
+updated_standard_catch_na_run |> 
+  group_by(stream, run) |> 
+  summarise(n = n()) |> 
+  mutate(freq = n / sum(n)) |> 
+  filter(is.na(run))
+
+updated_standard_catch_na_run |> 
+  filter(stream == "clear creek") |> 
+  group_by(site, week) |> 
+  summarise(n = n(),
+            prop_spring = sum(run == "spring", na.rm = T) / n,
+            prop_other = sum(run %in% c("fall", "late fall", "winter", NA_character_) / n)) |> 
+  ggplot(aes(x = week, y = prop_spring)) + 
+  geom_bar(stat = "identity") +
+  facet_wrap(~site, scales = "free")
+
+updated_standard_catch_na_run_no_deer_mill <- updated_standard_catch_na_run |> 
+  filter(!stream %in% c("deer creek", "mill creek")) |> 
+  glimpse()
+
+# create weekly proportion bins for run (spring / not spring / unknown)
+weekly_run_bins <- updated_standard_catch_na_run_no_deer_mill |> 
+  filter(!is.na(run), count != 0) |> 
+  mutate(year = year(date), week = week(date)) |> 
+  group_by(year, week, stream, site) |>
+  summarize(percent_spring = sum(run == "spring", na.rm = T)/n(),
+            percent_not_spring = sum(run != "spring", na.rm = T) / n()) |> 
+  ungroup() |> 
+  glimpse()
+
+# Use when no run data for a year 
+proxy_weekly_run <- updated_standard_catch_na_run_no_deer_mill |>
+  mutate(year = year(date), week = week(date)) |>
+  filter(count > 0, !is.na(run)) |> 
+  group_by(week, stream, site) |>
+  summarise(percent_spring = sum(run == "spring", na.rm = T)/n(),
+            percent_not_spring = sum(run != "spring", na.rm = T)/n()) |>
+  ungroup() |>
+  glimpse()
+
+# # Years without run data 
+proxy_run_bins_for_weeks_without_run <- updated_standard_catch_na_run_no_deer_mill |>
+  filter(count > 0) |> 
+  group_by(year, week, stream, site) |>
+  summarise(all_na = sum(is.na(run)) == n()) |> 
+  ungroup() |> 
+  filter(all_na) |> 
+  left_join(proxy_weekly_run, by = c("week", "stream", "site")) |>
+  select(-all_na) |>
+  glimpse()
+
+all_run_bins <- bind_rows(weekly_run_bins, proxy_run_bins_for_weeks_without_run) |>
+  glimpse()
+  
+
+# create table of all na values that need to be filled
+na_filled_run <- updated_standard_catch_na_run_no_deer_mill |> 
+  filter(is.na(run) & count > 0) |> 
+  left_join(all_run_bins, by = c("year", "week", "stream", "site")) |> 
+  mutate(spring_run = round(count * percent_spring),
+         not_spring_run = round(count * percent_not_spring)) |> 
+  select(-c(count, week, year, run)) |> # remove bc all NA, assigning in next line
+  pivot_longer(spring_run:not_spring_run, names_to = 'run_for_model', values_to = 'count') |> 
+  select(-c(percent_spring, percent_not_spring)) |>  
+  filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
+  mutate(model_run_method = "assign run based on weekly distribution",
+         week = week(date), 
+         year = year(date)) |> 
+  select(-run_method) |> 
   glimpse()
 
 # add filled values back into combined_rst 
 # first filter combined rst to exclude rows in na_to_fill
+
 combined_rst_wo_na_lifestage <- standard_catch_unmarked_field |> 
   mutate(week = week(date), year = year(date)) |> 
   filter(!is.na(lifestage)) |> 
@@ -324,6 +402,38 @@ updated_standard_catch_field |>
   ggplot() + 
   geom_line(aes(x = date, y = count, color = site)) + facet_wrap(~stream, scales = "free")
 
+# total of 
+combined_rst_wo_na_run <- updated_standard_catch_na_run_no_deer_mill |> 
+  filter(!is.na(run) & count > 0) |> 
+  mutate(run_for_model = if_else(run == "spring", "spring_run", "not_spring_run")) |> 
+  mutate(model_run_method = ifelse(is.na(run_method), "not recorded", run_method)) |> 
+  select(-run_method) |> 
+  glimpse() 
+
+mill_and_deer <- updated_standard_catch_na_run |> 
+  filter(stream %in% c("mill creek", "deer creek")) |> 
+  mutate(run_for_model = NA,
+         model_run_method = "mill and deer - no data to interpolate") |> 
+  select(-run_method)
+
+no_catch_run <- updated_standard_catch_na_run_no_deer_mill |> 
+  filter(count == 0) |> 
+  mutate(run_for_model = NA,
+         model_run_method = "count is 0") |> 
+  select(-run_method)
+
+# TODO we added lots of records here. I think it has to do with joining on site - all joins in this section
+# have increased nrow()
+updated_standard_catch_with_run <- bind_rows(combined_rst_wo_na_run, na_filled_run, no_catch_run, mill_and_deer) |> glimpse()
+
+# Quick plot to check that we are not missing data 
+updated_standard_catch_with_run |> 
+  filter(model_run_method != "count is 0") |> 
+  ggplot() + 
+  geom_line(aes(x = date, y = count, color = run_for_model)) + facet_wrap(~stream, scales = "free")
+
+
+
 
 # add include_in_model variable based on sampling window criteria
 # read in years to include produced in prep data for model
@@ -356,7 +466,7 @@ write_csv(rst_with_inclusion_criteria, "data/model-data/daily_catch_unmarked.csv
 weekly_standard_catch_unmarked <- rst_with_inclusion_criteria %>% 
   mutate(week = week(date),
          year = year(date)) %>% 
-  group_by(week, year, stream, site_group, site, subsite, run, lifestage, adipose_clipped, lifestage_for_model, include_in_model) %>% 
+  group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped, lifestage_for_model, include_in_model) %>% 
   summarize(mean_fork_length = mean(fork_length, na.rm = T),
             mean_weight = mean(weight, na.rm = T),
             count = sum(count)) %>% glimpse()
@@ -367,6 +477,51 @@ gcs_upload(weekly_standard_catch_unmarked,
            name = "jpe-model-data/weekly_catch_unmarked.csv",
            predefinedAcl = "bucketLevel")
 write_csv(weekly_standard_catch_unmarked, "data/model-data/weekly_catch_unmarked.csv")
+
+
+# fork length distributions -----------------------------------------------
+
+# In order to apply PLAD run assignments to historical juvenile abundance
+# Need fork length distributions by week and lifestage (fry/smolt)
+# Provide as raw data, small size bins, larger size bins
+
+catch_fl_summary_site <- rst_with_inclusion_criteria |> 
+  # only want to include those weeks being included in model
+  filter(include_in_model == T) |> 
+  mutate(week = week(date),
+         wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) |> 
+  # summarize by week 
+  # can also summarize to the site level as subsites can be added together (e.g. river left + river right)
+  group_by(week, wy, fork_length, stream, site, site_group, lifestage_for_model) |> 
+  summarize(count = sum(count))
+
+gcs_upload(catch_fl_summary_site,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/fork_length_summary_site.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(catch_fl_summary_site, "data/model-data/fork_length_summary_site.csv")
+
+catch_fl_summary_stream <- rst_with_inclusion_criteria |> 
+  # only want to include those weeks being included in model
+  filter(include_in_model == T) |> 
+  mutate(week = week(date),
+         wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) |> 
+  # summarize by week 
+  # can also summarize to the site level as subsites can be added together (e.g. river left + river right)
+  group_by(week, wy, fork_length, stream, site, site_group, lifestage_for_model) |> 
+  summarize(count = sum(count)) |> 
+  # if want to summarize at the stream level need to either select one site to use or could take the average
+  # can't sum across sites or will result in double counting (e.g. upper clear creek and lower clear creek, same fish passing through)
+  group_by(week, wy, fork_length, stream, lifestage_for_model) |> 
+  summarize(count = mean(count))
+
+gcs_upload(catch_fl_summary_stream,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/fork_length_summary_stream.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(catch_fl_summary_stream, "data/fork_length_summary_stream.csv")
 
 # Effort ------------------------------------------------------------------
 
@@ -411,6 +566,45 @@ gcs_upload(weekly_catch_effort,
            name = "jpe-model-data/weekly_catch_effort.csv",
            predefinedAcl = "bucketLevel")
 write_csv(weekly_catch_effort, "data/model-data/weekly_catch_effort.csv")
+
+# feather annual site list to use -----------------------------------------
+# Describe for feather river which site to use each year, in years that there 
+# are multiple sites fished, use the site with the most reccords
+
+# Use weekly catch effort to summarize sites fished for each year 
+annual_sites_trapped <- weekly_catch_effort |> 
+  filter(stream == "feather river") |> 
+  mutate(site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
+                         site %in% hfc_sites ~ "feather river hfc",
+                         T ~ NA)) |> 
+  group_by(year, site_group, site) |> 
+  tally() |> 
+  rename(reccords_per_site = n)
+
+# Filter to only include site with most records per year and site group 
+filtered_annual_sites <- annual_sites_trapped |> 
+  group_by(year, site_group) |> 
+  mutate(x = rank(desc(reccords_per_site), ties.method = "first"),
+         stream = "feather river") |> 
+  filter(x == 1) |>
+  select(year, stream, site_group, site) |> glimpse()
+  
+# Confirm only one site per site group 
+filtered_annual_sites |> 
+  group_by(year, site_group) |> 
+  tally() |> 
+  rename(traps_per_site_group = n) |> 
+  pull(traps_per_site_group) |> unique()
+
+# save to cloud 
+gcs_upload(filtered_annual_sites,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/feather_annual_site_selection.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(filtered_annual_sites, "data/model-data/feather_annual_site_selection.csv")
+
+
 
 
 # Environmental -----------------------------------------------------------
@@ -498,7 +692,10 @@ release_summary <- standard_release |>
          year_released = ifelse(is.na(year_released), year(date_released), year_released),
          site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
                                 site %in% hfc_sites ~ "feather river hfc",
-                                T ~ NA)) 
+                                T ~ NA),
+         origin_released = ifelse(origin_released == "natural", "wild", origin_released)) 
+
+ck <- filter(release_summary, site == "red bluff diversion dam")
 gcs_upload(release_summary,
            object_function = f,
            type = "csv",
@@ -569,6 +766,7 @@ efficiency_summary <- standard_release %>%
          site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
                                 site %in% hfc_sites ~ "feather river hfc",
                                 T ~ NA))
+ck <- filter(efficiency_summary, site == "red bluff diversion dam")
 gcs_upload(efficiency_summary,
            object_function = f,
            type = "csv",
@@ -588,14 +786,14 @@ weekly_release_origin <- release_summary |>
   # then origin is mixed
   # if any reported as unknown or not recorded then origin is unknown or not reported
   mutate(origin_released = case_when(hatchery == 1 ~ "hatchery",
-                                     natural == 1 ~ "natural",
+                                     wild == 1 ~ "wild",
                                      !is.na(`not recorded`) ~ "not recorded",
                                      !is.na(unknown) ~ "unknown",
                                      !is.na(mixed) ~ "mixed",
-                                     hatchery < 1 | natural < 1 ~ "mixed")) |> 
-  select(-c(natural, hatchery, `not recorded`, unknown, mixed))
+                                     hatchery < 1 | wild < 1 ~ "mixed")) |> 
+  select(-c(wild, hatchery, `not recorded`, unknown, mixed))
 weekly_release <- release_summary |> 
-  filter(include == "yes") |> 
+  filter(include == "yes" | is.na(include)) |> 
   select(stream, site_group, site, release_id, date_released, week_released, year_released, 
          number_released, median_fork_length_released, flow_at_release, temperature_at_release, 
          turbidity_at_release) |> 
