@@ -20,7 +20,7 @@ library(knitr)
 
 ## Description of Monitoring Data
 
-These data were acquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019. Red location, size, substrate and flow were measured. Annual monitoring questions and conditions drove the frequency and detail of individual redd measurements. 						
+These data were acquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019. Red location, size, substrate and flow were measured. Annual monitoring questions and conditions drove the frequency and detail of individual redd measurements. We received new data from Natasha wingerter in October 2023 after identifying that age data was not included.				
 
 
 **Timeframe:** 2001 - 2022
@@ -223,7 +223,7 @@ clean_2020_data <- raw_redd_2020 |>
   mutate(survey_id = case_when(between(date, survey_1[1], survey_1[2]) ~ 1,
                                between(date, survey_2[1], survey_2[2]) ~ 2,
                                between(date, survey_3[1], survey_3[2]) ~ 3),
-         JPE_redd_id = paste0(survey_id, "_", reach, "_", redd_id),
+         JPE_redd_id = paste0(date, "_", reach, "_", redd_id),
          date = as.Date(date),
          reach = as.character(reach),
          age = as.numeric(age),
@@ -1068,7 +1068,7 @@ battle_redd <- all_redd_data |> glimpse()
 ```
 
 
-```{r, eval=FALSE}
+```{r}
 # gcs_list_objects()
 f <- function(input, output) write_csv(input, file = output)
 
