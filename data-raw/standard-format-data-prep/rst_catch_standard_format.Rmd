@@ -96,6 +96,11 @@ pmap(files_tisdale, get_data)
 pmap(files_tisdale_camp, get_data)
 pmap(files_mill, get_data)
 pmap(files_yuba, get_data)
+
+gcs_get_object(object_name = "rst/rbdd/data/catch.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/rbdd_rst.csv",
+               overwrite = TRUE)
 ```
 
 ```{r, read_csv}
@@ -116,6 +121,7 @@ tisdale_rst <- read_csv(here::here("data", "rst", "tisdale_rst.csv"), lazy = FAL
 tisdale_rst_camp <- read_csv(here::here("data", "rst", "tisdale_rst_catch_camp.csv"), lazy = FALSE )
 mill_rst <- read_csv(here::here("data", "rst", "mill_rst.csv"), lazy = FALSE ) # contains trap data too
 yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"), lazy = FALSE )
+rbdd_rst <- read_csv(here::here("data", "rst", "rbdd_rst.csv"), lazy = FALSE)
 
 # sampling effort and environmental
 battle_environmental <- read_csv(here::here("data","rst", "battle_rst_environmental.csv"), lazy = FALSE )
@@ -1168,7 +1174,8 @@ combined_rst <- bind_rows(battle_rst_clean_final,
                           mill_rst_clean,
                           yuba_rst_clean,
                           knights_rst_clean_final,
-                          tisdale_rst_clean) %>% 
+                          tisdale_rst_clean,
+                          rbdd_rst) %>% 
   as_tibble() %>% 
   mutate(date = as.Date(date),
          month = month(date), # add to join with lad and yearling
@@ -1234,7 +1241,7 @@ rst_catch_data_dictionary <- tibble(variable_name = colnames(combined_rst),
                                                  NA,
                                                  "battle creek, butte creek, clear creek, deer creek, feather river, mill creek, yuba river, sacramento river",
                                                  "feather hfc, feather lfc",
-                                                 "battle creek, okie dam, adams dam, lcc, ucc, deer creek, eye riffle, live oak, herringer riffle, steep riffle, sunset pumps, shawns beach, gateway riffle, mill creek, yuba river, hallwood, knights landing, tisdale",
+                                                 "battle creek, okie dam, adams dam, lcc, ucc, deer creek, eye riffle, live oak, herringer riffle, steep riffle, sunset pumps, shawns beach, gateway riffle, mill creek, yuba river, hallwood, knights landing, tisdale, red bluff diversion dam",
                                                  "see readme",
                                                  "TRUE, FALSE",
                                                  "not recorded, length-at-date criteria, appearance, hatchery attribute",
@@ -1349,18 +1356,18 @@ unique(combined_rst$run)
 
 total_count <- combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(stream, year) %>%
+  group_by(site, year) %>%
   summarize(total = sum(count, na.rm = T))
 
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(stream, year, run) %>%
+  group_by(site, year, run) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = run)) +
   geom_col() +
-  facet_wrap(~stream, scales = "free_y") +
+  facet_wrap(~site, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -1373,13 +1380,13 @@ Figure below shows the percent of total fish counted that have a fork length mea
 combined_rst %>%
   filter(!is.na(fork_length)) %>%
   mutate(year = year(date)) %>%
-  group_by(stream, year) %>%
+  group_by(site, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~stream)
+  facet_wrap(~site)
   
 ```
 
@@ -1392,13 +1399,13 @@ Figure below shows the percentage by lifestage for each tributary and year.
 ```{r, lifestage_qaqc}
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(stream, year, lifestage) %>%
+  group_by(site, year, lifestage) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = lifestage)) +
   geom_col() +
-  facet_wrap(~stream, scales = "free_y") +
+  facet_wrap(~site, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -1419,13 +1426,13 @@ locations do not record this information.
 combined_rst %>%
   filter(dead == T) %>%
   mutate(year = year(date)) %>%
-  group_by(stream, year) %>%
+  group_by(site, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~stream)
+  facet_wrap(~site)
 ```
 
 ## interpolated
@@ -1439,13 +1446,13 @@ counts do not include values for fork length.
 combined_rst %>%
   filter(interpolated == T) %>%
   mutate(year = year(date)) %>%
-  group_by(stream, year) %>%
+  group_by(site, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~stream)
+  facet_wrap(~site)
 
 combined_rst %>%
   filter(stream %in% c("battle creek", "clear creek")) %>%
@@ -1464,13 +1471,13 @@ for origin. For other locations it is not relevant or was already filtered.
 ```{r, origin_qaqc}
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(stream, year, adipose_clipped) %>%
+  group_by(site, year, adipose_clipped) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
-  ggplot(aes(x = year, y = percent, fill = origin)) +
+  ggplot(aes(x = year, y = percent, fill = adipose_clipped)) +
   geom_col() +
-  facet_wrap(~stream, scales = "free_y") +
+  facet_wrap(~site, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -1483,13 +1490,13 @@ Figure below shows the percent of total fish counted that have a weight measurem
 combined_rst %>%
   filter(!is.na(weight)) %>%
   mutate(year = year(date)) %>%
-  group_by(stream, year) %>%
+  group_by(site, year) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent)) +
   geom_col() +
-  facet_wrap(~stream)
+  facet_wrap(~site)
 ```
 ## run_method
 
@@ -1499,13 +1506,13 @@ for all others.
 ```{r, runmethod_qaqc}
 combined_rst %>%
   mutate(year = year(date)) %>%
-  group_by(stream, year, run_method) %>%
+  group_by(site, year, run_method) %>%
   summarize(count = sum(count, na.rm = T)) %>%
   left_join(total_count) %>%
   mutate(percent = (count/total)*100) %>%
   ggplot(aes(x = year, y = percent, fill = run_method)) +
   geom_col() +
-  facet_wrap(~stream, scales = "free_y") +
+  facet_wrap(~site, scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
