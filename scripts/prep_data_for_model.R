@@ -93,14 +93,13 @@ standard_catch_unmarked <- standard_catch %>%
   glimpse()
 
 
+# FL-based lifestage logic ------------------------------------------------
+
+
 # add logic to assign lifestage_for_model 
 # extrapolate lifestage for model for plus count fish/fish without fork lenghts based on weekly fl probabilities
 # Create table with prob fry, smolt, and yearlings for each stream, site, week, year
 
-# TODO - figure out how to handle weeks where we do not have fl data 
-# options 
-# - use historical percentages for a specific week if a year week does not have fl data 
-# or specificy as unknown 
 weekly_lifestage_bins <- standard_catch_unmarked |> 
   filter(!is.na(fork_length), count != 0) |> 
   mutate(year = year(date), week = week(date)) |> 
@@ -186,6 +185,108 @@ updated_standard_catch |>
   geom_line(aes(x = date, y = count, color = site)) + facet_wrap(~stream, scales = "free")
 
 
+
+# historical lifestage-based logic ---------------------------------------
+
+# create df that assigns all "unknown" and "not recorded" lifestages NA
+standard_catch_unmarked_field <- standard_catch_unmarked |> 
+  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", NA_character_), 
+                            NA_character_, lifestage)) 
+  
+# plot to compare proportion of NAs by lifestage method (field vs. FL cutoff model)
+standard_catch_unmarked |> 
+  mutate(year = year(date)) |> 
+  group_by(stream, year) |> 
+  summarise(prop_na_model = sum(is.na(lifestage_for_model)) / n()) |> 
+  full_join(standard_catch_unmarked_field |> 
+              mutate(year = year(date)) |> 
+              group_by(stream, year) |> 
+              summarise(#n = n(), 
+                        #n_na = sum(is.na(lifestage)),
+                        prop_na_historical = sum(is.na(lifestage)) / n()),
+              by = c("stream", "year")) |> 
+  pivot_longer(prop_na_model:prop_na_historical, 
+               names_to = "available data",
+               values_to = "proportion_na") |> 
+  mutate(`available data` = ifelse(`available data` == "prop_na_model", "Fork length", "Field-assigned lifestage"),
+         stream = str_to_title(stream)) |> 
+  ggplot(aes(x = year, y = proportion_na, color = `available data`)) +
+  geom_line(alpha = 0.8) + 
+  theme_minimal() +
+  facet_wrap(~stream, scales = "free") +
+  xlab("Year") + ylab("Proportion of records where lifestage is NA") +
+  ggtitle("Data availability: field lifestage vs. FL cutoff-based lifestage") +
+  theme(legend.position = "bottom")
+
+# now fill in based on field-assigned lifestages (same method as above)
+weekly_field_lifestage_bins <- standard_catch_unmarked_field |> 
+  filter(!is.na(lifestage), count > 0) |> 
+  mutate(year = year(date), week = week(date)) |> 
+  group_by(year, week, stream, site) |> 
+  summarize(percent_adult = sum(lifestage == "adult") / n(),
+            percent_fry = sum(lifestage == "fry") / n(),
+            percent_parr = sum(lifestage == "parr") / n(),
+            percent_silvery_parr = sum(lifestage == "silvery parr") / n(),
+            percent_smolt = sum(lifestage == "smolt") / n(),
+            percent_yearling = sum(lifestage == "yearling") / n(),
+            percent_yolk_sac_fry = sum(lifestage == "yolk sac fry") / n()) |> 
+  ungroup() |> 
+  glimpse() 
+
+# Use when no lifestage data for a year 
+proxy_weekly_field <- standard_catch_unmarked_field |> 
+  mutate(year = year(date), week = week(date)) |> 
+  filter(!is.na(lifestage)) |> 
+  group_by(week, stream) |> 
+  summarize(percent_adult = sum(lifestage == "adult") / n(),
+            percent_fry = sum(lifestage == "fry") / n(),
+            percent_parr = sum(lifestage == "parr") / n(),
+            percent_silvery_parr = sum(lifestage == "silvery parr") / n(),
+            percent_smolt = sum(lifestage == "smolt") / n(),
+            percent_yearling = sum(lifestage == "yearling") / n(),
+            percent_yolk_sac_fry = sum(lifestage == "yolk sac fry") / n()) |> 
+  ungroup() |> 
+  glimpse() 
+
+# years with no lifestage data
+proxy_lifestage_bins_for_weeks_without_lifestage <- standard_catch_unmarked_field |> 
+  group_by(year = year(date), week = week(date), stream, site) |> 
+  summarise(lifestage_na = sum(is.na(lifestage)) / n()) |> 
+  #filter(lifestage_na > 0) |> 
+  filter(lifestage_na == 1) |> 
+  left_join(proxy_weekly_field, by = c("week", "stream")) |> 
+  select(-lifestage_na) |> 
+  ungroup() |> 
+  glimpse() 
+
+all_lifestage_bins_field <- bind_rows(weekly_field_lifestage_bins, 
+                                proxy_lifestage_bins_for_weeks_without_lifestage)
+
+# create table of all NA values that need to be filled
+# drops 77615 rows
+na_filled_lifestage_field <- standard_catch_unmarked_field |> 
+  ungroup() |> 
+  mutate(week = week(date), year = year(date)) |> 
+  filter(is.na(lifestage)) |> 
+  #filter(is.na(lifestage) & count > 0) |> 
+  left_join(all_lifestage_bins_field, by = c("week", "year", "stream", "site"),
+            multiple = "all") |>
+  mutate(adult = round(count * percent_adult),
+         fry = round(count * percent_fry),
+         percent_parr = round(count * percent_parr),
+         silvery_parr = round(count * percent_silvery_parr),
+         smolt = round(count * percent_smolt),
+         yearling = round(count * percent_yearling),
+         yolk_sac_fry = round(count * percent_yolk_sac_fry)) |> 
+  select(-c(lifestage, count, week, year)) |> # remove because all na, assigning in next line
+  pivot_longer(adult:yolk_sac_fry, names_to = "lifestage", values_to = "count") |> 
+  select(-c(percent_adult, percent_fry, percent_parr, percent_silvery_parr,
+            percent_smolt, percent_yearling, percent_yolk_sac_fry)) |>  
+  filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
+  mutate(model_lifestage_method = "assign count based on weekly distribution of field assigned lifestage",
+         week = week(date), 
+         year = year(date)) |> 
+
 # fill in run for all streams ------------------------------------------
 # how many records have no information for run?
 # ~15% of battle creek have no run; ~3% of clear creek have no run
@@ -265,6 +366,42 @@ na_filled_run <- updated_standard_catch_na_run_no_deer_mill |>
 
 # add filled values back into combined_rst 
 # first filter combined rst to exclude rows in na_to_fill
+
+combined_rst_wo_na_lifestage <- standard_catch_unmarked_field |> 
+  mutate(week = week(date), year = year(date)) |> 
+  filter(!is.na(lifestage)) |> 
+  mutate(model_lifestage_method = "field-assigned lifestage") |> 
+  glimpse()
+
+# weeks we cannot predict lifestage
+gap_weeks_field <- proxy_lifestage_bins_for_weeks_without_lifestage |> 
+  filter(is.na(percent_adult) & is.na(percent_fry) & is.na(percent_parr) &
+         is.na(percent_silvery_parr) & is.na(percent_smolt) & is.na(percent_yearling) &
+         is.na(percent_yolk_sac_fry)) |> 
+  select(year, week, stream, site)
+
+formatted_standard_catch_field <- standard_catch_unmarked_field |> 
+  mutate(week = week(date), year = year(date)) |> glimpse()
+
+weeks_wo_lifestage_field <- gap_weeks_field |> 
+  left_join(formatted_standard_catch_field, by = c("year", "stream", "week", "site")) |> 
+  filter(!is.na(count) & count > 0) |> 
+  mutate(model_lifestage_method = "Not able to determine, no weekly lifestage data") |> 
+  glimpse()
+
+no_catch_field <- standard_catch_unmarked_field |> 
+  mutate(week = week(date), year = year(date)) |>
+  filter(count == 0) |> 
+  #filter(is.na(lifestage) & count == 0) |> 
+  mutate(model_lifestage_method = "no catch")
+
+updated_standard_catch_field <- bind_rows(combined_rst_wo_na_lifestage, na_filled_lifestage_field, 
+                                          no_catch_field, weeks_wo_lifestage_field) |> glimpse()
+
+updated_standard_catch_field |> 
+  ggplot() + 
+  geom_line(aes(x = date, y = count, color = site)) + facet_wrap(~stream, scales = "free")
+
 # total of 
 combined_rst_wo_na_run <- updated_standard_catch_na_run_no_deer_mill |> 
   filter(!is.na(run) & count > 0) |> 
@@ -294,6 +431,7 @@ updated_standard_catch_with_run |>
   filter(model_run_method != "count is 0") |> 
   ggplot() + 
   geom_line(aes(x = date, y = count, color = run_for_model)) + facet_wrap(~stream, scales = "free")
+
 
 
 
