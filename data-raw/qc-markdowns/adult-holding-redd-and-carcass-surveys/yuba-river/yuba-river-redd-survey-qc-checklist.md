@@ -15,18 +15,18 @@ Maddee Rubenson
 primarily during October - December. The number of samples per month is
 summarized below.
 
--   January: 75
--   February: 34
--   March: 40
--   April: 15
--   May: 0
--   June: 0
--   July: 0
--   August: 0
--   September: 174
--   October: 759
--   November: 639
--   December: 188
+- January: 75
+- February: 34
+- March: 40
+- April: 15
+- May: 0
+- June: 0
+- July: 0
+- August: 0
+- September: 174
+- October: 759
+- November: 639
+- December: 188
 
 **Sampling Location:**
 
@@ -302,22 +302,22 @@ gcs_upload(all_yuba_redd,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2022-12-01 13:02:53 > File size detected as  170.9 Kb
+    ## ℹ 2023-09-11 13:31:14 > File size detected as  170.9 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_redd.csv 
     ## Type:                csv 
     ## Size:                170.9 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2Fyuba_redd.csv?generation=1669928573960975&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2Fyuba_redd.csv?generation=1694464274984285&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2Fyuba_redd.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fyuba-river%2Fdata%2Fyuba_redd.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_redd.csv/1669928573960975 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/yuba-river/data/yuba_redd.csv/1694464274984285 
     ## MD5 Hash:            WEUnceZtCsPog7+iqodnMw== 
     ## Class:               STANDARD 
-    ## Created:             2022-12-01 21:02:53 
-    ## Updated:             2022-12-01 21:02:53 
-    ## Generation:          1669928573960975 
+    ## Created:             2023-09-11 20:31:14 
+    ## Updated:             2023-09-11 20:31:14 
+    ## Generation:          1694464274984285 
     ## Meta Generation:     1 
-    ## eTag:                CI+Gztuo2fsCEAE= 
+    ## eTag:                CN3ax6mzo4EDEAE= 
     ## crc32c:              wjWppQ==

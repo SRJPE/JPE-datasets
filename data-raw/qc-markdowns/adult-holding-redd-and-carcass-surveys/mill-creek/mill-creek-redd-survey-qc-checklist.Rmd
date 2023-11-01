@@ -69,12 +69,14 @@ gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/mill-creek/data-raw/Mill Creek SRCS Redd Counts by Section 1997-2020 Reformatted.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "mill_creek_redd_raw.xlsx")
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "mill-creek",
+                                       "mill_creek_redd_raw.xlsx"))
                # Overwrite = TRUE)
 ```
 
 ```{r}
-raw_data = readxl::read_excel('mill_creek_redd_raw.xlsx',
+raw_data = readxl::read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "mill-creek",
+                                       "mill_creek_redd_raw.xlsx"),
                               sheet = '2007-2020 SR redds') %>% 
   glimpse()
 ```

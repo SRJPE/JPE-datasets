@@ -17,19 +17,19 @@ snorkel counts.The data has been qced and summed up.
 
 **Completeness of Record throughout timeframe:**
 
--   Some data lacks for Trail 2E17 to Dillon Cove
+- Some data lacks for Trail 2E17 to Dillon Cove
 
 **Sampling Location:**
 
--   Upper Falls to Potato Patch
--   Potato Patch to Lower Falls
--   Lower Falls to A-Line
--   A-Line to Wilson Cove
--   Wilson Cove to Polk Springs
--   Polk Springs to Murphy Trail
--   Murphy Trail to Ponderosa Way
--   Ponderosa Way to Trail 2E17
--   Trail 2E17 to Dillon Cove
+- Upper Falls to Potato Patch
+- Potato Patch to Lower Falls
+- Lower Falls to A-Line
+- A-Line to Wilson Cove
+- Wilson Cove to Polk Springs
+- Polk Springs to Murphy Trail
+- Murphy Trail to Ponderosa Way
+- Ponderosa Way to Trail 2E17
+- Trail 2E17 to Dillon Cove
 
 **Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
 
@@ -122,11 +122,11 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
 kable(data_dictionary)
 ```
 
-| variables | description                     | percent\_na |
-|:----------|:--------------------------------|------------:|
-| location  | Sample year                     |           0 |
-| year      | Description of location sampled |           0 |
-| count     | Number of fish observed         |           6 |
+| variables | description                     | percent_na |
+|:----------|:--------------------------------|-----------:|
+| location  | Sample year                     |          0 |
+| year      | Description of location sampled |          0 |
+| count     | Number of fish observed         |          6 |
 
 ## Explore Categorical Variables
 
@@ -153,7 +153,7 @@ table(cleaner_data$location)
 
 **NA and Unknown Values**
 
--   0 % of values in the `location` column are NA.
+- 0 % of values in the `location` column are NA.
 
 ## Explore Numeric Variables
 
@@ -202,13 +202,13 @@ cleaner_data %>%
 
 **NA and Unknown Values**
 
--   6.481 % of values in the `count` column are NA.
+- 6.481 % of values in the `count` column are NA.
 
 ## Next steps
 
--   Recommend adding numerical location variable such as latitude,
-    longitude; or maybe four variables (starting latitude, starting
-    longitude, ending latitude, ending longitude)
+- Recommend adding numerical location variable such as latitude,
+  longitude; or maybe four variables (starting latitude, starting
+  longitude, ending latitude, ending longitude)
 
 ## Add cleaned data back onto google cloud
 
@@ -230,28 +230,28 @@ gcs_upload(deer_adult_holding_survey_1997_to_2020,
            name = "adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv")
 ```
 
-    ## ℹ 2021-12-01 11:01:55 > File size detected as  7.4 Kb
+    ## ℹ 2023-10-12 09:12:33 > File size detected as  7.4 Kb
 
-    ## ℹ 2021-12-01 11:01:56 > Request Status Code:  400
+    ## ℹ 2023-10-12 09:12:33 > Request Status Code:  400
 
-    ## ! API returned: Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
+    ## ! http_400 Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
 
-    ## ℹ 2021-12-01 11:01:56 > File size detected as  7.4 Kb
+    ## ℹ 2023-10-12 09:12:33 > File size detected as  7.4 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv 
     ## Type:                csv 
     ## Size:                7.4 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv?generation=1638385316244899&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv?generation=1697127153910397&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-holding-redd-and-carcass-surveys%2Fdeer-creek%2Fdata%2Fdeer_adult_holding_1997_to_2020.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv/1638385316244899 
+    ## ID:                  jpe-dev-bucket/adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2020.csv/1697127153910397 
     ## MD5 Hash:            9mBfuDEVfDhkNSB4znZocQ== 
     ## Class:               STANDARD 
-    ## Created:             2021-12-01 19:01:56 
-    ## Updated:             2021-12-01 19:01:56 
-    ## Generation:          1638385316244899 
+    ## Created:             2023-10-12 16:12:33 
+    ## Updated:             2023-10-12 16:12:33 
+    ## Generation:          1697127153910397 
     ## Meta Generation:     1 
-    ## eTag:                CKPbnvakw/QCEAE= 
+    ## eTag:                CP2El6nz8IEDEAE= 
     ## crc32c:              ZEZzyw==

@@ -45,58 +45,59 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # git data and save as xlsx
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek/data-raw/FlowWest SCS JPE Data Request_Clear Creek.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_redd_holding_carcass_data.xlsx")
+               saveToDisk = here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "clear-creek", "raw_redd_holding_carcass_data.xlsx"))
                # Overwrite = TRUE)
 ```
 
 Read in data from google cloud, glimpse raw data sheet:
 
 ``` r
-raw_carcass_data <-readxl::read_excel("raw_redd_holding_carcass_data.xlsx", sheet = "Carcass") %>% glimpse()
+raw_carcass_data <-readxl::read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "clear-creek", "raw_redd_holding_carcass_data.xlsx"), 
+                                      sheet = "Carcass") %>% glimpse()
 ```
 
     ## Rows: 601
     ## Columns: 40
-    ## $ `QC Date`                       <dttm> 2019-02-08, 2019-02-08, 2019-02-08, 2~
-    ## $ `QC Type`                       <chr> "Shapefile/Annual Excel", "Shapefile/A~
-    ## $ Inspector                       <chr> "RS", "RS", "RS", "RS", "RS", "RS", "R~
-    ## $ Year                            <dbl> 2008, 2008, 2008, 2008, 2008, 2008, 20~
-    ## $ Survey                          <chr> "snorkel", "snorkel", "snorkel", "snor~
-    ## $ Type                            <chr> "snorkel", "snorkel", "snorkel", "snor~
-    ## $ DATE                            <dttm> 2008-09-10, 2008-09-23, 2008-09-23, 2~
-    ## $ POINT_X                         <dbl> -122.5247, -122.5339, -121.7493, -122.~
-    ## $ POINT_Y                         <dbl> 40.51367, 40.57413, 40.71537, 40.56912~
-    ## $ REACH                           <chr> "R3", "R2", "R2", "R2", "R2", "R4", "R~
-    ## $ River_Mile                      <dbl> 10.968258, 15.600476, 14.922846, 15.22~
-    ## $ OBS_ONLY                        <chr> "NO", "NO", "NO", "YES", "YES", "NO", ~
-    ## $ YEAR_ID                         <chr> "08", "08", "08", "08", "08", "08", "0~
-    ## $ SAMPLE_ID                       <dbl> 60024, 60008, 60009, 69000, 69001, 600~
-    ## $ SPECIES                         <chr> "Chinook", "Chinook", "Chinook", "Chin~
-    ## $ ADIPOSE                         <chr> "PRESENT", "PRESENT", "PRESENT", "PRES~
-    ## $ FORK_LEN__                      <chr> NA, "825", "665", NA, NA, "689", "770"~
-    ## $ CONDIT                          <chr> "UNKNOWN", "NON-FRESH", "NON-FRESH", "~
-    ## $ TIS_ETH                         <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO ~
-    ## $ TIS_DRY                         <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO ~
-    ## $ SCALE                           <chr> "YES", "YES", "YES", "NO", "NO", "YES"~
-    ## $ OTOLITH_ST                      <chr> "NO", "YES", "YES", "NO", "NO", "YES",~
-    ## $ GENDER                          <chr> "UNKNOWN", "MALE", "FEMALE", "UNKNOWN"~
-    ## $ WHY_GENDER                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ SPAWN_ST                        <chr> "UNKNOWN", "UNKNOWN", "PARTIAL", "UNKN~
-    ## $ WHY_NOT_SP                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ HEAD_TAK                        <chr> "NO", "NO", "NO", "NO", "NO", "NO", "N~
-    ## $ TAG_TYPE                        <chr> "NONE", "NONE", "NONE", "NONE", "NONE"~
-    ## $ Photo                           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ COMMENTS                        <chr> "old placer bridge", NA, "Many undevel~
-    ## $ `CWT Code`                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ Run                             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ BY                              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ `Release Location`              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ Hatchery                        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ AGE                             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ `Mark Rate`                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ `Verification and CWT comments` <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ `Run Call`                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
-    ## $ Genetic                         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA~
+    ## $ `QC Date`                       <dttm> 2019-02-08, 2019-02-08, 2019-02-08, 2…
+    ## $ `QC Type`                       <chr> "Shapefile/Annual Excel", "Shapefile/A…
+    ## $ Inspector                       <chr> "RS", "RS", "RS", "RS", "RS", "RS", "R…
+    ## $ Year                            <dbl> 2008, 2008, 2008, 2008, 2008, 2008, 20…
+    ## $ Survey                          <chr> "snorkel", "snorkel", "snorkel", "snor…
+    ## $ Type                            <chr> "snorkel", "snorkel", "snorkel", "snor…
+    ## $ DATE                            <dttm> 2008-09-10, 2008-09-23, 2008-09-23, 2…
+    ## $ POINT_X                         <dbl> -122.5247, -122.5339, -121.7493, -122.…
+    ## $ POINT_Y                         <dbl> 40.51367, 40.57413, 40.71537, 40.56912…
+    ## $ REACH                           <chr> "R3", "R2", "R2", "R2", "R2", "R4", "R…
+    ## $ River_Mile                      <dbl> 10.968258, 15.600476, 14.922846, 15.22…
+    ## $ OBS_ONLY                        <chr> "NO", "NO", "NO", "YES", "YES", "NO", …
+    ## $ YEAR_ID                         <chr> "08", "08", "08", "08", "08", "08", "0…
+    ## $ SAMPLE_ID                       <dbl> 60024, 60008, 60009, 69000, 69001, 600…
+    ## $ SPECIES                         <chr> "Chinook", "Chinook", "Chinook", "Chin…
+    ## $ ADIPOSE                         <chr> "PRESENT", "PRESENT", "PRESENT", "PRES…
+    ## $ FORK_LEN__                      <chr> NA, "825", "665", NA, NA, "689", "770"…
+    ## $ CONDIT                          <chr> "UNKNOWN", "NON-FRESH", "NON-FRESH", "…
+    ## $ TIS_ETH                         <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO …
+    ## $ TIS_DRY                         <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO …
+    ## $ SCALE                           <chr> "YES", "YES", "YES", "NO", "NO", "YES"…
+    ## $ OTOLITH_ST                      <chr> "NO", "YES", "YES", "NO", "NO", "YES",…
+    ## $ GENDER                          <chr> "UNKNOWN", "MALE", "FEMALE", "UNKNOWN"…
+    ## $ WHY_GENDER                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ SPAWN_ST                        <chr> "UNKNOWN", "UNKNOWN", "PARTIAL", "UNKN…
+    ## $ WHY_NOT_SP                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ HEAD_TAK                        <chr> "NO", "NO", "NO", "NO", "NO", "NO", "N…
+    ## $ TAG_TYPE                        <chr> "NONE", "NONE", "NONE", "NONE", "NONE"…
+    ## $ Photo                           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ COMMENTS                        <chr> "old placer bridge", NA, "Many undevel…
+    ## $ `CWT Code`                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ Run                             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ BY                              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ `Release Location`              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ Hatchery                        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ AGE                             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ `Mark Rate`                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ `Verification and CWT comments` <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ `Run Call`                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+    ## $ Genetic                         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
 
 ``` r
 cleaner_data <- raw_carcass_data %>% 
@@ -120,43 +121,46 @@ cleaner_data <- raw_carcass_data %>%
   glimpse()
 ```
 
-    ## Warning in mask$eval_all_mutate(quo): NAs introduced by coercion
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `age = as.numeric(age)`.
+    ## Caused by warning:
+    ## ! NAs introduced by coercion
 
     ## Rows: 561
     ## Columns: 33
-    ## $ type                          <chr> "snorkel", "snorkel", "snorkel", "snorke~
-    ## $ date                          <date> 2008-09-10, 2008-09-23, 2008-09-23, 200~
-    ## $ longitude                     <dbl> -122.5247, -122.5339, -121.7493, -122.53~
-    ## $ latitude                      <dbl> 40.51367, 40.57413, 40.71537, 40.56912, ~
-    ## $ reach                         <chr> "R3", "R2", "R2", "R2", "R2", "R4", "R4"~
-    ## $ river_mile                    <dbl> 10.968258, 15.600476, 14.922846, 15.2230~
-    ## $ obs_only                      <chr> "NO", "NO", "NO", "YES", "YES", "NO", "N~
-    ## $ sample_id                     <chr> "60024", "60008", "60009", "69000", "690~
-    ## $ adipose                       <chr> "PRESENT", "PRESENT", "PRESENT", "PRESEN~
-    ## $ fork_length                   <dbl> NA, 825, 665, NA, NA, 689, 770, 725, 712~
-    ## $ condition                     <chr> "UNKNOWN", "NON-FRESH", "NON-FRESH", "NO~
-    ## $ tis_eth                       <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO SA~
-    ## $ tis_dry                       <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO SA~
-    ## $ scale                         <chr> "YES", "YES", "YES", "NO", "NO", "YES", ~
-    ## $ otolith_st                    <chr> "NO", "YES", "YES", "NO", "NO", "YES", "~
-    ## $ sex                           <chr> "UNKNOWN", "MALE", "FEMALE", "UNKNOWN", ~
-    ## $ why_sex_unknown               <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ spawn_status                  <chr> "UNKNOWN", "UNKNOWN", "PARTIAL", "UNKNOW~
-    ## $ why_not_sp                    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ head_retrieved                <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO"~
-    ## $ tag_type                      <chr> "NONE", "NONE", "NONE", "NONE", "NONE", ~
-    ## $ photo                         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ comments                      <chr> "old placer bridge", NA, "Many undevelop~
-    ## $ cwt_code                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ run                           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ brood_year                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ release_location              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ hatchery                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ age                           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ mark_rate                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ verification_and_cwt_comments <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ run_call                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ genetic                       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ type                          <chr> "snorkel", "snorkel", "snorkel", "snorke…
+    ## $ date                          <date> 2008-09-10, 2008-09-23, 2008-09-23, 200…
+    ## $ longitude                     <dbl> -122.5247, -122.5339, -121.7493, -122.53…
+    ## $ latitude                      <dbl> 40.51367, 40.57413, 40.71537, 40.56912, …
+    ## $ reach                         <chr> "R3", "R2", "R2", "R2", "R2", "R4", "R4"…
+    ## $ river_mile                    <dbl> 10.968258, 15.600476, 14.922846, 15.2230…
+    ## $ obs_only                      <chr> "NO", "NO", "NO", "YES", "YES", "NO", "N…
+    ## $ sample_id                     <chr> "60024", "60008", "60009", "69000", "690…
+    ## $ adipose                       <chr> "PRESENT", "PRESENT", "PRESENT", "PRESEN…
+    ## $ fork_length                   <dbl> NA, 825, 665, NA, NA, 689, 770, 725, 712…
+    ## $ condition                     <chr> "UNKNOWN", "NON-FRESH", "NON-FRESH", "NO…
+    ## $ tis_eth                       <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO SA…
+    ## $ tis_dry                       <chr> "FIN", "FIN", "FIN", "NO SAMPLE", "NO SA…
+    ## $ scale                         <chr> "YES", "YES", "YES", "NO", "NO", "YES", …
+    ## $ otolith_st                    <chr> "NO", "YES", "YES", "NO", "NO", "YES", "…
+    ## $ sex                           <chr> "UNKNOWN", "MALE", "FEMALE", "UNKNOWN", …
+    ## $ why_sex_unknown               <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ spawn_status                  <chr> "UNKNOWN", "UNKNOWN", "PARTIAL", "UNKNOW…
+    ## $ why_not_sp                    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ head_retrieved                <chr> "NO", "NO", "NO", "NO", "NO", "NO", "NO"…
+    ## $ tag_type                      <chr> "NONE", "NONE", "NONE", "NONE", "NONE", …
+    ## $ photo                         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ comments                      <chr> "old placer bridge", NA, "Many undevelop…
+    ## $ cwt_code                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ run                           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ brood_year                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ release_location              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ hatchery                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ age                           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ mark_rate                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ verification_and_cwt_comments <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ run_call                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ genetic                       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
 
 ## Data Dictionary
 
@@ -209,41 +213,41 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
 knitr::kable(data_dictionary)
 ```
 
-| variables                        | description                                                                                                                   | percent\_na |
-|:---------------------------------|:------------------------------------------------------------------------------------------------------------------------------|------------:|
-| type                             | Survey type                                                                                                                   |           0 |
-| date                             | Date of sampling                                                                                                              |           0 |
-| longitude                        | GPS X point                                                                                                                   |           0 |
-| latitude                         | GPS Y point                                                                                                                   |           0 |
-| reach                            | Reach number (1-7); other location                                                                                            |           0 |
-| river\_mile                      | River mile number                                                                                                             |           0 |
-| obs\_only                        | True if the fish was observed and not sampled (T/F)                                                                           |           0 |
-| sample\_id                       | Unique sample ID number                                                                                                       |           1 |
-| adipose                          | Adipose status (absent, present, unknown)                                                                                     |           0 |
-| fork\_length                     | Fork length of fish in mm                                                                                                     |          16 |
-| condition                        | Condition of fish (fresh or not fresh)                                                                                        |           0 |
-| tis\_eth                         | ? TODO                                                                                                                        |           0 |
-| tis\_dry                         | ? TODO                                                                                                                        |           0 |
-| scale                            | True if a scale sample was taken                                                                                              |           0 |
-| otolith\_st                      | True if an otolith sample was taken                                                                                           |           0 |
-| sex                              | Male, Female, Unknown                                                                                                         |           0 |
-| why\_sex\_unknown                | Why fish sex is unknown (decomposed, predation, NA)                                                                           |          90 |
-| spawn\_status                    | Spawning status (partial, spawned, unspawned)                                                                                 |           1 |
-| why\_not\_sp                     | Why not spawned (decomposed, male, male always unknown, most eggs present, observed only, predation, prespawn, too decomposed |          21 |
-| head\_retrieved                  | True if fish head was retrieved                                                                                               |           0 |
-| tag\_type                        | Type of tag, if any present (Floy, external mark)                                                                             |           1 |
-| photo                            | Code describing if a photo of the carcass was taken, TODO get code definitions                                                |          51 |
-| comments                         | General comments from survey crew                                                                                             |          65 |
-| cwt\_code                        | Coded wire tag number                                                                                                         |          87 |
-| run                              | Run of Chinook (spring, fall, late-fall, winter, hybrid, unknown)                                                             |          90 |
-| brood\_year                      | Brood year of carcass found                                                                                                   |          90 |
-| release\_location                | Location where hatchery smolts were released, TODO figure out how this is relevent to carcass data                            |          90 |
-| hatchery                         | Hatchery that produced the fish (Coleman hatchery or feather river hatchery)                                                  |          90 |
-| age                              | Age of fish                                                                                                                   |          80 |
-| mark\_rate                       | Rate at which Hatchery Fish were marked, TODO figure out what this means                                                      |          98 |
-| verification\_and\_cwt\_comments | CWT code and relevant information, TODO clean this up                                                                         |          99 |
-| run\_call                        | Run call based on field data, TODO differnciate from other run                                                                |          68 |
-| genetic                          | Type of genetics taken, TODO elaborate on options                                                                             |          89 |
+| variables                     | description                                                                                                                   | percent_na |
+|:------------------------------|:------------------------------------------------------------------------------------------------------------------------------|-----------:|
+| type                          | Survey type                                                                                                                   |          0 |
+| date                          | Date of sampling                                                                                                              |          0 |
+| longitude                     | GPS X point                                                                                                                   |          0 |
+| latitude                      | GPS Y point                                                                                                                   |          0 |
+| reach                         | Reach number (1-7); other location                                                                                            |          0 |
+| river_mile                    | River mile number                                                                                                             |          0 |
+| obs_only                      | True if the fish was observed and not sampled (T/F)                                                                           |          0 |
+| sample_id                     | Unique sample ID number                                                                                                       |          1 |
+| adipose                       | Adipose status (absent, present, unknown)                                                                                     |          0 |
+| fork_length                   | Fork length of fish in mm                                                                                                     |         16 |
+| condition                     | Condition of fish (fresh or not fresh)                                                                                        |          0 |
+| tis_eth                       | ? TODO                                                                                                                        |          0 |
+| tis_dry                       | ? TODO                                                                                                                        |          0 |
+| scale                         | True if a scale sample was taken                                                                                              |          0 |
+| otolith_st                    | True if an otolith sample was taken                                                                                           |          0 |
+| sex                           | Male, Female, Unknown                                                                                                         |          0 |
+| why_sex_unknown               | Why fish sex is unknown (decomposed, predation, NA)                                                                           |         90 |
+| spawn_status                  | Spawning status (partial, spawned, unspawned)                                                                                 |          1 |
+| why_not_sp                    | Why not spawned (decomposed, male, male always unknown, most eggs present, observed only, predation, prespawn, too decomposed |         21 |
+| head_retrieved                | True if fish head was retrieved                                                                                               |          0 |
+| tag_type                      | Type of tag, if any present (Floy, external mark)                                                                             |          1 |
+| photo                         | Code describing if a photo of the carcass was taken, TODO get code definitions                                                |         51 |
+| comments                      | General comments from survey crew                                                                                             |         65 |
+| cwt_code                      | Coded wire tag number                                                                                                         |         87 |
+| run                           | Run of Chinook (spring, fall, late-fall, winter, hybrid, unknown)                                                             |         90 |
+| brood_year                    | Brood year of carcass found                                                                                                   |         90 |
+| release_location              | Location where hatchery smolts were released, TODO figure out how this is relevent to carcass data                            |         90 |
+| hatchery                      | Hatchery that produced the fish (Coleman hatchery or feather river hatchery)                                                  |         90 |
+| age                           | Age of fish                                                                                                                   |         80 |
+| mark_rate                     | Rate at which Hatchery Fish were marked, TODO figure out what this means                                                      |         98 |
+| verification_and_cwt_comments | CWT code and relevant information, TODO clean this up                                                                         |         99 |
+| run_call                      | Run call based on field data, TODO differnciate from other run                                                                |         68 |
+| genetic                       | Type of genetics taken, TODO elaborate on options                                                                             |         89 |
 
 ## Explore date
 
@@ -256,7 +260,7 @@ summary(cleaner_data$date)
 
 **NA and Unknown Values**
 
--   0 % of values in the `date` column are NA.
+- 0 % of values in the `date` column are NA.
 
 ## Explore Categorical Data
 
@@ -295,7 +299,7 @@ table(cleaner_data$type)
 
 **NA and Unknown Values**
 
--   0 % of values in the `survey` column are NA.
+- 0 % of values in the `survey` column are NA.
 
 ### Variable: `reach`
 
@@ -311,7 +315,7 @@ table(cleaner_data$reach)
 
 **NA and Unknown Values**
 
--   0 % of values in the `reach` column are NA.
+- 0 % of values in the `reach` column are NA.
 
 ### Variable: `obs_only`
 
@@ -331,7 +335,7 @@ table(cleaner_data$obs_only)
 
 **NA and Unknown Values**
 
--   0 % of values in the `obs_only` column are NA.
+- 0 % of values in the `obs_only` column are NA.
 
 ### Variable: `adipose`
 
@@ -349,7 +353,7 @@ table(cleaner_data$adipose)
 
 **NA and Unknown Values**
 
--   0 % of values in the `adipose` column are NA.
+- 0 % of values in the `adipose` column are NA.
 
 ### Variable: `condition`
 
@@ -368,7 +372,7 @@ table(cleaner_data$condition)
 
 **NA and Unknown Values**
 
--   1.2 % of values in the `condition` column are NA.
+- 1.2 % of values in the `condition` column are NA.
 
 ### Variable: `tis_eth`
 
@@ -386,7 +390,7 @@ table(cleaner_data$tis_eth)
 
 **NA and Unknown Values**
 
--   0 % of values in the `tis_eth` column are NA.
+- 0 % of values in the `tis_eth` column are NA.
 
 ### Variable: `tis_dry`
 
@@ -404,7 +408,7 @@ table(cleaner_data$tis_dry)
 
 **NA and Unknown Values**
 
--   0 % of values in the `tis_dry` column are NA.
+- 0 % of values in the `tis_dry` column are NA.
 
 ### Variable: `scale`
 
@@ -426,7 +430,7 @@ table(cleaner_data$scale)
 
 **NA and Unknown Values**
 
--   0 % of values in the `scale` column are NA.
+- 0 % of values in the `scale` column are NA.
 
 ### Variable: `otolith_st`
 
@@ -448,7 +452,7 @@ table(cleaner_data$otolith_st)
 
 **NA and Unknown Values**
 
--   0 % of values in the `otolith_st` column are NA.
+- 0 % of values in the `otolith_st` column are NA.
 
 ### Variable: `sex`
 
@@ -467,7 +471,7 @@ table(cleaner_data$sex)
 
 **NA and Unknown Values**
 
--   12.1 % of values in the `sex` column are NA.
+- 12.1 % of values in the `sex` column are NA.
 
 ### Variable: `why_sex_unknown`
 
@@ -485,7 +489,7 @@ table(cleaner_data$why_sex_unknown)
 
 **NA and Unknown Values**
 
--   90.2 % of values in the `why_sex_unknown` column are NA.
+- 90.2 % of values in the `why_sex_unknown` column are NA.
 
 ### Variable: `spawn_status`
 
@@ -504,7 +508,7 @@ table(cleaner_data$spawn_status)
 
 **NA and Unknown Values**
 
--   79.9 % of values in the `spawn_status` column are NA.
+- 79.9 % of values in the `spawn_status` column are NA.
 
 ### Variable: `why_not_sp`
 
@@ -532,7 +536,7 @@ table(cleaner_data$why_not_sp)
 
 **NA and Unknown Values**
 
--   79.9 % of values in the `spawn_status` column are NA.
+- 79.9 % of values in the `spawn_status` column are NA.
 
 ### Variable: `head_retrieved`
 
@@ -555,7 +559,7 @@ table(cleaner_data$head_retrieved)
 
 **NA and Unknown Values**
 
--   0 % of values in the `head_retrieved` column are NA.
+- 0 % of values in the `head_retrieved` column are NA.
 
 ### Variable: `tag_type`
 
@@ -579,7 +583,7 @@ table(cleaner_data$tag_type)
 
 **NA and Unknown Values**
 
--   1.2 % of values in the `tag_type` column are NA.
+- 1.2 % of values in the `tag_type` column are NA.
 
 ### Variable: `photo`
 
@@ -605,7 +609,7 @@ pictures?
 
 **NA and Unknown Values**
 
--   51.3 % of values in the `photo` column are NA.
+- 51.3 % of values in the `photo` column are NA.
 
 ### Variable: `comments`
 
@@ -618,7 +622,7 @@ unique(cleaner_data$comments[1:5])
 
 **NA and Unknown Values**
 
--   64.5 % of values in the `comments` column are NA.
+- 64.5 % of values in the `comments` column are NA.
 
 ### Variable: `cwt_code`
 
@@ -644,7 +648,7 @@ There are 36 unique coded wire tags.
 
 **NA and Unknown Values**
 
--   86.6 % of values in the `cwt_code` column are NA.
+- 86.6 % of values in the `cwt_code` column are NA.
 
 ### Variable: `run`
 
@@ -664,7 +668,7 @@ table(cleaner_data$run)
 
 **NA and Unknown Values**
 
--   90 % of values in the `run` column are NA.
+- 90 % of values in the `run` column are NA.
 
 ### Variable: `release_location`
 
@@ -698,7 +702,7 @@ table(cleaner_data$release_location)
 
 **NA and Unknown Values**
 
--   90 % of values in the `release_location` column are NA.
+- 90 % of values in the `release_location` column are NA.
 
 ### Variable: `hatchery`
 
@@ -722,7 +726,7 @@ table(cleaner_data$hatchery)
 
 **NA and Unknown Values**
 
--   90 % of values in the `hatchery` column are NA.
+- 90 % of values in the `hatchery` column are NA.
 
 ### Variable: `verification_and_cwt_comments`
 
@@ -740,8 +744,7 @@ unique(cleaner_data$verification_and_cwt_comments)[1:5]
 
 **NA and Unknown Values**
 
--   98.8 % of values in the `verification_and_cwt_comments` column are
-    NA.
+- 98.8 % of values in the `verification_and_cwt_comments` column are NA.
 
 ### Variable: `sample_id`
 
@@ -757,7 +760,7 @@ There are 260 unique sample IDs.
 
 **NA and Unknown Values**
 
--   1.2 % of values in the `sample_id` column are NA.
+- 1.2 % of values in the `sample_id` column are NA.
 
 ### Variable: `run_call`
 
@@ -780,7 +783,7 @@ table(cleaner_data$run_call)
 
 **NA and Unknown Values**
 
--   67.9 % of values in the `run_call` column are NA.
+- 67.9 % of values in the `run_call` column are NA.
 
 ### Variable: `genetic`
 
@@ -799,7 +802,7 @@ TODO: metadata need descriptions on these variables
 
 **NA and Unknown Values**
 
--   88.6 % of values in the `genetic` column are NA.
+- 88.6 % of values in the `genetic` column are NA.
 
 ## Explore Numerical Data
 
@@ -828,9 +831,9 @@ summary(cleaner_data$latitude)
 
 **NA and Unknown Values**
 
--   0.2 % of values in the `longitude` column are NA.
+- 0.2 % of values in the `longitude` column are NA.
 
--   0.2 % of values in the `latitude` column are NA.
+- 0.2 % of values in the `latitude` column are NA.
 
 ## Variable: `river_mile`
 
@@ -843,11 +846,11 @@ cleaner_data %>%
   theme_minimal()
 ```
 
-    ## Warning: Removed 1 rows containing missing values (geom_point).
+    ## Warning: Removed 1 rows containing missing values (`geom_point()`).
 
 ![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
-**Numeric Summary of river\_mile over Period of Time**
+**Numeric Summary of river_mile over Period of Time**
 
 ``` r
 summary(cleaner_data$river_mile)
@@ -858,7 +861,7 @@ summary(cleaner_data$river_mile)
 
 **NA and Unknown Values**
 
--   0.2 % of values in the `river_mile` column are NA.
+- 0.2 % of values in the `river_mile` column are NA.
 
 ### Variable: `brood_year`
 
@@ -873,11 +876,11 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 505 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 505 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
 
-**Numeric Summary of brood\_year over Period of Time**
+**Numeric Summary of brood_year over Period of Time**
 
 ``` r
 summary(cleaner_data$brood_year)
@@ -888,7 +891,7 @@ summary(cleaner_data$brood_year)
 
 **NA and Unknown Values**
 
--   90 % of values in the `brood_year` column are NA.
+- 90 % of values in the `brood_year` column are NA.
 
 ### Variable: `fork_length`
 
@@ -904,11 +907,11 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 89 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 89 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
 
-**Numeric Summary of fork\_length over Period of Time**
+**Numeric Summary of fork_length over Period of Time**
 
 ``` r
 summary(cleaner_data$fork_length)
@@ -919,7 +922,7 @@ summary(cleaner_data$fork_length)
 
 **NA and Unknown Values**
 
--   15.9 % of values in the `fork_length` column are NA.
+- 15.9 % of values in the `fork_length` column are NA.
 
 ### Variable: `age`
 
@@ -933,7 +936,7 @@ cleaner_data %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-    ## Warning: Removed 449 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 449 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
 
@@ -948,7 +951,7 @@ summary(cleaner_data$age)
 
 **NA and Unknown Values**
 
--   80 % of values in the `age` column are NA.
+- 80 % of values in the `age` column are NA.
 
 ### Variable: `mark_rate`
 
@@ -962,7 +965,7 @@ cleaner_data %>%
   labs(title = "Distribution of Mark Rate")
 ```
 
-    ## Warning: Removed 549 rows containing non-finite values (stat_bin).
+    ## Warning: Removed 549 rows containing non-finite values (`stat_bin()`).
 
 ![](clear_creek_carcass_survey_qc_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
 
@@ -975,31 +978,31 @@ summary(cleaner_data$mark_rate)
 
 **NA and Unknown Values**
 
--   97.9 % of values in the `mark_rate` column are NA.
+- 97.9 % of values in the `mark_rate` column are NA.
 
 ### Summary of Identified Issues
 
--   Some columns need better metadata description (tis\_eth, tis\_dry,
-    photo, release\_location, mark\_rate,
-    verification\_and\_cwt\_comments, run\_call)
--   Some columns such as ‘run’ and ‘run\_call’ seem to contain the same
-    type of information but have very different values. TODO need to
-    contact Ryan for more details on these columns.
+- Some columns need better metadata description (tis_eth, tis_dry,
+  photo, release_location, mark_rate, verification_and_cwt_comments,
+  run_call)
+- Some columns such as ‘run’ and ‘run_call’ seem to contain the same
+  type of information but have very different values. TODO need to
+  contact Ryan for more details on these columns.
 
 ## Next steps
 
--   Work on data modeling to identify important variables needed for
-    carcass datasets.
+- Work on data modeling to identify important variables needed for
+  carcass datasets.
 
 ### Columns to remove
 
--   Suggest removing some of the location variables we currently have:
-    `longitude`, `latitude`, `reach` and `river_mile`.
--   Suggest removing one of the run columns, either `run` or `run_call`
-    should be removed
--   `genetics`, `verification_and_cwt_comments`, `mark_rate`,
-    `hatchery`, `release_location`, `brood_year`, `comments` and `photo`
-    all contain a lot of NA values. These may not be needed.
+- Suggest removing some of the location variables we currently have:
+  `longitude`, `latitude`, `reach` and `river_mile`.
+- Suggest removing one of the run columns, either `run` or `run_call`
+  should be removed
+- `genetics`, `verification_and_cwt_comments`, `mark_rate`, `hatchery`,
+  `release_location`, `brood_year`, `comments` and `photo` all contain a
+  lot of NA values. These may not be needed.
 
 ### Save Cleaned data back to google cloud
 
@@ -1009,39 +1012,39 @@ clear_carcass <- cleaner_data %>% glimpse
 
     ## Rows: 561
     ## Columns: 33
-    ## $ type                          <chr> "snorkel", "snorkel", "snorkel", "snorke~
-    ## $ date                          <date> 2008-09-10, 2008-09-23, 2008-09-23, 200~
-    ## $ longitude                     <dbl> -122.5247, -122.5339, -121.7493, -122.53~
-    ## $ latitude                      <dbl> 40.51367, 40.57413, 40.71537, 40.56912, ~
-    ## $ reach                         <chr> "R3", "R2", "R2", "R2", "R2", "R4", "R4"~
-    ## $ river_mile                    <dbl> 10.968258, 15.600476, 14.922846, 15.2230~
-    ## $ obs_only                      <lgl> FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, ~
-    ## $ sample_id                     <chr> "60024", "60008", "60009", "69000", "690~
-    ## $ adipose                       <chr> "present", "present", "present", "presen~
-    ## $ fork_length                   <dbl> NA, 825, 665, NA, NA, 689, 770, 725, 712~
-    ## $ condition                     <chr> NA, "non-fresh", "non-fresh", "non-fresh~
-    ## $ tis_eth                       <chr> "fin", "fin", "fin", "no sample", "no sa~
-    ## $ tis_dry                       <chr> "fin", "fin", "fin", "no sample", "no sa~
-    ## $ scale                         <lgl> TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TR~
-    ## $ otolith_st                    <lgl> FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, T~
-    ## $ sex                           <chr> NA, "male", "female", NA, NA, "female", ~
-    ## $ why_sex_unknown               <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ spawn_status                  <chr> NA, NA, "partial", NA, NA, "spawned", NA~
-    ## $ why_not_sp                    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ head_retrieved                <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE~
-    ## $ tag_type                      <chr> "none", "none", "none", "none", "none", ~
-    ## $ photo                         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ comments                      <chr> "old placer bridge", NA, "Many undevelop~
-    ## $ cwt_code                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ run                           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ brood_year                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ release_location              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ hatchery                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ age                           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ mark_rate                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ verification_and_cwt_comments <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ run_call                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ genetic                       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ type                          <chr> "snorkel", "snorkel", "snorkel", "snorke…
+    ## $ date                          <date> 2008-09-10, 2008-09-23, 2008-09-23, 200…
+    ## $ longitude                     <dbl> -122.5247, -122.5339, -121.7493, -122.53…
+    ## $ latitude                      <dbl> 40.51367, 40.57413, 40.71537, 40.56912, …
+    ## $ reach                         <chr> "R3", "R2", "R2", "R2", "R2", "R4", "R4"…
+    ## $ river_mile                    <dbl> 10.968258, 15.600476, 14.922846, 15.2230…
+    ## $ obs_only                      <lgl> FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, …
+    ## $ sample_id                     <chr> "60024", "60008", "60009", "69000", "690…
+    ## $ adipose                       <chr> "present", "present", "present", "presen…
+    ## $ fork_length                   <dbl> NA, 825, 665, NA, NA, 689, 770, 725, 712…
+    ## $ condition                     <chr> NA, "non-fresh", "non-fresh", "non-fresh…
+    ## $ tis_eth                       <chr> "fin", "fin", "fin", "no sample", "no sa…
+    ## $ tis_dry                       <chr> "fin", "fin", "fin", "no sample", "no sa…
+    ## $ scale                         <lgl> TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TR…
+    ## $ otolith_st                    <lgl> FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, T…
+    ## $ sex                           <chr> NA, "male", "female", NA, NA, "female", …
+    ## $ why_sex_unknown               <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ spawn_status                  <chr> NA, NA, "partial", NA, NA, "spawned", NA…
+    ## $ why_not_sp                    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ head_retrieved                <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE…
+    ## $ tag_type                      <chr> "none", "none", "none", "none", "none", …
+    ## $ photo                         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ comments                      <chr> "old placer bridge", NA, "Many undevelop…
+    ## $ cwt_code                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ run                           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ brood_year                    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ release_location              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ hatchery                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ age                           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ mark_rate                     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ verification_and_cwt_comments <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ run_call                      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ genetic                       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
 
 ``` r
 # gcs_list_objects()
