@@ -1,0 +1,268 @@
+---
+title: "Redd locations below RSTs"
+author: "FlowWest"
+date: "11 November 2023"
+output: 
+  html_document:
+    default
+---
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(sf)
+library(lubridate)
+library(leaflet)
+```
+
+```{r message=FALSE, warning=FALSE}
+selected_streams <- c("battle creek", "clear creek", "feather river")
+```
+
+## Import RST locations
+
+```{r message=FALSE, warning=FALSE}
+rst_trap_locations <- 
+  read_csv(here::here("data", "standard-format-data", "rst_trap_locations.csv")) |>
+  filter(!is.na(longitude) & !is.na(latitude)) |>
+  st_as_sf(coords = c("longitude", "latitude")) |>
+  filter(stream %in% selected_streams) |>
+  rename(rst_river_mile = river_mile, rst_site = site) |>
+  group_by(stream, rst_site, rst_river_mile) |>
+  summarize() |>
+  mutate(geometry = st_centroid(geometry))
+```
+## Import redd locations
+
+```{r message=FALSE, warning=FALSE}
+redds_raw <- 
+  read_csv(here::here("data", "standard-format-data", "standard_daily_redd.csv")) |>
+  mutate(uid = row_number()) |>
+  # remove items that have missing or invalid lat/lon data
+  filter(!is.na(longitude) & !is.na(latitude)) |>
+  filter(!(stream=="battle creek" & date <= ymd("2020-09-30"))) |>
+  # fix records where the lat/lon are expressed as integers
+  mutate(latitude = case_when(floor(longitude/10000)==121 ~ latitude / 10000, TRUE ~ latitude),
+         longitude = case_when(floor(longitude/10000)==121 ~ -longitude / 10000, TRUE ~ longitude),
+  )
+
+# records expressed with decimal degrees
+redds_gcs <- 
+  redds_raw |> 
+  filter(!(longitude>10000)) |>
+  st_as_sf(coords = c("longitude", "latitude")) |>
+  st_set_crs(st_crs("+proj=longlat +datum=WGS84"))
+
+# records expressed with UTM northing/easting
+redds_pcs <-
+  redds_raw |> 
+  filter(longitude > 10000) |>
+  filter(longitude > 500000 & longitude < 700000) |> # removes two obs in Lower Auditorium reach with incorrect coords
+  # fix records where the latitude (northing) / longitude (easting) are off by a factor of 10
+  mutate(latitude = case_when(latitude < 1000000 ~ latitude * 10, TRUE ~ latitude),
+         longitude = case_when(longitude > 1000000 ~ longitude / 10, TRUE ~ longitude),
+         ) |>
+  st_as_sf(coords = c("longitude", "latitude")) |>
+  st_set_crs(st_crs("EPSG:26910")) |> # NAD83 UTM 10N
+  # convert to latitude/longitude to match the other datasets
+  st_transform(st_crs("+proj=longlat +datum=WGS84"))
+
+# combine both
+standard_daily_redd <-
+  bind_rows(redds_gcs, redds_pcs) |>
+  filter(stream %in% selected_streams)
+```
+
+## Import drainage basins for each RST
+
+Retrieved using the following package https://github.com/mheberger/delineator
+
+via web interface: https://mghydro.com/watersheds/
+
+This will take a while the first time you run it
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+folder_path <- here::here("analysis","rst_catchments")
+
+catchments <- 
+  paste(folder_path, list.files(folder_path), sep="/") |> 
+  setNames(list.files(folder_path)) |>
+  map(st_read) |> 
+  bind_rows(.id = "filename") |>
+  separate_wider_delim(filename, "_", names=c("stream", "rst_site")) |>
+  mutate(rst_site = rst_site |> str_replace(".gpkg", "") |> str_replace("-", " ")) |>
+  select(stream, rst_site, geometry = geom) |>
+  st_set_geometry("geometry")
+```
+
+## Preview the inputs on a map
+
+```{r message=FALSE, warning=FALSE}
+  leaflet() |> addTiles() |> 
+  addPolygons(data=catchments, weight=1, fillOpacity=0, popup = ~rst_site) |>
+  addCircleMarkers(data=standard_daily_redd, clusterOptions = markerClusterOptions(), popup = ~uid) |>
+  addMarkers(data=rst_trap_locations, popup = ~rst_site) 
+```
+
+## Spatially join redd locations and RST catchments
+
+example method:
+
+```{r eval=FALSE, include=TRUE}
+# one rst, all redds
+c <- catchments |> head(1) |> pull(geometry)
+standard_daily_redd |> mutate(above_rst = st_intersects(geometry, c, sparse=FALSE)[,1])
+
+# one redd, all catchments
+p <- standard_daily_redd |> head(1) |> pull(geometry)
+catchments |> mutate(contains_point = st_intersects(geometry, p, sparse=FALSE)[,1])
+```
+
+apply to all combinations:
+
+```{r message=FALSE, warning=FALSE}
+calculate_intersections <- function(point_geom) {
+  catchments |> 
+    mutate(contains_point = st_contains(geometry, point_geom, sparse=FALSE)[,1]) |>
+    st_drop_geometry() |>
+    select(rst_site, contains_point) |>
+    deframe()
+}
+
+file_path <- here::here("analysis", "redds_by_rst.Rds")
+if (!file.exists(file_path)) {
+  redds_by_rst_catchment <- standard_daily_redd |>
+    mutate(intersections = map(geometry, calculate_intersections)) |>
+    unnest_wider(col = intersections) |>
+    pivot_longer(cols = catchments$rst_site, names_to="rst_site", values_to="above_rst")
+  redds_by_rst_catchment |> saveRDS(file_path)
+} else {
+  redds_by_rst_catchment <- readRDS(file_path)  
+}
+```
+
+delete the Rds file to re-run the analysis after changing inputs -- it takes a while to run
+
+## Summarize results
+
+```{r message=FALSE, warning=FALSE}
+redds_by_rst_catchment_summary <- 
+  redds_by_rst_catchment |>
+  mutate(date_year = year(date)) |>
+  # filter results to only the valid stream combinations
+  inner_join(rst_trap_locations |> 
+               st_drop_geometry(), 
+             by=join_by(stream, rst_site)) |>
+  filter(!is.na(above_rst)) |>
+  group_by(stream, rst_site, rst_river_mile, date_year) |>
+  summarize(n_obs = n(), 
+            percent_below_rst = 1 - mean(above_rst))
+
+redds_by_rst_catchment_summary |> DT::datatable()
+```
+
+```{r message=FALSE, warning=FALSE}
+redds_by_rst_catchment_summary |> filter(stream=="clear creek") |>
+  ggplot(aes(x = paste0(as.character(date_year),"\n(",n_obs,")"))) + 
+  geom_col(aes(y = percent_below_rst)) +
+  geom_text(aes(y = percent_below_rst, label = paste0(round(percent_below_rst*100),"%")), vjust = -0.5, size=3) +
+  facet_grid(rows=vars(rst_site)) +
+  scale_y_continuous(limits = c(0,1)) +
+  labs(x = "year\n(n)", y = "percent below rotary screw trap", title="Clear Creek")
+```
+
+```{r message=FALSE, warning=FALSE}
+redds_by_rst_catchment_summary |> filter(stream=="battle creek") |>
+  ggplot(aes(x = paste0(as.character(date_year),"\n(",n_obs,")"))) + 
+  geom_col(aes(y = percent_below_rst)) +
+  geom_text(aes(y = percent_below_rst, label = paste0(round(percent_below_rst*100),"%")), vjust = -0.5, size=3) +
+  facet_grid(rows=vars(rst_site)) +
+  scale_y_continuous(limits = c(0,1)) +
+  labs(x = "year\n(n)", y = "percent below rotary screw trap", title="Battle Creek")
+```
+
+```{r message=FALSE, warning=FALSE}
+redds_by_rst_catchment_summary |> filter(stream=="feather river") |>
+  ggplot(aes(x = paste0(as.character(date_year),"\n(",n_obs,")"))) + 
+  geom_col(aes(y = percent_below_rst)) +
+  geom_text(aes(y = percent_below_rst, label = paste0(round(percent_below_rst*100),"%")), vjust = -0.5, size=3) +
+  facet_grid(rows=vars(-rst_river_mile, rst_site)) +
+  scale_y_continuous(limits = c(0,2), breaks=c(0,1)) +
+  labs(x = "year\n(n)", y = "percent below rotary screw trap", title="Feather River")
+```
+
+## Remaining data issues 
+
+* Some years are NA
+
+* ucc RST is missing river mile
+
+* Coordinates for feather river redds 2012-2013 are off. This is influencing the results.
+
+```{r message=FALSE, warning=FALSE}
+leaflet() |> addTiles() |> 
+  addCircleMarkers(data=redds_raw |> filter(stream=="feather river" & date<ymd("2013-12-31"))) |> #, clusterOptions = markerClusterOptions(), popup = ~uid) |>
+  addMarkers(data=rst_trap_locations |> filter(stream=="feather river"), popup = ~rst_site) 
+```
+
+```{r}
+knitr::knit_exit()
+```
+
+====================================================
+
+# TEST: Bring in river miles to fill in empty data
+
+Need to make sure the river miles are using the same scale before being able to trust this result.
+
+```{r message=FALSE, warning=FALSE}
+sites <- read_csv(here::here("data", "standard-format-data", "rst_trap_locations.csv")) |>
+  filter(stream %in% selected_streams) |>   
+  rename(rst_river_mile = river_mile) |>
+  group_by(stream, site, rst_river_mile) |> 
+  summarize() |>
+  rename(rst_site = site)
+
+redds <-  read_csv(here::here("data", "standard-format-data", "standard_daily_redd.csv")) |>
+  mutate(uid = row_number()) |>
+  filter(stream %in% selected_streams) 
+  
+redds_by_rst_rivermile <- sites |>
+  inner_join(redds, by = join_by(stream)) |>
+  mutate(date_year = year(date)) |>
+  mutate(above_rst = river_mile > rst_river_mile) 
+
+redds_by_rst_rivermile_summary <- redds_by_rst_rivermile |>
+  group_by(stream, rst_site, rst_river_mile, year) |>
+  filter(!is.na(above_rst)) |>
+  summarize(n_obs = n(), 
+            percent_below_rst = 1 - mean(above_rst))
+
+redds_by_rst_rivermile_summary
+```
+
+```{r}
+redds_by_rst_summary <- 
+  redds_by_rst_rivermile |> 
+  ungroup() |>
+  select(uid, stream, date, rst_site, above_rst_via_rivermile = above_rst) |> 
+  left_join(redds_by_rst_catchment |> 
+              st_drop_geometry() |> 
+              select(uid, rst_site, above_rst_via_catchment = above_rst), 
+            by = join_by(uid, rst_site)) |>
+  filter(stream %in% selected_streams) |>
+  # filter results to only the valid stream combinations
+  inner_join(rst_trap_locations |> 
+               st_drop_geometry(), 
+             by=join_by(stream, rst_site)) |>
+  mutate(date_year = year(date)) |>
+  #use river miles if available
+  mutate(above_rst = case_when(!is.na(above_rst_via_catchment) ~ above_rst_via_catchment,
+                               TRUE ~ above_rst_via_rivermile)) |>
+  filter(!is.na(above_rst)) |>
+  group_by(stream, rst_site, rst_river_mile, date_year) |>
+  summarize(n_obs = n(), 
+            percent_below_rst = 1 - mean(above_rst))
+
+redds_by_rst_summary
+```
+
