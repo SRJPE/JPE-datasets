@@ -428,14 +428,19 @@ gcs_upload(hatchery_release,
 
 
 # carcass -----------------------------------------------------------------
+# TODO
 # This currently contains both bulk counts and individual carcasses
+# There is still some work to do to clean this up and this data is not a high
+# priority for SR JPE 
 gcs_get_object(object_name = "standard-format-data/standard_carcass.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_carcass.csv",
                overwrite = TRUE)
 carcass_raw <- read_csv("data/standard-format-data/standard_carcass.csv")
 
-
+carcass_reach <- carcass_raw |> 
+  group_by(stream) |> 
+  distinct(reach)
 # carcass_estimates -------------------------------------------------------
 gcs_get_object(object_name = "standard-format-data/standard_carcass_cjs_estimate.csv",
                bucket = gcs_get_global_bucket(),
@@ -443,24 +448,42 @@ gcs_get_object(object_name = "standard-format-data/standard_carcass_cjs_estimate
                overwrite = TRUE)
 carcass_estimates_raw <- read_csv("data/standard-format-data/standard_carcass_cjs_estimate.csv")
 
+carcass_estimates <- carcass_estimates_raw |> 
+  rename(carcass_estimate = spawner_abundance_estimate) |> 
+  # this is so we can join to survey_location
+  mutate(reach = NA) |> 
+  left_join(survey_location, by = c("stream", "reach")) |>
+  select(-c(stream, reach, description)) |>
+  rename(survey_location_id = id) |>
+  
+
 # bulk carcass ------------------------------------------------------------
 # currently not going to use this table. originally designed to separate
 # out bulk counts from individual estimates
 
 # daily_redd --------------------------------------------------------------
-gcs_get_object(object_name = "jpe-model-data/daily_redd.csv",
+gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/jpe-model-data/daily_redd.csv",
+               saveToDisk = "data/standard-format-data/standard_daily_redd.csv",
                overwrite = TRUE)
-daily_redd_raw <- read_csv("data/jpe-model-data/daily_redd.csv")
+daily_redd_raw <- read_csv("data/standard-format-data/standard_daily_redd.csv")
 
+daily_redd <- daily_redd_raw |> 
+  # remove the 100 or entries from feather river where date is unknown
+  # select for chinook 
+  filter(!is.na(date), species %in% c("chinook", "not recorded", "unknown")) |> 
+  select(date, latitude, longitude, reach, river_mile, redd_id, age, age_index,
+         velocity, run, stream)
 
+redd_reach <- daily_redd_raw |> 
+  group_by(stream) |> 
+  distinct(reach)
 # annual_redd -------------------------------------------------------------
-gcs_get_object(object_name = "jpe-model-data/annual_redd.csv",
+gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/jpe-model-data/annual_redd.csv",
+               saveToDisk = "data/standard-format-data/standard_annual_redd.csv",
                overwrite = TRUE)
-annual_redd_raw <- read_csv("data/jpe-model-data/annual_redd.csv")
+annual_redd_raw <- read_csv("data/standard-format-data/standard_annual_redd.csv")
 
 
 # passage_counts ----------------------------------------------------------
@@ -503,6 +526,10 @@ passage_estimates_raw <- read_csv("data/standard-format-data/standard_adult_pass
 # TODO check the run and adipose_clipped of these
 passage_estimate <- passage_estimates_raw |> 
   # survey_location_id
+  # run_id
+  left_join(run, by = c("run" = "definition")) |> 
+  rename(run_id = id) |> 
+  select(-run, -description)   
   
 # holding -----------------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/holding.csv",
@@ -511,4 +538,27 @@ gcs_get_object(object_name = "jpe-model-data/holding.csv",
                overwrite = TRUE)
 holding_raw <- read_csv("data/model-data/holding.csv")
 
+holding_reach <- holding_raw |> 
+  group_by(stream) |> 
+  distinct(reach)
 
+
+# create spreadsheet to QC reach
+reach <- redd_reach |> 
+  mutate(included_redd = T) |> 
+  full_join(holding_reach |> 
+              mutate(included_holding = T)) |> 
+  full_join(carcass_reach |> 
+              mutate(included_carcass = T))
+write_csv(reach, "data/reach_list.csv")
+
+reach_all <- redd_reach |> 
+  bind_rows(holding_reach, carcass_reach) |> 
+  distinct(stream, reach)
+dput(unique(filter(reach_all, stream == "battle creek"))$reach)
+dput(unique(filter(reach_all, stream == "butte creek"))$reach)
+dput(unique(filter(reach_all, stream == "clear creek"))$reach)
+dput(unique(filter(reach_all, stream == "deer creek"))$reach)
+dput(unique(filter(reach_all, stream == "feather river"))$reach)
+dput(filter(annual_redd_raw, stream == "mill creek") |>  distinct(reach))
+dput(unique(filter(reach_all, stream == "yuba river"))$reach)
