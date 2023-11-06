@@ -70,6 +70,28 @@ redds_pcs <-
 standard_daily_redd <-
   bind_rows(redds_gcs, redds_pcs) |>
   filter(stream %in% selected_streams)
+
+# swap out the problematic feather river points with representative locations for these same named reaches
+default_redd_locations <- standard_daily_redd |> 
+  filter(stream=="feather river" & year(date)>=2014 & st_coordinates(standard_daily_redd$geometry)[,1] < -121.6) |> 
+  group_by(reach) |> 
+  summarize() |> 
+  st_centroid() |>
+  rename(geometry_default = geometry) |> 
+  as_tibble()
+standard_daily_redd <- standard_daily_redd |> 
+  left_join(default_redd_locations, by = join_by(reach)) |>
+  mutate(geometry = if_else(stream=="feather river" & #!st_is_empty(geometry_default) &
+                              (year(date) %in% c(NA, 2012, 2013) | (year(date)==2014 & st_coordinates(standard_daily_redd$geometry)[,1] > -121.6)), 
+                            geometry_default, 
+                            geometry)) |>
+  select(-geometry_default) |>
+  # remove any records that had invalid point geometries and that didn't have matches to the default redd locations
+  filter(!st_is_empty(geometry))
+
+# print final counts
+cat("original count of redds including those with invalid geometries", nrow(redds_raw), "\n")
+cat("final count after geometry corrections and filters", nrow(standard_daily_redd), "\n")
 ```
 
 ## Import drainage basins for each RST
@@ -99,7 +121,9 @@ catchments <-
 ```{r message=FALSE, warning=FALSE}
   leaflet() |> addTiles() |> 
   addPolygons(data=catchments, weight=1, fillOpacity=0, popup = ~rst_site) |>
-  addCircleMarkers(data=standard_daily_redd, clusterOptions = markerClusterOptions(), popup = ~uid) |>
+  addCircleMarkers(data=standard_daily_redd, 
+                   clusterOptions = markerClusterOptions(), 
+                   label = ~paste(uid, stream, reach, year)) |>
   addMarkers(data=rst_trap_locations, popup = ~rst_site) 
 ```
 
@@ -134,6 +158,7 @@ if (!file.exists(file_path)) {
     mutate(intersections = map(geometry, calculate_intersections)) |>
     unnest_wider(col = intersections) |>
     pivot_longer(cols = catchments$rst_site, names_to="rst_site", values_to="above_rst")
+  st_geometry(redds_by_rst_catchment) <- redds_by_rst_catchment$geometry
   redds_by_rst_catchment |> saveRDS(file_path)
 } else {
   redds_by_rst_catchment <- readRDS(file_path)  
@@ -143,6 +168,18 @@ if (!file.exists(file_path)) {
 delete the Rds file to re-run the analysis after changing inputs -- it takes a while to run
 
 ## Summarize results
+
+```{r message=FALSE, warning=FALSE}
+## QC
+#  leaflet() |> addTiles() |> 
+#  addPolygons(data=catchments |> filter(rst_site=="shawns beach"), weight=1, fillOpacity=0, popup = ~rst_site) |>
+#  addCircleMarkers(data=redds_by_rst_catchment |> filter(rst_site=="shawns beach" & stream=="feather river" & above_rst==FALSE), 
+#                   clusterOptions = markerClusterOptions(), 
+#                   label = ~paste(uid, stream, reach, year)) |>
+#  addMarkers(data=rst_trap_locations, popup = ~rst_site) 
+# QC
+redds_by_rst_catchment |> filter(stream=="feather river") |> group_by(rst_site) |> summarize(mean(above_rst))
+```
 
 ```{r message=FALSE, warning=FALSE}
 redds_by_rst_catchment_summary <- 
@@ -190,6 +227,9 @@ redds_by_rst_catchment_summary |> filter(stream=="feather river") |>
   labs(x = "year\n(n)", y = "percent below rotary screw trap", title="Feather River")
 ```
 
+Verify these rsults... looking at the map there shouldn't be many at all below Shawn's Beach
+
+
 ## Remaining data issues 
 
 * Some years are NA
@@ -203,6 +243,23 @@ leaflet() |> addTiles() |>
   addCircleMarkers(data=redds_raw |> filter(stream=="feather river" & date<ymd("2013-12-31"))) |> #, clusterOptions = markerClusterOptions(), popup = ~uid) |>
   addMarkers(data=rst_trap_locations |> filter(stream=="feather river"), popup = ~rst_site) 
 ```
+
+testing fix swapping out coordinates for problematic points using representative locations of named redds
+
+```{r}
+redds_raw |> filter(stream=="feather river" & year(date) %in% c(2012, 2013)) |> ggplot() + geom_point(aes(x=longitude, y=latitude, color=as.factor(year(date))))
+standard_daily_redd |> filter(stream=="feather river" & year(date) %in% c(2012, 2013)) |> ggplot() + geom_sf(aes(color=as.factor(year(date))))
+```
+
+This fix was applied to the original data sets where the reach name was able to be matched. Non-matching observations were dropped.
+
+
+
+
+
+
+
+
 
 ```{r}
 knitr::knit_exit()
