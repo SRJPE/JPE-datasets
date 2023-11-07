@@ -74,7 +74,18 @@ gcs_get_object(object_name = "model-db/origin.csv",
                saveToDisk = "data/model-db/origin.csv",
                overwrite = TRUE)
 origin <- read_csv("data/model-db/origin.csv")
-
+# survey_location
+gcs_get_object(object_name = "model-db/survey_location.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/survey_location.csv",
+               overwrite = TRUE)
+survey_location <- read_csv("data/model-db/survey_location.csv")
+# sex
+gcs_get_object(object_name = "model-db/sex.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-db/sex.csv",
+               overwrite = TRUE)
+sex <- read_csv("data/model-db/sex.csv")
 # catch -------------------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked.csv",
                bucket = gcs_get_global_bucket(),
@@ -109,6 +120,13 @@ ck <- filter(catch, is.na(id))
 unique(catch$trap_location_id)
 unique(catch$lifestage_id)
 unique(catch$run_id)
+
+try(if(any((unique(catch$trap_location_id) %in% trap_location$id) == F)) 
+  stop("Missing Trap Location ID! Please fix!"))
+try(if(any((unique(catch$run_id) %in% run$id) == F))
+  stop("Missing Run ID! Please fix!"))
+try(if(any((unique(catch$lifestage_id) %in% lifestage$id) == F))
+  stop("Missing Lifestage ID! Please fix!"))
 
 gcs_upload(catch,
            object_function = f,
@@ -208,6 +226,15 @@ unique(trap$debris_level_id)
 
 ck <- filter(trap, is.na(trap_visit_time_start) & is.na(trap_visit_time_end))
 
+# TODO ADD CHECKS
+# trap location id
+# visit type id
+# trap functioning id
+# fish processed id
+# debris level id
+
+# check that there are no missing dates
+
 unique(ck$visit_type)
 gcs_upload(trap,
            object_function = f,
@@ -266,6 +293,12 @@ unique(temperature$parameter_id)
 unique(temperature$gage_id)
 
 environmental_gage <- bind_rows(flow, temperature)
+
+# TODO ADD CHECKS
+# parameter
+# trap location
+# check that there are no missing dates
+
 gcs_upload(environmental_gage,
            object_function = f,
            type = "csv",
@@ -307,6 +340,13 @@ release_summary <- release_raw |>
   left_join(lifestage, by = c("lifestage_released" = "definition")) |> 
   rename(lifestage_id = id) |> 
   select(-lifestage_released, -description)
+
+# Need to determine if want to keep this table or make it just a release table
+# trap location, origin, run, lifestage
+# check that there are no missing dates
+# one time check - compare to last table provided josh with
+# check number recaptured and number released make sense
+
 gcs_upload(release_summary,
            object_function = f,
            type = "csv",
@@ -353,6 +393,14 @@ recaptured_fish <- recapture_raw |>
 unique(recaptured_fish$trap_location_id)
 unique(recaptured_fish$run_id)
 unique(recaptured_fish$lifestage_id)
+
+# TODO ADD CHECKS
+# Need to determine if want to keep this table or make it just a release table
+# trap location, run, lifestage
+# check that there are no missing dates
+# one time check - compare to last table provided josh with
+# check number recaptured and number released make sense
+
 
 gcs_upload(recaptured_fish,
            object_function = f,
@@ -442,6 +490,7 @@ carcass_reach <- carcass_raw |>
   group_by(stream) |> 
   distinct(reach)
 # carcass_estimates -------------------------------------------------------
+# TODO need to confirm the run and adipose_clipped for this data
 gcs_get_object(object_name = "standard-format-data/standard_carcass_cjs_estimate.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_carcass_cjs_estimate.csv",
@@ -449,19 +498,42 @@ gcs_get_object(object_name = "standard-format-data/standard_carcass_cjs_estimate
 carcass_estimates_raw <- read_csv("data/standard-format-data/standard_carcass_cjs_estimate.csv")
 
 carcass_estimates <- carcass_estimates_raw |> 
-  rename(carcass_estimate = spawner_abundance_estimate) |> 
+  rename(carcass_estimate = spawner_abundance_estimate,
+         upper_bound_estimate = upper,
+         lower_bound_estimate = lower,
+         confidence_level = confidence_interval) |> 
   # this is so we can join to survey_location
   mutate(reach = NA) |> 
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
   rename(survey_location_id = id) |>
-  
+  # need to confirm the run and adipose clipped
+  mutate(run = "spring",
+         adipose_clipped = F) |> 
+  # run_id
+  left_join(run, by = c("run" = "definition")) |> 
+  rename(run_id = id) |> 
+  select(-run, -description) 
+
+try(if(any((unique(carcass_estimates$survey_location_id) %in% survey_location$id) == F)) 
+  stop("Missing Survey Location ID! Please fix!"))
+try(if(any((unique(carcass_estimates$run_id) %in% run$id) == F))
+  stop("Missing Run ID! Please fix!"))
+try(if(any(is.na(carcass_estimates$year)))
+  stop("Missing Year! Please fix!"))
+
+gcs_upload(carcass_estimates,
+           object_function = f,
+           type = "csv",
+           name = "model-db/carcass_estimates.csv",
+           predefinedAcl = "bucketLevel")
 
 # bulk carcass ------------------------------------------------------------
 # currently not going to use this table. originally designed to separate
 # out bulk counts from individual estimates
 
 # daily_redd --------------------------------------------------------------
+# TODO look into the unknow date entries for Feather River
 gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_daily_redd.csv",
@@ -472,12 +544,33 @@ daily_redd <- daily_redd_raw |>
   # remove the 100 or entries from feather river where date is unknown
   # select for chinook 
   filter(!is.na(date), species %in% c("chinook", "not recorded", "unknown")) |> 
-  select(date, latitude, longitude, reach, river_mile, redd_id, age, age_index,
-         velocity, run, stream)
+  select(date, latitude, longitude, reach, redd_id, age, age_index,
+         velocity, run, stream) |> 
+  left_join(survey_location, by = c("stream", "reach")) |>
+  select(-c(stream, reach, description)) |>
+  rename(survey_location_id = id) |>
+  # run_id
+  left_join(run, by = c("run" = "definition")) |> 
+  rename(run_id = id) |> 
+  select(-run, -description) 
 
 redd_reach <- daily_redd_raw |> 
   group_by(stream) |> 
   distinct(reach)
+
+try(if(any((unique(daily_redd$survey_location_id) %in% survey_location$id) == F)) 
+  stop("Missing Survey Location ID! Please fix!"))
+try(if(any((unique(daily_redd$run_id) %in% run$id) == F))
+  stop("Missing Run ID! Please fix!"))
+try(if(any(is.na(daily_redd$date)))
+  stop("Missing Date! Please fix!"))
+
+gcs_upload(daily_redd,
+           object_function = f,
+           type = "csv",
+           name = "model-db/daily_redd.csv",
+           predefinedAcl = "bucketLevel")
+
 # annual_redd -------------------------------------------------------------
 gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
                bucket = gcs_get_global_bucket(),
@@ -485,6 +578,34 @@ gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
                overwrite = TRUE)
 annual_redd_raw <- read_csv("data/standard-format-data/standard_annual_redd.csv")
 
+annual_redd <- annual_redd_raw |> 
+  # filter out NA dates
+  filter(!is.na(year)) |> 
+  # filter to chinook, might want to do more work to look into error associated 
+  # with species misidentification
+  filter(species %in% c("chinook", "not recorded", "unknown")) |> 
+  select(-c(species)) |> 
+  rename(count = annual_redd_count) |> 
+  left_join(survey_location, by = c("stream", "reach")) |>
+  select(-c(stream, reach, description)) |>
+  rename(survey_location_id = id) |>
+  # run_id
+  left_join(run, by = c("run" = "definition")) |> 
+  rename(run_id = id) |> 
+  select(-run, -description) 
+
+try(if(any((unique(annual_redd$survey_location_id) %in% survey_location$id) == F)) 
+  stop("Missing Survey Location ID! Please fix!"))
+try(if(any((unique(annual_redd$run_id) %in% run$id) == F))
+  stop("Missing Run ID! Please fix!"))
+try(if(any(is.na(annual_redd$year)))
+  stop("Missing Year! Please fix!"))
+
+gcs_upload(annual_redd,
+           object_function = f,
+           type = "csv",
+           name = "model-db/annual_redd.csv",
+           predefinedAcl = "bucketLevel")
 
 # passage_counts ----------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/upstream_passage.csv",
@@ -494,15 +615,21 @@ gcs_get_object(object_name = "jpe-model-data/upstream_passage.csv",
 passage_raw <- read_csv("data/model-data/upstream_passage.csv")
 
 passage <- passage_raw |> 
+  # remove missing dates
+  filter(!is.na(date)) |> 
   mutate(date = case_when(!is.na(time) ~ ymd_hms(paste0(date,time)),
                            T ~ ymd_hms(paste0(date, " 00:00:00")))) |> 
   rename(hours_sampled = hours) |> 
   select(-c(time, viewing_condition, spawning_condition, jack_size, ladder, 
             flow, temperature, comments)) |> 
   # survey_location_id
-  # left_join(survey_location, by = c("stream")) |> 
-  # #select(-c(stream, site, subsite, site_group, description)) |> 
-  # rename(survey_location_id = id) |> 
+  mutate(stream = tolower(stream),
+         reach = NA,
+         sex = ifelse(is.na(sex), "not recorded", sex),
+         passage_direction = ifelse(is.na(passage_direction), "not recorded", passage_direction)) |> 
+  left_join(survey_location, by = c("stream", "reach")) |>
+  select(-c(stream, reach, description)) |>
+  rename(survey_location_id = id) |>
   # run_id
   left_join(run, by = c("run" = "definition")) |> 
   rename(run_id = id) |> 
@@ -515,7 +642,23 @@ passage <- passage_raw |>
   left_join(direction, by = c("passage_direction" = "definition")) |> 
   rename(direction_id = id) |> 
   select(-passage_direction, -description)
+
+try(if(any((unique(passage$survey_location_id) %in% survey_location$id) == F)) 
+  stop("Missing Survey Location ID! Please fix!"))
+try(if(any((unique(passage$run_id) %in% run$id) == F))
+  stop("Missing Run ID! Please fix!"))
+try(if(any((unique(passage$sex_id) %in% sex$id) == F))
+  stop("Missing Sex ID! Please fix!"))
+try(if(any((unique(passage$direction_id) %in% direction$id) == F))
+  stop("Missing Direction ID! Please fix!"))
+try(if(any(is.na(passage$date)))
+  stop("Missing Date! Please fix!"))
   
+gcs_upload(passage,
+           object_function = f,
+           type = "csv",
+           name = "model-db/passage.csv",
+           predefinedAcl = "bucketLevel")
 # passage_estimates -------------------------------------------------------
 gcs_get_object(object_name = "standard-format-data/standard_adult_passage_estimate.csv",
                bucket = gcs_get_global_bucket(),
@@ -523,25 +666,96 @@ gcs_get_object(object_name = "standard-format-data/standard_adult_passage_estima
                overwrite = TRUE)
 passage_estimates_raw <- read_csv("data/standard-format-data/standard_adult_passage_estimate.csv")
 
-# TODO check the run and adipose_clipped of these
 passage_estimate <- passage_estimates_raw |> 
   # survey_location_id
+  mutate(reach = NA) |> 
+  left_join(survey_location, by = c("stream", "reach")) |>
+  select(-c(stream, reach, description)) |>
+  rename(survey_location_id = id) |>
   # run_id
   left_join(run, by = c("run" = "definition")) |> 
   rename(run_id = id) |> 
   select(-run, -description)   
   
-# holding -----------------------------------------------------------------
+try(if(any((unique(passage_estimate$survey_location_id) %in% survey_location$id) == F)) 
+  stop("Missing Survey Location ID! Please fix!"))
+try(if(any((unique(passage_estimate$run_id) %in% run$id) == F))
+  stop("Missing Run ID! Please fix!"))
+try(if(any(is.na(passage_estimate$year)))
+  stop("Missing Year! Please fix!"))
+
+gcs_upload(passage_estimate,
+           object_function = f,
+           type = "csv",
+           name = "model-db/passage_estimate.csv",
+           predefinedAcl = "bucketLevel")
+
+# daily_holding -----------------------------------------------------------------
+# TODO check run and adipose clipped
+
 gcs_get_object(object_name = "jpe-model-data/holding.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/model-data/holding.csv",
                overwrite = TRUE)
 holding_raw <- read_csv("data/model-data/holding.csv")
 
+daily_holding <- holding_raw |> 
+  select(date, reach, count, latitude, longitude, stream) |> 
+  # remove all that are missing date
+  filter(!is.na(date)) |> 
+  mutate(run = "spring",
+         adipose_clipped = F) |> 
+  left_join(survey_location, by = c("stream", "reach")) |>
+  select(-c(stream, reach, description)) |>
+  rename(survey_location_id = id) |> 
+  # run_id
+  left_join(run, by = c("run" = "definition")) |> 
+  rename(run_id = id) |> 
+  select(-run, -description)  
+
+try(if(any((unique(daily_holding$survey_location_id) %in% survey_location$id) == F)) 
+  stop("Missing Survey Location ID! Please fix!"))
+try(if(any((unique(daily_holding$run_id) %in% run$id) == F))
+  stop("Missing Run ID! Please fix!"))
+try(if(any(is.na(daily_holding$date)))
+  stop("Missing Date! Please fix!"))
+
 holding_reach <- holding_raw |> 
   group_by(stream) |> 
   distinct(reach)
 
+gcs_upload(daily_holding,
+           object_function = f,
+           type = "csv",
+           name = "model-db/daily_holding.csv",
+           predefinedAcl = "bucketLevel")
+# annual_holding -----------------------------------------------------------------
+# TODO check run and adipose clipped
+annual_holding <- holding_raw |> 
+  mutate(year = ifelse(is.na(year), year(date), year)) |> 
+  group_by(year, stream, reach) |> 
+  summarize(count = sum(count)) |> 
+  mutate(run = "spring",
+         adipose_clipped = F) |> 
+  left_join(survey_location, by = c("stream", "reach")) |>
+  select(-c(stream, reach, description)) |>
+  rename(survey_location_id = id) |> 
+  # run_id
+  left_join(run, by = c("run" = "definition")) |> 
+  rename(run_id = id) |> 
+  select(-run, -description)  
+
+try(if(any((unique(annual_holding$survey_location_id) %in% survey_location$id) == F)) 
+  stop("Missing Survey Location ID! Please fix!"))
+try(if(any((unique(annual_holding$run_id) %in% run$id) == F))
+  stop("Missing Run ID! Please fix!"))
+try(if(any(is.na(annual_holding$year)))
+  stop("Missing Year! Please fix!"))
+gcs_upload(annual_holding,
+           object_function = f,
+           type = "csv",
+           name = "model-db/annual_holding.csv",
+           predefinedAcl = "bucketLevel")
 
 # create spreadsheet to QC reach
 reach <- redd_reach |> 
