@@ -116,10 +116,10 @@ cleaner_redd_data <- raw_redd_data |>
          "start_number_flow_meter_80" = start_80, 
          "end_number_flow_meter_80" = end_80,
          "flow_meter_time_80" = secs_80,
-         "survey_method" = sur_method,
-         "run" = species_run) |> 
+         "survey_method" = sur_method) |> 
   mutate(reach_sub_unit = toupper(reach_sub_unit),
-         run = ifelse(run == "SCS", "spring", run),
+         run = "spring", # all are SCS
+         species = "Chinook", # all are SCS
          redd_loc = ifelse(redd_loc == "NA", NA_character_, redd_loc),
          pre_redd_substrate_size = case_when(pre_redd_substrate_size == "1 to 2" ~ "1-2",
                                              pre_redd_substrate_size == 
@@ -163,7 +163,7 @@ cleaner_redd_data <- raw_redd_data |>
               project, year, date_measured, 
               corr_type, horz_prec, corr_date, fines_pres,
               overhead_v, instream_c, cover_comm, stream_fea, 
-              tributary, trib_comm, serial, comments, fork)) |> 
+              tributary, trib_comm, serial, comments, fork, species_run)) |> 
   rename(JPE_redd_id = database_id)
 
 clean_redd_data_with_age <- cleaner_redd_data |> 
@@ -219,7 +219,6 @@ survey_3 <- c(as.Date("2020-11-02"), as.Date("2020-11-06"))
 # TODO double check that no resampling in 2020
 clean_2020_data <- raw_redd_2020 |> 
   janitor::clean_names() |> 
-  filter(species == "Chinook") |>
   mutate(survey_id = case_when(between(date, survey_1[1], survey_1[2]) ~ 1,
                                between(date, survey_2[1], survey_2[2]) ~ 2,
                                between(date, survey_3[1], survey_3[2]) ~ 3),
@@ -227,9 +226,9 @@ clean_2020_data <- raw_redd_2020 |>
          date = as.Date(date),
          reach = as.character(reach),
          age = as.numeric(age),
-         run = "spring") |> 
+         run = ifelse(species == "Chinook", "spring", NA)) |> 
          relocate(JPE_redd_id, .before = point_x) |> 
-  select(-c(age_survey_3, age_survey_4, age_survey_5, species)) # empty
+  select(-c(age_survey_3, age_survey_4, age_survey_5)) # empty
 
 # create unique redd ID based on row 
 clean_2021_data <- raw_redd_2021 |> 
@@ -276,13 +275,14 @@ clean_2021_2022_data <- bind_rows(clean_2021_data, clean_2022_data) |>
                                age_index == "age_4" ~ 4,
                                age_index == "age_5" ~ 5),
          age_index = ifelse(is.na(new_age) & age_index == 1, 0, age_index)) |> 
-  filter(!is.na(new_date), species == "Chinook") |> 
+  filter(!is.na(new_date)) |> 
   select(-c(date, date_1, date_2, date_3, date_4, date_5, x40, x41, x42,
-            qa_qc, qa_qc_date, redd_id, species)) |> 
+            qa_qc, qa_qc_date, redd_id)) |> 
   rename(age = new_age, date = new_date) |> 
   relocate(date, .before = point_x) |> 
   relocate(JPE_redd_id, .before = date) |> 
-  mutate(run = "spring") |> 
+  mutate(run = ifelse(species == "Chinook", "spring", NA),
+         species = ifelse(species == "O.mykiss", "O. mykiss", species)) |> 
   glimpse()
 
 clean_2020_2022_data <- bind_rows(clean_2020_data, clean_2021_2022_data) |> 
@@ -333,7 +333,6 @@ data_dictionary <- tibble(variables = colnames(all_redd_data),
                                           "Reach number (1-7)",
                                           "Reach subunit (A-B)",
                                           "River mile number",
-                                          "Run designation",
                                           "Redd location (RL, RR, RC)",
                                           "Size of pre-redd substrate. Originally reported in inches; standardized to meters",
                                           "Size of side of redd substrate. Originally reported in inches; standardized to meters",
@@ -355,18 +354,20 @@ data_dictionary <- tibble(variables = colnames(all_redd_data),
                                           "End number for flow bomb at 80% depth; 80% depth was measured when redd was > 22 ft deep",
                                           "Number of seconds elapsed for flow bomb at 80% depth",
                                           "Survey number",
+                                          "Run designation",
+                                          "Species",
                                           "Number of times that unique redd has been aged: 0 (no redd aged) - 3 (aged 3x)",
                                           "Redd age assigned",
                                           "Date measured",
                                           "Tail spill",
                                           "Fork"),
-                          data_type = c("character", "Date", "character", "numeric", "numeric",                                         "character", "character", "numeric", "character",
+                          data_type = c("character", "Date", "character", "numeric", "numeric",                                         "character", "character", "numeric", 
                                         "character", "character", "character", "character",
                                         "character", "logical", "character", "numeric",
                                         "numeric", "numeric", "numeric", "numeric",
                                         "character", "numeric", "numeric", "numeric",
                                         "numeric", "numeric", "numeric", 
-                                        "numeric", "character", "numeric", "numeric",
+                                        "numeric", "character", "character", "character", "numeric", "numeric",
                                         "POSIXct", "numeric", "character"),
                           percent_na = round(percent_na$value*100)
                           
@@ -860,6 +861,16 @@ All records are for spring run fish.
 **NA and Unknown Values**
 
 * `r round(sum(is.na(all_redd_data$run))/nrow(all_redd_data), 3) * 100` % of values in the `run`column are NA. 
+
+### Variable: `species`
+```{r}
+table(all_redd_data$species) 
+```
+Most redds are associated with spring run Chinook; a few are for lamprey or O. mykiss.
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(all_redd_data$species))/nrow(all_redd_data), 3) * 100` % of values in the `species`column are NA. 
 
 
 ### Variable: `redd_id`

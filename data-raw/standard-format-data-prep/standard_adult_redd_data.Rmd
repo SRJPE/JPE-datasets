@@ -128,7 +128,7 @@ clean_battle_redd <- battle_redd  |>
          redd_measured, redd_width, redd_length, age,
          age_index, pre_redd_substrate_size, 
          redd_substrate_size, tail_substrate_size, flow_fps,
-         survey_method, run)  |>
+         survey_method, species, run)  |>
   mutate(stream = 'battle creek', 
          # adding redd count for only those redds surveyed and not aged, or aged once
          redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
@@ -181,7 +181,7 @@ clean_clear_redd <- clear_redd  |>
          fish_guarding = fish_on_redd, redd_measured = measured, redd_width,
          redd_length, age, age_index, pre_redd_substrate_size, 
          redd_substrate_size, tail_substrate_size, velocity,
-         survey_method, run)  |>
+         survey_method, run, species)  |>
   mutate(stream = 'clear creek', 
          # adding redd count for only those redds surveyed and not aged, or aged once
          redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
@@ -303,10 +303,10 @@ all_redd_data <- bind_rows(clean_battle_redd,
   select(-redd_count)  |>
   # remove mill creek
   filter(stream != "mill creek")  |> 
-  mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
+  mutate(species = case_when(species %in% c("Chinook", "chinook","CHN") ~ "chinook",
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
-                             species == "SH" ~ "steelhead",
-                             is.na(species) & stream %in% c("battle creek", "clear creek") ~ "chinook",
+                             species %in% c("SH", "O. mykiss") ~ "steelhead",
+                             species %in% c("Lamprey", "P. lamprey") ~ "pacific lamprey",
                              is.na(species) ~ "not recorded"),
          run = ifelse(is.na(run), "not recorded", run))
 ```
@@ -493,22 +493,22 @@ redd_count_by_year <- bind_rows(clean_feather_redd,
   bind_rows(clean_battle_redd |> 
               distinct(redd_id, .keep_all = TRUE) |> 
               mutate(redd_count = 1) |> 
-              group_by(reach, stream, year, run) |> 
+              group_by(reach, stream, year, species, run) |> 
               summarise(annual_redd_count = sum(redd_count)) |> 
               ungroup(), 
             clean_clear_redd |> 
               distinct(redd_id, .keep_all = TRUE) |> 
               mutate(redd_count = 1) |> 
-              group_by(reach, stream, year, run) |> 
+              group_by(reach, stream, year, species, run) |> 
               summarise(annual_redd_count = sum(redd_count)) |> 
               ungroup()) |> 
   mutate(annual_redd_count = ifelse(stream %in% c("mill creek", "yuba river", "feather river"),
                                     max_yearly_redd_count, annual_redd_count),
          annual_summarization_method = ifelse(stream %in% c("mill creek", "yuba river", "feather river"), "maximum yearly redd count", "summed by redd id")) |> 
-  mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
+  mutate(species = case_when(species %in% c("Chinook", "CHN") ~ "chinook",
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
-                             species == "SH" ~ "steelhead",
-                             is.na(species) & stream %in% c("battle creek", "clear creek") ~ "chinook",
+                             species %in% c("O. mykiss", "SH") ~ "steelhead",
+                             species %in% c("P. lamprey", "Lamprey") ~ "pacific lamprey",
                              is.na(species) ~ "not recorded"),
          run = ifelse(is.na(run), "not recorded", run)) |> 
   select(-max_yearly_redd_count) |> 
