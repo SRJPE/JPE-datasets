@@ -92,7 +92,9 @@ kable(battle_data_dictionary)
 battle_holding_clean <- battle_holding %>%
   select(-notes) %>%
   mutate(stream = "battle creek",
-         year = lubridate::year(date))
+         year = lubridate::year(date),
+         adipose_clipped = NA,
+         run = NA) # either spring or unknown, but not recorded in raw data
   
 
 ```
@@ -112,7 +114,9 @@ clear_holding_clean <- clear_holding %>%
   select(-comments) %>%
   rename(jacks = jack_count) %>%
   mutate(stream = "clear creek",
-         year = lubridate::year(date))
+         year = lubridate::year(date),
+         run = "spring",
+         adipose_clipped = NA)
 ```
 
 ### Variables removed
@@ -131,7 +135,9 @@ kable(deer_data_dictionary)
 deer_holding_clean <- bind_rows(deer_holding_1986_1996,
                                 deer_holding_1997_2020) %>%
   rename(reach = location) %>%
-  mutate(stream = "deer creek")
+  mutate(stream = "deer creek",
+         run = "spring",
+         adipose_clipped = NA)
 ```
 
 ### Variables removed
@@ -166,9 +172,11 @@ butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
                                  butte_holding_17) %>%
   group_by(date, reach) %>%
   summarize(avg_count = round(mean(fish_count, na.rm = T), digits = 0)) %>%
-  rename(count = avg_count) %>%
+  rename(count = avg_count) %>% 
   mutate(stream = "butte creek",
-         year = lubridate::year(date)) %>% 
+         year = lubridate::year(date),
+         run = "spring",
+         adipose_clipped = NA) %>% 
   glimpse()
 ```
 
@@ -201,6 +209,8 @@ holding_catch_data_dictionary <-
       "Longitude measurement of adult holding",
       "Stream name",
       "Year survey was conducted",
+      "Whether or not adipose fin was clipped. This is not observed in any streams and will be NA",
+      "Run designation of the surveyed fish. Nearly all are spring run - Battle Creek contains spring and unknown runs",
       "Reason survey was conducted",
       "Location of the Picket Weir - this is unique to Clear Creek and is either 7.4 or 8.2",
       "Fish above or below Picket Weir"
@@ -215,6 +225,8 @@ holding_catch_data_dictionary <-
       NA,
       NA,
       "YYYY",
+      NA,
+      NA,
       "august index, spawning",
       NA,
       "above, below"
@@ -229,6 +241,8 @@ holding_catch_data_dictionary <-
       "Battle and Clear",
       "All",
       "All",
+      "None",
+      "All but Battle",
       "Clear",
       "Clear",
       "Clear"
