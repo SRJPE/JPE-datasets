@@ -129,27 +129,42 @@ Conclusions based on comparisons:
 
 ```{r}
 # decided to remove years prior to 1994 because all NA
+
+# pull data from grandtab because it matches the data in the battle report
+# and is easier to process from grandtab
 clear_battle <- select(spring_grandtab, year, battle, clear) |> 
   rename(`battle creek` = battle,
          `clear creek` = clear) |> 
   pivot_longer(cols = c("battle creek","clear creek"), names_to = "stream", values_to = "passage_estimate") |> 
-  filter(year >= 1995)
+  filter(year >= 1995) |> 
+  mutate(run = "spring",
+         adipose_clipped = F)
 
+# data are from data provided by ryan and are all spring run. grandtab includes
+# long time series so can't be sure what the data source is
 deer_mill <- filter(adult_passage_standard, stream %in% c("Deer Creek", "Mill Creek")) |> 
   mutate(stream = tolower(stream),
          year = year(date)) |> 
   group_by(stream, year) |> 
   summarize(passage_estimate = sum(count)) |> 
-  filter(!is.na(year), !is.na(passage_estimate))
+  filter(!is.na(year), !is.na(passage_estimate)) |> 
+  mutate(run = "spring",
+         adipose_clipped = F)
 
+# from report provided by yuba
 yuba <- select(yuba, year, spring_run_escapement) |> 
   rename(passage_estimate = spring_run_escapement) |> 
-  mutate(stream = "yuba river")
+  mutate(stream = "yuba river") |> 
+  mutate(run = "spring",
+         adipose_clipped = F)
 
+# unknown the type of interpolation applied (if use this data should look into that)
 butte <- butte |> 
   rename(year = Year,
          passage_estimate = Vaki) |> 
-  mutate(stream = "butte creek")
+  mutate(stream = "butte creek") |> 
+  mutate(run = "spring",
+         adipose_clipped = F)
 
 passage_estimate <- bind_rows(clear_battle,
                               deer_mill,
