@@ -100,7 +100,7 @@ na_dates <- cleaner_data_2013 |>
 
 na_date_fix <- bind_rows(non_na_dates, na_dates)
 #Convert to snakecase
-cleaner_data_2013 <- cleaner_data_2013 %>% 
+cleaner_data_2013 <- na_date_fix %>% 
   set_names(tolower(colnames(cleaner_data_2013))) %>% 
   glimpse()
 ```
