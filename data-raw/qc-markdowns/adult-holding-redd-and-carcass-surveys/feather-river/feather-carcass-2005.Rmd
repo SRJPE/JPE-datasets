@@ -149,7 +149,10 @@ ChopRecov_raw <- read_csv(here::here("data-raw", "qc-markdowns",
 The `cwt` table contains sampling information on individual carcasses. It is not joined with the other tables. Added a `count` column assuming each row represents one individual. Added `disposition` column to get information from the `carc_stat` column (`tagged` or `chopped`). Added `source_table` column for tracking. Each `tag_id` is represented only once in this table.
 
 ```{r}
-cwt <- cwt_raw |>  
+cwt <- cwt_raw |> 
+  left_join(cwt_header_raw |> 
+              select(HeaderID = headerID, Date),
+            by = "HeaderID") |> 
   clean_names() |>
   mutate(disposition = case_when(carc_stat == "T" ~ "tagged",
                                  carc_stat == "C" ~ "chopped",
