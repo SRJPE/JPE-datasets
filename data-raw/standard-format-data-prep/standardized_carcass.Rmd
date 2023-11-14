@@ -152,7 +152,8 @@ butte_carcass_individuals <- bind_rows(butte_carcass_2014_2016, butte_carcass_20
 
 # combine bulk chops and individual chops
 butte_carcass_combined <- bind_rows(butte_carcass_individuals, butte_carcass_bulk_chops) |> 
-  mutate(stream = "butte creek") |> 
+  mutate(stream = "butte creek",
+         run = "spring") |> 
   select(-sect) |> # section information is already stored in the way_pt variable
   glimpse()
 
