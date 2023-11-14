@@ -74,12 +74,13 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-cree
 ```{r, message = FALSE, warning = FALSE}
 
 battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") |> 
-  mutate(stream = "battle creek") |> 
+  mutate(stream = "battle creek",
+         count = 1, 
+         run = NA) |>  # spring run and unknown mixed
   rename(carcass_condition = carcass_live_status,
          survey_method = method,
          reach = location,
          adipose_fin_clipped = adipose) |> 
-  mutate(count = 1) |> 
   select(-c(comments, year, observed_only, cwt_code)) |> 
   glimpse()
 # each row is a carcass in table
@@ -170,7 +171,7 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/clear-creek
 ```
 ```{r, message = FALSE, warning = FALSE}
 
-clear_carcass <- read_csv("data/redd-carcass-holding/clear_carcass.csv")  |> 
+clear_carcass <- read_csv("data/redd-carcass-holding/clear_carcass.csv")  |>
   select(-c(obs_only, tis_eth, why_sex_unknown, why_not_sp, photo, comments,
             cwt_code, brood_year, release_location, hatchery, age, mark_rate,
             verification_and_cwt_comments, run_call, genetic)) |> 
@@ -182,15 +183,12 @@ clear_carcass <- read_csv("data/redd-carcass-holding/clear_carcass.csv")  |>
          otolith_sample = otolith_st,
          spawn_condition = spawn_status,
          head_sample = head_retrieved,
-         tag_col = tag_type) |> 
-  mutate(adipose_fin_clipped = case_when(adipose == "present" ~ TRUE,
-                                         adipose == "absent" ~ FALSE,
-                                         is.na(adipose) ~ NA),
-         stream = "clear creek",
+         tag_col = tag_type,
+         adipose_fin_clipped = adipose) |> 
+  mutate(stream = "clear creek",
          count = 1,
          otolith_sample = as.character(otolith_sample),
          scale_sample = as.character(scale_sample)) |> 
-  select(-c(adipose)) |> 
   glimpse()
 ```
 
@@ -235,7 +233,9 @@ yuba_carcass <- read_csv("data/redd-carcass-holding/yuba_carcass.csv") |>
   rename(adipose_fin_clipped = adipose_clip,
          spawn_condition = spawned,
          count = chop_count) |> 
-  mutate(stream = "yuba river") |> glimpse()
+  mutate(stream = "yuba river",
+         run = NA) |> # no documentation or data recorded about run 
+  glimpse()
 ```
     
 
@@ -253,6 +253,7 @@ carcass_combined <- bind_rows(battle_carcass,
             # location variables
             longitude, latitude,
             river_mile, unit, chan, location)) |> 
+  filter(!is.na(date)) |> # TODO track down any non-feather rows with NAs
   glimpse()
 ```
 
