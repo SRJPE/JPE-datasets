@@ -105,7 +105,8 @@ cleaner_data<- raw_later_individuals_data %>%
   select(-c('week', 'year', 'f_lcm','location_cd', 'species_code','other_marks', 'cwt_status_id', 'cwt_status', 'cw_tcd', 'dn_anu', 'head_nu')) %>% #all location the same,all spring run chinook,  all no ad fin clip, no data for the rest of the dropped columns
   mutate(date = as.Date(date),
          scale_nu = as.character(scale_nu),
-         survey = as.character(survey)) %>% #scale_nu is identifier
+         survey = as.character(survey),
+         year = year(date)) %>% #scale_nu is identifier
   glimpse()
 ```
 No dates for 2019, not sure how helpful this data is without dates. 
