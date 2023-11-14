@@ -158,6 +158,9 @@ The `cwt` table contains sampling information on individual carcasses. It is not
 
 ```{r}
 cwt <- cwt_raw |>  
+  left_join(cwt_header_raw |> 
+              select(HeaderID = headerID, Date),
+            by = "HeaderID") |> 
   clean_names() |>
   mutate(disposition = case_when(carc_stat == "T" ~ "tagged",
                                  carc_stat == "C" ~ "chopped",
