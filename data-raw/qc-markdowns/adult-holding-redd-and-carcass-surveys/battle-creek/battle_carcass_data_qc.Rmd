@@ -98,7 +98,7 @@ data_dictionary <- tibble(variables = colnames(cleaner_carcass_data),
                                           "Male, female, unknown",
                                           "True if the fish was observed and not sampled (T/F)",
                                           "Fork length of fish in mm",
-                                          "Adipose status (absent, present, unknown)",
+                                          "Whether or not adipose fin was clipped (absent, present, unknown)",
                                           "Carcass status (bright, fresh, non-fresh, unknown)",
                                           "Spawning status (green, ripe, spawned, unknown, unspawned)",
                                           "Run of Chinook (spring, unknown)",
@@ -309,8 +309,8 @@ table(cleaner_carcass_data$adipose)
 
 ```{r}
 cleaner_carcass_data$adipose <- tolower(cleaner_carcass_data$adipose) 
-cleaner_carcass_data$adipose <- case_when(cleaner_carcass_data$adipose == "absent" ~ FALSE,
-                                          cleaner_carcass_data$adipose == "present" ~ TRUE,
+cleaner_carcass_data$adipose <- case_when(cleaner_carcass_data$adipose == "absent" ~ TRUE,
+                                          cleaner_carcass_data$adipose == "present" ~ FALSE,
                                           T ~ NA)
 table(cleaner_carcass_data$adipose) 
 ```
