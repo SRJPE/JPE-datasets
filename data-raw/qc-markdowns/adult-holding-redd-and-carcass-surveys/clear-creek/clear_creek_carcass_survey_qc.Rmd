@@ -196,7 +196,10 @@ table(cleaner_data$obs_only)
 **Description:** Indicates the presence or absence of an adipose fin
 ```{r}
 cleaner_data <- cleaner_data %>% 
-  mutate(adipose = tolower(adipose))
+  mutate(adipose = tolower(adipose),
+         adipose = case_when(adipose == "present" ~ TRUE,
+                             adipose == "absent" ~ FALSE,
+                             adipose == "unknown" ~ NA))
 table(cleaner_data$adipose)
 ```
 
