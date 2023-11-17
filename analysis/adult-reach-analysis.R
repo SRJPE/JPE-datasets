@@ -34,6 +34,15 @@ holding <- read.csv(here::here("data", "standard-format-data", "standard_holding
 
 battle_clear_reaches <- readxl::read_xlsx(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", 
                                              "battle-clear-creek-survey-reaches.xlsx"))
+# extract CAMP descriptions of feather reaches
+library(Hmisc)
+CAMP_feather_reach_categorization <- mdb.get(file = here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", 
+                                                              "feather-river", "feather_carcass_2017_2021.mdb"),
+                                        tables = "LocationSection") |> 
+  mutate(SectionID = as.character(SectionID)) |> 
+  select(section_id = SectionID, section_description = Section)
+detach(package:Hmisc)
+
 # read in original reach list file
 reach_list_raw <- read.csv(here::here("analysis", "reach_list.csv"))
 
@@ -334,9 +343,19 @@ all_feather_reaches |>
 # in .kmz file provided, they are numbered 1:38
 # now need to map these to the sites in the files
 # TODO stopped here
+feather_reach_categorization <- tibble("standardized_reach" = c(as.character(seq(1, 38)), NA, "no description"),
+                                       "categorization" = c(rep("HFC - high flow channel", 21),
+                                                            rep("LFC - low flow channel", 17),
+                                                            NA, "no description in data/source")) |> 
+  left_join(CAMP_feather_reach_categorization, by = c("standardized_reach" = "section_id")) |> 
+  rename(CAMP_description = section_description)
 standard_feather_reaches <- tibble("standardized_reach" = c(as.character(seq(1, 38)),
                                                             NA, "no description"),
-                                "reach_description" = c())
+                                "reach_description" = c(rep(NA, 15), 
+                                                        "Robinson Riffle", NA, 
+                                                        "Steep Riffle and Side Channel",
+                                                        rep(NA, 21),
+                                                        "no description in data/source"))
 
 feather_reach_lookup <- tibble("reach" = unique(all_feather_reaches$reach),
                             "standardized_reach" = c()) |> 
