@@ -340,9 +340,13 @@ all_feather_reaches |>
   theme(legend.position = "bottom")
 
 # hard-code feather reaches
-# in .kmz file provided, they are numbered 1:38
-# now need to map these to the sites in the files
-# TODO stopped here
+# feather reaches: in carcass file, sections numbered from 1:38
+# in redd file, descriptions of specific riffle pools
+# ideally we can map these riffle pools to the numbered survey reaches
+# TODO figure out how to get these from stream teams
+# in escapement methods doc, they say they have maps. can we get those?
+# TODO -- keep section variable! i think this is tossed out for 2000-2016 carcass but
+# these map to "reaches"
 feather_reach_categorization <- tibble("standardized_reach" = c(as.character(seq(1, 38)), NA, "no description"),
                                        "categorization" = c(rep("HFC - high flow channel", 21),
                                                             rep("LFC - low flow channel", 17),
@@ -362,9 +366,23 @@ feather_reach_lookup <- tibble("reach" = unique(all_feather_reaches$reach),
   left_join(standard_feather_reaches)
 
 # Yuba --------------------------------------------------------------------
+# TODO no reach data
+# carcass has river mile, redd has lat/longs
+all_yuba_reaches <- bind_rows(redd |> 
+                                filter(stream == "yuba river") |> 
+                                mutate(data_type = "redd") |> 
+                                select(reach, data_type, year),
+                              carcass |> 
+                                filter(stream == "yuba river") |> 
+                                mutate(data_type = "carcass",
+                                       year = year(date)) |> 
+                                select(reach, data_type, year)) 
 
-
-
-
-
+all_yuba_reaches |> 
+  group_by(year, reach, data_type) |> 
+  tally() |> 
+  ggplot(aes(x = year, y = n, fill = reach)) + 
+  geom_col() +
+  facet_wrap(~data_type) +
+  theme(legend.position = "bottom")
 
