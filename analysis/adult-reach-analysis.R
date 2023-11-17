@@ -163,7 +163,7 @@ all_butte_reaches |>
   theme(legend.position = "bottom")
 
 # hard-code butte reaches based on map provided in report (see adult data report)
-# TODO add subreach descriptions
+# TODO get additional sub-reach descriptions from team
 butte_subreach_lookup <- tibble("sub_reach" = c("A1", "A2", "A3", "A4", "A5",
                                            "B1", "B2", "B3", "B4", "B5", 
                                            "B6", "B7", "B8", "C1", "C2",
@@ -172,45 +172,61 @@ butte_subreach_lookup <- tibble("sub_reach" = c("A1", "A2", "A3", "A4", "A5",
                                            "D1", "D2", "D3", "D4", "D5", 
                                            "D6", "D7", "D8", "E1", "E2", 
                                            "E3", "E4", "E5", "E6", "E7", 
-                                           "F", "G", "H", "I", NA, "no description"),
+                                           "F", "G", "H", "I", NA, "no description",
+                                           "COV-BCK", "BCK-PWL", "PWL-PPD",
+                                           "PH-PWL",
+                                           "Covered bridge to Parrot-Phelan Diversion"),
+                                "sub_reach_descriptions" = c("Quartz Pool 1", "Quartz Pool 2", "Quartz Pool 3",
+                                                             "Chimney (Pool in Quartz Bowl)",
+                                                             rep(NA, 41), 
+                                                             "no description in current map/source",
+                                                             "Covered bridge to USGS BCK gage",
+                                                             "USGS BCK gage to power lines",
+                                                             "Power lines to Parrot-Phelan Diversion",
+                                                             "Centreville powerhouse to power lines",
+                                                             "Covered bridge to Parrot-Phelan Diversion (full sub-reach)"),
                           "reach" = c("A", "A", "A", "A", "A", 
                                       "B", "B", "B", "B", "B", "B", "B", "B", 
                                       "C", "C", "C", "C", "C", "C", "C", "C", 
                                       "C", "C", "C", "C", "D", "D", "D", "D", 
                                       "D", "D", "D", "D", "E", "E", "E", "E", "E", 
-                                      "E", "E", "F", "G", "H", "I", NA, "no description"))
+                                      "E", "E", "F", "G", "H", "I", NA, "no description",
+                                      "Covered bridge to Parrot-Phelan Diversion",
+                                      "Covered bridge to Parrot-Phelan Diversion",
+                                      "Covered bridge to Parrot-Phelan Diversion",
+                                      "Covered bridge to Parrot-Phelan Diversion",
+                                      "Covered bridge to Parrot-Phelan Diversion"))
 standard_butte_reaches <- tibble("reach" = c("A", "B", "C", "D", "E", "F", "G", "H", "I", NA, "no description",
-                                             "Covered bridge to Parrott-Phelan Diversion"),
+                                             "Covered bridge to Parrot-Phelan Diversion"),
                                  "reach_description" = c("Quartz Bowl Pool to Whiskey Flat",
                                                          "Whiskey Flat to Helltown",
                                                          "Helltown to Quail Run Bridge",
                                                          "Quail Run Bridge to Cable Bridge",
                                                          "Cable Bridge to Covered Bridge",
-                                                         "Parrott-Phelan Diversion to Hwy 99 Bridge",
+                                                         "Parrot-Phelan Diversion to Hwy 99 Bridge",
                                                          "Hwy 99 Bridge to Durham-Dayton Rd",
                                                          "Durham-Dayton Rd to Adams Dam",
                                                          "Adams Dam to Western Canal",
                                                          "not recorded",
                                                          "no description in current map/source",
-                                                         "Covered bridge to Parrott-Phelan Diversion (no reach name)")) |> 
+                                                         "Covered bridge to Parrot-Phelan Diversion")) |> 
       full_join(butte_subreach_lookup)
 
-
-# TODO what is BCK, PWL, BLK, PH, PTR? Assume "OKIE" is same as Parrott-Phelan (coding of RST sites), 
-# "COV" is Covered Bridge, "PWR" is Centreville powerhouse ? clarify these and we can assign these
-# reaches to a standardized reach
+# TODO Skyway-99 encoding - likely fall survey, outside normal survey range
 butte_reach_lookup <- tibble("sub_reach" = unique(all_butte_reaches$reach),
                              "standardized_sub_reach" = c("A1", "A2", "A3", "A5", "B1", "B2", "B3", "B6", 
                                                           "B7", "C1", "C11", "C2", "C4", "C9", "A4", "B4", 
                                                           "B5", "B8", "C10", "C12", "C3", "C5", "C6", "C7",
-                                                          "C8", "D2", "D3", "D4", "D7", "E3", "E4", "no description",
-                                                          "D8", "E5", "E7", "E1", "no description", "no description",
-                                                          "no description", "E2", "D1", "D5", "no description", "D6", 
-                                                          "no description", "no description", "E6", "Covered bridge to Parrott-Phelan Diversion", 
-                                                          "no description", "no description", NA, "no description", 
-                                                          "no description", "no description", "no description", 
-                                                          "no description", "no description", "A1", "A2", "A3",
-                                                          "C5", "D1", "C5", "C5", "no description", "no description", 
+                                                          "C8", "D2", "D3", "D4", "D7", "E3", "E4", "COV-BCK",
+                                                          "D8", "E5", "E7", "E1", "COV-BCK", 
+                                                          "BCK-PWL", "PWL-PPD", 
+                                                          "E2", "D1", "D5", "COV-BCK", "D6", 
+                                                          "BCK-PWL", "PWL-PPD", 
+                                                          "E6", "Covered bridge to Parrot-Phelan Diversion", "BCK-PWL", 
+                                                          "BCK-PWL", NA, "BCK-PWL", 
+                                                          "Covered bridge to Parrot-Phelan Diversion", "PH-PWL", "PWL-PPD", 
+                                                          "C1", "A4", "A1", "A2", "A3",
+                                                          "C5", "D1", "C5", "C5", "COV-BCK", "PWL-PPD", 
                                                           "F", "G", "G")) |> 
   left_join(standard_butte_reaches, 
             by = c("standardized_sub_reach" = "sub_reach"))
