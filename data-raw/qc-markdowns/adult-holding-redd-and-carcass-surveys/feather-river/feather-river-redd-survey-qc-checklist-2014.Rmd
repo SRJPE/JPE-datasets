@@ -89,8 +89,16 @@ cleaner_data_2014 <- raw_data_2014 %>%
          'redd_length_m' = 'redd length (m)',
          ) %>%
   mutate(Date = as.Date(as.numeric(Date), origin = "1899-12-30"))
-cleaner_data_2014 <- cleaner_data_2014 %>% 
-  set_names(tolower(colnames(cleaner_data_2014))) %>% 
+
+non_na_dates <- cleaner_data_2014 |> filter(!is.na(Date)) |> glimpse()
+# FIX date that was incorrectly put into origional spreadsheet as 10/25/1013
+na_dates <- cleaner_data_2014 |> 
+  filter(is.na(Date)) |> 
+  mutate(Date = as.Date("10/01/2014", format = "%m/%d/%Y")) |> glimpse()
+na_date_fix <- bind_rows(non_na_dates, na_dates)
+
+cleaner_data_2014 <- na_date_fix %>% 
+  set_names(tolower(colnames(na_date_fix))) %>% 
   glimpse()
 ```
 ## Explore `date`

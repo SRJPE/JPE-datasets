@@ -252,7 +252,7 @@ table(feather_redd$type, useNA = "ifany")
 clean_feather_redd <- feather_redd  |>
   select(date, location, redd_count, 
          latitude, longitude, 
-         redd_width_m, redd_length_m, velocity_m_per_s, depth_m)  |> 
+         redd_width_m, redd_length_m, velocity_m_per_s = velocity, depth_m)  |> 
   rename(reach = location,
          redd_width = redd_width_m, 
          redd_length = redd_length_m)  |>
