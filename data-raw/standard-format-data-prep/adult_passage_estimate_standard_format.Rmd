@@ -158,7 +158,7 @@ yuba <- select(yuba, year, spring_run_escapement) |>
   mutate(run = "spring",
          adipose_clipped = F)
 
-# unknown the type of interpolation applied (if use this data should look into that)
+# no interpolation for butte creek - raw data counts, so no uncertainty
 butte <- butte |> 
   rename(year = Year,
          passage_estimate = Vaki) |> 
