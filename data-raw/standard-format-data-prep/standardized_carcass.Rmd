@@ -76,7 +76,7 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/battle-cree
 battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") |> 
   mutate(stream = "battle creek",
          count = 1, 
-         run = NA) |>  # spring run and unknown mixed
+         run = "spring") |>  # spring run and unknown mixed
   rename(carcass_condition = carcass_live_status,
          survey_method = method,
          reach = location,
@@ -238,7 +238,7 @@ yuba_carcass <- read_csv("data/redd-carcass-holding/yuba_carcass.csv") |>
          spawn_condition = spawned,
          count = chop_count) |> 
   mutate(stream = "yuba river",
-         run = NA) |> # no documentation or data recorded about run 
+         run = "unknown") |> # no documentation or data recorded about run 
   glimpse()
 ```
     
