@@ -340,10 +340,9 @@ all_feather_reaches |>
 # feather reaches: in carcass file, sections numbered from 1:38
 # in redd file, descriptions of specific riffle pools
 # ideally we can map these riffle pools to the numbered survey reaches
-# TODO figure out how to get these from stream teams
-# in escapement methods doc, they say they have maps. can we get those?
-# TODO -- keep section variable! i think this is tossed out for 2000-2016 carcass but
-# these map to "reaches"
+# used the survey map to match the riffles to the numbered survey reaches
+# https://drive.google.com/file/d/1KtnSSlU2Z3v8KvI_7_9FBbekitkRuFo9/view?usp=drive_link (link to file)
+
 feather_reach_categorization <- tibble("standardized_reach" = c(as.character(seq(1, 38)), NA, "no description"),
                                        "categorization" = c(rep("HFC - high flow channel", 21),
                                                             rep("LFC - low flow channel", 17),
@@ -430,7 +429,8 @@ feather_reach_lookup <- tibble("reach" = unique(all_feather_reaches$reach),
                                                      23, 24, 28, 37, "no description",
                                                      27, 31, "no description", "no description", 35,
                                                      "no description", 34, 21, "no description", "no description"))) |> 
-  left_join(standard_feather_reaches)
+  left_join(standard_feather_reaches) |> 
+  left_join(feather_reach_categorization)
 
 # Yuba --------------------------------------------------------------------
 # TODO no reach data
