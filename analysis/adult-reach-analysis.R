@@ -318,17 +318,14 @@ all_mill_reaches |>
 # no need to standardize for Mill Creek
 
 # Feather -----------------------------------------------------------------
-all_feather_reaches <- bind_rows(holding |> 
-                                   filter(stream == "feather river") |> 
-                                   mutate(data_type = "holding") |> 
-                                   select(reach, data_type, year),
-                                 redd |> 
+all_feather_reaches <- bind_rows(redd |> 
                                    filter(stream == "feather river") |> 
                                    mutate(data_type = "redd") |> 
                                    select(reach, data_type, year),
-                                 holding |> 
+                                 carcass |> 
                                    filter(stream == "feather river") |> 
-                                   mutate(data_type = "carcass") |> 
+                                   mutate(data_type = "carcass",
+                                          year = year(date)) |> 
                                    select(reach, data_type, year))
 
 all_feather_reaches |> 
@@ -355,14 +352,84 @@ feather_reach_categorization <- tibble("standardized_reach" = c(as.character(seq
   rename(CAMP_description = section_description)
 standard_feather_reaches <- tibble("standardized_reach" = c(as.character(seq(1, 38)),
                                                             NA, "no description"),
-                                "reach_description" = c(rep(NA, 15), 
-                                                        "Robinson Riffle", NA, 
-                                                        "Steep Riffle and Side Channel",
-                                                        rep(NA, 21),
+                                "reach_description" = c("Table Mountain Riffle and Cottonwood Riffle",
+                                                        "no named riffles", 
+                                                        "Top of Auditorium",
+                                                        "Hatchery Riffle",
+                                                        "Moes S.C.",
+                                                        "Upper Auditorium and Lower Auditorium",
+                                                        "Hatchery S.C.",
+                                                        "Below Lower Auditorium", # inferred this
+                                                        "no named riffles",
+                                                        "Bedrock Riffle, Highway 70, Riverbend Park, and Highway 162",
+                                                        "Trailer Park Riffle and Mathews Riffle",
+                                                        "Mathews",
+                                                        "no named riffles",
+                                                        "Aleck Riffle",
+                                                        "River Reflections RV Park Boat Launch and Great Western",
+                                                        "Upper Robinson Riffle",
+                                                        "Lower Robinson Riffle",
+                                                        "Steep Riffle, Steep Side Channel, and Weir",
+                                                        "Eye Side Channel",
+                                                        "Eye Riffle",
+                                                        "Gateway Riffle",
+                                                        # skip outlet (between 21 and 22)
+                                                        "Vance West (Evens)",
+                                                        "Vance East (Odds)",
+                                                        "Vance Ave/Big Hole Launch",
+                                                        "Big Hole",
+                                                        "no named riffles",
+                                                        "G-95 Riffle",
+                                                        "no named riffles",
+                                                        "Hour Riffle",
+                                                        "Hour Bars",
+                                                        "Palm Ave. Boat Launch",
+                                                        "Keister Riffle",
+                                                        "Goose Riffle and Gaging Station/SWP Boundary",
+                                                        "Big Riffle",
+                                                        "Big Bar",
+                                                        "Upper McFarland and Lower McFarland",
+                                                        "Developing Riffle",
+                                                        "Swampy Bend",
+                                                        NA,
                                                         "no description in data/source"))
 
 feather_reach_lookup <- tibble("reach" = unique(all_feather_reaches$reach),
-                            "standardized_reach" = c()) |> 
+                            "standardized_reach" = as.character(
+                                                     c(1, 1, 5, 4, 6, 
+                                                     10, 11, 12, 14, 16,
+                                                     17, 18, 20, 21, 17, 
+                                                     17, 6, 6, 18, 3,
+                                                     5, 8, 20, 18, 18,
+                                                     18, 6, 16, 8, 10,
+                                                     10, 11, 14, 16, 18,
+                                                     22, 23, 25, 27, 27,
+                                                     27, 27, 29, 29, 32,
+                                                     33, 34, 35, 36, 23,
+                                                     1, 5, 5, 4, 4,
+                                                     21, 19, 24, 25, 25,
+                                                     27, 29, 29, 31, 32,
+                                                     33, 25, 35, 36, 37,
+                                                     27, 23, 23, 23, 18,
+                                                     12, 18, 27, 27, 7,
+                                                     4, 5, 5, 18, 4,
+                                                     5, 7, 11, 11, "no description",
+                                                     25, 27, 27, 27, 22,
+                                                     25, 32, "no description", "no description", 35,
+                                                     36, 37, 29, 32, 1,
+                                                     29, 4, 7, 29, 27,
+                                                     15, 4, 34, NA, "no description", 
+                                                     10, 14, 21, 21, 31,
+                                                     1, 2, 3, 4, 8,
+                                                     7, 6, 5, 10, 13,
+                                                     14, 15, 17, 18, 19,
+                                                     20, "no description", "no description", "no description", 9,
+                                                     11, 12, 16, 25, 29,
+                                                     33, 32, "no description", "no description", "no description",
+                                                     26, 38, 30, 36, 22,
+                                                     23, 24, 28, 37, "no description",
+                                                     27, 31, "no description", "no description", 35,
+                                                     "no description", 34, 21, "no description", "no description"))) |> 
   left_join(standard_feather_reaches)
 
 # Yuba --------------------------------------------------------------------
