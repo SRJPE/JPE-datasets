@@ -541,11 +541,13 @@ gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
 daily_redd_raw <- read_csv("data/standard-format-data/standard_daily_redd.csv")
 
 daily_redd <- daily_redd_raw |> 
-  # remove the 100 or entries from feather river where date is unknown
-  # select for chinook 
+  # remove any NA entries - there should not be any now that Feather issue fixed
+  # remove any non chinook species
   filter(!is.na(date), species %in% c("chinook", "not recorded", "unknown")) |> 
   select(date, latitude, longitude, reach, redd_id, age, age_index,
          velocity, run, stream) |> 
+  # change format to date instead of datetime
+  mutate(date = as.Date(date))
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
   rename(survey_location_id = id) |>
