@@ -371,10 +371,12 @@ gcs_upload(environmental_parameter,
 
 gage_source <- tibble(definition = c("FWS", "CDEC BCK", "CDEC DCV", "CDEC MLM", 
                                      "USGS 11390500", "USGS 11376550", "USGS 11372000", "USGS 11383500", 
-                                     "CDEC GRL", "USGS 11407000", "USGS 11381500", "USGS 11421000"),
+                                     "CDEC GRL", "USGS 11407000", "USGS 11381500", "USGS 11421000",
+                                     "CDEC FBS", "USGS 11377100"),
                       description = c("FWS", "CDEC BCK", "CDEC DCV", "CDEC MLM", 
                                       "USGS 11390500", "USGS 11376550", "USGS 11372000", "USGS 11383500", 
-                                      "CDEC GRL", "USGS 11407000", "USGS 11381500", "USGS 11421000")) |> 
+                                      "CDEC GRL", "USGS 11407000", "USGS 11381500", "USGS 11421000",
+                                      "CDEC FBS", "USGS 11377100")) |> 
   mutate(id = row_number())
 gcs_upload(gage_source,
            object_function = f,
