@@ -422,3 +422,14 @@ gcs_upload(direction,
            name = "model-db/direction.csv",
            predefinedAcl = "bucketLevel")
 
+
+# method ------------------------------------------------------------------
+# method <- tibble(definition = c("maximum yearly redd count", "summed by redd id"),
+#                     description = c("","")) |> 
+#   mutate(id = row_number())
+# gcs_upload(method,
+#            object_function = f,
+#            type = "csv",
+#            name = "model-db/method.csv",
+#            predefinedAcl = "bucketLevel")
+
