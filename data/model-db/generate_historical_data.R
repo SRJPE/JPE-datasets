@@ -55,7 +55,7 @@ gcs_get_object(object_name = "model-db/environmental_parameter.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/model-db/environmental_parameter.csv",
                overwrite = TRUE)
-write_csv(environmental_parameter, "data/model-db/environmental_parameter.csv")
+environmental_parameter <- read_csv("data/model-db/environmental_parameter.csv")
 #gage_source
 gcs_get_object(object_name = "model-db/gage_source.csv",
                bucket = gcs_get_global_bucket(),
