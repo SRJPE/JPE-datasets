@@ -320,21 +320,17 @@ gcs_get_object(object_name = "standard-format-data/standard_release.csv",
                overwrite = TRUE)
 release_raw <- read_csv("data/standard-format-data/standard_release.csv")
 
-gcs_get_object(object_name = "jpe-model-data/efficiency_summary.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/standard-format-data/efficiency_summary.csv",
-               overwrite = TRUE)
-efficiency_raw <- read_csv("data/standard-format-data/efficiency_summary.csv")
-
-release_summary <- release_raw |> 
-  select(stream, site, release_id, date_released, time_released, 
-         origin_released, lifestage_released, run_released) |> 
-  left_join(efficiency_raw) |> 
+release <- release_raw |> 
+  select(stream, site, release_id, date_released, time_released, median_fork_length_released,
+         origin_released, lifestage_released, run_released, number_released) |>
+  # When run this there is a WARNING about 110 failed to parse but there are
+  # no NA dates so I think it is OK
   mutate(date_released = case_when(is.na(time_released) ~ ymd(date_released),
                                    T ~ ymd_hms(paste(date_released, time_released))),
          run_released = ifelse(run_released == "other", "unknown", run_released)) |> 
   select(-time_released) |> 
-  left_join(trap_location, by = c("stream", "site"), multiple = "all") |> 
+  # Releases are not at the subsite level
+  left_join(trap_location, by = c("stream", "site")) |> 
   select(-c(stream, site, description)) |> 
   rename(trap_location_id = id) |> 
   left_join(origin, by = c("origin_released" = "definition")) |> 
@@ -550,8 +546,7 @@ daily_redd <- daily_redd_raw |>
   # remove any NA entries - there should not be any now that Feather issue fixed
   # remove any non chinook species
   filter(!is.na(date), species %in% c("chinook", "not recorded", "unknown")) |> 
-  select(date, latitude, longitude, reach, redd_id, age, age_index,
-         velocity, run, stream) |> 
+  select(date, latitude, longitude, reach, redd_id, age, velocity, run, stream) |> 
   # change format to date instead of datetime
   mutate(date = as.Date(date))
   left_join(survey_location, by = c("stream", "reach")) |>
