@@ -675,6 +675,7 @@ gcs_get_object(object_name = "standard-format-data/standard_adult_passage_estima
 passage_estimates_raw <- read_csv("data/standard-format-data/standard_adult_passage_estimate.csv")
 
 passage_estimate <- passage_estimates_raw |> 
+  filter(!is.na(passage_estimate)) |> 
   # survey_location_id
   mutate(reach = NA) |> 
   left_join(survey_location, by = c("stream", "reach")) |>
