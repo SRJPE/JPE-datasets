@@ -1,0 +1,61 @@
+---
+title: "Covariate processing for stock recruit model"
+output: html_document
+date: "2023-12-21"
+---
+
+```{r setup, include=FALSE}
+root.dir <- rprojroot::find_rstudio_root_file()
+knitr::opts_knit$set(root.dir)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+Describe goal of document
+Insert table of covariates and citations
+
+# Temperature
+Temperature has been found to influence spawning and rearing. Therefore it is expected to affect the translation from stock to recruit. Temperature can be included in multiple different formats including:
+- Number of degree days
+- Day of year when 7DADM drops below 13 C
+- Maximum weekly stream temperature
+- Emergence date (calculated from degree days and median spawning date)
+
+TODO update this section with more information about sources if do literature review or add additional types
+
+```{r, include=F}
+# Temperature data pull
+# 1. Review ~/data-raw/qc-markdowns/temperature_data_prep.Rmd
+# 2. Source data prep
+# source(knitr::purl(here::here("data-raw", "qc-markdowns", "temperature_data_prep.Rmd"), quiet=TRUE)) # after reviewing we will likely just source the data prep file here so you have access to all the data objects
+
+```
+
+## Number of degree days
+
+## Day of year
+
+## Max temperature
+
+## Emergence date
+
+# Flow
+Precipitation and streamflow have been found to influence spawning and rearing. Therefore it is expected to affect the translation from stock to recruit. Streamflow can be included in multiple different formats including:
+- Mean precipitation (or streamflow)
+- Max monthly precipitation (or streamflow)
+
+TODO update this section with more information about sources if do literature review or add additional types
+
+```{r, include=F}
+# Flow data pull
+# 1. Review ~/data-raw/standard-format-data-prep/flow_data_prep_files/flow_data_prep.Rmd
+# 2. Source data prep
+# source(knitr::purl(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data_prep.Rmd"), quiet=TRUE)) # after reviewing we will likely just source the data prep file here so you have access to all the data objects
+```
+
+
+## Mean flow
+
+## Max flow
+
+
