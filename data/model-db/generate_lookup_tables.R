@@ -10,44 +10,67 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # trap_location -----------------------------------------------------------
 
-battle <- tibble(stream = c("battle creek"),
-                 site = c("ubc"),
-                 subsite = c("ubc"),
+battle <- tibble(stream = c("battle creek","battle creek"),
+                 site = c("ubc", "ubc"),
+                 subsite = c("ubc", NA),
                  site_group = c("battle creek"),
-                 description = c("upper battle creek rst site location")) 
-butte <- tibble(stream = c(rep("butte creek", 5)),
-                site = c(rep("okie dam",4), "adams dam"),
-                subsite = c("okie dam 1", "okie dam 2", "okie dam fyke trap", NA, "adams dam"),
+                 description = c("upper battle creek rst site location", 
+                                 "upper battle creek rst site location and subsite is
+                                 not associated with release location")) 
+butte <- tibble(stream = c(rep("butte creek", 6)),
+                site = c(rep("okie dam",5), "adams dam"),
+                subsite = c("okie dam 1", "okie dam 2", "okie dam fyke trap", NA, NA, "adams dam"),
                 site_group = c("butte creek"),
                 description = c("rst 1 at okie dam (aka parrott-phalean)", "rst 2 at okie dam (aka parrott-phalean)",
                                 "fyke trap at okie dam located in diversion canal", "trap unknown", 
-                                "rst at adams dam, only used historically")) 
-clear <- tibble(stream = c(rep("clear creek",2)),
-                site = c("lcc", "ucc"),
-                subsite = c("lcc", "ucc"),
+                                "okie dam site and subsite is not associated with release location",
+                                "rst at adams dam only used historically")) 
+clear <- tibble(stream = c(rep("clear creek",5)),
+                site = c("lcc", "ucc", "not recorded", "lcc", "ucc"),
+                subsite = c("lcc", "ucc", NA, NA, NA),
                 site_group = c("clear creek"),
-                description = c("lower clear creek rst site", "upper clear creek rst site")) 
-deer <- tibble(stream = c("deer creek"),
-               site = c("deer creek"),
-               subsite = c("deer creek"),
+                description = c("lower clear creek rst site", "upper clear creek rst site",
+                                "site not recorded during release trial", "lower clear creek rst site
+                                 and subsite is not associated with release location",
+                                "upper clear creek rst site and subsite is not associated with 
+                                release location")) 
+deer <- tibble(stream = c("deer creek", "deer creek"),
+               site = c("deer creek", "deer creek"),
+               subsite = c("deer creek", NA),
                site_group = c("deer creek"),
-               description = c("deer creek rst site location")) 
-feather <- tibble(stream = c(rep("feather river",19)),
-                  site = c(rep("eye riffle",2), "live oak", rep("herringer riffle",3), rep("steep riffle",3), 
-                           rep("sunset pumps",2), rep("shawn's beach",2), rep("gateway riffle",4), 
-                           rep("lower feather river",2)),
-                  subsite = c("eye riffle_north", "eye riffle_side channel", "live oak",
-                              "herringer_west", "herringer_east", "herringer_upper_west",
-                              "#steep riffle_rst", "steep riffle_10' ext", "steep side channel",
-                              "sunset west bank", "sunset east bank", "shawns_west", "shawns_east",
+               description = c("deer creek rst site location",
+                               "deer creek rst site location and subsite is not associated with release location")) 
+feather <- tibble(stream = c(rep("feather river",26)),
+                  site = c(rep("eye riffle",3), rep("live oak",2), rep("herringer riffle",4), rep("steep riffle",4), 
+                           rep("sunset pumps",3), rep("shawn's beach",2), rep("gateway riffle",5), 
+                           rep("lower feather river",3)),
+                  subsite = c("eye riffle_north", "eye riffle_side channel", NA,
+                              "live oak", NA,
+                              "herringer_west", "herringer_east", "herringer_upper_west", NA,
+                              "#steep riffle_rst", "steep riffle_10' ext", "steep side channel", NA,
+                              "sunset west bank", "sunset east bank", NA,
+                              "shawns_west", "shawns_east",
                               "gateway_main1", "gateway main 400' up river", "gateway_rootball", 
-                              "gateway_rootball_river_left", "rr", "rl"),
-                  site_group = c(rep("upper feather lfc",2), rep("upper feather hfc", 4),
-                                 rep("upper feather lfc",3), rep("upper feather hfc", 4),
-                                 rep("upper feather lfc",4), rep("lower feather river",2)),
-                  description = c(rep("low flow channel rst sites",2), rep("high flow channel rst sites", 4),
-                                  rep("low flow channel rst sites",3), rep("high flow channel rst sites", 4),
-                                  rep("low flow channel rst sites",4), "rst at river right", "rst at river left")) 
+                              "gateway_rootball_river_left", NA, 
+                              "rr", "rl", NA),
+                  site_group = c(rep("upper feather lfc",3), rep("upper feather hfc", 6),
+                                 rep("upper feather lfc",4), rep("upper feather hfc", 5),
+                                 rep("upper feather lfc",5), rep("lower feather river",3)),
+                  description = c(rep("low flow channel rst sites",2), "low flow channel rst sites 
+                                  and subsite is not associated with release location",
+                                  rep("high flow channel rst sites", 1), "high flow channel rst sites 
+                                  and subsite is not associated with release location",
+                                  rep("high flow channel rst sites", 3), "high flow channel rst sites 
+                                  and subsite is not associated with release location",
+                                  rep("low flow channel rst sites",3), "low flow channel rst sites 
+                                  and subsite is not associated with release location",
+                                  rep("high flow channel rst sites", 2),"high flow channel rst sites 
+                                  and subsite is not associated with release location",
+                                  rep("high flow channel rst sites", 2),
+                                  rep("low flow channel rst sites",4), "low flow channel rst sites 
+                                  and subsite is not associated with release location",
+                                  "rst at river right", "rst at river left", "lower feather and 
+                                  subsite is not associated with release location")) 
 mill <- tibble(stream = c("mill creek"),
                site = c("mill creek"),
                subsite = c("mill creek"),

@@ -310,9 +310,7 @@ gcs_upload(environmental_gage,
            type = "csv",
            name = "model-db/environmental_gage.csv",
            predefinedAcl = "bucketLevel")
-# release_summary ---------------------------------------------------------
-
-# TODO efficiency raw has rows for each subsite which i don't think we want
+# release ---------------------------------------------------------
 
 gcs_get_object(object_name = "standard-format-data/standard_release.csv",
                bucket = gcs_get_global_bucket(),
