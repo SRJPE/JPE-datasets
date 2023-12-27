@@ -46,7 +46,6 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 # CDEC has no temperature data available
 ```
 
-
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
@@ -61,9 +60,13 @@ BAT_USGS <- readNWISdv(11376550, "00010") # parameter code 00010: water temperat
 # BAT_USGS
 ```
 
-CDEC and USGS do not provide temperature data for Battle Creek. Temperature data is collected by sensor 25, but CDEC data is not available for this sensor. USGS mapper indicates as well there is no data available for the requested period.
+CDEC and USGS do not provide temperature data for Battle Creek.
+Temperature data is collected by sensor 25, but CDEC data is not
+available for this sensor. USGS mapper indicates as well there is no
+data available for the requested period.
 
-We requested water temperature data from Battle Creek to fill this data gap.
+We requested water temperature data from Battle Creek to fill this data
+gap.
 
 ### Temperature data collected locally
 
@@ -94,6 +97,7 @@ write_rds(battle_temp, here::here("data-raw", "standard-format-data-prep","temp_
 ## Butte Creek
 
 ### CDEC
+
 ```{r}
 # Check if CDEC data provides temp data for respective location
 # cdec_datasets("BCK")
@@ -116,9 +120,11 @@ ggplot(BCK_hourly_temps, aes(x=date)) +
   labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Buttle Creek", caption = "CDEC")
 ```
 
-CDEC data provides temperature data for Butte Creek. It ranges from 1998-09-16 to 2022-06-16
+CDEC data provides temperature data for Butte Creek. It ranges from
+1998-09-16 to 2022-06-16
 
 ### CDEC Outliers Removed
+
 ```{r}
 # Plot without outliers
 # TODO review literature on temps on Butte Creek
@@ -130,6 +136,7 @@ BCK_hourly_temps %>%
 ```
 
 ### USGS
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
@@ -141,7 +148,8 @@ BCK_hourly_temps %>%
 # no data available from USGS
 ```
 
-### Clean data and summarize as mean daily 
+### Clean data and summarize as mean daily
+
 ```{r}
 
 # 1. Calculate the daily average temperature
@@ -164,17 +172,20 @@ filter(butte_format, mean_temp_degC > 70)
 ```
 
 ### Save data
+
 ```{r}
 # save final version of butte data
 # from ashley: erin and i have started using the here package, especially in markdowns because it makes it easier for file path reading
 write_rds(BCK_daily_temps, here::here("data-raw", "standard-format-data-prep","temp_data", "butte_temp.rds"))
 ```
 
-
-USGS provides no temperature data for Butte Creek. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
+USGS provides no temperature data for Butte Creek. This was confirmed
+with mapper tool accessed from waterdata.usgs.gov.
 
 ## Clear Creek
+
 ### CDEC
+
 ```{r}
 # Check if CDEC data provides temp data for respective location
 # cdec_datasets("IGO")
@@ -196,9 +207,12 @@ ggplot(IGO_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y ="Temperature (deg C)", title = "Water Temperature at Clear Creek", caption = "CDEC")
 ```
-CDEC temeprature data for Clear Cleek ranges from 2002-12-31 to 2022-05-27.
+
+CDEC temeprature data for Clear Cleek ranges from 2002-12-31 to
+2022-05-27.
 
 ### CDEC Outliers Removed
+
 ```{r}
 # Plot without outliers
 IGO_hourly_temps %>%
@@ -209,6 +223,7 @@ IGO_hourly_temps %>%
 ```
 
 ### USGS
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
@@ -222,9 +237,11 @@ IGO_hourly_temps %>%
 # no data available from USGS
 ```
 
-USGS provides no temperature data for Clear Creek. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
+USGS provides no temperature data for Clear Creek. This was confirmed
+with mapper tool accessed from waterdata.usgs.gov.
 
-### Clean data and summarize as mean daily 
+### Clean data and summarize as mean daily
+
 ```{r}
 
 # 1. Calculate the daily average temperature
@@ -244,10 +261,11 @@ write_rds(IGO_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 
 ### Temperature data collected locally
 
-- We received temperature data from clear and battle. 
-- CDEC data has very high max - I think these are errors or code for something.
-- Use the data from Battle and Clear over the CDEC data.
-- CDEC data is more similar to Upper Clear Creek
+-   We received temperature data from clear and battle.
+-   CDEC data has very high max - I think these are errors or code for
+    something.
+-   Use the data from Battle and Clear over the CDEC data.
+-   CDEC data is more similar to Upper Clear Creek
 
 ```{r}
 clear_cdec <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "clear_temp.rds"))
@@ -281,6 +299,7 @@ write_rds(lcc_temp, here::here("data-raw", "standard-format-data-prep","temp_dat
 ## Deer Creek
 
 ### CDEC
+
 ```{r}
 
 # cdec_datasets("DCV")
@@ -302,9 +321,12 @@ ggplot(DCV_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)",title = "Water Temperature at Deer Creek", caption = " CDEC")
 ```
-CDEC Temperature Data for Deer Creek ranges from 1998-10-01 to 2022-06-16.
+
+CDEC Temperature Data for Deer Creek ranges from 1998-10-01 to
+2022-06-16.
 
 ### CDEC Outliers Removed
+
 ```{r}
 # Plot without outliers
 DCV_hourly_temps %>%
@@ -315,6 +337,7 @@ DCV_hourly_temps %>%
 ```
 
 ### USGS
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
@@ -337,9 +360,12 @@ ggplot(DCV_daily_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)", title = "Water Temperature at Deer Creek", caption = "USGS")
 ```
-USGS temperature data for deer creek ranges from 2016-10-01 to 2022-05-25.
+
+USGS temperature data for deer creek ranges from 2016-10-01 to
+2022-05-25.
 
 #### Mean Daily USGS vs Daily CDEC data
+
 ```{r}
 DCV_combined = DCV_hourly_temps %>% 
   full_join(DCV_daily_temps, by ="date") %>% 
@@ -357,9 +383,12 @@ DCV_combined %>%
   labs(y = "Temperature (deg C)", title = "Water Temperature at Deer Creek")
 ```
 
-The plot below shows the daily average to allow for comparison between CDEC and USGS datasets. This helps it become more apparent that we should use CDEC data for deer creek due to the availability of the data.
+The plot below shows the daily average to allow for comparison between
+CDEC and USGS datasets. This helps it become more apparent that we
+should use CDEC data for deer creek due to the availability of the data.
 
-### Clean data and summarize as mean daily 
+### Clean data and summarize as mean daily
+
 ```{r}
 
 # 1. Calculate the daily average temperature
@@ -380,6 +409,7 @@ write_rds(DCV_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 ## Feather River
 
 ### CDEC
+
 ```{r}
 
 # cdec_datasets("GRL")
@@ -401,9 +431,12 @@ ggplot(GRL_hourly_temps, aes(x = date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y="Temperature (deg C)", title = "Temperature at Feather River", caption = "CDEC")
 ```
-CDEC provides temperature data for Feather River from 2003-01-05 to 2007-06-15.
+
+CDEC provides temperature data for Feather River from 2003-01-05 to
+2007-06-15.
 
 ### CDEC Outliers Removed
+
 ```{r}
 # Plot without outliers
 GRL_hourly_temps %>%
@@ -414,6 +447,7 @@ GRL_hourly_temps %>%
 ```
 
 ### USGS
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
@@ -426,17 +460,32 @@ GRL_hourly_temps %>%
 # GRL_USGS
 ```
 
-#TODO check if we are missing anything by checking USGS and CDEC data
-USGS does not provide temperature data for Feather River. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
+USGS does not provide temperature data for Feather River. This was
+confirmed with mapper tool accessed from waterdata.usgs.gov. 
 
-The CDEC data does not cover the extent of the monitoring period for Feather River
+TODO check if we are missing anything by checking USGS and CDEC data
+
+Notes from Badhia: USGS data for Feather River across three stations
+* Thermalito Afterbay Rel to Feather R NR Oroville 11406920,
+* Feather R A Yuba City CA 11407700, and 
+* Feather R A Oroville CA 11407000 (the one used).
+* Monitoring periods range from 1968-1992, 1964-1976, and 1958-1992 respectively 
+
+* CDEC only has one station, only data from time period stated above was found
+* This same station data was used for va-habitat EDA temps
+
+
+The CDEC data does not cover the extent of the monitoring period for
+Feather River
 
 ```{r}
 # write_rds(GRL_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/feather_temp.rds")
 ```
 
 ## Mill Creek
+
 ### CDEC
+
 ```{r}
 
 # cdec_datasets("MLM") 
@@ -459,9 +508,12 @@ ggplot(MLM_hourly_temps, aes(x = date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Mill Creek", caption = "CDEC")
 ```
-CDEC provides temperature data for Mill Creek from 1998-09-30 to 2022-05-27
+
+CDEC provides temperature data for Mill Creek from 1998-09-30 to
+2022-05-27
 
 ### CDEC Outliers Removed
+
 ```{r}
 # Plot without outliers
 MLM_hourly_temps %>%
@@ -472,6 +524,7 @@ MLM_hourly_temps %>%
 ```
 
 ### USGS
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
@@ -494,9 +547,11 @@ ggplot(MLM_daily_temps, aes(x=date)) +
   labs(x = "Year",y = "Temperature (deg C)",title = "Temperature at Mill Creek", caption = "USGS")
 ```
 
-USGS provides daily temperature daily for Mill Creek from 2016-10-01 to 2022-05-25
+USGS provides daily temperature daily for Mill Creek from 2016-10-01 to
+2022-05-25
 
 #### Mean Daily USGS vs Daily CDEC data
+
 ```{r}
 # comparison of USGS vs CDEC
 # Does one have more data?
@@ -518,9 +573,11 @@ MLM_combined %>%
 
 ```
 
-I would recommend using the CDEC data for Mill Creek due to the significant data gaps for USGS.
+I would recommend using the CDEC data for Mill Creek due to the
+significant data gaps for USGS.
 
-## Clean data and summarize as mean daily 
+## Clean data and summarize as mean daily
+
 ```{r}
 
 # 1. Calculate the daily average temperature
@@ -539,10 +596,18 @@ write_rds(MLM_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 ```
 
 ## Yuba River
+
 There is not CDEC or USGS data available for Yuba River.
-# TODO look into temp data in Yuba River
+
+TODO look into temp data in Yuba River USGS
+
+-   daily max and min Temp data from 1964-2003, with some data gaps, for
+    station number 11421000 Yuba R NR Marysville
+-   daily max and min Temp data from 1972-2005, Station 11418000 Yuba R
+    BL Englebright Dam NR Smartsville has
 
 ### Air Gage - code isn't working so comment out for now
+
 ```{r}
 # use this code to get the data types for the station
 # ncdc_datatypes(datasetid='GHCND', stationid='GHCND:USR0000CFOR', token = NOAA_KEY)
@@ -595,10 +660,13 @@ There is not CDEC or USGS data available for Yuba River.
 <!-- ### Save data -->
 
 <!-- ```{r} -->
+
 <!-- write_rds(yuba_air, here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp_air.rds")) -->
+
 <!-- ``` -->
 
 ## Sacramento River - Knights Landing
+
 ```{r}
 # cdec_datasets("WLK")
 
@@ -620,9 +688,11 @@ ggplot(WLK_hourly_temps, aes(x = date)) +
   labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "CDEC")
 ```
 
-CDEC provides temperature data for Sacramento River - Knights Landing from 2012-11-15 to 2022-06-16
+CDEC provides temperature data for Sacramento River - Knights Landing
+from 2012-11-15 to 2022-06-16
 
 ### CDEC Outliers Removed
+
 ```{r}
 # Plot without outliers
 WLK_hourly_temps %>%
@@ -633,6 +703,7 @@ WLK_hourly_temps %>%
 ```
 
 ### USGS
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
@@ -657,9 +728,13 @@ ggplot(WLK_daily_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
-Temperature data for Sacramento River - Knights landing has data from 1995-01-01 to 2022-06-14, but we should explore further the signifcant data gap and identify that period.
+
+Temperature data for Sacramento River - Knights landing has data from
+1995-01-01 to 2022-06-14, but we should explore further the signifcant
+data gap and identify that period.
 
 ### Data before Missing Data Gap
+
 ```{r}
 ### Identify date data starts to be missing
 WLK_daily_temps %>%
@@ -675,7 +750,9 @@ WLK_daily_temps %>%
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
+
 ### Data after missing data gap
+
 ```{r}
 ### Identify date data starts to be missing
 WLK_daily_temps %>%
@@ -692,9 +769,12 @@ WLK_daily_temps %>%
   labs(x = "Year", y ="Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 #
 ```
-Temperature data for Sacramento River - Knights landing is missing significant data from the period of 1998-09-30 to 2016-09-31.
+
+Temperature data for Sacramento River - Knights landing is missing
+significant data from the period of 1998-09-30 to 2016-09-31.
 
 #### Mean Daily USGS vs Daily CDEC data
+
 ```{r}
 WLK_combined = WLK_hourly_temps %>% 
   full_join(WLK_daily_temps, by = "date") %>% 
@@ -710,5 +790,3 @@ WLK_combined %>%
   geom_line(aes(y = temp_USGS), color = "blue", linetype ="twodash") +
   labs(y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
-
-
