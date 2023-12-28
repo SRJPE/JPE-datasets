@@ -157,7 +157,8 @@ BCK_daily_temps <- BCK_hourly_temps %>%
   filter(temp_degC < 37, temp_degC > -18) %>%
   group_by(date) %>% 
   summarize(mean_temp_degC = mean(temp_degC, na.rm = T),
-            max_temp_degC = max(temp_degC, na.rm = T)) 
+            max_temp_degC = max(temp_degC, na.rm = T),
+            min_temp_degC = min(temp_degC, na.rm = T)) 
 
 # 2. Check to see if applying rolling mean would help with outliers.
 butte_format <- transform(BCK_daily_temps, rollmean = rollapplyr(mean_temp_degC, 3, mean, partial = T)) %>% 
