@@ -27,11 +27,31 @@ TODO update this section with more information about sources if do literature re
 # Temperature data pull
 # 1. Review ~/data-raw/qc-markdowns/temperature_data_prep.Rmd
 # 2. Source data prep
-# source(knitr::purl(here::here("data-raw", "qc-markdowns", "temperature_data_prep.Rmd"), quiet=TRUE)) # after reviewing we will likely just source the data prep file here so you have access to all the data objects
+source(knitr::purl(here::here("data-raw", "qc-markdowns", "temperature_data_prep.Rmd"), quiet=TRUE)) # after reviewing we will likely just source the data prep file here so you have access to all the data objects
 
 ```
 
 ## Number of degree days
+DD= ((Tmax + Tmin / 2) - T0), where Tmax and Tmin are daily ambient temps, and T0 is the base or threshold temp
+Citation: Chezik, Kyle & Lester, Nigel & Venturelli, Paul. (2014). Fish growth and degree-days I: Selecting a base temperature for a within-population study. Canadian Journal of Fisheries and Aquatic Sciences. 71. 47-55. 10.1139/cjfas-2013-0295. 
+```{r}
+# We are stating with Butte data because its ok and would be a good placeholder
+glimpse(BCK_daily_temps)
+butte_dd <- BCK_daily_temps |> 
+  mutate(month= month(date), 
+         wyear= ifelse(month %in% (10:12), year(date)+1, year(date))) |>  
+  filter(month>=11 | month<=4) |> 
+  mutate(degdays= ((max_temp_degC + min_temp_degC) / 2) - 2) 
+butte_dd_sum <- butte_dd |> 
+  group_by(wyear) |> 
+  summarise(totalddays=sum(degdays))
+ggplot(butte_dd, aes(as.factor(wyear), degdays))+
+  geom_boxplot()
+ggplot(butte_dd_sum, aes(wyear, totalddays)) +
+  geom_col()
+?water_year_indices
+```
+
 
 ## Day of year
 
