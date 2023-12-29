@@ -354,10 +354,10 @@ release <- release_raw |>
 # one time check - compare to last table provided josh with
 # check number recaptured and number released make sense
 
-gcs_upload(release_summary,
+gcs_upload(release,
            object_function = f,
            type = "csv",
-           name = "model-db/release_summary.csv",
+           name = "model-db/release.csv",
            predefinedAcl = "bucketLevel")
 # released_fish -----------------------------------------------------------
 # no historical data
@@ -402,7 +402,6 @@ unique(recaptured_fish$run_id)
 unique(recaptured_fish$lifestage_id)
 
 # TODO ADD CHECKS
-# Need to determine if want to keep this table or make it just a release table
 # trap location, run, lifestage
 # check that there are no missing dates
 # one time check - compare to last table provided josh with
@@ -431,7 +430,8 @@ ck <- full_join(recaptured_fish, standard_recapture)
 mismatch <- filter(ck, site != "red bluff diversion dam", number_recaptured != number_recaptured_ck)
 
 # hatchery_release --------------------------------------------------------
-# need to figure out this one
+# I think this should likely just be pulled into the data package as
+# the data are stored elsewhere
 gcs_get_object(object_name = "standard-format-data/standard_rst_hatchery_release.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_hatchery.csv",
