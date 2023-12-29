@@ -20,7 +20,9 @@ library(knitr)
 
 ## Description of Monitoring Data
 
-These data were acquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019 and describe the locations of live adult Chinook Salmon seen in Battle Creek. Generally, spring-run Chinook Salmon are in holding position prior to August 15 and in spawning position after August 15.  						
+These data were acquired via snorkel and kayak surveys on Battle Creek from 2001 to 2019 and describe the locations of live adult Chinook Salmon seen in Battle Creek. Generally, spring-run Chinook Salmon are in holding position prior to August 15 and in spawning position after August 15. 
+
+From data request topsheet: "In some cases have been reduced to only include **spring-run and unknown-run** adult Chinook Salmon (redd, carcass, and holding/spawning) while video, trap, and weir data used to create upstream passage estimates include all runs of Chinook Salmon in Battle Creek."
 
 
 **Timeframe:** 2001 - 2019
@@ -51,9 +53,9 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 Read in data from google cloud, glimpse raw data sheet: 
 
 ```{r}
-sheets <- excel_sheets("raw_adult_spawn_hold_carcass.xlsx")
+sheets <- excel_sheets(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"))
 sheets 
-raw_holding_data <-read_excel("raw_adult_spawn_hold_carcass.xlsx", sheet = "Live Holding Spawning") %>% glimpse()
+raw_holding_data <-read_excel(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", "raw_adult_spawn_hold_carcass.xlsx"), sheet = "Live Holding Spawning") %>% glimpse()
 ```
 
 ## Data transformations
@@ -67,7 +69,7 @@ cleaner_holding_data <- raw_holding_data %>%
   mutate(date = as.Date(date),
          jacks = as.numeric(jacks)) %>%
   select(-project, -year) %>% # All projects = snorkel, year can be pulled from date
-  glimpse
+  glimpse()
 ```
 
 ## Data Dictionary
