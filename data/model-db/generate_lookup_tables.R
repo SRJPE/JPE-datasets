@@ -17,13 +17,12 @@ battle <- tibble(stream = c("battle creek","battle creek"),
                  description = c("upper battle creek rst site location", 
                                  "upper battle creek rst site location and subsite is
                                  not associated with release location")) 
-butte <- tibble(stream = c(rep("butte creek", 6)),
-                site = c(rep("okie dam",5), "adams dam"),
-                subsite = c("okie dam 1", "okie dam 2", "okie dam fyke trap", NA, NA, "adams dam"),
+butte <- tibble(stream = c(rep("butte creek", 5)),
+                site = c(rep("okie dam",4), "adams dam"),
+                subsite = c("okie dam 1", "okie dam 2", "okie dam fyke trap", NA, "adams dam"),
                 site_group = c("butte creek"),
                 description = c("rst 1 at okie dam (aka parrott-phalean)", "rst 2 at okie dam (aka parrott-phalean)",
-                                "fyke trap at okie dam located in diversion canal", "trap unknown", 
-                                "okie dam site and subsite is not associated with release location",
+                                "fyke trap at okie dam located in diversion canal", "trap unknown or okie dam site and subsite is not associated with release location",
                                 "rst at adams dam only used historically")) 
 clear <- tibble(stream = c(rep("clear creek",5)),
                 site = c("lcc", "ucc", "not recorded", "lcc", "ucc"),

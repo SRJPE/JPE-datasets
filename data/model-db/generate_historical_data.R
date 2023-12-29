@@ -330,11 +330,13 @@ release <- release_raw |>
   # no NA dates so I think it is OK
   mutate(date_released = case_when(is.na(time_released) ~ ymd(date_released),
                                    T ~ ymd_hms(paste(date_released, time_released))),
-         run_released = ifelse(run_released == "other", "unknown", run_released)) |> 
+         run_released = ifelse(run_released == "other", "unknown", run_released),
+         # no subsite for release trials, need this to join with trap location lookup
+         subsite = NA) |> 
   select(-time_released) |> 
-  # Releases are not at the subsite level
-  left_join(trap_location, by = c("stream", "site")) |> 
-  select(-c(stream, site, description)) |> 
+  # Releases are not at the subsite level so added NA subsite to trap location lookup
+  left_join(trap_location, by = c("stream", "site", "subsite")) |> 
+  select(-c(stream, site, subsite, site_group, description)) |> 
   rename(trap_location_id = id) |> 
   left_join(origin, by = c("origin_released" = "definition")) |> 
   rename(origin_id = id) |> 
