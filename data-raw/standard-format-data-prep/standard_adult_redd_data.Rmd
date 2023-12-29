@@ -184,7 +184,9 @@ summary(mill_redd)
 
 clean_mill_redd <- mill_redd  |>
   rename(reach = location)  |>
-  mutate(stream = 'mill creek')  |>
+  mutate(stream = 'mill creek',
+         # pseudo date to add into daily data
+         date = as_date(paste0(year, "-10-01")))  |>
   glimpse()
 ```
 
@@ -212,11 +214,7 @@ gcs_get_object(
   overwrite = TRUE
 )
 feather_redd <- read_csv(here::here("data", "redd-carcass-holding", "feather_redd.csv"), 
-                         col_names = TRUE, 
-                         col_types = list("D", "c", "c", "n",
-                                       "n", "n", "n", "n", "n",
-                                       "n", "n", "n", "n", "n",
-                                       "n", "n", "n"))  |> glimpse()
+                         col_names = TRUE)
 
 summary(feather_redd)
 table(feather_redd$type, useNA = "ifany")
@@ -224,15 +222,14 @@ table(feather_redd$type, useNA = "ifany")
 clean_feather_redd <- feather_redd  |>
   select(date, location, redd_count, 
          latitude, longitude, 
-         redd_width_m, redd_length_m, velocity_m_per_s, depth_m)  |> 
+         redd_width_m, redd_length_m, velocity, depth_m)  |> 
   rename(reach = location,
          redd_width = redd_width_m, 
          redd_length = redd_length_m)  |>
   mutate(stream = "feather river",
          year = lubridate::year(date),
          date = as.Date(date),
-         velocity = velocity_m_per_s / 0.3048)  |> # convert to feet per second 
-  select(-velocity_m_per_s)  |>
+         velocity = velocity / 0.3048)  |> # convert to feet per second 
   glimpse()
 
 ```
@@ -273,11 +270,9 @@ all_redd_data <- bind_rows(clean_battle_redd,
                            clean_mill_redd,
                            clean_yuba_redd)  |> 
   select(-redd_count)  |>
-  # remove mill creek
-  filter(stream != "mill creek")  |> 
   mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
-                             species == "SH" ~ "steelhead",
+                             species %in% c("SH", "O. mykiss") ~ "steelhead",
                              is.na(species) ~ "not recorded"),
          run = ifelse(is.na(run), "not recorded", run))
 ```
@@ -321,9 +316,9 @@ unique(all_redd_data$redd_substrate_size)
 
 redd_substrate_size_lookup <- 
   data.frame("redd_substrate_size" = unique(all_redd_data$redd_substrate_size),
-             "standardized_size_range" = c(NA, "1-2", "2-4", "1-2", "2-4",
-                                           "2-4", "1-2", "2-4", "0.25-0.5", 
-                                           "<0.25", "4-8", "4-8", ">16", "2-4")) |> 
+             "standardized_size_range" = c(NA, "1-2", "2-4", "2-4", "2-4", "0.5-1", "2-4","2-4", '8-16', 
+                                           "4-8", "1-2", "1-2", "4-8", "0.5-1", "1-2", "2-4", "0.5-1", "1-2", 
+                                           "2-4", "2-4", "<0.25", "4-8", "4-8")) |> 
   left_join(substrate_class)
                     
 tail_substrate_size_lookup <- all_redd_data  |> 
