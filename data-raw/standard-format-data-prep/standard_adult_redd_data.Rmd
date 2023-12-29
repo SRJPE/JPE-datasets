@@ -28,6 +28,9 @@ FlowWest received Adult Redd data from four monitoring programs:
 
 Due to the format of the data received, two redd datasets were developed. The first dataset includes Feather, Battle, Yuba, and Clear Creek daily data and the second dataset includes Feather, Battle, Clear, Yuba, and Mill Creek and has a yearly maximum redd counts value.
 
+UPDATE: Mill Creek was added to the daily data with a pseudo date as October 1. This is to allow Mill Creek data
+to be added to the database without creating a seperate table.
+
 ## Standard format for Adult All Redd Data
 
 Data dictionary for standard format for `all_redd_data`:
@@ -105,12 +108,7 @@ gcs_get_object(
 )
 # Redd data for Battle Creek
 battle_redd <- read_csv(here::here("data", "redd-carcass-holding", "battle_redd.csv"), 
-                        col_names = TRUE, 
-                        col_types = list("n", "n", "D", "c", "n", "c", 
-                                         "c", "c", "l", "l", "l", "n", 
-                                         "n", "n", "n", "n", "c", "n", 
-                                         "n", "n", "n", "n", "n", "n", 
-                                         "c"))  |> glimpse()
+                        col_names = TRUE)
 
 summary(battle_redd)
 
