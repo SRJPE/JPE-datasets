@@ -89,6 +89,8 @@ battle_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and
 kable(battle_data_dictionary)
 ```
 ```{r, battle_clean}
+# There are multiple observations per reach. Checked raw data and there is not a 
+# field for crew name etc to indicate that there are duplicates
 battle_holding_clean <- battle_holding %>%
   select(-notes) %>%
   mutate(stream = "battle creek",
@@ -110,6 +112,8 @@ clear_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-
 kable(clear_data_dictionary)
 ```
 ```{r, clear_clean}
+# There are multiple observations per reach. Checked raw data and there is not a 
+# field for crew name etc to indicate that there are duplicates
 clear_holding_clean <- clear_holding %>%
   select(-comments) %>%
   rename(jacks = jack_count) %>%
