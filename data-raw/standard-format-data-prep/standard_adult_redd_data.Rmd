@@ -124,7 +124,7 @@ clean_battle_redd <- battle_redd  |>
          redd_measured, redd_width, redd_length, 
          pre_redd_substrate_size, redd_substrate_size, 
          tail_substrate_size, 
-         flow_fps)  |>
+         flow_fps, age, age_index)  |>
   mutate(redd_count = 1, # each row is a redd observation
          stream = 'battle creek', 
          year = lubridate::year(date))  |>
