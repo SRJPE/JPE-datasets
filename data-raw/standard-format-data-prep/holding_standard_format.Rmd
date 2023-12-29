@@ -131,7 +131,8 @@ kable(deer_data_dictionary)
 deer_holding_clean <- bind_rows(deer_holding_1986_1996,
                                 deer_holding_1997_2020) %>%
   rename(reach = location) %>%
-  mutate(stream = "deer creek")
+  mutate(stream = "deer creek",
+         date = as_date(paste0(year, "-08-01")))
 ```
 
 ### Variables removed
