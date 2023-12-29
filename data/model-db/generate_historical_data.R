@@ -540,7 +540,6 @@ gcs_upload(carcass_estimates,
 # out bulk counts from individual estimates
 
 # daily_redd --------------------------------------------------------------
-# TODO look into the unknow date entries for Feather River
 gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_daily_redd.csv",
@@ -553,7 +552,8 @@ daily_redd <- daily_redd_raw |>
   filter(!is.na(date), species %in% c("chinook", "not recorded", "unknown")) |> 
   select(date, latitude, longitude, reach, redd_id, age, velocity, run, stream) |> 
   # change format to date instead of datetime
-  mutate(date = as.Date(date))
+  mutate(date = as.Date(date)) |> 
+  # TODO we need to add a lookup table - liz is working on the standard reach names
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
   rename(survey_location_id = id) |>
@@ -580,40 +580,41 @@ gcs_upload(daily_redd,
            predefinedAcl = "bucketLevel")
 
 # annual_redd -------------------------------------------------------------
-gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/standard-format-data/standard_annual_redd.csv",
-               overwrite = TRUE)
-annual_redd_raw <- read_csv("data/standard-format-data/standard_annual_redd.csv")
-
-annual_redd <- annual_redd_raw |> 
-  # filter out NA dates
-  filter(!is.na(year)) |> 
-  # filter to chinook, might want to do more work to look into error associated 
-  # with species misidentification
-  filter(species %in% c("chinook", "not recorded", "unknown")) |> 
-  select(-c(species)) |> 
-  rename(count = annual_redd_count) |> 
-  left_join(survey_location, by = c("stream", "reach")) |>
-  select(-c(stream, reach, description)) |>
-  rename(survey_location_id = id) |>
-  # run_id
-  left_join(run, by = c("run" = "definition")) |> 
-  rename(run_id = id) |> 
-  select(-run, -description) 
-
-try(if(any((unique(annual_redd$survey_location_id) %in% survey_location$id) == F)) 
-  stop("Missing Survey Location ID! Please fix!"))
-try(if(any((unique(annual_redd$run_id) %in% run$id) == F))
-  stop("Missing Run ID! Please fix!"))
-try(if(any(is.na(annual_redd$year)))
-  stop("Missing Year! Please fix!"))
-
-gcs_upload(annual_redd,
-           object_function = f,
-           type = "csv",
-           name = "model-db/annual_redd.csv",
-           predefinedAcl = "bucketLevel")
+# Decided to remove this table. Annual summarization will be handled in R pacakge
+# gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "data/standard-format-data/standard_annual_redd.csv",
+#                overwrite = TRUE)
+# annual_redd_raw <- read_csv("data/standard-format-data/standard_annual_redd.csv")
+# 
+# annual_redd <- annual_redd_raw |> 
+#   # filter out NA dates
+#   filter(!is.na(year)) |> 
+#   # filter to chinook, might want to do more work to look into error associated 
+#   # with species misidentification
+#   filter(species %in% c("chinook", "not recorded", "unknown")) |> 
+#   select(-c(species)) |> 
+#   rename(count = annual_redd_count) |> 
+#   left_join(survey_location, by = c("stream", "reach")) |>
+#   select(-c(stream, reach, description)) |>
+#   rename(survey_location_id = id) |>
+#   # run_id
+#   left_join(run, by = c("run" = "definition")) |> 
+#   rename(run_id = id) |> 
+#   select(-run, -description) 
+# 
+# try(if(any((unique(annual_redd$survey_location_id) %in% survey_location$id) == F)) 
+#   stop("Missing Survey Location ID! Please fix!"))
+# try(if(any((unique(annual_redd$run_id) %in% run$id) == F))
+#   stop("Missing Run ID! Please fix!"))
+# try(if(any(is.na(annual_redd$year)))
+#   stop("Missing Year! Please fix!"))
+# 
+# gcs_upload(annual_redd,
+#            object_function = f,
+#            type = "csv",
+#            name = "model-db/annual_redd.csv",
+#            predefinedAcl = "bucketLevel")
 
 # passage_counts ----------------------------------------------------------
 gcs_get_object(object_name = "jpe-model-data/upstream_passage.csv",
@@ -625,6 +626,7 @@ passage_raw <- read_csv("data/model-data/upstream_passage.csv")
 passage <- passage_raw |> 
   # remove missing dates
   filter(!is.na(date)) |> 
+  # warning failed to parse here but it is OK because no missing dates
   mutate(date = case_when(!is.na(time) ~ ymd_hms(paste0(date,time)),
                            T ~ ymd_hms(paste0(date, " 00:00:00")))) |> 
   rename(hours_sampled = hours) |> 
@@ -635,6 +637,7 @@ passage <- passage_raw |>
          reach = NA,
          sex = ifelse(is.na(sex), "not recorded", sex),
          passage_direction = ifelse(is.na(passage_direction), "not recorded", passage_direction)) |> 
+  # need to add survey location lookup
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
   rename(survey_location_id = id) |>
@@ -668,6 +671,7 @@ gcs_upload(passage,
            name = "model-db/passage.csv",
            predefinedAcl = "bucketLevel")
 # passage_estimates -------------------------------------------------------
+# TODO when we get CIs we will want to add that to the db
 gcs_get_object(object_name = "standard-format-data/standard_adult_passage_estimate.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_adult_passage_estimate.csv",
@@ -700,9 +704,7 @@ gcs_upload(passage_estimate,
            predefinedAcl = "bucketLevel")
 
 # daily_holding -----------------------------------------------------------------
-# TODO check run and adipose clipped
-
-gcs_get_object(object_name = "jpe-model-data/holding.csv",
+gcs_get_object(object_name = "standard-format-data/standard_holding.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/model-data/holding.csv",
                overwrite = TRUE)
@@ -739,49 +741,49 @@ gcs_upload(daily_holding,
            name = "model-db/daily_holding.csv",
            predefinedAcl = "bucketLevel")
 # annual_holding -----------------------------------------------------------------
-# TODO check run and adipose clipped
-annual_holding <- holding_raw |> 
-  mutate(year = ifelse(is.na(year), year(date), year)) |> 
-  group_by(year, stream, reach) |> 
-  summarize(count = sum(count)) |> 
-  mutate(run = "spring",
-         adipose_clipped = F) |> 
-  left_join(survey_location, by = c("stream", "reach")) |>
-  select(-c(stream, reach, description)) |>
-  rename(survey_location_id = id) |> 
-  # run_id
-  left_join(run, by = c("run" = "definition")) |> 
-  rename(run_id = id) |> 
-  select(-run, -description)  
-
-try(if(any((unique(annual_holding$survey_location_id) %in% survey_location$id) == F)) 
-  stop("Missing Survey Location ID! Please fix!"))
-try(if(any((unique(annual_holding$run_id) %in% run$id) == F))
-  stop("Missing Run ID! Please fix!"))
-try(if(any(is.na(annual_holding$year)))
-  stop("Missing Year! Please fix!"))
-gcs_upload(annual_holding,
-           object_function = f,
-           type = "csv",
-           name = "model-db/annual_holding.csv",
-           predefinedAcl = "bucketLevel")
-
-# create spreadsheet to QC reach
-reach <- redd_reach |> 
-  mutate(included_redd = T) |> 
-  full_join(holding_reach |> 
-              mutate(included_holding = T)) |> 
-  full_join(carcass_reach |> 
-              mutate(included_carcass = T))
-write_csv(reach, "data/reach_list.csv")
-
-reach_all <- redd_reach |> 
-  bind_rows(holding_reach, carcass_reach) |> 
-  distinct(stream, reach)
-dput(unique(filter(reach_all, stream == "battle creek"))$reach)
-dput(unique(filter(reach_all, stream == "butte creek"))$reach)
-dput(unique(filter(reach_all, stream == "clear creek"))$reach)
-dput(unique(filter(reach_all, stream == "deer creek"))$reach)
-dput(unique(filter(reach_all, stream == "feather river"))$reach)
-dput(filter(annual_redd_raw, stream == "mill creek") |>  distinct(reach))
-dput(unique(filter(reach_all, stream == "yuba river"))$reach)
+# Considering removing this table. Summarization will be handled in the data package
+# annual_holding <- holding_raw |> 
+#   mutate(year = ifelse(is.na(year), year(date), year)) |> 
+#   group_by(year, stream, reach) |> 
+#   summarize(count = sum(count)) |> 
+#   mutate(run = "spring",
+#          adipose_clipped = F) |> 
+#   left_join(survey_location, by = c("stream", "reach")) |>
+#   select(-c(stream, reach, description)) |>
+#   rename(survey_location_id = id) |> 
+#   # run_id
+#   left_join(run, by = c("run" = "definition")) |> 
+#   rename(run_id = id) |> 
+#   select(-run, -description)  
+# 
+# try(if(any((unique(annual_holding$survey_location_id) %in% survey_location$id) == F)) 
+#   stop("Missing Survey Location ID! Please fix!"))
+# try(if(any((unique(annual_holding$run_id) %in% run$id) == F))
+#   stop("Missing Run ID! Please fix!"))
+# try(if(any(is.na(annual_holding$year)))
+#   stop("Missing Year! Please fix!"))
+# gcs_upload(annual_holding,
+#            object_function = f,
+#            type = "csv",
+#            name = "model-db/annual_holding.csv",
+#            predefinedAcl = "bucketLevel")
+# 
+# # create spreadsheet to QC reach
+# reach <- redd_reach |> 
+#   mutate(included_redd = T) |> 
+#   full_join(holding_reach |> 
+#               mutate(included_holding = T)) |> 
+#   full_join(carcass_reach |> 
+#               mutate(included_carcass = T))
+# write_csv(reach, "data/reach_list.csv")
+# 
+# reach_all <- redd_reach |> 
+#   bind_rows(holding_reach, carcass_reach) |> 
+#   distinct(stream, reach)
+# dput(unique(filter(reach_all, stream == "battle creek"))$reach)
+# dput(unique(filter(reach_all, stream == "butte creek"))$reach)
+# dput(unique(filter(reach_all, stream == "clear creek"))$reach)
+# dput(unique(filter(reach_all, stream == "deer creek"))$reach)
+# dput(unique(filter(reach_all, stream == "feather river"))$reach)
+# dput(filter(annual_redd_raw, stream == "mill creek") |>  distinct(reach))
+# dput(unique(filter(reach_all, stream == "yuba river"))$reach)

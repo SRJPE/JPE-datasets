@@ -136,10 +136,12 @@ butte_s <- tibble(stream = rep("butte creek",69),
                    # south_bounding_coordinate = ,
 )
 
-clear_s <- tibble(stream = rep("clear creek",12),
-                   reach = c("R1", "R2", "R4", "R3", "R5", "R5A", "R5B", "R5C", "R6", "R7", 
+clear_s <- tibble(stream = rep("clear creek",15),
+                   reach = c("R1", "R2", "R4", "R3", "R5", "R5A", "R5B", "R5C", "R5A (Above UCC)", "R5A (Below UCC)",
+                             "R6", "R6B", "R7", 
                              "R6A", NA),
-                   description = c("R1", "R2", "R4", "R3", "R5", "R5A", "R5B", "R5C", "R6", "R7", 
+                   description = c("R1", "R2", "R4", "R3", "R5", "R5A", "R5B", "R5C", "R5A (Above UCC)", "R5A (Below UCC)",
+                                   "R6", "R6B", "R7", 
                                    "R6A", NA)
                    # north_bounding_coordinate = ,
                    # south_bounding_coordinate = ,
