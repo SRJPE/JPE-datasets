@@ -159,7 +159,6 @@ environmental_raw <- read_csv("data/standard-format-data/standard_environmental.
 # debris level id
 # add environmental variables, need to format correctly first
 
-# TODO in trap standard data: if stop/start date NA then make start the same as visit time
 discharge <- filter(environmental_raw, parameter == "discharge") |> 
   select(-c(parameter, text)) |> 
   rename(discharge = value) |> 
@@ -248,27 +247,31 @@ gcs_upload(trap,
            name = "model-db/trap.csv",
            predefinedAcl = "bucketLevel")
 # environmental_gage ------------------------------------------------------
+# Considering removing this table as these are gage data from USGS
+# The data that could be stored here are temperature gages collected by
+# the monitoring program
+
 gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_flow.csv",
                overwrite = TRUE)
 flow_raw <- read_csv("data/standard-format-data/standard_flow.csv")
 
-flow <- flow_raw |> 
-  full_join(trap_location, by = c("stream", "site"), multiple = "all") |> 
-  select(-c(stream, site, subsite, site_group, description)) |> 
-  rename(trap_location_id = id) |> 
-  rename(value = flow_cfs, 
-         gage = source) |> 
-  filter(!is.na(value), !is.na(date)) |> 
-  mutate(parameter = "discharge") |> 
-  left_join(environmental_parameter, by = c("parameter" = "definition")) |> 
-  rename(parameter_id = id) |> 
-  select(-parameter, -description) |> 
-  left_join(gage_source, by = c("gage" = "definition")) |> 
-  rename(gage_id = id) |> 
+flow <- flow_raw |>
+  full_join(trap_location, by = c("stream", "site"), multiple = "all") |>
+  select(-c(stream, site, subsite, site_group, description)) |>
+  rename(trap_location_id = id) |>
+  rename(value = flow_cfs,
+         gage = source) |>
+  filter(!is.na(value), !is.na(date)) |>
+  mutate(parameter = "discharge") |>
+  left_join(environmental_parameter, by = c("parameter" = "definition")) |>
+  rename(parameter_id = id) |>
+  select(-parameter, -description) |>
+  left_join(gage_source, by = c("gage" = "definition")) |>
+  rename(gage_id = id) |>
   select(-gage, -description)
-  
+
 unique(flow$trap_location_id)
 unique(flow$parameter_id)
 unique(flow$gage_id)
@@ -278,27 +281,29 @@ gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
                saveToDisk = "data/standard-format-data/standard_temperature.csv",
                overwrite = TRUE)
 temperature_raw <- read_csv("data/standard-format-data/standard_temperature.csv")
-temperature <- temperature_raw |> 
-  filter(source != "RST environmental") |> 
-  left_join(trap_location, by = c("stream", "site", "subsite"), multiple = "all") |> 
-  select(-c(stream, site, subsite, site_group, description)) |> 
-  rename(trap_location_id = id) |> 
+temperature <- temperature_raw |>
+  filter(source != "RST environmental") |>
+  left_join(trap_location, by = c("stream", "site", "subsite"), multiple = "all") |>
+  select(-c(stream, site, subsite, site_group, description)) |>
+  rename(trap_location_id = id) |>
   rename(value = mean_daily_temp_c,
-         gage = source) |> 
-  select(-max_daily_temp_c) |> 
-  mutate(parameter = "temperature") |> 
-  left_join(environmental_parameter, by = c("parameter" = "definition")) |> 
-  rename(parameter_id = id) |> 
-  select(-parameter, -description) |> 
-  left_join(gage_source, by = c("gage" = "definition")) |> 
-  rename(gage_id = id) |> 
+         gage = source) |>
+  select(-max_daily_temp_c) |>
+  mutate(parameter = "temperature") |>
+  left_join(environmental_parameter, by = c("parameter" = "definition")) |>
+  rename(parameter_id = id) |>
+  select(-parameter, -description) |>
+  left_join(gage_source, by = c("gage" = "definition")) |>
+  rename(gage_id = id) |>
   select(-gage, -description)
-  
+
 unique(temperature$trap_location_id)
 unique(temperature$parameter_id)
 unique(temperature$gage_id)
 
-environmental_gage <- bind_rows(flow, temperature)
+environmental_gage <- bind_rows(flow, temperature) |> 
+  # select for data not stored on CDEC or USGS
+  filter(gage_id == 1)
 
 # TODO ADD CHECKS
 # parameter
