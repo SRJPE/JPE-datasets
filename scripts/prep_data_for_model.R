@@ -92,7 +92,6 @@ standard_catch_unmarked <- standard_catch %>%
   select(-species, -release_id, -is_yearling, -month, -day, -cutoff) |> 
   glimpse()
 
-
 # FL-based lifestage logic ------------------------------------------------
 
 
@@ -523,6 +522,55 @@ gcs_upload(catch_fl_summary_stream,
            predefinedAcl = "bucketLevel")
 write_csv(catch_fl_summary_stream, "data/fork_length_summary_stream.csv")
 
+# measure fork length by PLAD size bin ------------------------------------
+# from meeting with josh 12/27/23 - wants number of fish per PLAD size bin (only measured)
+
+plad_distributions_raw <- standard_catch_unmarked |> 
+  mutate(week = week(date),
+         monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
+  left_join(years_to_include) |> 
+  mutate(include_in_model = ifelse(date >= min_date & date <= max_date, TRUE, FALSE),
+         # if the year was not included in the list of years to include then should be FALSE
+         include_in_model = ifelse(is.na(min_date), FALSE, include_in_model),
+         fork_length = round(fork_length)) |> 
+  select(-c(min_date, max_date)) |> 
+  filter(include_in_model == T) |> 
+  select(stream, site, subsite, week, year = monitoring_year, fork_length, count) |> 
+  mutate(plad_size_bins = case_when(fork_length %in% 35:39 ~ "1",
+                                    fork_length %in% 40:44 ~ "2",
+                                    fork_length %in% 45:49 ~ "3",
+                                    fork_length %in% 50:54 ~ "4",
+                                    fork_length %in% 55:59 ~ "5",
+                                    fork_length %in% 60:64 ~ "6",
+                                    fork_length %in% 65:69 ~ "7",
+                                    fork_length %in% 70:74 ~ "8",
+                                    fork_length %in% 75:79 ~ "9",
+                                    fork_length %in% 80:84 ~ "10",
+                                    fork_length %in% 85:89 ~ "11",
+                                    fork_length %in% 90:94 ~ "12",
+                                    fork_length %in% 95:99 ~ "13",
+                                    fork_length %in% 100:104 ~ "14",
+                                    fork_length %in% 105:109 ~ "15",
+                                    fork_length %in% 110:114 ~ "16",
+                                    is.na(fork_length) ~ "not measured",
+                                    fork_length > 114 | fork_length < 35 ~ "outside bins")) |> 
+  group_by(stream, site, week, year, plad_size_bins) |> 
+  summarize(count = sum(count, na.rm = T))
+
+plad_distributions <- plad_distributions_raw |>  
+  group_by(stream, site, week, year) |> 
+  summarize(total = sum(count)) |> 
+  left_join(plad_distributions_raw) |> 
+  select(stream, site, week, year, plad_size_bins, count, total)
+ 
+gcs_upload(plad_distributions,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/plad_bin_distribution.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(plad_distributions, "data/plad_bin_distribution.csv")
+  # ck <- plad_distributions_raw |> 
+  #   filter(is.na(plad_size_bins), !is.na(fork_length), fork_length > 34, fork_length < 114)
 # Effort ------------------------------------------------------------------
 
 # Summarize effort data by week
