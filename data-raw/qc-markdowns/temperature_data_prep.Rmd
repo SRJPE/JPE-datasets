@@ -147,6 +147,13 @@ BCK_hourly_temps %>%
 
 # no data available from USGS
 ```
+from Badhia 
+on USGS data:
+* Site number 11390000 Butte C NR Chico CA contains water data
+* Data ranges from 1961-11-01 to present, with a data gap between ~1979-1999 
+on CDEC
+* Hourly data does range from 1998-present, however there is another record under "event" duration that ranges from 2017-present. Unsure on the difference between datasets 
+* Gauge is operating and "present data" is available
 
 ### Clean data and summarize as mean daily
 
@@ -240,6 +247,12 @@ IGO_hourly_temps %>%
 
 USGS provides no temperature data for Clear Creek. This was confirmed
 with mapper tool accessed from waterdata.usgs.gov.
+
+Notes from Badhia:
+CDEC:
+* Temp seems to range from 1996-09-06 to present (for hourly) and 1996-05-13 to 200-01-01 (for event), not 2002-12-31 to 2022-05-27.
+USGS:
+* No temp
 
 ### Clean data and summarize as mean daily
 
@@ -388,6 +401,15 @@ The plot below shows the daily average to allow for comparison between
 CDEC and USGS datasets. This helps it become more apparent that we
 should use CDEC data for deer creek due to the availability of the data.
 
+Notes from Badhia
+USGS
+* Temp data range from Shinny app 2007-10-01 to present
+* 11383500 station has min and mx temp with a wider range than 2016-2022 (1998-present)
+* This same gauge data was used on DSMtemperature 
+CDEC
+* Hourly data does range from 1998-present, however there is another record under "event" duration that ranges from 2014-present. Unsure on the difference between datasets
+* There is another gauge on Deer Creek (DVD) called Deer Creek Below Standford Vina Dam. Temp data ranges from 1997-present
+
 ### Clean data and summarize as mean daily
 
 ```{r}
@@ -464,15 +486,17 @@ GRL_hourly_temps %>%
 USGS does not provide temperature data for Feather River. This was
 confirmed with mapper tool accessed from waterdata.usgs.gov. 
 
-TODO check if we are missing anything by checking USGS and CDEC data
 
-Notes from Badhia: USGS data for Feather River across three stations
+Notes from Badhia:
+USGS
+* data for Feather River across three stations:
 * Thermalito Afterbay Rel to Feather R NR Oroville 11406920,
 * Feather R A Yuba City CA 11407700, and 
 * Feather R A Oroville CA 11407000 (the one used).
 * Monitoring periods range from 1968-1992, 1964-1976, and 1958-1992 respectively 
 
-* CDEC only has one station, only data from time period stated above was found
+CDEC
+* only has one station and data from time period stated above was found
 * This same station data was used for va-habitat EDA temps
 
 
@@ -577,6 +601,13 @@ MLM_combined %>%
 I would recommend using the CDEC data for Mill Creek due to the
 significant data gaps for USGS.
 
+Notes from Badhia:
+CDEC
+* There is another gauge along Mill (MCH) Mill Creek Bellow HWY 99. Temp Data ranges from 1998-present (hourly) and 2005-present (event)
+USGS
+* Daily data range is 1998-2023, and daily statistics ranges from 2016-2023 (used) 
+* This gage station data was used on DSMtemperature 
+
 ## Clean data and summarize as mean daily
 
 ```{r}
@@ -600,12 +631,15 @@ write_rds(MLM_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 
 There is not CDEC or USGS data available for Yuba River.
 
-TODO look into temp data in Yuba River USGS
-
--   daily max and min Temp data from 1964-2003, with some data gaps, for
-    station number 11421000 Yuba R NR Marysville
--   daily max and min Temp data from 1972-2005, Station 11418000 Yuba R
+Notes from Badhia:
+USGS
+* daily max and min Temp data from 1964-2003, with some data gaps, for
+    station number 11421000 Yuba R NR Marysville (this station data was pulled for va-habitat eda, too)
+* daily max and min Temp data from 1972-2005, Station 11418000 Yuba R
     BL Englebright Dam NR Smartsville has
+CDEC
+* Station YR7 Yuba R ABV HWY 70 has temp data (event) from 2019-09-04 to present
+* For va-habitat project a higher upstream gauge was used. Station code = YRS 
 
 ### Air Gage - code isn't working so comment out for now
 
