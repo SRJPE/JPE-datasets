@@ -141,7 +141,17 @@ BCK_hourly_temps %>%
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-#BCK_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperature
+BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00001") # parameter code 00010: water temperature
+glimpse(BCK_USGS)
+BCK_USGS_format <- BCK_USGS |> 
+  select(Date, temperature=X_00010_00001)
+ggplot(BCK_USGS_format, aes(Date, temperature)) +
+  geom_line()
+BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00002")
+BCK_USGS_format <- BCK_USGS |> 
+  select(Date, temperature=X_00010_00002)
+ggplot(BCK_USGS_format, aes(Date, temperature)) +
+  geom_line()
 # from ashley: don't need to save if no data
 #write.csv(BCK_USGS,"BCK_USGS.csv", row.names = FALSE)
 
@@ -154,6 +164,9 @@ on USGS data:
 on CDEC
 * Hourly data does range from 1998-present, however there is another record under "event" duration that ranges from 2017-present. Unsure on the difference between datasets 
 * Gauge is operating and "present data" is available
+
+TODO We looked at USGS and only mean data is available starting 2016, CDEC has finer resolution hourly data, that is why we decided to use
+CDEC. We are using USGS data to help filter out outliers.
 
 ### Clean data and summarize as mean daily
 
@@ -408,7 +421,9 @@ USGS
 * This same gauge data was used on DSMtemperature 
 CDEC
 * Hourly data does range from 1998-present, however there is another record under "event" duration that ranges from 2014-present. Unsure on the difference between datasets
-* There is another gauge on Deer Creek (DVD) called Deer Creek Below Standford Vina Dam. Temp data ranges from 1997-present
+* There is another gauge on Deer Creek (DVD) called Deer Creek Below Standford Vina Dam. Temp data ranges from 1997-present. It is closer to confluence of the Sac River, below Vina Dam.
+
+TODO use USGS min and max to filter out outlier from CDEC data
 
 ### Clean data and summarize as mean daily
 
@@ -491,7 +506,7 @@ Notes from Badhia:
 USGS
 * data for Feather River across three stations:
 * Thermalito Afterbay Rel to Feather R NR Oroville 11406920,
-* Feather R A Yuba City CA 11407700, and 
+* Feather R A Yuba City CA 11407700, (not using this one because it is too low on the stream) 
 * Feather R A Oroville CA 11407000 (the one used).
 * Monitoring periods range from 1968-1992, 1964-1976, and 1958-1992 respectively 
 
@@ -499,6 +514,7 @@ CDEC
 * only has one station and data from time period stated above was found
 * This same station data was used for va-habitat EDA temps
 
+TODO pull data from 11406920. Plot to see all four (2USGS and 1CDEC, plus FRA from CDEC) data sets
 
 The CDEC data does not cover the extent of the monitoring period for
 Feather River
@@ -640,6 +656,8 @@ USGS
 CDEC
 * Station YR7 Yuba R ABV HWY 70 has temp data (event) from 2019-09-04 to present
 * For va-habitat project a higher upstream gauge was used. Station code = YRS 
+
+TODO pull in those two data sources listed above
 
 ### Air Gage - code isn't working so comment out for now
 
