@@ -524,7 +524,10 @@ write_csv(catch_fl_summary_stream, "data/fork_length_summary_stream.csv")
 
 # measure fork length by PLAD size bin ------------------------------------
 # from meeting with josh 12/27/23 - wants number of fish per PLAD size bin (only measured)
-
+plad_bin_lookup <- tibble(plad_size_bins = c(seq(1:16), "not measured", "outside bins"),
+                          bin_lower = c(seq(from = 35, to = 110,by = 5),NA, NA),
+                          bin_upper = c(seq(from = 39, to = 114, by = 5), NA, NA),
+                          bin_mid = c(seq(from = 37.5, to = 112.5, by = 5), NA, NA))
 plad_distributions_raw <- standard_catch_unmarked |> 
   mutate(week = week(date),
          monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date)),
@@ -566,7 +569,11 @@ plad_distributions <- plad_distributions_raw |>
   group_by(stream, site, week, monitoring_year) |> 
   summarize(total = sum(count)) |> 
   left_join(plad_distributions_raw) |> 
-  select(stream, site, week, monitoring_year, lifestage_for_model, plad_size_bins, count, total)
+  select(stream, site, week, monitoring_year, lifestage_for_model, plad_size_bins, count, total) |> 
+  rename(year = monitoring_year) |> 
+  left_join(plad_bin_lookup) |> 
+  # Josh said he is not going to use these
+  filter(!plad_size_bins %in% c("not measured", "outside bins"))
  
 gcs_upload(plad_distributions,
            object_function = f,
