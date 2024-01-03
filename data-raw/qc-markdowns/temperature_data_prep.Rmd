@@ -544,6 +544,20 @@ head(GRL_hourly_temps$date, n = 1)
 ggplot(GRL_hourly_temps, aes(x = date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y="Temperature (deg C)", title = "Temperature at Feather River", caption = "CDEC")
+
+#Adding "FRA" dataset
+FRA_CDEC <- cdec_query(station = "FRA", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+
+FRA_hourly_temps <- FRA_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+  select(date,time,temp_degC)
+
+# Plot FRA
+ggplot(FRA_hourly_temps, aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y="Temperature (deg C)", title = "Temperature at FRA Feather River", caption = "CDEC")
 ```
 
 CDEC provides temperature data for Feather River from 2003-01-05 to
@@ -572,6 +586,36 @@ GRL_hourly_temps %>%
 # # Read created CSV
 # GRL_USGS <- read_csv("GRL_USGS.csv")
 # GRL_USGS
+
+#Adding Oroville station
+# ORO_USGS <- readNWISdv(11406920, "00010", statCd = "00003") # parameter code 00010: water temperature
+# 
+# # Format to make tidier
+# ORO_daily_meantemps <- ORO_USGS %>%
+#   select(Date, temp_degC =  X_00010_00003) %>%
+#   as_tibble() %>% 
+#   rename(date = Date)
+# no data for daily statistics mean temp on default statCd = 00003, so using min and max
+
+
+ORO_USGS <- readNWISdv(11406920, "00010", statCd = "00001") # parameter code 00010: water temperature
+
+# Format to make tidier
+ORO_daily_maxtemps <- ORO_USGS %>%
+  select(Date, temp_degC =  X_00010_00001) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(ORO_daily_maxtemps)
+
+ORO_USGS <- readNWISdv(11406920, "00010", statCd = "00002") # parameter code 00010: water temperature
+
+# Format to make tidier
+ORO_daily_mintemps <- ORO_USGS %>%
+  select(Date, temp_degC =  X_00010_00002) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(ORO_daily_mintemps)
+
 ```
 
 USGS does not provide temperature data for Feather River. This was
@@ -731,10 +775,83 @@ USGS
 * daily max and min Temp data from 1972-2005, Station 11418000 Yuba R
     BL Englebright Dam NR Smartsville has
 CDEC
-* Station YR7 Yuba R ABV HWY 70 has temp data (event) from 2019-09-04 to present
+* Station YR7 Yuba R ABV HWY 70 has temp data (event) from 2019-09-04 to present 
 * For va-habitat project a higher upstream gauge was used. Station code = YRS 
 
 TODO pull in those two data sources listed above
+
+##CDEC
+```{r}
+YRS_CDEC <- cdec_query(station = "YRS", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+
+YRS_hourly_temps <- YRS_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+  select(date,time,temp_degC)
+
+# Date Ranges
+tail(YRS_hourly_temps$date, n = 1)
+head(YRS_hourly_temps$date, n = 1)
+
+# Plot
+ggplot(YRS_hourly_temps, aes(x=date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)",title = "Water Temperature at Yuba River", caption = " CDEC")
+
+#Adding another gage
+YR7_CDEC <- cdec_query(station = "YR7", dur_code = "E", sensor_num = "146", start_date = "1995-01-01")
+#note that this station only has event duration, not hourly
+YR7_hourly_temps <- YR7_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+  select(date,time,temp_degC)
+
+# Plot
+ggplot(YR7_hourly_temps, aes(x=date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)",title = "Water Temperature at YR7 Yuba River", caption = " CDEC")
+
+```
+
+#CDEC Outliers Removed
+```{r}
+# Plot without outliers
+YRS_hourly_temps %>%
+    filter(temp_degC < 37, temp_degC > -18) %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)", title = "CDEC Water Temperature at Yuba River", caption = "CDEC")
+```
+### USGS
+```{r}
+# Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
+# Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
+
+YBAMR_USGS <- readNWISdv(11421000, "00010") # parameter code 00010: water temperature
+glimpse(YBAMR_USGS) #no data on 00003
+
+YBAMR_USGS <- readNWISdv(11421000, "00010", statCd = "00001") # parameter code 00010: water temperature
+
+# Format to make tidier
+YBAMR_daily_maxtemps <- YBAMR_USGS %>%
+  select(Date, temp_degC =  X_00010_00001) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(YBAMR_daily_maxtemps)
+
+YBAMR_USGS <- readNWISdv(11421000, "00010", statCd = "00002") # parameter code 00010: water temperature
+
+# Format to make tidier
+YBAMR_daily_mintemps <- ORO_USGS %>%
+  select(Date, temp_degC =  X_00010_00002) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(YBAMR_daily_mintemps)
+
+```
+
 
 ### Air Gage - code isn't working so comment out for now
 
