@@ -165,8 +165,48 @@ on CDEC
 * Hourly data does range from 1998-present, however there is another record under "event" duration that ranges from 2017-present. Unsure on the difference between datasets 
 * Gauge is operating and "present data" is available
 
-TODO We looked at USGS and only mean data is available starting 2016, CDEC has finer resolution hourly data, that is why we decided to use
-CDEC. We are using USGS data to help filter out outliers.
+TODO We looked at USGS and only mean data is available starting 2016, CDEC has finer resolution hourly data, that is why we decided to use CDEC. 
+We are using USGS data to help filter out outliers.
+
+### Using USGS min and max to filter out outliers from CDEC
+```{r}
+#USGS
+BCK_USGS <- readNWISdv(11390000, "00010") # parameter code 00010: water temperature
+
+# Format to make tidier
+BCK_daily_temps <- BCK_USGS %>%
+  select(Date, temp_degC =  X_00010_00003) %>%
+  filter(lubridate::year(Date) >= 1995) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+
+ggplot(BCK_daily_temps, aes(date, temp_degC)) +
+  geom_line()
+
+temp_rangeUSGS <- BCK_daily_temps |> 
+  summarise(min_tempUSGS = min(temp_degC),
+            max_tempUSGS = max(temp_degC))
+glimpse(temp_rangeUSGS)
+
+#CDEC
+BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+
+BCK_hourly_temps <- BCK_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+  select(date, time, temp_degC)
+
+BCK_temps_filtered <- BCK_hourly_temps |> 
+  filter(temp_degC >= 3.7,
+         temp_degC <= 24.6)
+
+ggplot(BCK_temps_filtered, aes(date, temp_degC)) +
+  geom_line()
+
+
+```
+
 
 ### Clean data and summarize as mean daily
 
@@ -425,6 +465,42 @@ CDEC
 
 TODO use USGS min and max to filter out outlier from CDEC data
 
+### Using USGS min and max to filter out outliers from CDEC
+
+```{r}
+library(dplyr)
+#USGS
+DCV_USGS <- readNWISdv(11383500, "00010") # parameter code 00010: water temperature
+
+# Format to make tidier
+DCV_daily_temps <- DCV_USGS %>%
+  select(Date, temp_degC =  X_00010_00003) %>%
+  filter(lubridate::year(Date) >= 1995) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+
+temp_rangeUSGS <- DCV_daily_temps |> 
+  summarise(min_tempUSGS = min(temp_degC),
+            max_tempUSGS = max(temp_degC))
+#CDEC
+DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+
+DCV_hourly_temps <- DCV_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+  select(date,time,temp_degC)
+
+DCV_temp_filtered <- DCV_hourly_temps |> 
+  filter(temp_degC >= 3.3,
+         temp_degC <= 27)
+
+ggplot(DCV_temp_filtered, aes(date, temp_degC)) +
+  geom_line()
+```
+
+
+
 ### Clean data and summarize as mean daily
 
 ```{r}
@@ -518,6 +594,7 @@ TODO pull data from 11406920. Plot to see all four (2USGS and 1CDEC, plus FRA fr
 
 The CDEC data does not cover the extent of the monitoring period for
 Feather River
+
 
 ```{r}
 # write_rds(GRL_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/feather_temp.rds")
