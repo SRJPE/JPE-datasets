@@ -284,7 +284,7 @@ na_filled_lifestage_field <- standard_catch_unmarked_field |>
   filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
   mutate(model_lifestage_method = "assign count based on weekly distribution of field assigned lifestage",
          week = week(date), 
-         year = year(date)) |> 
+         year = year(date)) 
 
 # fill in run for all streams ------------------------------------------
 # how many records have no information for run?
@@ -557,23 +557,8 @@ plad_distributions_raw <- standard_catch_unmarked |>
       fork_length %in% 110:114 ~ "16",
       is.na(fork_length) ~ "not measured",
       fork_length > 114 |
-        fork_length < 35 ~ "outside bins"
-    ),
-    lifestage_for_model = case_when(
-      fork_length > cutoff &
-        !run %in% c("fall", "late fall", "winter") ~ "yearling",
-      fork_length <= cutoff &
-        fork_length > 45 &
-        !run %in% c("fall", "late fall", "winter") ~ "smolt",
-      fork_length > 45 &
-        run %in% c("fall", "late fall", "winter", "not recorded") ~ "smolt",
-      fork_length > 45 &
-        stream == "sacramento river" ~ "smolt",
-      fork_length <= 45 ~ "fry",
-      # logic from flora includes week (all weeks but 7, 8, 9 had this threshold) but I am not sure this is necessary, worth talking through
-      T ~ NA
-    )
-  ) |> 
+        fork_length < 35 ~ "outside bins")
+  ) |>
   group_by(stream, site, week, monitoring_year, plad_size_bins, lifestage_for_model) |> 
   summarize(count = sum(count, na.rm = T))
 
