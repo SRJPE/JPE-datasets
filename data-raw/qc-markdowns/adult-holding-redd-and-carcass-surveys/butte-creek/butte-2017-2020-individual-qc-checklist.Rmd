@@ -415,7 +415,7 @@ butte_individual_survey_2017_2020 <- cleaner_data |> glimpse()
 ```
 
 ```{r}
-write_csv(butte_individual_survey_2017_2020, "butte_carcass_2017-2020.csv")
+write_csv(butte_individual_survey_2017_2020, "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/butte-creek//butte_carcass_2017-2020.csv")
 ```
 
 
