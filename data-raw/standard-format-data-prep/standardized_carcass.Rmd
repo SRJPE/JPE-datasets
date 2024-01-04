@@ -88,8 +88,6 @@ battle_carcass <- read_csv("data/redd-carcass-holding/battle_carcass.csv") |>
 
 ### Butte Creek
 
-* all individual-level carcass data from 2019 does not have associated `date` information. These data only have resolution at the `year` level. All other individual-level carcass data tables for years `2014-2020` have `date` information.
-
 #### Columns Removed
 
 `scale_nu`, `tissue_nu`, `otolith_nu`, `comments`, `year`
@@ -125,11 +123,11 @@ butte_carcass_bulk_chops <- read_csv("data/redd-carcass-holding/butte_carcass.cs
   glimpse()
 # each row is an individual for these
 butte_carcass_2014_2016 <- read_csv("data/redd-carcass-holding/butte_carcass_2014-2016.csv")
-butte_carcass_2017_2020 <- read_csv("data/redd-carcass-holding/butte_carcass-2017-2020.csv") |> 
-  mutate(date = if_else(year == 2019, as.Date("2019-01-01"), date)) |>  # TODO false dates to keep 2019 year data in the final dataset
-  select(-year)
+butte_carcass_2017_2020 <- read_csv("data/redd-carcass-holding/butte_carcass-2017-2020.csv")
 
-butte_carcass_individuals <- bind_rows(butte_carcass_2014_2016, butte_carcass_2017_2020) |> 
+butte_carcass_individuals <- bind_rows(butte_carcass_2014_2016 |> 
+                                         mutate(scale_nu = as.character(scale_nu)),
+                                       butte_carcass_2017_2020) |> 
   select(-c(survey, comments)) |> 
   rename(mark_recapture = disposition,
          tag_id = disc_tag_applied,
