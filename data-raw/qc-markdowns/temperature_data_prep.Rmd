@@ -165,13 +165,13 @@ on CDEC
 * Hourly data does range from 1998-present, however there is another record under "event" duration that ranges from 2017-present. Unsure on the difference between datasets 
 * Gauge is operating and "present data" is available
 
-TODO We looked at USGS and only mean data is available starting 2016, CDEC has finer resolution hourly data, that is why we decided to use CDEC. 
+We looked at USGS and only mean data is available starting 2016, CDEC has finer resolution hourly data, that is why we decided to use CDEC. 
 We are using USGS data to help filter out outliers.
 
-### Using USGS min and max to filter out outliers from CDEC
+### Using USGS mean min and max to filter out outliers from CDEC
 ```{r}
 #USGS
-BCK_USGS <- readNWISdv(11390000, "00010") # parameter code 00010: water temperature, median 
+BCK_USGS <- readNWISdv(11390000, "00010") # parameter code 00010: water temperature, mean 
 
 # Format to make tidier
 BCK_daily_temps <- BCK_USGS %>%
@@ -188,33 +188,6 @@ temp_rangeUSGS <- BCK_daily_temps |>
             max_tempUSGS = max(temp_degC))
 glimpse(temp_rangeUSGS)
 
-#TODO also graph adding min max datasets
-BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00001") # parameter code 00010: water temperature
-
-# BCK_USGS_format <- BCK_USGS |> 
-#   select(Date, temperature=X_00010_00001)
-# plotmax <- ggplot(BCK_USGS_format, aes(Date, temperature)) +
-#   geom_line()
-# 
-# 
-# BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00002")
-# BCK_USGS_format <- BCK_USGS |> 
-#   select(Date, temperature=X_00010_00002)
-# plotmin <- ggplot(BCK_USGS_format, aes(Date, temperature)) +
-#   geom_line()
-# 
-# #Combined min and max plot
-
-
-combined_data <- bind_rows(
-  mutate(BCK_USGS_format, group = "Stat Code: 00001"),
-  mutate(BCK_USGS_format, group = "Stat Code: 00002")
-)
-# plot_minmax <- plotmin + plotmax
-ggplot(combined_data, aes(Date, temperature, color = group)) +
-  geom_line() +
-  ggtitle("Combined Plot for Stat Code: 00001 and Stat Code: 00002")
-
 #CDEC
 BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01") #added start date otherwise defaults to most recent years only
 
@@ -225,13 +198,67 @@ BCK_hourly_temps <- BCK_CDEC %>%
          temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
   select(date, time, temp_degC)
 
+#applying USGS min and max to remove outliers from CDEC data
 BCK_temps_filtered <- BCK_hourly_temps |> 
   filter(temp_degC >= 3.7,
          temp_degC <= 24.6)
 
 ggplot(BCK_temps_filtered, aes(date, temp_degC)) +
   geom_line()
+```
 
+```{r}
+#Adding min max datasets
+BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00001") # parameter code 00010: water temperature
+
+BCK_USGS_max <- BCK_USGS |>
+  select(Date, temperature=X_00010_00001)
+# plotmax <- ggplot(BCK_USGS_max, aes(Date, temperature)) +
+#   geom_line()
+# 
+# 
+BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00002")
+BCK_USGS_min <- BCK_USGS |>
+  select(Date, temperature=X_00010_00002)
+# plotmin <- ggplot(BCK_USGS_min, aes(Date, temperature)) +
+#   geom_line()
+# 
+# #Combined min and max plot
+combined_data <- bind_rows(
+  mutate(BCK_USGS_max, HourlyTemperatures = "Max Temp"),
+  mutate(BCK_USGS_min, HourlyTemperatures = "Min Temp")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_data, aes(Date, temperature, color = HourlyTemperatures)) +
+  geom_col() +
+  ggtitle("USGS hourly min and max hourly temperatures from Butte Creek near Chico")
+
+```
+
+
+```{r}
+#Testing using USGS min and max as a threshold to remove outliers from CDEC
+#Max
+BCK_maxtemp_threshold <- max(BCK_USGS_max$temperature) |> 
+  glimpse()
+
+#Trying another way to filter max of max
+# BCK_USGS_max |> 
+#   summarise(highest_temperature = max(temperature)) |> 
+#   glimpse()
+
+#Min 
+BCK_mintemp_threshold <- min(BCK_USGS_min$temperature) |> 
+  glimpse()
+
+#Add thresholds from min and max to CDEC data
+BCK_temps_capped <- BCK_hourly_temps |> 
+  filter(temp_degC >= 0.5,
+         temp_degC <= 27.5)
+
+ggplot(BCK_temps_capped, aes(date, temp_degC)) +
+  geom_line()
+  ggtitle("Filtered CDEC temperatures from Butte Creek near Chico, using USGS min/max threshold")
 
 ```
 
@@ -268,8 +295,6 @@ filter(butte_format, mean_temp_degC > 70)
 write_rds(BCK_daily_temps, here::here("data-raw", "standard-format-data-prep","temp_data", "butte_temp.rds"))
 ```
 
-USGS provides no temperature data for Butte Creek. This was confirmed
-with mapper tool accessed from waterdata.usgs.gov.
 
 ## Clear Creek
 
@@ -437,6 +462,7 @@ DCV_hourly_temps %>%
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
+#Mean temperature USGS
 DCV_USGS <- readNWISdv(11383500, "00010") # parameter code 00010: water temperature
 
 # Format to make tidier
@@ -454,6 +480,32 @@ head(DCV_daily_temps$date,n=1)
 ggplot(DCV_daily_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)", title = "Water Temperature at Deer Creek", caption = "USGS")
+
+#Pulling Max and Min temperature USGS
+#max
+DCV_USGS <- readNWISdv(11383500, "00010", statCd = "00001") # parameter code 00010: water temperature
+DCV_USGS_max <- DCV_USGS |>
+  select(Date, temperature=X_00010_00001)
+# plotmax <- ggplot(DCV_USGSS_max, aes(Date, temperature)) +
+#   geom_line()
+
+# min
+DCV_USGS <- readNWISdv(11383500, "00010", statCd = "00002")
+DCV_USGS_min <- DCV_USGS |>
+  select(Date, temperature=X_00010_00002)
+# plotmin <- ggplot(DCV_USGS_min, aes(Date, temperature)) +
+#   geom_line()
+# 
+# #Combined min and max plot
+combined_data <- bind_rows(
+  mutate(DCV_USGS_max, HourlyTemperatures = "Max Temp"),
+  mutate(DCV_USGS_min, HourlyTemperatures = "Min Temp")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_data, aes(Date, temperature, color = HourlyTemperatures)) +
+  geom_col() +
+  ggtitle("USGS hourly min and max hourly temperatures from Deer Creek near Vina")
+
 ```
 
 USGS temperature data for deer creek ranges from 2016-10-01 to
@@ -491,43 +543,35 @@ CDEC
 * Hourly data does range from 1998-present, however there is another record under "event" duration that ranges from 2014-present. Unsure on the difference between datasets
 * There is another gauge on Deer Creek (DVD) called Deer Creek Below Standford Vina Dam. Temp data ranges from 1997-present. It is closer to confluence of the Sac River, below Vina Dam.
 
-TODO use USGS min and max to filter out outlier from CDEC data
 
 ### Using USGS min and max to filter out outliers from CDEC
 
 ```{r}
-library(dplyr)
-#USGS
-DCV_USGS <- readNWISdv(11383500, "00010") # parameter code 00010: water temperature
+#USGS min and max
+#Max
+DCV_max_threshold <- max(DCV_USGS_max$temperature) |> 
+  glimpse()
 
-# Format to make tidier
-DCV_daily_temps <- DCV_USGS %>%
-  select(Date, temp_degC =  X_00010_00003) %>%
-  filter(lubridate::year(Date) >= 1995) %>%
-  as_tibble() %>% 
-  rename(date = Date)
+#Trying another way to filter max of max
+# DCV_USGS_max |>
+#   summarise(highest_temperature = max(temperature)) |>
+#   glimpse()
 
-temp_rangeUSGS <- DCV_daily_temps |> 
-  summarise(min_tempUSGS = min(temp_degC),
-            max_tempUSGS = max(temp_degC))
-#CDEC
-DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+#Min 
+DCV_min_threshold <- min(DCV_USGS_min$temperature) |> 
+  glimpse()
 
-DCV_hourly_temps <- DCV_CDEC %>%
-  mutate(date = as_date(datetime),
-         time = as_hms(datetime),
-         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
-  select(date,time,temp_degC)
+#Add thresholds from min and max to CDEC data
+DCV_temps_capped <- DCV_hourly_temps |> 
+  filter(temp_degC >= 0.4,
+         temp_degC <= 28.5)
 
-DCV_temp_filtered <- DCV_hourly_temps |> 
-  filter(temp_degC >= 3.3,
-         temp_degC <= 27)
+ggplot(DCV_temps_capped, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from Deer Creek, using USGS min/max threshold")
 
-ggplot(DCV_temp_filtered, aes(date, temp_degC)) +
-  geom_line()
-#TODO add min and max datasets
+#note that 25 nows were removed, assuming that is because they were outside threshold
 ```
-
 
 
 ### Clean data and summarize as mean daily
@@ -626,7 +670,7 @@ GRL_hourly_temps %>%
 #   rename(date = Date)
 # no data for daily statistics mean temp on default statCd = 00003, so using min and max
 
-
+#max temp
 ORO_USGS <- readNWISdv(11406920, "00010", statCd = "00001") # parameter code 00010: water temperature
 
 # Format to make tidier
@@ -640,6 +684,7 @@ ggplot(ORO_daily_maxtemps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)",title = "Max Temperature at Feather Oroville", caption = "USGS")
 
+#min temp
 ORO_USGS <- readNWISdv(11406920, "00010", statCd = "00002") # parameter code 00010: water temperature
 
 # Format to make tidier
@@ -653,12 +698,20 @@ ggplot(ORO_daily_mintemps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)",title = "Min Temperature at Feather Oroville", caption = "USGS")
 
-#TODO compare min and max plots
 ```
 
-USGS does not provide temperature data for Feather River. This was
-confirmed with mapper tool accessed from waterdata.usgs.gov. 
+```{r}
+#Plot of min and max 
+combined_data <- bind_rows(
+  mutate(ORO_daily_maxtemps, HourlyTemperatures = "Max Temp"),
+  mutate(ORO_daily_mintemps, HourlyTemperatures = "Min Temp")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_data, aes(date, temp_degC, color = HourlyTemperatures)) +
+  geom_col() +
+  ggtitle("USGS hourly min and max hourly temperatures Feather River - Oroville")
 
+```
 
 Notes from Badhia:
 USGS
@@ -671,11 +724,6 @@ USGS
 CDEC
 * only has one station and data from time period stated above was found
 * This same station data was used for va-habitat EDA temps
-
-TODO pull data from 11406920. Plot to see all four (2USGS and 1CDEC, plus FRA from CDEC) data sets
-
-The CDEC data does not cover the extent of the monitoring period for
-Feather River
 
 
 ```{r}
@@ -815,11 +863,11 @@ CDEC
 * Station YR7 Yuba R ABV HWY 70 has temp data (event) from 2019-09-04 to present 
 * For va-habitat project a higher upstream gauge was used. Station code = YRS 
 
-TODO pull in those two data sources listed above
 
 ##CDEC
 ```{r}
 YRS_CDEC <- cdec_query(station = "YRS", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+#this data seems weird
 
 YRS_hourly_temps <- YRS_CDEC %>%
   mutate(date = as_date(datetime),
@@ -867,8 +915,9 @@ YRS_hourly_temps %>%
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
 YBAMR_USGS <- readNWISdv(11421000, "00010") # parameter code 00010: water temperature
-glimpse(YBAMR_USGS) #no data on 00003
+glimpse(YBAMR_USGS) #no data on 00003 (median), so using min and max
 
+#max
 YBAMR_USGS <- readNWISdv(11421000, "00010", statCd = "00001") # parameter code 00010: water temperature
 
 # Format to make tidier
@@ -878,17 +927,57 @@ YBAMR_daily_maxtemps <- YBAMR_USGS %>%
   rename(date = Date)
 glimpse(YBAMR_daily_maxtemps)
 
+#min
 YBAMR_USGS <- readNWISdv(11421000, "00010", statCd = "00002") # parameter code 00010: water temperature
 
 # Format to make tidier
-YBAMR_daily_mintemps <- ORO_USGS %>%
+YBAMR_daily_mintemps <- YBAMR_USGS %>%
   select(Date, temp_degC =  X_00010_00002) %>%
   as_tibble() %>% 
   rename(date = Date)
 glimpse(YBAMR_daily_mintemps)
-#TODO plot min and max together
-```
 
+
+#Plot USGS min and max together
+combined_data <- bind_rows(
+  mutate(YBAMR_daily_maxtemps, HourlyTemperatures = "Max Temp"),
+  mutate(YBAMR_daily_mintemps, HourlyTemperatures = "Min Temp")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_data, aes(date, temp_degC, color = HourlyTemperatures)) +
+  geom_col() +
+  ggtitle("USGS hourly min and max hourly temperatures Yuba River - Marysville")
+
+```
+# Plot without outliers using USGS max/min
+```{r}
+#Max
+YBAMR_maxtemps_threshold <- max(YBAMR_daily_maxtemps$temp_degC) |> 
+  glimpse()
+
+#Trying another way to filter max of max
+# YBAMR_daily_maxtemps |>
+#   summarise(highest_temperature = max(temp_degC)) |>
+#   glimpse()
+
+#Min 
+YBAMR_mintemps_threshold <- min(YBAMR_daily_mintemps$temp_degC) |> 
+  glimpse()
+#Trying another way to filter min of min
+# YBAMR_daily_mintemps |>
+#   summarise(lowest_temperature = min(temp_degC)) |>
+#   glimpse()
+
+#Add thresholds from min and max to CDEC YR7 data
+YBAMR_temps_capped <- YR7_hourly_temps |> 
+  filter(temp_degC >= 4.5,
+         temp_degC <= 29.5)
+
+ggplot(YBAMR_temps_capped, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from Yuba River (YR7), using USGS min/max threshold")
+
+```
 
 ### Air Gage - code isn't working so comment out for now
 
