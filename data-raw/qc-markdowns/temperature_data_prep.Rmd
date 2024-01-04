@@ -171,7 +171,7 @@ We are using USGS data to help filter out outliers.
 ### Using USGS min and max to filter out outliers from CDEC
 ```{r}
 #USGS
-BCK_USGS <- readNWISdv(11390000, "00010") # parameter code 00010: water temperature
+BCK_USGS <- readNWISdv(11390000, "00010") # parameter code 00010: water temperature, median 
 
 # Format to make tidier
 BCK_daily_temps <- BCK_USGS %>%
@@ -188,8 +188,36 @@ temp_rangeUSGS <- BCK_daily_temps |>
             max_tempUSGS = max(temp_degC))
 glimpse(temp_rangeUSGS)
 
+#TODO also graph adding min max datasets
+BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00001") # parameter code 00010: water temperature
+
+# BCK_USGS_format <- BCK_USGS |> 
+#   select(Date, temperature=X_00010_00001)
+# plotmax <- ggplot(BCK_USGS_format, aes(Date, temperature)) +
+#   geom_line()
+# 
+# 
+# BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00002")
+# BCK_USGS_format <- BCK_USGS |> 
+#   select(Date, temperature=X_00010_00002)
+# plotmin <- ggplot(BCK_USGS_format, aes(Date, temperature)) +
+#   geom_line()
+# 
+# #Combined min and max plot
+
+
+combined_data <- bind_rows(
+  mutate(BCK_USGS_format, group = "Stat Code: 00001"),
+  mutate(BCK_USGS_format, group = "Stat Code: 00002")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_data, aes(Date, temperature, color = group)) +
+  geom_line() +
+  ggtitle("Combined Plot for Stat Code: 00001 and Stat Code: 00002")
+
 #CDEC
-BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01") #added start date otherwise defaults to most recent years only
+
 
 BCK_hourly_temps <- BCK_CDEC %>%
   mutate(date = as_date(datetime),
@@ -497,6 +525,7 @@ DCV_temp_filtered <- DCV_hourly_temps |>
 
 ggplot(DCV_temp_filtered, aes(date, temp_degC)) +
   geom_line()
+#TODO add min and max datasets
 ```
 
 
@@ -607,6 +636,10 @@ ORO_daily_maxtemps <- ORO_USGS %>%
   rename(date = Date)
 glimpse(ORO_daily_maxtemps)
 
+ggplot(ORO_daily_maxtemps, aes(x=date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)",title = "Max Temperature at Feather Oroville", caption = "USGS")
+
 ORO_USGS <- readNWISdv(11406920, "00010", statCd = "00002") # parameter code 00010: water temperature
 
 # Format to make tidier
@@ -616,6 +649,11 @@ ORO_daily_mintemps <- ORO_USGS %>%
   rename(date = Date)
 glimpse(ORO_daily_mintemps)
 
+ggplot(ORO_daily_mintemps, aes(x=date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)",title = "Min Temperature at Feather Oroville", caption = "USGS")
+
+#TODO compare min and max plots
 ```
 
 USGS does not provide temperature data for Feather River. This was
@@ -766,7 +804,6 @@ write_rds(MLM_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 
 ## Yuba River
 
-There is not CDEC or USGS data available for Yuba River.
 
 Notes from Badhia:
 USGS
@@ -787,7 +824,7 @@ YRS_CDEC <- cdec_query(station = "YRS", dur_code = "H", sensor_num = "25", start
 YRS_hourly_temps <- YRS_CDEC %>%
   mutate(date = as_date(datetime),
          time = as_hms(datetime),
-         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+         temp_degC = parameter_value) %>%
   select(date,time,temp_degC)
 
 # Date Ranges
@@ -805,7 +842,7 @@ YR7_CDEC <- cdec_query(station = "YR7", dur_code = "E", sensor_num = "146", star
 YR7_hourly_temps <- YR7_CDEC %>%
   mutate(date = as_date(datetime),
          time = as_hms(datetime),
-         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+         temp_degC = parameter_value) %>%
   select(date,time,temp_degC)
 
 # Plot
@@ -849,7 +886,7 @@ YBAMR_daily_mintemps <- ORO_USGS %>%
   as_tibble() %>% 
   rename(date = Date)
 glimpse(YBAMR_daily_mintemps)
-
+#TODO plot min and max together
 ```
 
 
