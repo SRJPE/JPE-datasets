@@ -76,10 +76,15 @@ raw_later_data <- purrr::map(later_years, open_files) %>%
   reduce(bind_rows)
 write_csv(raw_later_data, "raw_2017_to_2020_individuals_data.csv")
 
-year <- 2019
-read_from_cloud(year)
-raw_2019_data <- readxl::read_excel("2019_raw_surveyindividuals.xlsx")
-write_csv(raw_2019_data, "2019_raw_surveyindividuals.csv")
+# 2019 original file did not contain dates, so updated file (sent 11-28-2023) is read in separately
+
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek/data-raw/2019_SurveyIndividuals_updated.xls",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/butte-creek/2019_raw_surveyindividuals.xls",
+               overwrite = TRUE)
+
+raw_2019_data <- readxl::read_xls("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/butte-creek/2019_raw_surveyindividuals.xls")
+write_csv(raw_2019_data, "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/butte-creek/2019_raw_surveyindividuals.csv")
 
 ```
 
@@ -87,8 +92,8 @@ Read in data from google cloud, glimpse raw data and domain description sheet:
 ```{r}
 # read in data to clean
 
-raw_later_individuals_data <- read_csv("raw_2017_to_2020_individuals_data.csv")%>% glimpse()
-raw_2019_individuals_data <- read_csv("2019_raw_surveyindividuals.csv") %>% glimpse()
+raw_later_individuals_data <- read_csv("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/butte-creek/raw_2017_to_2020_individuals_data.csv")%>% glimpse()
+raw_2019_individuals_data <- read_csv("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/butte-creek/2019_raw_surveyindividuals.csv") %>% glimpse()
 
 ```
 
