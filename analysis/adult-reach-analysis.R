@@ -253,7 +253,7 @@ all_deer_reaches |>
   geom_col() +
   facet_wrap(~data_type)
 
-# hard-code butte reaches based on map provided in report (see adult data report)
+# hard-code deer reaches based on map provided in report (see adult data report)
 standard_deer_reaches <- tibble("standardized_reach" = c("Upper Falls to Potato Patch Camp",
                                             "Potato Patch Camp to Highway 32 (Red Bridge)",
                                             "Highway 32 (Red Bridge) to Lower Falls", 
