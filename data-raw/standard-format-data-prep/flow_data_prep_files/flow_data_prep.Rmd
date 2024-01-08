@@ -530,7 +530,34 @@ boyds_landing_hourly_flows <- boyds_landing_CDEC %>%
   mutate(date = as_date(datetime),
          time = as_hms(datetime),
          flow_cfs = parameter_value)
-  
+
+# Another gage from CDEC (FBL)
+boyds_landing_CDEC2 <- cdec_query(station = "FBL", dur_code = "H", 
+                                 sensor_num = "20", start_date = "2009-01-01")
+boyds_landing2_hourly_flows <- boyds_landing_CDEC2 %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)  
+
+#USGS - FEA
+FEA_USGS <- readNWISdv(11421700, "00060")
+
+FEA_USGS_format <- FEA_USGS |> 
+  select(Date, flow_cfs =  X_00060_00003)
+ggplot(FEA_USGS_format, aes(Date, flow_cfs)) +
+  geom_line()
+# it looks like data is pretty outdated (1969-1980)
+
+#USGS - FEA2
+FEA2_USGS <- readNWISdv(11425000, "00060")
+
+FEA2_USGS_format <- FEA2_USGS |> 
+  select(Date, flow_cfs =  X_00060_00003) |> 
+  filter(year(Date)>1980)
+ggplot(FEA2_USGS_format, aes(Date, flow_cfs)) +
+  geom_line()
+
+
 ```
 
 
@@ -544,6 +571,15 @@ boyds_landing_hourly_flows |> filter(flow_cfs == 0) |> nrow()
 boyds_landing_hourly_flows |> filter(is.na(flow_cfs)) |> nrow()
 boyds_landing_hourly_flows |> filter(flow_cfs < 0) |> nrow()
 boyds_landing_hourly_flows |> nrow()
+
+# FSL plot
+ggplot(boyds_landing2_hourly_flows, aes(x = date, y = flow_cfs)) +
+  geom_line()
+# just checking to make sure there aren't any zeros
+boyds_landing2_hourly_flows |> filter(flow_cfs == 0) |> nrow()
+boyds_landing2_hourly_flows |> filter(is.na(flow_cfs)) |> nrow()
+boyds_landing2_hourly_flows |> filter(flow_cfs < 0) |> nrow()
+boyds_landing2_hourly_flows |> nrow()
 ```
 
 #### Clean data
@@ -566,8 +602,9 @@ We will use the CDEC GRL gage for HFC, the USGS Oroville gage for LFC, and the C
 ```{r}
 saveRDS(gridley_hourly_flows_clean_mean, "data-raw/standard-format-data-prep/flow_data/feather_hfc_flow.rds")
 saveRDS(oroville_daily_flows, "data-raw/standard-format-data-prep/flow_data/feather_lfc_flow.rds")
-saveRDS(boyds_landing_mean_daily_flows, 
-        "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/lower_feather_flow.rds")
+saveRDS(boyds_landing_mean_daily_flows, here::here("data-raw", "standard-format-data-prep",
+                                                   "flow_data_prep_files","flow_data", "lower_feather_flow.rds"))
+        
 ```
 
 ## Mill Creek

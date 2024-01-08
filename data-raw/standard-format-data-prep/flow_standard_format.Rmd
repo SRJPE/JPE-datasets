@@ -80,6 +80,7 @@ glimpse()
 ```
 
 ## Feather
+### Feather High flow channel
 
 ```{r}
 # source CDEC
@@ -112,6 +113,11 @@ feather_sunset_pumps <- feather_hfc %>%
   glimpse()
 
 feather_hfc_format <- bind_rows(feather_herringer, feather_live_oak, feather_shawns_beach, feather_sunset_pumps)
+```
+
+### Feather Low flow channel
+
+```{R}
 
 # source USGS
 feather_lfc <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", 
@@ -137,16 +143,25 @@ feather_steep_riffle <- feather_lfc %>%
   glimpse()
 
 feather_lfc_format <- bind_rows(feather_eye_riffle, feather_gateway_riffle, feather_steep_riffle)
+
+
+
+```
+### Lower Feather 
+```{r}
+
+#CDEC
 # source lower feather
 lower_feather <- read_rds(here::here("data-raw", "standard-format-data-prep", 
                                      "flow_data_prep_files", "flow_data",
                                      "lower_feather_flow.rds"))
-
 lower_feather_format <- lower_feather |> 
   mutate(stream = "feather river",
          source = "CDEC FBS", 
          site = "lower feather") |> 
   glimpse()
+
+
 ```
 
 ## Mill
