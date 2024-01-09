@@ -101,7 +101,7 @@ ggplot(BCK_hourly_temps, aes(x=date)) +
   labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Buttle Creek", caption = "CDEC")
 ```
 
-### Visualize CDEC with Outliers Removed
+#### Visualize CDEC with Outliers Removed
 
 ```{r}
 # Plot without outliers
@@ -115,7 +115,7 @@ BCK_hourly_temps %>%
 ### USGS
 
 One station:
-* Site number 11390000 Butte C NR Chico CA (TODO TIME PERIOD): TODO LOCATION DESCRIPTION
+* Site number 11390000 Butte C NR Chico CA (2016-10 Daily Mean; 1961-11-01 to present Min/Max): Upper stream, near Chico, CA, below little Butte Creek diversion. Above Parrott-Phelan Dam    
 
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
@@ -228,14 +228,14 @@ write_rds(BCK_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 
 ### Recommendations
 
--   CDEC data has very high max - I think these are errors or code for
-    something. CDEC data is more similar to Upper Clear Creek
--   Use the data from Clear over the CDEC data.
+CDEC data has very high max - I think these are errors or code for something. 
+CDEC data is more similar to Upper Clear Creek.
+Use the data from Clear over the CDEC data.
 
 ### CDEC
 
 One station:
-* IGO (1996-09-06 to present H; 1996-05-13 to 2000-01-01 E): TODO ADD DESCRIPTION OF LCOATION
+* IGO (1996-09-06 to present H; 1996-05-13 to 2000-01-01 E): Near Igo, before south folk clear creek confluence. Halfway through the Creek.  
 
 ```{r}
 IGO_CDEC <- cdec_query(station = "IGO", dur_code = "H", sensor_num = "25", start_date = "2003-01-01")
@@ -313,10 +313,14 @@ write_rds(lcc_temp, here::here("data-raw", "standard-format-data-prep","temp_dat
 
 ## Deer Creek
 
+### Recommendation
+Use CDEC data because USGS data has a limited range for the mean. Use USGS min and max data to establish threshold criteria that can be used to filter out any outliers in the CDEC data.
+
 ### CDEC
-TODO MOVE TO FORMAT LIKE OTHERS
-CDEC Temperature Data for Deer Creek ranges from 1998-10-01 to
-2022-06-16. Hourly data does range from 1998-present, however there is another record under "event" duration that ranges from 2014-present. There is another gauge on Deer Creek (DVD) called Deer Creek Below Standford Vina Dam. Temp data ranges from 1997-present. It is closer to confluence of the Sac River, below Vina Dam.
+
+Two stations:
+* DCV (1998-10-01 to present H: 2014-11-18 to present E): Lower watershed, near Vina, far from confluence with Sacramento River
+* DVD (1997-10-03 to present H: 2013-03-14 to present E): Lower watershed, below Stanford Vina Dam, close from confluence with Sacramento River
 
 ```{r}
 DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
@@ -337,7 +341,7 @@ ggplot(DCV_hourly_temps, aes(x=date)) +
   labs(x = "Year",y = "Temperature (deg C)",title = "Water Temperature at Deer Creek", caption = " CDEC")
 ```
 
-### Visualize CDEC Data with Outliers Removed
+#### Visualize CDEC Data with Outliers Removed
 
 ```{r}
 # Plot without outliers
@@ -350,7 +354,8 @@ DCV_hourly_temps %>%
 
 ### USGS
 
-USGS mean temperature data for deer creek ranges from 2016-10-01 to 2022-05-25. Min and max temp with a wider range from 1998 to present. This gage is also used in DSMtemperature
+One station:
+* Site number 11383500 Deer C NR Vina CA (2016-10-01 to 2022-05-25 Daily Mean; 1998-10-01 to present Min/Max): Lower stream, near Vina, close from confluence with Sacramento River
 
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
@@ -402,7 +407,7 @@ ggplot(combined_data, aes(Date, temperature, color = HourlyTemperatures)) +
 
 ```
 
-#### Mean Daily USGS vs Daily CDEC data
+### Mean Daily USGS vs Daily CDEC data
 
 The plot below shows the daily average to allow for comparison between
 CDEC and USGS datasets. This helps it become more apparent that we
@@ -425,9 +430,6 @@ DCV_combined %>%
   labs(y = "Temperature (deg C)", title = "Water Temperature at Deer Creek")
 ```
 
-### Recommendation
-
-Use CDEC data because USGS data has a limited range for the mean. Use USGS min and max data to establish threshold criteria that can be used to filter out any outliers in the CDEC data.
 
 ### Using USGS min and max to filter out outliers from CDEC
 
@@ -532,9 +534,10 @@ GRL_hourly_temps %>%
 
 ### USGS
 Three stations:
-* Thermalito Afterbay Rel to Feather R NR Oroville 11406920 (1968-1992): located right where Thermalito rejoins LFC. Time period is old but could be helpful to understand HFC temperature.
-* Feather R A Yuba City CA 11407700 (1964-1976): not using this one because it is too low on the stream)
-* Feather R A Oroville CA 11407000 (1958-1992): located right below diversion from Oroville into LFC and Thermalito Afterbay. Time period is old but could be helpful to understand the LFC temperature.
+* Site Number 11406920 Thermalito Afterbay Rel to Feather R NR Oroville (1968-1992): located right where Thermalito
+rejoins LFC. Time period is old but could be helpful to understand HFC temperature.
+* Site Number 11407700 Feather R A Yuba City CA (1964-1976): not using this one because it is too low on the stream
+* Sit Number 11407000 Feather R A Oroville CA (1958-1992): located right below diversion from Oroville into LFC and Thermalito Afterbay. Time period is old but could be helpful to understand the LFC temperature.
 
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
@@ -607,8 +610,8 @@ Use CDEC data due to the longer time period and resolution of data. USGS can be 
 * Note that Mill Creek has multiple temperature loggers to represent summer holding habitat. We will be acquiring this data and using in addition to the CDEC data. 
 
 ### CDEC
-One station:
-* MLM (1998-09-30 to 2022-05-27): Upper watershed, near Los Molinos
+Two stations:
+* MLM (1998-09-30 to 2022-05-27 H): Upper watershed, near Los Molinos
 * MCH (1998-present H; 2005-present E): Lower watershed, near confluence with Sacramento R, Below HWY 99
 
 ```{r}
@@ -647,7 +650,7 @@ MLM_hourly_temps %>%
 
 ### USGS
 One station:
-* ADD STATION NAME (2016-10-01 to 2022-05-25 Daily Mean; 1998-2023 Min/Max): ADD LOCATION DESCRIPTION. This gage station data was used on DSMtemperature.
+* Site Numer 11381500 Mill C NR Los Molinos CA (2016-10 to 2023-10 Daily Mean): Lower stream, near Los Molinos CA, close from confluence with Sacramento River. This gage station data was used on DSMtemperature.
 
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
@@ -718,8 +721,8 @@ write_rds(MLM_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 ### CDEC
 
 Two stations:
-* YR7 (2019-09-04 to present): Above highway 70 (TODO include more location description)
-* YRS TODO ADD TIME PERIOD AND LOCATION DESCRIPTION
+* YR7 Yuba R ABV HWY 70 (2019-09-04 to present E): Above highway 70, near Marysville, close from confluence with Sacramento River 
+* YRS Yuba River near Smartville (2001-03-22 to 2017-05-17 H): Right below Englebright Dam - temp data might be unavailable (delete?) 
 
 ```{r}
 YRS_CDEC <- cdec_query(station = "YRS", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
@@ -756,7 +759,7 @@ ggplot(YR7_hourly_temps, aes(x=date)) +
 
 ```
 
-### Visualize CDEC Data with Outliers Removed
+#### Visualize CDEC Data with Outliers Removed
 ```{r}
 # Plot without outliers
 YRS_hourly_temps %>%
@@ -766,11 +769,12 @@ YRS_hourly_temps %>%
   labs(x = "Year",y = "Temperature (deg C)", title = "CDEC Water Temperature at Yuba River", caption = "CDEC")
 ```
 
-## USGS
-* daily max and min Temp data from 1964-2003, with some data gaps, for
-    station number 11421000 Yuba R NR Marysville (this station data was pulled for va-habitat eda, too)
-* daily max and min Temp data from 1972-2005, Station 11418000 Yuba R
-    BL Englebright Dam NR Smartsville has
+### USGS
+
+Two stations:
+* Site number 11421000 Yuba R NR Marysville (1964-10-01 to 2003-09-29 Min/Max with some data gaps): Lower on the stream, near Marysville CA, relatively close to confluence with Sacramento River 
+* Site number 11418000 Yuba R BL Englebright Dam NR Smartsville (1972-10-18 to 2005-02-18 Min/Max): Right below Englebright Dam, near Smartsville CA. This station data was pulled for va-habitat eda, too
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
