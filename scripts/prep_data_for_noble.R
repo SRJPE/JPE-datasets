@@ -60,6 +60,7 @@ raw <- read_data_entity(packageId = "edi.1504.1", entityId = res$entityId[1])
 deer_mill_raw <- read_csv(file = raw)
 mill_deer_2021_present <- deer_mill_raw |>
   filter(species == "chinook salmon") |>
+  filter(as.Date(date) > as.Date("2021-09-01")) |> 
   mutate(run = "not recorded",
          siteName = stream,
          subSiteName = stream,
@@ -95,6 +96,7 @@ raw <- read_data_entity(packageId = "edi.1509.1", entityId = res$entityId[1])
 battle_clear_raw <- read_csv(file = raw)
 
 battle_2021_present <- battle_clear_raw |> 
+  filter(as.Date(sample_date) > as.Date("2021-09-01")) |> 
   rename(siteName = station_code,
          visitTime = sample_date,
          lifeStage = life_stage,
@@ -121,7 +123,8 @@ current_data <- bind_rows(butte_2021_present,
                           tisdale_2021_present,
                           mill_deer_2021_present,
                           battle_2021_present,
-                          knights_2021_present)
+                          knights_2021_present) |> 
+  filter(!is.na(stream))
 write_csv(current_data, here::here("data", "PLAD-data","catch_2021_current.csv"))
 
 # upload to google cloud bucket
