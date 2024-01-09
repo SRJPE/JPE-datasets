@@ -2,13 +2,15 @@
 # Ideally we would just pull this data from the jpe-model-db but it isn't quite there yet
 library(readr)
 library(dplyr)
-
+library(EDIutils)
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # Tisdale
-# https://github.com/FlowWest/jpe-tisdale-edi/blob/add-metadata/data/catch.csv
-tisdale_raw <- read_csv(here::here("data", "tisdale_catch_edi.csv"))
+# pull straight from EDI
+res <- read_data_entity_names(packageId = "edi.1499.2")
+raw <- read_data_entity(packageId = "edi.1499.2", entityId = res$entityId[1])
+tisdale_raw <- read_csv(file = raw)
 tisdale_2021_present <- tisdale_raw |> 
   filter(commonName == "Chinook salmon") |> 
   select(-c(ProjectDescriptionID, catchRawID, trapVisitID, commonName, releaseID, finalRun, totalLength, visitType, actualCount)) |> 
@@ -18,31 +20,33 @@ tisdale_2021_present <- tisdale_raw |>
 
 
 # Knights Landing
-# https://github.com/FlowWest/jpe-knights-edi/blob/main/data/catch.csv
-knights_raw <- read_csv(here::here("data", "knights_catch_edi.csv"))
+res <- read_data_entity_names(packageId = "edi.1501.1")
+raw <- read_data_entity(packageId = "edi.1501.1", entityId = res$entityId[2])
+knights_raw <- read_csv(file = raw)
 knights_2021_present <- knights_raw |>
   filter(commonName == "Chinook salmon", releaseID %in% c(0, 255)) |>
-  mutate(subSiteName = ifelse(trapPositionID == 63004, "8.4", "8.3"),
-         siteName = "knights landing") |> 
-  select(-c(projectDescriptionID, catchRawID, trapVisitID, commonName, releaseID, finalRun, totalLength, visitType, actualCount, visitTime2, atCaptureRunMethod, random, siteID, trapPositionID, finalRunMethod)) |>
+  mutate(siteName = "knights landing",
+         subSiteName = as.character(subSiteName)) |> 
+  select(-c(catchRawID, trapVisitID, commonName, releaseID, totalLength, visitType)) |>
   filter(as.Date(visitTime) > as.Date("2021-09-01")) |>
-  rename(run = atCaptureRun) |>
   mutate(stream = "sacramento river")
 
 
 # Butte
-# pulled most recent catch file from the butte edi repo: https://github.com/FlowWest/jpe-butte-edi/blob/make_xml_qc/data/butte_catch_edi.csv
-butte_raw <- read_csv(here::here("data", "butte_catch_edi.csv"))
+res <- read_data_entity_names(packageId = "edi.1497.1")
+raw <- read_data_entity(packageId = "edi.1497.1", entityId = res$entityId[1])
+butte_raw <- read_csv(file = raw)
 butte_2021_present <- butte_raw |> 
-  filter(commonName == "Chinook salmon") |> 
+  filter(commonName == "chinook salmon") |> 
   select(-c(ProjectDescriptionID, catchRawID, trapVisitID, commonName, releaseID, finalRun, totalLength, visitType, actualCount)) |> 
   filter(as.Date(visitTime) > as.Date("2021-09-01")) |> 
   rename(run = atCaptureRun) |> 
   mutate(stream = "butte creek")
 
 # Feather 
-# https://github.com/FlowWest/jpe-feather-edi/blob/make_xml_qc/data/feather_catch_edi.csv
-feather_raw <- read_csv(here::here("data", "feather_catch_edi.csv"))
+res <- read_data_entity_names(packageId = "edi.1239.3")
+raw <- read_data_entity(packageId = "edi.1239.3", entityId = res$entityId[1])
+feather_raw <- read_csv(file = raw)
 feather_2021_present <- feather_raw |> 
   filter(commonName == "Chinook salmon") |> 
   select(-c(ProjectDescriptionID, catchRawID, trapVisitID, commonName, releaseID, totalLength, visitType, actualCount)) |> 
@@ -50,47 +54,74 @@ feather_2021_present <- feather_raw |>
   mutate(stream = "feather river")
 
 # Mill/Deer - paper sheets - working on data entry
-gcs_get_object(object_name = 
-                 "rst/mill-creek/data/mill_2021_catch.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data-raw/qc-markdowns/rst/mill-creek/mill_2021_catch.csv",
-               overwrite = TRUE)
 
-mill_raw <- read_csv("data-raw/qc-markdowns/rst/mill-creek/mill_2021_catch.csv")
-mill_2021_present <- mill_raw |> 
-  filter(species == "chinook salmon") |> 
+res <- read_data_entity_names(packageId = "edi.1504.1")
+raw <- read_data_entity(packageId = "edi.1504.1", entityId = res$entityId[1])
+deer_mill_raw <- read_csv(file = raw)
+mill_deer_2021_present <- deer_mill_raw |>
+  filter(species == "chinook salmon") |>
   mutate(run = "not recorded",
-         siteName = "upper mill creek",
-         subSiteName = "upper mill creek",
-         fishOrigin = "not recorded") |> 
-  select(-c(mort, is_plus_count, weight, species)) |> 
+         siteName = stream,
+         subSiteName = stream,
+         fishOrigin = "not recorded") |>
+  select(-c(weight, species)) |>
   rename(lifeStage = lifestage,
          forkLength = fork_length,
          n = count,
          visitTime = date)
-  
-# Battle/Clear - working on getting from Natasha
-# erin created this - TODO merge workflow
-battle_clear_raw <- read_csv("data/battle_clear_catch_2021_2022.csv")
+
+# gcs_get_object(object_name = 
+#                  "rst/mill-creek/data/mill_2021_catch.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "data-raw/qc-markdowns/rst/mill-creek/mill_2021_catch.csv",
+#                overwrite = TRUE)
+# 
+# mill_raw <- read_csv("data-raw/qc-markdowns/rst/mill-creek/mill_2021_catch.csv")
+# mill_2021_present <- mill_raw |> 
+#   filter(species == "chinook salmon") |> 
+#   mutate(run = "not recorded",
+#          siteName = "upper mill creek",
+#          subSiteName = "upper mill creek",
+#          fishOrigin = "not recorded") |> 
+#   select(-c(mort, is_plus_count, weight, species)) |> 
+#   rename(lifeStage = lifestage,
+#          forkLength = fork_length,
+#          n = count,
+#          visitTime = date)
+#   
+# Battle/Clear 
+res <- read_data_entity_names(packageId = "edi.1509.1")
+raw <- read_data_entity(packageId = "edi.1509.1", entityId = res$entityId[1])
+battle_clear_raw <- read_csv(file = raw)
+
 battle_2021_present <- battle_clear_raw |> 
-  rename(stream = river,
-         siteName = station_code,
+  rename(siteName = station_code,
          visitTime = sample_date,
          lifeStage = life_stage,
          n = count, 
          forkLenth = fork_length) |> 
-  mutate(fishOrigin = "not recorded",
+  mutate(stream = case_when(siteName %in% c("upper battle creek", "lower battle creek", "power house battle creek") ~ "battle creek",
+                            siteName %in% c("lower clear creek", "upper clear creek") ~ "clear creek",
+                            T ~ siteName),
+         fishOrigin = "not recorded",
          subSiteName = siteName) |> 
   select(-common_name)
 # Yuba - just started in 2022/2023
+res <- read_data_entity_names(packageId = "edi.1529.2")
+raw <- read_data_entity(packageId = "edi.1529.2", entityId = res$entityId[1])
+yuba_raw <- read_csv(file = raw)
+yuba_2021_present <- yuba_raw |> 
+  filter(commonName == "Chinook salmon") |> 
+  select(-c(ProjectDescriptionID, catchRawID, trapVisitID, commonName, totalLength, visitType)) |> 
+  filter(as.Date(visitTime) > as.Date("2021-09-01")) |> 
+  mutate(stream = "yuba river")
 
 current_data <- bind_rows(butte_2021_present, 
                           feather_2021_present,
                           tisdale_2021_present,
-                          mill_2021_present,
+                          mill_deer_2021_present,
                           battle_2021_present,
-                          knights_2021_present) |> 
-  select(-sample_time)
+                          knights_2021_present)
 write_csv(current_data, here::here("data", "PLAD-data","catch_2021_current.csv"))
 
 # upload to google cloud bucket
