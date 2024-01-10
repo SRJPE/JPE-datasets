@@ -239,8 +239,6 @@ ck <- filter(trap, is.na(trap_visit_time_start) & is.na(trap_visit_time_end))
 # debris level id
 
 # check that there are no missing dates
-
-unique(ck$visit_type)
 gcs_upload(trap,
            object_function = f,
            type = "csv",
