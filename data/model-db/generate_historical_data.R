@@ -676,10 +676,14 @@ gcs_get_object(object_name = "standard-format-data/standard_adult_passage_estima
                overwrite = TRUE)
 passage_estimates_raw <- read_csv("data/standard-format-data/standard_adult_passage_estimate.csv")
 
-passage_estimate <- passage_estimates_raw |> 
+passage_estimates <- passage_estimates_raw |> 
   filter(!is.na(passage_estimate)) |> 
   # survey_location_id
-  mutate(reach = NA) |> 
+  mutate(reach = NA,
+         # these fields will be filled in when we get this information
+         upper_bound_estimate = NA,
+         lower_bound_estimate = NA,
+         confidence_level = NA) |> 
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
   rename(survey_location_id = id) |>
@@ -695,7 +699,7 @@ try(if(any((unique(passage_estimate$run_id) %in% run$id) == F))
 try(if(any(is.na(passage_estimate$year)))
   stop("Missing Year! Please fix!"))
 
-gcs_upload(passage_estimate,
+gcs_upload(passage_estimates,
            object_function = f,
            type = "csv",
            name = "model-db/passage_estimate.csv",
