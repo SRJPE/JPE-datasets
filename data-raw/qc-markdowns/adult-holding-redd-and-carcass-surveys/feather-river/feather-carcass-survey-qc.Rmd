@@ -120,7 +120,8 @@ feather_carcass_2001 <- read_from_cloud("all_carcasses", 2001) |>
 feather_carcass_2002 <- read_from_cloud("all_carcasses", 2002) |> 
   mutate(date = as.Date(date)) |> 
   rename(fork_length = fl,
-         samples_collected = samp_type) |> 
+         samples_collected = samp_type,
+         adipose_fin_clipped = adipose_fin_clip) |> 
   glimpse() 
 ```
 
@@ -429,7 +430,7 @@ feather_carcass_combined_raw <-
 
 ```{r}
 feather_carcass_combined <- feather_carcass_combined_raw |> 
-  select(-c(spawn, adipose_fin_clip, time, comment)) |> # spawn and adipose_fin_clip are from survey_meta_id == 70002 and are empty oncne we filter out NA dates 
+  select(-c(spawn, time, comment)) |> # spawn and adipose_fin_clip are from survey_meta_id == 70002 and are empty oncne we filter out NA dates 
   mutate(year = year(date),
          disposition = case_when(disposition == "recaptured, chopped" ~ "chopped",
                                  disposition == "chopped_recovered" ~ "chopped",
