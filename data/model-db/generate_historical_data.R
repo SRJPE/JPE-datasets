@@ -242,7 +242,7 @@ ck <- filter(trap, is.na(trap_visit_time_start) & is.na(trap_visit_time_end))
 gcs_upload(trap,
            object_function = f,
            type = "csv",
-           name = "model-db/trap.csv",
+           name = "model-db/trap_visit.csv",
            predefinedAcl = "bucketLevel")
 # environmental_gage ------------------------------------------------------
 # Considering removing this table as these are gage data from USGS
@@ -666,7 +666,7 @@ try(if(any(is.na(passage$date)))
 gcs_upload(passage,
            object_function = f,
            type = "csv",
-           name = "model-db/passage.csv",
+           name = "model-db/passage_counts.csv",
            predefinedAcl = "bucketLevel")
 # passage_estimates -------------------------------------------------------
 # TODO when we get CIs we will want to add that to the db
@@ -702,7 +702,7 @@ try(if(any(is.na(passage_estimate$year)))
 gcs_upload(passage_estimates,
            object_function = f,
            type = "csv",
-           name = "model-db/passage_estimate.csv",
+           name = "model-db/passage_estimates.csv",
            predefinedAcl = "bucketLevel")
 
 # daily_holding -----------------------------------------------------------------
