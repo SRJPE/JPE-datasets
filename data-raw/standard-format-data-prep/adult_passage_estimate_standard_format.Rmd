@@ -186,6 +186,7 @@ write_csv(passage_estimate, here::here("data","adult_passage_estimate.csv"))
 
 ### Get CIs from Deer Creek raw files
 ```{r}
+# TODO make this into a cleaner function
 deer_CIs_21_22_south <- readxl::read_xlsx(here::here("data", "deer_escapement_estimates_21-22.xlsx"),
                                     sheet = "Post R DSVS Salmon ",
                                     range = "A1:F4") |> 
@@ -193,8 +194,7 @@ deer_CIs_21_22_south <- readxl::read_xlsx(here::here("data", "deer_escapement_es
   select(lower = `...4`, upper = `South Salmon`) |> 
   mutate(lower = as.numeric(lower), 
          upper = as.numeric(upper),
-         ladder = "South") |> 
-  glimpse()
+         ladder = "South")
 
 deer_CIs_21_22_north <- readxl::read_xlsx(here::here("data", "deer_escapement_estimates_21-22.xlsx"),
                                           sheet = "Post R DNVS Salmon",
