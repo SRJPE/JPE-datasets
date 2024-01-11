@@ -66,6 +66,14 @@ gcs_get_object(object_name =
                saveToDisk = here::here("data", "deer_escapement_estimates_21-22.xlsx"),
                overwrite = TRUE)
 
+# pull in mill creek VAKI estimates
+# sent from Doug Killam doug.killam@wildlife.ca.gov
+gcs_get_object(object_name = 
+                 "adult-upstream-passage-monitoring/mill-creek/data-raw/MCVS 2021-22 spring FINAL 3-3-23.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "mill_escapement_estimates_21-22.xlsx"),
+               overwrite = TRUE)
+
 ```
 
 ```{r}
@@ -206,6 +214,14 @@ deer_CIs_21_22_north <- readxl::read_xlsx(here::here("data", "deer_escapement_es
          ladder = "North") |> 
   bind_rows(deer_CIs_21_22_south) |> 
   glimpse()
+
+mill_CIs_21_22 <- readxl::read_xlsx(here::here("data", "mill_escapement_estimates_21-22.xlsx"),
+                                    sheet = "Post R MCVS Salmon ",
+                                    range = "A1:F4") |> 
+  filter(`2021-22  Mill Creek SPRING Video Station Estimate` == "0.9") |> 
+  select(lower = `...4`, upper = `POST -R`) |> 
+  mutate(upper = as.numeric(upper),
+         lower = as.numeric(lower)) 
 
 ```
 
