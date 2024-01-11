@@ -58,6 +58,14 @@ gcs_get_object(object_name =
                saveToDisk = here::here("data", "butte_escapement.csv"),
                overwrite = TRUE)
 
+# pull in deer creek VAKI estimates
+# sent from Doug Killam doug.killam@wildlife.ca.gov
+gcs_get_object(object_name = 
+                 "adult-upstream-passage-monitoring/deer-creek/data-raw/DCVS both 2021-22 Spring FINAL 3-3-23.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "deer_escapement_estimates_21-22.xlsx"),
+               overwrite = TRUE)
+
 ```
 
 ```{r}
@@ -173,6 +181,16 @@ passage_estimate <- bind_rows(clear_battle,
   mutate(passage_estimate = round(passage_estimate, 2))
 
 write_csv(passage_estimate, here::here("data","adult_passage_estimate.csv"))
+```
+
+
+### Get CIs from Deer Creek raw files
+```{r}
+deer_CIs_21_22 <- readxl::read_xlsx(here::here("data", "deer_escapement_estimates_21-22.xlsx"),
+                                    sheet = "Post R DSVS Salmon ",
+                                    range = "A1:F4") |> 
+  glimpse()
+
 ```
 
 ```{r, save_data}
