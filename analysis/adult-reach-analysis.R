@@ -221,7 +221,7 @@ standard_butte_reaches <- tibble("reach" = c("A", "B", "C", "D", "E", "F", "G", 
                                                          "Covered bridge to Parrot-Phelan Diversion")) |> 
       full_join(butte_subreach_lookup)
 
-# TODO Skyway-99 encoding - likely fall survey, outside normal survey range
+# Skyway-99 encoding - likely fall survey, outside normal survey range
 butte_reach_lookup <- tibble("sub_reach" = unique(all_butte_reaches$reach),
                              "standardized_sub_reach" = c("A1", "A2", "A3", "A5", "B1", "B2", "B3", "B6", 
                                                           "B7", "C1", "C11", "C2", "C4", "C9", "A4", "B4", 
