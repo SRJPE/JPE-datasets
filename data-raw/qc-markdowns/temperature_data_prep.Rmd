@@ -170,7 +170,26 @@ ggplot(combined_data, aes(Date, temperature, color = HourlyTemperatures)) +
 
 # Caption for figure: Daily max and min temperatures (degrees Celcius) from 1960 to 2024 using data from USGS gage at Butte Creek near Chico (insert link to data source)."
 
-
+#Trying other aesthetics
+ggplot(combined_data, aes(Date, temperature, color = HourlyTemperatures)) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(option = "plasma") +  # Use colorblind-friendly palette "magma"
+  labs(
+    title = "Hourly Min and Max Temperatures from Butte Creek near Chico",
+    x = "",
+    y = "Temperature (°C)",
+    color = "Hourly Temperatures",
+    caption =  "Daily max and min temperatures (°C) from 1960 to 2024 using data from USGS gage at Butte Creek near Chico (https://waterdata.usgs.gov/ca/nwis/inventory/?site_no=11390000)"
+  ) +
+  theme_minimal(base_size = 13) +  # Adjust base font size
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+      plot.caption = element_text(size = 6)
+  )
 ```
 
 
@@ -396,14 +415,30 @@ DCV_USGS_min <- DCV_USGS |>
 #   geom_line()
 # 
 # #Combined min and max plot
-combined_data <- bind_rows(
+combined_dataDCV <- bind_rows(
   mutate(DCV_USGS_max, HourlyTemperatures = "Max Temp"),
   mutate(DCV_USGS_min, HourlyTemperatures = "Min Temp")
 )
 # plot_minmax <- plotmin + plotmax
-ggplot(combined_data, aes(Date, temperature, color = HourlyTemperatures)) +
-  geom_col() +
-  ggtitle("USGS hourly min and max hourly temperatures from Deer Creek near Vina")
+ggplot(combined_dataDCV, aes(Date, temperature, color = HourlyTemperatures)) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(option = "plasma") +  # Use colorblind-friendly palette "magma"
+  labs(
+    title = "Hourly Min and Max Temperatures from Deer Creek near Vina",
+    x = "",
+    y = "Temperature (°C)",
+    color = "Hourly Temperatures",
+    caption =  "Daily max and min temperatures (°C) from 1998 to 2024 using data from USGS gage at Deer Creek near Vina (https://waterdata.usgs.gov/ca/nwis/inventory/?site_no=11383500)"
+  ) +
+  theme_minimal(base_size = 13) +  # Adjust base font size
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+      plot.caption = element_text(size = 6)
+  )
 
 ```
 
@@ -563,9 +598,9 @@ ORO_daily_maxtemps <- ORO_USGS_max_raw %>%
   rename(date = Date)
 glimpse(ORO_daily_maxtemps)
 
-ggplot(ORO_daily_maxtemps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color = "darkred") +
-  labs(x = "Year",y = "Temperature (deg C)",title = "Max Temperature at Feather Oroville", caption = "USGS")
+# ggplot(ORO_daily_maxtemps, aes(x=date)) +
+#   geom_line(aes(y = temp_degC), color = "darkred") +
+#   labs(x = "Year",y = "Temperature (deg C)",title = "Max Temperature at Feather Oroville", caption = "USGS")
 
 #min temp
 ORO_USGS_min_raw <- readNWISdv(11406920, "00010", statCd = "00002") # parameter code 00010: water temperature
@@ -577,23 +612,38 @@ ORO_daily_mintemps <- ORO_USGS_min_raw %>%
   rename(date = Date)
 glimpse(ORO_daily_mintemps)
 
-ggplot(ORO_daily_mintemps, aes(x=date)) +
-  geom_line(aes(y = temp_degC), color = "darkred") +
-  labs(x = "Year",y = "Temperature (deg C)",title = "Min Temperature at Feather Oroville", caption = "USGS")
+# ggplot(ORO_daily_mintemps, aes(x=date)) +
+#   geom_line(aes(y = temp_degC), color = "darkred") +
+#   labs(x = "Year",y = "Temperature (deg C)",title = "Min Temperature at Feather Oroville", caption = "USGS")
 
 ```
 
 ```{r}
 #Plot of min and max 
-combined_data <- bind_rows(
+combined_dataORO <- bind_rows(
   mutate(ORO_daily_maxtemps, HourlyTemperatures = "Max Temp"),
   mutate(ORO_daily_mintemps, HourlyTemperatures = "Min Temp")
 )
 # plot_minmax <- plotmin + plotmax
-ggplot(combined_data, aes(date, temp_degC, color = HourlyTemperatures)) +
-  geom_col() +
-  ggtitle("USGS hourly min and max hourly temperatures Feather River - Oroville")
-
+ggplot(combined_dataORO, aes(date, temp_degC, color = HourlyTemperatures)) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(option = "plasma") +  # Use colorblind-friendly palette "magma"
+  labs(
+    title = "Hourly Min and Max Temperatures from Feather River",
+    x = "",
+    y = "Temperature (°C)",
+    color = "Hourly Temperatures",
+    caption =  "Daily max and min temperatures (°C) from 1968 to 1992 using data from USGS gage at Feather River nea Oroville (https://waterdata.usgs.gov/ca/nwis/inventory/?site_no=11406920)"
+  ) +
+  theme_minimal(base_size = 13) +  # Adjust base font size
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+      plot.caption = element_text(size = 6)
+  )
 ```
 
 
@@ -804,14 +854,30 @@ glimpse(YBAMR_daily_mintemps)
 
 
 #Plot USGS min and max together
-combined_data <- bind_rows(
+combined_dataYBAMR <- bind_rows(
   mutate(YBAMR_daily_maxtemps, HourlyTemperatures = "Max Temp"),
   mutate(YBAMR_daily_mintemps, HourlyTemperatures = "Min Temp")
 )
 # plot_minmax <- plotmin + plotmax
-ggplot(combined_data, aes(date, temp_degC, color = HourlyTemperatures)) +
-  geom_col() +
-  ggtitle("USGS hourly min and max hourly temperatures Yuba River - Marysville")
+ggplot(combined_dataYBAMR, aes(date, temp_degC, color = HourlyTemperatures)) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(option = "plasma") +  # Use colorblind-friendly palette "magma"
+  labs(
+    title = "Hourly Min and Max Temperatures from Yuba River",
+    x = "",
+    y = "Temperature (°C)",
+    color = "Hourly Temperatures",
+    caption =  "Daily max and min temperatures (°C) from 1964 to 2003 using data from USGS gage at Yuba River near Marysville (https://waterdata.usgs.gov/ca/nwis/inventory/?site_no=11421000)"
+  ) +
+  theme_minimal(base_size = 13) +  # Adjust base font size
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+      plot.caption = element_text(size = 6)
+  )
 
 ```
 
