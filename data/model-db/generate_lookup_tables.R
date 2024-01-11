@@ -353,10 +353,10 @@ gcs_upload(trap_functioning,
            predefinedAcl = "bucketLevel")
 
 # fish_processed ----------------------------------------------------------
-fish_processed <- tibble(definition = c("not recorded", "processed fish", "no fish caught", "no catch data, fish released", 
-                                        "no catch data, fish left in live box"),
-                         description = c("not recorded", "processed fish", "no fish caught", "no catch data, fish released", 
-                                         "no catch data, fish left in live box")) |> 
+fish_processed <- tibble(definition = c("not recorded", "processed fish", "no fish caught", "no catch data and fish released", 
+                                        "no catch data and fish left in live box"),
+                         description = c("not recorded", "processed fish", "no fish caught", "no catch data and fish released", 
+                                         "no catch data and fish left in live box")) |> 
   mutate(id = row_number())
 gcs_upload(fish_processed,
            object_function = f,
