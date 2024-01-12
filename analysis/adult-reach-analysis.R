@@ -10,19 +10,20 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
 #                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "standard-format-data", "standard_daily_redd.csv")))
+#                saveToDisk = here::here("data", "standard-format-data", "standard_daily_redd.csv"),
+#                overwrite = TRUE)
 # gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
 #                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "standard-format-data", "standard_annual_redd.csv")))
+#                saveToDisk = here::here("data", "standard-format-data", "standard_annual_redd.csv"),
+#                overwrite = TRUE)
 # gcs_get_object(object_name = "standard-format-data/standard_carcass.csv",
 #                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "standard-format-data", "standard_cacass.csv")))
+#                saveToDisk = here::here("data", "standard-format-data", "standard_cacass.csv"),
+#                overwrite = TRUE)
 # gcs_get_object(object_name = "standard-format-data/standard_holding.csv",
 #                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "standard-format-data", "standard_holding.csv")))
-gcs_get_object(object_name = "resources/Battle_Clear_Reach_Breaks_Adult_Surveys.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", "battle-clear-creek-survey-reaches.xlsx"))
+#                saveToDisk = here::here("data", "standard-format-data", "standard_holding.csv"),
+#                overwrite = TRUE)
 
 # read in adult data files
 
@@ -80,7 +81,7 @@ standard_battle_reaches <- tibble("standardized_reach" = c("R1A", "R1B", "R1", "
                                                          "R5", "R6", "R7", NA),
                               "reach_description" = c("Eagle Canyon Dam to Trout Farm",
                                                       "Trout Farm to Wildcat Dam",
-                                                      "Assumes encompasses R1A and R1B: Eagle Canyon Dam to Wildcat Dam",
+                                                      "Assumes encompasses R1A and R1B: Eagle Canyon Dam to Wildcat Dam. Moving forward will be using sub-reaches",
                                                       "Wildcat Dam to Conflence",
                                                       "Coleman Dam to Confluence",
                                                       "Confluence to Barnbeat",
@@ -89,13 +90,11 @@ standard_battle_reaches <- tibble("standardized_reach" = c("R1A", "R1B", "R1", "
                                                       "Coleman NFH to LBC (Lower Battle Creek)",
                                                       "not recorded"))
 
-
-# TODO confirm Tailrace and Nevis Creek with Natasha, here encodes as NA (only 3 rows)
-# TODO R1A vs R1B for older
 battle_reach_lookup <- tibble("reach" = unique(all_battle_reaches$reach),
                               "standardized_reach" = c(NA, "R7", "R3", "R4",
                                                        "R6", "R7", "R2", "R1", "R5",
-                                                       NA, NA)) |> 
+                                                       "R6", "R7", "R4", "R1",
+                                                       "R2", "R5", "R3", "R1", "R1")) |> 
   left_join(standard_battle_reaches)
 
 
