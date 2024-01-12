@@ -10,6 +10,8 @@ knitr::opts_knit$set(root.dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+               
+               
 # Overview
 Describe goal of document
 Insert table of covariates and citations
@@ -31,20 +33,53 @@ source(knitr::purl(here::here("data-raw", "qc-markdowns", "temperature_data_prep
 
 ```
 
-## Number of degree days
+```{r}
+# google cloud set up
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# get data from google cloud
+gcs_get_object(object_name = "gs://jpe-dev-bucket/standard-format-data/standard_temperature.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk =  here::here("data-raw", "standard-format-data-prep", "standard_temperature.csv"),
+               overwrite = TRUE)
+#saving data
+strd_temp <- read.csv(here::here("data-raw", "standard-format-data-prep", "temp_data", "standard_temperature.csv"))
+glimpse(strd_temp)
+```
+
+```{r}
+# #For now, pulling Temp data from jpe-dev-bucket
+# source(knitr::purl(here::here("data-raw", "standard-format-data-prep", "temp_data", "standard_temperature.csv"), quiet=TRUE))
+
+
+```
+
+## Number of degree days (we are skipping this part for now)
 DD= ((Tmax + Tmin / 2) - T0), where Tmax and Tmin are daily ambient temps, and T0 is the base or threshold temp
 Citation: Chezik, Kyle & Lester, Nigel & Venturelli, Paul. (2014). Fish growth and degree-days I: Selecting a base temperature for a within-population study. Canadian Journal of Fisheries and Aquatic Sciences. 71. 47-55. 10.1139/cjfas-2013-0295. 
 ```{r}
 # We are stating with Butte data because its ok and would be a good placeholder
-glimpse(BCK_daily_temps)
-butte_dd <- BCK_daily_temps |> 
+
+butte_std_temp <- read.csv(here::here("data-raw", "standard-format-data-prep", "temp_data", "standard_temperature.csv")) |>
+  filter(stream == "butte creek")
+
+
+butte_std_temp$date <- as.Date(butte_std_temp$date)
+glimpse(butte_std_temp)
+
+#setting up by water years
+butte_dd <- butte_std_temp |> 
   mutate(month= month(date), 
          wyear= ifelse(month %in% (10:12), year(date)+1, year(date))) |>  
   filter(month>=11 | month<=4) |> 
-  mutate(degdays= ((max_temp_degC + min_temp_degC) / 2) - 2) 
+  mutate(degdays=((mean_daily_temp_c + max_daily_temp_c) / 2) - 2) 
+
 butte_dd_sum <- butte_dd |> 
   group_by(wyear) |> 
   summarise(totalddays=sum(degdays))
+
+#plotting
 ggplot(butte_dd, aes(as.factor(wyear), degdays))+
   geom_boxplot()
 ggplot(butte_dd_sum, aes(wyear, totalddays)) +
@@ -53,9 +88,44 @@ ggplot(butte_dd_sum, aes(wyear, totalddays)) +
 ```
 
 
-## Day of year
+## Day of year when 7DADM drops below 13 C
+#Butte Creek
+```{r}
+#Filtering Butte data 
+butte_std_temp <- read.csv(here::here("data-raw", "standard-format-data-prep", "temp_data", "standard_temperature.csv")) |>
+  filter(stream == "butte creek")
+
+#Changing "date" field into date format
+butte_std_temp$date <- as.Date(butte_std_temp$date)
+glimpse(butte_std_temp)
+
+#Extracting spawning months (Aug-Dec)
+butte_std_temp <- butte_std_temp |> 
+  mutate(month = format(date, "%m"))
+spawning_months <- c("08", "09", "10", "11", "12")
+
+butte_spawn_temps <- butte_std_temp |> 
+  filter(month %in% spawning_months) 
+#Making sure we only have the months we need 
+table(butte_spawn_temps$month)
+
+#Delete "month field" TODO
+#  butte_spawn_temps |> select(-month)
+# glimpse(butte_spawn_temps)
+
+#Calculating Butte 7DADM
+butte_7dadm <- butte_7dadm |> 
+  mutate(rolling_7DADM = zoo::rollmean(max_daily_temp_c, k = 7, align = "center", fill = NA))`
+
+glimpse(butte_7dadm)
+
+```
 
 ## Max temperature
+
+```{r}
+
+```
 
 ## Emergence date
 
