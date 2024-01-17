@@ -516,6 +516,7 @@ Two stations:
 * FRA (2002-01-01 to present): located between Lake Oroville and Thermalito Afterbay
 
 ```{r}
+#Pulling data from "GRL" station
 GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "2003-03-05", end_date = "2007-06-01")
 
 GRL_hourly_temps <- GRL_CDEC %>%
@@ -533,7 +534,7 @@ ggplot(GRL_hourly_temps, aes(x = date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y="Temperature (deg C)", title = "Temperature at Feather River", caption = "CDEC")
 
-#Adding "FRA" dataset
+#Pulling data from "FRA" station
 FRA_CDEC <- cdec_query(station = "FRA", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
 
 FRA_hourly_temps <- FRA_CDEC %>%
@@ -546,9 +547,10 @@ FRA_hourly_temps <- FRA_CDEC %>%
 ggplot(FRA_hourly_temps, aes(x = date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y="Temperature (deg C)", title = "Temperature at FRA Feather River", caption = "CDEC")
+
 ```
 
-### Visualize CDEC Data with Outliers Removed
+#### Visualize CDEC Data with Outliers Removed
 
 ```{r}
 # Plot without outliers
@@ -558,6 +560,7 @@ GRL_hourly_temps %>%
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Feather River", caption = "CDEC")
 ```
+
 
 ### USGS
 Three stations:
@@ -604,6 +607,7 @@ ORO_daily_mintemps <- ORO_USGS_min_raw %>%
   rename(date = Date)
 glimpse(ORO_daily_mintemps)
 
+tail(ORO_daily_maxtemps$temp_degC)
 # ggplot(ORO_daily_mintemps, aes(x=date)) +
 #   geom_line(aes(y = temp_degC), color = "darkred") +
 #   labs(x = "Year",y = "Temperature (deg C)",title = "Min Temperature at Feather Oroville", caption = "USGS")
@@ -638,6 +642,37 @@ ggplot(combined_dataORO, aes(date, temp_degC, color = HourlyTemperatures)) +
   )
 ```
 
+### Using USGS min and max to filter out outliers from CDEC
+```{r}
+#USGS min and max
+#Max
+ORO_max_threshold <- max(ORO_daily_maxtemps$temp_degC) |> 
+  glimpse()
+
+#Min 
+ORO_min_threshold <- min(ORO_daily_mintemps$temp_degC) |> 
+  glimpse()
+
+#Add threshold from USGS min and max to "GRL" CDEC data
+hfc_feather <-  GRL_hourly_temps |> 
+  filter(temp_degC >= 1.7,
+         temp_degC <= 28.5)
+
+#Plotting filtered GRL CDEC temperatures using USGS threshold
+ggplot(hfc_feather, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from (GRL) Feather River, using USGS (ORO) min/max threshold")
+
+#Add threshold from USGS min and max to "FEA" CDEC data
+lfc_feather <-  FRA_hourly_temps |> 
+  filter(temp_degC >= 1.7,
+         temp_degC <= 28.5)
+
+#Plotting filtered GRL CDEC temperatures using USGS threshold
+ggplot(lfc_feather, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from (FRA) Feather River, using USGS (ORO) min/max threshold")
+```
 
 
 ```{r}
@@ -698,6 +733,7 @@ One station:
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
+#Pulling mean daily data USGS
 MLM_USGS <- readNWISdv(11381500, "00010") # parameter code 00010: water temperature temperature
 
 # Format to make tidier
@@ -710,10 +746,50 @@ MLM_daily_temps <- MLM_USGS %>%
 tail(MLM_daily_temps$date, n = 1)
 head(MLM_daily_temps$date, n = 1)
 
-# Plot DCV
+# Plot 
 ggplot(MLM_daily_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)",title = "Temperature at Mill Creek", caption = "USGS")
+
+#Pulling USGS daily min and max 
+#Max temp
+Mill_USGS_max_raw <- readNWISdv(11381500, "00010", statCd = "00001") # parameter code 00010: water temperature temperature
+
+# Format to make tidier
+Mill_daily_maxtemps <- Mill_USGS_max_raw %>%
+  select(Date, temp_degC =  X_00010_00001) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+
+#Min temp
+Mill_USGS_min_raw <- readNWISdv(11381500, "00010", statCd = "00002") # parameter code 00010: water temperature temperature
+
+# Format to make tidier
+Mill_daily_mintemps <- Mill_USGS_min_raw %>%
+  select(Date, temp_degC =  X_00010_00002) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+```
+
+### Using USGS min and max to filter out outliers from CDEC
+```{r}
+#USGS min and max
+#Max
+Mill_max_threshold <- max(Mill_daily_maxtemps$temp_degC) |> 
+  glimpse()
+
+Mill_min_threshold <- min(Mill_daily_mintemps$temp_degC) |> 
+  glimpse()
+
+#Add threshold from USGS min and max to "MLM" CDEC data
+Mill_temps_capped <-  MLM_hourly_temps |> 
+  filter(temp_degC >= 0.5,
+         temp_degC <= 27.5)
+
+#Plotting filtered GRL CDEC temperatures using USGS threshold
+ggplot(Mill_temps_capped, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from (MLM) Mill Creek, using USGS min/max threshold")
 ```
 
 #### Mean Daily USGS vs Daily CDEC data
@@ -738,7 +814,6 @@ MLM_combined %>%
   labs(y = "Temperature (deg C)", title = "Water Temperature at Mill Creek")
 
 ```
-
 
 
 ```{r}
