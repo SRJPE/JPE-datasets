@@ -138,6 +138,7 @@ filter(trap_visit, !is.na(ConeDebrisIntake2))
 filter(trap_visit, !is.na(debrisVolumeCatID))
 filter(trap_visit, !is.na(debrisVolume))
 filter(trap_visit, !is.na(debrisType))
+unique(trap_visit$dataCollectedID)
 ```
 
 # CatchRaw

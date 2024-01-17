@@ -398,6 +398,25 @@ tisdale_recaptured <- read_csv(here::here("data", "rst", "tisdale_recaptures.csv
             median_fork_length_recaptured = median(fork_length, na.rm = T)) %>% glimpse()
 ```
 
+### Red Bluff
+
+```{r, include = F}
+
+# there are release ids that are repeated in multiple years. need to make unique id
+gcs_get_object(object_name = "rst/rbdd/data/recapture.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/rbdd_recapture.csv",
+               overwrite = TRUE)
+rbdd_recapture <- read_csv(here::here("data", "rst", "rbdd_recapture.csv")) |> 
+  mutate(release_id = paste0(release_id, year(date_recaptured)))
+gcs_get_object(object_name = "rst/rbdd/data/release.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/rbdd_release.csv",
+               overwrite = TRUE)
+rbdd_release <- read_csv(here::here("data", "rst", "rbdd_release.csv")) |> 
+  mutate(release_id = paste0(release_id, year(date_released)))
+```
+
 ## Combine datasets:
 
 ```{r}
@@ -411,14 +430,15 @@ combined_release <- bind_rows(battle_released, butte_released, clear_released, f
          source_released = ifelse(is.na(source_released), "not recorded", source_released),
          site_released = ifelse(is.na(site_released), "not recorded", site_released),
          subsite_released = ifelse(is.na(subsite_released), "not recorded", subsite_released),
-         include = ifelse(is.na(include), "yes", include)) %>% glimpse()
+         include = ifelse(is.na(include), "yes", include)) %>% 
+  bind_rows(rbdd_release)
 
-# combined_release %>% 
-#   group_by(stream, site, release_id) %>% 
-#   tally() %>% 
+# ck <- combined_release %>%
+#   group_by(stream, site, release_id) %>%
+#   tally() %>%
 #   filter(n > 1)
 
-combined_recapture <- bind_rows(battle_recaptured, butte_recaptured, clear_recaptured, feather_recaptured, knights_recaptured, tisdale_recaptured) %>%
+combined_recapture <- bind_rows(battle_recaptured, butte_recaptured, clear_recaptured, feather_recaptured, knights_recaptured, tisdale_recaptured, rbdd_recapture) %>%
   relocate(stream, site, subsite, release_id,
            date_recaptured, number_recaptured, median_fork_length_recaptured) %>% glimpse
 ```

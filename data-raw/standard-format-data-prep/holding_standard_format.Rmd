@@ -89,10 +89,14 @@ battle_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and
 kable(battle_data_dictionary)
 ```
 ```{r, battle_clean}
+# There are multiple observations per reach. Checked raw data and there is not a 
+# field for crew name etc to indicate that there are duplicates
 battle_holding_clean <- battle_holding %>%
   select(-notes) %>%
   mutate(stream = "battle creek",
-         year = lubridate::year(date))
+         year = lubridate::year(date),
+         adipose_clipped = "not recorded",
+         run = "spring") # either spring or unknown, but not recorded in raw data
   
 
 ```
@@ -108,11 +112,15 @@ clear_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-
 kable(clear_data_dictionary)
 ```
 ```{r, clear_clean}
+# There are multiple observations per reach. Checked raw data and there is not a 
+# field for crew name etc to indicate that there are duplicates
 clear_holding_clean <- clear_holding %>%
   select(-comments) %>%
   rename(jacks = jack_count) %>%
   mutate(stream = "clear creek",
-         year = lubridate::year(date))
+         year = lubridate::year(date),
+         run = "spring",
+         adipose_clipped = "not recorded")
 ```
 
 ### Variables removed
@@ -133,6 +141,8 @@ deer_holding_clean <- bind_rows(deer_holding_1986_1996,
   rename(reach = location) %>%
   mutate(stream = "deer creek",
          date = as_date(paste0(year, "-08-01")))
+         run = "spring",
+         adipose_clipped = as.character(F)) # no hatchery, any adipose clipped fish would be strays
 ```
 
 ### Variables removed
@@ -167,9 +177,11 @@ butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
                                  butte_holding_17) %>%
   group_by(date, reach) %>%
   summarize(avg_count = round(mean(fish_count, na.rm = T), digits = 0)) %>%
-  rename(count = avg_count) %>%
+  rename(count = avg_count) %>% 
   mutate(stream = "butte creek",
-         year = lubridate::year(date)) %>% 
+         year = lubridate::year(date),
+         run = "spring",
+         adipose_clipped = "not recorded") %>% 
   glimpse()
 ```
 
@@ -202,6 +214,8 @@ holding_catch_data_dictionary <-
       "Longitude measurement of adult holding",
       "Stream name",
       "Year survey was conducted",
+      "Whether or not adipose fin was clipped.",
+      "Run designation of the surveyed fish. Nearly all are spring run - Battle Creek contains spring and unknown runs",
       "Reason survey was conducted",
       "Location of the Picket Weir - this is unique to Clear Creek and is either 7.4 or 8.2",
       "Fish above or below Picket Weir"
@@ -216,6 +230,8 @@ holding_catch_data_dictionary <-
       NA,
       NA,
       "YYYY",
+      NA,
+      NA,
       "august index, spawning",
       NA,
       "above, below"
@@ -229,6 +245,8 @@ holding_catch_data_dictionary <-
       "Battle and Clear",
       "Battle and Clear",
       "All",
+      "All",
+      "None",
       "All",
       "Clear",
       "Clear",

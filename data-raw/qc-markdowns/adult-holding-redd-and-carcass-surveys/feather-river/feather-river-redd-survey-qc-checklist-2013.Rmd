@@ -89,10 +89,19 @@ cleaner_data_2013 <- raw_data_2013 %>%
          'redd_width_m' = 'redd width (m)',
          'redd_length_m' = 'redd length (m)',
          ) %>%
-  mutate(date = as.Date(as.numeric(date), origin = "1899-12-30"))
+  mutate(date = janitor::excel_numeric_to_date(as.numeric(date)))
+
+non_na_dates <- cleaner_data_2013 |> filter(!is.na(date)) |> glimpse()
+
+# FIX date that was incorrectly put into origional spreadsheet as 10/25/1013
+na_dates <- cleaner_data_2013 |> 
+  filter(is.na(date)) |> 
+  mutate(date = as.Date("10/25/2013", format = "%m/%d/%Y"))
+
+na_date_fix <- bind_rows(non_na_dates, na_dates)
 #Convert to snakecase
-cleaner_data_2013 <- cleaner_data_2013 %>% 
-  set_names(tolower(colnames(cleaner_data_2013))) %>% 
+cleaner_data_2013 <- na_date_fix %>% 
+  set_names(tolower(colnames(na_date_fix))) %>% 
   glimpse()
 ```
 ## Explore `date`
