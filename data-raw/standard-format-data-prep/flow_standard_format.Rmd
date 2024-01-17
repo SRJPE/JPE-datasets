@@ -82,6 +82,23 @@ glimpse()
 ## Feather
 
 ```{r}
+feather_site_lookup <- tibble(
+site = c(rep("eye riffle",2), "live oak", rep("herringer riffle",3), rep("steep riffle",3), 
+         rep("sunset pumps",2), rep("shawn's beach",2), rep("gateway riffle",4), 
+         rep("lower feather river",2)),
+subsite = c("eye riffle_north", "eye riffle_side channel", "live oak",
+            "herringer_west", "herringer_east", "herringer_upper_west",
+            "#steep riffle_rst", "steep riffle_10' ext", "steep side channel",
+            "sunset west bank", "sunset east bank", "shawns_west", "shawns_east",
+            "gateway_main1", "gateway main 400' up river", "gateway_rootball", 
+            "gateway_rootball_river_left", "rr", "rl"),
+site_group = c(rep("upper feather lfc",2), rep("upper feather hfc", 4),
+               rep("upper feather lfc",3), rep("upper feather hfc", 4),
+               rep("upper feather lfc",4), rep("lower feather river",2)))
+
+feather_sites <- feather_site_lookup |> 
+  distinct(site, .keep_all = T) |> 
+  select(-subsite)
 # source CDEC
 feather_hfc <- read_rds(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", 
                                    "flow_data", "feather_hfc_flow.rds"))
@@ -102,6 +119,7 @@ feather_live_oak <- feather_hfc %>%
 feather_shawns_beach <- feather_hfc %>%
   mutate(stream = "feather river",
          source = "CDEC GRL",
+         site_group = "upper feather hfc") %>%
          site = "shawn's beach") %>%
   glimpse()
 
@@ -127,6 +145,7 @@ feather_eye_riffle <- feather_lfc %>%
 feather_gateway_riffle <- feather_lfc %>%
   mutate(stream = "feather river",
          source = "USGS 11407000",
+         site_group = "upper feather lfc") %>%
          site = "gateway riffle") %>%
   glimpse()
 
@@ -147,6 +166,10 @@ lower_feather_format <- lower_feather |>
          source = "CDEC FBS", 
          site = "lower feather") |> 
   glimpse()
+
+feather_format <- bind_rows(feather_hfc_format, feather_lfc_format) |> 
+  full_join(feather_sites) |> 
+  select(-site_group)
 ```
 
 ## Mill
@@ -216,8 +239,7 @@ combined_flow <- bind_rows(battle_format,
                            butte_format,
                            clear_format,
                            deer_format,
-                           feather_hfc_format,
-                           feather_lfc_format,
+                           feather_format,
                            lower_feather_format,
                            mill_format,
                            yuba_format,

@@ -819,8 +819,8 @@ write_csv(recapture_summary, "data/model-data/recapture_summary.csv")
 efficiency_summary <- standard_release %>% 
   select(stream, site, release_id, number_released) %>% 
   left_join(standard_recapture %>% 
-              select(stream, site, subsite, release_id, number_recaptured) %>% 
-              group_by(stream, site, subsite, release_id) %>% 
+              select(stream, site, release_id, number_recaptured) %>% 
+              group_by(stream, site, release_id) %>% 
               summarize(number_recaptured = sum(number_recaptured))) %>% 
   mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
          site_group = case_when(site %in% lfc_sites ~ "feather river lfc",

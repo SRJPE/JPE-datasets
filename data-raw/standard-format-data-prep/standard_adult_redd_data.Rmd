@@ -28,6 +28,9 @@ FlowWest received Adult Redd data from four monitoring programs:
 
 Due to the format of the data received, two redd datasets were developed. The first dataset includes Feather, Battle, Yuba, and Clear Creek daily data and the second dataset includes Feather, Battle, Clear, Yuba, and Mill Creek and has a yearly maximum redd counts value.
 
+UPDATE: Mill Creek was added to the daily data with a pseudo date as October 1. This is to allow Mill Creek data
+to be added to the database without creating a seperate table.
+
 ## Standard format for Adult All Redd Data
 
 Data dictionary for standard format for `all_redd_data`:
@@ -107,12 +110,7 @@ gcs_get_object(
 )
 # Redd data for Battle Creek
 battle_redd <- read_csv(here::here("data", "redd-carcass-holding", "battle_redd.csv"), 
-                        col_names = TRUE, 
-                        col_types = c("c", "D", "c", "n", "n", "c", "c", "n", "c",
-                                      "c", "c", "c", "c", "l", "l", "c", "n", "n",
-                                      "n", "n", "n", "c", "n", "n", "n", "n", "n",
-                                      "n", "n", "n", "n", "n", "l", "l", "l")) |> 
-                          glimpse()
+                        col_names = TRUE)
 
 summary(battle_redd)
 
@@ -124,14 +122,13 @@ unique(battle_redd$flow_meter)
 
 clean_battle_redd <- battle_redd  |>
   select(date, latitude, longitude, 
-         reach, river_mile, fish_guarding, JPE_redd_id,
-         redd_measured, redd_width, redd_length, age,
-         age_index, pre_redd_substrate_size, 
-         redd_substrate_size, tail_substrate_size, flow_fps,
-         survey_method, species, run)  |>
-  mutate(stream = 'battle creek', 
-         # adding redd count for only those redds surveyed and not aged, or aged once
-         redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
+         reach, river_mile, fish_guarding, 
+         redd_measured, redd_width, redd_length, 
+         pre_redd_substrate_size, redd_substrate_size, 
+         tail_substrate_size, 
+         flow_fps, age, age_index)  |>
+  mutate(redd_count = 1, # each row is a redd observation
+         stream = 'battle creek', 
          year = lubridate::year(date))  |>
   rename(velocity = flow_fps,
          redd_id = JPE_redd_id)  |>
@@ -212,7 +209,9 @@ summary(mill_redd)
 
 clean_mill_redd <- mill_redd  |>
   rename(reach = location)  |>
-  mutate(stream = 'mill creek')  |>
+  mutate(stream = 'mill creek',
+         # pseudo date to add into daily data
+         date = as_date(paste0(year, "-10-01")))  |>
   glimpse()
 ```
 
@@ -240,11 +239,7 @@ gcs_get_object(
   overwrite = TRUE
 )
 feather_redd <- read_csv(here::here("data", "redd-carcass-holding", "feather_redd.csv"), 
-                         col_names = TRUE, 
-                         col_types = list("D", "c", "c", "n",
-                                       "n", "n", "n", "n", "n",
-                                       "n", "n", "n", "n", "n",
-                                       "n", "n", "n"))  |> glimpse()
+                         col_names = TRUE)
 
 summary(feather_redd)
 table(feather_redd$type, useNA = "ifany")
@@ -252,15 +247,14 @@ table(feather_redd$type, useNA = "ifany")
 clean_feather_redd <- feather_redd  |>
   select(date, location, redd_count, 
          latitude, longitude, 
-         redd_width_m, redd_length_m, velocity_m_per_s = velocity, depth_m)  |> 
+         redd_width_m, redd_length_m, velocity, depth_m)  |> 
   rename(reach = location,
          redd_width = redd_width_m, 
          redd_length = redd_length_m)  |>
   mutate(stream = "feather river",
          year = lubridate::year(date),
          date = as.Date(date),
-         velocity = velocity_m_per_s / 0.3048)  |> # convert to feet per second 
-  select(-velocity_m_per_s)  |>
+         velocity = velocity / 0.3048)  |> # convert to feet per second 
   glimpse()
 
 ```
@@ -301,12 +295,9 @@ all_redd_data <- bind_rows(clean_battle_redd,
                            clean_mill_redd,
                            clean_yuba_redd)  |> 
   select(-redd_count)  |>
-  # remove mill creek
-  filter(stream != "mill creek")  |> 
-  mutate(species = case_when(species %in% c("Chinook", "chinook","CHN") ~ "chinook",
+  mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
                              species %in% c("SH", "O. mykiss") ~ "steelhead",
-                             species %in% c("Lamprey", "P. lamprey") ~ "pacific lamprey",
                              is.na(species) ~ "not recorded"),
          run = ifelse(is.na(run), "not recorded", run))
 ```
@@ -350,12 +341,9 @@ unique(all_redd_data$redd_substrate_size)
 
 redd_substrate_size_lookup <- 
   data.frame("redd_substrate_size" = unique(all_redd_data$redd_substrate_size),
-             "standardized_size_range" = c(NA, "1-2", "1-2", "2-4", "2-4", 
-                                           "0.5-1", "2-4", "2-4", ">16", "4-6",
-                                           "2-4", "1-2", "4-8", "0.5-1", "1-2", 
-                                           "2-4", "0.5-1", "1-2", "2-4", "2-4", 
-                                           "<0.25", "4-8", "4-8", "0.5-1",
-                                           "4-8", "8-16")) |> 
+             "standardized_size_range" = c(NA, "1-2", "2-4", "2-4", "2-4", "0.5-1", "2-4","2-4", '8-16', 
+                                           "4-8", "1-2", "1-2", "4-8", "0.5-1", "1-2", "2-4", "0.5-1", "1-2", 
+                                           "2-4", "2-4", "<0.25", "4-8", "4-8")) |> 
   left_join(substrate_class)
                     
 tail_substrate_size_lookup <- all_redd_data  |> 
