@@ -75,12 +75,12 @@ write_rds(battle_temp, here::here("data-raw", "standard-format-data-prep","temp_
 
 ### Recommendation
 
-We looked at USGS and only mean data is available starting 2016. CDEC has finer resolution hourly data which is why we decided to use CDEC. We use USGS data establish threshold criteria to help filter out outliers in CDEC data.
+We looked at USGS and only mean data is available starting 2016. CDEC has finer resolution hourly data which is why we decided to use CDEC. We use USGS data to establish threshold criteria to help filter out outliers in CDEC data.
 
 ### CDEC
 
 One station:
-* BCK (961-11-01 to present, with a data gap between ~1979-1999): Upper watershed, near Chico, far from confluence with Sacramento River
+* BCK (1961-11-01 to present, with a data gap between ~1979-1999): Upper watershed, near Chico, far from confluence with Sacramento River
 
 
 ```{r}
@@ -247,9 +247,7 @@ write_rds(BCK_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 
 ### Recommendations
 
-CDEC data has very high max - I think these are errors or code for something. 
-CDEC data is more similar to Upper Clear Creek.
-Use the data from Clear over the CDEC data.
+Similar to Butte Creek, the CDEC data has extreme outliers reducing the quality of the data. The location of the CDEC gage also would be more comparable to Upper Clear Creek than lower Clear Creek. The benefit of using CDEC or USGS gage data rather than data collected locally by the monitoring programs is that it is more readily available and easier to update. Since we are already using local data from Battle Creek and the Clear Creek data have questionable quality, recommend using the data collected locally.
 
 ### CDEC
 
@@ -333,13 +331,13 @@ write_rds(lcc_temp, here::here("data-raw", "standard-format-data-prep","temp_dat
 ## Deer Creek
 
 ### Recommendation
-Use CDEC data because USGS data has a limited range for the mean. Use USGS min and max data to establish threshold criteria that can be used to filter out any outliers in the CDEC data.
+Use CDEC data because USGS data has a limited range for the mean. Use USGS min and max data to establish threshold criteria that can be used to filter out any outliers in the CDEC data. We selected DCV gage as it is most representative of the upper watershed conditions. DVD data may be useful for juvenile survival to the mainstem and may be added to the dataset in future iterations.
 
 ### CDEC
 
 Two stations:
-* DCV (1998-10-01 to present H: 2014-11-18 to present E): Lower watershed, near Vina, far from confluence with Sacramento River
-* DVD (1997-10-03 to present H: 2013-03-14 to present E): Lower watershed, below Stanford Vina Dam, close from confluence with Sacramento River
+* DCV (1998-10-01 to present H; 2014-11-18 to present E): Upper watershed, near Vina, far from confluence with Sacramento River
+* DVD (1997-10-03 to present H; 2013-03-14 to present E): Lower watershed, below Stanford Vina Dam, close to confluence with Sacramento River
 
 ```{r}
 DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
@@ -473,12 +471,6 @@ DCV_combined %>%
 #Max
 DCV_max_threshold <- max(DCV_USGS_max$temperature) |> 
   glimpse()
-
-# TODO for ashley go through summarization with Badhia
-#Trying another way to filter max of max
-# DCV_USGS_max |>
-#   summarise(highest_temperature = max(temperature)) |>
-#   glimpse()
 
 #Min 
 DCV_min_threshold <- min(DCV_USGS_min$temperature) |> 
