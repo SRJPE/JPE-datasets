@@ -10,7 +10,6 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
-
 library(tidyverse)
 library(lubridate)
 library(CDECRetrieve)
@@ -22,14 +21,14 @@ library(purrr)
 library(zoo)
 library(rnoaa)
 library(data.table)
+library(viridis)
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
-knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, include = F}
 # token for rnoaa is added to Renviron file
-NOAA_KEY <- Sys.getenv("NOAA_KEY")
+#NOAA_KEY <- Sys.getenv("NOAA_KEY")
 
 # google cloud set up
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
@@ -40,30 +39,13 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 ## Battle Creek
 
-```{r}
-# Check if CDEC data provides temp data for respective location
-# cdec_datasets("BAT") 
-# CDEC has no temperature data available
-```
+### Recommendation
 
+CDEC and USGS do not provide temperature data for Battle Creek. USGS mapper 
+indicates as well there is no data available for the requested period.
 
-```{r}
-# Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
-# Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
-
-BAT_USGS <- readNWISdv(11376550, "00010") # parameter code 00010: water temperature
-
-# from ashley: don't need to save this if there is no data.
-# write.csv(BAT_USGS,"BAT_USGS.csv", row.names = FALSE)
-
-# Read created CSV
-# BAT_USGS <- read_csv("BAT_USGS.csv")
-# BAT_USGS
-```
-
-CDEC and USGS do not provide temperature data for Battle Creek. Temperature data is collected by sensor 25, but CDEC data is not available for this sensor. USGS mapper indicates as well there is no data available for the requested period.
-
-We requested water temperature data from Battle Creek to fill this data gap.
+We requested water temperature data from Battle Creek to fill this data
+gap.
 
 ### Temperature data collected locally
 
@@ -85,22 +67,24 @@ ggplot(battle_temp, aes(x=date, y = temp_degC)) +
   labs(y = "Temperature (deg C)")
 ```
 
-### Save data
-
 ```{r}
 write_rds(battle_temp, here::here("data-raw", "standard-format-data-prep","temp_data", "battle_temp.rds"))
 ```
 
 ## Butte Creek
 
-### CDEC
-```{r}
-# Check if CDEC data provides temp data for respective location
-# from ashley: this is a repeat of code above. reason why it is here again?
-# cdec_datasets("BCK")
+### Recommendation
 
-# Since this location has sensor that collects temp data, we can make request
-BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+We looked at USGS and only mean data is available starting 2016. CDEC has finer resolution hourly data which is why we decided to use CDEC. We use USGS data to establish threshold criteria to help filter out outliers in CDEC data.
+
+### CDEC
+
+One station:
+* BCK (1961-11-01 to present, with a data gap between ~1979-1999): Upper watershed, near Chico, far from confluence with Sacramento River
+
+
+```{r}
+BCK_CDEC <- cdec_query(station = "BCK", dur_code = "H", sensor_num = "25", start_date = "2000-01-01")
 
 BCK_hourly_temps <- BCK_CDEC %>%
   mutate(date = as_date(datetime),
@@ -117,9 +101,8 @@ ggplot(BCK_hourly_temps, aes(x=date)) +
   labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Buttle Creek", caption = "CDEC")
 ```
 
-CDEC data provides temperature data for Butte Creek. It ranges from 1998-09-16 to 2022-06-16
+#### Visualize CDEC with Outliers Removed
 
-### CDEC Outliers Removed
 ```{r}
 # Plot without outliers
 BCK_hourly_temps %>%
@@ -130,39 +113,131 @@ BCK_hourly_temps %>%
 ```
 
 ### USGS
+
+One station:
+* Site number 11390000 Butte C NR Chico CA (1961-11-01 to present Daily Mean; 1961-11-01 to present Min/Max): Upper stream, near Chico, CA, below little Butte Creek diversion. Above Parrott-Phelan Dam    
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-#BCK_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperature
-# from ashley: don't need to save if no data
-#write.csv(BCK_USGS,"BCK_USGS.csv", row.names = FALSE)
+BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00001") # parameter code 00010: water temperature
+glimpse(BCK_USGS)
+head(BCK_USGS$Date)
 
-# no data available from USGS
+BCK_USGS_format <- BCK_USGS |> 
+  select(Date, temperature=X_00010_00001)
+ggplot(BCK_USGS_format, aes(Date, temperature)) +
+  geom_line()
+BCK_USGS <- readNWISdv(11390000, "00010", statCd = "00002")
+BCK_USGS_format <- BCK_USGS |> 
+  select(Date, temperature=X_00010_00002)
+ggplot(BCK_USGS_format, aes(Date, temperature)) +
+  geom_line()
 ```
 
-### Clean data and summarize as mean daily 
-```{r}
+### Using USGS min and max to filter out outliers from CDEC
 
-# 1. Calculate the daily average temperature
-BCK_daily_temps <- BCK_hourly_temps %>% 
+```{r}
+#Adding min max datasets
+BCK_USGS_max_raw <- readNWISdv(11390000, "00010", statCd = "00001") # parameter code 00010: water temperature
+
+BCK_USGS_max <- BCK_USGS_max_raw |>
+  select(Date, temperature=X_00010_00001)
+# plotmax <- ggplot(BCK_USGS_max, aes(Date, temperature)) +
+#   geom_line()
+# 
+# 
+BCK_USGS_min_raw <- readNWISdv(11390000, "00010", statCd = "00002")
+BCK_USGS_min <- BCK_USGS_min_raw |>
+  select(Date, temperature=X_00010_00002)
+# plotmin <- ggplot(BCK_USGS_min, aes(Date, temperature)) +
+#   geom_line()
+# 
+# #Combined min and max plot
+combined_data <- bind_rows(
+  mutate(BCK_USGS_max, HourlyTemperatures = "Daily Max"),
+  mutate(BCK_USGS_min, HourlyTemperatures = "Daily Min")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_data, aes(Date, temperature, color = HourlyTemperatures)) +
+  scale_color_viridis_d(begin = 1, end = 0) +
+  geom_line() +
+  #ggtitle("USGS hourly min and max hourly temperatures from Butte Creek near Chico") +
+  labs(x = "",
+       y = "Temperature (degrees Celcius)",
+       color = "") +
+  theme_minimal() +
+  theme(legend.position = "bottom") 
+
+# Caption for figure: Daily max and min temperatures (degrees Celcius) from 1960 to 2024 using data from USGS gage at Butte Creek near Chico (insert link to data source)."
+
+#Trying other aesthetics
+ggplot(combined_data, aes(Date, temperature, color = HourlyTemperatures)) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(option = "plasma") +  # Use colorblind-friendly palette "magma"
+  labs(
+    title = "Hourly Min and Max Temperatures from Butte Creek near Chico",
+    x = "",
+    y = "Temperature (°C)",
+    color = "Hourly Temperatures",
+    caption =  "Daily max and min temperatures (°C) from 1960 to 2024 using data from USGS gage at Butte Creek near Chico (https://waterdata.usgs.gov/ca/nwis/inventory/?site_no=11390000)"
+  ) +
+  theme_minimal(base_size = 13) +  # Adjust base font size
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+      plot.caption = element_text(size = 6)
+  )
+```
+
+
+```{r}
+#Testing using USGS min and max as a threshold to remove outliers from CDEC
+#Max
+
+BCK_maxtemp_threshold <- max(BCK_USGS_max$temperature) |> 
+  glimpse()
+
+#Min 
+BCK_mintemp_threshold <- min(BCK_USGS_min$temperature) |> 
+  glimpse()
+
+BCK_threshold <- BCK_USGS_max |> 
+  rename(max = temperature) |> 
+  full_join(BCK_USGS_min |> 
+              rename(min = temperature)) |> 
+  summarize(max = max(max, na.rm = T),
+            min = min(min, na.rm = T))
+
+#Add thresholds from min and max to CDEC data
+BCK_temps_capped <- BCK_hourly_temps |> 
+  filter(temp_degC >= BCK_threshold$min,
+         temp_degC <= BCK_threshold$max)
+
+ggplot(BCK_temps_capped, aes(date, temp_degC)) +
+  geom_line()
+  ggtitle("Filtered CDEC temperatures from Butte Creek near Chico, using USGS min/max threshold")
+
+```
+
+
+### Clean data and summarize as mean daily
+
+```{r}
+# Calculate the daily average temperature
+BCK_daily_temps <- BCK_temps_capped %>% 
   group_by(date) %>% 
   summarize(mean_temp_degC = mean(temp_degC, na.rm = T),
-            max_temp_degC = max(temp_degC, na.rm = T)) 
-
-# 2. Check to see if applying rolling mean would help with outliers.
-butte_format <- transform(BCK_daily_temps, rollmean = rollapplyr(mean_temp_degC, 3, mean, partial = T)) %>% 
-  mutate(mean_temp_degC_clean = ifelse(mean_temp_degC > 70, rollmean, mean_temp_degC)) 
-
-butte_format %>%
-  ggplot(aes(x=date)) +
-  geom_line(aes(y = mean_temp_degC_clean), color = "darkred") +
-  labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Buttle Creek", caption = "CDEC")
-# doesn't really seem to help much so for transparency don't apply any transformation
-filter(butte_format, mean_temp_degC > 70)
+            max_temp_degC = max(temp_degC, na.rm = T),
+            min_temp_degC = min(temp_degC, na.rm = T)) 
 ```
 
 ### Save data
+
 ```{r}
 # save final version of butte data
 # from ashley: erin and i have started using the here package, especially in markdowns because it makes it easier for file path reading
@@ -170,15 +245,18 @@ write_rds(BCK_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 ```
 
 
-USGS provides no temperature data for Butte Creek. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
-
 ## Clear Creek
-### CDEC
-```{r}
-# Check if CDEC data provides temp data for respective location
-# cdec_datasets("IGO")
 
-# Since this location has sensor that collects temp data, we can make request
+### Recommendations
+
+Similar to Butte Creek, the CDEC data has extreme outliers reducing the quality of the data. The location of the CDEC gage also would be more comparable to Upper Clear Creek than lower Clear Creek. The benefit of using CDEC or USGS gage data rather than data collected locally by the monitoring programs is that it is more readily available and easier to update. Since we are already using local data from Battle Creek and the Clear Creek data have questionable quality, recommend using the data collected locally.
+
+### CDEC
+
+One station:
+* IGO (1996-09-06 to present H; 1996-05-13 to 2000-01-01 E): Near Igo, before south folk clear creek confluence. Halfway through the Creek. RTS is nearby, bellow gage
+
+```{r}
 IGO_CDEC <- cdec_query(station = "IGO", dur_code = "H", sensor_num = "25", start_date = "2003-01-01")
 
 IGO_hourly_temps <- IGO_CDEC %>%
@@ -195,9 +273,9 @@ ggplot(IGO_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y ="Temperature (deg C)", title = "Water Temperature at Clear Creek", caption = "CDEC")
 ```
-CDEC temeprature data for Clear Cleek ranges from 2002-12-31 to 2022-05-27.
 
-### CDEC Outliers Removed
+#### Visualize CDEC Data with Outliers Removed
+
 ```{r}
 # Plot without outliers
 IGO_hourly_temps %>%
@@ -208,42 +286,20 @@ IGO_hourly_temps %>%
 ```
 
 ### USGS
+
+USGS provides no temperature data for Clear Creek. This was confirmed
+with mapper tool accessed from waterdata.usgs.gov.
+
 ```{r}
-# Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
-# Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
-
-#IGO_USGS <- readNWISdv(11372000, "00010") # parameter code 00010: water temperature
-#write.csv(IGO_USGS,"IGO_USGS.csv", row.names = FALSE)
-
-# Read created CSV
-# IGO_USGS <- read_csv("IGO_USGS.csv")
-# IGO_USGS
-# no data available from USGS
-```
-
-USGS provides no temperature data for Clear Creek. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
-
-### Clean data and summarize as mean daily 
-```{r}
-
-# 1. Calculate the daily average temperature
+# Calculate the daily average temperature
 IGO_daily_temps <- IGO_hourly_temps %>% 
+  filter(temp_degC < 37, temp_degC > -18) %>%
   group_by(date) %>% 
-  summarize(mean_temp_degC = mean(temp_degC)) 
-```
-
-```{r}
-# save final version of butte data
-# from ashley: erin and i have started using the here package, especially in markdowns because it makes it easier for file path reading
-write_rds(IGO_daily_temps, here::here("data-raw", "standard-format-data-prep","temp_data", "clear_temp.rds"))
+  summarize(mean_temp_degC = mean(temp_degC),
+            max_temp_degC = max(temp_degC)) 
 ```
 
 ### Temperature data collected locally
-
-- We received temperature data from clear and battle. 
-- CDEC data has very high max - I think these are errors or code for something.
-- Use the data from Battle and Clear over the CDEC data.
-- CDEC data is more similar to Upper Clear Creek
 
 ```{r}
 clear_cdec <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "clear_temp.rds"))
@@ -276,11 +332,16 @@ write_rds(lcc_temp, here::here("data-raw", "standard-format-data-prep","temp_dat
 
 ## Deer Creek
 
+### Recommendation
+Use CDEC data because USGS data has a limited range for the mean. Use USGS min and max data to establish threshold criteria that can be used to filter out any outliers in the CDEC data. We selected DCV gage as it is most representative of the upper watershed conditions. DVD data may be useful for juvenile survival to the mainstem and may be added to the dataset in future iterations.
+
 ### CDEC
+
+Two stations:
+* DCV (1998-10-01 to present H; 2014-11-18 to present E): Upper watershed, near Vina, far from confluence with Sacramento River
+* DVD (1997-10-03 to present H; 2013-03-14 to present E): Lower watershed, below Stanford Vina Dam, close to confluence with Sacramento River
+
 ```{r}
-
-# cdec_datasets("DCV")
-
 DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
 
 DCV_hourly_temps <- DCV_CDEC %>%
@@ -298,9 +359,9 @@ ggplot(DCV_hourly_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)",title = "Water Temperature at Deer Creek", caption = " CDEC")
 ```
-CDEC Temperature Data for Deer Creek ranges from 1998-10-01 to 2022-06-16.
 
-### CDEC Outliers Removed
+#### Visualize CDEC Data with Outliers Removed
+
 ```{r}
 # Plot without outliers
 DCV_hourly_temps %>%
@@ -311,10 +372,15 @@ DCV_hourly_temps %>%
 ```
 
 ### USGS
+
+One station:
+* Site number 11383500 Deer C NR Vina CA (2016-10-01 to 2022-05-25 Daily Mean; 1998-10-01 to present Min/Max): Lower stream, near Vina, close from confluence with Sacramento River
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
+#Mean temperature USGS
 DCV_USGS <- readNWISdv(11383500, "00010") # parameter code 00010: water temperature
 
 # Format to make tidier
@@ -332,10 +398,56 @@ head(DCV_daily_temps$date,n=1)
 ggplot(DCV_daily_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)", title = "Water Temperature at Deer Creek", caption = "USGS")
-```
-USGS temperature data for deer creek ranges from 2016-10-01 to 2022-05-25.
 
-#### Mean Daily USGS vs Daily CDEC data
+#Pulling Max and Min temperature USGS
+#max
+DCV_USGS <- readNWISdv(11383500, "00010", statCd = "00001") # parameter code 00010: water temperature
+DCV_USGS_max <- DCV_USGS |>
+  select(Date, temperature=X_00010_00001)
+# plotmax <- ggplot(DCV_USGSS_max, aes(Date, temperature)) +
+#   geom_line()
+
+# min
+DCV_USGS <- readNWISdv(11383500, "00010", statCd = "00002")
+DCV_USGS_min <- DCV_USGS |>
+  select(Date, temperature=X_00010_00002)
+# plotmin <- ggplot(DCV_USGS_min, aes(Date, temperature)) +
+#   geom_line()
+# 
+# #Combined min and max plot
+combined_dataDCV <- bind_rows(
+  mutate(DCV_USGS_max, HourlyTemperatures = "Max Temp"),
+  mutate(DCV_USGS_min, HourlyTemperatures = "Min Temp")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_dataDCV, aes(Date, temperature, color = HourlyTemperatures)) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(option = "plasma") +  # Use colorblind-friendly palette "magma"
+  labs(
+    title = "Hourly Min and Max Temperatures from Deer Creek near Vina",
+    x = "",
+    y = "Temperature (°C)",
+    color = "Hourly Temperatures",
+    caption =  "Daily max and min temperatures (°C) from 1998 to 2024 using data from USGS gage at Deer Creek near Vina (https://waterdata.usgs.gov/ca/nwis/inventory/?site_no=11383500)"
+  ) +
+  theme_minimal(base_size = 13) +  # Adjust base font size
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+      plot.caption = element_text(size = 6)
+  )
+
+```
+
+### Mean Daily USGS vs Daily CDEC data
+
+The plot below shows the daily average to allow for comparison between
+CDEC and USGS datasets. This helps it become more apparent that we
+should use CDEC data for deer creek due to the availability of the data.
+
 ```{r}
 DCV_combined = DCV_hourly_temps %>% 
   full_join(DCV_daily_temps, by ="date") %>% 
@@ -353,33 +465,61 @@ DCV_combined %>%
   labs(y = "Temperature (deg C)", title = "Water Temperature at Deer Creek")
 ```
 
-The plot below shows the daily average to allow for comparison between CDEC and USGS datasets. This helps it become more apparent that we should use CDEC data for deer creek due to the availability of the data.
 
-### Clean data and summarize as mean daily 
+### Using USGS min and max to filter out outliers from CDEC
+
 ```{r}
+#USGS min and max
+#Max
+DCV_max_threshold <- max(DCV_USGS_max$temperature) |> 
+  glimpse()
 
+#Min 
+DCV_min_threshold <- min(DCV_USGS_min$temperature) |> 
+  glimpse()
+
+#Add thresholds from min and max to CDEC data
+DCV_temps_capped <- DCV_hourly_temps |> 
+  filter(temp_degC >= 0.4,
+         temp_degC <= 28.5)
+
+ggplot(DCV_temps_capped, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from Deer Creek, using USGS min/max threshold")
+
+#note that 25 nows were removed, assuming that is because they were outside threshold
+```
+
+### Clean data and summarize as mean daily
+
+```{r}
 # 1. Calculate the daily average temperature
-DCV_daily_temps <- DCV_hourly_temps %>% 
-  filter(!is.na(temp_degC)) %>%
+DCV_daily_temps <- DCV_temps_capped %>% 
   group_by(date) %>% 
   summarize(mean_temp_degC = mean(temp_degC, na.rm = T),
-            max_temp_degC = max(temp_degC, na.rm = T)) 
+            max_temp_degC = max(temp_degC, na.rm = T),
+            min_temp_degC = min(temp_degC, na.rm = T)) 
 ```
 
 ```{r}
-# save final version of butte data
-# from ashley: erin and i have started using the here package, especially in markdowns because it makes it easier for file path reading
 write_rds(DCV_daily_temps, here::here("data-raw", "standard-format-data-prep","temp_data", "deer_temp.rds"))
 ```
 
 ## Feather River
 
+### Recommendation
+
+Both CDEC sites will be used because of the more recent period of time that data are available. If needed, USGS could be appended for a longer time series. Currently only CDEC data will be added to the dataset. GRL will represent the High Flow Channel (HFC) and FRA will represent the Low Flow Channel (LFC).
+
 ### CDEC
+
+Two stations:
+* GRL (2003-03-05 to 2007-06-01 H; 2020-01-04 to present E): located after Thermalito Afterbay
+* FRA (2002-01-01 to present): located between Lake Oroville and Thermalito Afterbay
+
 ```{r}
-
-# cdec_datasets("GRL")
-
-GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+#Pulling data from "GRL" station
+GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "2003-03-05", end_date = "2007-06-01")
 
 GRL_hourly_temps <- GRL_CDEC %>%
   mutate(date = as_date(datetime),
@@ -395,10 +535,25 @@ head(GRL_hourly_temps$date, n = 1)
 ggplot(GRL_hourly_temps, aes(x = date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y="Temperature (deg C)", title = "Temperature at Feather River", caption = "CDEC")
-```
-CDEC provides temperature data for Feather River from 2003-01-05 to 2007-06-15.
 
-### CDEC Outliers Removed
+#Pulling data from "FRA" station
+FRA_CDEC <- cdec_query(station = "FRA", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+
+FRA_hourly_temps <- FRA_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+  select(date,time,temp_degC)
+
+# Plot FRA
+ggplot(FRA_hourly_temps, aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year", y="Temperature (deg C)", title = "Temperature at FRA Feather River", caption = "CDEC")
+
+```
+
+#### Visualize CDEC Data with Outliers Removed
+
 ```{r}
 # Plot without outliers
 GRL_hourly_temps %>%
@@ -408,29 +563,136 @@ GRL_hourly_temps %>%
   labs(x = "Year", y = "Temperature (deg C)", title = "CDEC Water Temperature at Feather River", caption = "CDEC")
 ```
 
+
 ### USGS
+Three stations:
+* Site Number 11406920 Thermalito Afterbay Rel to Feather R NR Oroville (1968-1992): located right where Thermalito
+rejoins LFC. Time period is old but could be helpful to understand HFC temperature.
+* Site Number 11407700 Feather R A Yuba City CA (1964-1976): not using this one because it is too low on the stream
+* Sit Number 11407000 Feather R A Oroville CA (1958-1992): located right below diversion from Oroville into LFC and Thermalito Afterbay. Time period is old but could be helpful to understand the LFC temperature.
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
-# GRL_USGS <- readNWISdv(11407000, "00010") # parameter code 00010: water temperature
-# # write.csv(GRL_USGS,"GRL_USGS.csv", row.names = FALSE)
+#Adding Oroville station
+# ORO_USGS <- readNWISdv(11406920, "00010", statCd = "00003") # parameter code 00010: water temperature
 # 
-# # Read created CSV
-# GRL_USGS <- read_csv("GRL_USGS.csv")
-# GRL_USGS
+# # Format to make tidier
+# ORO_daily_meantemps <- ORO_USGS %>%
+#   select(Date, temp_degC =  X_00010_00003) %>%
+#   as_tibble() %>% 
+#   rename(date = Date)
+# no data for daily statistics mean temp on default statCd = 00003, so using min and max
+
+#max temp
+ORO_USGS_max_raw <- readNWISdv(11406920, "00010", statCd = "00001") # parameter code 00010: water temperature
+
+# Format to make tidier
+ORO_daily_maxtemps <- ORO_USGS_max_raw %>%
+  select(Date, temp_degC =  X_00010_00001) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(ORO_daily_maxtemps)
+
+# ggplot(ORO_daily_maxtemps, aes(x=date)) +
+#   geom_line(aes(y = temp_degC), color = "darkred") +
+#   labs(x = "Year",y = "Temperature (deg C)",title = "Max Temperature at Feather Oroville", caption = "USGS")
+
+#min temp
+ORO_USGS_min_raw <- readNWISdv(11406920, "00010", statCd = "00002") # parameter code 00010: water temperature
+
+# Format to make tidier
+ORO_daily_mintemps <- ORO_USGS_min_raw %>%
+  select(Date, temp_degC =  X_00010_00002) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(ORO_daily_mintemps)
+
+tail(ORO_daily_maxtemps$temp_degC)
+# ggplot(ORO_daily_mintemps, aes(x=date)) +
+#   geom_line(aes(y = temp_degC), color = "darkred") +
+#   labs(x = "Year",y = "Temperature (deg C)",title = "Min Temperature at Feather Oroville", caption = "USGS")
+
 ```
 
-USGS does not provide temperature data for Feather River. This was confirmed with mapper tool accessed from waterdata.usgs.gov.
+```{r}
+#Plot of min and max 
+combined_dataORO <- bind_rows(
+  mutate(ORO_daily_maxtemps, HourlyTemperatures = "Max Temp"),
+  mutate(ORO_daily_mintemps, HourlyTemperatures = "Min Temp")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_dataORO, aes(date, temp_degC, color = HourlyTemperatures)) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(option = "plasma") +  # Use colorblind-friendly palette "magma"
+  labs(
+    title = "Hourly Min and Max Temperatures from Feather River",
+    x = "",
+    y = "Temperature (°C)",
+    color = "Hourly Temperatures",
+    caption =  "Daily max and min temperatures (°C) from 1968 to 1992 using data from USGS gage at Feather River nea Oroville (https://waterdata.usgs.gov/ca/nwis/inventory/?site_no=11406920)"
+  ) +
+  theme_minimal(base_size = 13) +  # Adjust base font size
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+      plot.caption = element_text(size = 6)
+  )
+```
 
-The CDEC data does not cover the extent of the monitoring period for Feather River
+### Using USGS min and max to filter out outliers from CDEC
+```{r}
+#USGS min and max
+#Max
+ORO_max_threshold <- max(ORO_daily_maxtemps$temp_degC) |> 
+  glimpse()
+
+#Min 
+ORO_min_threshold <- min(ORO_daily_mintemps$temp_degC) |> 
+  glimpse()
+
+#Add threshold from USGS min and max to "GRL" CDEC data
+hfc_feather <-  GRL_hourly_temps |> 
+  filter(temp_degC >= 1.7,
+         temp_degC <= 28.5)
+
+#Plotting filtered GRL CDEC temperatures using USGS threshold
+ggplot(hfc_feather, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from (GRL) Feather River, using USGS (ORO) min/max threshold")
+
+#Add threshold from USGS min and max to "FEA" CDEC data
+lfc_feather <-  FRA_hourly_temps |> 
+  filter(temp_degC >= 1.7,
+         temp_degC <= 28.5)
+
+#Plotting filtered GRL CDEC temperatures using USGS threshold
+ggplot(lfc_feather, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from (FRA) Feather River, using USGS (ORO) min/max threshold")
+```
+
 
 ```{r}
+# TODO save all the data from the gages that we want to use
 # write_rds(GRL_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/feather_temp.rds")
 ```
 
 ## Mill Creek
+
+### Recommendation
+Use CDEC data due to the longer time period and resolution of data. USGS can be used as a threshold criteria if needed. 
+* Note that Mill Creek has multiple temperature loggers to represent summer holding habitat. We will be acquiring this data and using in addition to the CDEC data. 
+
 ### CDEC
+Two stations:
+* MLM (1998-09-30 to 2022-05-27 H): Upper watershed, near Los Molinos
+* MCH (1998-present H; 2005-present E): Lower watershed, near confluence with Sacramento R, Below HWY 99
+
 ```{r}
 
 # cdec_datasets("MLM") 
@@ -453,9 +715,9 @@ ggplot(MLM_hourly_temps, aes(x = date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Mill Creek", caption = "CDEC")
 ```
-CDEC provides temperature data for Mill Creek from 1998-09-30 to 2022-05-27
 
-### CDEC Outliers Removed
+#### Visualize CDEC Data with Outliers Removed
+
 ```{r}
 # Plot without outliers
 MLM_hourly_temps %>%
@@ -466,16 +728,19 @@ MLM_hourly_temps %>%
 ```
 
 ### USGS
+One station:
+* Site Numer 11381500 Mill C NR Los Molinos CA (2016-10 to 2023-10 Daily Mean): Lower stream, near Los Molinos CA, close from confluence with Sacramento River. This gage station data was used on DSMtemperature.
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
 
+#Pulling mean daily data USGS
 MLM_USGS <- readNWISdv(11381500, "00010") # parameter code 00010: water temperature temperature
 
 # Format to make tidier
 MLM_daily_temps <- MLM_USGS %>%
   select(Date, temp_degC =  X_00010_00003) %>%
-  filter(lubridate::year(Date) >= 1996) %>%
   as_tibble() %>% 
   rename(date = Date)
 
@@ -483,15 +748,80 @@ MLM_daily_temps <- MLM_USGS %>%
 tail(MLM_daily_temps$date, n = 1)
 head(MLM_daily_temps$date, n = 1)
 
-# Plot DCV
+# Plot 
 ggplot(MLM_daily_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)",title = "Temperature at Mill Creek", caption = "USGS")
+
+#Pulling USGS daily min and max 
+#Max temp
+Mill_USGS_max_raw <- readNWISdv(11381500, "00010", statCd = "00001") # parameter code 00010: water temperature temperature
+
+# Format to make tidier
+Mill_daily_maxtemps <- Mill_USGS_max_raw %>%
+  select(Date, temp_degC =  X_00010_00001) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+
+#Min temp
+Mill_USGS_min_raw <- readNWISdv(11381500, "00010", statCd = "00002") # parameter code 00010: water temperature temperature
+
+# Format to make tidier
+Mill_daily_mintemps <- Mill_USGS_min_raw %>%
+  select(Date, temp_degC =  X_00010_00002) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+
+#plot USGS min and max
+combined_datamill <- bind_rows(
+  mutate(Mill_daily_maxtemps, HourlyTemperatures = "Max Temp"),
+  mutate(Mill_daily_mintemps, HourlyTemperatures = "Min Temp")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_datamill, aes(date, temp_degC, color = HourlyTemperatures)) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(option = "plasma") +  # Use colorblind-friendly palette "magma"
+  labs(
+    title = "Hourly Min and Max Temperatures from Mill Creek",
+    x = "",
+    y = "Temperature (°C)",
+    color = "Hourly Temperatures",
+    caption =  "Daily max and min temperatures (°C) from 2016 to 2023 using data from USGS gage at Mill Creek near Los Molinos CA (https://waterdata.usgs.gov/ca/nwis/inventory/?site_no=11381500)"
+  ) +
+  theme_minimal(base_size = 13) +  # Adjust base font size
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+      plot.caption = element_text(size = 6)
+  )
 ```
 
-USGS provides daily temperature daily for Mill Creek from 2016-10-01 to 2022-05-25
+### Using USGS min and max to filter out outliers from CDEC
+```{r}
+#USGS min and max
+#Max
+Mill_max_threshold <- max(Mill_daily_maxtemps$temp_degC) |> 
+  glimpse()
+
+Mill_min_threshold <- min(Mill_daily_mintemps$temp_degC) |> 
+  glimpse()
+
+#Add threshold from USGS min and max to "MLM" CDEC data
+Mill_temps_capped <-  MLM_hourly_temps |> 
+  filter(temp_degC >= 0.5,
+         temp_degC <= 27.5)
+
+#Plotting filtered GRL CDEC temperatures using USGS threshold
+ggplot(Mill_temps_capped, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from (MLM) Mill Creek, using USGS min/max threshold")
+```
 
 #### Mean Daily USGS vs Daily CDEC data
+
 ```{r}
 # comparison of USGS vs CDEC
 # Does one have more data?
@@ -513,13 +843,13 @@ MLM_combined %>%
 
 ```
 
-I would recommend using the CDEC data for Mill Creek due to the significant data gaps for USGS.
 
-## Clean data and summarize as mean daily 
 ```{r}
 
 # 1. Calculate the daily average temperature
 MLM_daily_temps <- MLM_hourly_temps %>% 
+  filter(!is.na(temp_degC),
+         temp_degC < 37, temp_degC > -18) %>% 
   group_by(date) %>% 
   summarize(mean_temp_degC = mean(temp_degC),
             max_temp_degC = max(temp_degC)) 
@@ -532,65 +862,188 @@ write_rds(MLM_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 ```
 
 ## Yuba River
-There is not CDEC or USGS data available for Yuba River.
+###Recommendation
+We recommend not using  YRS Yuba River near Smartville data because the majority of the data appears to be ouliers, and data gaps are apparent when outliers are removed. There are data quality issues in this dataset that we could avoid by using the YR7 data instead.
+### CDEC
 
-### Air Gage - code isn't working so comment out for now
+Two stations:
+* YR7 Yuba R ABV HWY 70 (2019-09-04 to present E): Above highway 70, near Marysville, close from confluence with Sacramento River 
+* YRS Yuba River near Smartville (2001-03-22 to 2017-05-17 H): Right below Englebright Dam 
+
 ```{r}
-# use this code to get the data types for the station
-# ncdc_datatypes(datasetid='GHCND', stationid='GHCND:USR0000CFOR', token = NOAA_KEY)
-# 
-# # used this code to figure out units. units for TAVG is in celsius tenths which means we need to divide by 10 to get celsisus
-# with_units <- ncdc(datasetid='GHCND', stationid='GHCND:USR0000CFOR', token = NOAA_KEY, datatypeid='TAVG', startdate = '2010-05-01', enddate = '2010-10-31', limit=500, add_units = TRUE)
-# head( with_units$data )
-# 
-# get_temp_yuba <- function(start_date, end_date, year) {
-#   query <- rnoaa::ncdc(datasetid = 'GHCND', stationid = 'GHCND:USR0000CFOR', 
-#                        datatypeid = 'TAVG', startdate = start_date, 
-#                        enddate = end_date, token = NOAA_KEY, limit = 365)
-#   # Get columns of interest
-#   temp_data <- query$data %>%
-#     select(date, value) %>%
-#     mutate(date = as.Date(date))
-#   # Return
-#   write_csv(temp_data, here::here("data-raw", "standard-format-data-prep", "temp_data", paste0(year, "_yuba_noaa_airtemp.csv")))
-# }
-# 
-# # list date ranges, note we can only take yearly data
-# # note that there is no data after 2020
-# date_ranges <- tibble(year = c(seq(from = 2001, to = 2020))) %>% 
-#   mutate(start_date = paste0(year, "-01-01"),
-#          end_date = paste0(year, "-12-31"))
-#                       
-# pmap(date_ranges, get_temp_yuba)
-# ```
-# 
-# ### QC data
-# 
-# ```{r}
-# # read in all the yuba air temp files
-# files <- list.files(path = here::here("data-raw", "standard-format-data-prep", "temp_data"), pattern = "_yuba_noaa_airtemp.csv")
-# path <- here::here("data-raw", "standard-format-data-prep", "temp_data")
-# file_path <- paste0(path, "/",files)
-# # fread uses data.table
-# yuba_air <- file_path %>% 
-#   map_df(~fread(.)) %>% 
-#   rename(air_tempC = value) %>% 
-#   mutate(date = as.Date(date),
-#          air_tempC = air_tempC/10)
-# 
-# ggplot(yuba_air, aes(x=date, y = air_tempC)) +
-#   geom_line(color = "darkred") +
-#   labs(y = "Air temperature (deg C)") +
-#   theme(axis.text = element_text(size = 12))
+YRS_CDEC <- cdec_query(station = "YRS", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+#this data seems weird
+
+YRS_hourly_temps <- YRS_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degC = parameter_value) %>%
+  select(date,time,temp_degC)
+
+# Date Ranges
+tail(YRS_hourly_temps$date, n = 1)
+head(YRS_hourly_temps$date, n = 1)
+
+# Plot
+ggplot(YRS_hourly_temps, aes(x=date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)",title = "Water Temperature at Yuba River- YRS Station", caption = " CDEC")
+
+#Adding another gage
+YR7_CDEC <- cdec_query(station = "YR7", dur_code = "E", sensor_num = "146", start_date = "1995-01-01")
+#note that this station only has event duration, not hourly
+YR7_hourly_temps <- YR7_CDEC %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degC = parameter_value) %>%
+  select(date,time,temp_degC)
+
+# Plot
+ggplot(YR7_hourly_temps, aes(x=date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)",title = "Water Temperature at YR7 Yuba River", caption = " CDEC")
+
 ```
 
-<!-- ### Save data -->
+#### Visualize CDEC Data with Outliers Removed
+```{r}
+# Plot without outliers
+YRS_hourly_temps %>%
+    filter(temp_degC < 37, temp_degC > -18) %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = temp_degC), color = "darkred") +
+  labs(x = "Year",y = "Temperature (deg C)", title = "CDEC Water Temperature at Yuba River", caption = "CDEC")
+```
 
-<!-- ```{r} -->
-<!-- write_rds(yuba_air, here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp_air.rds")) -->
-<!-- ``` -->
+### USGS
+
+Two stations:
+* Site number 11421000 Yuba R NR Marysville (1964-10-01 to 2003-09-29 Min/Max with some data gaps): Lower on the stream, near Marysville CA, relatively close to confluence with Sacramento River 
+* Site number 11418000 Yuba R BL Englebright Dam NR Smartsville (1972-10-18 to 2005-02-18 Min/Max): Right below Englebright Dam, near Smartsville CA. This station data was pulled for va-habitat eda, too
+
+```{r}
+# Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
+# Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
+
+#Pulling data from USGS 11421000 station
+YBAMR_USGS <- readNWISdv(11421000, "00010") # parameter code 00010: water temperature
+glimpse(YBAMR_USGS) #no data on 00003 (median), so using min and max
+
+#max
+YBAMR_USGS <- readNWISdv(11421000, "00010", statCd = "00001") # parameter code 00010: water temperature
+
+# Format to make tidier
+YBAMR_daily_maxtemps <- YBAMR_USGS %>%
+  select(Date, temp_degC =  X_00010_00001) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(YBAMR_daily_maxtemps)
+
+#min
+YBAMR_USGS <- readNWISdv(11421000, "00010", statCd = "00002") # parameter code 00010: water temperature
+
+# Format to make tidier
+YBAMR_daily_mintemps <- YBAMR_USGS %>%
+  select(Date, temp_degC =  X_00010_00002) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(YBAMR_daily_mintemps)
+
+
+#Plot USGS min and max together
+combined_dataYBAMR <- bind_rows(
+  mutate(YBAMR_daily_maxtemps, HourlyTemperatures = "Max Temp"),
+  mutate(YBAMR_daily_mintemps, HourlyTemperatures = "Min Temp")
+)
+# plot_minmax <- plotmin + plotmax
+ggplot(combined_dataYBAMR, aes(date, temp_degC, color = HourlyTemperatures)) +
+  geom_line(size = 1) +
+  scale_color_viridis_d(option = "plasma") +  # Use colorblind-friendly palette "magma"
+  labs(
+    title = "Hourly Min and Max Temperatures from Yuba River",
+    x = "",
+    y = "Temperature (°C)",
+    color = "Hourly Temperatures",
+    caption =  "Daily max and min temperatures (°C) from 1964 to 2003 using data from USGS gage at Yuba River near Marysville (https://waterdata.usgs.gov/ca/nwis/inventory/?site_no=11421000)"
+  ) +
+  theme_minimal(base_size = 13) +  # Adjust base font size
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8),
+      plot.caption = element_text(size = 6)
+  )
+
+#Pulling data from USGS 11418000 station
+YBASV_USGS <- readNWISdv(11418000, "00010") # parameter code 00010: water temperature
+glimpse(YBASV_USGS) #no data on 00003 (median), so using min and max
+
+#max
+YBASV_USGS <- readNWISdv(11418000, "00010", statCd = "00001") # parameter code 00010: water temperature
+
+# Format to make tidier
+YBASV_daily_maxtemps <- YBASV_USGS %>%
+  select(Date, temp_degC =  X_00010_00001) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(YBASV_daily_maxtemps)
+
+#min
+YBASV_USGS <- readNWISdv(11418000, "00010", statCd = "00002") # parameter code 00010: water temperature
+
+# Format to make tidier
+YBASV_daily_mintemps <- YBASV_USGS %>%
+  select(Date, temp_degC =  X_00010_00002) %>%
+  as_tibble() %>% 
+  rename(date = Date)
+glimpse(YBASV_daily_mintemps)
+
+```
+
+### Plot without outliers using USGS YBAMR max/min
+
+```{r}
+#Max
+YBAMR_maxtemps_threshold <- max(YBAMR_daily_maxtemps$temp_degC) |> 
+  glimpse()
+
+#Trying another way to filter max of max
+# YBAMR_daily_maxtemps |>
+#   summarise(highest_temperature = max(temp_degC)) |>
+#   glimpse()
+
+#Min 
+YBAMR_mintemps_threshold <- min(YBAMR_daily_mintemps$temp_degC) |> 
+  glimpse()
+#Trying another way to filter min of min
+# YBAMR_daily_mintemps |>
+#   summarise(lowest_temperature = min(temp_degC)) |>
+#   glimpse()
+
+#Add thresholds from min and max to CDEC YR7 data
+YBAMR_temps_capped <- YR7_hourly_temps |> 
+  filter(temp_degC >= 4.5,
+         temp_degC <= 29.5)
+
+ggplot(YBAMR_temps_capped, aes(date, temp_degC)) +
+  geom_line() +
+  ggtitle("Filtered CDEC temperatures from Yuba River (YR7), using USGS min/max threshold")
+
+```
 
 ## Sacramento River - Knights Landing
+### Recommendation
+
+Temperature data for Sacramento River - Knights landing is missing
+significant data from the period of 1998-09-30 to 2016-09-31.
+
+###CDEC
+
+One station: 
+* WLK (2012-11-15 to present E): Sacramento River Bellow Wilkins Slough, right bellow Tisdale By-Pass confluence
+
 ```{r}
 # cdec_datasets("WLK")
 
@@ -612,9 +1065,9 @@ ggplot(WLK_hourly_temps, aes(x = date)) +
   labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "CDEC")
 ```
 
-CDEC provides temperature data for Sacramento River - Knights Landing from 2012-11-15 to 2022-06-16
 
-### CDEC Outliers Removed
+### Visualize CDEC Data with Outliers Removed
+
 ```{r}
 # Plot without outliers
 WLK_hourly_temps %>%
@@ -625,6 +1078,10 @@ WLK_hourly_temps %>%
 ```
 
 ### USGS
+
+One Station:
+* Site Numer 11390500 Sacramento R BL Wilkins Slough NR Grimes CA (1996-10-01 to 2023-04-11 Daily Mean) #TODO- add a location description, should we explore other stations? 
+
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage
 # Using mapper to check if temp data is available for the site https://maps.waterdata.usgs.gov/mapper/index.html
@@ -634,10 +1091,10 @@ WLK_USGS <- readNWISdv(11390500, "00010") # parameter code 00010: water temperat
 # Format to make tidier
 WLK_daily_temps <- WLK_USGS %>%
   select(Date, temp_degC =  X_00010_00003) %>%
-  filter(lubridate::year(Date) >= 1995) %>%
+  #filter(lubridate::year(Date) >= 1995) %>%
   as_tibble() %>% 
   rename(date = Date) %>% 
-  filter(year(date) > 2000) %>%
+  #filter(year(date) > 2000) %>%
   glimpse
 
 # Date Ranges
@@ -649,9 +1106,13 @@ ggplot(WLK_daily_temps, aes(x=date)) +
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year",y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
-Temperature data for Sacramento River - Knights landing has data from 1995-01-01 to 2022-06-14, but we should explore further the signifcant data gap and identify that period.
 
-### Data before Missing Data Gap
+Temperature data for Sacramento River - Knights landing has data from
+1995-01-01 to 2022-06-14, but we should explore further the signifcant
+data gap and identify that period.
+
+#### Data before Missing Data Gap
+
 ```{r}
 ### Identify date data starts to be missing
 WLK_daily_temps %>%
@@ -667,7 +1128,9 @@ WLK_daily_temps %>%
   geom_line(aes(y = temp_degC), color = "darkred") +
   labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
-### Data after missing data gap
+
+#### Data after missing data gap
+
 ```{r}
 ### Identify date data starts to be missing
 WLK_daily_temps %>%
@@ -684,9 +1147,11 @@ WLK_daily_temps %>%
   labs(x = "Year", y ="Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 #
 ```
-Temperature data for Sacramento River - Knights landing is missing significant data from the period of 1998-09-30 to 2016-09-31.
+
+
 
 #### Mean Daily USGS vs Daily CDEC data
+
 ```{r}
 WLK_combined = WLK_hourly_temps %>% 
   full_join(WLK_daily_temps, by = "date") %>% 
@@ -702,5 +1167,3 @@ WLK_combined %>%
   geom_line(aes(y = temp_USGS), color = "blue", linetype ="twodash") +
   labs(y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
-
-

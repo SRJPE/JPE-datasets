@@ -19,7 +19,7 @@ library(hms)
 
 # Flow gage lookup
 
-```{r}
+```{r, include = F}
 # We need flow data for each of the sites included in the trap_locations table
 # for all of the years listed.
 # We do not need to go to subsite scale of resolution.
@@ -34,17 +34,17 @@ library(hms)
 #   select(tributary, site_name, river_location, latitude, longitude, year) %>%
 #   distinct()
   # identify years
-
-gage_locations_raw <- read_csv("data-raw/standard-format-data-prep/gage_sites.csv")
-
-# Pull flow data from each of the gage sites here
-gage_locations <- gage_locations_raw %>%
-  filter(flow_gage == T) %>%
-  select(tributary, site_name, agency, latitude, longitude, identifier) %>%
-  distinct() %>%
-  rename(gage_latitude = latitude,
-         gage_longitude = longitude) %>%
-  glimpse()
+# 
+# gage_locations_raw <- read_csv("data-raw/standard-format-data-prep/gage_sites.csv")
+# 
+# # Pull flow data from each of the gage sites here
+# gage_locations <- gage_locations_raw %>%
+#   filter(flow_gage == T) %>%
+#   select(tributary, site_name, agency, latitude, longitude, identifier) %>%
+#   distinct() %>%
+#   rename(gage_latitude = latitude,
+#          gage_longitude = longitude) %>%
+#   glimpse()
   # get codes
 ```
 
@@ -156,7 +156,7 @@ BAT_combined %>%
 Battle Creek : recommend using USGS because CDEC had a lot of NA (-9998) values.
 
 ```{r}
-saveRDS(BAT_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/battle_flow.rds")
+saveRDS(BAT_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/battle_flow.rds")
 ```
 
 ## Butte Creek
@@ -255,7 +255,7 @@ Buttle Creek : Recommended to use CDEC to not lose significant fluctuations
 BCK_hourly_flows_clean_mean <- BCK_hourly_flows_clean %>%
   group_by(date) %>%
   summarize(flow_cfs = mean(flow_cfs, na.rm = T))
-saveRDS(BCK_hourly_flows_clean_mean, "data-raw/standard-format-data-prep/flow_data/butte_flow.rds")
+saveRDS(BCK_hourly_flows_clean_mean, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/butte_flow.rds")
 ```
 
 ## Clear Creek
@@ -346,7 +346,7 @@ IGO_combined %>%
 Clear Creek : recommend using USGS because CDEC had a lot of NA (-9998) values.
 
 ```{r}
-saveRDS(IGO_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/clear_flow.rds")
+saveRDS(IGO_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/clear_flow.rds")
 ```
 
 ## Deer Creek
@@ -438,7 +438,7 @@ DCV_combined %>%
 Deer Creek : recommend using USGS because CDEC had a lot of NA (-9998) values.
 
 ```{r}
-saveRDS(DCV_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/deer_flow.rds")
+saveRDS(DCV_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/deer_flow.rds")
 ```
 
 ## Feather River
@@ -530,7 +530,34 @@ boyds_landing_hourly_flows <- boyds_landing_CDEC %>%
   mutate(date = as_date(datetime),
          time = as_hms(datetime),
          flow_cfs = parameter_value)
-  
+
+# Another gage from CDEC (FBL)
+boyds_landing_CDEC2 <- cdec_query(station = "FBL", dur_code = "H", 
+                                 sensor_num = "20", start_date = "2009-01-01")
+boyds_landing2_hourly_flows <- boyds_landing_CDEC2 %>%
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         flow_cfs = parameter_value)  
+
+#USGS - FEA
+FEA_USGS <- readNWISdv(11421700, "00060")
+
+FEA_USGS_format <- FEA_USGS |> 
+  select(Date, flow_cfs =  X_00060_00003)
+ggplot(FEA_USGS_format, aes(Date, flow_cfs)) +
+  geom_line()
+# it looks like data is pretty outdated (1969-1980)
+
+#USGS - FEA2
+FEA2_USGS <- readNWISdv(11425000, "00060")
+
+FEA2_USGS_format <- FEA2_USGS |> 
+  select(Date, flow_cfs =  X_00060_00003) |> 
+  filter(year(Date)>1980)
+ggplot(FEA2_USGS_format, aes(Date, flow_cfs)) +
+  geom_line()
+
+
 ```
 
 
@@ -544,6 +571,15 @@ boyds_landing_hourly_flows |> filter(flow_cfs == 0) |> nrow()
 boyds_landing_hourly_flows |> filter(is.na(flow_cfs)) |> nrow()
 boyds_landing_hourly_flows |> filter(flow_cfs < 0) |> nrow()
 boyds_landing_hourly_flows |> nrow()
+
+# FSL plot
+ggplot(boyds_landing2_hourly_flows, aes(x = date, y = flow_cfs)) +
+  geom_line()
+# just checking to make sure there aren't any zeros
+boyds_landing2_hourly_flows |> filter(flow_cfs == 0) |> nrow()
+boyds_landing2_hourly_flows |> filter(is.na(flow_cfs)) |> nrow()
+boyds_landing2_hourly_flows |> filter(flow_cfs < 0) |> nrow()
+boyds_landing2_hourly_flows |> nrow()
 ```
 
 #### Clean data
@@ -559,15 +595,16 @@ boyds_landing_mean_daily_flows <- boyds_landing_hourly_flows |>
 
 ### Recommendations
 
-There are three major sites on the Feather River - High Flow Channel, Low Flow Channel, and the Lower Feather RST site. The Lower Feather RST site does not collect discharge data. 
+There are three major sites on the Feather River - High Flow Channel, Low Flow Channel, and the Lower Feather RST site. 
 
 We will use the CDEC GRL gage for HFC, the USGS Oroville gage for LFC, and the CDEC FSB gage for the Lower Feather.
 
 ```{r}
-saveRDS(gridley_hourly_flows_clean_mean, "data-raw/standard-format-data-prep/flow_data/feather_hfc_flow.rds")
-saveRDS(oroville_daily_flows, "data-raw/standard-format-data-prep/flow_data/feather_lfc_flow.rds")
-saveRDS(boyds_landing_mean_daily_flows, 
-        "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/lower_feather_flow.rds")
+saveRDS(gridley_hourly_flows_clean_mean, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/feather_hfc_flow.rds")
+saveRDS(oroville_daily_flows, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/feather_lfc_flow.rds")
+saveRDS(boyds_landing_mean_daily_flows, here::here("data-raw", "standard-format-data-prep",
+                                                   "flow_data_prep_files","flow_data", "lower_feather_flow.rds"))
+        
 ```
 
 ## Mill Creek
@@ -659,7 +696,7 @@ MLM_combined %>%
 Mill Creek: Recommend to use USGS because CDEC has no available data from 2008-2020.
 
 ```{r}
-saveRDS(MLM_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/mill_flow.rds")
+saveRDS(MLM_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/mill_flow.rds")
 ```
 
 ## Yuba River
@@ -748,7 +785,7 @@ MRY_combined %>%
 Yuba : Recommend to use USGS because CDEC has no available data from 2003-2020.
 
 ```{r}
-saveRDS(MRY_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/yuba_flow.rds")
+saveRDS(MRY_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/yuba_flow.rds")
 ```
 
 ## Sacramento River - Knights Landing
@@ -838,7 +875,7 @@ WLK_combined %>%
 Sacramento River- Knights Landing :  Use USGS because there are a few gaps where there is not data for CDEC
 
 ```{r}
-saveRDS(WLK_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/knights_flow.rds")
+saveRDS(WLK_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/knights_flow.rds")
 ```
 
 
@@ -902,7 +939,7 @@ The CDEC data for Tisdale is really sparse. Recommend using the USGS gage for Kn
 because it is very close.
 
 ```{r}
-saveRDS(WLK_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data/tisdale_flow.rds")
+saveRDS(WLK_daily_flows_clean, "data-raw/standard-format-data-prep/flow_data_prep_files/flow_data/tisdale_flow.rds")
 ```
 
 
