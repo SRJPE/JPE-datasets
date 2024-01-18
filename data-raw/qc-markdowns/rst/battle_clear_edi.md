@@ -222,9 +222,9 @@ gcs_upload(catch_format,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2024-01-17 17:19:11 > File size detected as  38.6 Mb
+    ## ℹ 2024-01-17 17:42:57 > File size detected as  38.6 Mb
 
-    ## ℹ 2024-01-17 17:19:11 > Found resumeable upload URL:  https://www.googleapis.com/upload/storage/v1/b/jpe-dev-bucket/o/?uploadType=resumable&name=rst%2Fbattle_clear_catch_edi.csv&upload_id=ABPtcPo6EE0_SgWa7420k-esCBFzbKbXhrTGsioeHkhcpzocl1K_OT18AzIPZYp0BEoqZPKfDxdldwO_BKijWf6HDudT_1Y-_APTQK_f9eOHOXuB
+    ## ℹ 2024-01-17 17:42:57 > Found resumeable upload URL:  https://www.googleapis.com/upload/storage/v1/b/jpe-dev-bucket/o/?uploadType=resumable&name=rst%2Fbattle_clear_catch_edi.csv&upload_id=ABPtcPrdjI6hot-4jinG79RqLa29TVo61dRzv7U19D43G7Bq231nfO9IAZ0lhQ-0JZ5A9aTwEY892ns9Bf8nWs5kftm5QjIOXZqExQBeQzfJem9uiw
 
 # Trap
 
@@ -282,7 +282,7 @@ trap_format %>%
   geom_point()
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ### trap_start_time, trap_sample_time
 
@@ -294,7 +294,7 @@ trap_format %>%
   geom_point()
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ### is_half_cone_configuration
 
@@ -363,7 +363,7 @@ trap_format %>%
   geom_point()
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 trap_format %>%
@@ -371,7 +371,7 @@ trap_format %>%
   geom_boxplot()
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
 
 ### rpms_start, rpms_end
 
@@ -381,7 +381,7 @@ trap_format %>%
   geom_point()
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ## Save data
 
@@ -395,25 +395,181 @@ gcs_upload(trap_format,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2024-01-17 17:19:18 > File size detected as  2.3 Mb
+    ## ℹ 2024-01-17 17:43:03 > File size detected as  2.3 Mb
 
     ## ==Google Cloud Storage Object==
     ## Name:                rst/battle_clear_trap_edi.csv 
     ## Type:                csv 
     ## Size:                2.3 Mb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_trap_edi.csv?generation=1705540759260093&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_trap_edi.csv?generation=1705542183616923&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/rst%2Fbattle_clear_trap_edi.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/rst%2Fbattle_clear_trap_edi.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/rst/battle_clear_trap_edi.csv/1705540759260093 
+    ## ID:                  jpe-dev-bucket/rst/battle_clear_trap_edi.csv/1705542183616923 
     ## MD5 Hash:            8Nl8u1GuvoFrDSTUM1xuwg== 
     ## Class:               STANDARD 
-    ## Created:             2024-01-18 01:19:19 
-    ## Updated:             2024-01-18 01:19:19 
-    ## Generation:          1705540759260093 
+    ## Created:             2024-01-18 01:43:03 
+    ## Updated:             2024-01-18 01:43:03 
+    ## Generation:          1705542183616923 
     ## Meta Generation:     1 
-    ## eTag:                CL2X7Lji5YMDEAE= 
+    ## eTag:                CJuDhODn5YMDEAE= 
     ## crc32c:              5Lqn5w==
+
+# Environmental
+
+``` r
+environmental_format <- trap |> 
+  select(sample_date, station_code, velocity, turbidity,  river_left_depth, river_center_depth, river_right_depth) |> 
+  pivot_longer(cols = c(velocity, turbidity, river_left_depth, river_center_depth, river_right_depth,), names_to = "parameter", values_to = "value") |> 
+  mutate(text = NA_character_) |> 
+  rbind(trap |> 
+          select(station_code, sample_date, weather, habitat, diel) |> 
+          pivot_longer(cols = c(weather, habitat, diel), names_to = "parameter", values_to = "text") |> 
+        mutate(value = NA_integer_)) |> 
+  rename(date = sample_date,
+         site = station_code) |> 
+   mutate(stream = case_when(grepl("clear", site) ~ "clear creek",
+                            grepl("battle", site) ~ "battle creek"),
+         site = case_when(site == "upper battle creek" ~ "ubc",
+                          site == "lower battle creek" ~ "lbc",
+                          site == "lower clear creek" ~ "lcc", 
+                          site == "upper clear creek" ~ "ucc"),
+         subsite = site) |> 
+  filter(!(is.na(value) & is.na(text)))
+```
+
+## QA/QC
+
+### date
+
+``` r
+environmental_format %>% 
+  ggplot() + 
+  geom_point(aes(x = date, y = site, color = stream), alpha = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) + 
+  theme(legend.position = "none", 
+        text = element_text(size = 18)) 
+```
+
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+### velocity
+
+``` r
+environmental_format %>% 
+  filter(parameter == "velocity") %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = value, y = stream, color = stream), alpha = .5, binwidth = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+Zoom in on 0 - 10 velocity range:
+
+``` r
+environmental_format %>% 
+  filter(parameter == "velocity") %>% 
+  filter(value < 10) %>%
+  ggplot() + 
+  geom_histogram(aes(x = value, fill = stream), alpha = .5, binwidth = .3, position="identity") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+```
+
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+### turbidity
+
+All watersheds provide turbidity data
+
+``` r
+environmental_format%>% 
+  filter(parameter == "turbidity") %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = value, y = stream, color = stream), alpha = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+Zoom in on 0 - 25 turbidity range:
+
+``` r
+environmental_format%>% 
+  filter(parameter == "turbidity") %>% 
+  filter(value < 50) %>% # 1,647 values above 50 (274,049 rows total)
+  ggplot() + 
+  geom_histogram(aes(x = value, fill = stream), alpha = .5, binwidth = .3, position="identity") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+```
+
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+### weather
+
+``` r
+unique(environmental_format$weather)
+```
+
+    ## NULL
+
+``` r
+environmental_format %>% 
+  filter(parameter == "weather") %>% 
+  ggplot() + 
+  geom_bar(aes(x = text, fill = stream), position = "dodge") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+### habitat
+
+``` r
+environmental_format %>% 
+  filter(parameter == "habitat") %>% 
+  ggplot() + 
+  geom_bar(aes(x = text, fill = stream), position = "dodge") +
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+```
+
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
+## Save data
+
+``` r
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(environmental_format,
+           object_function = f,
+           type = "csv",
+           name = "rst/battle_clear_environmental_edi.csv",
+           predefinedAcl = "bucketLevel")
+```
+
+    ## ℹ 2024-01-17 17:43:08 > File size detected as  4.9 Mb
+
+    ## ℹ 2024-01-17 17:43:08 > Found resumeable upload URL:  https://www.googleapis.com/upload/storage/v1/b/jpe-dev-bucket/o/?uploadType=resumable&name=rst%2Fbattle_clear_environmental_edi.csv&upload_id=ABPtcPq2VnEzyeQzl9ZwNj5piUHONL0-bhUrzH3AsBN7rrjiN6ZSZDQZ56OSIFKVgGC_jPQyj4uKH_tia6o9G-OdW_0pOay7dITVUh4guNtdbno8-A
 
 # Release
 
@@ -469,7 +625,7 @@ release_format %>% ggplot() +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 ### release_time
 
@@ -484,7 +640,7 @@ release_format %>% ggplot() +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 ### number_released
 
@@ -500,7 +656,7 @@ release_format %>% ggplot() +
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ### median_fork_length_released
 
@@ -517,7 +673,7 @@ release_format %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 ``` r
 release_format %>% 
@@ -532,7 +688,7 @@ release_format %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 ### night_release
 
@@ -565,7 +721,7 @@ release_format %>%
     ## `.groups` argument.
     ## Joining with `by = join_by(site, year)`
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 ### days_held_post_mark
 
@@ -583,7 +739,7 @@ release_format %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 ### flow_at_release
 
@@ -598,7 +754,7 @@ release_format %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
 
 ### temperature_at_release
 
@@ -613,7 +769,7 @@ release_format %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 ### turbidity_at_release
 
@@ -628,7 +784,7 @@ release_format %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 \## Save data
 
 ``` r
@@ -641,24 +797,24 @@ gcs_upload(release_format,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2024-01-17 17:19:24 > File size detected as  85 Kb
+    ## ℹ 2024-01-17 17:43:14 > File size detected as  85 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                rst/battle_clear_release_edi.csv 
     ## Type:                csv 
     ## Size:                85 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_release_edi.csv?generation=1705540764951240&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_release_edi.csv?generation=1705542194789558&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/rst%2Fbattle_clear_release_edi.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/rst%2Fbattle_clear_release_edi.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/rst/battle_clear_release_edi.csv/1705540764951240 
+    ## ID:                  jpe-dev-bucket/rst/battle_clear_release_edi.csv/1705542194789558 
     ## MD5 Hash:            0Xt7+3XymKXbRGeqLBMLDQ== 
     ## Class:               STANDARD 
-    ## Created:             2024-01-18 01:19:24 
-    ## Updated:             2024-01-18 01:19:24 
-    ## Generation:          1705540764951240 
+    ## Created:             2024-01-18 01:43:14 
+    ## Updated:             2024-01-18 01:43:14 
+    ## Generation:          1705542194789558 
     ## Meta Generation:     1 
-    ## eTag:                CMjFx7vi5YMDEAE= 
+    ## eTag:                CLb5reXn5YMDEAE= 
     ## crc32c:              786GXA==
 
 # Recapture
@@ -706,7 +862,7 @@ recapture_format %>% ggplot() +
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 
 ### number_recaptured
 
@@ -727,7 +883,7 @@ recapture_format %>%
     ## `summarise()` has grouped output by 'release_id'. You can override using the
     ## `.groups` argument.
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
 
 ``` r
 recapture_format %>% 
@@ -762,7 +918,7 @@ recapture_format %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
 
 ``` r
 recapture_format %>% 
@@ -777,7 +933,7 @@ recapture_format %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
 
-![](battle_clear_edi_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](battle_clear_edi_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
 \## Save data
 
 ``` r
@@ -790,22 +946,22 @@ gcs_upload(recapture_format,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2024-01-17 17:19:27 > File size detected as  170 Kb
+    ## ℹ 2024-01-17 17:43:17 > File size detected as  170 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                rst/battle_clear_recapture_edi.csv 
     ## Type:                csv 
     ## Size:                170 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_recapture_edi.csv?generation=1705540767748850&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_recapture_edi.csv?generation=1705542197527064&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/rst%2Fbattle_clear_recapture_edi.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/rst%2Fbattle_clear_recapture_edi.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/rst/battle_clear_recapture_edi.csv/1705540767748850 
+    ## ID:                  jpe-dev-bucket/rst/battle_clear_recapture_edi.csv/1705542197527064 
     ## MD5 Hash:            At1xK0Z2K1b87pNuxBDrdA== 
     ## Class:               STANDARD 
-    ## Created:             2024-01-18 01:19:27 
-    ## Updated:             2024-01-18 01:19:27 
-    ## Generation:          1705540767748850 
+    ## Created:             2024-01-18 01:43:17 
+    ## Updated:             2024-01-18 01:43:17 
+    ## Generation:          1705542197527064 
     ## Meta Generation:     1 
-    ## eTag:                CPKl8rzi5YMDEAE= 
+    ## eTag:                CJiE1ebn5YMDEAE= 
     ## crc32c:              bR9IQQ==

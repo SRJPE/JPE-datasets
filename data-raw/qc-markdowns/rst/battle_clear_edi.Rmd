@@ -184,7 +184,7 @@ catch_format %>%
 ```
 ## Save data
 
-```{r, save_data}
+```{r}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(catch_format,
@@ -329,6 +329,143 @@ gcs_upload(trap_format,
 ```
 
 
+
+
+# Environmental
+
+```{r}
+environmental_format <- trap |> 
+  select(sample_date, station_code, velocity, turbidity,  river_left_depth, river_center_depth, river_right_depth) |> 
+  pivot_longer(cols = c(velocity, turbidity, river_left_depth, river_center_depth, river_right_depth,), names_to = "parameter", values_to = "value") |> 
+  mutate(text = NA_character_) |> 
+  rbind(trap |> 
+          select(station_code, sample_date, weather, habitat, diel) |> 
+          pivot_longer(cols = c(weather, habitat, diel), names_to = "parameter", values_to = "text") |> 
+        mutate(value = NA_integer_)) |> 
+  rename(date = sample_date,
+         site = station_code) |> 
+   mutate(stream = case_when(grepl("clear", site) ~ "clear creek",
+                            grepl("battle", site) ~ "battle creek"),
+         site = case_when(site == "upper battle creek" ~ "ubc",
+                          site == "lower battle creek" ~ "lbc",
+                          site == "lower clear creek" ~ "lcc", 
+                          site == "upper clear creek" ~ "ucc"),
+         subsite = site) |> 
+  filter(!(is.na(value) & is.na(text)))
+```
+
+## QA/QC {.tabset}
+
+### date
+
+```{r}
+environmental_format %>% 
+  ggplot() + 
+  geom_point(aes(x = date, y = site, color = stream), alpha = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) + 
+  theme(legend.position = "none", 
+        text = element_text(size = 18)) 
+```
+
+### velocity
+
+```{r}
+environmental_format %>% 
+  filter(parameter == "velocity") %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = value, y = stream, color = stream), alpha = .5, binwidth = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+
+Zoom in on 0 - 10 velocity range:
+
+```{r}
+environmental_format %>% 
+  filter(parameter == "velocity") %>% 
+  filter(value < 10) %>%
+  ggplot() + 
+  geom_histogram(aes(x = value, fill = stream), alpha = .5, binwidth = .3, position="identity") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+```
+
+### turbidity
+
+All watersheds provide turbidity data
+
+```{r}
+environmental_format%>% 
+  filter(parameter == "turbidity") %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = value, y = stream, color = stream), alpha = .5) + 
+  theme_minimal() + 
+  scale_color_manual(values = color_pal) +
+  theme(legend.position = "none", 
+        text = element_text(size = 18))
+```
+
+Zoom in on 0 - 25 turbidity range:
+
+```{r}
+environmental_format%>% 
+  filter(parameter == "turbidity") %>% 
+  filter(value < 50) %>% # 1,647 values above 50 (274,049 rows total)
+  ggplot() + 
+  geom_histogram(aes(x = value, fill = stream), alpha = .5, binwidth = .3, position="identity") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+```
+
+### weather
+
+```{r}
+unique(environmental_format$weather)
+environmental_format %>% 
+  filter(parameter == "weather") %>% 
+  ggplot() + 
+  geom_bar(aes(x = text, fill = stream), position = "dodge") + 
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+### habitat
+
+```{r}
+environmental_format %>% 
+  filter(parameter == "habitat") %>% 
+  ggplot() + 
+  geom_bar(aes(x = text, fill = stream), position = "dodge") +
+  theme_minimal() + 
+  scale_fill_manual(values = color_pal) +
+  theme(legend.position = "bottom", 
+        text = element_text(size = 18))
+
+
+```
+
+## Save data
+
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(environmental_format,
+           object_function = f,
+           type = "csv",
+           name = "rst/battle_clear_environmental_edi.csv",
+           predefinedAcl = "bucketLevel")
+```
 
 # Release
 
