@@ -28,9 +28,9 @@ FlowWest aggregated environmental data for temperature data from all
 monitoring programs:
 
 -   Feather River (source: RST monitoring data)
--   Battle Creek (source: FWS)
+-   Battle Creek (source: USFWS)
 -   Butte Creek (source: CDEC)
--   Clear Creek (source: FWS)
+-   Clear Creek (source: USFWS)
 -   Deer Creek (source: CDEC)
 -   Mill Creek (source: CDEC)
 -   Sacramento River (source for Tisdale: USGS; source for Knights
@@ -101,6 +101,7 @@ catch <- read_csv("data/rst/standard_catch.csv")
 
 -   One site from the Fish and Wildlife Service provides data from
     `2003-01-07` to `2021-02-2021`
+-   TODO update with data through 2023
 
 ```{r}
 ubc_temp_raw <- readxl::read_excel(here::here("data-raw", "standard-format-data-prep", "temp_data", "battle_clear_temp.xlsx"), sheet = 4)
@@ -112,10 +113,11 @@ battle_format <- ubc_temp_raw %>%
          site = "ubc",
          subsite = "ubc",
          date = as.Date(date),
-         source = "FWS") %>%
+         source = "USFWS logger") %>%
   group_by(date, stream, site, source, subsite) %>%
   summarise(mean_temp_degC = mean(temp_c, na.rm = T),
-            max_temp_degC = max(temp_c, na.rm = T)) %>% 
+            max_temp_degC = max(temp_c, na.rm = T),
+            min_temp_degC = min(temp_c, na.rm = T)) %>% 
   filter(mean_temp_degC > 0) %>%
   glimpse
 
@@ -132,7 +134,7 @@ filter(catch, stream == "battle creek") |> distinct(site, subsite)
 ## Butte Creek
 
 -   The CDEC gage `BCK` was used to aggregate temperature for sites
-    `adams dam` and `okie dam` from `1998-09-16` to `2022-06-30`.
+    `adams dam` and `okie dam` from `1998-09-16` to `2022-06-30`. USGS data was used to establish threshold to identify min and max temperatures. Outliers were interpolated using linear approximation methods
 
 ```{r}
 # source CDEC
@@ -203,7 +205,7 @@ filter(catch, stream == "clear creek") |> distinct(site, subsite)
 ## Deer Creek
 
 -   Deer Creek data was aggregated from CDEC's site `DCV` from
-    `1998-10-01` to `2022-07-13`
+    `1998-10-01` to `2022-07-13`. USGS data was used to identify outliers. Outliers were interpolated using linear approximation.
 
 ```{r}
 # source 
@@ -230,13 +232,13 @@ deer_format %>% ggplot() +
 
 ## Feather River
 
--   Chose to use RST environmental data instead of CDEC or USGS because
-    a significant data gap exists in publicly available data between
-    2006-09-05 and 2018-09-30. The two publicly available sites are also
-    spatially far apart.
+Two stations:
+* GRL (2003-03-05 to 2007-06-01 H; 2020-01-04 to present E): located after Thermalito Afterbay
+* FRA (2002-01-01 to present): located between Lake Oroville and Thermalito Afterbay
 
--   Feather River data can be aggregate by high and low flows using the
-    `location` column
+
+- Both CDEC sites will be used because of the more recent period of time that data are available. If needed, USGS could be appended for a longer time series. Currently only CDEC data will be added to the dataset. GRL will represent the High Flow Channel (HFC) and FRA will represent the Low Flow Channel (LFC).
+
 
 ```{r}
 # Two gages according to RST shiny app:

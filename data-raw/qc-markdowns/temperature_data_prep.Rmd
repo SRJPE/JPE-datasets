@@ -206,17 +206,12 @@ BCK_maxtemp_threshold <- max(BCK_USGS_max$temperature) |>
 BCK_mintemp_threshold <- min(BCK_USGS_min$temperature) |> 
   glimpse()
 
-BCK_threshold <- BCK_USGS_max |> 
-  rename(max = temperature) |> 
-  full_join(BCK_USGS_min |> 
-              rename(min = temperature)) |> 
-  summarize(max = max(max, na.rm = T),
-            min = min(min, na.rm = T))
-
 #Add thresholds from min and max to CDEC data
 BCK_temps_capped <- BCK_hourly_temps |> 
-  filter(temp_degC >= BCK_threshold$min,
-         temp_degC <= BCK_threshold$max)
+  mutate(temp_degC = case_when(temp_degC < 0.5 | temp_degC > 27.5 ~ NA_real_,
+                               T ~ temp_degC),
+         temp_degC = as.numeric(temp_degC),
+         temp_degC = na.approx(temp_degC, na.rm = F))
 
 ggplot(BCK_temps_capped, aes(date, temp_degC)) +
   geom_line()
@@ -480,8 +475,9 @@ DCV_min_threshold <- min(DCV_USGS_min$temperature) |>
 
 #Add thresholds from min and max to CDEC data
 DCV_temps_capped <- DCV_hourly_temps |> 
-  filter(temp_degC >= 0.4,
-         temp_degC <= 28.5)
+ mutate(temp_degC = case_when(temp_degC < 0.4 | temp_degC > 28.5 ~ NA_real_,
+                              T ~ temp_degC),
+        temp_degC = na.approx(temp_degC, na.rm = F))
 
 ggplot(DCV_temps_capped, aes(date, temp_degC)) +
   geom_line() +
@@ -657,8 +653,9 @@ ORO_min_threshold <- min(ORO_daily_mintemps$temp_degC) |>
 
 #Add threshold from USGS min and max to "GRL" CDEC data
 hfc_feather <-  GRL_hourly_temps |> 
-  filter(temp_degC >= 1.7,
-         temp_degC <= 28.5)
+  mutate(temp_degC = case_when(temp_degC < 1.7 | temp_degC > 28.5 ~ NA_real_,
+                               T ~ temp_degC),
+         temp_degC = na.approx(temp_degC, na.rm = F))
 
 #Plotting filtered GRL CDEC temperatures using USGS threshold
 ggplot(hfc_feather, aes(date, temp_degC)) +
@@ -667,8 +664,9 @@ ggplot(hfc_feather, aes(date, temp_degC)) +
 
 #Add threshold from USGS min and max to "FEA" CDEC data
 lfc_feather <-  FRA_hourly_temps |> 
-  filter(temp_degC >= 1.7,
-         temp_degC <= 28.5)
+  mutate(temp_degC = case_when(temp_degC < 1.7 | temp_degC > 28.5 ~ NA_real_,
+                               T ~ temp_degC),
+         temp_degC = na.approx(temp_degC, na.rm = F))
 
 #Plotting filtered GRL CDEC temperatures using USGS threshold
 ggplot(lfc_feather, aes(date, temp_degC)) +
@@ -678,8 +676,9 @@ ggplot(lfc_feather, aes(date, temp_degC)) +
 
 
 ```{r}
-# TODO save all the data from the gages that we want to use
-# write_rds(GRL_hourly_temps, "../../data-raw/standard-format-data-prep/temp_data/feather_temp.rds")
+write_rds(hfc_feather, here::here("data-raw", "standard-format-data-prep","temp_data", "feather_hfc_temp.rds"))
+
+write_rds(lfc_feather, here::here("data-raw", "standard-format-data-prep","temp_data", "feather_lfc_temp.rds"))
 ```
 
 ## Mill Creek
@@ -811,8 +810,9 @@ Mill_min_threshold <- min(Mill_daily_mintemps$temp_degC) |>
 
 #Add threshold from USGS min and max to "MLM" CDEC data
 Mill_temps_capped <-  MLM_hourly_temps |> 
-  filter(temp_degC >= 0.5,
-         temp_degC <= 27.5)
+  mutate(temp_degC = case_when(temp_degC < 0.5 | temp_degC > 27.5 ~ NA_real_,
+                               T ~ temp_degC),
+         temp_degC = na.approx(temp_degC, na.rm = F))
 
 #Plotting filtered GRL CDEC temperatures using USGS threshold
 ggplot(Mill_temps_capped, aes(date, temp_degC)) +
@@ -847,23 +847,21 @@ MLM_combined %>%
 ```{r}
 
 # 1. Calculate the daily average temperature
-MLM_daily_temps <- MLM_hourly_temps %>% 
-  filter(!is.na(temp_degC),
-         temp_degC < 37, temp_degC > -18) %>% 
+MLM_daily_temps <- Mill_temps_capped %>% 
   group_by(date) %>% 
-  summarize(mean_temp_degC = mean(temp_degC),
-            max_temp_degC = max(temp_degC)) 
+  summarize(mean_temp_degC = mean(temp_degC, na.rm = T),
+            max_temp_degC = max(temp_degC, na.rm = T),
+            min_temp_degC = min(temp_degC, na.rm = T)) 
 ```
 
 ```{r}
-# save final version of butte data
-# from ashley: erin and i have started using the here package, especially in markdowns because it makes it easier for file path reading
 write_rds(MLM_daily_temps, here::here("data-raw", "standard-format-data-prep","temp_data", "mill_temp.rds"))
 ```
 
 ## Yuba River
 ###Recommendation
 We recommend not using  YRS Yuba River near Smartville data because the majority of the data appears to be ouliers, and data gaps are apparent when outliers are removed. There are data quality issues in this dataset that we could avoid by using the YR7 data instead.
+
 ### CDEC
 
 Two stations:
@@ -1024,8 +1022,9 @@ YBAMR_mintemps_threshold <- min(YBAMR_daily_mintemps$temp_degC) |>
 
 #Add thresholds from min and max to CDEC YR7 data
 YBAMR_temps_capped <- YR7_hourly_temps |> 
-  filter(temp_degC >= 4.5,
-         temp_degC <= 29.5)
+  mutate(temp_degC = case_when(temp_degC < 4.5 | temp_degC > 29.5 ~ NA_real_,
+         T ~ temp_degC),
+         temp_degC = na.approx(temp_degC, na.rm = F))
 
 ggplot(YBAMR_temps_capped, aes(date, temp_degC)) +
   geom_line() +
@@ -1033,7 +1032,22 @@ ggplot(YBAMR_temps_capped, aes(date, temp_degC)) +
 
 ```
 
+```{r}
+
+# 1. Calculate the daily average temperature
+YR7_daily_temps <- YBAMR_temps_capped %>% 
+  group_by(date) %>% 
+  summarize(mean_temp_degC = mean(temp_degC, na.rm = T),
+            max_temp_degC = max(temp_degC, na.rm = T),
+            min_temp_degC = min(temp_degC, na.rm = T)) 
+```
+
+```{r}
+write_rds(YR7_daily_temps, here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp.rds"))
+```
+
 ## Sacramento River - Knights Landing
+
 ### Recommendation
 
 Temperature data for Sacramento River - Knights landing is missing
@@ -1148,9 +1162,7 @@ WLK_daily_temps %>%
 #
 ```
 
-
-
-#### Mean Daily USGS vs Daily CDEC data
+### Mean Daily USGS vs Daily CDEC data
 
 ```{r}
 WLK_combined = WLK_hourly_temps %>% 
@@ -1167,3 +1179,8 @@ WLK_combined %>%
   geom_line(aes(y = temp_USGS), color = "blue", linetype ="twodash") +
   labs(y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "USGS")
 ```
+
+```{r}
+write_rds(WLK_daily_temps, here::here("data-raw", "standard-format-data-prep","temp_data", "sac_temp.rds"))
+```
+
