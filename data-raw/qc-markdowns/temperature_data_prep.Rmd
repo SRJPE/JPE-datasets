@@ -673,12 +673,25 @@ ggplot(lfc_feather, aes(date, temp_degC)) +
   geom_line() +
   ggtitle("Filtered CDEC temperatures from (FRA) Feather River, using USGS (ORO) min/max threshold")
 ```
+```{r}
+hfc_daily <- hfc_feather %>% 
+  group_by(date) %>% 
+  summarize(mean_temp_degC = mean(temp_degC, na.rm = T),
+            max_temp_degC = max(temp_degC, na.rm = T),
+            min_temp_degC = min(temp_degC, na.rm = T)) 
+
+lfc_daily <- lfc_feather %>% 
+  group_by(date) %>% 
+  summarize(mean_temp_degC = mean(temp_degC, na.rm = T),
+            max_temp_degC = max(temp_degC, na.rm = T),
+            min_temp_degC = min(temp_degC, na.rm = T)) 
+```
 
 
 ```{r}
-write_rds(hfc_feather, here::here("data-raw", "standard-format-data-prep","temp_data", "feather_hfc_temp.rds"))
+write_rds(hfc_daily, here::here("data-raw", "standard-format-data-prep","temp_data", "feather_hfc_temp.rds"))
 
-write_rds(lfc_feather, here::here("data-raw", "standard-format-data-prep","temp_data", "feather_lfc_temp.rds"))
+write_rds(lfc_daily, here::here("data-raw", "standard-format-data-prep","temp_data", "feather_lfc_temp.rds"))
 ```
 
 ## Mill Creek
@@ -860,7 +873,7 @@ write_rds(MLM_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 
 ## Yuba River
 ###Recommendation
-We recommend not using  YRS Yuba River near Smartville data because the majority of the data appears to be ouliers, and data gaps are apparent when outliers are removed. There are data quality issues in this dataset that we could avoid by using the YR7 data instead.
+We recommend not using YRS Yuba River near Smartville data because the majority of the data appears to be ouliers, and data gaps are apparent when outliers are removed. There are data quality issues in this dataset that we could avoid by using the YR7 data instead.
 
 ### CDEC
 
@@ -1050,13 +1063,12 @@ write_rds(YR7_daily_temps, here::here("data-raw", "standard-format-data-prep","t
 
 ### Recommendation
 
-Temperature data for Sacramento River - Knights landing is missing
-significant data from the period of 1998-09-30 to 2016-09-31.
+Use USGS Wilkins gage because it extends further than CDEC. However, note that there is a large data gap. 
 
 ###CDEC
 
 One station: 
-* WLK (2012-11-15 to present E): Sacramento River Bellow Wilkins Slough, right bellow Tisdale By-Pass confluence
+* WLK (2012-11-15 to present E): Sacramento River Bellow Wilkins Slough, right below Tisdale By-Pass confluence
 
 ```{r}
 # cdec_datasets("WLK")
@@ -1079,7 +1091,6 @@ ggplot(WLK_hourly_temps, aes(x = date)) +
   labs(x = "Year", y = "Temperature (deg C)", title = "Temperature at Sacramento River- Knights Landing", caption = "CDEC")
 ```
 
-
 ### Visualize CDEC Data with Outliers Removed
 
 ```{r}
@@ -1094,7 +1105,7 @@ WLK_hourly_temps %>%
 ### USGS
 
 One Station:
-* Site Numer 11390500 Sacramento R BL Wilkins Slough NR Grimes CA (1996-10-01 to 2023-04-11 Daily Mean) #TODO- add a location description, should we explore other stations? 
+* Site Numer 11390500 Sacramento R BL Wilkins Slough NR Grimes CA (1996-10-01 to 2023-04-11 Daily Mean) 
 
 ```{r}
 # Using https://flowwest.shinyapps.io/jpe-eda-app/ to find temperature gage

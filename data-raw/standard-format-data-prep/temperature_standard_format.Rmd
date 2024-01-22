@@ -27,15 +27,14 @@ knitr::opts_chunk$set(echo = TRUE)
 FlowWest aggregated environmental data for temperature data from all 
 monitoring programs:
 
--   Feather River (source: RST monitoring data)
+-   Feather River (source: CDEC)
 -   Battle Creek (source: USFWS)
 -   Butte Creek (source: CDEC)
 -   Clear Creek (source: USFWS)
 -   Deer Creek (source: CDEC)
 -   Mill Creek (source: CDEC)
--   Sacramento River (source for Tisdale: USGS; source for Knights
-    Landing: RST monitoring data)
--   Yuba River (source: RST monitoring data)
+-   Sacramento River (source: USGS)
+-   Yuba River (source: CDEC)
 
 ### Rational for Data Sources:
 
@@ -66,8 +65,8 @@ Y - Yuba River)
 | site              | B, Bu, C, D, M, F | unique site identifier where measurement occurs     |
 | source            | B, Bu, C, D, M, F | data source                                         |
 | location          | F                 | differentiates between `high flow` and `low flow`   |
-| mean_daily_temp_c | B, Bu, C, D, M, F | average daily temperature (degrees Celsius)         |
-| max_daily_temp_c  | B, C              | maximum daily temperature (degrees Celsius)         |
+| value             | all               | Temperature value in degress Celsius                |
+| statistics        | B, Bu, C, D, M, F | mean, min, max summary statistic                    |
 
 # Pull in data and format {.tabset}
 
@@ -104,22 +103,19 @@ catch <- read_csv("data/rst/standard_catch.csv")
 -   TODO update with data through 2023
 
 ```{r}
-ubc_temp_raw <- readxl::read_excel(here::here("data-raw", "standard-format-data-prep", "temp_data", "battle_clear_temp.xlsx"), sheet = 4)
+ubc_temp_raw <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "battle_temp.rds"))
 
 battle_format <- ubc_temp_raw %>% 
-  rename(date = DT,
-         temp_c = TEMP_C) %>%
+  group_by(date) |> 
+  summarise(mean_temp_degC = mean(temp_degC, na.rm = T),
+            max_temp_degC = max(temp_degC, na.rm = T),
+            min_temp_degC = min(temp_degC, na.rm = T)) %>% 
   mutate(stream = "battle creek", 
          site = "ubc",
          subsite = "ubc",
          date = as.Date(date),
-         source = "USFWS logger") %>%
-  group_by(date, stream, site, source, subsite) %>%
-  summarise(mean_temp_degC = mean(temp_c, na.rm = T),
-            max_temp_degC = max(temp_c, na.rm = T),
-            min_temp_degC = min(temp_c, na.rm = T)) %>% 
-  filter(mean_temp_degC > 0) %>%
-  glimpse
+         gage_agency = "USFWS",
+         gage_number = "logger")
 
 summary(battle_format)
 
@@ -127,8 +123,6 @@ battle_format %>% ggplot() +
   geom_line(aes(x = date, y = mean_temp_degC, color = site)) + 
   # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
   theme_minimal()
-
-filter(catch, stream == "battle creek") |> distinct(site, subsite)
 ```
 
 ## Butte Creek
@@ -141,7 +135,8 @@ filter(catch, stream == "battle creek") |> distinct(site, subsite)
 butte <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "butte_temp.rds"))
 butte_format <- butte %>%
   mutate(stream = "butte creek",
-         source = "CDEC BCK")
+         gage_agency = "CDEC",
+         gage_number = "BCK")
 
 butte_sites <- filter(catch, stream == "butte creek") |> 
   select(stream, site, subsite) |> 
@@ -165,32 +160,31 @@ filter(catch, stream == "butte creek") |> distinct(site, subsite)
     `lcc` from `2001-02-16` to `2021-12-31`
 
 ```{r}
-ucc_temp_raw <- readxl::read_excel(here::here("data-raw", "standard-format-data-prep", "temp_data", "battle_clear_temp.xlsx"), sheet = 2)
+ucc_temp_raw <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "upper_clear_temp.rds"))
 
-ucc_temp <- ucc_temp_raw %>% 
-  rename(date = DT,
-         temp_c = TEMP_C) %>%
+ucc_temp <- ubc_temp_raw %>% 
   mutate(stream = "clear creek", 
          site = "ucc",
          subsite = "ucc",
-         date = as.Date(date)) %>%
-  glimpse
+         date = as.Date(date),
+         gage_agency = "USFWS",
+         gage_number = "logger")
 
-lcc_temp_raw <- readxl::read_excel(here::here("data-raw", "standard-format-data-prep", "temp_data", "battle_clear_temp.xlsx"), sheet = 3)
-lcc_temp <- lcc_temp_raw %>% 
-  rename(date = DT,
-         temp_c = TEMP_C) %>% 
+lcc_temp_raw <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "lower_clear_temp.rds"))
+
+lcc_temp <- lcc_temp_raw  %>% 
   mutate(stream = "clear creek", 
          site = "lcc",
          subsite = "lcc",
-         date = as.Date(date)) %>%
-  glimpse
+         date = as.Date(date),
+         gage_agency = "USFWS",
+         gage_number = "logger")
 
 clear_format <- bind_rows(lcc_temp, ucc_temp) %>% 
-  group_by(date, stream, site, subsite) %>%
-  summarise(mean_temp_degC = mean(temp_c, na.rm = T),
-            max_temp_degC = max(temp_c, na.rm = T)) %>% 
-  mutate(source = "FWS") %>% glimpse
+  group_by(date, stream, site, subsite, gage_agency, gage_number) %>%
+  summarise(mean_temp_degC = mean(temp_degC, na.rm = T),
+            max_temp_degC = max(temp_degC, na.rm = T),
+            min_temp_degC = min(temp_degC, na.rm = T)) 
 
 summary(clear_format$date)
 
@@ -214,10 +208,8 @@ deer_format <- deer %>%
   mutate(stream = "deer creek",
          site = stream,
          subsite = site,
-         source = "CDEC DCV") %>%
-  filter(mean_temp_degC > 0 & mean_temp_degC < 35,
-         max_temp_degC > 0 & max_temp_degC < 35) %>% 
-  glimpse()
+         gage_agency = "CDEC",
+         gage_number = "DCV")
 
 summary(deer_format$date)
 
@@ -241,92 +233,60 @@ Two stations:
 
 
 ```{r}
-# Two gages according to RST shiny app:
-# - CDEC GRL
-# - CDEC FRA
 
-GRL_CDEC <- cdec_query(station = "GRL", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+hfc_feather <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "feather_hfc_temp.rds"))
 
+lfc_feather <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "feather_lfc_temp.rds"))
 
-feather_river_temp_GRL <- GRL_CDEC %>%
-  mutate(date = as_date(datetime),
-         time = as_hms(datetime),
-         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
-  select(date,time,temp_degC) %>%
-  group_by(date) %>%
-  summarise(mean_temp_degC = mean(temp_degC, na.rm = TRUE),
-            max_temp_degC = max(temp_degC, na.rm = TRUE)) %>% 
-  mutate(stream = "feather river", 
-         site = "GRL", 
-         source = "CDEC") %>%
-  filter(mean_temp_degC < 23 & mean_temp_degC > 2,
-         max_temp_degC < 35 & max_temp_degC > 2) # remove outlier
+feather_sites <- catch |> 
+  filter(stream == "feather river") |> 
+  distinct(stream, site, site_group, subsite)
 
-# ggplot() + 
-#   geom_line(data = feather_river_temp_GRL, aes(x = date, y = mean_temp_degC)) +
-#   theme_minimal()
-# 
-# summary(feather_river_temp_GRL$date)
+feather_hfc_sites <- filter(feather_sites, site_group == "feather river hfc")
+feather_lfc_sites <- filter(feather_sites, site_group == "feather river lfc")
 
-# FRA
+feather_hfc_format <- hfc_feather %>% 
+  mutate(stream = "feather river",
+         gage_agency = "CDEC",
+         gage_number = "GRL")
 
+feather_format_all_hfc <- full_join(feather_hfc_format, feather_hfc_sites)
 
-FRA_CDEC <- cdec_query(station = "FRA", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+summary(feather_format_all_hfc$date)
 
+feather_format_all_hfc %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC, color = site)) + 
+  # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
+  theme_minimal() 
 
-feather_river_temp_FRA <- FRA_CDEC %>%
-  mutate(date = as_date(datetime),
-         time = as_hms(datetime),
-         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
-  select(date,time,temp_degC) %>%
-  group_by(date) %>%
-  summarise(mean_temp_degC = mean(temp_degC, na.rm = TRUE),
-            max_temp_degC = max(temp_degC, na.rm = TRUE)) %>% 
-  mutate(stream = "feather river", 
-         site = "FRA", 
-         source = "CDEC") 
+feather_lfc_format <- lfc_feather %>% 
+  mutate(stream = "feather river",
+         gage_agency = "CDEC",
+         gage_number = "FRA")
 
-# ggplot() + 
-#   geom_line(data = feather_river_temp_FRA, aes(x = date, y = mean_temp_degC)) +
-#   theme_minimal()
-# 
-# summary(feather_river_temp_FRA$date)
+feather_format_all_lfc <- full_join(feather_lfc_format, feather_lfc_sites)
+
+summary(feather_format_all_lfc$date)
+
+feather_format_all_lfc %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC, color = site)) + 
+  # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
+  theme_minimal() 
 ```
 
-### Combine Gage data for Feather River
-
--   significant data gap exists
-
 ```{r}
-
-feather_cdec_gages  <- bind_rows(feather_river_temp_FRA,
-                             feather_river_temp_GRL)
-
-ggplot() +
-  geom_line(data = feather_cdec_gages, aes(x = date, y = mean_temp_degC, color = site))
-
-```
-
-#### RST Environmental Data for Feather River 
-
--   Chose to use this dataset since it is more complete
-
--   Data can be aggregated up to high and low flows using `location`
-    column
-
-```{r}
-feather_rst <- rst_enviro %>% 
-  filter(stream == "feather river", parameter == "temperature") %>%
-  select(stream, site, subsite, date, value) %>%
-  rename(mean_temp_degC = value) %>%
-  mutate(source = "RST environmental") %>%
-  filter(mean_temp_degC > 0) %>%
-  glimpse
-
-ggplot() +
-  geom_line(data = feather_rst, aes(x = date, y = mean_temp_degC, color = subsite)) + 
-  facet_wrap(~site) +
-  theme_minimal()
+# feather_rst <- rst_enviro %>% 
+#   filter(stream == "feather river", parameter == "temperature") %>%
+#   select(stream, site, subsite, date, value) %>%
+#   rename(mean_temp_degC = value) %>%
+#   mutate(source = "RST environmental") %>%
+#   filter(mean_temp_degC > 0) %>%
+#   glimpse
+# 
+# ggplot() +
+#   geom_line(data = feather_rst, aes(x = date, y = mean_temp_degC, color = subsite)) + 
+#   facet_wrap(~site) +
+#   theme_minimal()
 ```
 
 ## Mill Creek
@@ -336,15 +296,13 @@ ggplot() +
 
 ```{r}
 # source USGS
-mill <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "mill_temp.rds"))
+mill <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "mill_temp.rds")) |> glimpse()
 mill_format <- mill %>%
   mutate(stream = "mill creek",
          site = stream, 
          subsite = site,
-         source = "CDEC MLM") %>%
-   filter(mean_temp_degC > 0 & mean_temp_degC < 35,
-          max_temp_degC > 0 & max_temp_degC < 35) %>% 
-glimpse()
+         gage_agency = "CDEC",
+         gage_number = "MLM") 
 
 summary(mill_format$date)
 
@@ -367,6 +325,7 @@ mill_format %>% ggplot() +
   - use for both Knights Landing and Tisdale
 
 ```{r}
+WLK_USGS <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "sac_temp.rds"))
 
 ### USGS 11390500
 # Read created CSV
