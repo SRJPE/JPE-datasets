@@ -8,9 +8,7 @@ editor_options:
     wrap: 72
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
-
+```{r, include=FALSE}
 library(tidyverse)
 library(googleCloudStorageR)
 library(CDECRetrieve)
@@ -21,22 +19,21 @@ library(forecast)
 
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
-knitr::opts_chunk$set(echo = TRUE)
 ```
 
 FlowWest aggregated environmental data for temperature data from all 
 monitoring programs:
 
--   Feather River (source: CDEC)
--   Battle Creek (source: USFWS)
+-   Feather River (source: CDEC & DWR loggers)
+-   Battle Creek (source: USFWS loggers)
 -   Butte Creek (source: CDEC)
--   Clear Creek (source: USFWS)
+-   Clear Creek (source: USFWS loggers)
 -   Deer Creek (source: CDEC)
 -   Mill Creek (source: CDEC)
--   Sacramento River (source: USGS)
--   Yuba River (source: CDEC)
+-   Sacramento River (source: USGS & CDFW loggers)
+-   Yuba River (source: CDEC & DWR loggers)
 
-### Rational for Data Sources:
+### Rationale for Data Sources:
 
 The following decision hierarchy was used to determine which datasets
 were used in the final temperature data aggregation:
@@ -45,10 +42,9 @@ were used in the final temperature data aggregation:
     This data can easily be built into a data pipeline because it's
     available through a query and publicly available. The data is also
     QC'd and available at precise temporal scales like hourly.
-2.  If no, is there data available through gages operated by Fish and Wildlife?
+2.  If no, is there data available through gages operated by US Fish and Wildlife?
 3.  If no, is there RST temperature monitoring data available?
-4.  If no, perform linear regression on air temperature to get modeled
-    stream temperature for site
+4.  If no, build a regression model with another similar stream in order to fill in data gaps.
 
 ## Standard format for Temperature Data
 
@@ -60,12 +56,13 @@ Y - Yuba River)
 
 | column name       | stream collects   | definition                                          |
 |:-----------------|:-------------------|:---------------------------------|
-| date              | B, Bu, C, D, M, F | date that measurement occurs                        |
-| stream            | B, Bu, C, D, M, F | unique stream name associated with temperature data |
-| site              | B, Bu, C, D, M, F | unique site identifier where measurement occurs     |
-| source            | B, Bu, C, D, M, F | data source                                         |
-| location          | F                 | differentiates between `high flow` and `low flow`   |
-| value             | all               | Temperature value in degress Celsius                |
+| date              | B, Bu, C, D, M, F, S | date that measurement occurs                        |
+| stream            | B, Bu, C, D, M, F, S | unique stream name associated with temperature data |
+| site              | B, Bu, C, D, M, F, S | unique site identifier where measurement occurs     |
+| subsite           | B, Bu, C, D, M, F, S | unique subsite identifer that data can be applied to |
+| gage_agency       | B, Bu, C, D, M, F, S | agency that collects data  |
+| gage_numger       | B, Bu, C, D, M, F, S | unique gage identifier |
+| value             | B, Bu, C, D, M, F, S | Temperature value in degress Celsius                |
 | statistics        | B, Bu, C, D, M, F | mean, min, max summary statistic                    |
 
 # Pull in data and format {.tabset}
@@ -82,18 +79,17 @@ source(knitr::purl(here::here("data-raw", "qc-markdowns", "temperature_data_prep
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/rst/standard_RST_environmental.csv",
-               overwrite = TRUE)
-
-rst_enviro <- read_csv('data/rst/standard_RST_environmental.csv') %>% glimpse()
-
 gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/rst/standard_catch.csv",
                overwrite = TRUE)
 catch <- read_csv("data/rst/standard_catch.csv")
+
+gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/rst/standard_environmental.csv",
+               overwrite = TRUE)
+rst_enviro <- read_csv("data/rst/standard_environmental.csv")
 ```
 
 ## Battle Creek
@@ -229,7 +225,7 @@ Two stations:
 * FRA (2002-01-01 to present): located between Lake Oroville and Thermalito Afterbay
 
 
-- Both CDEC sites will be used because of the more recent period of time that data are available. If needed, USGS could be appended for a longer time series. Currently only CDEC data will be added to the dataset. GRL will represent the High Flow Channel (HFC) and FRA will represent the Low Flow Channel (LFC).
+- GRL will represent the High Flow Channel (HFC) and FRA will represent the Low Flow Channel (LFC). Data collected at the RST will be appended to these datasets. Eye Riffle site will be used to represent all LFC sites and Herringer Riffle will be used to represent all HFC sites as these datasets are the most extensive.
 
 
 ```{r}
@@ -248,46 +244,216 @@ feather_lfc_sites <- filter(feather_sites, site_group == "feather river lfc")
 feather_hfc_format <- hfc_feather %>% 
   mutate(stream = "feather river",
          gage_agency = "CDEC",
-         gage_number = "GRL")
+         gage_number = "GRL",
+         site_group = "feather river hfc")
 
-feather_format_all_hfc <- full_join(feather_hfc_format, feather_hfc_sites)
-
-summary(feather_format_all_hfc$date)
-
-feather_format_all_hfc %>% ggplot() + 
-  geom_line(aes(x = date, y = mean_temp_degC, color = site)) + 
+feather_hfc_format %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC)) + 
   # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
   theme_minimal() 
 
 feather_lfc_format <- lfc_feather %>% 
   mutate(stream = "feather river",
          gage_agency = "CDEC",
-         gage_number = "FRA")
+         gage_number = "FRA",
+         site_group = "feather river lfc")
 
-feather_format_all_lfc <- full_join(feather_lfc_format, feather_lfc_sites)
-
-summary(feather_format_all_lfc$date)
-
-feather_format_all_lfc %>% ggplot() + 
-  geom_line(aes(x = date, y = mean_temp_degC, color = site)) + 
+feather_lfc_format %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC)) + 
   # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
   theme_minimal() 
 ```
 
+#### Data from monitoring program
+
 ```{r}
-# feather_rst <- rst_enviro %>% 
-#   filter(stream == "feather river", parameter == "temperature") %>%
-#   select(stream, site, subsite, date, value) %>%
-#   rename(mean_temp_degC = value) %>%
-#   mutate(source = "RST environmental") %>%
-#   filter(mean_temp_degC > 0) %>%
-#   glimpse
-# 
-# ggplot() +
-#   geom_line(data = feather_rst, aes(x = date, y = mean_temp_degC, color = subsite)) + 
-#   facet_wrap(~site) +
-#   theme_minimal()
+feather_rst_hfc <- rst_enviro %>%
+  filter(stream == "feather river", site == "herringer riffle", parameter == "temperature") %>%
+  select(stream, date, value) %>%
+  rename(mean_temp_degC = value) %>%
+  mutate(gage_agency = "DWR",
+         gage_number = "logger",
+         site_group = "feather river hfc") %>%
+  glimpse
+
+ggplot() +
+  geom_line(data = feather_rst_hfc, aes(x = date, y = mean_temp_degC)) +
+  theme_minimal()
+
+feather_rst_lfc <- rst_enviro %>%
+  filter(stream == "feather river", site == "eye riffle", parameter == "temperature") %>%
+  select(stream, date, value) %>%
+  rename(mean_temp_degC = value) %>%
+  mutate(gage_agency = "DWR",
+         gage_number = "logger",
+         site_group = "feather river lfc") %>%
+  glimpse
+
+ggplot() +
+  geom_line(data = feather_rst_lfc, aes(x = date, y = mean_temp_degC)) +
+  theme_minimal()
 ```
+
+#### Combine data
+
+```{r}
+feather_lfc_format_combined <- bind_rows(filter(feather_rst_lfc, year(date) < 2017), # rst, filter so it does not overlap with gage data
+                        feather_lfc_format) %>% 
+  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number, site_group) |> 
+  distinct() |> glimpse()
+ggplot() +
+  geom_line(data = feather_lfc_format_combined, aes(x = date, y = mean_temp_degC)) +
+  theme_minimal()
+
+feather_hfc_format_combined <- bind_rows(filter(feather_rst_hfc, year(date) > 2007), # rst filter so does not overlap with gage data
+                        feather_hfc_format) %>% 
+  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number, site_group) |> 
+  distinct() |> glimpse()
+ggplot() +
+  geom_line(data = feather_hfc_format_combined, aes(x = date, y = mean_temp_degC)) +
+  theme_minimal()
+```
+
+#### Predict missing data
+
+```{r}
+# LFC gage: 2018-present
+min(feather_lfc_format$date, na.rm = T)
+# LFC monitoring data: 1997-2006, 2017-2021 (not using 2017-2021 data, instead use gage)
+min(feather_rst_lfc$date)
+max(feather_rst_lfc$date)
+feather_rst_lfc |> 
+  filter(year(date) < 2016) |> 
+  summarize(max = max(date))
+
+# HFC gage: 2003-2007
+min(feather_hfc_format$date, na.rm = T)
+max(feather_hfc_format$date, na.rm = T)
+# HFC monitoring data: 2008-2021 (not using data prior to 2008 so as not to overlap with gage data)
+feather_rst_hfc |> 
+  filter(year(date) > 2007) |> 
+  summarize(max = max(date),
+            min = min(date))
+
+# LFC
+# create dataframe to use in regression
+feather_lfc_regression_data_full <- feather_lfc_format_combined |> 
+  ungroup() |> 
+  select(date, mean_temp_degC) |> 
+  rename(feather_temp = mean_temp_degC) |> 
+  full_join(butte_format |> 
+              select(date, mean_temp_degC) |> 
+              rename(butte_temp = mean_temp_degC))
+# identify gap to predict data
+feather_gap <- feather_lfc_regression_data_full |> 
+  filter(is.na(feather_temp), !is.na(butte_temp)) |> 
+  select(-feather_temp)
+feather_lfc_regression_data <- feather_lfc_regression_data_full |> 
+  filter(!is.na(feather_temp), !is.na(butte_temp))
+
+ggplot(data = feather_lfc_regression_data, aes(x = butte_temp, y = feather_temp)) +
+  geom_point() +
+  stat_smooth(method = "lm")
+
+# test the model
+split <- rsample::initial_split(feather_lfc_regression_data, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+
+feather_mod <- lm(feather_temp ~ date + butte_temp, data = train)
+summary(feather_mod)
+test_predict <- predict(feather_mod, test)
+test_predict_df <- test |> 
+  mutate(feather_predicted = test_predict,
+         percent_off = (feather_temp - feather_predicted)/feather_temp)
+
+# MAPE of 10% is not bad
+mape <- mean(abs((test_predict_df$feather_predicted - test_predict_df$feather_temp))/test_predict_df$feather_temp)
+
+feather_predict <- predict(feather_mod, feather_gap)
+
+feather_gap_predicted <- feather_gap |> 
+  mutate(feather_temp = feather_predict)
+
+
+
+# HFC
+# create dataframe to use in regression
+feather_hfc_regression_data_full <- feather_hfc_format_combined |> 
+  ungroup() |> 
+  select(date, mean_temp_degC) |> 
+  rename(feather_temp = mean_temp_degC) |> 
+  full_join(butte_format |> 
+              select(date, mean_temp_degC) |> 
+              rename(butte_temp = mean_temp_degC))
+# identify gap to predict data
+feather_gap_hfc <- feather_hfc_regression_data_full |> 
+  filter(is.na(feather_temp), !is.na(butte_temp)) |> 
+  select(-feather_temp)
+feather_hfc_regression_data <- feather_hfc_regression_data_full |> 
+  filter(!is.na(feather_temp), !is.na(butte_temp))
+
+ggplot(data = feather_hfc_regression_data, aes(x = butte_temp, y = feather_temp)) +
+  geom_point() +
+  stat_smooth(method = "lm")
+
+# test the model
+split <- rsample::initial_split(feather_hfc_regression_data, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+
+feather_mod_hfc <- lm(feather_temp ~ date + butte_temp, data = train)
+summary(feather_mod_hfc)
+test_predict <- predict(feather_mod_hfc, test)
+test_predict_df <- test |> 
+  mutate(feather_predicted = test_predict,
+         percent_off = (feather_temp - feather_predicted)/feather_temp)
+
+# MAPE of 10.5% is not bad
+mape <- mean(abs((test_predict_df$feather_predicted - test_predict_df$feather_temp))/test_predict_df$feather_temp)
+
+feather_predict <- predict(feather_mod_hfc, feather_gap_hfc)
+
+feather_gap_predicted_hfc <- feather_gap_hfc |> 
+  mutate(feather_temp = feather_predict)
+```
+
+#### Add in missing data
+
+```{r}
+feather_lfc_format_combined_w_missing <- bind_rows(feather_lfc_format_combined,
+                                                   feather_gap_predicted |> 
+                                                     select(date, feather_temp) |> 
+                                                     rename(mean_temp_degC = feather_temp) |> 
+                                                     mutate(stream = "feather river",
+                                                            gage_agency = "interpolated",
+                                                            gage_number = "interpolated",
+                                                            site_group = "feather river lfc")) %>% 
+  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number, site_group) |> 
+  distinct() |> 
+  full_join(feather_lfc_sites) |> 
+  glimpse()
+ggplot() +
+  geom_line(data = feather_lfc_format_combined_w_missing, aes(x = date, y = mean_temp_degC)) +
+  theme_minimal()
+
+feather_hfc_format_combined_w_missing <- bind_rows(feather_hfc_format_combined,
+                                                   feather_gap_predicted_hfc |> 
+                                                     select(date, feather_temp) |> 
+                                                     rename(mean_temp_degC = feather_temp) |> 
+                                                     mutate(stream = "feather river",
+                                                            gage_agency = "interpolated",
+                                                            gage_number = "interpolated",
+                                                            site_group = "feather river hfc")) %>% 
+  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number, site_group) |> 
+  distinct() |> 
+  full_join(feather_hfc_sites) |>
+  glimpse()
+ggplot() +
+  geom_line(data = feather_hfc_format_combined_w_missing, aes(x = date, y = mean_temp_degC)) +
+  theme_minimal()
+```
+
 
 ## Mill Creek
 
@@ -325,22 +491,12 @@ mill_format %>% ggplot() +
   - use for both Knights Landing and Tisdale
 
 ```{r}
-WLK_USGS <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "sac_temp.rds"))
-
-### USGS 11390500
-# Read created CSV
-WLK_USGS <- readNWISdv(11390500, "00010")
-
-# Format to make tidier
-sac_usgs_format <- WLK_USGS %>%
-  select(Date, temp_degC =  X_00010_00003) %>%
-  as_tibble() %>% 
-  rename(date = Date,
-         mean_temp_degC = temp_degC) %>% 
-  mutate(stream = "sacramento river", 
-         source = "USGS 11390500") %>%
-  #filter(year(date) > 2000) %>% # filter to greater than 2000
-  glimpse
+WLK_USGS <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "sac_temp.rds")) |> glimpse()
+sac_usgs_format <- WLK_USGS |> 
+  rename(mean_temp_degC = temp_degC) |> 
+  mutate(stream = "sacramento river",
+         gage_agency = "USGS",
+         gage_number = "11390500") 
 
 # Plot
 ggplot() +
@@ -350,7 +506,7 @@ ggplot() +
        caption = "USGS 11390500")
 ```
 
-#### Sacramento RST Environmental Data 
+#### Data from monitoring program
 
 -   One site: `knights landing`; apply to Tisdale
 
@@ -358,12 +514,12 @@ ggplot() +
     between `2016-06-20` and `2018-08-28`
 
 ```{r}
-
 sac_rst_format <- rst_enviro %>% 
   filter(stream == "sacramento river", parameter == "temperature") %>% 
   select(stream, date, value) %>%
   rename(mean_temp_degC = value) %>%
-  mutate(source = "RST environmental") %>%
+  mutate(gage_agency = "CDFW",
+         gage_number = "logger") %>%
   glimpse
 
 summary(sac_rst_format$date)
@@ -382,14 +538,18 @@ ggplot() +
 
 sac_format <- bind_rows(sac_rst_format, # rst
                         sac_usgs_format) %>% 
-  group_by(stream, date, mean_temp_degC, source) |> 
+  group_by(stream, date, mean_temp_degC, gage_agency, gage_number) |> 
   distinct()
 # need to apply values for all sacramento sites and subsites
-sac_sites <- filter(catch, stream == "sacramento river") |> 
-  select(stream, site, subsite) |> 
-  distinct()
+sac_sites <- catch |> 
+  filter(stream == "sacramento river", site %in% c("knights landing", "tisdale")) |> 
+  distinct(stream, site, subsite)
 
-sac_format_all <- full_join(sac_format, sac_sites)
+sac_format_all <- full_join(sac_format, sac_sites) |> 
+  mutate(mean_temp_degC = case_when(mean_temp_degC < 0.5 ~ NA_real_,
+                               T ~ mean_temp_degC),
+         mean_temp_degC = as.numeric(mean_temp_degC),
+         mean_temp_degC = zoo::na.approx(mean_temp_degC, na.rm = F))
 
 summary(sac_format_all$date)
 
@@ -401,9 +561,28 @@ ggplot() +
 
 ## Yuba
 
-- There is limited USGS data and CDEC gage is far from the RST
-- Current approach is to use Yuba RST temperature data
-- Another possible option to model using air temperature
+YR7 CDEC gage is used, however, this only contains data from 2020 onwards. Temperature data collected along with RST data is used to fill the gap prior to 2020. Additional work needs to be done to fill data gaps.
+
+```{r}
+YR7_daily_temps <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp.rds"))
+
+yuba_format <- YR7_daily_temps %>%
+  mutate(stream = "yuba river",
+         gage_agency = "CDEC",
+         gage_number = "YR7")
+
+yuba_sites <- filter(catch, stream == "yuba river") |> 
+  select(stream, site, subsite) |> 
+  distinct()
+
+yuba_format_all <- full_join(yuba_format, yuba_sites)
+
+yuba_format_all %>% ggplot() + 
+  geom_line(aes(x = date, y = mean_temp_degC, color = site)) + 
+  # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
+  theme_minimal() 
+
+```
 
 ```{r}
 #TODO need to do air temp modeling, check temperature_data_prep for potential gages (if not there use noaa data)
@@ -412,7 +591,8 @@ yuba_rst_format <- rst_enviro %>%
   filter(stream == "yuba river", parameter == "temperature") %>% 
   select(stream, site, subsite, date, value) %>%
   rename(mean_temp_degC = value) %>%
-  mutate(source = "RST environmental") %>%
+  mutate(gage_agency = "DWR",
+         gage_number = "logger") %>%
   glimpse
 
 summary(yuba_rst_format$date)
@@ -421,149 +601,81 @@ ggplot() +
   geom_line(data = yuba_rst_format, aes(x = date, y = mean_temp_degC))
 ```
 
-<!-- #### Other data available? -->
+#### Combine Yuba gage and logger data
 
-<!-- * CDEC YRS - spatially far away from RST -->
-
-```{r, eval=FALSE, include=FALSE}
-# limited USGS gage data 
-# USGS 11417500 S YUBA R A JONES BAR NR GRASS VALLEY CA
-# site_no=11417500
-
-#cdec_datasets('YRS')
-cdec_yrs <- cdec_query(station = "YRS", dur_code = "H", sensor_num = "25", start_date = "1996-01-01") 
-
-## TODO: convert to C from F
-cdec_yrs_format <- cdec_yrs %>% 
-  rename(source = agency_cd,
-         site = location_id, 
-         temperature_c = parameter_value,
-         date = datetime) %>%
-  mutate(date = as_date(date),
-         temperature_c = (temperature_c-32 * 5/9)) %>%
-  group_by(date) %>%
-  mutate(mean_temp_degC = mean(temperature_c, na.rm = TRUE),
-         max_temp_degC = max(temperature_c, na.rm = TRUE)) %>%
-  filter(mean_temp_degC > 0) %>%
-  glimpse
-  
-summary(cdec_yrs_format)
-
+```{r}
+yuba_combined <- bind_rows(yuba_format_all, yuba_rst_format)
 
 ggplot() +
-  geom_line(data = cdec_yrs_format, aes(x = date, y = mean_temp_degC))
+  geom_line(data = yuba_combined, aes(x = date, y = mean_temp_degC, color = site)) 
 ```
 
-<!-- #### Compare to Air Data Linear Regression -->
+#### Predict missing data
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
+# gage: 2019-present
+min(yuba_format$date, na.rm = T)
+# monitoring data: 1999-2009
+min(yuba_rst_format$date)
+max(yuba_rst_format$date)
 
-# yuba_monthly_agg <- yuba_rst_format %>% 
-#   mutate(year = year(date), month = month(date)) %>%
-#   group_by(year, month) %>%
-#   summarise(mean_temp_degC = mean(mean_temp_degC, na.rm = TRUE)) %>%
-#   ungroup() %>%
-#   mutate(date = ymd(paste(year, month, '01', sep = '-'))) %>%
-#   filter(!is.na(date)) %>%
-#   select(date, mean_temp_degC) %>% glimpse
-# 
-# yuba_air <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "yuba_temp_air.rds")) %>% 
-#   mutate(year = year(date), month = month(date)) %>%
-#   group_by(year, month) %>%
-#   summarise(air_tempC = mean(air_tempC, na.rm = TRUE)) %>%
-#   ungroup() %>%
-#   mutate(date = ymd(paste(year, month, '01', sep = '-'))) %>%
-#   filter(!is.na(date)) %>%
-#   select(date, air_tempC) %>%
-#   glimpse
-# 
-# ggplot(yuba_air, aes(x=date, y = air_tempC)) +
-#   geom_line(color = "darkred") +
-#   labs(y = "Air temperature (deg C)") +
-#   theme(axis.text = element_text(size = 12))
-# 
-# # combine water and air
-# 
-# yuba_air_water <- yuba_monthly_agg %>%
-#   left_join(yuba_air) %>%
-#   filter(!is.na(air_tempC)) %>% glimpse()
-# 
-# yuba_air_water %>%
-#   ggplot(aes(x = air_tempC, y = mean_temp_degC)) +
-#   geom_point() +
-#   geom_smooth(method = 'lm', se = FALSE)
-# 
-# yuba_temp_model <- lm(mean_temp_degC ~ air_tempC, data = yuba_air_water)
-# summary(yuba_temp_model)
-# 
-# yuba_temp_model$coefficients
-# 
-# # air temp thresholds
-# # MR: I don't really understand this section 
-# y <- c(13, 14)
-# air_temp_thresholds <- (y - yuba_temp_model$coefficients[[1]]) / yuba_temp_model$coefficients[[2]]
-# 
-# yuba_air_water %>%
-#   ggplot(aes(x = air_tempC, y = mean_temp_degC)) +
-#   geom_point() +
-#   geom_smooth(method = 'lm', se = FALSE) +
-#   geom_vline(xintercept = air_temp_thresholds[1], alpha = .2) +
-#   geom_vline(xintercept = air_temp_thresholds[2], alpha = .2) +
-#   geom_hline(yintercept = 13) +
-#   geom_hline(yintercept = 14)
-# 
-# pred <- broom::augment(yuba_temp_model) %>% pull(.fitted)
-# truth <- yuba_monthly_agg$mean_temp_degC
-# #xtab <- table(pred > 11, truth > 11)
-# #xtab <- table(pred > 12, truth > 12)
-# 
-# # new stuff
-# yuba_air_more_time <- yuba_air %>%
-#   bind_rows(
-#     tibble(date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
-#            air_tempC = 0)
-#   ) %>%
-#   group_by(date) %>%
-#   summarise(air_tempC = max(air_tempC, na.rm = TRUE)) %>%
-#   ungroup() %>%
-#   mutate(air_tempC = ifelse(air_tempC == 0, NA, air_tempC)) %>% glimpse
-# 
-# 
-# ts_yuba <- ts(yuba_air_more_time$air_tempC, start = c(2000, 1), end = c(2020, 12), frequency = 12)
-# 
-# na.interp(ts_yuba) %>% autoplot(series = 'Interpolated') +
-#   forecast::autolayer(ts_yuba, series = 'Original')
-# 
-# yuba_air_temp_c <- tibble(
-#   date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
-#   air_tempC = as.numeric(na.interp(ts_yuba)))
-# 
-# 
-# yuba_air_temp_c %>%
-#   ggplot(aes(x = date, y = air_tempC)) +
-#   geom_col(fill = 'darkgoldenrod2') +
-#   geom_col(data = yuba_air_temp_c, aes(x = date, y = air_tempC)) +
-#   theme_minimal() +
-#   labs(y = 'monthly mean air temperature (°C)')
-# 
-# yuba_pred_water_temp <- predict(yuba_temp_model, yuba_air_temp_c)
-# 
-# yuba_water_temp_c <- tibble(
-#   date = seq.Date(ymd('2000-01-01'), ymd('2020-12-01'), by = 'month'),
-#   stream = 'yuba river',
-#   mean_temp_degC = yuba_pred_water_temp) %>% 
-#   mutate(source = "predicted water temperature") %>%
-#   glimpse
-# 
-# yuba_water_temp_c %>%
-#   ggplot(aes(x = date)) +
-#   geom_line(aes(y = mean_temp_degC), color = 'red') +
-#   geom_line(data = yuba_air_temp_c, aes(y = air_tempC))
-# 
-# summary(yuba_water_temp_c)
-# 
-# yuba_format <-  yuba_water_temp_c
+# create dataframe to use in regression
+yuba_regression_data_full <- yuba_combined |> 
+  ungroup() |> 
+  select(date, mean_temp_degC) |> 
+  rename(yuba_temp = mean_temp_degC) |> 
+  full_join(butte_format |> 
+              select(date, mean_temp_degC) |> 
+              rename(butte_temp = mean_temp_degC))
+# identify gap to predict data
+yuba_gap <- yuba_regression_data_full |> 
+  filter(is.na(yuba_temp), !is.na(butte_temp)) |> 
+  select(-yuba_temp)
+yuba_regression_data <- yuba_regression_data_full |> 
+  filter(!is.na(yuba_temp), !is.na(butte_temp))
 
+ggplot(data = yuba_regression_data, aes(x = butte_temp, y = yuba_temp)) +
+  geom_point() +
+  stat_smooth(method = "lm")
+
+# test the model
+split <- rsample::initial_split(yuba_regression_data, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+
+yuba_mod <- lm(yuba_temp ~ date + butte_temp, data = train)
+summary(yuba_mod)
+test_predict <- predict(yuba_mod, test)
+test_predict_df <- test |> 
+  mutate(yuba_predicted = test_predict,
+         percent_off = (yuba_temp - yuba_predicted)/yuba_temp) |> 
+  filter(!is.na(date))
+
+# MAPE of 10% is not bad
+mape <- mean(abs((test_predict_df$yuba_predicted - test_predict_df$yuba_temp))/test_predict_df$yuba_temp)
+
+yuba_predict <- predict(yuba_mod, yuba_gap)
+
+yuba_gap_predicted <- yuba_gap |> 
+  mutate(yuba_temp = yuba_predict) |> glimpse()
+```
+
+#### Add in missing data
+
+```{r}
+yuba_format_combined_w_missing <- bind_rows(yuba_combined,
+                                                   yuba_gap_predicted |> 
+                                                     select(date, yuba_temp) |> 
+                                                     rename(mean_temp_degC = yuba_temp) |> 
+                                                     mutate(stream = "yuba river",
+                                                            gage_agency = "interpolated",
+                                                            gage_number = "interpolated") |> 
+                                              full_join(yuba_sites)) %>% 
+  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number) |> 
+  distinct() |> glimpse()
+ggplot() +
+  geom_line(data = yuba_format_combined_w_missing, aes(x = date, y = mean_temp_degC)) +
+  theme_minimal()
 ```
 
 # Combine temperature data {.tabset}
@@ -573,14 +685,17 @@ combined_temp <- bind_rows(battle_format,
                            butte_format_all,
                            clear_format,
                            deer_format,
-                           feather_rst,
+                           feather_lfc_format_combined_w_missing,
+                           feather_hfc_format_combined_w_missing,
                            mill_format,
                            sac_format_all,
-                           #yuba_format,
-                           yuba_rst_format
+                           yuba_format_combined_w_missing
                            ) %>%
-  rename(mean_daily_temp_c  = mean_temp_degC,
-         max_daily_temp_c = max_temp_degC) %>%
+  rename(mean  = mean_temp_degC,
+         max = max_temp_degC,
+         min = min_temp_degC) %>%
+  select(-site_group) |> 
+  pivot_longer(cols = c(mean, max, min), names_to = "statistic", values_to = "value") |> 
   glimpse()
 ```
 
@@ -591,22 +706,24 @@ summary(combined_temp)
 unique(combined_temp$stream)
 unique(combined_temp$site)
 unique(combined_temp$subsite)
-ggplot(combined_temp, aes(x = date, y = mean_daily_temp_c, color = site)) +
+ggplot(filter(combined_temp, statistic == "mean"), aes(x = date, y = value, color = site)) +
   theme_minimal() +
   geom_line() +
   facet_wrap(~stream)
+# TODO look into the NA dates for Butte Creek
 filter(combined_temp, is.na(date)) 
-filter(combined_temp, mean_daily_temp_c == "NaN") 
-filter(combined_temp, max_daily_temp_c == "-Inf") 
-filter(combined_temp, is.na(max_daily_temp_c)) %>% pull(stream) %>% unique
+# TODO look into the NAs and Infs
+filter(combined_temp, statistic == "mean", value == "NaN") 
+filter(combined_temp, statistic == "max", value  == "-Inf") 
+
 combined_temp_clean <- filter(combined_temp, !is.na(date)) %>% 
-  mutate(mean_daily_temp_c = ifelse(is.nan(mean_daily_temp_c), NA, mean_daily_temp_c),
-         max_daily_temp_c = ifelse(max_daily_temp_c == "-Inf", NA, max_daily_temp_c)) %>% glimpse
+  mutate(value = ifelse(is.nan(value), NA, value),
+         value = ifelse(value == "-Inf", NA, value)) %>% glimpse()
 
 summary(combined_temp_clean)
 
-filter(combined_temp_clean, mean_daily_temp_c == "NaN") 
-filter(combined_temp_clean, max_daily_temp_c == "-Inf") 
+filter(combined_temp_clean, value == "NaN") 
+filter(combined_temp_clean, value == "-Inf") 
 unique(combined_temp_clean$stream)
 unique(combined_temp_clean$source)
 ```

@@ -27,12 +27,10 @@ knitr::opts_knit$set(root.dir)
 ```
 
 ```{r, include = F}
-# token for rnoaa is added to Renviron file
-#NOAA_KEY <- Sys.getenv("NOAA_KEY")
-
 # google cloud set up
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
 ```
 
 # Pull in temperature data {.tabset}
