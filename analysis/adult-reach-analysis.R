@@ -139,7 +139,7 @@ standard_clear_reaches <- tibble("standardized_reach" = c("R1", "R2", "R3", "R4"
                                                           "China Garden BLM Recreation Area to Clear Creek Video Station",
                                                           "no description",
                                                           "not recorded"))
-# TODO confirm reaches 15-32 with Natasha
+
 clear_reach_lookup <- tibble("reach" = unique(all_clear_reaches$reach),
                               "standardized_reach" = c("R3", "R2", "R4", "R5", "R1", "R5",
                                                        "R6", "R5", "R7", "R6A", "R5", NA, "R6B",
@@ -171,7 +171,6 @@ all_butte_reaches |>
   theme(legend.position = "bottom")
 
 # hard-code butte reaches based on map provided in report (see adult data report)
-# TODO get additional sub-reach descriptions from team
 butte_subreach_lookup <- tibble("sub_reach" = c("A1", "A2", "A3", "A4", "A5",
                                            "B1", "B2", "B3", "B4", "B5", 
                                            "B6", "B7", "B8", "C1", "C2",
@@ -339,14 +338,14 @@ all_feather_reaches |>
 # used the survey map to match the riffles to the numbered survey reaches
 # https://drive.google.com/file/d/1KtnSSlU2Z3v8KvI_7_9FBbekitkRuFo9/view?usp=drive_link (link to file)
 
-feather_reach_categorization <- tibble("standardized_reach" = c(as.character(seq(1, 38)), NA, "no description"),
+feather_reach_categorization <- tibble("standardized_reach" = c(as.character(seq(1, 38)), NA, "historical reach - no description"),
                                        "categorization" = c(rep("HFC - high flow channel", 21),
                                                             rep("LFC - low flow channel", 17),
-                                                            NA, "no description in data/source")) |> 
+                                                            NA, "unknown")) |> 
   left_join(CAMP_feather_reach_categorization, by = c("standardized_reach" = "section_id")) |> 
   rename(CAMP_description = section_description)
 standard_feather_reaches <- tibble("standardized_reach" = c(as.character(seq(1, 38)),
-                                                            NA, "no description"),
+                                                            NA, "historical reach - no description"),
                                 "reach_description" = c("Table Mountain Riffle and Cottonwood Riffle",
                                                         "no named riffles", 
                                                         "Top of Auditorium",
@@ -387,7 +386,16 @@ standard_feather_reaches <- tibble("standardized_reach" = c(as.character(seq(1, 
                                                         "Developing Riffle",
                                                         "Swampy Bend",
                                                         NA,
-                                                        "no description in data/source"))
+                                                        "historical reach - no description in data/source"))
+
+# read in feather corrected reach list file (from Casey Campos 1-22-2024)
+feather_reach_clarification <- read.csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
+                                                   "feather-river", "feather_reach_clarification_CJC edits.csv")) |> 
+  select(reach = reach_name, clarified_categorization = LFC.HFC, clarified_reach_description = Notes) |> 
+  mutate(clarified_categorization = ifelse(clarified_categorization == "HFC", "HFC - high flow channel", "unknown"),
+         clarified_reach_description = ifelse(clarified_reach_description == "", "historical reach - not in use", clarified_reach_description)) |> 
+  glimpse()
+
 
 feather_reach_lookup <- tibble("reach" = unique(all_feather_reaches$reach),
                             "standardized_reach" = as.character(
@@ -408,25 +416,30 @@ feather_reach_lookup <- tibble("reach" = unique(all_feather_reaches$reach),
                                                      27, 23, 23, 23, 18,
                                                      12, 18, 27, 27, 7,
                                                      4, 5, 5, 18, 4,
-                                                     5, 7, 11, 11, "no description",
+                                                     5, 7, 11, 11, "historical reach - no description",
                                                      25, 27, 27, 27, 22,
-                                                     25, 32, "no description", "no description", 35,
+                                                     25, 32, "historical reach - no description", "historical reach - no description", 35,
                                                      36, 37, 29, 32, 1,
                                                      29, 4, 7, 29, 27,
-                                                     15, 4, 34, NA, "no description", 
+                                                     15, 4, 34, NA, "historical reach - no description", 
                                                      10, 14, 21, 21, 31,
                                                      1, 2, 3, 4, 8,
                                                      7, 6, 5, 10, 13,
                                                      14, 15, 17, 18, 19,
-                                                     20, "no description", "no description", "no description", 9,
+                                                     20, "historical reach - no description", "historical reach - no description", "historical reach - no description", 9,
                                                      11, 12, 16, 25, 29,
-                                                     33, 32, "no description", "no description", "no description",
+                                                     33, 32, "historical reach - no description", "historical reach - no description", "historical reach - no description",
                                                      26, 38, 30, 36, 22,
-                                                     23, 24, 28, 37, "no description",
-                                                     27, 31, "no description", "no description", 35,
-                                                     "no description", 34, 21, "no description", "no description"))) |> 
+                                                     23, 24, 28, 37, "historical reach - no description",
+                                                     27, 31, "historical reach - no description", "historical reach - no description", 35,
+                                                     "historical reach - no description", 34, 21, "historical reach - no description", "historical reach - no description"))) |> 
   left_join(standard_feather_reaches) |> 
-  left_join(feather_reach_categorization)
+  left_join(feather_reach_categorization) |> 
+  left_join(feather_reach_clarification) |> 
+  mutate(categorization = ifelse(is.na(clarified_categorization), categorization, clarified_categorization),
+         reach_description = ifelse(is.na(clarified_reach_description), reach_description, clarified_reach_description)) |> 
+  select(-c(clarified_categorization, clarified_reach_description)) |> 
+  glimpse()
 
 # Yuba --------------------------------------------------------------------
 # TODO no reach data
