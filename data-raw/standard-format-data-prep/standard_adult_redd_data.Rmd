@@ -292,7 +292,6 @@ all_redd_data <- bind_rows(clean_battle_redd,
                            clean_feather_redd,
                            clean_mill_redd,
                            clean_yuba_redd)  |> 
-  select(-redd_count)  |>
   mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
                              species %in% c("SH", "O. mykiss") ~ "steelhead",
