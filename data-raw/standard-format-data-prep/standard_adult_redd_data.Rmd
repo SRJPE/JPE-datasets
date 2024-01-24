@@ -127,7 +127,8 @@ clean_battle_redd <- battle_redd  |>
          pre_redd_substrate_size, redd_substrate_size, 
          tail_substrate_size, 
          flow_fps, age, age_index)  |>
-  mutate(redd_count = 1, # each row is a redd observation
+  mutate(# adding redd count for only those redds surveyed and not aged, or aged once
+         redd_count = ifelse(age_index %in% c(0, 1), 1, 0),
          stream = 'battle creek', 
          year = lubridate::year(date))  |>
   rename(velocity = flow_fps,
