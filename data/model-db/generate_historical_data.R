@@ -185,6 +185,9 @@ trap <- trap_raw |>
          trap_stop_date, trap_stop_time, trap_functioning, is_half_cone_configuration,
          fish_processed, rpms_start, rpms_end, sample_period_revolutions,
          debris_volume, debris_level, include) |> 
+  mutate(fish_processed = case_when(fish_processed == "no catch data, fish released" ~ "no catch data and fish released",
+                                    fish_processed == "no catch data, fish left in live box" ~ "no catch data and fish left in live box",
+                                    T ~ fish_processed)) |> 
   left_join(discharge, by = c("stream", "site", "subsite", "trap_stop_date" = "date")) |> 
   left_join(water_velocity, by = c("stream", "site", "subsite", "trap_stop_date" = "date")) |> 
   left_join(water_temp, by = c("stream", "site", "subsite", "trap_stop_date" = "date")) |> 
@@ -249,70 +252,66 @@ gcs_upload(trap,
 # The data that could be stored here are temperature gages collected by
 # the monitoring program
 
-gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/standard-format-data/standard_flow.csv",
-               overwrite = TRUE)
-flow_raw <- read_csv("data/standard-format-data/standard_flow.csv")
-
-flow <- flow_raw |>
-  full_join(trap_location, by = c("stream", "site"), multiple = "all") |>
-  select(-c(stream, site, subsite, site_group, description)) |>
-  rename(trap_location_id = id) |>
-  rename(value = flow_cfs,
-         gage = source) |>
-  filter(!is.na(value), !is.na(date)) |>
-  mutate(parameter = "discharge") |>
-  left_join(environmental_parameter, by = c("parameter" = "definition")) |>
-  rename(parameter_id = id) |>
-  select(-parameter, -description) |>
-  left_join(gage_source, by = c("gage" = "definition")) |>
-  rename(gage_id = id) |>
-  select(-gage, -description)
-
-unique(flow$trap_location_id)
-unique(flow$parameter_id)
-unique(flow$gage_id)
-
-gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/standard-format-data/standard_temperature.csv",
-               overwrite = TRUE)
-temperature_raw <- read_csv("data/standard-format-data/standard_temperature.csv")
-temperature <- temperature_raw |>
-  filter(source != "RST environmental") |>
-  left_join(trap_location, by = c("stream", "site", "subsite"), multiple = "all") |>
-  select(-c(stream, site, subsite, site_group, description)) |>
-  rename(trap_location_id = id) |>
-  rename(value = mean_daily_temp_c,
-         gage = source) |>
-  select(-max_daily_temp_c) |>
-  mutate(parameter = "temperature") |>
-  left_join(environmental_parameter, by = c("parameter" = "definition")) |>
-  rename(parameter_id = id) |>
-  select(-parameter, -description) |>
-  left_join(gage_source, by = c("gage" = "definition")) |>
-  rename(gage_id = id) |>
-  select(-gage, -description)
-
-unique(temperature$trap_location_id)
-unique(temperature$parameter_id)
-unique(temperature$gage_id)
-
-environmental_gage <- bind_rows(flow, temperature) |> 
-  # select for data not stored on CDEC or USGS
-  filter(gage_id == 1)
-
-# TODO ADD CHECKS
-# parameter
-# trap location
-# check that there are no missing dates
-
-gcs_upload(environmental_gage,
-           object_function = f,
-           type = "csv",
-           name = "model-db/environmental_gage.csv",
-           predefinedAcl = "bucketLevel")
+# gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "data/standard-format-data/standard_flow.csv",
+#                overwrite = TRUE)
+# flow_raw <- read_csv("data/standard-format-data/standard_flow.csv")
+# 
+# flow <- flow_raw |>
+#   full_join(trap_location, by = c("stream", "site"), multiple = "all") |>
+#   select(-c(stream, site, subsite, site_group, description)) |>
+#   rename(trap_location_id = id) |>
+#   rename(value = flow_cfs,
+#          gage = source) |>
+#   filter(!is.na(value), !is.na(date)) |>
+#   mutate(parameter = "discharge") |>
+#   left_join(environmental_parameter, by = c("parameter" = "definition")) |>
+#   rename(parameter_id = id) |>
+#   select(-parameter, -description) |>
+#   left_join(gage_source, by = c("gage" = "definition")) |>
+#   rename(gage_id = id) |>
+#   select(-gage, -description)
+# 
+# unique(flow$trap_location_id)
+# unique(flow$parameter_id)
+# unique(flow$gage_id)
+# 
+# gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "data/standard-format-data/standard_temperature.csv",
+#                overwrite = TRUE)
+# temperature_raw <- read_csv("data/standard-format-data/standard_temperature.csv")
+# temperature <- temperature_raw |>
+#   left_join(trap_location, by = c("stream", "site", "subsite"), multiple = "all") |>
+#   select(-c(stream, site, subsite, site_group, description)) |>
+#   rename(trap_location_id = id) |>
+#   mutate(parameter = "temperature") |>
+#   left_join(environmental_parameter, by = c("parameter" = "definition")) |>
+#   rename(parameter_id = id) |>
+#   select(-parameter, -description) |>
+#   left_join(gage_source, by = c("gage" = "definition")) |>
+#   rename(gage_id = id) |>
+#   select(-gage, -description)
+# 
+# unique(temperature$trap_location_id)
+# unique(temperature$parameter_id)
+# unique(temperature$gage_id)
+# 
+# environmental_gage <- bind_rows(flow, temperature) |> 
+#   # select for data not stored on CDEC or USGS
+#   filter(gage_id == 1)
+# 
+# # TODO ADD CHECKS
+# # parameter
+# # trap location
+# # check that there are no missing dates
+# 
+# gcs_upload(environmental_gage,
+#            object_function = f,
+#            type = "csv",
+#            name = "model-db/environmental_gage.csv",
+#            predefinedAcl = "bucketLevel")
 # release ---------------------------------------------------------
 
 gcs_get_object(object_name = "standard-format-data/standard_release.csv",
@@ -692,11 +691,11 @@ passage_estimates <- passage_estimates_raw |>
   rename(run_id = id) |> 
   select(-run, -description)   
   
-try(if(any((unique(passage_estimate$survey_location_id) %in% survey_location$id) == F)) 
+try(if(any((unique(passage_estimates$survey_location_id) %in% survey_location$id) == F)) 
   stop("Missing Survey Location ID! Please fix!"))
-try(if(any((unique(passage_estimate$run_id) %in% run$id) == F))
+try(if(any((unique(passage_estimates$run_id) %in% run$id) == F))
   stop("Missing Run ID! Please fix!"))
-try(if(any(is.na(passage_estimate$year)))
+try(if(any(is.na(passage_estimates$year)))
   stop("Missing Year! Please fix!"))
 
 gcs_upload(passage_estimates,
