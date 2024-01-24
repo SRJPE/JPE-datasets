@@ -27,8 +27,10 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # read in adult data files
 
-redd <- read.csv(here::here("data", "standard-format-data", "standard_daily_redd.csv"))
-annual_redd <- read.csv(here::here("data", "standard-format-data", "standard_annual_redd.csv"))
+redd <- read.csv(here::here("data", "standard-format-data", "standard_daily_redd.csv")) |> 
+  filter(species != "steelhead")
+annual_redd <- read.csv(here::here("data", "standard-format-data", "standard_annual_redd.csv")) |> 
+  filter(species != "steelhead")
 carcass <- read.csv(here::here("data", "standard-format-data", "standard_carcass.csv"))
 holding <- read.csv(here::here("data", "standard-format-data", "standard_holding.csv"))
 
@@ -128,7 +130,7 @@ battle_clear_reaches |>
   print(n=Inf) 
 
 standard_clear_reaches <- tibble("standardized_reach" = c("R1", "R2", "R3", "R4", "R5",
-                                                          "R6A", "R6B", "R7", "no description", NA),
+                                                          "R6A", "R6B", "R7", NA),
                                   "reach_description" = c("Whiskeytown Dam to NEED Camp Bridge",
                                                           "NEED Camp Bridge to Kanaka Creek Confluence",
                                                           "Kanaka Creek Confluence to Placer Rd. Bridge",
@@ -137,21 +139,16 @@ standard_clear_reaches <- tibble("standardized_reach" = c("R1", "R2", "R3", "R4"
                                                           "Clear Creek Gorge to Gold Dredge BLM Recreation Area",
                                                           "Gold Drege BLM REcreation Area to China Garden BLM Recreation Area",
                                                           "China Garden BLM Recreation Area to Clear Creek Video Station",
-                                                          "no description",
                                                           "not recorded"))
 
 clear_reach_lookup <- tibble("reach" = unique(all_clear_reaches$reach),
                               "standardized_reach" = c("R3", "R2", "R4", "R5", "R1", "R5",
-                                                       "R6", "R5", "R7", "R6A", "R5", NA, "R6B",
-                                                       "no description", "no description", "no description", 
-                                                       "no description", "no description", "no description", 
-                                                       "no description", "no description", "R5", "R5", 
-                                                       "R5", "R5")) |> 
+                                                       "R6A", "R5", "R7", "R6A", "R5", "R5", 
+                                                       "R5", NA, "R6B")) |> 
   left_join(standard_clear_reaches)
 
 
 # Butte Creek -------------------------------------------------------------
-# TODO do we want to use reach or way_pt (which seems to relate to subreach?)
 all_butte_reaches <- bind_rows(carcass |> 
                                  filter(stream == "butte creek") |> 
                                  mutate(data_type = "carcass") |> 
