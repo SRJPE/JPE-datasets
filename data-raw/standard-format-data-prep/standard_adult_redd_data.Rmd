@@ -123,7 +123,7 @@ unique(battle_redd$flow_meter)
 clean_battle_redd <- battle_redd  |>
   select(date, latitude, longitude, 
          reach, river_mile, fish_guarding, 
-         redd_measured, redd_width, redd_length, 
+         redd_measured, redd_width, redd_length, JPE_redd_id,
          pre_redd_substrate_size, redd_substrate_size, 
          tail_substrate_size, 
          flow_fps, age, age_index)  |>
@@ -139,9 +139,7 @@ clean_battle_redd <- battle_redd  |>
 
 ### Clear Creek
 
-FlowWest acquired Clear Creek redd data for late fall and spring runs through CVPIA.
-
-This contains only spring run chinook.
+FlowWest acquired raw Clear Creek redd data in November 2023.
 
 #### Columns Removed
 
@@ -341,10 +339,14 @@ unique(all_redd_data$redd_substrate_size)
 
 redd_substrate_size_lookup <- 
   data.frame("redd_substrate_size" = unique(all_redd_data$redd_substrate_size),
-             "standardized_size_range" = c(NA, "1-2", "2-4", "2-4", "2-4", "0.5-1", "2-4","2-4", '8-16', 
-                                           "4-8", "1-2", "1-2", "4-8", "0.5-1", "1-2", "2-4", "0.5-1", "1-2", 
-                                           "2-4", "2-4", "<0.25", "4-8", "4-8")) |> 
+             "standardized_size_range" = c(NA, "1-2", "2-4", "2-4", "2-4", 
+                                           "0.5-1", "2-4","2-4", '8-16', "4-8", 
+                                           "1-2", "1-2", "4-8", "0.5-1", "1-2", 
+                                           "2-4", "0.5-1", "1-2", "2-4", "2-4", 
+                                           "<0.25", "4-8", "4-8", "0.5-1", "4-8",
+                                           "8-16")) |> 
   left_join(substrate_class)
+# TODO recode that
                     
 tail_substrate_size_lookup <- all_redd_data  |> 
   ungroup()  |>
@@ -481,13 +483,13 @@ redd_count_by_year <- bind_rows(clean_feather_redd,
   bind_rows(clean_battle_redd |> 
               distinct(redd_id, .keep_all = TRUE) |> 
               mutate(redd_count = 1) |> 
-              group_by(reach, stream, year, species, run) |> 
+              group_by(reach, stream, year) |> 
               summarise(annual_redd_count = sum(redd_count)) |> 
               ungroup(), 
             clean_clear_redd |> 
               distinct(redd_id, .keep_all = TRUE) |> 
               mutate(redd_count = 1) |> 
-              group_by(reach, stream, year, species, run) |> 
+              group_by(reach, stream, year, run, species) |> 
               summarise(annual_redd_count = sum(redd_count)) |> 
               ungroup()) |> 
   mutate(annual_redd_count = ifelse(stream %in% c("mill creek", "yuba river", "feather river"),
