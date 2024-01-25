@@ -38,26 +38,33 @@ Data dictionary for standard format for `all_redd_data`:
 (B - Battle Creek, C - Clear Creek,\
 F - Feather River, Y - Yuba River)
 
-| column name              | tributary collects | definition                                                         |
-|:-----------------|:-----------------|:-----------------------------------|
-| date                     | B, C, F, Y         | Date in which redd data was collected                              |
-| latitude                 | B, C, F, Y         | Latitude of redd location                                          |
-| longitude                | B, C, F, Y         | Longitude of redd location                                         |
-| reach                    | B, C, F            | Unique name identifier of reach sampled                            |
-| river_mile               | B, C               | River mile associated with redd measured                           |
-| redd_measured            | B, C               | Whether or not a redd was measured (T/F)                           |
-| age                      | B, C               | integer ranging from 1 - 5; redd age                               |
-| fish_guarding            | B, C               | Whether or not a fish is on redd when measured ??                  |
-| redd_length              | B, C, F            | Length of measured redd (m)                                        |
-| redd_width               | B, C, F            | Width of measured redd (m)                                         |
-| run                      | B, C               | `spring`, `fall`, `late-fall`                                      |
-| stream                   | B, C, F, Y         | Unique stream associated with redd data collected                  |
-| redd_substrate_class     | B, C               | categorical; size class determined by millimeter size of substrate |
-| pre_redd_substrate_class | B, C               | categorical; size class determined by millimeter size of substrate |
-| tail_substrate_class     | B, C               | categorical; size class determined by millimeter size of substrate |
-| year                     | B, C, F, Y         | Calendar year sampling occurred                                    |
-| velocity                 | B, C, F, Y         | measured stream velocity (ft/s)                                    |
-| depth_m                  | F, Y               | Depth of water (meters)                                            |
+|column_name              |tributary_collects |definitions                                                        |
+|:------------------------|:------------------|:------------------------------------------------------------------|
+|date                     |B, C, F, M, Y      |Date redd data was collected                                       |
+|latitude                 |B, C, F, Y         |Latitude of redd location                                          |
+|longitude                |B, C, F, Y         |Longitude of redd location                                         |
+|reach                    |B, C, F, M         |Reach sampled                                                      |
+|river_mile               |B, C               |River mile associated with redd measured                           |
+|redd_id                  |B, C, Y            |Unique redd ID                                                     |
+|fish_guarding            |B, C               |Whether or not fish were observed guarding the redd (T/F)          |
+|redd_measured            |B, C               |Whether or not redd was measured (T/F)                             |
+|redd_width               |B, C, F            |Width of redd measured (m)                                         |
+|redd_length              |B, C, F            |Length of redd measured (m)                                        |
+|velocity                 |B, C, F, Y         |Measured stream velocity (ft/s)                                    |
+|age                      |B, C               |Age of redd                                                        |
+|age_index                |B, C               |Number of times redd was aged. If 0, redd was sampled but not aged |
+|redd_count               |B, C, F, M, Y      |Number of redds sampled                                            |
+|stream                   |B, C, F, M, Y      |Stream associated with redd data collection                        |
+|year                     |B, C, F, M, Y      |Year data were collected                                           |
+|survey_method            |C                  |Survey method                                                      |
+|run                      |B, C, F, M, Y      |Run of fish associated with redd                                   |
+|species                  |B, C, F, M, Y      |Species associated with redd                                       |
+|depth_m                  |F, Y               |Depth of water (m)                                                 |
+|starting_elevation_ft    |M                  |Starting elevation (ft)                                            |
+|num_of_fish_on_redd      |Y                  |Number of fish on redd                                             |
+|redd_substrate_class     |B, C               |Categorical, size class determined by millimeter size of substrate |
+|tail_substrate_class     |B, C               |Categorical, size class determined by millimeter size of substrate |
+|pre_redd_substrate_class |B, C               |Categorical, size class determined by millimeter size of substrate |                                         |
 
 ## Standard format for Adult Redd Data Aggregated by Year
 
@@ -67,13 +74,13 @@ Data dictionary for standard format for `annual_redd_count`:
 
 |column_name                 |tributary_collects |definition                                                                                                |
 |:---------------------------|:------------------|:---------------------------------------------------------------------------------------------------------|
-|year                        |B, C, F, M, Y      |Calendar year sampling occurred                                                                           |
-|stream                      |B, C, F, M, Y      |Unique stream associated with redd data collected                                                         |
-|reach                       |B, C, F, M         |Unique name identifier of reach sampled                                                                   |
-|species                     |B, C, Y      |Species associated with redd sampled                                                                      |
-|run                         |B, C     |spring, fall, late_fall                                                                                   |
-|annual_redd_count           |B, C, F, M, Y      |Number of redds counted in a year by reach and stream                                                     |
-|annual_summarization_method |B, C, F, M, Y      |Summarization method used to get the annual number: either summed by redd id or maximum yearly redd count |
+|stream                      |F, M, Y, C, B      |Stream associated with redd data collected                                                                |
+|year                        |F, M, Y, C, B      |Calendar year sampling occured                                                                            |
+|reach                       |F, M, C, B         |Reach sampled                                                                                             |
+|species                     |F, M, Y, B, C      |Species associated with redd sampled                                                                      |
+|run                         |F, M, Y, C, B      |Run of fish associated with redd sampled                                                                  |
+|annual_redd_count           |F, M, Y, C, B      |Number of redds counted in a year by reach, stream, species, and run                                      |
+|annual_summarization_method |F, M, Y, C, B      |Summarization method used to get the annual number: either summed by redd id or maximum yearly redd count |
 
 ## Read in data {.tabset}
 
@@ -467,43 +474,30 @@ For Battle and Clear Creeks, the dataset was filtered to unique `redd_id` and th
 Since Mill Creek is aggregated by year already, this dataset includes Mill Creek.
 
 ```{r}
-redd_count_by_year <- bind_rows(clean_feather_redd, 
-                                clean_yuba_redd)  |> 
-  # find the redd count by stream/reach/species/run
-  group_by(reach, stream, year, species)  |>
-  summarize(redd_count = sum(redd_count))  |>
-  ungroup() |>
-  # since some redds may be double counted, summarize yearly count by date
-  # as we learn more about methods we can summarize using a better method
-  group_by(year, stream, reach, species)  |>
-  summarize(max_yearly_redd_count = max(redd_count, na.rm = T))  |>  # maximum per year 
-  bind_rows(clean_mill_redd  |> 
-              rename(max_yearly_redd_count = redd_count) |> 
-              select(-starting_elevation_ft)) |> 
-  bind_rows(clean_battle_redd |> 
-              distinct(redd_id, .keep_all = TRUE) |> 
-              mutate(redd_count = 1) |> 
-              group_by(reach, stream, year) |> 
-              summarise(annual_redd_count = sum(redd_count)) |> 
-              ungroup(), 
-            clean_clear_redd |> 
-              distinct(redd_id, .keep_all = TRUE) |> 
-              mutate(redd_count = 1) |> 
-              group_by(reach, stream, year, run, species) |> 
-              summarise(annual_redd_count = sum(redd_count)) |> 
-              ungroup()) |> 
-  mutate(annual_redd_count = ifelse(stream %in% c("mill creek", "yuba river", "feather river"),
-                                    max_yearly_redd_count, annual_redd_count),
-         annual_summarization_method = ifelse(stream %in% c("mill creek", "yuba river", "feather river"), "maximum yearly redd count", "summed by redd id")) |> 
-  mutate(species = case_when(species %in% c("Chinook", "CHN") ~ "chinook",
-                             species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
-                             species %in% c("O. mykiss", "SH") ~ "steelhead",
-                             species %in% c("P. lamprey", "Lamprey") ~ "pacific lamprey",
-                             is.na(species) ~ "not recorded"),
-         run = ifelse(is.na(run), "not recorded", run)) |> 
-  select(-max_yearly_redd_count) |> 
+# Use max daily reach count summed across year to get max annual count for streams
+# that do not have redd id 
+redd_non_battle_clear <- all_redd_data |>
+  filter(!stream %in% c("battle creek", "clear creek")) |> 
+  group_by(stream, reach, date, species, run) |> 
+  summarize(daily_reach_count = sum(redd_count, na.rm = TRUE)) |> 
+  ungroup() |> 
+  group_by(year = year(date), stream, reach, species, run) |> 
+  summarize(max_daily_reach_count = max(daily_reach_count, na.rm = TRUE)) |> 
+  ungroup() |> 
+  group_by(stream, year, reach, species, run) |> 
+  summarize(annual_redd_count = sum(max_daily_reach_count, na.rm = TRUE)) |> 
+  ungroup() |> 
+  glimpse()
+  
+# for streams with redd id, just sum redd count (each redd id is only counted once)
+battle_clear_redd <- all_redd_data |>
+  filter(stream %in% c("battle creek", "clear creek")) |> 
+  group_by(year = year(date), stream, reach, species, run) |> 
+  summarize(annual_redd_count = sum(redd_count, na.rm = TRUE)) |> 
   ungroup()
 
+redd_count_by_year <- bind_rows(redd_non_battle_clear, battle_clear_redd) |>
+  mutate(annual_summarization_method = ifelse(stream %in% c("mill creek", "yuba river", "feather river"), "maximum yearly redd count", "summed by redd id"))
 ```
 
 ## Exploratory Plots
