@@ -8,22 +8,22 @@ library(googleCloudStorageR)
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-# gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "standard-format-data", "standard_daily_redd.csv"),
-#                overwrite = TRUE)
-# gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "standard-format-data", "standard_annual_redd.csv"),
-#                overwrite = TRUE)
-# gcs_get_object(object_name = "standard-format-data/standard_carcass.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "standard-format-data", "standard_cacass.csv"),
-#                overwrite = TRUE)
-# gcs_get_object(object_name = "standard-format-data/standard_holding.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = here::here("data", "standard-format-data", "standard_holding.csv"),
-#                overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "standard-format-data", "standard_daily_redd.csv"),
+               overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "standard-format-data", "standard_annual_redd.csv"),
+               overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_carcass.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "standard-format-data", "standard_cacass.csv"),
+               overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_holding.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "standard-format-data", "standard_holding.csv"),
+               overwrite = TRUE)
 
 # read in adult data files
 
@@ -143,8 +143,7 @@ standard_clear_reaches <- tibble("standardized_reach" = c("R1", "R2", "R3", "R4"
 
 clear_reach_lookup <- tibble("reach" = unique(all_clear_reaches$reach),
                               "standardized_reach" = c("R3", "R2", "R4", "R5", "R1", "R5",
-                                                       "R6A", "R5", "R7", "R6A", "R5", "R5", 
-                                                       "R5", NA, "R6B")) |> 
+                                                       "R6A", "R5", "R7", "R6A", "R5")) |> 
   left_join(standard_clear_reaches)
 
 
@@ -307,7 +306,10 @@ all_mill_reaches |>
   geom_col() +
   facet_wrap(~data_type)
 
-# no need to standardize for Mill Creek
+# no need to standardize for Mill Creek, but create lookup to bind rows
+mill_reach_lookup <- tibble(reach = unique(all_mill_reaches$reach),
+                            standardized_reach = unique(all_mill_reaches$reach),
+                            reach_description = unique(all_mill_reaches$reach))
 
 # Feather -----------------------------------------------------------------
 all_feather_reaches <- bind_rows(redd |> 
@@ -458,4 +460,47 @@ all_yuba_reaches |>
   geom_col() +
   facet_wrap(~data_type) +
   theme(legend.position = "bottom")
+
+
+# Bind together all years and streams into a lookup -----------------------
+
+all_stream_reach_lookup <- bind_rows(battle_reach_lookup |> 
+                                       mutate(stream = "battle creek"),
+                                     clear_reach_lookup |> 
+                                       mutate(stream = "clear creek"),
+                                     butte_reach_lookup |> 
+                                       mutate(stream = "butte creek"),
+                                     feather_reach_lookup |> 
+                                       mutate(stream = "feather river"),
+                                     deer_reach_lookup |> 
+                                       mutate(stream = "deer creek"),
+                                     mill_reach_lookup |> 
+                                       mutate(stream = "mill creek")) |> 
+  glimpse()
+
+data_dictionary <- tibble(column_name = names(all_stream_reach_lookup),
+                          streams_collecting = c("B, C, Bu, F, D, M",
+                                                 "B, C, F, D, M",
+                                                 "B, C, Bu, F, D, M",
+                                                 "B, C, Bu, F, D, M",
+                                                 "Bu", "Bu", "Bu", "F", "F"), 
+                          description = c("Surveyed reach name in raw data", 
+                                          "Standard reach associated with raw reach name",
+                                          "Description of standard reach",
+                                          "Stream where reach is surveyed",
+                                          "Sub-reach name in raw data",
+                                          "Standard sub-reach associated with raw sub-reach name",
+                                          "Description of standard sub-reach",
+                                          "Categorization of reach as high or low flow channels (HFC/LFC)",
+                                          "Description of standard reach from CAMP database"))
+
+
+# push to cloud -----------------------------------------------------------
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(all_stream_reach_lookup,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/standard_reach_lookup.csv")
+# TODO pull into the standard adult markdowns (new branch)
+
 
