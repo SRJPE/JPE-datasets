@@ -1,0 +1,201 @@
+---
+title: "[Watershed] [Data type] [QC]"
+author: "Badhia Yunes Katz"
+date: "01/25/2024"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(RODBC)
+library(chron)
+library(weathermetrics)
+library(CDECRetrieve)
+library(hms)
+library(dplyr)
+```
+
+# Deer Creek [Data type long version]
+
+## Description of Monitoring Data
+
+**Timeframe:** 1998-2019
+
+**Video Season:** 
+
+**Completeness of Record throughout timeframe:** no data gaps
+
+**Sampling Location:** Deer Creek
+
+**Data Contact:** 
+
+Any additional info?
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# git data and save as xlsx
+
+```
+
+Read in data from google cloud, glimpse raw data and domain description sheet: 
+```{r}
+# read in data to clean 
+deer_mill <- odbcConnectAccess2007(here::here("data-raw", "standard-format-data-prep", "MASTER_TEMPERATURE.mdb"))
+
+
+```
+
+## Data transformations
+
+```{r}
+# For different excel sheets for each year read in and combine years here
+
+tables <- sqlTables(deer_mill)
+
+
+deer_1 <- sqlFetch(deer_mill,"Deer 9-0 Mouth") |> 
+  mutate(date = as_date(Date)) 
+deer_2 <- sqlFetch(deer_mill, "Deer 9-1 VIDEO Station SV Dam")|> 
+  mutate(date = as_date(Date)) 
+deer_3 <- sqlFetch(deer_mill, "Deer 9-15 DCV upper CDEC")|> 
+  mutate(date = as_date(Date)) 
+deer_4 <- sqlFetch(deer_mill, "Deer 9-2 Trail 2E17")|> 
+  mutate(date = as_date(Date)) 
+deer_5 <- sqlFetch(deer_mill, "Deer 9-3 Beaver Cr")|> 
+  mutate(date = as_date(Date)) 
+deer_6 <- sqlFetch(deer_mill, "Deer 9-4 Murphy Trail")|> 
+  mutate(date = as_date(Date)) 
+deer_7 <- sqlFetch(deer_mill, "Deer 9-5 Wilson Cove")|> 
+  mutate(date = as_date(Date)) 
+deer_8 <- sqlFetch(deer_mill, "Deer 9-6 C-Pool")|> 
+  mutate(date = as_date(Date)) 
+deer_9 <- sqlFetch(deer_mill, "Deer 9-7 Upper Falls")|> 
+  mutate(date = as_date(Date)) 
+
+combined_table <- bind_rows(deer_1, deer_2, deer_3 ,deer_4, deer_5, deer_6, deer_7, deer_8, deer_9, .id = "deer_site")
+
+
+
+```
+
+```{r}
+# Snake case, 
+# Columns are appropriate types
+combined_table <- combined_table |> 
+   mutate(min_Date = min(Date),
+         max_Date = max(Date),
+         temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+   mutate(year = lubridate::year(Date))
+
+
+# Remove redundant columns
+
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+# Filter clean data to show only numeric variables 
+
+deer_temp <- combined_table |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Sort ID", -"Place ID", -"Primary ID")
+```
+
+### Variable: `[name]`
+
+**Plotting [Variable] over Period of Record**
+
+```{r}
+# Make whatever plot is appropriate 
+# ggplot(deer_temp, aes(x = Min_Date, xend = Max_Date, y = min(Temperature), yend = max(Temperature))) +
+#   geom_segment(size = 5, color = "blue") #checking temporal coverage across deer sites
+
+butte_plot <- ggplot(deer_temp, aes(x=date, y = temperature)) +
+  geom_line(color = "darkred") +
+  labs(y = "Temperature (deg C)")
+
+#adding CDEC to plot with it
+DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+
+DCV_hourly_temps <- DCV_CDEC |> 
+  mutate(date = as_date(datetime),
+         time = as_hms(datetime),
+         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) |>
+  filter(temp_degC < 37, temp_degC > 0) |> 
+  rename(temperature = temp_degC)
+
+
+# Create the combined plot
+combined_plot <- butte_plot +
+   geom_line(data = DCV_hourly_temps, aes(x = date, y = temperature))
+
+print(combined_plot)
+
+# maybe 2+ plots are appropriate
+```
+
+**Numeric Summary of [Variable] over Period of Record**
+
+```{r}
+# Table with summary statistics
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+## Explore Categorical variables: {.tabset}
+
+General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
+
+```{r}
+# Filter clean data to show only categorical variables
+```
+
+
+### Variable: `[name]`
+```{r}
+#table() 
+```
+
+Fix inconsistencies with spelling, capitalization, and abbreviations. 
+
+```{r}
+# Fix any inconsistencies with categorical variables
+```
+
+**Create lookup rda for [variable] encoding:** 
+```{r}
+# Create named lookup vector
+# Name rda [watershed]_[data type]_[variable_name].rda
+# save rda to data/ 
+```
+
+**NA and Unknown Values**
+
+Provide a stat on NA or unknown values
+
+## Summary of identified issues
+
+* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
+
+## Save cleaned data back to google cloud 
+
+```{r}
+# Write to google cloud 
+# Name file [watershed]_[data type].csv
+```

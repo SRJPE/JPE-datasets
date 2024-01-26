@@ -92,40 +92,49 @@ ggplot(butte_dd_sum, aes(wyear, totalddays)) +
 #Butte Creek
 ```{r}
 #Filtering Butte data 
-butte_std_temp <- read.csv(here::here("data-raw", "standard-format-data-prep", "temp_data", "standard_temperature.csv")) |>
-  filter(stream == "butte creek")
+std_temp <- read.csv(here::here("data-raw", "standard-format-data-prep", "temp_data", "standard_temperature.csv")) 
 
 #Changing "date" field into date format
-butte_std_temp$date <- as.Date(butte_std_temp$date)
-glimpse(butte_std_temp)
+std_temp$date <- as.Date(std_temp$date)
+glimpse(std_temp)
 
 #Extracting spawning months (Aug-Dec)
-butte_std_temp <- butte_std_temp |> 
-  mutate(month = format(date, "%m"))
+std_temp <- std_temp |> 
+  mutate(month = month(date))
+
+table(std_temp$month)
+
 spawning_months <- c("08", "09", "10", "11", "12")
 
-butte_spawn_temps <- butte_std_temp |> 
-  filter(month%in%spawning_months) |> 
-  filter(date!= as.Date("2000-12-09"))  #removes one day with NA max temp 
+spawn_temps <- std_temp |> 
+  filter(month%in%spawning_months)
 
-#Making sure we only have the months we need 
-table(butte_spawn_temps$month)
+#filter(date!= as.Date("2000-12-09"))  #removes one day with NA max temp 
+
+#Making sure we only have the months we need - check why only months 10,11,12 appear
+table(spawn_temps$month)
 
 #Delete "month field" 
-butte_spawn_temps |> select(-month)
+spawn_temps |> select(-month)
 
 #Calculating Butte 7DADM
-butte_7dadm <-  butte_spawn_temps |> 
-  mutate(rolling_7DADM = zoo::rollmean(max_daily_temp_c, k = 7, align = "center", fill = NA)) #There are 6 N/A values corresponding to the first and last three values that are unable to calculate rollmean 
+butte_7dadm <-  spawn_temps |> 
+  filter(stream == "butte creek") |> 
+  group_by(site, subsite) |> 
+  mutate(rolling_7DADM = zoo::rollmean(max_daily_temp_c, k = 7, align = "center", fill = NA)) #Look into NA values
 
 
-glimpse(butte_spawn_temps)
+glimpse(butte_7dadm)
 
 #Filtering days when 7DADM is below 13C
-filter(butte_7dadm, rolling_7DADM < 13)
+butte_7dadm_below13 <- butte_7dadm |> 
+filter( rolling_7DADM < 13)
+glimpse(butte_7dadm_below13)
 
-#plotting 
-
+#plotting - 7dadm below 13 
+ggplot(butte_7dadm_below13, aes(x = date, y = rolling_7DADM))+
+  scale_color_viridis_d(begin = 1, end = 0) +
+  geom_line()
 ```
 #Battle
 ```{r}
