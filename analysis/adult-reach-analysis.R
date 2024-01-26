@@ -34,7 +34,7 @@ annual_redd <- read.csv(here::here("data", "standard-format-data", "standard_ann
 carcass <- read.csv(here::here("data", "standard-format-data", "standard_carcass.csv"))
 holding <- read.csv(here::here("data", "standard-format-data", "standard_holding.csv"))
 
-
+# this file is stored in the google drive: https://drive.google.com/drive/u/0/folders/1vv_QV9NdiIc4tlWPPB3UBs1s8idBOiSB
 battle_clear_reaches <- readxl::read_xlsx(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", 
                                              "battle-clear-creek-survey-reaches.xlsx"))
 # extract CAMP descriptions of feather reaches
@@ -493,7 +493,6 @@ data_dictionary <- tibble(column_name = names(all_stream_reach_lookup),
                                           "Description of standard sub-reach",
                                           "Categorization of reach as high or low flow channels (HFC/LFC)",
                                           "Description of standard reach from CAMP database"))
-
 
 # push to cloud -----------------------------------------------------------
 f <- function(input, output) write_csv(input, file = output)
