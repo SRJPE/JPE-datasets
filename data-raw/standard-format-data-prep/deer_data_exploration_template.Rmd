@@ -112,7 +112,7 @@ combined_table <- combined_table |>
 # Filter clean data to show only numeric variables 
 
 deer_temp <- combined_table |> 
-  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Sort ID", -"Place ID", -"Primary ID")
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
 ```
 
 ### Variable: `[name]`
@@ -128,7 +128,7 @@ butte_plot <- ggplot(deer_temp, aes(x=date, y = temperature)) +
   geom_line(color = "darkred") +
   labs(y = "Temperature (deg C)")
 
-#adding CDEC to plot with it
+#adding CDEC data to plot with it and compare
 DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
 
 DCV_hourly_temps <- DCV_CDEC |> 

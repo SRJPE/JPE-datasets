@@ -99,9 +99,7 @@ combined_table <- bind_rows(mill_1, mill_2, mill_3 ,mill_4, mill_5, mill_6, mill
 # Snake case, 
 # Columns are appropriate types
 combined_table <- combined_table |> 
-   mutate(min_Date = min(Date),
-         max_Date = max(Date),
-         temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+   mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
    mutate(year = lubridate::year(Date))
 
 
@@ -114,37 +112,40 @@ combined_table <- combined_table |>
 ```{r}
 # Filter clean data to show only numeric variables 
 
-deer_temp <- combined_table |> 
-  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Sort ID", -"Place ID", -"Primary ID")
+mill_temp <- combined_table |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
 ```
 
-### Variable: `[name]`
+### Variable: `Temperature`
 
 **Plotting [Variable] over Period of Record**
 
 ```{r}
-# Make whatever plot is appropriate 
-# ggplot(deer_temp, aes(x = Min_Date, xend = Max_Date, y = min(Temperature), yend = max(Temperature))) +
-#   geom_segment(size = 5, color = "blue") #checking temporal coverage across deer sites
 
-butte_plot <- ggplot(deer_temp, aes(x=date, y = temperature)) +
+mill_plot <- ggplot(mill_temp, aes(x = date, y = temperature)) +
   geom_line(color = "darkred") +
   labs(y = "Temperature (deg C)")
 
-#adding CDEC to plot with it
-DCV_CDEC <- cdec_query(station = "DCV", dur_code = "H", sensor_num = "25", start_date = "1995-01-01")
+print(mill_plot)
 
-DCV_hourly_temps <- DCV_CDEC |> 
+#adding CDEC data to plot with it and compare
+MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+
+
+MLM_hourly_temps <- MLM_CDEC %>%
   mutate(date = as_date(datetime),
          time = as_hms(datetime),
-         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) |>
-  filter(temp_degC < 37, temp_degC > 0) |> 
-  rename(temperature = temp_degC)
+         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+  select(date,time,temp_degC) |> 
+  filter(temp_degC < 40, temp_degC > 0) |> 
+    rename(temperature = temp_degC)
 
 
 # Create the combined plot
-combined_plot <- butte_plot +
-   geom_line(data = DCV_hourly_temps, aes(x = date, y = temperature))
+combined_plot <- mill_plot +
+  geom_line(data = MLM_hourly_temps, aes(x = date, y = temperature, color = ""))
+  
+  
 
 print(combined_plot)
 
@@ -170,7 +171,7 @@ General notes: If there is an opportunity to turn yes no into boolean do so, but
 ```
 
 
-### Variable: `[name]`
+### Variable: `Temperature`
 ```{r}
 #table() 
 ```
