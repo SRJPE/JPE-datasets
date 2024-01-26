@@ -714,6 +714,7 @@ MLM_hourly_temps <- MLM_CDEC %>%
   mutate(date = as_date(datetime),
          time = as_hms(datetime),
          temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
+  filter(!is.na(date)) |> 
   select(date,time,temp_degC)
 
 # Date Ranges

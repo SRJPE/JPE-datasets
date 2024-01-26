@@ -103,6 +103,7 @@ rst_enviro <- read_csv("data/rst/standard_environmental.csv")
 ubc_temp_raw <- readRDS(here::here("data-raw", "standard-format-data-prep","temp_data", "battle_temp.rds"))
 
 battle_format <- ubc_temp_raw %>% 
+  mutate(date = as_date(date)) |> 
   group_by(date) |> 
   summarise(mean_temp_degC = mean(temp_degC, na.rm = T),
             max_temp_degC = max(temp_degC, na.rm = T),
@@ -177,6 +178,7 @@ lcc_temp <- lcc_temp_raw  %>%
          gage_number = "logger")
 
 clear_format <- bind_rows(lcc_temp, ucc_temp) %>% 
+  mutate(date = as_date(date)) |> 
   group_by(date, stream, site, subsite, gage_agency, gage_number) %>%
   summarise(mean_temp_degC = mean(temp_degC, na.rm = T),
             max_temp_degC = max(temp_degC, na.rm = T),
@@ -472,7 +474,7 @@ ggplot() +
     `1998-10-07` to `2022-07-13`
 
 ```{r}
-# source USGS
+# source CDEC - note that there are some missing data points
 mill <- read_rds(here::here("data-raw", "standard-format-data-prep","temp_data", "mill_temp.rds")) |> glimpse()
 mill_format <- mill %>%
   mutate(stream = "mill creek",
