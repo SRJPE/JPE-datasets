@@ -74,7 +74,7 @@ Initial data exploration was done `r here::here("data-raw", "qc-markdowns", "tem
 
 ```{r, include = F}
 # source file where gage data is pulled, need to run this file first
-source(knitr::purl(here::here("data-raw", "qc-markdowns", "temperature_data_prep.Rmd"), quiet=TRUE))
+# source(knitr::purl(here::here("data-raw", "qc-markdowns", "temperature_data_prep.Rmd"), quiet=TRUE))
 
 # set up GCS
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
@@ -246,24 +246,32 @@ feather_hfc_sites <- filter(feather_sites, site_group == "feather river hfc")
 feather_lfc_sites <- filter(feather_sites, site_group == "feather river lfc")
 
 feather_hfc_format <- hfc_feather %>% 
+  rename(mean = mean_temp_degC,
+         min = min_temp_degC,
+         max = max_temp_degC) |> 
+  pivot_longer(cols = mean:min, names_to = "statistic", values_to = "value") |> 
   mutate(stream = "feather river",
          gage_agency = "CDEC",
          gage_number = "GRL",
          site_group = "feather river hfc")
 
 feather_hfc_format %>% ggplot() + 
-  geom_line(aes(x = date, y = mean_temp_degC)) + 
+  geom_line(aes(x = date, y = value, color = statistic)) + 
   # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
   theme_minimal() 
 
 feather_lfc_format <- lfc_feather %>% 
+  rename(mean = mean_temp_degC,
+         min = min_temp_degC,
+         max = max_temp_degC) |> 
+  pivot_longer(cols = mean:min, names_to = "statistic", values_to = "value") |> 
   mutate(stream = "feather river",
          gage_agency = "CDEC",
          gage_number = "FRA",
          site_group = "feather river lfc")
 
 feather_lfc_format %>% ggplot() + 
-  geom_line(aes(x = date, y = mean_temp_degC)) + 
+  geom_line(aes(x = date, y = value, color = statistic)) + 
   # geom_point(aes(x = date, y = mean_temp_degC), size = .001) +
   theme_minimal() 
 ```
@@ -274,33 +282,37 @@ feather_lfc_format %>% ggplot() +
 feather_rst_hfc <- rst_enviro %>%
   filter(stream == "feather river", site == "herringer riffle", parameter == "temperature") %>%
   select(stream, date, value) %>%
-  rename(mean_temp_degC = value) %>%
+  group_by(stream, date) |> 
+  summarize(value = mean(value, na.rm = T)) |> 
   mutate(gage_agency = "DWR",
          gage_number = "logger",
          site_group = "feather river hfc",
-         mean_temp_degC = case_when(mean_temp_degC < 0.5 ~ NA_real_,
-                               T ~ mean_temp_degC),
-         mean_temp_degC = as.numeric(mean_temp_degC),
-         mean_temp_degC = na.approx(mean_temp_degC, na.rm = F)) |> glimpse()
+         statistic = "mean",
+         value = case_when(value < 0.5 ~ NA_real_,
+                               T ~ value),
+         value = as.numeric(value),
+         value = na.approx(value, na.rm = F)) |> glimpse()
 
 ggplot() +
-  geom_line(data = feather_rst_hfc, aes(x = date, y = mean_temp_degC)) +
+  geom_line(data = feather_rst_hfc, aes(x = date, y = value)) +
   theme_minimal()
 
 feather_rst_lfc <- rst_enviro %>%
   filter(stream == "feather river", site == "eye riffle", parameter == "temperature") %>%
   select(stream, date, value) %>%
-  rename(mean_temp_degC = value) %>%
+  group_by(stream, date) |> 
+  summarize(value = mean(value, na.rm = T)) |> 
   mutate(gage_agency = "DWR",
          gage_number = "logger",
          site_group = "feather river lfc",
-         mean_temp_degC = case_when(mean_temp_degC < 0.5 ~ NA_real_,
-                               T ~ mean_temp_degC),
-         mean_temp_degC = as.numeric(mean_temp_degC),
-         mean_temp_degC = na.approx(mean_temp_degC, na.rm = F)) |> glimpse()
+         statistic = "mean",
+         value = case_when(value < 0.5 ~ NA_real_,
+                               T ~ value),
+         value = as.numeric(value),
+         value = na.approx(value, na.rm = F)) |> glimpse()
 
 ggplot() +
-  geom_line(data = feather_rst_lfc, aes(x = date, y = mean_temp_degC)) +
+  geom_line(data = feather_rst_lfc, aes(x = date, y = value)) +
   theme_minimal()
 ```
 
@@ -309,164 +321,253 @@ ggplot() +
 ```{r}
 feather_lfc_format_combined <- bind_rows(filter(feather_rst_lfc, year(date) < 2017), # rst, filter so it does not overlap with gage data
                         feather_lfc_format) %>% 
-  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number, site_group) |> 
-  distinct() |> 
+  group_by(stream, date, statistic, gage_agency, gage_number, site_group) |> 
   glimpse()
 ggplot() +
-  geom_line(data = feather_lfc_format_combined, aes(x = date, y = mean_temp_degC)) +
+  geom_line(data = feather_lfc_format_combined, aes(x = date, y = value, color = statistic)) +
   theme_minimal()
 
 feather_hfc_format_combined <- bind_rows(filter(feather_rst_hfc, date > "2007-06-01"), # rst filter so does not overlap with gage data
                         feather_hfc_format) %>% 
-  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number, site_group) |> 
-  distinct() |> glimpse()
+  mutate(value = ifelse(is.nan(value) | is.infinite(value), NA, value)) |> 
+  group_by(stream, date, statistic, gage_agency, gage_number, site_group) |> glimpse()
 ggplot() +
-  geom_line(data = feather_hfc_format_combined, aes(x = date, y = mean_temp_degC)) +
+  geom_line(data = feather_hfc_format_combined, aes(x = date, y = value, color = statistic)) +
   theme_minimal()
 ```
 
 #### Fill in data gapps
 
-```{r}
+Decided to build regression model between Butte Creek and Feather River data (using mean values)
+We will use this model to predict values for min, mean, and max
+
+```{r, include = F}
 
 #-----Code to identify the date ranges for the gage v trap data
 # LFC gage: 2018-present
-min(feather_lfc_format$date, na.rm = T)
-# LFC monitoring data: 1997-2006, 2017-2021 (not using 2017-2021 data, instead use gage)
-min(feather_rst_lfc$date)
-max(feather_rst_lfc$date)
-feather_rst_lfc |> 
-  filter(year(date) < 2016) |> 
-  summarize(max = max(date))
-
-# HFC gage: 2003-2007
-min(feather_hfc_format$date, na.rm = T)
-max(feather_hfc_format$date, na.rm = T)
-# HFC monitoring data: 2008-2021 (not using data prior to 2008 so as not to overlap with gage data)
-feather_rst_hfc |> 
-  filter(year(date) > 2007) |> 
-  summarize(max = max(date),
-            min = min(date))
+# min(feather_lfc_format$date, na.rm = T)
+# # LFC monitoring data: 1997-2006, 2017-2021 (not using 2017-2021 data, instead use gage)
+# min(feather_rst_lfc$date)
+# max(feather_rst_lfc$date)
+# feather_rst_lfc |> 
+#   filter(year(date) < 2016) |> 
+#   summarize(max = max(date))
+# 
+# # HFC gage: 2003-2007
+# min(feather_hfc_format$date, na.rm = T)
+# max(feather_hfc_format$date, na.rm = T)
+# # HFC monitoring data: 2008-2021 (not using data prior to 2008 so as not to overlap with gage data)
+# feather_rst_hfc |> 
+#   filter(year(date) > 2007) |> 
+#   summarize(max = max(date),
+#             min = min(date))
 
 #------ Code to create dataframes that combine Feather data with Butte data for regression
 # LFC
 # create dataframe to use in regression
-feather_lfc_regression_data_full <- feather_lfc_format_combined |> 
-  ungroup() |> 
-  select(date, mean_temp_degC) |> 
-  rename(feather_temp = mean_temp_degC) |> 
-  full_join(butte_format |> 
-              select(date, mean_temp_degC) |> 
-              rename(butte_temp = mean_temp_degC))
-# identify gaps to predict data
-feather_gap <- feather_lfc_regression_data_full |> 
-  filter(is.na(feather_temp), !is.na(butte_temp)) |> 
-  select(-feather_temp)
-feather_lfc_regression_data <- feather_lfc_regression_data_full |> 
-  filter(!is.na(feather_temp), !is.na(butte_temp))
+# This needs to be done for both mean, min, max
 
-ggplot(data = feather_lfc_regression_data, aes(x = butte_temp, y = feather_temp)) +
+# need reformat the dataset so can find the dates when min/max are NA (e.g. otherwise just won't ahve data)
+feather_lfc_format_wide <- feather_lfc_format_combined |> 
+  ungroup() |> 
+  select(-gage_agency, -gage_number) |> 
+pivot_wider(id_cols = c(stream, date, site_group), names_from = "statistic", values_from = "value", values_fill = NA)
+
+# Combine butte and feather together for regression modeling
+feather_lfc_regression_data_full <- feather_lfc_format_wide |> 
+  ungroup() |> 
+  select(date, mean, max, min) |> 
+  rename(feather_temp_mean = mean,
+         feather_temp_min = min,
+         feather_temp_max = max) |> 
+  full_join(butte_format |> 
+              select(date, mean_temp_degC, max_temp_degC, min_temp_degC) |> 
+              rename(butte_temp_mean = mean_temp_degC,
+                     butte_temp_min = min_temp_degC,
+                     butte_temp_max = max_temp_degC))
+# FOR PREDICTIONS identify gaps to predict data
+feather_gap_mean <- feather_lfc_regression_data_full |> 
+  filter(is.na(feather_temp_mean), !is.na(butte_temp_mean)) |> 
+  select(-c(feather_temp_mean, feather_temp_min, feather_temp_max)) |> 
+  rename(butte_temp = butte_temp_mean)
+feather_gap_min <- feather_lfc_regression_data_full |> 
+  filter(is.na(feather_temp_min), !is.na(butte_temp_min)) |> 
+ select(-c(feather_temp_mean, feather_temp_min, feather_temp_max)) |> 
+  rename(butte_temp = butte_temp_min)
+feather_gap_max <- feather_lfc_regression_data_full |> 
+  filter(is.na(feather_temp_max), !is.na(butte_temp_max)) |> 
+ select(-c(feather_temp_mean, feather_temp_min, feather_temp_max)) |> 
+  rename(butte_temp = butte_temp_max)
+
+# FOR MODEL use data where there are no missing data for either butte or feather for regression modeling
+feather_lfc_regression_data_mean <- feather_lfc_regression_data_full |> 
+  filter(!is.na(feather_temp_mean), !is.na(butte_temp_mean)) |> 
+  rename(butte_temp = butte_temp_mean,
+         temp = feather_temp_mean)
+
+# plot for mean
+ggplot(data = feather_lfc_regression_data_mean, aes(x = butte_temp, y = temp)) +
   geom_point() +
   stat_smooth(method = "lm")
-
-# split into testing and training dataset 
-split <- rsample::initial_split(feather_lfc_regression_data, prop = 0.8)
-train <- rsample::training(split)
-test <- rsample::testing(split)
-
-# build linear model
-feather_mod <- lm(feather_temp ~ date + butte_temp, data = train)
-summary(feather_mod)
-# predict using the testing data
-test_predict <- predict(feather_mod, test)
-test_predict_df <- test |> 
-  mutate(feather_predicted = test_predict)
-# evaluate predictions - MAPE of 10% is not bad
-mape <- mean(abs((test_predict_df$feather_predicted - test_predict_df$feather_temp))/test_predict_df$feather_temp)
-
-# Use model to make predictions
-feather_predict <- predict(feather_mod, feather_gap)
-
-feather_gap_predicted <- feather_gap |> 
-  mutate(feather_temp = feather_predict)
-
-
-
-# HFC
-# create dataframe to use in regression
-feather_hfc_regression_data_full <- feather_hfc_format_combined |> 
-  ungroup() |> 
-  select(date, mean_temp_degC) |> 
-  rename(feather_temp = mean_temp_degC) |> 
-  full_join(butte_format |> 
-              select(date, mean_temp_degC) |> 
-              rename(butte_temp = mean_temp_degC))
-# identify gap to predict data
-feather_gap_hfc <- feather_hfc_regression_data_full |> 
-  filter(is.na(feather_temp), !is.na(butte_temp)) |> 
-  select(-feather_temp)
-feather_hfc_regression_data <- feather_hfc_regression_data_full |> 
-  filter(!is.na(feather_temp), !is.na(butte_temp))
-
-ggplot(data = feather_hfc_regression_data, aes(x = butte_temp, y = feather_temp)) +
-  geom_point() +
-  stat_smooth(method = "lm")
-
-# test the model
-split <- rsample::initial_split(feather_hfc_regression_data, prop = 0.8)
-train <- rsample::training(split)
-test <- rsample::testing(split)
-
-feather_mod_hfc <- lm(feather_temp ~ date + butte_temp, data = train)
-summary(feather_mod_hfc)
-test_predict <- predict(feather_mod_hfc, test)
-test_predict_df <- test |> 
-  mutate(feather_predicted = test_predict)
-# MAPE of 10.5% is not bad
-mape <- mean(abs((test_predict_df$feather_predicted - test_predict_df$feather_temp))/test_predict_df$feather_temp)
-
-feather_predict <- predict(feather_mod_hfc, feather_gap_hfc)
-
-feather_gap_predicted_hfc <- feather_gap_hfc |> 
-  mutate(feather_temp = feather_predict)
 ```
 
-#### Add in missing data
-
 ```{r}
-feather_lfc_format_combined_w_missing <- bind_rows(feather_lfc_format_combined,
-                                                   feather_gap_predicted |> 
-                                                     select(date, feather_temp) |> 
-                                                     rename(mean_temp_degC = feather_temp) |> 
-                                                     mutate(stream = "feather river",
-                                                            gage_agency = "interpolated",
-                                                            gage_number = "interpolated",
-                                                            site_group = "feather river lfc")) %>% 
-  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number, site_group) |> 
+# LFC regression and predictions
+
+# MEAN Regression
+split <-rsample::initial_split(feather_lfc_regression_data_mean, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+feather_lfc_mod_mean <- lm(temp ~ date + butte_temp, data = train)
+summary(feather_lfc_mod_mean)
+test_predict <- predict(feather_lfc_mod_mean, test)
+test_predict_df <- test |>
+  mutate(predicted = test_predict)
+# evaluate predictions - MAPE of 10% is not bad
+mean(abs((
+  test_predict_df$predicted - test_predict_df$temp
+)) / test_predict_df$temp)
+
+# Predictions
+feather_gap_predicted_mean_lfc <- predict(feather_lfc_mod_mean, feather_gap_mean)
+feather_lfc_mean_predicted <- feather_gap_mean |> 
+  mutate(value = feather_gap_predicted_mean_lfc,
+         statistic = "mean") |> 
+  select(date, value, statistic)
+ggplot(feather_lfc_mean_predicted, aes(x = date, y = value)) +
+  geom_line()
+feather_gap_predicted_min_lfc <- predict(feather_lfc_mod_mean, feather_gap_min)
+feather_lfc_min_predicted <- feather_gap_min |> 
+  mutate(value = feather_gap_predicted_min_lfc,
+         statistic = "min") |> 
+  select(date, value, statistic)
+ggplot(feather_lfc_min_predicted, aes(x = date, y = value)) +
+  geom_line()
+feather_gap_predicted_max_lfc <- predict(feather_lfc_mod_mean, feather_gap_max)
+feather_lfc_max_predicted <- feather_gap_max |> 
+  mutate(value = feather_gap_predicted_max_lfc,
+         statistic = "max") |> 
+  select(date, value, statistic)
+ggplot(feather_lfc_max_predicted, aes(x = date, y = value)) +
+  geom_line()
+
+feather_gap_lfc <- bind_rows(feather_lfc_max_predicted,
+                             feather_lfc_mean_predicted,
+                             feather_lfc_min_predicted) |> 
+  mutate(stream = "feather river",
+         gage_agency = "interpolated",
+         gage_number = "interpolated",
+         site_group = "feather river lfc") %>% 
+  bind_rows(feather_lfc_format_combined) |> 
+  group_by(stream, date, statistic, gage_agency, gage_number, site_group) |> 
   distinct() |> 
   full_join(feather_lfc_sites) |> 
   glimpse()
 ggplot() +
-  geom_line(data = feather_lfc_format_combined_w_missing, aes(x = date, y = mean_temp_degC)) +
-  theme_minimal()
-
-feather_hfc_format_combined_w_missing <- bind_rows(feather_hfc_format_combined,
-                                                   feather_gap_predicted_hfc |> 
-                                                     select(date, feather_temp) |> 
-                                                     rename(mean_temp_degC = feather_temp) |> 
-                                                     mutate(stream = "feather river",
-                                                            gage_agency = "interpolated",
-                                                            gage_number = "interpolated",
-                                                            site_group = "feather river hfc")) %>% 
-  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number, site_group) |> 
-  distinct() |> 
-  full_join(feather_hfc_sites) |>
-  glimpse()
-ggplot() +
-  geom_line(data = feather_hfc_format_combined_w_missing, aes(x = date, y = mean_temp_degC)) +
+  geom_line(data = feather_gap_lfc, aes(x = date, y = value, color = statistic)) +
   theme_minimal()
 ```
 
+```{r, include = F}
+# need reformat the dataset so can find the dates when min/max are NA (e.g. otherwise just won't ahve data)
+feather_hfc_format_wide <- feather_hfc_format_combined |> 
+  ungroup() |> 
+  select(-gage_agency, -gage_number) |> 
+pivot_wider(id_cols = c(stream, date, site_group), names_from = "statistic", values_from = "value", values_fill = NA)
+# set up dataframes for HFC
+feather_hfc_regression_data_full <- feather_hfc_format_wide |> 
+  ungroup() |> 
+  select(date, mean, max, min) |> 
+  rename(feather_temp_mean = mean,
+         feather_temp_min = min,
+         feather_temp_max = max) |> 
+  full_join(butte_format |> 
+              select(date, mean_temp_degC, max_temp_degC, min_temp_degC) |> 
+              rename(butte_temp_mean = mean_temp_degC,
+                     butte_temp_min = min_temp_degC,
+                     butte_temp_max = max_temp_degC))
+# identify gaps to predict data
+feather_gap_mean <- feather_hfc_regression_data_full |> 
+  filter(is.na(feather_temp_mean), !is.na(butte_temp_mean)) |> 
+  select(-c(feather_temp_mean, feather_temp_min, feather_temp_max)) |> 
+  rename(butte_temp = butte_temp_mean)
+feather_gap_min <- feather_hfc_regression_data_full |> 
+  filter(is.na(feather_temp_min), !is.na(butte_temp_min)) |> 
+ select(-c(feather_temp_mean, feather_temp_min, feather_temp_max)) |> 
+  rename(butte_temp = butte_temp_min)
+feather_gap_max <- feather_hfc_regression_data_full |> 
+  filter(is.na(feather_temp_max), !is.na(butte_temp_max)) |> 
+ select(-c(feather_temp_mean, feather_temp_min, feather_temp_max)) |> 
+  rename(butte_temp = butte_temp_max)
+
+feather_hfc_regression_data_mean <- feather_hfc_regression_data_full |> 
+  filter(!is.na(feather_temp_mean), !is.na(butte_temp_mean)) |> 
+  rename(butte_temp = butte_temp_mean,
+         temp = feather_temp_mean)
+
+# plot for mean
+ggplot(data = feather_hfc_regression_data_mean, aes(x = butte_temp, y = temp)) +
+  geom_point() +
+  stat_smooth(method = "lm")
+```
+
+```{r}
+# HFC regression and predictions
+
+# MEAN Regression
+split <-rsample::initial_split(feather_hfc_regression_data_mean, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+feather_hfc_mod_mean <- lm(temp ~ date + butte_temp, data = train)
+summary(feather_hfc_mod_mean)
+test_predict <- predict(feather_hfc_mod_mean, test)
+test_predict_df <- test |>
+  mutate(predicted = test_predict)
+# evaluate predictions - MAPE of 10% is not bad
+mean(abs((
+  test_predict_df$predicted - test_predict_df$temp
+)) / test_predict_df$temp)
+
+# Predictions
+feather_gap_predicted_mean_hfc <- predict(feather_hfc_mod_mean, feather_gap_mean)
+feather_hfc_mean_predicted <- feather_gap_mean |> 
+  mutate(value = feather_gap_predicted_mean_hfc,
+         statistic = "mean") |> 
+  select(date, value, statistic)
+ggplot(feather_hfc_mean_predicted, aes(x = date, y = value)) +
+  geom_line()
+feather_gap_predicted_min_hfc <- predict(feather_hfc_mod_mean, feather_gap_min)
+feather_hfc_min_predicted <- feather_gap_min |> 
+  mutate(value = feather_gap_predicted_min_hfc,
+         statistic = "min") |> 
+  select(date, value, statistic)
+ggplot(feather_hfc_min_predicted, aes(x = date, y = value)) +
+  geom_line()
+feather_gap_predicted_max_hfc <- predict(feather_hfc_mod_mean, feather_gap_max)
+feather_hfc_max_predicted <- feather_gap_max |> 
+  mutate(value = feather_gap_predicted_max_hfc,
+         statistic = "max") |> 
+  select(date, value, statistic)
+ggplot(feather_hfc_max_predicted, aes(x = date, y = value)) +
+  geom_line()
+
+feather_gap_hfc <- bind_rows(feather_hfc_max_predicted,
+                             feather_hfc_mean_predicted,
+                             feather_hfc_min_predicted) |> 
+  mutate(stream = "feather river",
+         gage_agency = "interpolated",
+         gage_number = "interpolated",
+         site_group = "feather river hfc") %>% 
+  bind_rows(feather_hfc_format_combined) |> 
+  group_by(stream, date, statistic, gage_agency, gage_number, site_group) |> 
+  distinct() |> 
+  full_join(feather_hfc_sites) |> 
+  glimpse()
+ggplot() +
+  geom_line(data = feather_gap_hfc, aes(x = date, y = value, color = statistic)) +
+  theme_minimal()
+
+```
 
 ## Mill Creek
 
@@ -628,71 +729,101 @@ ggplot() +
 #### Fill in data gaps
 
 ```{r}
-# gage: 2019-present
-min(yuba_format$date, na.rm = T)
-# monitoring data: 1999-2009
-min(yuba_rst_format$date)
-max(yuba_rst_format$date)
-
-# create dataframe to use in regression
+# combine butte and yuba together for regression modeling
 yuba_regression_data_full <- yuba_combined |> 
   ungroup() |> 
-  select(date, mean_temp_degC) |> 
-  rename(yuba_temp = mean_temp_degC) |> 
+  select(date, mean_temp_degC, max_temp_degC, min_temp_degC) |> 
+  rename(yuba_temp_mean = mean_temp_degC,
+         yuba_temp_min = min_temp_degC,
+         yuba_temp_max = max_temp_degC) |> 
   full_join(butte_format |> 
-              select(date, mean_temp_degC) |> 
-              rename(butte_temp = mean_temp_degC))
-# identify gap to predict data
-yuba_gap <- yuba_regression_data_full |> 
-  filter(is.na(yuba_temp), !is.na(butte_temp)) |> 
-  select(-yuba_temp)
-yuba_regression_data <- yuba_regression_data_full |> 
-  filter(!is.na(yuba_temp), !is.na(butte_temp))
+              select(date, mean_temp_degC, max_temp_degC, min_temp_degC) |> 
+              rename(butte_temp_mean = mean_temp_degC,
+                     butte_temp_min = min_temp_degC,
+                     butte_temp_max = max_temp_degC))
+# FOR PREDICTIONS identify gaps to predict data
+yuba_gap_mean <- yuba_regression_data_full |> 
+  filter(is.na(yuba_temp_mean), !is.na(butte_temp_mean)) |> 
+  select(-c(yuba_temp_mean, yuba_temp_min, yuba_temp_max)) |> 
+  rename(butte_temp = butte_temp_mean)
+yuba_gap_min <- yuba_regression_data_full |> 
+  filter(is.na(yuba_temp_min), !is.na(butte_temp_min)) |> 
+ select(-c(yuba_temp_mean, yuba_temp_min, yuba_temp_max)) |> 
+  rename(butte_temp = butte_temp_min)
+yuba_gap_max <- yuba_regression_data_full |> 
+  filter(is.na(yuba_temp_max), !is.na(butte_temp_max)) |> 
+select(-c(yuba_temp_mean, yuba_temp_min, yuba_temp_max)) |> 
+  rename(butte_temp = butte_temp_max)
 
-ggplot(data = yuba_regression_data, aes(x = butte_temp, y = yuba_temp)) +
+# FOR MODEL use data where there are no missing data for either butte or feather for regression modeling
+yuba_regression_data_mean <- yuba_regression_data_full |> 
+  filter(!is.na(yuba_temp_mean), !is.na(butte_temp_mean)) |> 
+  rename(butte_temp = butte_temp_mean,
+         temp = yuba_temp_mean)
+
+# plot for mean
+ggplot(data = yuba_regression_data_mean, aes(x = butte_temp, y = temp)) +
   geom_point() +
   stat_smooth(method = "lm")
-
-# test the model
-split <- rsample::initial_split(yuba_regression_data, prop = 0.8)
-train <- rsample::training(split)
-test <- rsample::testing(split)
-
-yuba_mod <- lm(yuba_temp ~ date + butte_temp, data = train)
-summary(yuba_mod)
-test_predict <- predict(yuba_mod, test)
-test_predict_df <- test |> 
-  mutate(yuba_predicted = test_predict,
-         percent_off = (yuba_temp - yuba_predicted)/yuba_temp) |> 
-  filter(!is.na(date))
-
-# MAPE of 10% is not bad
-mape <- mean(abs((test_predict_df$yuba_predicted - test_predict_df$yuba_temp))/test_predict_df$yuba_temp)
-
-yuba_predict <- predict(yuba_mod, yuba_gap)
-
-yuba_gap_predicted <- yuba_gap |> 
-  mutate(yuba_temp = yuba_predict) |> glimpse()
 ```
-
-#### Add in missing data
 
 ```{r}
-yuba_format_combined_w_missing <- bind_rows(yuba_combined,
-                                                   yuba_gap_predicted |> 
-                                                     select(date, yuba_temp) |> 
-                                                     rename(mean_temp_degC = yuba_temp) |> 
-                                                     mutate(stream = "yuba river",
-                                                            gage_agency = "interpolated",
-                                                            gage_number = "interpolated") |> 
-                                              full_join(yuba_sites)) %>% 
-  group_by(stream, date, mean_temp_degC, max_temp_degC, min_temp_degC, gage_agency, gage_number) |> 
-  distinct() |> glimpse()
+
+# MEAN Regression
+split <-rsample::initial_split(yuba_regression_data_mean, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+yuba_mod_mean <- lm(temp ~ date + butte_temp, data = train)
+summary(yuba_mod_mean)
+test_predict <- predict(yuba_mod_mean, test)
+test_predict_df <- test |>
+  mutate(predicted = test_predict)
+# evaluate predictions - MAPE of 10% is not bad
+mean(abs((
+  test_predict_df$predicted - test_predict_df$temp
+)) / test_predict_df$temp)
+
+# Predictions
+yuba_gap_predicted_mean <- predict(yuba_mod_mean, yuba_gap_mean)
+yuba_mean_predicted <- yuba_gap_mean |> 
+  mutate(value = yuba_gap_predicted_mean,
+         statistic = "mean") |> 
+  select(date, value, statistic)
+ggplot(yuba_mean_predicted, aes(x = date, y = value)) +
+  geom_line()
+yuba_gap_predicted_min <- predict(yuba_mod_mean, yuba_gap_min)
+yuba_min_predicted <- yuba_gap_min |> 
+  mutate(value = yuba_gap_predicted_min,
+         statistic = "min") |> 
+  select(date, value, statistic)
+ggplot(yuba_min_predicted, aes(x = date, y = value)) +
+  geom_line()
+yuba_gap_predicted_max <- predict(yuba_mod_mean, yuba_gap_max)
+yuba_max_predicted <- yuba_gap_max |> 
+  mutate(value = yuba_gap_predicted_max,
+         statistic = "max") |> 
+  select(date, value, statistic)
+ggplot(yuba_max_predicted, aes(x = date, y = value)) +
+  geom_line()
+
+yuba_gap <- bind_rows(yuba_max_predicted,
+                             yuba_mean_predicted,
+                             yuba_min_predicted) |> 
+  mutate(stream = "yuba river",
+         gage_agency = "interpolated",
+         gage_number = "interpolated") |> 
+  bind_rows(yuba_combined |> 
+              rename(mean = mean_temp_degC,
+                     min = min_temp_degC,
+                     max = max_temp_degC) |> 
+              pivot_longer(cols = mean:min, values_to = "value", names_to = "statistic")) |> 
+  group_by(stream, date, statistic, gage_agency, gage_number) |> 
+  full_join(yuba_sites) |> 
+  glimpse()
 ggplot() +
-  geom_line(data = yuba_format_combined_w_missing, aes(x = date, y = mean_temp_degC)) +
+  geom_line(data = yuba_gap, aes(x = date, y = value, color = statistic)) +
   theme_minimal()
 ```
-
 # Combine temperature data {.tabset}
 
 ```{r}
@@ -700,17 +831,16 @@ combined_temp <- bind_rows(battle_format,
                            butte_format_all,
                            clear_format,
                            deer_format,
-                           feather_lfc_format_combined_w_missing,
-                           feather_hfc_format_combined_w_missing,
                            mill_format,
-                           sac_format_all,
-                           yuba_format_combined_w_missing
+                           sac_format_all
                            ) %>%
   rename(mean  = mean_temp_degC,
          max = max_temp_degC,
          min = min_temp_degC) %>%
-  select(-site_group) |> 
   pivot_longer(cols = c(mean, max, min), names_to = "statistic", values_to = "value") |> 
+  bind_rows(feather_gap_hfc,
+            feather_gap_lfc,
+            yuba_gap) |> 
   glimpse()
 ```
 
