@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(zoo)
+library(googleCloudStorageR)
 ```
 
 # Overview
@@ -64,12 +65,17 @@ std_temp_dd_spawn <- standard_temperature |>
   group_by(date, stream, year) |> 
   summarize(max_mean = max(mean, na.rm = T)) |> 
   group_by(year, stream) |> 
-  summarize(gdd_spawn = sum(max_mean))
+  summarize(gdd_spawn = sum(max_mean)) |> glimpse()
   
 
 std_temp_dd_spawn |> 
   ggplot(aes(x = year, y = gdd_spawn, color = stream)) + 
   geom_line()
+
+# years for each stream, data are complete
+std_temp_dd_spawn |> 
+  ggplot(aes(x = year, y = stream)) + 
+  geom_point()
 ```
 
 ## Day of year when 7DADM drops above/below 13 C
@@ -110,7 +116,7 @@ std_temp_7dadm_above_13 <- std_temp_7dadm_interpolated |>
   group_by(year, stream) |> 
   slice_min(date) |> 
   select(date, year, week, stream) |> 
-  rename(above_13 = week)
+  rename(above_13 = week) |> glimpse()
 
 std_temp_7dadm_below_13 <- std_temp_7dadm_interpolated |> 
   filter(roll_7 < 13) |> 
@@ -130,13 +136,14 @@ std_temp_7dadm_threshold <- full_join(std_temp_7dadm_above_13,
 ggplot(std_temp_7dadm_threshold, aes(x = year, y = week, color = threshold)) +
   geom_point() +
   facet_wrap(~stream)
+
 ```
 
 ```{r}
 std_temp_7dadm_final <- std_temp_7dadm_above_13 |> 
-  rename(week = above_13) |> 
-  mutate(day = yday(date)) |> 
-  select(stream, date, day, week, year)
+  rename(above_13_temp_week = above_13) |> 
+  mutate(above_13_temp_day = yday(date)) |> 
+  select(stream, above_13_temp_day, above_13_temp_week, year) |> glimpse()
 ```
 
 ## Max temperature
@@ -153,22 +160,21 @@ std_temp_weekly <- standard_temperature |>
   summarize(w_max = max(value, na.rm = T)) |>  # find the max weekly temperature
   ungroup() |>
   group_by(stream, year) |> 
-  summarize(max = max(w_max, na.rm = T),
-            mean = mean(w_max, na.rm = T),
-            median = median(w_max, na.rm = T)) |> 
-  pivot_longer(cols = c(max, mean, median), names_to = "statistic", values_to = "weekly_max_temperature")
+  summarize(weekly_max_temp_max = max(w_max, na.rm = T),
+            weekly_max_temp_mean = mean(w_max, na.rm = T),
+            weekly_max_temp_median = median(w_max, na.rm = T)) |> glimpse()
   
 ```
 **Plot of mean, median, max of the maximum weekly temperature**
 
 ```{r}
 std_temp_weekly |> 
-  ggplot(aes(x = year, y = weekly_max_temperature, color = statistic)) +
+  ggplot(aes(x = year, y = weekly_max_temp_max)) +
   geom_line() +
   facet_wrap(~stream)
 ```
 
-## Emergence date
+## TODO Emergence date
 
 # Flow
 Precipitation and streamflow have been found to influence spawning and rearing. Therefore it is expected to affect the translation from stock to recruit. Streamflow can be included in multiple different formats including:
@@ -220,8 +226,51 @@ std_flow_rear_summary |>
   ggplot(aes(x = year, y = value, color = statistic)) +
   geom_line() +
   facet_wrap(~stream, scales = "free_y")
+
+std_flow_final <- std_flow_spawn_summary |> 
+  pivot_wider(id_cols = c(year, stream), values_from = "value", names_from = "statistic") |> 
+  rename(mean_flow = mean,
+         median_flow = median,
+         max_flow = max,
+         min_flow = min) |> 
+  mutate(lifestage = "spawning and incubation") |> 
+  bind_rows(std_flow_rear_summary |> 
+  pivot_wider(id_cols = c(year, stream), values_from = "value", names_from = "statistic") |> 
+  rename(mean_flow = mean,
+         median_flow = median,
+         max_flow = max,
+         min_flow = min) |> 
+  mutate(lifestage = "rearing")) |> glimpse()
   
 ```
 
+```{r, include = F}
 
+# Combine covariate data
+stock_recruit_covariates <- std_temp_dd_spawn |> 
+  mutate(lifestage = "spawning and incubation",
+         covariate_type = "temperature") |> 
+  full_join(std_temp_7dadm_final |> 
+              mutate(lifestage = NA_character_,
+                     covariate_type = "temperature")) |> 
+  full_join(std_temp_weekly |> 
+              mutate(lifestage = "spawning and incubation",
+                     covariate_type = "temperature")) |> 
+  full_join(std_flow_final |> 
+              mutate(covariate_type = "flow")) |>  
+  pivot_longer(cols = c(gdd_spawn, above_13_temp_day, above_13_temp_week, weekly_max_temp_max, weekly_max_temp_mean, weekly_max_temp_median, mean_flow, max_flow, min_flow, median_flow), values_to = "value", names_to = "covariate_structure") |> 
+  filter(!is.na(value)) |> 
+    glimpse()
+```
+
+```{r, include = F}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(stock_recruit_covariates,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/stock_recruit_covariates.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(stock_recruit_covariates, "data/model-data/stock_recruit_covariates.csv")
+```
 
