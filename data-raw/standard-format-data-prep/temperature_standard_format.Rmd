@@ -336,7 +336,7 @@ ggplot() +
   theme_minimal()
 ```
 
-#### Fill in data gapps
+#### Fill in data gaps
 
 Decided to build regression model between Butte Creek and Feather River data (using mean values)
 We will use this model to predict values for min, mean, and max
@@ -404,6 +404,14 @@ feather_lfc_regression_data_mean <- feather_lfc_regression_data_full |>
   filter(!is.na(feather_temp_mean), !is.na(butte_temp_mean)) |> 
   rename(butte_temp = butte_temp_mean,
          temp = feather_temp_mean)
+feather_lfc_regression_data_min <- feather_lfc_regression_data_full |> 
+  filter(!is.na(feather_temp_min), !is.na(butte_temp_min)) |> 
+  rename(butte_temp = butte_temp_min,
+         temp = feather_temp_min)
+feather_lfc_regression_data_max <- feather_lfc_regression_data_full |> 
+  filter(!is.na(feather_temp_max), !is.na(butte_temp_max)) |> 
+  rename(butte_temp = butte_temp_max,
+         temp = feather_temp_max)
 
 # plot for mean
 ggplot(data = feather_lfc_regression_data_mean, aes(x = butte_temp, y = temp)) +
@@ -411,7 +419,7 @@ ggplot(data = feather_lfc_regression_data_mean, aes(x = butte_temp, y = temp)) +
   stat_smooth(method = "lm")
 ```
 
-```{r}
+```{r, include = F}
 # LFC regression and predictions
 
 # MEAN Regression
@@ -428,6 +436,36 @@ mean(abs((
   test_predict_df$predicted - test_predict_df$temp
 )) / test_predict_df$temp)
 
+# MIN Regression
+split <-rsample::initial_split(feather_lfc_regression_data_min, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+feather_lfc_mod_min <- lm(temp ~ date + butte_temp, data = train)
+summary(feather_lfc_mod_min)
+test_predict <- predict(feather_lfc_mod_min, test)
+test_predict_df <- test |>
+  mutate(predicted = test_predict)
+# evaluate predictions - MAPE of 10% is not bad
+mean(abs((
+  test_predict_df$predicted - test_predict_df$temp
+)) / test_predict_df$temp)
+
+# MAX Regression
+split <-rsample::initial_split(feather_lfc_regression_data_max, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+feather_lfc_mod_max <- lm(temp ~ date + butte_temp, data = train)
+summary(feather_lfc_mod_max)
+test_predict <- predict(feather_lfc_mod_max, test)
+test_predict_df <- test |>
+  mutate(predicted = test_predict)
+# evaluate predictions - MAPE of 10% is not bad
+mean(abs((
+  test_predict_df$predicted - test_predict_df$temp
+)) / test_predict_df$temp)
+```
+
+```{r}
 # Predictions
 feather_gap_predicted_mean_lfc <- predict(feather_lfc_mod_mean, feather_gap_mean)
 feather_lfc_mean_predicted <- feather_gap_mean |> 
@@ -436,14 +474,14 @@ feather_lfc_mean_predicted <- feather_gap_mean |>
   select(date, value, statistic)
 ggplot(feather_lfc_mean_predicted, aes(x = date, y = value)) +
   geom_line()
-feather_gap_predicted_min_lfc <- predict(feather_lfc_mod_mean, feather_gap_min)
+feather_gap_predicted_min_lfc <- predict(feather_lfc_mod_min, feather_gap_min)
 feather_lfc_min_predicted <- feather_gap_min |> 
   mutate(value = feather_gap_predicted_min_lfc,
          statistic = "min") |> 
   select(date, value, statistic)
 ggplot(feather_lfc_min_predicted, aes(x = date, y = value)) +
   geom_line()
-feather_gap_predicted_max_lfc <- predict(feather_lfc_mod_mean, feather_gap_max)
+feather_gap_predicted_max_lfc <- predict(feather_lfc_mod_max, feather_gap_max)
 feather_lfc_max_predicted <- feather_gap_max |> 
   mutate(value = feather_gap_predicted_max_lfc,
          statistic = "max") |> 
@@ -455,14 +493,22 @@ feather_gap_lfc <- bind_rows(feather_lfc_max_predicted,
                              feather_lfc_mean_predicted,
                              feather_lfc_min_predicted) |> 
   mutate(stream = "feather river",
-         gage_agency = "interpolated",
-         gage_number = "interpolated",
          site_group = "feather river lfc") %>% 
-  bind_rows(feather_lfc_format_combined) |> 
+  pivot_wider(id_cols = c(date, stream, site_group), values_from = "value", names_from = "statistic") |>
+  rename(mean_i = mean,
+         max_i = max,
+         min_i = min) |> 
+  full_join(feather_lfc_format_combined |> 
+              pivot_wider(id_cols = c(stream, date, gage_agency, gage_number, site_group), values_from = "value", names_from = "statistic")) |> 
+  mutate(mean = ifelse(is.na(mean), mean_i, mean),
+         min = ifelse(is.na(min), min_i, min),
+         max = ifelse(is.na(max), max_i, max)) |> 
+  select(-c(min_i, mean_i, max_i)) |> 
+  pivot_longer(cols = mean:min, values_to = "value", names_to = "statistic") |> 
   group_by(stream, date, statistic, gage_agency, gage_number, site_group) |> 
-  distinct() |> 
   full_join(feather_lfc_sites) |> 
   glimpse()
+
 ggplot() +
   geom_line(data = feather_gap_lfc, aes(x = date, y = value, color = statistic)) +
   theme_minimal()
@@ -504,6 +550,14 @@ feather_hfc_regression_data_mean <- feather_hfc_regression_data_full |>
   filter(!is.na(feather_temp_mean), !is.na(butte_temp_mean)) |> 
   rename(butte_temp = butte_temp_mean,
          temp = feather_temp_mean)
+feather_hfc_regression_data_min <- feather_hfc_regression_data_full |> 
+  filter(!is.na(feather_temp_min), !is.na(butte_temp_min)) |> 
+  rename(butte_temp = butte_temp_min,
+         temp = feather_temp_min)
+feather_hfc_regression_data_max <- feather_hfc_regression_data_full |> 
+  filter(!is.na(feather_temp_max), !is.na(butte_temp_max)) |> 
+  rename(butte_temp = butte_temp_max,
+         temp = feather_temp_max)
 
 # plot for mean
 ggplot(data = feather_hfc_regression_data_mean, aes(x = butte_temp, y = temp)) +
@@ -511,7 +565,7 @@ ggplot(data = feather_hfc_regression_data_mean, aes(x = butte_temp, y = temp)) +
   stat_smooth(method = "lm")
 ```
 
-```{r}
+```{r, include = F}
 # HFC regression and predictions
 
 # MEAN Regression
@@ -528,6 +582,36 @@ mean(abs((
   test_predict_df$predicted - test_predict_df$temp
 )) / test_predict_df$temp)
 
+# MIN Regression
+split <-rsample::initial_split(feather_hfc_regression_data_min, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+feather_hfc_mod_min <- lm(temp ~ date + butte_temp, data = train)
+summary(feather_hfc_mod_min)
+test_predict <- predict(feather_hfc_mod_min, test)
+test_predict_df <- test |>
+  mutate(predicted = test_predict)
+# evaluate predictions - MAPE of 10% is not bad
+mean(abs((
+  test_predict_df$predicted - test_predict_df$temp
+)) / test_predict_df$temp)
+
+# MAX Regression
+split <-rsample::initial_split(feather_hfc_regression_data_max, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+feather_hfc_mod_max <- lm(temp ~ date + butte_temp, data = train)
+summary(feather_hfc_mod_max)
+test_predict <- predict(feather_hfc_mod_max, test)
+test_predict_df <- test |>
+  mutate(predicted = test_predict)
+# evaluate predictions - MAPE of 10% is not bad
+mean(abs((
+  test_predict_df$predicted - test_predict_df$temp
+)) / test_predict_df$temp)
+```
+
+```{r}
 # Predictions
 feather_gap_predicted_mean_hfc <- predict(feather_hfc_mod_mean, feather_gap_mean)
 feather_hfc_mean_predicted <- feather_gap_mean |> 
@@ -536,14 +620,14 @@ feather_hfc_mean_predicted <- feather_gap_mean |>
   select(date, value, statistic)
 ggplot(feather_hfc_mean_predicted, aes(x = date, y = value)) +
   geom_line()
-feather_gap_predicted_min_hfc <- predict(feather_hfc_mod_mean, feather_gap_min)
+feather_gap_predicted_min_hfc <- predict(feather_hfc_mod_min, feather_gap_min)
 feather_hfc_min_predicted <- feather_gap_min |> 
   mutate(value = feather_gap_predicted_min_hfc,
          statistic = "min") |> 
   select(date, value, statistic)
 ggplot(feather_hfc_min_predicted, aes(x = date, y = value)) +
   geom_line()
-feather_gap_predicted_max_hfc <- predict(feather_hfc_mod_mean, feather_gap_max)
+feather_gap_predicted_max_hfc <- predict(feather_hfc_mod_max, feather_gap_max)
 feather_hfc_max_predicted <- feather_gap_max |> 
   mutate(value = feather_gap_predicted_max_hfc,
          statistic = "max") |> 
@@ -555,10 +639,18 @@ feather_gap_hfc <- bind_rows(feather_hfc_max_predicted,
                              feather_hfc_mean_predicted,
                              feather_hfc_min_predicted) |> 
   mutate(stream = "feather river",
-         gage_agency = "interpolated",
-         gage_number = "interpolated",
          site_group = "feather river hfc") %>% 
-  bind_rows(feather_hfc_format_combined) |> 
+  pivot_wider(id_cols = c(date, stream, site_group), values_from = "value", names_from = "statistic") |>
+  rename(mean_i = mean,
+         max_i = max,
+         min_i = min) |> 
+  full_join(feather_hfc_format_combined |> 
+              pivot_wider(id_cols = c(stream, date, gage_agency, gage_number, site_group), values_from = "value", names_from = "statistic")) |> 
+  mutate(mean = ifelse(is.na(mean), mean_i, mean),
+         min = ifelse(is.na(min), min_i, min),
+         max = ifelse(is.na(max), max_i, max)) |> 
+  select(-c(min_i, mean_i, max_i)) |> 
+  pivot_longer(cols = mean:min, values_to = "value", names_to = "statistic") |> 
   group_by(stream, date, statistic, gage_agency, gage_number, site_group) |> 
   distinct() |> 
   full_join(feather_hfc_sites) |> 
@@ -760,14 +852,21 @@ yuba_regression_data_mean <- yuba_regression_data_full |>
   filter(!is.na(yuba_temp_mean), !is.na(butte_temp_mean)) |> 
   rename(butte_temp = butte_temp_mean,
          temp = yuba_temp_mean)
-
+yuba_regression_data_min <- yuba_regression_data_full |> 
+  filter(!is.na(yuba_temp_min), !is.na(butte_temp_min)) |> 
+  rename(butte_temp = butte_temp_min,
+         temp = yuba_temp_min)
+yuba_regression_data_max <- yuba_regression_data_full |> 
+  filter(!is.na(yuba_temp_max), !is.na(butte_temp_max)) |> 
+  rename(butte_temp = butte_temp_max,
+         temp = yuba_temp_max)
 # plot for mean
 ggplot(data = yuba_regression_data_mean, aes(x = butte_temp, y = temp)) +
   geom_point() +
   stat_smooth(method = "lm")
 ```
 
-```{r}
+```{r, include = F}
 
 # MEAN Regression
 split <-rsample::initial_split(yuba_regression_data_mean, prop = 0.8)
@@ -783,6 +882,36 @@ mean(abs((
   test_predict_df$predicted - test_predict_df$temp
 )) / test_predict_df$temp)
 
+# MIN Regression
+split <-rsample::initial_split(yuba_regression_data_min, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+yuba_mod_min <- lm(temp ~ date + butte_temp, data = train)
+summary(yuba_mod_min)
+test_predict <- predict(yuba_mod_min, test)
+test_predict_df <- test |>
+  mutate(predicted = test_predict)
+# evaluate predictions - MAPE of 10% is not bad
+mean(abs((
+  test_predict_df$predicted - test_predict_df$temp
+)) / test_predict_df$temp)
+
+# MAX Regression
+split <-rsample::initial_split(yuba_regression_data_max, prop = 0.8)
+train <- rsample::training(split)
+test <- rsample::testing(split)
+yuba_mod_max <- lm(temp ~ date + butte_temp, data = train)
+summary(yuba_mod_max)
+test_predict <- predict(yuba_mod_max, test)
+test_predict_df <- test |>
+  mutate(predicted = test_predict)
+# evaluate predictions - MAPE of 10% is not bad
+mean(abs((
+  test_predict_df$predicted - test_predict_df$temp
+)) / test_predict_df$temp)
+```
+
+```{r}
 # Predictions
 yuba_gap_predicted_mean <- predict(yuba_mod_mean, yuba_gap_mean)
 yuba_mean_predicted <- yuba_gap_mean |> 
@@ -791,14 +920,14 @@ yuba_mean_predicted <- yuba_gap_mean |>
   select(date, value, statistic)
 ggplot(yuba_mean_predicted, aes(x = date, y = value)) +
   geom_line()
-yuba_gap_predicted_min <- predict(yuba_mod_mean, yuba_gap_min)
+yuba_gap_predicted_min <- predict(yuba_mod_min, yuba_gap_min)
 yuba_min_predicted <- yuba_gap_min |> 
   mutate(value = yuba_gap_predicted_min,
          statistic = "min") |> 
   select(date, value, statistic)
 ggplot(yuba_min_predicted, aes(x = date, y = value)) +
   geom_line()
-yuba_gap_predicted_max <- predict(yuba_mod_mean, yuba_gap_max)
+yuba_gap_predicted_max <- predict(yuba_mod_max, yuba_gap_max)
 yuba_max_predicted <- yuba_gap_max |> 
   mutate(value = yuba_gap_predicted_max,
          statistic = "max") |> 
@@ -807,19 +936,23 @@ ggplot(yuba_max_predicted, aes(x = date, y = value)) +
   geom_line()
 
 yuba_gap <- bind_rows(yuba_max_predicted,
-                             yuba_mean_predicted,
-                             yuba_min_predicted) |> 
-  mutate(stream = "yuba river",
-         gage_agency = "interpolated",
-         gage_number = "interpolated") |> 
-  bind_rows(yuba_combined |> 
-              rename(mean = mean_temp_degC,
-                     min = min_temp_degC,
-                     max = max_temp_degC) |> 
-              pivot_longer(cols = mean:min, values_to = "value", names_to = "statistic")) |> 
+                      yuba_mean_predicted,
+                      yuba_min_predicted) |> 
+  mutate(stream = "yuba river") |> 
+  pivot_wider(id_cols = c(date, stream), values_from = "value", names_from = "statistic") |> 
+  full_join(yuba_combined) |> 
+  mutate(mean_temp_degC = ifelse(is.na(mean_temp_degC), mean, mean_temp_degC),
+         min_temp_degC = ifelse(is.na(min_temp_degC), min, min_temp_degC),
+         max_temp_degC = ifelse(is.na(max_temp_degC), max, max_temp_degC)) |> 
+  select(-c(mean, max, min)) |> 
+    rename(mean = mean_temp_degC,
+           min = min_temp_degC,
+           max = max_temp_degC) |> 
+    pivot_longer(cols = mean:min, values_to = "value", names_to = "statistic") |>
   group_by(stream, date, statistic, gage_agency, gage_number) |> 
   full_join(yuba_sites) |> 
   glimpse()
+
 ggplot() +
   geom_line(data = yuba_gap, aes(x = date, y = value, color = statistic)) +
   theme_minimal()
