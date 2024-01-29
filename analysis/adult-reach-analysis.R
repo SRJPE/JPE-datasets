@@ -24,6 +24,22 @@ gcs_get_object(object_name = "standard-format-data/standard_holding.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "standard-format-data", "standard_holding.csv"),
                overwrite = TRUE)
+# battle and clear survey reaches
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/resources_Battle_Clear_Reach_Breaks_Adult_Surveys.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", 
+                                       "battle-clear-creek-survey-reaches.xlsx"),
+               overwrite = TRUE)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/carcass/2017_2021/CAMP_Escapement_20210412.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", 
+                                       "feather-river", "feather_carcass_2017_2021.mdb"),
+               overwrite = TRUE)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-river/data-raw/feather_reach_clarification_CJC_edits.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
+                                       "feather-river", "feather_reach_clarification_CJC_edits.csv"),
+               overwrite = TRUE)
 
 # read in adult data files
 
@@ -34,7 +50,7 @@ annual_redd <- read.csv(here::here("data", "standard-format-data", "standard_ann
 carcass <- read.csv(here::here("data", "standard-format-data", "standard_carcass.csv"))
 holding <- read.csv(here::here("data", "standard-format-data", "standard_holding.csv"))
 
-# this file is stored in the google drive: https://drive.google.com/drive/u/0/folders/1vv_QV9NdiIc4tlWPPB3UBs1s8idBOiSB
+# this file is stored in the google drive: https://drive.google.com/drive/u/0/folders/1vv_QV9NdiIc4tlWPPB3UBs1s8idBOiSB and also on the GCP bucket (read in above)
 battle_clear_reaches <- readxl::read_xlsx(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys", "battle-creek", 
                                              "battle-clear-creek-survey-reaches.xlsx"))
 # extract CAMP descriptions of feather reaches
@@ -47,7 +63,8 @@ CAMP_feather_reach_categorization <- mdb.get(file = here::here("data-raw", "qc-m
 detach(package:Hmisc)
 
 # read in original reach list file
-reach_list_raw <- read.csv(here::here("analysis", "reach_list.csv"))
+# this isn't being used for anything
+# reach_list_raw <- read.csv(here::here("analysis", "reach_list.csv"))
 
 
 # Battle Creek ------------------------------------------------------------
@@ -388,9 +405,9 @@ standard_feather_reaches <- tibble("standardized_reach" = c(as.character(seq(1, 
                                                         "historical reach - no description in data/source"))
 
 # read in feather corrected reach list file (from Casey Campos 1-22-2024)
-feather_reach_clarification <- read.csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
-                                                   "feather-river", "feather_reach_clarification_CJC edits.csv")) |> 
-  select(reach = reach_name, clarified_categorization = LFC.HFC, clarified_reach_description = Notes) |> 
+feather_reach_clarification <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
+                                                   "feather-river", "feather_reach_clarification_CJC_edits.csv")) |> 
+  select(reach = reach_name, clarified_categorization = `LFC/HFC`, clarified_reach_description = Notes) |> 
   mutate(clarified_categorization = ifelse(clarified_categorization == "HFC", "HFC - high flow channel", "unknown"),
          clarified_reach_description = ifelse(clarified_reach_description == "", "historical reach - not in use", clarified_reach_description)) |> 
   glimpse()
