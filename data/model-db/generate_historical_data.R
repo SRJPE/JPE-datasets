@@ -633,7 +633,9 @@ passage <- passage_raw |>
   mutate(stream = tolower(stream),
          reach = NA,
          sex = ifelse(is.na(sex), "not recorded", sex),
-         passage_direction = ifelse(is.na(passage_direction), "not recorded", passage_direction)) |> 
+         passage_direction = ifelse(is.na(passage_direction), "not recorded", passage_direction),
+         count = case_when(count < 0 ~ 0,
+                           T ~ round(count))) |> 
   # need to add survey location lookup
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
