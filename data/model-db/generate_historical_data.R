@@ -219,7 +219,8 @@ trap <- trap_raw |>
   mutate(trap_visit_time_start = case_when(!is.na(trap_start_time) ~ ymd_hms(paste(trap_start_date, trap_start_time)),
                                            T ~ ymd(trap_start_date)),
          trap_visit_time_end = case_when(!is.na(trap_stop_time) ~ ymd_hms(paste(trap_stop_date, trap_stop_time)),
-                                         T ~ ymd(trap_stop_date))) |> 
+                                         T ~ ymd(trap_stop_date)),
+         rpm_end = ifelse(is.infinite(rpm_end), NA, rpm_end)) |> 
   select(-c(trap_start_time, trap_start_date, trap_stop_time, trap_stop_date)) |> 
  select(c(trap_location_id, visit_type_id, trap_visit_time_start, trap_visit_time_end,
             trap_functioning_id, in_half_cone_configuration, fish_processed_id,
@@ -391,8 +392,7 @@ recaptured_fish <- recapture_raw |>
   # lifestage_id
   left_join(select(lifestage, -description), by = c("lifestage" = "definition")) |> 
   rename(lifestage_id = id) |> 
-  select(-lifestage) |> 
-  mutate(actual_count = NA)
+  select(-lifestage) 
 
 unique(recaptured_fish$trap_location_id)
 unique(recaptured_fish$run_id)
