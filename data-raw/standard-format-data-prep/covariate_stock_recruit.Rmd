@@ -22,9 +22,9 @@ The goal of this document is to process covariates for use in SR JPE stock recru
 Temperature has been found to influence spawning and rearing. Therefore it is expected to affect the translation from stock to recruit. Temperature can be included in multiple different formats including:
 
 - Number of degree days
-- Day of year when 7DADM drops below 13 C
+- Day of year when 7DADM is above 13 C
 - Maximum weekly stream temperature
-- Emergence date (calculated from degree days and median spawning date)
+- In development: Emergence date (calculated from degree days and median spawning date)
 
 ```{r, include=F}
 # google cloud set up
@@ -38,36 +38,38 @@ gcs_get_object(object_name = "standard-format-data/standard_temperature.csv",
 standard_temperature <- read_csv("data/standard-format-data/standard_temperature.csv")
 ```
 
-## Number of degree days (we are skipping this part for now)
-DD= ((Tmax + Tmin / 2) - T0), where Tmax and Tmin are daily ambient temps, and T0 is the base or threshold temp
-Citation: Chezik, Kyle & Lester, Nigel & Venturelli, Paul. (2014). Fish growth and degree-days I: Selecting a base temperature for a within-population study. Canadian Journal of Fisheries and Aquatic Sciences. 71. 47-55. 10.1139/cjfas-2013-0295. 
-```{r}
-# We are stating with Butte data because its ok and would be a good placeholder
+## Number of degree days
 
-# butte_std_temp <- read.csv(here::here("data-raw", "standard-format-data-prep", "temp_data", "standard_temperature.csv")) |>
-#   filter(stream == "butte creek")
-# 
-# 
-# butte_std_temp$date <- as.Date(butte_std_temp$date)
-# glimpse(butte_std_temp)
-# 
-# #setting up by water years
-# butte_dd <- butte_std_temp |> 
-#   mutate(month= month(date), 
-#          wyear= ifelse(month %in% (10:12), year(date)+1, year(date))) |>  
-#   filter(month>=11 | month<=4) |> 
-#   mutate(degdays=((mean_daily_temp_c + max_daily_temp_c) / 2) - 2) 
-# 
-# butte_dd_sum <- butte_dd |> 
-#   group_by(wyear) |> 
-#   summarise(totalddays=sum(degdays))
-# 
-# #plotting
-# ggplot(butte_dd, aes(as.factor(wyear), degdays))+
-#   geom_boxplot()
-# ggplot(butte_dd_sum, aes(wyear, totalddays)) +
-#   geom_col()
-# ?water_year_indices
+- Includes the sum of the daily mean temperatures between August and December (spawning time period) by year and stream. Note that for streams with multiple locations the max daily mean was selected.
+
+```{r}
+# 1. Filter data to the spawning and incubation time period
+# 2. Calculate the DD (use 0 as threshold for now)
+
+# ck_complete_years <- standard_temperature |> 
+#   group_by(year(date), stream) |> 
+#   summarize(min = min(date),
+#             month_min = month(min)) |> 
+#   filter(month_min > 8)
+# Need to remove following years because incomplete: 1997 feather river, 1998 deer mill, 1999 butte and yuba
+std_temp_dd_spawn <- standard_temperature |> 
+  mutate(year = year(date),
+         rm = case_when(stream %in% c("feather river") & year == 1997 ~ "incomplete",
+                        stream %in% c("deer creek", "mill creek") & year == 1998 ~ "incomplete",
+                        stream %in% c("butte creek", "yuba river") & year == 1999 ~ "incomplete",
+                        T ~ "complete")) |> 
+  filter(month(date) %in% c(8:12), stream != "sacramento river", rm != "incomplete") |> # filter to the spawning and incubation time period, not including sacramento because spawning is happening in tributaries
+  select(date, year, stream, site, subsite, statistic, value) |> 
+  pivot_wider(id_cols = c(date, year, stream, site, subsite), values_from = "value", names_from = "statistic") |> 
+  group_by(date, stream, year) |> 
+  summarize(max_mean = max(mean, na.rm = T)) |> 
+  group_by(year, stream) |> 
+  summarize(gdd_spawn = sum(max_mean))
+  
+
+std_temp_dd_spawn |> 
+  ggplot(aes(x = year, y = gdd_spawn, color = stream)) + 
+  geom_line()
 ```
 
 ## Day of year when 7DADM drops above/below 13 C
@@ -170,21 +172,56 @@ std_temp_weekly |>
 
 # Flow
 Precipitation and streamflow have been found to influence spawning and rearing. Therefore it is expected to affect the translation from stock to recruit. Streamflow can be included in multiple different formats including:
-- Mean precipitation (or streamflow)
-- Max monthly precipitation (or streamflow)
-
-TODO update this section with more information about sources if do literature review or add additional types
+- Mean, meadian, max precipitation (or streamflow)
 
 ```{r, include=F}
-# Flow data pull
-# 1. Review ~/data-raw/standard-format-data-prep/flow_data_prep_files/flow_data_prep.Rmd
-# 2. Source data prep
-# source(knitr::purl(here::here("data-raw", "standard-format-data-prep", "flow_data_prep_files", "flow_data_prep.Rmd"), quiet=TRUE)) # after reviewing we will likely just source the data prep file here so you have access to all the data objects
+gcs_get_object(object_name = "standard-format-data/standard_flow.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/standard-format-data/standard_flow.csv",
+               overwrite = TRUE)
+standard_flow <- read_csv("data/standard-format-data/standard_flow.csv")
 ```
 
+## Mean, median, max flow
 
-## Mean flow
+```{r}
+std_flow_spawn_summary <- standard_flow |> 
+  mutate(year = year(date)) |> 
+  filter(month(date) %in% c(8:12), stream != "sacramento river") |> 
+  group_by(date, year, stream) |> 
+  summarize(flow_cfs = max(flow_cfs)) |> 
+  group_by(year, stream) |> 
+  summarize(mean = mean(flow_cfs, na.rm = T),
+            median = median(flow_cfs, na.rm = T),
+            max = max(flow_cfs, na.rm = T),
+            min = min(flow_cfs, na.rm = T)) |> 
+  pivot_longer(cols = mean:min, values_to = "value", names_to = "statistic") |> 
+  mutate(value = ifelse(is.nan(value) | is.infinite(value), NA_real_, value))
 
-## Max flow
+std_flow_spawn_summary |> 
+  ggplot(aes(x = year, y = value, color = statistic)) +
+  geom_line() +
+  facet_wrap(~stream, scales = "free_y")
+
+std_flow_rear_summary <- standard_flow |> 
+  mutate(year = ifelse(month(date) %in% c(10:12), year(date) + 1, year(date))) |> 
+  filter(month(date) %in% c(11:12, 1:7), stream != "sacramento river") |> 
+  group_by(date, year, stream) |> 
+  summarize(flow_cfs = max(flow_cfs)) |> 
+  group_by(year, stream) |> 
+  summarize(mean = mean(flow_cfs, na.rm = T),
+            median = median(flow_cfs, na.rm = T),
+            max = max(flow_cfs, na.rm = T),
+            min = min(flow_cfs, na.rm = T)) |> 
+  pivot_longer(cols = mean:min, values_to = "value", names_to = "statistic") |> 
+  mutate(value = ifelse(is.nan(value) | is.infinite(value), NA_real_, value))
+
+std_flow_rear_summary |> 
+  ggplot(aes(x = year, y = value, color = statistic)) +
+  geom_line() +
+  facet_wrap(~stream, scales = "free_y")
+  
+```
+
 
 
