@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 library(tidyverse)
 library(googleCloudStorageR)
+library(hms)
 color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
 ```
 
@@ -59,6 +60,12 @@ Below we read in the adult upstream passage data for each monitoring program and
 
 No columns are removed from battle creek upstream passage video data.
 
+Upstream passage monitoring switches from trap/spawning building to video passage
+based on temperature. These two data types should both be considered upstream passage
+and are additive.
+
+TODO - Verify that we should remove the fish with status "given to hatchery" from the spawning-building dataset. Do we know run for spawning-building dataset?
+
 ```{r}
 # Set your authentication using gcs_auth
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
@@ -70,17 +77,54 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/battle-creek/dat
                saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "battle_adult_upstream.csv"),
                overwrite = TRUE)
 
-battle_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "battle_adult_upstream.csv")) %>% 
-  mutate(stream = "Battle Creek") %>% 
-  filter(count != 0) %>% # occurs when catch of non chinook fish
-  glimpse
+battle_video <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "battle_adult_upstream.csv")) %>% 
+  mutate(stream = "battle creek",
+         method = "video",
+         adipose_clipped = case_when(adipose == "present" ~ F, # originally adipose was present/absent which maps to F/T for clipped
+                             adipose == "absent" ~ T)) %>% 
+  filter(count != 0) %>% # occurs when catch of non chinook fish 
+  select(-adipose) |> 
+  glimpse()
+
+video_start_date <- battle_video |> 
+  group_by(year = year(date)) |> 
+  summarize(start_date = min(date))
+# battle_video |> 
+#   mutate(day = day(date),
+#          month = month(date),
+#          year = year(date),
+#          fake_date = as_date(paste0("2000-", month, "-", day))) |> 
+#   ggplot(aes(x = fake_date, y = count, color = year)) +
+#   geom_point()
 
 gcs_get_object(object_name = "adult-upstream-passage-monitoring/battle-creek/data/battle_passage_trap.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "battle_passage_trap.csv"),
                overwrite = TRUE)
 
-battle_spawning_building <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "battle_passage_trap.csv"))
+battle_spawning_building <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "battle_passage_trap.csv")) |> 
+  mutate(stream = "battle creek",
+         method = "trap",
+         time = as_hms(trap_beg),
+         adipose_clipped = case_when(adipose == "present" ~ F, # originally adipose was present/absent which maps to F/T for clipped
+                             adipose == "absent" ~ T)) 
+# battle_spawning_building |> 
+#   mutate(day = day(date),
+#          month = month(date),
+#          fake_date = as_date(paste0("2000-", month, "-", day))) |> 
+#   ggplot(aes(x = fake_date, y = count)) +
+#   geom_point()
+spawning_end_date <- battle_spawning_building |> 
+  group_by(year = year(date)) |> 
+  summarize(end_date = max(date))
+
+date_switch <- full_join(video_start_date, spawning_end_date)
+
+battle_upstream_passage <- battle_video |> 
+  bind_rows(battle_spawning_building |> 
+              select(date, stream, time, count, sex, confidence_in_sex, fork_length, adipose_clipped, status) |> 
+              mutate(dead = ifelse(status %in% c("sacraficed", "mortality", "dead in pond"), T, F)) |> # label mortalities
+              filter(status != "given to the hatchery")) # remove fish that will spawn in hatchery because not part of spawning population
 
 ```
 
@@ -114,15 +158,15 @@ battle_spawning_building <- read_csv(here::here("data", "adult-upstream-passage-
 
 ```{r}
 # download file as csv
-# gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/data/clear_passage.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/adult-upstream-passage-monitoring/clear_adult_upstream.csv",
-#                overwrite = TRUE)
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/data/clear_passage.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "clear_adult_upstream.csv"),
+               overwrite = TRUE)
 
-clear_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/clear_adult_upstream.csv") %>% 
+clear_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "clear_adult_upstream.csv")) %>% 
   select(-time_block) %>%
   rename(time = time_passed) %>% 
-  mutate(stream = "Clear Creek",
+  mutate(stream = "clear creek",
          viewing_condition = case_when( 
            viewing_condition == 1 ~ "normal",  
            viewing_condition == 2 ~ "readable",  
@@ -134,27 +178,32 @@ clear_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring
            spawning_condition == 3 ~ "full spawn coloration",
            spawning_condition == 4 ~ "post spawn",
            spawning_condition == 5 ~ "unknown"
-         )) %>% 
+         ),
+         adipose_clipped = case_when(adipose == "present" ~ F, # originally adipose was present/absent which maps to F/T for clipped
+                             adipose == "absent" ~ T),
+         method = "video") %>% 
   filter(count != 0) %>% # occurs when catch of non chinook fish
-  glimpse
+  select(-adipose) |> 
+  glimpse()
 ```
 
 ### Deer Creek
 
 #### Columns Removed
 
-No columns are removed from battle creek upstream passage video data.
+No columns are removed from deer creek upstream passage video data.
 
 ```{r}
 # download file as csv
-# gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "../../data/adult-upstream-passage-monitoring/deer_adult_upstream.csv",
-#                overwrite = TRUE)
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "deer_adult_upstream.csv"),
+               overwrite = TRUE)
 
-deer_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/deer_adult_upstream.csv") %>% 
+deer_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "deer_adult_upstream.csv")) %>% 
     rename(count = passage_estimate) %>% # confirm with matt johnson that this is a count not a modeled passage
-    mutate(stream = "Deer Creek") %>% 
+    mutate(stream = "deer creek",
+           method = "video") %>% 
     glimpse
 ```
 
@@ -162,19 +211,20 @@ deer_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/
 
 #### Columns Removed
 
-No columns are removed from battle creek upstream passage video data.
+No columns are removed from mill creek upstream passage video data.
 
 ```{r}
 
 # download file as csv
-# gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv",
-#                 bucket = gcs_get_global_bucket(),
-#                 saveToDisk = "../../data/adult-upstream-passage-monitoring/mill_adult_upstream.csv",
-#                 overwrite = TRUE)
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv",
+                bucket = gcs_get_global_bucket(),
+                saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "mill_adult_upstream.csv"),
+                overwrite = TRUE)
 
-mill_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/mill_adult_upstream.csv") %>% 
+mill_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "mill_adult_upstream.csv")) %>% 
   rename(count = passage_estimate) %>% # confirm with matt johnson that this is a count not a modeled passage
-  mutate(stream = "Mill Creek") %>% 
+  mutate(stream = "mill creek",
+         method = "video") %>% 
   glimpse
 ```
 
@@ -197,27 +247,28 @@ The following columns were removed from the Yuba River dataset. There was no cle
 ```{r}
 
 # download file as csv
-# gcs_get_object(object_name = "adult-upstream-passage-monitoring/yuba-river/data/yuba_upstream_passage.csv",
-#                 bucket = gcs_get_global_bucket(),
-#                 saveToDisk = "../../data/adult-upstream-passage-monitoring/yuba_adult_upstream.csv",
-#                 overwrite = TRUE)
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/yuba-river/data/yuba_upstream_passage.csv",
+                bucket = gcs_get_global_bucket(),
+                saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "yuba_adult_upstream.csv"),
+                overwrite = TRUE)
 
-yuba_upstream_passage <- read_csv("../../data/adult-upstream-passage-monitoring/yuba_adult_upstream.csv") %>% 
+yuba_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "yuba_adult_upstream.csv")) %>% 
   select(-category, -speed_m_per_s, -length_cm, 
          -depth_m, -position_in_frame) %>% # No clear methodology shared by yuba on these data and how they should be used  
-  mutate(stream = "Yuba River") %>% 
+  mutate(stream = "yuba river",
+         method = "video",
+         adipose_clipped = case_when(adipose == "clipped" ~ T)) %>% 
+  select(-adipose) |> 
   distinct() %>%
   glimpse
-View(yuba_upstream_passage)
 ```
 
-## Combine data:
+## Combine data
 
 ```{r}
 combined_upstream_passage <- bind_rows(battle_upstream_passage, clear_upstream_passage, 
                                        deer_upstream_passage, mill_upstream_passage, 
                                        yuba_upstream_passage) %>% 
-  rename(adipose_clipped = adipose) %>%
   relocate(stream, date, time, count, run, adipose_clipped, sex, passage_direction, 
            viewing_condition, spawning_condition, jack_size, ladder, flow, temperature, hours) %>%
   glimpse
@@ -297,8 +348,9 @@ combined_upstream_passage <- combined_upstream_passage %>%
                          run == "LF" ~ "late fall",
                          run == "WR" ~ "winter", 
                          run == "FR" ~ "fall", 
-                         run == "unknown" ~ "unknown"),
-         run = ifelse(stream %in% c("Mill Creek", "Deer Creek"), "spring", run))
+                         run == "unknown" ~ "unknown",
+                         is.na(run) ~ "not recorded"),
+         run = ifelse(stream %in% c("mill creek", "deer creek"), "spring", run))
 
 combined_upstream_passage %>% 
   group_by(stream) %>%
@@ -318,11 +370,6 @@ unique(combined_upstream_passage$adipose_clipped)
 
 
 ```{r}
-combined_upstream_passage <- combined_upstream_passage %>% 
-  mutate(adipose_clipped = case_when(adipose_clipped == "absent" ~ TRUE, 
-                                     adipose_clipped == "present" ~ FALSE, 
-                                     adipose_clipped == "clipped" ~ TRUE))
-
 combined_upstream_passage %>% 
   group_by(stream) %>%
   summarise(origin = unique(adipose_clipped) %>% base::paste(collapse = ', ')) 
@@ -330,13 +377,18 @@ combined_upstream_passage %>%
 
 ### sex
 
-Clear Creek is the only stream that reports data on the sex of fish
+Clear and Battle Creek is the only stream that reports data on the sex of fish
 
 ```{r}
 combined_upstream_passage %>% 
   group_by(stream) %>%
   summarise(sex = unique(sex) %>% base::paste(collapse = ', ')) 
 
+combined_upstream_passage <- combined_upstream_passage |> 
+  mutate(sex = case_when(sex == "F" ~ "female",
+                         sex == "M" ~ "male",
+                         is.na(sex) ~ "not recorded",
+                         T ~ sex))
 unique(combined_upstream_passage$sex)
 
 ```
@@ -428,7 +480,7 @@ combined_upstream_passage %>%
 
 ```{r}
 combined_upstream_passage %>% 
-  filter(stream %in% c("Mill Creek", "Deer Creek")) %>%
+  filter(stream %in% c("mill creek", "deer creek")) %>%
   ggplot() +
   geom_line(aes(x = date, y = flow, color = stream), size = 1) + 
   scale_color_manual(values = color_pal) +
@@ -455,7 +507,7 @@ combined_upstream_passage %>%
 
 ```{r}
 combined_upstream_passage %>% 
-  filter(stream %in% c("Mill Creek", "Deer Creek")) %>%
+  filter(stream %in% c("mill creek", "deer creek")) %>%
   ggplot() +
   geom_line(aes(x = date, y = temperature, color = stream), size = 1) + 
   scale_color_manual(values = color_pal) +
@@ -468,18 +520,21 @@ combined_upstream_passage %>%
 ## Save Cleaned Data to Google Cloud
 
 ```{r}
-clean_passage <- combined_upstream_passage
+clean_passage <- combined_upstream_passage 
 
 knitr::kable(clean_passage %>% head)
 ```
 
-```{r, eval=FALSE}
+```{r}
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
-write_csv(clean_passage, "../../data/standard-format-data/standard_adult_upstream_passage.csv")
+write_csv(clean_passage, here::here("data", "standard-format-data", "standard_adult_upstream_passage.csv"))
+
 f <- function(input, output) write_csv(input, file = output)
+
 gcs_upload(clean_passage,
            object_function = f,
            type = "csv",
-           name = "standard-format-data/standard_adult_upstream_passage.csv")
+           name = "standard-format-data/standard_adult_upstream_passage.csv",
+           predefinedAcl = "bucketLevel")
 ```
