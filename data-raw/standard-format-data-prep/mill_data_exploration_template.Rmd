@@ -20,7 +20,7 @@ library(hms)
 library(dplyr)
 ```
 
-# Deer Creek [Data type long version]
+# Mill Creek [Data type long version]
 
 ## Description of Monitoring Data
 
@@ -128,7 +128,7 @@ mill_plot <- ggplot(mill_temp, aes(x = date, y = temperature)) +
 
 print(mill_plot)
 
-#adding CDEC data to plot with it and compare
+#adding CDEC data to plot with it and compare (with removed outliers from CDEC using 0-40C range)
 MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
 
 
