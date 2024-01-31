@@ -33,7 +33,7 @@ to be added to the database without creating a seperate table.
 
 ## Standard format for Adult All Redd Data
 
-Data dictionary for standard format for `all_redd_data`:
+Data dictionary for standard format for `redd_data_final`:
 
 (B - Battle Creek, C - Clear Creek,\
 F - Feather River, Y - Yuba River)
@@ -300,6 +300,29 @@ all_redd_data <- bind_rows(clean_battle_redd,
          run = ifelse(is.na(run), "not recorded", run))
 ```
 
+## Survey Reach Standardization
+
+Survey reach naming conventions changed over time for several monitoring programs. A standardized reach lookup table was created in `analysis/adult-reach-analysis.R` and is merged in here to standardize all reaches.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+gcs_get_object(
+  object_name = "jpe-model-data/standard_reach_lookup.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "standard-format-data", "standard-reach-lookup.csv"),
+  overwrite = TRUE
+)
+
+standard_reach_lookup <- read_csv(here::here("data", "standard-format-data", "standard-reach-lookup.csv")) |> 
+  select(reach, standardized_reach)
+
+redd_data_final <- all_redd_data |> 
+  left_join(standard_reach_lookup) |> 
+  select(-reach) |> 
+  rename(reach = standardized_reach) |> 
+  relocate(reach, .before = river_mile) |> 
+  glimpse()
+```
+
 ## Substrate Size Standardization
 
 Substrate sizes were given names and classes following the Wentworth Scale, created by W.C. Krumbein. This scale is what is commonly used in the United States. The substrate size provided for redd data was standardized using this scale. When the size range fell into two categories, they were rounded down.
@@ -335,10 +358,10 @@ substrate_class = data.frame("standardized_size_range" = c("<0.25",
                                                     "medium gravel", 
                                                     "coarse gravel to boulder"))
 
-unique(all_redd_data$redd_substrate_size)
+unique(redd_data_final$redd_substrate_size)
 
 redd_substrate_size_lookup <- 
-  data.frame("redd_substrate_size" = unique(all_redd_data$redd_substrate_size),
+  data.frame("redd_substrate_size" = unique(redd_data_final$redd_substrate_size),
              "standardized_size_range" = c(NA, "1-2", "2-4", "2-4", "2-4", 
                                            "0.5-1", "2-4","2-4", '8-16', "4-8", 
                                            "1-2", "1-2", "4-8", "0.5-1", "1-2", 
@@ -348,7 +371,7 @@ redd_substrate_size_lookup <-
   left_join(substrate_class)
 # TODO recode that
                     
-tail_substrate_size_lookup <- all_redd_data  |> 
+tail_substrate_size_lookup <- redd_data_final  |> 
   ungroup()  |>
   select(tail_substrate_size)  |> 
   full_join(redd_substrate_size_lookup  |> 
@@ -356,7 +379,7 @@ tail_substrate_size_lookup <- all_redd_data  |>
   distinct()  |>
   rename(tail_substrate_class = redd_substrate_class)
 
-pre_redd_substrate_size_lookup <- all_redd_data  |> 
+pre_redd_substrate_size_lookup <- redd_data_final  |> 
   ungroup()  |>
   select(pre_redd_substrate_size)  |> 
   full_join(redd_substrate_size_lookup  |> 
@@ -364,7 +387,7 @@ pre_redd_substrate_size_lookup <- all_redd_data  |>
   distinct()  |>
   rename(pre_redd_substrate_class = redd_substrate_class) 
 
-all_redd_data <- all_redd_data  |> 
+redd_data_final <- redd_data_final  |> 
   left_join(redd_substrate_size_lookup)  |>
   select(-standardized_size_range)  |>
   left_join(tail_substrate_size_lookup)  |>
@@ -380,15 +403,15 @@ all_redd_data <- all_redd_data  |>
 ### stream
 
 ```{r}
-table(all_redd_data$stream)
+table(redd_data_final$stream)
 ```
 
 ### date
 
 ```{r}
-summary(all_redd_data$date)
+summary(redd_data_final$date)
 
-all_redd_data  |>
+redd_data_final  |>
   group_by(stream)  |>
   summarise(year_range = paste0(min(year, na.rm = TRUE), " : ", max(year, na.rm = TRUE)), 
             months = paste0(unique(sort(lubridate::month(date))), collapse = ", "))  |>
@@ -400,10 +423,10 @@ all_redd_data  |>
 ### velocity
 
 ```{r}
-summary(all_redd_data$velocity)
+summary(redd_data_final$velocity)
 
 ggplot() + 
-  geom_point(data = all_redd_data, aes(x = date, y = velocity, color = reach)) + 
+  geom_point(data = redd_data_final, aes(x = date, y = velocity, color = reach)) + 
   facet_wrap(~ stream) +
   theme(legend.position = "none")
 ```
@@ -411,13 +434,13 @@ ggplot() +
 ### fish_guarding
 
 ```{r}
-table(all_redd_data$fish_guarding, useNA = "ifany")
+table(redd_data_final$fish_guarding, useNA = "ifany")
 ```
 
 ### redd_measured
 
 ```{r}
-table(all_redd_data$redd_measured, useNA = "ifany")
+table(redd_data_final$redd_measured, useNA = "ifany")
 
 ```
 
@@ -425,36 +448,36 @@ table(all_redd_data$redd_measured, useNA = "ifany")
 
 ```{r}
 
-summary(all_redd_data$redd_width)
+summary(redd_data_final$redd_width)
 
-summary(all_redd_data$redd_length)
+summary(redd_data_final$redd_length)
 
 ggplot() + 
-  geom_histogram(data = all_redd_data, aes(redd_width)) 
+  geom_histogram(data = redd_data_final, aes(redd_width)) 
   
 ggplot() +   
-  geom_histogram(data = all_redd_data, aes(redd_length))
+  geom_histogram(data = redd_data_final, aes(redd_length))
 
 ```
 
 ### pre_redd_substrate_class
 
 ```{r}
-table(all_redd_data$pre_redd_substrate_class, useNA = "ifany")
+table(redd_data_final$pre_redd_substrate_class, useNA = "ifany")
 
 ```
 
 ### redd_substrate_class
 
 ```{r}
-table(all_redd_data$redd_substrate_class, useNA = "ifany")
+table(redd_data_final$redd_substrate_class, useNA = "ifany")
 
 ```
 
 ### tail_substrate_class
 
 ```{r}
-table(all_redd_data$tail_substrate_class, useNA = "ifany")
+table(redd_data_final$tail_substrate_class, useNA = "ifany")
 
 ```
 
@@ -510,7 +533,7 @@ redd_count_by_year <- bind_rows(clean_feather_redd,
 
 ```{r}
 # a plot to help understand sampling frequency across streams 
-all_redd_data  |>
+redd_data_final  |>
   group_by(date, stream)  |>
   summarise(n_reaches = length(unique(reach)))  |>
   ggplot() + 
@@ -534,7 +557,7 @@ ggplot() +
 ## Save Cleaned Data to Google Cloud
 
 ```{r}
-knitr::kable(all_redd_data  |> head())
+knitr::kable(redd_data_final  |> head())
 
 knitr::kable(redd_count_by_year  |> head())
 
@@ -542,10 +565,10 @@ knitr::kable(redd_count_by_year  |> head())
 
 ```{r, eval=FALSE}
 
-write_csv(all_redd_data, here::here("data","redd-carcass-holding","standard_all_redd_data.csv"))
+write_csv(redd_data_final, here::here("data","redd-carcass-holding","standard_all_redd_data.csv"))
 write_csv(redd_count_by_year, here::here("data","redd-carcass-holding","standard_redd_data_by_year.csv"))
 f <- function(input, output) write_csv(input, file = output)
-gcs_upload(all_redd_data,
+gcs_upload(redd_data_final,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_daily_redd.csv",
