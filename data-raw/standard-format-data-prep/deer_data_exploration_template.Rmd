@@ -215,7 +215,7 @@ print(combined_CDEC_logger_plot)
 
 #CDEC mean temp
 DCV_mean_temp <- DCV_hourly_temps |> 
-  group_by(month = format(date, "%Y-%m"),
+  group_by(month = month(date),
            year = format(date, "%Y")) |> 
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
 
@@ -234,21 +234,24 @@ DCV_mean_temp <- DCV_hourly_temps |>
 #        y = "Mean Temperature (deg C)",
 #        x = "Month",
 #        fill = "Dataset")
-
+#TODO maybe change to boxplot. Group by month and find mean across years
 #plotting means from Deer_1 + CDEC 2001-2018
 DCV_filtered1 <- DCV_mean_temp |> 
+  mutate(month = factor(month)) |> 
   filter(year >= 2013, year <= 2018)
 ggplot() +
-  geom_bar(data = DCV_filtered1, aes(x = month, y = mean_temp, label = "CDEC"),
-           stat = "identity", position = "dodge", width = 0.7, fill = "orange") +
+  geom_boxplot(data = DCV_filtered1, aes(x = month, y = mean_temp)) +
   labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-0 Mouth (2013-2018)",
        y = "Mean Temperature (deg C)",
-       x = "Month") +
+       x = "Month") 
+
+
   geom_bar(data = deer_1_monthly_mean, aes(x = month, y = mean_temp, label = "Logger"),
            stat = "identity", position = "dodge", width = 0.35, fill = "blue") +
   labs(title = "Monthly Mean Temperatures Comparison (2013-2018)",
        y = "Mean Temperature (deg C)",
        x = "Month")
+
 #plotting means from Deer 9-1 VIDEO Station SV Dam + CDEC 
 DCV_filtered2 <- DCV_mean_temp |> 
   filter(year >= 2014, year <= 2018)

@@ -47,15 +47,18 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-# git data and save as xlsx
-
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet: 
 ```{r}
 # read in data to clean 
-deer_mill <- odbcConnectAccess2007(here::here("data-raw", "standard-format-data-prep", "MASTER_TEMPERATURE.mdb"))
+gcs_get_object(object_name = "environmental/data-raw/MASTER_TEMPERATURE.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "MASTER_TEMPERATURE.mdb",
+               overwrite = TRUE)
 
+
+master_temp_deer_mill <- odbcConnectAccess2007(here::here("data-raw", "standard-format-data-prep", "MASTER_TEMPERATURE.mdb"))
 
 ```
 
@@ -88,6 +91,8 @@ mill_9 <- sqlFetch(deer_mill, "Mill 8-8 Little Hole in Ground")|>
 mill_10 <- sqlFetch(deer_mill, "Mill 8-9 Brokenshire")|> 
   mutate(date = as_date(Date)) 
 
+#There are these tables too that we won't use to compare data because they are from CDEC stations
+#Mill 8-05 MCH lower CDEC, Mill 8-15 MLM upper CDEC
 
 combined_table <- bind_rows(mill_1, mill_2, mill_3 ,mill_4, mill_5, mill_6, mill_7, mill_8, mill_9, mill_10, .id = "mill_site")
 
