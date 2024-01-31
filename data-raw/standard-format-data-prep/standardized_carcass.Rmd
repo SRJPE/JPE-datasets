@@ -290,7 +290,7 @@ combined_carcass_with_reach <- carcass_combined |>
 f <- function(input, output) write_csv(input, file = output)
 
 # combined chops and tags
-gcs_upload(carcass_combined,
+gcs_upload(combined_carcass_with_reach,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_carcass.csv",
