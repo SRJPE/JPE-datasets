@@ -313,10 +313,10 @@ gcs_get_object(
 )
 
 standard_reach_lookup <- read_csv(here::here("data", "standard-format-data", "standard-reach-lookup.csv")) |> 
-  select(reach, standardized_reach)
+  select(stream, reach, standardized_reach)
 
 redd_data_final <- all_redd_data |> 
-  left_join(standard_reach_lookup) |> 
+  left_join(standard_reach_lookup, by = c("stream", "reach")) |> 
   select(-reach) |> 
   rename(reach = standardized_reach) |> 
   relocate(reach, .before = river_mile) |> 
