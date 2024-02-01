@@ -461,8 +461,6 @@ all_redd_data  |>
 
 ```{r}
 knitr::kable(all_redd_data  |> head())
-
-knitr::kable(redd_count_by_year  |> head())
 ```
 
 ```{r, eval=FALSE}
