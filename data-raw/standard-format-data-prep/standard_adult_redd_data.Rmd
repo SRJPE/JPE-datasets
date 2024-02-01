@@ -26,16 +26,15 @@ FlowWest received Adult Redd data from four monitoring programs:
 -   Mill Creek
 -   Yuba River
 
-Due to the format of the data received, two redd datasets were developed. The first dataset includes Feather, Battle, Yuba, and Clear Creek daily data and the second dataset includes Feather, Battle, Clear, Yuba, and Mill Creek and has a yearly maximum redd counts value.
+Redd data were pulled together at a daily level. Mill Creek conducts one annual survey per year and produces an annual count, and so those data were added to the daily data with a pseudo date as October 1. This is to allow Mill Creek data to be added to the database without creating a separate table. 
 
-UPDATE: Mill Creek was added to the daily data with a pseudo date as October 1. This is to allow Mill Creek data
-to be added to the database without creating a seperate table.
+Previously a standard annual table was created in this markdown but this is now created and documented in `SRJPEdata`.
 
 ## Standard format for Adult All Redd Data
 
 Data dictionary for standard format for `all_redd_data`:
 
-(B - Battle Creek, C - Clear Creek,\
+(B - Battle Creek, C - Clear Creek, M - Mill Creek,
 F - Feather River, Y - Yuba River)
 
 |column_name              |tributary_collects |definitions                                                        |
@@ -66,21 +65,6 @@ F - Feather River, Y - Yuba River)
 |tail_substrate_class     |B, C               |Categorical, size class determined by millimeter size of substrate |
 |pre_redd_substrate_class |B, C               |Categorical, size class determined by millimeter size of substrate |                                         |
 
-## Standard format for Adult Redd Data Aggregated by Year
-
-This dataset includes `annual_redd_count` which is the total number of redds sampled. This can be summarized by `redd_id` or by `max_yearly_redd_count` (maximum number of redds counted on a single day per year per reach).
-
-Data dictionary for standard format for `annual_redd_count`:
-
-|column_name                 |tributary_collects |definition                                                                                                |
-|:---------------------------|:------------------|:---------------------------------------------------------------------------------------------------------|
-|stream                      |F, M, Y, C, B      |Stream associated with redd data collected                                                                |
-|year                        |F, M, Y, C, B      |Calendar year sampling occured                                                                            |
-|reach                       |F, M, C, B         |Reach sampled                                                                                             |
-|species                     |F, M, Y, B, C      |Species associated with redd sampled                                                                      |
-|run                         |F, M, Y, C, B      |Run of fish associated with redd sampled                                                                  |
-|annual_redd_count           |F, M, Y, C, B      |Number of redds counted in a year by reach, stream, species, and run                                      |
-|annual_summarization_method |F, M, Y, C, B      |Summarization method used to get the annual number: either summed by redd id or maximum yearly redd count |
 
 ## Read in data {.tabset}
 
@@ -292,7 +276,7 @@ clean_yuba_redd <- yuba_river_raw |>
 
 ## Combine data:
 
-This is the daily tabular redd data. Since Mill Creek is already aggregated to yearly counts, that stream is removed from this dataset.
+This is the daily tabular redd data. 
 
 ```{r}
 all_redd_data <- bind_rows(clean_battle_redd, 
@@ -353,7 +337,6 @@ redd_substrate_size_lookup <-
                                            "<0.25", "4-8", "4-8", "0.5-1", "4-8",
                                            "8-16")) |> 
   left_join(substrate_class)
-# TODO recode that
                     
 tail_substrate_size_lookup <- all_redd_data  |> 
   ungroup()  |>
@@ -431,7 +414,6 @@ table(all_redd_data$redd_measured, useNA = "ifany")
 ### redd_width and redd_length
 
 ```{r}
-
 summary(all_redd_data$redd_width)
 
 summary(all_redd_data$redd_length)
@@ -441,64 +423,26 @@ ggplot() +
   
 ggplot() +   
   geom_histogram(data = all_redd_data, aes(redd_length))
-
 ```
 
 ### pre_redd_substrate_class
 
 ```{r}
 table(all_redd_data$pre_redd_substrate_class, useNA = "ifany")
-
 ```
 
 ### redd_substrate_class
 
 ```{r}
 table(all_redd_data$redd_substrate_class, useNA = "ifany")
-
 ```
 
 ### tail_substrate_class
 
 ```{r}
 table(all_redd_data$tail_substrate_class, useNA = "ifany")
-
 ```
 
-## By Year Aggregation
-
-Redd data for Feather River and Yuba River was aggregated by sampled reach and date to get a count of redds. In order to not potentially double count, the maximum of a daily count is reported as the yearly redd count. 
-
-For Battle and Clear Creeks, the dataset was filtered to unique `redd_id` and these were summed by reach and year.
-
-Since Mill Creek is aggregated by year already, this dataset includes Mill Creek.
-
-```{r}
-# Use max daily reach count summed across year to get max annual count for streams
-# that do not have redd id 
-redd_non_battle_clear <- all_redd_data |>
-  filter(!stream %in% c("battle creek", "clear creek")) |> 
-  group_by(stream, reach, date, species, run) |> 
-  summarize(daily_reach_count = sum(redd_count, na.rm = TRUE)) |> 
-  ungroup() |> 
-  group_by(year = year(date), stream, reach, species, run) |> 
-  summarize(max_daily_reach_count = max(daily_reach_count, na.rm = TRUE)) |> 
-  ungroup() |> 
-  group_by(stream, year, reach, species, run) |> 
-  summarize(annual_redd_count = sum(max_daily_reach_count, na.rm = TRUE)) |> 
-  ungroup() |> 
-  glimpse()
-  
-# for streams with redd id, just sum redd count (each redd id is only counted once)
-battle_clear_redd <- all_redd_data |>
-  filter(stream %in% c("battle creek", "clear creek")) |> 
-  group_by(year = year(date), stream, reach, species, run) |> 
-  summarize(annual_redd_count = sum(redd_count, na.rm = TRUE)) |> 
-  ungroup()
-
-redd_count_by_year <- bind_rows(redd_non_battle_clear, battle_clear_redd) |>
-  mutate(annual_summarization_method = ifelse(stream %in% c("mill creek", "yuba river", "feather river"), "maximum yearly redd count", "summed by redd id"))
-```
 
 ## Exploratory Plots
 
@@ -511,18 +455,6 @@ all_redd_data  |>
   geom_point(aes(x = date, y = n_reaches)) + 
   ylab('number of samples per reach and date') + 
   facet_wrap(~ stream)
-
-# Note: based on plot, count value could be double counting for Mill Creek
-# I spent some time trying to figure out why feather and mill are so much higher
-# feather does survey a lot of reaches. this may be an artificat of the methodology
-redd_count_by_year  |> 
-  group_by(year, stream)  |> # add across reaches
-  summarize(annual_redd_count = sum(annual_redd_count, na.rm = T)) |> 
-ggplot() + 
-  geom_col(aes(x = year, y = annual_redd_count, fill = stream)) + 
-  facet_wrap(~stream) +
-  scale_fill_manual(values = color_pal) + 
-  theme_minimal()
 ```
 
 ## Save Cleaned Data to Google Cloud
@@ -531,22 +463,14 @@ ggplot() +
 knitr::kable(all_redd_data  |> head())
 
 knitr::kable(redd_count_by_year  |> head())
-
 ```
 
 ```{r, eval=FALSE}
-
 write_csv(all_redd_data, here::here("data","redd-carcass-holding","standard_all_redd_data.csv"))
-write_csv(redd_count_by_year, here::here("data","redd-carcass-holding","standard_redd_data_by_year.csv"))
 f <- function(input, output) write_csv(input, file = output)
 gcs_upload(all_redd_data,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_daily_redd.csv",
-           predefinedAcl = "bucketLevel")
-gcs_upload(redd_count_by_year,
-           object_function = f,
-           type = "csv",
-           name = "standard-format-data/standard_annual_redd.csv",
            predefinedAcl = "bucketLevel")
 ```
