@@ -178,7 +178,7 @@ std_temp_weekly |>
 
 # Flow
 Precipitation and streamflow have been found to influence spawning and rearing. Therefore it is expected to affect the translation from stock to recruit. Streamflow can be included in multiple different formats including:
-- Mean, meadian, max precipitation (or streamflow)
+- Mean, median, max precipitation (or streamflow)
 
 ```{r, include=F}
 gcs_get_object(object_name = "standard-format-data/standard_flow.csv",

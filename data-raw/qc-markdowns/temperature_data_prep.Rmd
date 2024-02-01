@@ -331,7 +331,7 @@ Use CDEC data because USGS data has a limited range for the mean. Use USGS min a
 ### CDEC
 
 Two stations:
-* DCV (1998-10-01 to present H; 2014-11-18 to present E): Upper watershed, near Vina, far from confluence with Sacramento River
+* DCV (1998-10-01 to present H; 2014-11-18 to present E): Near Vina, farther from confluence with Sacramento River than DVD gage
 * DVD (1997-10-03 to present H; 2013-03-14 to present E): Lower watershed, below Stanford Vina Dam, close to confluence with Sacramento River
 
 ```{r}
