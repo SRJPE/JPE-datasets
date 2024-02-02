@@ -78,8 +78,9 @@ deer_1 <- sqlFetch(master_temp_deer_mill,"Deer 9-0 Mouth") |>
   select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") # Remove redundant columns
 # Finding Logger mean "Deer 9-0 Mouth"
 deer_1_monthly_mean <- deer_1 |> 
-  group_by(month = format(date, "%Y-%m"),
-           year = format(date, "%Y")) |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
 
 deer_2 <- sqlFetch(master_temp_deer_mill, "Deer 9-1 VIDEO Station SV Dam")|> 
@@ -89,8 +90,9 @@ deer_2 <- sqlFetch(master_temp_deer_mill, "Deer 9-1 VIDEO Station SV Dam")|>
   select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
 # Finding Logger mean "Deer 9-1 VIDEO Station SV Dam"
 deer_2_monthly_mean <- deer_2 |> 
-  group_by(month = format(date, "%Y-%m"),
-           year = format(date, "%Y")) |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |>
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
 
 deer_3 <- sqlFetch(master_temp_deer_mill, "Deer 9-2 Trail 2E17")|> 
@@ -100,8 +102,9 @@ deer_3 <- sqlFetch(master_temp_deer_mill, "Deer 9-2 Trail 2E17")|>
   select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
 # Finding Logger mean "Deer 9-2 Trail 2E17"
 deer_3_monthly_mean <- deer_3 |> 
-  group_by(month = format(date, "%Y-%m"),
-           year = format(date, "%Y")) |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |>
   summarise(mean_temp = mean(temperature, na.rm = TRUE))  
 
 deer_4 <- sqlFetch(master_temp_deer_mill, "Deer 9-3 Beaver Cr")|> 
@@ -111,9 +114,10 @@ deer_4 <- sqlFetch(master_temp_deer_mill, "Deer 9-3 Beaver Cr")|>
   select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
 # Finding Logger mean "Deer 9-3 Beaver Cr"
 deer_4_monthly_mean <- deer_4 |> 
-  group_by(month = format(date, "%Y-%m"),
-           year = format(date, "%Y")) |> 
-  summarise(mean_temp = mean(temperature, na.rm = TRUE))  
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |>
+  summarise(mean_temp = mean(temperature, na.rm = TRUE)) 
   
 deer_5 <- sqlFetch(master_temp_deer_mill, "Deer 9-4 Murphy Trail")|> 
   mutate(date = as_date(Date)) |> 
@@ -122,8 +126,9 @@ deer_5 <- sqlFetch(master_temp_deer_mill, "Deer 9-4 Murphy Trail")|>
   select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
 # Finding Logger mean "Deer 9-4 Murphy Trail"
 deer_5_monthly_mean <- deer_5 |> 
-  group_by(month = format(date, "%Y-%m"),
-           year = format(date, "%Y")) |> 
+   group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |>
   summarise(mean_temp = mean(temperature, na.rm = TRUE))  
   
 deer_6 <- sqlFetch(master_temp_deer_mill, "Deer 9-5 Wilson Cove")|> 
@@ -133,8 +138,9 @@ deer_6 <- sqlFetch(master_temp_deer_mill, "Deer 9-5 Wilson Cove")|>
   select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
 # Finding Logger mean "Deer 9-5 Wilson Cove"
 deer_6_monthly_mean <- deer_6 |> 
-  group_by(month = format(date, "%Y-%m"),
-           year = format(date, "%Y")) |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |>
   summarise(mean_temp = mean(temperature, na.rm = TRUE))  
 
 deer_7 <- sqlFetch(master_temp_deer_mill, "Deer 9-6 C-Pool")|> 
@@ -144,8 +150,9 @@ deer_7 <- sqlFetch(master_temp_deer_mill, "Deer 9-6 C-Pool")|>
   select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
 # Finding Logger mean "Deer 9-6 C-Pool"
 deer_7_monthly_mean <- deer_7 |> 
-  group_by(month = format(date, "%Y-%m"),
-           year = format(date, "%Y")) |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |>
   summarise(mean_temp = mean(temperature, na.rm = TRUE)) 
 
 deer_8 <- sqlFetch(master_temp_deer_mill, "Deer 9-7 Upper Falls")|> 
@@ -155,9 +162,10 @@ deer_8 <- sqlFetch(master_temp_deer_mill, "Deer 9-7 Upper Falls")|>
   select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
 # Finding Logger mean "Deer 9-6 C-Pool"
 deer_8_monthly_mean <- deer_8 |> 
-  group_by(month = format(date, "%Y-%m"),
-           year = format(date, "%Y")) |> 
-  summarise(mean_temp = mean(temperature, na.rm = TRUE)) 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |>
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
 
 #There are these tables too that we won't use to compare data because they are from CDEC stations
 #Deer 9-05 DVD lower CDEC, Deer 9-15 DVC upper CDEC
@@ -220,22 +228,6 @@ DCV_mean_temp <- DCV_hourly_temps |>
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
 
 
-# #combining and plotting both means
-# ggplot() +
-#   geom_bar(data = DCV_mean_temp, aes(x = month, y = mean_temp),
-#            stat = "identity", position = "dodge", width = 0.7, fill = "orange") +
-#   labs(title = "Monthly Mean Temperatures Comparison",
-#        y = "Mean Temperature (deg C)",
-#        x = "Month",
-#        fill = "Dataset") +
-#   geom_bar(data = deer_1_monthly_mean, aes(x = month, y = mean_temp),
-#            stat = "identity", position = "dodge", width = 0.5, fill = "blue") +
-#   labs(title = "Monthly Mean Temperatures Comparison",
-#        y = "Mean Temperature (deg C)",
-#        x = "Month",
-#        fill = "Dataset")
-#TODO maybe change to boxplot. Group by month and find mean across years
-#plotting means from Deer_1 + CDEC 2001-2018
 DCV_filtered1 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
   filter(year >= 2013, year <= 2018)
@@ -243,118 +235,91 @@ ggplot() +
   geom_boxplot(data = DCV_filtered1, aes(x = month, y = mean_temp)) +
   labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-0 Mouth (2013-2018)",
        y = "Mean Temperature (deg C)",
-       x = "Month") 
+       x = "Month") +
+  geom_boxplot(data = deer_1_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+    
 
-
-  geom_bar(data = deer_1_monthly_mean, aes(x = month, y = mean_temp, label = "Logger"),
-           stat = "identity", position = "dodge", width = 0.35, fill = "blue") +
-  labs(title = "Monthly Mean Temperatures Comparison (2013-2018)",
-       y = "Mean Temperature (deg C)",
-       x = "Month")
+  
 
 #plotting means from Deer 9-1 VIDEO Station SV Dam + CDEC 
 DCV_filtered2 <- DCV_mean_temp |> 
+  mutate(month = factor(month)) |> 
   filter(year >= 2014, year <= 2018)
 ggplot() +
-  geom_bar(data = DCV_filtered2, aes(x = month, y = mean_temp, label = "CDEC"),
-           stat = "identity", position = "dodge", width = 0.7, fill = "orange") +
+  geom_boxplot(data = DCV_filtered2, aes(x = month, y = mean_temp)) +
   labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-1 VIDEO Station SV Dam (2014-2018)",
        y = "Mean Temperature (deg C)",
        x = "Month") +
-  geom_bar(data = deer_2_monthly_mean, aes(x = month, y = mean_temp, label = "Logger"),
-           stat = "identity", position = "dodge", width = 0.35, fill = "blue") +
-  labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-1 VIDEO Station SV Dam (2014-2018)",
-       y = "Mean Temperature (deg C)",
-       x = "Month")
+  geom_boxplot(data = deer_2_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+
 #plotting means from "Deer 9-2 Trail 2E17" + CDEC 
 DCV_filtered3 <- DCV_mean_temp |> 
+  mutate(month = factor(month)) |> 
   filter(year >= 2001, year <= 2018)
-ggplot() +
-  geom_bar(data = DCV_filtered3, aes(x = month, y = mean_temp, label = "CDEC"),
-           stat = "identity", position = "dodge", width = 0.7, fill = "orange") +
+ggplot()+
+  geom_boxplot(data = DCV_filtered3, aes(x = month, y = mean_temp)) +
   labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-2 Trail 2E17 (2001-2018)",
        y = "Mean Temperature (deg C)",
        x = "Month") +
-  geom_bar(data = deer_3_monthly_mean, aes(x = month, y = mean_temp, label = "Logger"),
-           stat = "identity", position = "dodge", width = 0.35, fill = "blue") +
-  labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-2 Trail 2E17 (2001-2018)",
-       y = "Mean Temperature (deg C)",
-       x = "Month")
+  geom_boxplot(data = deer_3_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+
 
 #plotting means from "Deer 9-3 Beaver Cr" + CDEC 
 DCV_filtered4 <- DCV_mean_temp |> 
+  mutate(month = factor(month)) |> 
   filter(year >= 2001, year <= 2018)
-ggplot() +
-  geom_bar(data = DCV_filtered4, aes(x = month, y = mean_temp, label = "CDEC"),
-           stat = "identity", position = "dodge", width = 0.7, fill = "orange") +
+ggplot()+
+  geom_boxplot(data = DCV_filtered4, aes(x = month, y = mean_temp)) +
   labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-3 Beaver Cr (2001-2018)",
        y = "Mean Temperature (deg C)",
        x = "Month") +
-  geom_bar(data = deer_4_monthly_mean, aes(x = month, y = mean_temp, label = "Logger"),
-           stat = "identity", position = "dodge", width = 0.35, fill = "blue") +
-  labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-3 Beaver Cr (2001-2018)",
-       y = "Mean Temperature (deg C)",
-       x = "Month")
+  geom_boxplot(data = deer_4_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 
 #plotting means from "Deer 9-4 Murphy Trail" + CDEC 
 DCV_filtered5 <- DCV_mean_temp |> 
+  mutate(month = factor(month)) |> 
   filter(year >= 2001, year <= 2018)
-ggplot() +
-  geom_bar(data = DCV_filtered5, aes(x = month, y = mean_temp, label = "CDEC"),
-           stat = "identity", position = "dodge", width = 0.7, fill = "orange") +
+ggplot()+
+  geom_boxplot(data = DCV_filtered5, aes(x = month, y = mean_temp)) +
   labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-4 Murphy Trail (2001-2018)",
        y = "Mean Temperature (deg C)",
        x = "Month") +
-  geom_bar(data = deer_5_monthly_mean, aes(x = month, y = mean_temp, label = "Logger"),
-           stat = "identity", position = "dodge", width = 0.35, fill = "blue") +
-  labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-4 Murphy Trail (2001-2018)",
-       y = "Mean Temperature (deg C)",
-       x = "Month")
+  geom_boxplot(data = deer_5_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 
 #plotting means from "Deer 9-5 Wilson Cove" + CDEC 
 DCV_filtered6 <- DCV_mean_temp |> 
+  mutate(month = factor(month)) |> 
   filter(year >= 2001, year <= 2018)
-ggplot() +
-  geom_bar(data = DCV_filtered6, aes(x = month, y = mean_temp, label = "CDEC"),
-           stat = "identity", position = "dodge", width = 0.7, fill = "orange") +
+ggplot()+
+  geom_boxplot(data = DCV_filtered6, aes(x = month, y = mean_temp)) +
   labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-5 Wilson Cove (2001-2018)",
        y = "Mean Temperature (deg C)",
        x = "Month") +
-  geom_bar(data = deer_6_monthly_mean, aes(x = month, y = mean_temp, label = "Logger"),
-           stat = "identity", position = "dodge", width = 0.35, fill = "blue") +
-  labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-5 Wilson Cove (2001-2018)",
-       y = "Mean Temperature (deg C)",
-       x = "Month")
+  geom_boxplot(data = deer_6_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 
 #plotting means from "Deer 9-6 C-Pool" + CDEC 
 DCV_filtered7 <- DCV_mean_temp |> 
+  mutate(month = factor(month)) |> 
   filter(year >= 2001, year <= 2018)
-ggplot() +
-  geom_bar(data = DCV_filtered7, aes(x = month, y = mean_temp, label = "CDEC"),
-           stat = "identity", position = "dodge", width = 0.7, fill = "orange") +
+ggplot()+
+  geom_boxplot(data = DCV_filtered7, aes(x = month, y = mean_temp)) +
   labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-6 C-Pool (2001-2018)",
        y = "Mean Temperature (deg C)",
        x = "Month") +
-  geom_bar(data = deer_7_monthly_mean, aes(x = month, y = mean_temp, label = "Logger"),
-           stat = "identity", position = "dodge", width = 0.35, fill = "blue") +
-  labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-6 C-Pool (2001-2018)",
-       y = "Mean Temperature (deg C)",
-       x = "Month")
+  geom_boxplot(data = deer_7_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+
 
 #plotting means from "Deer 9-7 Upper Falls" + CDEC 
 DCV_filtered8 <- DCV_mean_temp |> 
-  filter(year >= 2001, year <= 2018)
+  mutate(month = factor(month)) |> 
+  filter(year >= 2013, year <= 2018)
 ggplot() +
-  geom_bar(data = DCV_filtered8, aes(x = month, y = mean_temp, label = "CDEC"),
-           stat = "identity", position = "dodge", width = 0.7, fill = "orange") +
-  labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-7 Upper Falls (2001-2018)",
+  geom_boxplot(data = DCV_filtered8, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Upper Falls (2013-2018)",
        y = "Mean Temperature (deg C)",
        x = "Month") +
-  geom_bar(data = deer_8_monthly_mean, aes(x = month, y = mean_temp, label = "Logger"),
-           stat = "identity", position = "dodge", width = 0.35, fill = "blue") +
-  labs(title = "Monthly Mean Temperatures Comparison CDEC and Deer 9-7 Upper Falls (2001-2018)",
-       y = "Mean Temperature (deg C)",
-       x = "Month")
+  geom_boxplot(data = deer_8_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#TODO add interpretation comparing this data to CDEC and what the recommendation would be. If big differenece "
 ```
 
 **Numeric Summary of [Variable] over Period of Record**
