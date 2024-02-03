@@ -67,45 +67,151 @@ master_temp_deer_mill <- odbcConnectAccess2007(here::here("data-raw", "standard-
 ```{r}
 # For different excel sheets for each year read in and combine years here
 
-tables <- sqlTables(deer_mill)
+tables <- sqlTables(master_temp_deer_mill)
 
 
-mill_1 <- sqlFetch(deer_mill,"Mill 8-0 Mouth") |> 
-  mutate(date = as_date(Date)) 
-mill_2 <- sqlFetch(deer_mill, "Mill 8-1 VIDEO Station")|> 
-  mutate(date = as_date(Date)) 
-mill_3 <- sqlFetch(deer_mill, "Mill 8-2 Little Mill Confluence")|> 
-  mutate(date = as_date(Date)) 
-mill_4 <- sqlFetch(deer_mill, "Mill 8-3 Rancheria")|> 
-  mutate(date = as_date(Date)) 
-mill_5 <- sqlFetch(deer_mill, "Mill 8-4 Black Rock")|> 
-  mutate(date = as_date(Date)) 
-mill_6 <- sqlFetch(deer_mill, "Mill 8-5 Sooner")|> 
-  mutate(date = as_date(Date)) 
-mill_7 <- sqlFetch(deer_mill, "Mill 8-6 Canyon Camp")|> 
-  mutate(date = as_date(Date)) 
-mill_8 <- sqlFetch(deer_mill, "Mill 8-7 Hole in Ground")|> 
-  mutate(date = as_date(Date)) 
-mill_9 <- sqlFetch(deer_mill, "Mill 8-8 Little Hole in Ground")|> 
-  mutate(date = as_date(Date)) 
-mill_10 <- sqlFetch(deer_mill, "Mill 8-9 Brokenshire")|> 
-  mutate(date = as_date(Date)) 
+mill_1 <- sqlFetch(master_temp_deer_mill,"Mill 8-0 Mouth") |> 
+  mutate(date = as_date(Date)) |>                                            #Transforming columns to appropriate types
+  mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+  mutate(year = lubridate::year(Date)) |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") # Remove redundant columns
+# Finding Logger mean "Mill 8-0 Mouth"
+mill_1_monthly_mean <- mill_1 |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+
+mill_2 <- sqlFetch(master_temp_deer_mill, "Mill 8-1 VIDEO Station")|> 
+    mutate(date = as_date(Date)) |>                                            
+  mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+  mutate(year = lubridate::year(Date)) |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") 
+# Finding Logger mean "Mill 8-1 VIDEO Station"
+mill_2_monthly_mean <- mill_2 |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+
+mill_3 <- sqlFetch(master_temp_deer_mill, "Mill 8-2 Little Mill Confluence")|> 
+  mutate(date = as_date(Date)) |>                                            
+  mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+  mutate(year = lubridate::year(Date)) |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") 
+# Finding Logger mean "Mill 8-1 VIDEO Station"
+mill_3_monthly_mean <- mill_3 |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+
+
+mill_4 <- sqlFetch(master_temp_deer_mill, "Mill 8-3 Rancheria")|>
+  mutate(date = as_date(Date)) |>                                            
+  mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+  mutate(year = lubridate::year(Date)) |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") 
+# Finding Logger mean "Mill 8-3 Rancheria"
+mill_4_monthly_mean <- mill_4 |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+
+mill_5 <- sqlFetch(master_temp_deer_mill, "Mill 8-4 Black Rock")|> 
+  mutate(date = as_date(Date)) |>                                            
+  mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+  mutate(year = lubridate::year(Date)) |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") 
+# Finding Logger mean "Mill 8-4 Black Rock"
+mill_5_monthly_mean <- mill_5 |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+
+
+mill_6 <- sqlFetch(master_temp_deer_mill, "Mill 8-5 Sooner")|>
+  mutate(date = as_date(Date)) |>                                            
+  mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+  mutate(year = lubridate::year(Date)) |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") 
+# Finding Logger mean "Mill 8-5 Sooner"
+mill_6_monthly_mean <- mill_6 |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+
+
+
+mill_7 <- sqlFetch(master_temp_deer_mill, "Mill 8-6 Canyon Camp")|> 
+  mutate(date = as_date(Date)) |>                                            
+  mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+  mutate(year = lubridate::year(Date)) |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") 
+# Finding Logger mean "Mill 8-6 Canyon Camp"
+mill_7_monthly_mean <- mill_7 |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+
+mill_8 <- sqlFetch(master_temp_deer_mill, "Mill 8-7 Hole in Ground")|> 
+  mutate(date = as_date(Date)) |>                                            
+  mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+  mutate(year = lubridate::year(Date)) |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") 
+# Finding Logger mean "Mill 8-7 Hole in Ground"
+mill_8_monthly_mean <- mill_8 |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+
+mill_9 <- sqlFetch(master_temp_deer_mill, "Mill 8-8 Little Hole in Ground")|> 
+  mutate(date = as_date(Date)) |>                                            
+  mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
+  mutate(year = lubridate::year(Date)) |> 
+  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID") 
+# Finding Logger mean "Mill 8-8 Little Hole in Ground"
+mill_9_monthly_mean <- mill_9 |> 
+  group_by(month = month(date),
+           year = year(date)) |> 
+  mutate(month = factor(month)) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
 
 #There are these tables too that we won't use to compare data because they are from CDEC stations
 #Mill 8-05 MCH lower CDEC, Mill 8-15 MLM upper CDEC
 
-combined_table <- bind_rows(mill_1, mill_2, mill_3 ,mill_4, mill_5, mill_6, mill_7, mill_8, mill_9, mill_10, .id = "mill_site")
+combined_table_mill <- bind_rows(mill_1, mill_2, mill_3 ,mill_4, mill_5, mill_6, mill_7, mill_8, mill_9, mill_10, .id = "mill_site")
+
+#adding CDEC data (with removed outliers from CDEC using 0-40C range)
+MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
 
 
+MLM_hourly_temps <- MLM_CDEC |> 
+  mutate(date = as_date(datetime),
+         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) |>
+  filter(temp_degC < 37, temp_degC > 0) |> #Filtered out outliers using temp range of 0-37 degrees Celsius 
+  rename(temperature = temp_degC)
 
 ```
 
 ```{r}
 # Snake case, 
 # Columns are appropriate types
-combined_table <- combined_table |> 
-   mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
-   mutate(year = lubridate::year(Date))
+
 
 
 # Remove redundant columns
@@ -116,43 +222,119 @@ combined_table <- combined_table |>
 
 ```{r}
 # Filter clean data to show only numeric variables 
+#checking temporal coverage across deer sites from logger
+mill_plot_logger <- ggplot(combined_table_mill, aes(x = date, y = temperature, color = "Logger data")) +
+  geom_line(color = "darkred") +
+  labs(title = "Mill temp plot from Logger data", y = "Temperature (deg C)", color = "Data Source")
 
-mill_temp <- combined_table |> 
-  select(-Date, -Time, -"Primary ID", -"Sort ID", -"Logger ID", -"Place ID")
+
+
 ```
 
 ### Variable: `Temperature`
 
 **Plotting [Variable] over Period of Record**
 
+
 ```{r}
+# Create the combined plot of all logger Mill sites and CDEC
+combined_CDEC_logger_plot <- deer_plot_logger +
+   geom_line(data = MLM_hourly_temps, aes(x = date, y = temperature, color = "CDEC data")) +
+   scale_color_manual(values = c("blue", "darkred")) +
+   labs(title = "Combined Plot to See Temporal coverage - Mill Logger and CDEC Data", y = "Temperature (deg C)", color = "Data Source")
+print(combined_CDEC_logger_plot)
 
-mill_plot <- ggplot(mill_temp, aes(x = date, y = temperature)) +
-  geom_line(color = "darkred") +
-  labs(y = "Temperature (deg C)")
+#CDEC mean temp
+MLM_mean_temp <- MLM_hourly_temps |> 
+  group_by(month = month(date),
+           year = format(date, "%Y")) |> 
+  summarise(mean_temp = mean(temperature, na.rm = TRUE))
+```
 
-print(mill_plot)
+```{r}
+#plotting means from Mill 8-0 Mouth + CDEC 
+MLM_filtered1 <- MLM_mean_temp |> 
+  mutate(month = factor(month)) |> 
+  filter(year >= 2013, year <= 2018)
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Mill 8-0 Mouth (2013-2018)",
+       y = "Mean Temperature (deg C)",
+       x = "Month") +
+  geom_boxplot(data = mill_1_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 
-#adding CDEC data to plot with it and compare (with removed outliers from CDEC using 0-40C range)
-MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
+#plotting means from Mill 8-1 VIDEO Station + CDEC 
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Mill 8-1 VIDEO Station",
+       y = "Mean Temperature (deg C)",
+       x = "Month") +
+  geom_boxplot(data = mill_2_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#TODO check data from this logger 
 
 
-MLM_hourly_temps <- MLM_CDEC %>%
-  mutate(date = as_date(datetime),
-         time = as_hms(datetime),
-         temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) %>%
-  select(date,time,temp_degC) |> 
-  filter(temp_degC < 40, temp_degC > 0) |> 
-    rename(temperature = temp_degC)
+#plotting means from Mill 8-2 Little Mill Confluence + CDEC 
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Mill 8-2 Little Mill Confluence",
+       y = "Mean Temperature (deg C)",
+       x = "Month") +
+  geom_boxplot(data = mill_3_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 
 
-# Create the combined plot
-combined_plot <- mill_plot +
-  geom_line(data = MLM_hourly_temps, aes(x = date, y = temperature, color = ""))
-  
-  
+#plotting means from Mill 8-3 Rancheria + CDEC 
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Mill 8-3 Rancheria",
+       y = "Mean Temperature (deg C)",
+       x = "Month") +
+  geom_boxplot(data = mill_4_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 
-print(combined_plot)
+
+#plotting means from Mill 8-4 Black Rock + CDEC 
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Mill 8-4 Black Rock",
+       y = "Mean Temperature (deg C)",
+       x = "Month") +
+  geom_boxplot(data = mill_5_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+
+
+#plotting means from Mill 8-5 Sooner + CDEC 
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Mill 8-5 Sooner",
+       y = "Mean Temperature (deg C)",
+       x = "Month") +
+  geom_boxplot(data = mill_6_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+
+
+#plotting means from Mill 8-6 Canyon Camp  + CDEC 
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Mill 8-6 Canyon Camp",
+       y = "Mean Temperature (deg C)",
+       x = "Month") +
+  geom_boxplot(data = mill_7_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+
+
+#plotting means from Mill 8-7 Hole in Ground + CDEC 
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Mill 8-7 Hole in Ground",
+       y = "Mean Temperature (deg C)",
+       x = "Month") +
+  geom_boxplot(data = mill_8_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+
+
+#plotting means from Mill 8-8 Little Hole in Ground + CDEC 
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures Comparison CDEC and Mill 8-8 Little Hole in Ground",
+       y = "Mean Temperature (deg C)",
+       x = "Month") +
+  geom_boxplot(data = mill_9_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+
 
 # maybe 2+ plots are appropriate
 ```

@@ -204,7 +204,10 @@ DCV_hourly_temps <- DCV_CDEC |>
 ### Variable: `[name]`
 
 **Plotting Temperature over Period of Record**
-
+Checking Deer data sites from logger:
+ *Data gap from 2003-2006
+ *No concerning outliers
+ *Temperature ranges between 0-30 degree Celcius 
 ```{r}
 # Make whatever plot is appropriate 
 
@@ -212,8 +215,10 @@ DCV_hourly_temps <- DCV_CDEC |>
 deer_plot_logger <- ggplot(combined_table, aes(x = date, y = temperature, color = "Logger data")) +
   geom_line(color = "darkred") +
   labs(title = "Deer temp plot from Logger data", y = "Temperature (deg C)", color = "Data Source")
+```
 
 
+```{r}
 # Create the combined plot of all logger Deer sites and CDEC
 combined_CDEC_logger_plot <- deer_plot_logger +
    geom_line(data = DCV_hourly_temps, aes(x = date, y = temperature, color = "CDEC data")) +
@@ -228,6 +233,13 @@ DCV_mean_temp <- DCV_hourly_temps |>
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
 
 
+
+```
+
+
+```{r}
+
+#plotting means from Deer 9-0 Mouth + CDEC 
 DCV_filtered1 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
   filter(year >= 2013, year <= 2018)
@@ -237,9 +249,7 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_1_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
-    
-
-  
+#Logger data similar to CDEC, however this might be lower in the stream, closer to the Sacramento confluence. Recommendation is to use logger from higher up, where adult fish spawn
 
 #plotting means from Deer 9-1 VIDEO Station SV Dam + CDEC 
 DCV_filtered2 <- DCV_mean_temp |> 
@@ -251,6 +261,8 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_2_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Plot shows very similar data ranges than CDEC data. However, interquartile range is higher than other logger sites, and CDEC, which could make this dataset a little less reliable.
+
 
 #plotting means from "Deer 9-2 Trail 2E17" + CDEC 
 DCV_filtered3 <- DCV_mean_temp |> 
@@ -307,6 +319,8 @@ ggplot()+
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_7_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Recommend to use this logger data since it is in area of adult fish spawning
+
 
 
 #plotting means from "Deer 9-7 Upper Falls" + CDEC 
@@ -319,7 +333,7 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_8_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
-#TODO add interpretation comparing this data to CDEC and what the recommendation would be. If big differenece "
+## Observations: Upper Falls appears to have much lower temperatures compared to other logger sites and also CDEC data, we can assume that this due to the location of Upper Falls, higher up in the Feather river system where altitude is higher than closer to Sacramento confluence. Recommend to use this logger data since it is in area of adult fish spawning
 ```
 
 **Numeric Summary of [Variable] over Period of Record**
