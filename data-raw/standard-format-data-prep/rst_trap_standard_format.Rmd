@@ -448,18 +448,13 @@ filter(feather_trap_camp, !is.na(debrisVolumeCat))
 # only a few cases where visitTime != visitTime2
 filter(feather_trap_camp, visitTime != visitTime2)
 
-# organize feather subsites by high flow channel and low flow channel to make easier to understand
-lfc <- c("eye riffle_north", "eye riffle_side channel", "gateway main 400' up river", "gateway_main1", "gateway_rootball", "gateway_rootball_river_left", "#steep riffle_rst", "steep riffle_10' ext", "steep side channel")
-hfc <- c("herringer_east", "herringer_upper_west", "herringer_west", "live oak", "shawns_east", "shawns_west", "sunset east bank", "sunset west bank")
-
 feather_trap_clean <- feather_trap_camp %>%
   select(-c(debrisVolumeCat, debrisVolume, debrisVolumeUnits)) %>%
   group_by(siteName, subSiteName) %>% 
   arrange(visitTime) %>% 
   mutate(stream = "feather river",
          subsite = tolower(subSiteName),
-         site = case_when(subsite %in% lfc ~ "upper feather lfc",
-                          subsite %in% hfc ~ "upper feather hfc"),
+         site = tolower(siteName),
          trap_visit_date = as.Date(visitTime),
          trap_visit_time = as_hms(visitTime),
          trap_stop_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
@@ -851,6 +846,10 @@ combined_trap <- combined_trap_raw %>%
                                       fish_processed == "no catch data; fish released" ~ "no catch data, fish released",
                                       fish_processed == "no catch data; fish left in live box" ~ "no catch data, fish left in live box",
                                     T ~ "not recorded"),
+         trap_start_date = case_when(is.na(trap_start_date) ~ as.Date(trap_visit_date), 
+                                     T ~ as.Date(trap_start_date)),
+         trap_start_time = case_when(is.na(trap_start_time) ~ as_hms(trap_visit_time),
+                                     T ~ as_hms(trap_start_time)),
          gear_type = ifelse(is.na(gear_type), "rotary screw trap", gear_type),
          # convert ft to m and inches to cm
          depth_adjust = depth_adjust*2.54,

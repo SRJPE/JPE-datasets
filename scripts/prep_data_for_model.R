@@ -92,7 +92,6 @@ standard_catch_unmarked <- standard_catch %>%
   select(-species, -release_id, -is_yearling, -month, -day, -cutoff) |> 
   glimpse()
 
-
 # FL-based lifestage logic ------------------------------------------------
 
 
@@ -285,7 +284,7 @@ na_filled_lifestage_field <- standard_catch_unmarked_field |>
   filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
   mutate(model_lifestage_method = "assign count based on weekly distribution of field assigned lifestage",
          week = week(date), 
-         year = year(date)) |> 
+         year = year(date)) 
 
 # fill in run for all streams ------------------------------------------
 # how many records have no information for run?
@@ -523,6 +522,67 @@ gcs_upload(catch_fl_summary_stream,
            predefinedAcl = "bucketLevel")
 write_csv(catch_fl_summary_stream, "data/fork_length_summary_stream.csv")
 
+# measure fork length by PLAD size bin ------------------------------------
+# from meeting with josh 12/27/23 - wants number of fish per PLAD size bin (only measured)
+plad_bin_lookup <- tibble(plad_size_bins = c(seq(1:16), "not measured", "outside bins"),
+                          bin_lower = c(seq(from = 35, to = 110,by = 5),NA, NA),
+                          bin_upper = c(seq(from = 39, to = 114, by = 5), NA, NA),
+                          bin_mid = c(seq(from = 37.5, to = 112.5, by = 5), NA, NA))
+plad_distributions_raw <- standard_catch_unmarked |> 
+  mutate(week = week(date),
+         monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date)),
+         month = month(date), # add to join with yearling
+         day = day(date),
+         fork_length = round(fork_length)) |> 
+  left_join(years_to_include) |> 
+  mutate(include_in_model = ifelse(date >= min_date & date <= max_date, TRUE, FALSE),
+         # if the year was not included in the list of years to include then should be FALSE
+         include_in_model = ifelse(is.na(min_date), FALSE, include_in_model)) |> 
+  filter(include_in_model == T) |> 
+  left_join(daily_yearling_ruleset) |> 
+  mutate(
+    plad_size_bins = case_when(
+      fork_length %in% 35:39 ~ "1",
+      fork_length %in% 40:44 ~ "2",
+      fork_length %in% 45:49 ~ "3",
+      fork_length %in% 50:54 ~ "4",
+      fork_length %in% 55:59 ~ "5",
+      fork_length %in% 60:64 ~ "6",
+      fork_length %in% 65:69 ~ "7",
+      fork_length %in% 70:74 ~ "8",
+      fork_length %in% 75:79 ~ "9",
+      fork_length %in% 80:84 ~ "10",
+      fork_length %in% 85:89 ~ "11",
+      fork_length %in% 90:94 ~ "12",
+      fork_length %in% 95:99 ~ "13",
+      fork_length %in% 100:104 ~ "14",
+      fork_length %in% 105:109 ~ "15",
+      fork_length %in% 110:114 ~ "16",
+      is.na(fork_length) ~ "not measured",
+      fork_length > 114 |
+        fork_length < 35 ~ "outside bins")
+  ) |>
+  group_by(stream, site, week, monitoring_year, plad_size_bins, lifestage_for_model) |> 
+  summarize(count = sum(count, na.rm = T))
+
+plad_distributions <- plad_distributions_raw |>  
+  group_by(stream, site, week, monitoring_year) |> 
+  summarize(total = sum(count)) |> 
+  left_join(plad_distributions_raw) |> 
+  select(stream, site, week, monitoring_year, lifestage_for_model, plad_size_bins, count, total) |> 
+  rename(year = monitoring_year) |> 
+  left_join(plad_bin_lookup) |> 
+  # Josh said he is not going to use these
+  filter(!plad_size_bins %in% c("not measured", "outside bins"))
+ 
+gcs_upload(plad_distributions,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/plad_bin_distribution.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(plad_distributions, "data/plad_bin_distribution.csv")
+  # ck <- plad_distributions_raw |> 
+  #   filter(is.na(plad_size_bins), !is.na(fork_length), fork_length > 34, fork_length < 114)
 # Effort ------------------------------------------------------------------
 
 # Summarize effort data by week
@@ -759,8 +819,8 @@ write_csv(recapture_summary, "data/model-data/recapture_summary.csv")
 efficiency_summary <- standard_release %>% 
   select(stream, site, release_id, number_released) %>% 
   left_join(standard_recapture %>% 
-              select(stream, site, subsite, release_id, number_recaptured) %>% 
-              group_by(stream, site, subsite, release_id) %>% 
+              select(stream, site, release_id, number_recaptured) %>% 
+              group_by(stream, site, release_id) %>% 
               summarize(number_recaptured = sum(number_recaptured))) %>% 
   mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
          site_group = case_when(site %in% lfc_sites ~ "feather river lfc",

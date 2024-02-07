@@ -70,69 +70,69 @@ raw_mark_recapture <- readxl::read_excel("raw_battle_mark_recapture_data.xlsx", 
 ```
 
     ## New names:
-    ## * `` -> ...12
-    ## * `` -> ...19
-    ## * `` -> ...44
+    ## • `` -> `...12`
+    ## • `` -> `...19`
+    ## • `` -> `...44`
 
     ## Rows: 285
     ## Columns: 57
-    ## $ `Valid for Corr. Analysis?(Y/N)`      <chr> "N", "Y", "Y", "N", "Y", "Y", "Y~
-    ## $ `Valid For Prod. Est?  (Y/N)`         <chr> "N", "Y", "Y", "N", "Y", "Y", "Y~
-    ## $ `Release Date`                        <chr> "37643", "37649", "37652", "3765~
-    ## $ `(D)ay or (N)ight    Release`         <chr> "N", "N", "N", "N", "N", "N", "N~
-    ## $ `Release Time`                        <dttm> 1899-12-31 19:35:00, 1899-12-31~
-    ## $ `No. Marked`                          <dbl> 179, 404, 215, 127, 300, 297, 50~
-    ## $ `No. Released`                        <dbl> 168, 400, 212, 125, 292, 289, 49~
-    ## $ Recaps                                <dbl> 0, 33, 14, 0, 23, 20, 33, 2, 20,~
-    ## $ Mortality                             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Bailey's Trap Efficiency`            <dbl> 0.5917160, 8.4788030, 7.0422535,~
-    ## $ `Peterson Trap Efficiency`            <dbl> 0.0000000, 8.2500000, 6.6037736,~
-    ## $ ...12                                 <lgl> NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Mark Med Fork Length(mm)`            <dbl> 36, 36, 36, 35, 36, 36, 36, 37, ~
-    ## $ `Recap Med Fork Length(mm)`           <dbl> NA, 36, 35, NA, 35, 36, 37, 37, ~
-    ## $ `Origin (H/N)`                        <chr> "N", "N", "N", "N", "N", "N", "N~
-    ## $ Clip                                  <chr> NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Days Held Post-mark`                 <dbl> 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1,~
-    ## $ `Max Days Held Pre-Mark`              <dbl> 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,~
-    ## $ ...19                                 <lgl> NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Release Temp`                        <chr> "49.9", "49.6", "51.3", "47.4", ~
-    ## $ `Flow @ Release`                      <dbl> 1710, 817, 636, 614, 523, 481, 7~
-    ## $ `Barom. Pressure`                     <dbl> 30.22, 30.15, 30.20, 30.19, 30.1~
-    ## $ `<U+2206>B.P. after`                         <dbl> 0.07, 0.13, -0.17, -0.01, 0.02, ~
-    ## $ `<U+2206>B.P. before`                        <dbl> 0.03, 0.03, -0.13, -0.05, 0.01, ~
-    ## $ `Release Turbidity`                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Peak Wind Speed @ Release`           <dbl> 7, 9, 6, 15, 25, 9, 6, 6, 14, 14~
-    ## $ `Hourly Average Wind Speed @ Release` <dbl> 0, 5, 4, 8, 14, 3, 2, 3, 6, 5, 1~
-    ## $ `% Sky Cover @ Rel`                   <dbl> 8, 0, 3, 0, 0, 0, 8, 0, 0, 0, 5,~
-    ## $ `Weather/Sky Condition`               <chr> "hvy rain, fog", "overcast", "fo~
-    ## $ `Event (day of release)`              <chr> "Rain", "0", "Fog", "0", "0", "0~
-    ## $ `Event (day after release)`           <chr> "Fog", "0", "Fog-Rain", "0", "0"~
-    ## $ `Rain (Y/N)`                          <chr> "Y", "N", "Y", "N", "N", "N", "Y~
-    ## $ `Rain @ Release (in)`                 <dbl> 1.30, 0.00, 0.01, 0.00, 0.00, 0.~
-    ## $ `Light from moon`                     <chr> NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Nightly Moon Fraction`               <dbl> 0.72, 0.11, 0.00, 0.09, 0.31, 0.~
-    ## $ `Adjusted Moon Fraction`              <dbl> 0.072, 0.022, 0.000, 0.090, 0.31~
-    ## $ `Date of 1st Recap`                   <dttm> NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ `Time of 1st Recap`                   <dttm> NA, 1899-12-31 13:20:00, 1899-1~
-    ## $ `Turbidity @ Recap`                   <dbl> 4.0, 2.8, 2.3, 2.5, 4.0, 2.3, 3.~
-    ## $ `Flow @ 1st Recap`                    <dbl> NA, 717, 662, NA, 513, 485, 598,~
-    ## $ `Cone Velocity`                       <dbl> 3.12, 3.37, 2.74, 2.29, 2.56, 2.~
-    ## $ `Sec/ Rotation`                       <dbl> 6.33, 8.00, 9.33, 7.33, 10.33, 1~
-    ## $ `Cone Status (H/F)`                   <chr> "F", "F", "F", "F", "F", "F", "F~
-    ## $ ...44                                 <lgl> NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Mean Temp Day of Rel`                <dbl> 49.0, 49.1, 50.6, 46.3, 44.8, 45~
-    ## $ `Mean Temp Day 1+ 2`                  <dbl> 48.75, 48.95, 50.55, 46.05, 44.6~
-    ## $ `Mean Flow    Day 1 to Day 5.`        <dbl> 1161, 714, 650, 563, 506, 521, 8~
-    ## $ `Mean Flow Day of Rel`                <dbl> 1190, 849, 638, 627, 542, 483, 5~
-    ## $ `Mean Flow Day 1+ 2`                  <dbl> 1100.0, 788.5, 665.0, 606.0, 528~
-    ## $ `Caught Day 1`                        <dbl> NA, 33, 12, 0, 23, 20, 32, 2, 18~
-    ## $ `Caught Day 2`                        <dbl> 0, 0, 2, 0, 0, 0, 1, 0, 2, 1, 0,~
-    ## $ `Caught Day 3`                        <dbl> 0, 0, 0, 0, 0, 0, NA, 0, 0, 0, 0~
-    ## $ `Caught Day 4`                        <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,~
-    ## $ `Caught Day 5`                        <dbl> 0, 0, 0, 0, 0, 0, 0, 0, NA, 0, 0~
-    ## $ `Days past Dec 31`                    <dbl> 22, 28, 31, 34, 37, 41, 44, 48, ~
-    ## $ `Trap Year`                           <dbl> 2003, 2003, 2003, 2003, 2003, 20~
-    ## $ `Bailey's E (Full Cone Equivalence)`  <dbl> 0.5917160, 8.4788030, 7.0422535,~
+    ## $ `Valid for Corr. Analysis?(Y/N)`      <chr> "N", "Y", "Y", "N", "Y", "Y", "Y…
+    ## $ `Valid For Prod. Est?  (Y/N)`         <chr> "N", "Y", "Y", "N", "Y", "Y", "Y…
+    ## $ `Release Date`                        <chr> "37643", "37649", "37652", "3765…
+    ## $ `(D)ay or (N)ight    Release`         <chr> "N", "N", "N", "N", "N", "N", "N…
+    ## $ `Release Time`                        <dttm> 1899-12-31 19:35:00, 1899-12-31…
+    ## $ `No. Marked`                          <dbl> 179, 404, 215, 127, 300, 297, 50…
+    ## $ `No. Released`                        <dbl> 168, 400, 212, 125, 292, 289, 49…
+    ## $ Recaps                                <dbl> 0, 33, 14, 0, 23, 20, 33, 2, 20,…
+    ## $ Mortality                             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Bailey's Trap Efficiency`            <dbl> 0.5917160, 8.4788030, 7.0422535,…
+    ## $ `Peterson Trap Efficiency`            <dbl> 0.0000000, 8.2500000, 6.6037736,…
+    ## $ ...12                                 <lgl> NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Mark Med Fork Length(mm)`            <dbl> 36, 36, 36, 35, 36, 36, 36, 37, …
+    ## $ `Recap Med Fork Length(mm)`           <dbl> NA, 36, 35, NA, 35, 36, 37, 37, …
+    ## $ `Origin (H/N)`                        <chr> "N", "N", "N", "N", "N", "N", "N…
+    ## $ Clip                                  <chr> NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Days Held Post-mark`                 <dbl> 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
+    ## $ `Max Days Held Pre-Mark`              <dbl> 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,…
+    ## $ ...19                                 <lgl> NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Release Temp`                        <chr> "49.9", "49.6", "51.3", "47.4", …
+    ## $ `Flow @ Release`                      <dbl> 1710, 817, 636, 614, 523, 481, 7…
+    ## $ `Barom. Pressure`                     <dbl> 30.22, 30.15, 30.20, 30.19, 30.1…
+    ## $ `∆B.P. after`                         <dbl> 0.07, 0.13, -0.17, -0.01, 0.02, …
+    ## $ `∆B.P. before`                        <dbl> 0.03, 0.03, -0.13, -0.05, 0.01, …
+    ## $ `Release Turbidity`                   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Peak Wind Speed @ Release`           <dbl> 7, 9, 6, 15, 25, 9, 6, 6, 14, 14…
+    ## $ `Hourly Average Wind Speed @ Release` <dbl> 0, 5, 4, 8, 14, 3, 2, 3, 6, 5, 1…
+    ## $ `% Sky Cover @ Rel`                   <dbl> 8, 0, 3, 0, 0, 0, 8, 0, 0, 0, 5,…
+    ## $ `Weather/Sky Condition`               <chr> "hvy rain, fog", "overcast", "fo…
+    ## $ `Event (day of release)`              <chr> "Rain", "0", "Fog", "0", "0", "0…
+    ## $ `Event (day after release)`           <chr> "Fog", "0", "Fog-Rain", "0", "0"…
+    ## $ `Rain (Y/N)`                          <chr> "Y", "N", "Y", "N", "N", "N", "Y…
+    ## $ `Rain @ Release (in)`                 <dbl> 1.30, 0.00, 0.01, 0.00, 0.00, 0.…
+    ## $ `Light from moon`                     <chr> NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Nightly Moon Fraction`               <dbl> 0.72, 0.11, 0.00, 0.09, 0.31, 0.…
+    ## $ `Adjusted Moon Fraction`              <dbl> 0.072, 0.022, 0.000, 0.090, 0.31…
+    ## $ `Date of 1st Recap`                   <dttm> NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ `Time of 1st Recap`                   <dttm> NA, 1899-12-31 13:20:00, 1899-1…
+    ## $ `Turbidity @ Recap`                   <dbl> 4.0, 2.8, 2.3, 2.5, 4.0, 2.3, 3.…
+    ## $ `Flow @ 1st Recap`                    <dbl> NA, 717, 662, NA, 513, 485, 598,…
+    ## $ `Cone Velocity`                       <dbl> 3.12, 3.37, 2.74, 2.29, 2.56, 2.…
+    ## $ `Sec/ Rotation`                       <dbl> 6.33, 8.00, 9.33, 7.33, 10.33, 1…
+    ## $ `Cone Status (H/F)`                   <chr> "F", "F", "F", "F", "F", "F", "F…
+    ## $ ...44                                 <lgl> NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Mean Temp Day of Rel`                <dbl> 49.0, 49.1, 50.6, 46.3, 44.8, 45…
+    ## $ `Mean Temp Day 1+ 2`                  <dbl> 48.75, 48.95, 50.55, 46.05, 44.6…
+    ## $ `Mean Flow    Day 1 to Day 5.`        <dbl> 1161, 714, 650, 563, 506, 521, 8…
+    ## $ `Mean Flow Day of Rel`                <dbl> 1190, 849, 638, 627, 542, 483, 5…
+    ## $ `Mean Flow Day 1+ 2`                  <dbl> 1100.0, 788.5, 665.0, 606.0, 528…
+    ## $ `Caught Day 1`                        <dbl> NA, 33, 12, 0, 23, 20, 32, 2, 18…
+    ## $ `Caught Day 2`                        <dbl> 0, 0, 2, 0, 0, 0, 1, 0, 2, 1, 0,…
+    ## $ `Caught Day 3`                        <dbl> 0, 0, 0, 0, 0, 0, NA, 0, 0, 0, 0…
+    ## $ `Caught Day 4`                        <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+    ## $ `Caught Day 5`                        <dbl> 0, 0, 0, 0, 0, 0, 0, 0, NA, 0, 0…
+    ## $ `Days past Dec 31`                    <dbl> 22, 28, 31, 34, 37, 41, 44, 48, …
+    ## $ `Trap Year`                           <dbl> 2003, 2003, 2003, 2003, 2003, 20…
+    ## $ `Bailey's E (Full Cone Equivalence)`  <dbl> 0.5917160, 8.4788030, 7.0422535,…
 
 ## Data transformations
 
@@ -147,63 +147,63 @@ mark_recapture_data <- raw_mark_recapture %>%
 
     ## Rows: 275
     ## Columns: 57
-    ## $ valid_for_corr_analysis_y_n       <chr> "N", "Y", "Y", "N", "Y", "Y", "Y", "~
-    ## $ valid_for_prod_est_y_n            <chr> "N", "Y", "Y", "N", "Y", "Y", "Y", "~
-    ## $ release_date                      <date> 2003-01-22, 2003-01-28, 2003-01-31,~
-    ## $ d_ay_or_n_ight_release            <chr> "N", "N", "N", "N", "N", "N", "N", "~
-    ## $ release_time                      <dttm> 1899-12-31 19:35:00, 1899-12-31 18:~
-    ## $ no_marked                         <dbl> 179, 404, 215, 127, 300, 297, 500, 2~
-    ## $ no_released                       <dbl> 168, 400, 212, 125, 292, 289, 491, 2~
-    ## $ recaps                            <dbl> 0, 33, 14, 0, 23, 20, 33, 2, 20, 37,~
-    ## $ mortality                         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ baileys_trap_efficiency           <dbl> 0.5917160, 8.4788030, 7.0422535, 0.7~
-    ## $ peterson_trap_efficiency          <dbl> 0.0000000, 8.2500000, 6.6037736, 0.0~
-    ## $ x12                               <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ mark_med_fork_length_mm           <dbl> 36, 36, 36, 35, 36, 36, 36, 37, 37, ~
-    ## $ recap_med_fork_length_mm          <dbl> NA, 36, 35, NA, 35, 36, 37, 37, 36, ~
-    ## $ origin_h_n                        <chr> "N", "N", "N", "N", "N", "N", "N", "~
-    ## $ clip                              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ days_held_post_mark               <dbl> 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
-    ## $ max_days_held_pre_mark            <dbl> 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, ~
-    ## $ x19                               <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ release_temp                      <chr> "49.9", "49.6", "51.3", "47.4", "46"~
-    ## $ flow_release                      <dbl> 1710, 817, 636, 614, 523, 481, 711, ~
-    ## $ barom_pressure                    <dbl> 30.22, 30.15, 30.20, 30.19, 30.12, 3~
-    ## $ b_p_after                         <dbl> 0.07, 0.13, -0.17, -0.01, 0.02, -0.1~
-    ## $ b_p_before                        <dbl> 0.03, 0.03, -0.13, -0.05, 0.01, -0.1~
-    ## $ release_turbidity                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ peak_wind_speed_release           <dbl> 7, 9, 6, 15, 25, 9, 6, 6, 14, 14, 18~
-    ## $ hourly_average_wind_speed_release <dbl> 0, 5, 4, 8, 14, 3, 2, 3, 6, 5, 1, 2,~
-    ## $ percent_sky_cover_rel             <dbl> 8, 0, 3, 0, 0, 0, 8, 0, 0, 0, 5, 0, ~
-    ## $ weather_sky_condition             <chr> "hvy rain, fog", "overcast", "fog", ~
-    ## $ event_day_of_release              <chr> "Rain", "0", "Fog", "0", "0", "0", "~
-    ## $ event_day_after_release           <chr> "Fog", "0", "Fog-Rain", "0", "0", "0~
-    ## $ rain_y_n                          <chr> "Y", "N", "Y", "N", "N", "N", "Y", "~
-    ## $ rain_release_in                   <dbl> 1.30, 0.00, 0.01, 0.00, 0.00, 0.00, ~
-    ## $ light_from_moon                   <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ nightly_moon_fraction             <dbl> 0.72, 0.11, 0.00, 0.09, 0.31, 0.68, ~
-    ## $ adjusted_moon_fraction            <dbl> 0.072, 0.022, 0.000, 0.090, 0.310, 0~
-    ## $ date_of_1st_recap                 <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ time_of_1st_recap                 <dttm> NA, 1899-12-31 13:20:00, 1899-12-31~
-    ## $ turbidity_recap                   <dbl> 4.0, 2.8, 2.3, 2.5, 4.0, 2.3, 3.3, 3~
-    ## $ flow_1st_recap                    <dbl> NA, 717, 662, NA, 513, 485, 598, 620~
-    ## $ cone_velocity                     <dbl> 3.12, 3.37, 2.74, 2.29, 2.56, 2.36, ~
-    ## $ sec_rotation                      <dbl> 6.33, 8.00, 9.33, 7.33, 10.33, 10.66~
-    ## $ cone_status_h_f                   <chr> "F", "F", "F", "F", "F", "F", "F", "~
-    ## $ x44                               <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ mean_temp_day_of_rel              <dbl> 49.0, 49.1, 50.6, 46.3, 44.8, 45.5, ~
-    ## $ mean_temp_day_1_2                 <dbl> 48.75, 48.95, 50.55, 46.05, 44.65, 4~
-    ## $ mean_flow_day_1_to_day_5          <dbl> 1161, 714, 650, 563, 506, 521, 837, ~
-    ## $ mean_flow_day_of_rel              <dbl> 1190, 849, 638, 627, 542, 483, 583, ~
-    ## $ mean_flow_day_1_2                 <dbl> 1100.0, 788.5, 665.0, 606.0, 528.0, ~
-    ## $ caught_day_1                      <dbl> NA, 33, 12, 0, 23, 20, 32, 2, 18, 36~
-    ## $ caught_day_2                      <dbl> 0, 0, 2, 0, 0, 0, 1, 0, 2, 1, 0, 1, ~
-    ## $ caught_day_3                      <dbl> 0, 0, 0, 0, 0, 0, NA, 0, 0, 0, 0, 1,~
-    ## $ caught_day_4                      <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, ~
-    ## $ caught_day_5                      <dbl> 0, 0, 0, 0, 0, 0, 0, 0, NA, 0, 0, 0,~
-    ## $ days_past_dec_31                  <dbl> 22, 28, 31, 34, 37, 41, 44, 48, 51, ~
-    ## $ trap_year                         <dbl> 2003, 2003, 2003, 2003, 2003, 2003, ~
-    ## $ baileys_e_full_cone_equivalence   <dbl> 0.5917160, 8.4788030, 7.0422535, 0.7~
+    ## $ valid_for_corr_analysis_y_n       <chr> "N", "Y", "Y", "N", "Y", "Y", "Y", "…
+    ## $ valid_for_prod_est_y_n            <chr> "N", "Y", "Y", "N", "Y", "Y", "Y", "…
+    ## $ release_date                      <date> 2003-01-22, 2003-01-28, 2003-01-31,…
+    ## $ d_ay_or_n_ight_release            <chr> "N", "N", "N", "N", "N", "N", "N", "…
+    ## $ release_time                      <dttm> 1899-12-31 19:35:00, 1899-12-31 18:…
+    ## $ no_marked                         <dbl> 179, 404, 215, 127, 300, 297, 500, 2…
+    ## $ no_released                       <dbl> 168, 400, 212, 125, 292, 289, 491, 2…
+    ## $ recaps                            <dbl> 0, 33, 14, 0, 23, 20, 33, 2, 20, 37,…
+    ## $ mortality                         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ baileys_trap_efficiency           <dbl> 0.5917160, 8.4788030, 7.0422535, 0.7…
+    ## $ peterson_trap_efficiency          <dbl> 0.0000000, 8.2500000, 6.6037736, 0.0…
+    ## $ x12                               <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ mark_med_fork_length_mm           <dbl> 36, 36, 36, 35, 36, 36, 36, 37, 37, …
+    ## $ recap_med_fork_length_mm          <dbl> NA, 36, 35, NA, 35, 36, 37, 37, 36, …
+    ## $ origin_h_n                        <chr> "N", "N", "N", "N", "N", "N", "N", "…
+    ## $ clip                              <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ days_held_post_mark               <dbl> 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+    ## $ max_days_held_pre_mark            <dbl> 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, …
+    ## $ x19                               <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ release_temp                      <chr> "49.9", "49.6", "51.3", "47.4", "46"…
+    ## $ flow_release                      <dbl> 1710, 817, 636, 614, 523, 481, 711, …
+    ## $ barom_pressure                    <dbl> 30.22, 30.15, 30.20, 30.19, 30.12, 3…
+    ## $ b_p_after                         <dbl> 0.07, 0.13, -0.17, -0.01, 0.02, -0.1…
+    ## $ b_p_before                        <dbl> 0.03, 0.03, -0.13, -0.05, 0.01, -0.1…
+    ## $ release_turbidity                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ peak_wind_speed_release           <dbl> 7, 9, 6, 15, 25, 9, 6, 6, 14, 14, 18…
+    ## $ hourly_average_wind_speed_release <dbl> 0, 5, 4, 8, 14, 3, 2, 3, 6, 5, 1, 2,…
+    ## $ percent_sky_cover_rel             <dbl> 8, 0, 3, 0, 0, 0, 8, 0, 0, 0, 5, 0, …
+    ## $ weather_sky_condition             <chr> "hvy rain, fog", "overcast", "fog", …
+    ## $ event_day_of_release              <chr> "Rain", "0", "Fog", "0", "0", "0", "…
+    ## $ event_day_after_release           <chr> "Fog", "0", "Fog-Rain", "0", "0", "0…
+    ## $ rain_y_n                          <chr> "Y", "N", "Y", "N", "N", "N", "Y", "…
+    ## $ rain_release_in                   <dbl> 1.30, 0.00, 0.01, 0.00, 0.00, 0.00, …
+    ## $ light_from_moon                   <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ nightly_moon_fraction             <dbl> 0.72, 0.11, 0.00, 0.09, 0.31, 0.68, …
+    ## $ adjusted_moon_fraction            <dbl> 0.072, 0.022, 0.000, 0.090, 0.310, 0…
+    ## $ date_of_1st_recap                 <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ time_of_1st_recap                 <dttm> NA, 1899-12-31 13:20:00, 1899-12-31…
+    ## $ turbidity_recap                   <dbl> 4.0, 2.8, 2.3, 2.5, 4.0, 2.3, 3.3, 3…
+    ## $ flow_1st_recap                    <dbl> NA, 717, 662, NA, 513, 485, 598, 620…
+    ## $ cone_velocity                     <dbl> 3.12, 3.37, 2.74, 2.29, 2.56, 2.36, …
+    ## $ sec_rotation                      <dbl> 6.33, 8.00, 9.33, 7.33, 10.33, 10.66…
+    ## $ cone_status_h_f                   <chr> "F", "F", "F", "F", "F", "F", "F", "…
+    ## $ x44                               <lgl> NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ mean_temp_day_of_rel              <dbl> 49.0, 49.1, 50.6, 46.3, 44.8, 45.5, …
+    ## $ mean_temp_day_1_2                 <dbl> 48.75, 48.95, 50.55, 46.05, 44.65, 4…
+    ## $ mean_flow_day_1_to_day_5          <dbl> 1161, 714, 650, 563, 506, 521, 837, …
+    ## $ mean_flow_day_of_rel              <dbl> 1190, 849, 638, 627, 542, 483, 583, …
+    ## $ mean_flow_day_1_2                 <dbl> 1100.0, 788.5, 665.0, 606.0, 528.0, …
+    ## $ caught_day_1                      <dbl> NA, 33, 12, 0, 23, 20, 32, 2, 18, 36…
+    ## $ caught_day_2                      <dbl> 0, 0, 2, 0, 0, 0, 1, 0, 2, 1, 0, 1, …
+    ## $ caught_day_3                      <dbl> 0, 0, 0, 0, 0, 0, NA, 0, 0, 0, 0, 1,…
+    ## $ caught_day_4                      <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, …
+    ## $ caught_day_5                      <dbl> 0, 0, 0, 0, 0, 0, 0, 0, NA, 0, 0, 0,…
+    ## $ days_past_dec_31                  <dbl> 22, 28, 31, 34, 37, 41, 44, 48, 51, …
+    ## $ trap_year                         <dbl> 2003, 2003, 2003, 2003, 2003, 2003, …
+    ## $ baileys_e_full_cone_equivalence   <dbl> 0.5917160, 8.4788030, 7.0422535, 0.7…
 
 ``` r
 View(raw_mark_recapture)
@@ -261,7 +261,7 @@ and `baileys_trap_efficiency`
 
 ### Variable: `no_released`
 
-**Plotting no\_released over Period of Record**
+**Plotting no_released over Period of Record**
 
 ``` r
 mark_recapture_data %>% ggplot() +
@@ -270,7 +270,7 @@ mark_recapture_data %>% ggplot() +
 
 ![](battle_creek_mark_recapture_data_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-**Numeric Summary of no\_released over Period of Record**
+**Numeric Summary of no_released over Period of Record**
 
 ``` r
 # Table with summary statistics
@@ -307,7 +307,7 @@ Looks like there are anywhere from 0 - 64 fish recaptured
 
 ### Variable: `baileys_trap_efficiency`
 
-**Plotting baileys\_trap\_efficiency over Period of Record**
+**Plotting baileys_trap_efficiency over Period of Record**
 
 ``` r
 mark_recapture_data %>% ggplot() +
@@ -316,7 +316,7 @@ mark_recapture_data %>% ggplot() +
 
 ![](battle_creek_mark_recapture_data_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-**Numeric Summary of baileys\_trap\_efficiency over Period of Record**
+**Numeric Summary of baileys_trap_efficiency over Period of Record**
 
 ``` r
 # Table with summary statistics
@@ -330,14 +330,16 @@ Looks like baileys efficiency is anywhere from .22 - 100.
 
 ## Summary of identified issues
 
--   What are all other variables doing in dataset if not being used to
-    calculate trap efficiency?
--   Does not look like consistent amount of mark recapture trials each
-    year
+- What are all other variables doing in dataset if not being used to
+  calculate trap efficiency?
+- Does not look like consistent amount of mark recapture trials each
+  year
 
 ## Select relevent data, & save cleaned data to cloud
 
 ``` r
+# identified a typo where release_date == "2018-02-14": caught_day_1 should be 11 not 1180 because totaly of 11 recaps and 299 released so 1180 does not make sensing.
+# Fixing typo here: 10/27/2023
 battle_mark_reacpture <- mark_recapture_data %>% 
   select(release_date, day_or_night_release = d_ay_or_n_ight_release, release_time, no_marked,
          no_released, recaps, mortality, mark_med_fork_length_mm, recap_med_fork_length_mm, 
@@ -352,34 +354,18 @@ battle_mark_reacpture <- mark_recapture_data %>%
                                 origin_h_n == "N" ~ "natural"),
          release_temp = as.numeric(release_temp),
          cone_status = case_when(cone_status_h_f == "H" ~ "half", 
-                                 cone_status_h_f == "F" ~ "full")) %>% 
-  select(-origin_h_n, -cone_status_h_f) %>% glimpse
+                                 cone_status_h_f == "F" ~ "full"),
+         # FIX TYPO
+         caught_day_1 = ifelse(release_date == "2018-02-14",11,caught_day_1)) %>% 
+  select(-origin_h_n, -cone_status_h_f)
+# check to make sure typo fixed
+filter(battle_mark_reacpture, release_date == "2018-02-14") |> select(caught_day_1)
 ```
 
-    ## Rows: 275
-    ## Columns: 22
-    ## $ release_date             <date> 2003-01-22, 2003-01-28, 2003-01-31, 2003-02-~
-    ## $ day_or_night_release     <chr> "night", "night", "night", "night", "night", ~
-    ## $ release_time             <time> 19:35:00, 18:09:00, 22:00:00, 19:00:00, 19:2~
-    ## $ no_marked                <dbl> 179, 404, 215, 127, 300, 297, 500, 248, 505, ~
-    ## $ no_released              <dbl> 168, 400, 212, 125, 292, 289, 491, 238, 498, ~
-    ## $ recaps                   <dbl> 0, 33, 14, 0, 23, 20, 33, 2, 20, 37, 13, 28, ~
-    ## $ mortality                <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ mark_med_fork_length_mm  <dbl> 36, 36, 36, 35, 36, 36, 36, 37, 37, 36, 36, 3~
-    ## $ recap_med_fork_length_mm <dbl> NA, 36, 35, NA, 35, 36, 37, 37, 36, 37, 36, 3~
-    ## $ days_held_post_mark      <dbl> 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, ~
-    ## $ release_temp             <dbl> 49.9, 49.6, 51.3, 47.4, 46.0, 47.1, 50.7, 49.~
-    ## $ flow_release             <dbl> 1710, 817, 636, 614, 523, 481, 711, 668, 604,~
-    ## $ release_turbidity        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ mean_temp_day_of_rel     <dbl> 49.0, 49.1, 50.6, 46.3, 44.8, 45.5, 49.9, 48.~
-    ## $ mean_flow_day_of_rel     <dbl> 1190, 849, 638, 627, 542, 483, 583, 733, 617,~
-    ## $ caught_day_1             <dbl> NA, 33, 12, 0, 23, 20, 32, 2, 18, 36, 13, 25,~
-    ## $ caught_day_2             <dbl> 0, 0, 2, 0, 0, 0, 1, 0, 2, 1, 0, 1, 1, NA, 0,~
-    ## $ caught_day_3             <dbl> 0, 0, 0, 0, 0, 0, NA, 0, 0, 0, 0, 1, 0, 0, 0,~
-    ## $ caught_day_4             <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, ~
-    ## $ caught_day_5             <dbl> 0, 0, 0, 0, 0, 0, 0, 0, NA, 0, 0, 0, 0, 0, 0,~
-    ## $ origin                   <chr> "natural", "natural", "natural", "natural", "~
-    ## $ cone_status              <chr> "full", "full", "full", "full", "full", "full~
+    ## # A tibble: 1 × 1
+    ##   caught_day_1
+    ##          <dbl>
+    ## 1           11
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
@@ -389,3 +375,29 @@ gcs_upload(battle_mark_reacpture,
            type = "csv",
            name = "rst/battle-creek/data/battle_mark_reacpture.csv")
 ```
+
+    ## ℹ 2023-10-27 13:30:37 > File size detected as  26 Kb
+
+    ## ℹ 2023-10-27 13:30:37 > Request Status Code:  400
+
+    ## ! http_400 Cannot insert legacy ACL for an object when uniform bucket-level access is enabled. Read more at https://cloud.google.com/storage/docs/uniform-bucket-level-access - Retrying with predefinedAcl='bucketLevel'
+
+    ## ℹ 2023-10-27 13:30:37 > File size detected as  26 Kb
+
+    ## ==Google Cloud Storage Object==
+    ## Name:                rst/battle-creek/data/battle_mark_reacpture.csv 
+    ## Type:                csv 
+    ## Size:                26 Kb 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle-creek%2Fdata%2Fbattle_mark_reacpture.csv?generation=1698438637912081&alt=media 
+    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/rst%2Fbattle-creek%2Fdata%2Fbattle_mark_reacpture.csv 
+    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/rst%2Fbattle-creek%2Fdata%2Fbattle_mark_reacpture.csv 
+    ## Bucket:              jpe-dev-bucket 
+    ## ID:                  jpe-dev-bucket/rst/battle-creek/data/battle_mark_reacpture.csv/1698438637912081 
+    ## MD5 Hash:            FOon/qiX1gCoVtAtYu4bAA== 
+    ## Class:               STANDARD 
+    ## Created:             2023-10-27 20:30:37 
+    ## Updated:             2023-10-27 20:30:37 
+    ## Generation:          1698438637912081 
+    ## Meta Generation:     1 
+    ## eTag:                CJGAvv2Il4IDEAE= 
+    ## crc32c:              GUtVBA==

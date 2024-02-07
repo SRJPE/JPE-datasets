@@ -59,7 +59,9 @@ gcs_get_object(object_name =
 
 feather <- readxl::read_excel(here::here("data", "feather_escapement.xlsx")) |> 
   rename(spawner_abundance_estimate = estimate) |> 
-  mutate(stream = "feather river")
+  mutate(stream = "feather river",
+         adipose_fin_clip = "not recorded",
+         run = "combined fall and spring")
 
 
 ```

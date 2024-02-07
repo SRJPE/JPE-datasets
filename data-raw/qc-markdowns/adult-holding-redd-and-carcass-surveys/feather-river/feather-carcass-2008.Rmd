@@ -160,6 +160,9 @@ cwt <- cwt_raw |>
                           clip == "NO DATA" ~ NA_character_,
                           TRUE ~ clip)) |>  
   rename(adipose_fin_clip = clip) |> 
+  left_join(cwt_header |> 
+              select(header_id = headerID, date = Date), 
+            by = "header_id") |> 
   select(-c(samp_num, header_id)) |> 
   glimpse()
 ```
