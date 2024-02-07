@@ -533,7 +533,8 @@ plad_distributions_raw <- standard_catch_unmarked |>
          monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date)),
          month = month(date), # add to join with yearling
          day = day(date),
-         fork_length = round(fork_length)) |> 
+         fork_length = round(fork_length),
+         year = year(date)) |> 
   left_join(years_to_include) |> 
   mutate(include_in_model = ifelse(date >= min_date & date <= max_date, TRUE, FALSE),
          # if the year was not included in the list of years to include then should be FALSE
@@ -562,15 +563,14 @@ plad_distributions_raw <- standard_catch_unmarked |>
       fork_length > 114 |
         fork_length < 35 ~ "outside bins")
   ) |>
-  group_by(stream, site, week, monitoring_year, plad_size_bins, lifestage_for_model) |> 
+  group_by(stream, site, week, year, plad_size_bins, lifestage_for_model) |> 
   summarize(count = sum(count, na.rm = T))
 
 plad_distributions <- plad_distributions_raw |>  
-  group_by(stream, site, week, monitoring_year) |> 
+  group_by(stream, site, week, year) |> 
   summarize(total = sum(count)) |> 
   left_join(plad_distributions_raw) |> 
-  select(stream, site, week, monitoring_year, lifestage_for_model, plad_size_bins, count, total) |> 
-  rename(year = monitoring_year) |> 
+  select(stream, site, week, year, lifestage_for_model, plad_size_bins, count, total) |> 
   left_join(plad_bin_lookup) |> 
   # Josh said he is not going to use these
   filter(!plad_size_bins %in% c("not measured", "outside bins"))
