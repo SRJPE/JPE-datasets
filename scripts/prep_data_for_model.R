@@ -574,6 +574,11 @@ plad_distributions <- plad_distributions_raw |>
   left_join(plad_bin_lookup) |> 
   # Josh said he is not going to use these
   filter(!plad_size_bins %in% c("not measured", "outside bins"))
+
+plad_distributions_filtered <- plad_distributions |> 
+  filter(site == "lcc", lifestage_for_model != "yearling") |> 
+  ungroup() |> 
+  select(-site)
  
 gcs_upload(plad_distributions,
            object_function = f,
@@ -581,6 +586,13 @@ gcs_upload(plad_distributions,
            name = "jpe-model-data/plad_bin_distribution.csv",
            predefinedAcl = "bucketLevel")
 write_csv(plad_distributions, "data/plad_bin_distribution.csv")
+
+gcs_upload(plad_distributions_filtered,
+           object_function = f,
+           type = "csv",
+           name = "jpe-model-data/plad_bin_distribution_filtered.csv",
+           predefinedAcl = "bucketLevel")
+write_csv(plad_distributions_filtered, "data/plad_bin_distribution_filtered.csv")
   # ck <- plad_distributions_raw |> 
   #   filter(is.na(plad_size_bins), !is.na(fork_length), fork_length > 34, fork_length < 114)
 # Effort ------------------------------------------------------------------
