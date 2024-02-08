@@ -147,25 +147,65 @@ deer_2014 <- deer_2013_raw |>
 ## 2016-2017
 
 ```{r}
-deer_2017_raw <- openxlsx::read.xlsx(here("data-raw", "qc-markdowns", "adult-upstream-passage-monitoring", "deer-creek", paste0(deer_creek_files[3])),
-                                    rows = 1:9,
-                                    fillMergedCells = TRUE,
-                                    sheet = "SUMMARY") 
-
-deer_2017 <- deer_2017_raw |> 
-  rename(description = `2016-17.Deer.Creek.Spring.Video.Station.Estimate`,
+process_deer_files <- function(raw_table) {
+  first_col <- names(raw_table)[1]
+  clean_data <- raw_table |> 
+      rename(description = all_of(first_col),
          value = X2) |> 
-  mutate(data_type = case_when(str_detect(description, "Estimate") ~ "abundance_estimate",
+  mutate(value = ifelse(value == "N/A", NA, value),
+         data_type = case_when(str_detect(description, "Estimate") ~ "abundance_estimate",
                                str_detect(description,"lower confidence") ~ "lcl",
                                str_detect(description,"upper confidence") ~ "ucl",
                                TRUE ~ NA)) |> 
   filter(!is.na(data_type)) |> 
   select(data_type, value) |> 
+    distinct(value, .keep_all = TRUE) |> 
   pivot_wider(values_from = value, names_from = data_type) |> 
   mutate(ladder = "both",
          stream = "deer creek",
          year = 2017,
          confidence_interval = "90")
+  clean_data
+}
+
+deer_2017_raw <- openxlsx::read.xlsx(here("data-raw", "qc-markdowns", "adult-upstream-passage-monitoring", "deer-creek", paste0(deer_creek_files[3])),
+                                    rows = 1:9,
+                                    fillMergedCells = TRUE,
+                                    sheet = "SUMMARY") 
+
+deer_2017 <- process_deer_files(deer_2017_raw)
+```
+
+# 2017-2018
+```{r}
+deer_2018_raw <- openxlsx::read.xlsx(here("data-raw", "qc-markdowns", "adult-upstream-passage-monitoring", "deer-creek", paste0(deer_creek_files[4])),
+                                    rows = 1:9,
+                                    fillMergedCells = TRUE,
+                                    sheet = "SUMMARY") 
+
+deer_2018 <- process_deer_files(deer_2018_raw) |> 
+  mutate(ucl = ifelse(ucl == "N/A", NA, ucl))
+```
+
+# 2018-2019
+```{r}
+deer_2019_raw <- openxlsx::read.xlsx(here("data-raw", "qc-markdowns", "adult-upstream-passage-monitoring", "deer-creek", paste0(deer_creek_files[5])),
+                                    rows = 1:9,
+                                    fillMergedCells = TRUE,
+                                    sheet = "SUMMARY") 
+
+deer_2019 <- process_deer_files(deer_2019_raw)
+```
+
+# 2019-2020
+```{r}
+# TODO stopped here - continue to check against raw files bc they're different
+deer_2020_raw <- openxlsx::read.xlsx(here("data-raw", "qc-markdowns", "adult-upstream-passage-monitoring", "deer-creek", paste0(deer_creek_files[6])),
+                                    rows = 1:9,
+                                    fillMergedCells = TRUE,
+                                    sheet = "SUMMARY") 
+
+deer_2020 <- process_deer_files(deer_2020_raw)
 ```
 
 ```{r}
