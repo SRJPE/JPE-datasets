@@ -122,43 +122,6 @@ butte <- read_csv(here::here("data", "butte_escapement.csv")) |>
 compare_battle <- left_join(spring_grandtab, battle_spring) |> 
   select(year, battle, passage_estimate)
 # for the years where does has passage estimates, passage estimate data is very similar
-# to what is in grandtab, there are a few discrepancies
-# we aren't missing any days though so assume that we have estimates rather than raw
-standard_deer <- filter(adult_passage_standard, stream == "Deer Creek") |> 
-  mutate(year = year(date),
-         month = month(date),
-         day = day(date),
-         fake_date = as_date(paste0("2000-0",month,"-",day)))
-standard_deer_annual <- standard_deer |> 
-  group_by(year) |> 
-  summarize(count = sum(count))
-compare_deer <- select(spring_grandtab, year, deer) |> 
-  left_join(standard_deer_annual)
-
-ggplot(standard_deer, aes(x = fake_date, y = count)) +
-  geom_point() + 
-  facet_wrap(~year)
-
-# manual check to see if missing dates
-# dates <- seq(as.Date("2000-02-01"), as.Date("2000-08-01"), by = "day")
-# missing_date <- tibble(all_date = rep(dates,7),
-#                        year = c(rep(2014,183), rep(2015, 183), rep(2016, 183), rep(2017, 183), rep(2018, 183), rep(2019, 183), rep(2020, 183)))
-# 
-# check <- full_join(standard_deer, missing_date, by = c("fake_date"="all_date", "year"))
-
-# there are some discrepancies between the passage estimate data we have
-# and what is in grandtab
-standard_mill <- filter(adult_passage_standard, stream == "Mill Creek") |> 
-  mutate(year = year(date),
-         month = month(date),
-         day = day(date),
-         fake_date = as_date(paste0("2000-0",month,"-",day)))
-standard_mill_annual <- standard_mill |> 
-  group_by(year) |> 
-  summarize(count = sum(count))
-compare_mill <- select(spring_grandtab, year, mill) |> 
-  left_join(standard_mill_annual)
-# check <- full_join(standard_mill, missing_date, by = c("fake_date"="all_date", "year"))
 
 # looks like yuba doesn't really report to grandtab
 compare_yuba <- left_join(spring_grandtab, yuba) |> 
