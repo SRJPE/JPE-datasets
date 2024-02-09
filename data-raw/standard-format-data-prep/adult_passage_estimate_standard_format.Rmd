@@ -85,9 +85,14 @@ gcs_get_object(object_name =
 ```{r}
 deer_raw <- readxl::read_excel(here("data", "deer_escapement_estimates.csv"))
 
+
+# deer creek 2014 collects north and south ladders separately; for 
+# all other years, take the "both" estimate to avoid double counting
 deer <- deer_raw |> 
-  select(-c(is_count, percent_grilse, percent_hatchery, file_source)) |> 
-  filter(species == "chinook") |> glimpse()
+  mutate(keep_ladder = ifelse(year == 2014 & ladder %in% c("north", "south") | year != 2014 & ladder == "both", TRUE, FALSE)) |> 
+  filter(species == "chinook", keep_ladder) |> 
+  select(-c(is_count, percent_grilse, percent_hatchery, file_source, keep_ladder)) |> 
+  glimpse()
 ```
 
 # Mill Creek Passage Estimates
@@ -148,16 +153,16 @@ clear_battle <- select(spring_grandtab, year, battle, clear) |>
   mutate(run = "spring",
          adipose_clipped = F)
 
-# data are from data provided by ryan and are all spring run. grandtab includes
-# long time series so can't be sure what the data source is
-deer_mill <- filter(adult_passage_standard, stream %in% c("Deer Creek", "Mill Creek")) |> 
-  mutate(stream = tolower(stream),
-         year = year(date)) |> 
+# data are provided by Doug Killam
+# run is recorded for mill creek
+# all raw data files for deer creek are titled "spring"
+deer_mill <- bind_rows(deer |> 
+                         mutate(run = "spring"), mill) |> 
   group_by(stream, year) |> 
-  summarize(passage_estimate = sum(count)) |> 
-  filter(!is.na(year), !is.na(passage_estimate)) |> 
+  rename(passage_estimate = estimate) |> 
   mutate(run = "spring",
-         adipose_clipped = F)
+         adipose_clipped = NA) |> # TODO incorporate percent hatchery?
+  select(-species)
 
 # from report provided by yuba
 yuba <- select(yuba, year, spring_run_escapement) |> 
@@ -183,39 +188,6 @@ passage_estimate <- bind_rows(clear_battle,
 write_csv(passage_estimate, here::here("data","adult_passage_estimate.csv"))
 ```
 
-
-### Get CIs from Deer Creek raw files
-```{r}
-# TODO make this into a cleaner function
-deer_CIs_21_22_south <- readxl::read_xlsx(here::here("data", "deer_escapement_estimates_21-22.xlsx"),
-                                    sheet = "Post R DSVS Salmon ",
-                                    range = "A1:F4") |> 
-  filter(`2021-22  Deer Creek SPRING Video Station Estimate` == "0.9") |> 
-  select(lower = `...4`, upper = `South Salmon`) |> 
-  mutate(lower = as.numeric(lower), 
-         upper = as.numeric(upper),
-         ladder = "South")
-
-deer_CIs_21_22_north <- readxl::read_xlsx(here::here("data", "deer_escapement_estimates_21-22.xlsx"),
-                                          sheet = "Post R DNVS Salmon",
-                                          range = "A1:F4") |> 
-  filter(`2021-22  Deer Creek SPRING Video Station Estimate` == "0.9") |> 
-  select(lower = `...4`, upper = `North Salmon`) |> 
-  mutate(lower = as.numeric(lower), 
-         upper = as.numeric(upper),
-         ladder = "North") |> 
-  bind_rows(deer_CIs_21_22_south) |> 
-  glimpse()
-
-mill_CIs_21_22 <- readxl::read_xlsx(here::here("data", "mill_escapement_estimates_21-22.xlsx"),
-                                    sheet = "Post R MCVS Salmon ",
-                                    range = "A1:F4") |> 
-  filter(`2021-22  Mill Creek SPRING Video Station Estimate` == "0.9") |> 
-  select(lower = `...4`, upper = `POST -R`) |> 
-  mutate(upper = as.numeric(upper),
-         lower = as.numeric(lower)) 
-
-```
 
 ```{r, save_data}
 f <- function(input, output) write_csv(input, file = output)
