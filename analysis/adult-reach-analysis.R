@@ -492,7 +492,7 @@ all_stream_reach_lookup <- bind_rows(battle_reach_lookup |>
                                        mutate(stream = "deer creek"),
                                      mill_reach_lookup |> 
                                        mutate(stream = "mill creek")) |> 
-  glimpse()
+  distinct(stream, reach, standardized_reach, .keep_all = TRUE)
 
 data_dictionary <- tibble(column_name = names(all_stream_reach_lookup),
                           streams_collecting = c("B, C, Bu, F, D, M",
