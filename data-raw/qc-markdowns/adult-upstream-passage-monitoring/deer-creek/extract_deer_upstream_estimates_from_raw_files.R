@@ -1,9 +1,18 @@
-# code to extract adult passage estimates from raw deer creek files
-# estimates were manually extracted into `deer_estimates_manual_extract.xlsx`
+# this file is not actively in use and wasn't used to clean data (2-13-2024). It exists to document some scratch work
+# that automates pulling the confidence intervals from all the raw deer and mill creek upstream passage
+# files stored in the google bucket.
 
-# code here is only helpful for automating/extracting
+# we decided to manually extract (i.e. look through and manually enter data into a cleaner file) 
+# for sake of time, but keep this code in case we decide to use it to pull in the
+# individual files and clean them in R.
 
+# estimates were manually extracted into `data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_estimates_manual_extract.xlsx`
 # Deer Creek and Mill Creek files were sent individually from Doug Killam and added to the google bucket
+
+# libraries
+library(tidyverse)
+library(googleCloudStorageR)
+library(here)
 
 # get filenames
 get_deer_creek_filenames <- function() {
@@ -49,7 +58,7 @@ purrr::map(get_mill_creek_filenames(), read_from_cloud)
 deer_creek_files <- basename(get_deer_creek_filenames())
 deer_2014_raw <- readxl::read_xls(here("data-raw", "qc-markdowns", "adult-upstream-passage-monitoring", "deer-creek", paste0(deer_creek_files[1]))) 
 
-deer_2014 <- deer_2013_raw |>
+deer_2014 <- deer_2014_raw |>
   select(main_col = `Deer Creek Video Station Final Counts February 20, 2014 through June 30, 2014.`) |> 
   filter(!is.na(main_col)) |> 
   mutate(ladder = case_when(str_detect(main_col, "South") ~ "south",
