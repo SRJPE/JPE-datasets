@@ -560,12 +560,16 @@ yuba_rst_format <- rst_enviro %>%
          gage_number = "logger") %>%
   glimpse
 # Combined data
-yuba_combined <- bind_rows(yuba_format, yuba_rst_format)
+yuba_combined <- bind_rows(yuba_format, yuba_rst_format) |> glimpse()
+
+yuba_combined |> 
+  ggplot(aes(x = date, y = max_temp_degC)) +
+  geom_line()
 ```
 
 ```{r, include = F}
 # combine butte and yuba together for regression modeling
-yuba_regression_data_full <- yuba_combined |> 
+yuba_regression_data_full <- yuba_format |> 
   ungroup() |> 
   select(date, mean_temp_degC, max_temp_degC, min_temp_degC) |> 
   rename(yuba_temp_mean = mean_temp_degC,
@@ -714,7 +718,7 @@ yuba_gap <- bind_rows(yuba_max_predicted,
                       yuba_min_predicted) |> 
   mutate(stream = "yuba river") |> 
   pivot_wider(id_cols = c(date, stream), values_from = "value", names_from = "statistic") |> 
-  full_join(yuba_combined) |> 
+  full_join(yuba_format) |> 
   mutate(mean_temp_degC = ifelse(is.na(mean_temp_degC), mean, mean_temp_degC),
          min_temp_degC = ifelse(is.na(min_temp_degC), min, min_temp_degC),
          max_temp_degC = ifelse(is.na(max_temp_degC), max, max_temp_degC)) |> 
