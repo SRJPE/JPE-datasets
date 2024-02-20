@@ -24,11 +24,13 @@ library(dplyr)
 
 ## Description of Monitoring Data
 
-**Timeframe:** 1998-2019
+**Timeframe:** CDEC- 1998-2024, Logger- 2001-2018
 
 **Video Season:** 
 
-**Completeness of Record throughout timeframe:** no data gaps
+**Completeness of Record throughout timeframe:** 
+Missing years from logger: 2003, 2004, 2005
+Missing years from CDEC: 1997
 
 **Sampling Location:** Deer Creek
 
@@ -187,10 +189,23 @@ DCV_hourly_temps <- DCV_CDEC |>
 
 ```
 
+Checking if data in all years
 ```{r}
-# Snake case, 
+#From Loggers
+combined_table$year <- year(combined_table$date)
 
-# Remove redundant columns
+unique_years <- unique(combined_table$year)
+
+all_years <- 2001:2018
+
+
+missing_years <- setdiff(all_years, unique_years)
+
+if (length(missing_years) == 0) {
+  print("No missing years, dataset covers all years from 1997 to 2020.")
+} else {
+  print(paste("Missing years:", missing_years))
+}
 
 ```
 
@@ -215,6 +230,8 @@ Checking Deer data sites from logger:
 deer_plot_logger <- ggplot(combined_table, aes(x = date, y = temperature, color = "Logger data")) +
   geom_line(color = "darkred") +
   labs(title = "Deer temp plot from Logger data", y = "Temperature (deg C)", color = "Data Source")
+
+print(deer_plot_logger)
 ```
 
 
@@ -232,7 +249,21 @@ DCV_mean_temp <- DCV_hourly_temps |>
            year = format(date, "%Y")) |> 
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
 
+#Checking if data in all years from CDEC
+unique_years_CDEC <- unique(DCV_mean_temp$year)
 
+# Generate a sequence of years from 1997 to 2020
+all_years_CDEC <- 1997:2020
+
+# Check which years from 1997 to 2020 are missing in the dataset
+missing_years_CDEC <- setdiff(all_years_CDEC, unique_years_CDEC)
+
+# Print out the missing years, if any
+if (length(missing_years_CDEC) == 0) {
+  print("No missing years, dataset covers all years from 1997 to 2020.")
+} else {
+  print(paste("Missing years:", missing_years_CDEC))
+}
 
 ```
 
