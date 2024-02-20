@@ -264,6 +264,11 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_1_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Comments:
+#This logger data is at the mouth of Mill creek, therefore we can see that temperatures tend to be slightly higher than CDEC's. This could be due to the proximity to the Sac river. One thing to note is the really high temperature variability during fall (August-October)  
+#The monthly mean temperatures on January (~8 degrees) are too similar, higher than December and February, which suggest might be inaccurate
+#Winter lowest temperatures (Nov, Dec, Feb) don't go lower than ~7 degrees C and the highest is ~25 degrees C during August
+
 
 #plotting means from Mill 8-1 VIDEO Station + CDEC 
 ggplot() +
@@ -272,7 +277,7 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_2_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
-#TODO check data from this logger 
+#TODO check data from this logger, it seems like Jul, Aug, Sept, data might have something wrong 
 
 
 #plotting means from Mill 8-2 Little Mill Confluence + CDEC 
@@ -282,6 +287,10 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_3_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Comments:
+#Temperature ranges fluctuate less than at other point of the logger and has a consistent increase from Jan-Jul, and a consistent drop Jul-Dec
+#Winter lowest temperatures ~6 degrees C
+#The highest temps are during July ~23 degrees C
 
 
 #plotting means from Mill 8-3 Rancheria + CDEC 
@@ -291,7 +300,9 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_4_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
-
+#Comments:
+#The range of mean temperatures throughout the months is a bid wider than CDEC (and other sites from logger)
+#Winter months don't vary so much from CDEC, but fall and summer do. The mean temperature is lower during those seasons with a high of ~18 degrees C during summer
 
 #plotting means from Mill 8-4 Black Rock + CDEC 
 ggplot() +
@@ -300,6 +311,9 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_5_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Comments:
+#The decrease on mean temperatures in general (compared to CDEC) is reasonable due to the location higher up in the stream, and the elevation change 
+
 
 
 #plotting means from Mill 8-5 Sooner + CDEC 
@@ -336,7 +350,12 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_9_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Comments;
+#This logger data has data from the highest point of the stream. Therefore, it is expected that mean temperatures don't go over ~17 degrees C throughout the year
+#The lowest temperatures are in December and January and they go as low as ~3 degrees C
 
+#CDEC station is significantly lower down the stream, closer to the Sac River confluence. 
+#The lowest data location point from the logger is at mouth, then the next one is at little Mill Creek confluence (much higher upstream, in relation to CDEC MLM station)
 
 # TODO analyze plots. Check for location of the data coming from logger and see if any relationship on temp variability/logger sampled location
 ```
