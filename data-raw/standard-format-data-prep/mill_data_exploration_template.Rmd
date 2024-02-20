@@ -24,17 +24,19 @@ library(dplyr)
 
 ## Description of Monitoring Data
 
-**Timeframe:** 
+**Timeframe:**  
+CDEC data range: 1998-2024
+Logger data range: 2001-2018
 
 **Video Season:** 
 
-**Completeness of Record throughout timeframe:** no data gaps
+**Completeness of Record throughout timeframe:** 
+Logger Data Missing years: 2003, 2004
 
 **Sampling Location:** Mill Creek
 
 **Data Contact:** 
 
-Any additional info?
 
 ## Access Cloud Data
 
@@ -209,13 +211,23 @@ MLM_hourly_temps <- MLM_CDEC |>
 
 ```
 
+Checking if data in all years
 ```{r}
-# Snake case, 
-# Columns are appropriate types
+#From Loggers
+combined_table_mill$year <- year(combined_table_mill$date)
+
+unique_years <- unique(combined_table_mill$year)
+
+all_years <- 2001:2018
 
 
+missing_years <- setdiff(all_years, unique_years)
 
-# Remove redundant columns
+if (length(missing_years) == 0) {
+  print("No missing years, dataset covers all years from 1997 to 2020.")
+} else {
+  print(paste("Missing years:", missing_years))
+}
 
 ```
 
@@ -230,6 +242,7 @@ mill_plot_logger <- ggplot(combined_table_mill, aes(x = date, y = temperature, c
 glimpse(mill_plot_logger)
 
 print(mill_plot_logger)
+
 
 ```
 
@@ -251,6 +264,23 @@ MLM_mean_temp <- MLM_hourly_temps |>
   group_by(month = month(date),
            year = format(date, "%Y")) |> 
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+#Checking if data in all years from CDEC ----
+unique_years_CDEC <- unique(MLM_mean_temp$year)
+
+# Generate a sequence of years from 1997 to 2020
+all_years_CDEC <- 1998:2024
+
+# Check which years from 1997 to 2020 are missing in the dataset
+missing_years_CDEC <- setdiff(all_years_CDEC, unique_years_CDEC)
+
+# Print out the missing years, if any
+if (length(missing_years_CDEC) == 0) {
+  print("No missing years, dataset covers all years from 1997 to 2024.")
+} else {
+  print(paste("Missing years:", missing_years_CDEC))
+}
+
 ```
 
 ```{r}
@@ -369,6 +399,13 @@ ggplot() +
 **NA and Unknown Values**
 
 Provide a stat on NA or unknown values
+```{r}
+combined_means_mill <- bind_rows(mill_1_monthly_mean, mill_2_monthly_mean, mill_3_monthly_mean, mill_4_monthly_mean, mill_5_monthly_mean, mill_6_monthly_mean, mill_7_monthly_mean, mill_8_monthly_mean, mill_9_monthly_mean, .id = "mill_site")
+
+sum(is.na(combined_means_mill$mean_temp))
+
+sum(is.na(MLM_mean_temp$mean_temp))
+```
 
 ## Explore Categorical variables: {.tabset}
 

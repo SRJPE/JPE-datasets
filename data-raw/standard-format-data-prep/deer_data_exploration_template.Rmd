@@ -376,6 +376,13 @@ ggplot() +
 **NA and Unknown Values**
 
 Provide a stat on NA or unknown values
+```{r}
+combined_means_deer <- bind_rows(deer_1_monthly_mean, deer_2_monthly_mean, deer_3_monthly_mean, deer_4_monthly_mean, deer_5_monthly_mean, deer_6_monthly_mean, deer_7_monthly_mean, deer_8_monthly_mean, .id = "mill_site")
+
+sum(is.na(combined_means_deer$mean_temp)) #no NA's
+
+sum(is.na(DCV_mean_temp$mean_temp)) #no NA's
+```
 
 
 
