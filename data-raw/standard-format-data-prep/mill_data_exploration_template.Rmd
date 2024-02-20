@@ -194,7 +194,7 @@ mill_9_monthly_mean <- mill_9 |>
 #There are these tables too that we won't use to compare data because they are from CDEC stations
 #Mill 8-05 MCH lower CDEC, Mill 8-15 MLM upper CDEC
 
-combined_table_mill <- bind_rows(mill_1, mill_2, mill_3 ,mill_4, mill_5, mill_6, mill_7, mill_8, mill_9, mill_10, .id = "mill_site")
+combined_table_mill <- bind_rows(mill_1, mill_2, mill_3 ,mill_4, mill_5, mill_6, mill_7, mill_8, mill_9, .id = "mill_site")
 
 #adding CDEC data (with removed outliers from CDEC using 0-40C range)
 MLM_CDEC <- cdec_query(station = "MLM", dur_code = "H", sensor_num = "25", start_date = "1996-01-01")
@@ -205,6 +205,7 @@ MLM_hourly_temps <- MLM_CDEC |>
          temp_degC = fahrenheit.to.celsius(parameter_value, round = 1)) |>
   filter(temp_degC < 37, temp_degC > 0) |> #Filtered out outliers using temp range of 0-37 degrees Celsius 
   rename(temperature = temp_degC)
+
 
 ```
 
@@ -226,8 +227,9 @@ MLM_hourly_temps <- MLM_CDEC |>
 mill_plot_logger <- ggplot(combined_table_mill, aes(x = date, y = temperature, color = "Logger data")) +
   geom_line(color = "darkred") +
   labs(title = "Mill temp plot from Logger data", y = "Temperature (deg C)", color = "Data Source")
+glimpse(mill_plot_logger)
 
-
+print(mill_plot_logger)
 
 ```
 
@@ -238,7 +240,7 @@ mill_plot_logger <- ggplot(combined_table_mill, aes(x = date, y = temperature, c
 
 ```{r}
 # Create the combined plot of all logger Mill sites and CDEC
-combined_CDEC_logger_plot <- deer_plot_logger +
+combined_CDEC_logger_plot <- mill_plot_logger +
    geom_line(data = MLM_hourly_temps, aes(x = date, y = temperature, color = "CDEC data")) +
    scale_color_manual(values = c("blue", "darkred")) +
    labs(title = "Combined Plot to See Temporal coverage - Mill Logger and CDEC Data", y = "Temperature (deg C)", color = "Data Source")
@@ -336,7 +338,7 @@ ggplot() +
   geom_boxplot(data = mill_9_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 
 
-# maybe 2+ plots are appropriate
+# TODO analyze plots. Check for location of the data coming from logger and see if any relationship on temp variability/logger sampled location
 ```
 
 **Numeric Summary of [Variable] over Period of Record**
