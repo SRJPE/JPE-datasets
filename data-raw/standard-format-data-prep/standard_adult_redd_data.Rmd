@@ -291,6 +291,20 @@ all_redd_data <- bind_rows(clean_battle_redd,
          run = ifelse(is.na(run), "not recorded", run))
 ```
 
+## Save file without standardized reaches
+We need all raw reaches to pull into `analysis/adult-reach-analysis.R`
+
+# Save data
+```{r, save_data}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(all_redd_data,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_redd_raw_reaches.csv",
+           predefinedAcl = "bucketLevel")
+```
+
 ## Survey Reach Standardization
 
 Survey reach naming conventions changed over time for several monitoring programs. A standardized reach lookup table was created in `analysis/adult-reach-analysis.R` and is merged in here to standardize all reaches.
@@ -487,14 +501,10 @@ redd_data_final  |>
 
 ```{r}
 knitr::kable(redd_data_final  |> head())
-
-knitr::kable(redd_count_by_year  |> head())
-
 ```
 
 ```{r, eval=FALSE}
 write_csv(redd_data_final, here::here("data","redd-carcass-holding","standard_all_redd_data.csv"))
-write_csv(redd_count_by_year, here::here("data","redd-carcass-holding","standard_redd_data_by_year.csv"))
 ```
 
 ```{r, eval=FALSE}

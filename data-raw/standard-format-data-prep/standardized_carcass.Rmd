@@ -258,6 +258,20 @@ carcass_combined <- bind_rows(battle_carcass,
   glimpse()
 ```
 
+###  Save file without standardized reaches
+We need all raw reaches to pull into `analysis/adult-reach-analysis.R`
+
+# Save data
+```{r, save_data}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(carcass_combined,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_carcass_raw_reaches.csv",
+           predefinedAcl = "bucketLevel")
+```
+
 ### Survey Reach Standardization
 
 Survey reach naming conventions changed over time for several monitoring programs. A standardized reach lookup table was created in `analysis/adult-reach-analysis.R` and is merged in here to standardize all reaches.
