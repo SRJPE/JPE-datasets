@@ -8,19 +8,20 @@ library(googleCloudStorageR)
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-gcs_get_object(object_name = "standard-format-data/standard_daily_redd.csv",
+gcs_get_object(object_name = "standard-format-data/standard_redd_raw_reaches.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "standard-format-data", "standard_daily_redd.csv"),
                overwrite = TRUE)
-gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data", "standard-format-data", "standard_annual_redd.csv"),
-               overwrite = TRUE)
-gcs_get_object(object_name = "standard-format-data/standard_carcass.csv",
+# gcs_get_object(object_name = "standard-format-data/standard_annual_redd.csv",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = here::here("data", "standard-format-data", "standard_annual_redd.csv"),
+#                overwrite = TRUE)
+gcs_get_object(object_name = "standard-format-data/standard_carcass_raw_reaches.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "standard-format-data", "standard_carcass.csv"),
                overwrite = TRUE)
-gcs_get_object(object_name = "standard-format-data/standard_holding.csv",
+# read in raw reaches file
+gcs_get_object(object_name = "standard-format-data/standard_holding_raw_reaches.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "standard-format-data", "standard_holding.csv"),
                overwrite = TRUE)
@@ -45,8 +46,8 @@ gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/feather-riv
 
 redd <- read.csv(here::here("data", "standard-format-data", "standard_daily_redd.csv")) |> 
   filter(species != "steelhead")
-annual_redd <- read.csv(here::here("data", "standard-format-data", "standard_annual_redd.csv")) |> 
-  filter(species != "steelhead")
+# annual_redd <- read.csv(here::here("data", "standard-format-data", "standard_annual_redd.csv")) |> 
+#   filter(species != "steelhead")
 carcass <- read.csv(here::here("data", "standard-format-data", "standard_carcass.csv"))
 holding <- read.csv(here::here("data", "standard-format-data", "standard_holding.csv"))
 
@@ -310,7 +311,7 @@ deer_reach_lookup <- tibble("reach" = unique(all_deer_reaches$reach),
   left_join(standard_deer_reaches)
 
 # Mill --------------------------------------------------------------------
-all_mill_reaches <- bind_rows(annual_redd |> 
+all_mill_reaches <- bind_rows(redd |> 
                               filter(stream == "mill creek") |> 
                               mutate(data_type = "redd") |> 
                               select(reach, data_type, year))
@@ -402,7 +403,7 @@ standard_feather_reaches <- tibble("standardized_reach" = c(as.character(seq(1, 
                                                         "Developing Riffle",
                                                         "Swampy Bend",
                                                         NA,
-                                                        "historical reach - no description in data/source"))
+                                                        "historical reach - no description in data/source")) 
 
 # read in feather corrected reach list file (from Casey Campos 1-22-2024)
 feather_reach_clarification <- read_csv(here::here("data-raw", "qc-markdowns", "adult-holding-redd-and-carcass-surveys",
@@ -492,7 +493,7 @@ all_stream_reach_lookup <- bind_rows(battle_reach_lookup |>
                                        mutate(stream = "deer creek"),
                                      mill_reach_lookup |> 
                                        mutate(stream = "mill creek")) |> 
-  distinct(stream, reach, standardized_reach, .keep_all = TRUE)
+  distinct(stream, reach, standardized_reach, sub_reach, standardized_sub_reach, .keep_all = TRUE)
 
 data_dictionary <- tibble(column_name = names(all_stream_reach_lookup),
                           streams_collecting = c("B, C, Bu, F, D, M",
@@ -516,6 +517,3 @@ gcs_upload(all_stream_reach_lookup,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/standard_reach_lookup.csv")
-# TODO pull into the standard adult markdowns (new branch)
-
-
