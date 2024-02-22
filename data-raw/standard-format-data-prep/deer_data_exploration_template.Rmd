@@ -229,7 +229,8 @@ Checking Deer data sites from logger:
 #checking temporal coverage across deer sites from logger
 deer_plot_logger <- ggplot(combined_table, aes(x = date, y = temperature, color = "Logger data")) +
   geom_line(color = "darkred") +
-  labs(title = "Deer temp plot from Logger data", y = "Temperature (deg C)", color = "Data Source")
+  labs(title = "Deer temp plot from Logger data", y = "Temperature (deg C)", color = "Data Source") +
+  scale_x_date(date_breaks = "2 years", date_labels = "%Y")
 
 print(deer_plot_logger)
 ```
@@ -269,6 +270,7 @@ if (length(missing_years_CDEC) == 0) {
 
 
 ```{r}
+#For context, DCV Station is lower than Dillon Cove and 9-2 trail, on an elevation of ~520'
 
 #plotting means from Deer 9-0 Mouth + CDEC 
 DCV_filtered1 <- DCV_mean_temp |> 
@@ -294,7 +296,6 @@ ggplot() +
   geom_boxplot(data = deer_2_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Plot shows very similar data ranges than CDEC data. However, interquartile range is higher than other logger sites, and CDEC, which could make this dataset a little less reliable.
 
-
 #plotting means from "Deer 9-2 Trail 2E17" + CDEC 
 DCV_filtered3 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
@@ -305,7 +306,8 @@ ggplot()+
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_3_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
-
+#Logger temperatures are slightly lower than CDEC, there is a consistent range temperature difference. The widest temperature difference is during the summer (Jun, Jul, Aug) with about mean temperature difference of ~ 3.5 degrees C. This Lower temperature is expected since the elevation change is of over 1000'.
+#Suggestion: this data could be used to represent higher up the stream from CDEC
 
 #plotting means from "Deer 9-3 Beaver Cr" + CDEC 
 DCV_filtered4 <- DCV_mean_temp |> 
@@ -317,6 +319,8 @@ ggplot()+
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_4_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Logger temperatures are lower than CDEC, there temperature range difference is a bit inconsistent throughout the year. Summer month ranges are the most different than the logger (Jun, Jul, Aug, Sept). However, temperatures for February seem to have a relatively small range (>1 degree C), which suggests some data in from that month might be inaccurate.
+#Suggestion: This logger can be used to represent higher up the stream from CDEC, or used as complement to Murphy Trail site, depending on the purpose of data use, due to their proximity.
 
 #plotting means from "Deer 9-4 Murphy Trail" + CDEC 
 DCV_filtered5 <- DCV_mean_temp |> 
