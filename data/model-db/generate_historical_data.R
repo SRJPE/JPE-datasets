@@ -122,7 +122,7 @@ catch <- catch_raw |>
   select(-lifestage) |> 
   mutate(actual_count = NA)
 
-ck <- filter(catch, is.na(id))
+ck <- filter(catch, is.na(trap_location_id))
 unique(catch$trap_location_id)
 unique(catch$lifestage_id)
 unique(catch$run_id)
@@ -790,3 +790,43 @@ gcs_upload(daily_holding,
 # dput(unique(filter(reach_all, stream == "feather river"))$reach)
 # dput(filter(annual_redd_raw, stream == "mill creek") |>  distinct(reach))
 # dput(unique(filter(reach_all, stream == "yuba river"))$reach)
+
+
+# data checks -------------------------------------------------------------
+
+# check date of release and catch data
+glimpse(catch_raw)
+glimpse(release_raw)
+catch_month_year_stream <- catch_raw |> 
+  mutate(month = month(date),
+         year = year(date)) |> 
+  filter(count > 0, !is.na(count)) |> 
+  select(month, year, stream) |> 
+  distinct() |> 
+  mutate(catch = T)
+release_month_year_stream <- release_raw |> 
+  mutate(month = month(date_released),
+         year = year(date_released)) |> 
+  select(month, year, stream) |> 
+  distinct() |> 
+  mutate(release = T)
+catch_release_overlap <- full_join(catch_month_year_stream,
+                                   release_month_year_stream)
+ck <- filter(catch_release_overlap, release == T & is.na(catch))
+# check butte creek
+# I think what is happening is that catch from 10/2021 are being removed because only the fyke trap is running
+# This same logic should be applied to the release data
+filter(ck, stream == "butte creek")
+butte_catch_ck <- filter(catch_raw, stream == "butte creek", year(date) == 2021)
+# checked the raw data for butte
+# butte_catch_ck <- filter(butte_rst_camp, year(visitTime) == 2021)
+# butte_catch_ck <- filter(butte_rst_clean_camp, year(date) == 2021)
+# make sure data doesn't max out and that is why there is no catch data. That is not the issue
+max(butte_catch_ck$date)
+filter(butte_catch_ck, month(date) == 10)
+butte_release_ck <- filter(release_raw, stream == "butte creek", year(date_released) == 2021)   
+
+# check battle creek
+filter(ck, stream == "battle creek")
+battle_catch_ck <- filter(catch_raw, stream == "battle creek", year(date) == 2006)
+battle_release_ck <- filter(release_raw, stream == "battle creek", year(date_released) == 2006)
