@@ -49,6 +49,7 @@ D - Deer Creek, M - Mill Creek, Y - Yuba River)
 | hours              | **Y**              | number of hours viewed by day                                                                          |
 | flow               | **D, M**           | flow in cfs at the weir                                                                                |
 | temperature        | **D, M**           | temperature in C at the weir                                                                           |
+| method             | **B**              | battle collects upstream passage data uses two methods (trap, video)                                   |
 
 ## Read in data {.tabset}
 
@@ -121,8 +122,9 @@ spawning_end_date <- battle_spawning_building |>
 date_switch <- full_join(video_start_date, spawning_end_date)
 
 battle_upstream_passage <- battle_video |> 
+  select(-comments) |> 
   bind_rows(battle_spawning_building |> 
-              select(date, stream, time, count, sex, confidence_in_sex, fork_length, adipose_clipped, status) |> 
+              select(date, stream, time, count, sex, confidence_in_sex, fork_length, adipose_clipped, status, method) |> 
               mutate(status = ifelse(status == "sacraficed", "sacrificed", status), 
                      dead = ifelse(status %in% c("sacrificed", "mortality", "dead in pond"), T, F)) |> # label mortalities
               filter(status != "given to the hatchery")) # remove fish that will spawn in hatchery because not part of spawning population
@@ -267,11 +269,14 @@ yuba_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-mon
 ## Combine data
 
 ```{r}
-combined_upstream_passage <- bind_rows(battle_upstream_passage, clear_upstream_passage, 
-                                       deer_upstream_passage, mill_upstream_passage, 
+combined_upstream_passage <- bind_rows(battle_upstream_passage |> 
+                                         select(-c(confidence_in_sex, status, dead)), 
+                                       clear_upstream_passage, 
+                                       deer_upstream_passage, 
+                                       mill_upstream_passage, 
                                        yuba_upstream_passage) %>% 
   relocate(stream, date, time, count, run, adipose_clipped, sex, passage_direction, 
-           viewing_condition, spawning_condition, jack_size, ladder, flow, temperature, hours) %>%
+           viewing_condition, spawning_condition, jack_size, ladder, flow, temperature, hours, method) %>%
   glimpse
 ```
 
