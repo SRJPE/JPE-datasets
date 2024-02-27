@@ -123,7 +123,8 @@ date_switch <- full_join(video_start_date, spawning_end_date)
 battle_upstream_passage <- battle_video |> 
   bind_rows(battle_spawning_building |> 
               select(date, stream, time, count, sex, confidence_in_sex, fork_length, adipose_clipped, status) |> 
-              mutate(dead = ifelse(status %in% c("sacraficed", "mortality", "dead in pond"), T, F)) |> # label mortalities
+              mutate(status = ifelse(status == "sacraficed", "sacrificed", status), 
+                     dead = ifelse(status %in% c("sacrificed", "mortality", "dead in pond"), T, F)) |> # label mortalities
               filter(status != "given to the hatchery")) # remove fish that will spawn in hatchery because not part of spawning population
 
 ```
