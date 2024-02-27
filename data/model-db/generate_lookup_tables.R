@@ -100,170 +100,124 @@ gcs_upload(trap_location,
 
 
 # survey_location ---------------------------------------------------------
-
-battle_s <- tibble(stream = rep("battle creek",18),
-                   reach = c("R2", "R3", "R7", "R1", "R4", "R5", "R6", "4", "1", "2", "5", 
-                             "3", "R1B", "R12", NA, "CNFH", "Nevis Creek", "Tailrace"),
-                   description = c("R2", "R3", "R7", "R1", "R4", "R5", "R6", "4", "1", "2", "5", 
-                                   "3", "R1B", "R12", NA, "CNFH", "Nevis Creek", "Tailrace")
+# daily_redd_raw |>  
+#   filter(stream == "battle creek") |> 
+#   group_by(reach) |> 
+#   tally()
+# holding_raw |>  
+#   filter(stream == "battle creek") |> 
+#   group_by(reach) |> 
+#   tally()
+battle_s <- tibble(stream = rep("battle creek",8),
+                   reach = c("R1", "R2", "R3", "R4", "R5", "R6", "R7", NA),
+                   description = c("R1", "R2", "R3", "R4", "R5", "R6", "R7", NA)
                    # north_bounding_coordinate = ,
                    # south_bounding_coordinate = ,
                    # east_bounding_coordinate = ,
                    # south_bounding_coordinate = ,
                    )
-
-butte_s <- tibble(stream = rep("butte creek",69),
-                   reach = c("A1", "A2", "A3", "A4", "A5", "Chimney", "Quartz", "B1", "B2", 
-                             "B3", "B4", "B5", "B6", "B7", "B8", "C1", "C2", "C4", "C5", "C10", 
-                             "C11", "C12", "C6", "C7", "C8", "C9", "D1", "D3", "D4", "D5", 
-                             "D7", "E1", "E2", "E4", "E5", "E6", "Quartz 2", "Quartz 3", "C3", 
-                             "C5-C12", "D1-D4", "D6", "D2", "D8", "E7", "C5b", "E3", "C5a", 
-                             "BCK-PL", "Cov-BCK", "PL-OKIE", "Below PPD", "below Skyway-99", 
-                             "HWY 99 -OROCHICO", "COV-BLK", "COV-BCK", "BCK-PWL", "PWL-OKIE", 
-                             "C-B", "B-P", "P-O", "COV-OKIE", "BCK-PWR", NA, "BLK-PL", "COVER-PTR", 
-                             "PH-PWL", "PWR-OKI", "CO1"),
-                   description = c("A1", "A2", "A3", "A4", "A5", "Chimney", "Quartz", "B1", "B2", 
-                                   "B3", "B4", "B5", "B6", "B7", "B8", "C1", "C2", "C4", "C5", "C10", 
-                                   "C11", "C12", "C6", "C7", "C8", "C9", "D1", "D3", "D4", "D5", 
-                                   "D7", "E1", "E2", "E4", "E5", "E6", "Quartz 2", "Quartz 3", "C3", 
-                                   "C5-C12", "D1-D4", "D6", "D2", "D8", "E7", "C5b", "E3", "C5a", 
-                                   "BCK-PL", "Cov-BCK", "PL-OKIE", "Below PPD", "below Skyway-99", 
-                                   "HWY 99 -OROCHICO", "COV-BLK", "COV-BCK", "BCK-PWL", "PWL-OKIE", 
-                                   "C-B", "B-P", "P-O", "COV-OKIE", "BCK-PWR", NA, "BLK-PL", "COVER-PTR", 
-                                   "PH-PWL", "PWR-OKI", "CO1")
+# ck <- holding_raw |>
+#   filter(stream == "butte creek") |>
+#   group_by(reach) |>
+#   tally()
+# dput(ck$reach)
+butte_s <- tibble(stream = rep("butte creek",46),
+                   reach = c("A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "B5", 
+                             "B6", "B7", "B8", "BCK-PWL", "C1", "C10", "C11", "C12", "C2", 
+                             "C3", "C4", "C5", "C6", "C7", "C8", "C9", "COV-BCK", "D1", "D2", 
+                             "D3", "D4", "D5", "D6", "D7", "D8", "E1", "E2", "E3", "E4", "E5", 
+                             "E6", "E7", "F", "G", "PWL-PPD", NA),
+                   description = c("A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "B5", 
+                                   "B6", "B7", "B8", "BCK-PWL", "C1", "C10", "C11", "C12", "C2", 
+                                   "C3", "C4", "C5", "C6", "C7", "C8", "C9", "COV-BCK", "D1", "D2", 
+                                   "D3", "D4", "D5", "D6", "D7", "D8", "E1", "E2", "E3", "E4", "E5", 
+                                   "E6", "E7", "F", "G", "PWL-PPD", NA)
+                   # north_bounding_coordinate = ,
+                   # south_bounding_coordinate = ,
+                   # east_bounding_coordinate = ,
+                   # south_bounding_coordinate = ,
+)
+# daily_redd_raw |>
+#   filter(stream == "clear creek") |>
+#   group_by(reach) |>
+#   tally()
+# holding_raw |>
+#   filter(stream == "clear creek") |>
+#   group_by(reach) |>
+#   tally()
+clear_s <- tibble(stream = rep("clear creek",8),
+                   reach = c("R1", "R2", "R4", "R3", "R5", "R6A","R7", NA),
+                   description = c("R1", "R2", "R4", "R3", "R5", "R6A","R7", NA)
                    # north_bounding_coordinate = ,
                    # south_bounding_coordinate = ,
                    # east_bounding_coordinate = ,
                    # south_bounding_coordinate = ,
 )
 
-clear_s <- tibble(stream = rep("clear creek",15),
-                   reach = c("R1", "R2", "R4", "R3", "R5", "R5A", "R5B", "R5C", "R5A (Above UCC)", "R5A (Below UCC)",
-                             "R6", "R6B", "R7", 
-                             "R6A", NA),
-                   description = c("R1", "R2", "R4", "R3", "R5", "R5A", "R5B", "R5C", "R5A (Above UCC)", "R5A (Below UCC)",
-                                   "R6", "R6B", "R7", 
-                                   "R6A", NA)
-                   # north_bounding_coordinate = ,
-                   # south_bounding_coordinate = ,
-                   # east_bounding_coordinate = ,
-                   # south_bounding_coordinate = ,
-)
-
-deer_s <- tibble(stream = rep("deer creek",20),
-                  reach = c("Hwy 32 To A Line", "Lower Falls To A Line", "Upper Falls To Potato Patch", 
-                            "Potato Patch To Hwy 32", "Hwy 32 To Lower Falls", "A Line To Wilson", 
-                            "Wilson To Polk Springs", "Polk Springs To Murphy", "Murphy To Beaver", 
-                            "Beaver To Ponderosa", "Ponderosa To Homestead", "Homestead To 2e17", 
-                            "Potato Patch To Lower Falls", "A Line To Wilson Cove", "Wilson Cove To Polk Springs", 
-                            "Polk Springs To Murphy Trail", "Murphy Trail To Ponderosa Way", 
-                            "Ponderosa Way To Trail 2e17", "Trail 2e17 To Dillon Cove", NA),
-                  description = c("Hwy 32 To A Line", "Lower Falls To A Line", "Upper Falls To Potato Patch", 
-                                  "Potato Patch To Hwy 32", "Hwy 32 To Lower Falls", "A Line To Wilson", 
-                                  "Wilson To Polk Springs", "Polk Springs To Murphy", "Murphy To Beaver", 
-                                  "Beaver To Ponderosa", "Ponderosa To Homestead", "Homestead To 2e17", 
-                                  "Potato Patch To Lower Falls", "A Line To Wilson Cove", "Wilson Cove To Polk Springs", 
-                                  "Polk Springs To Murphy Trail", "Murphy Trail To Ponderosa Way", 
-                                  "Ponderosa Way To Trail 2e17", "Trail 2e17 To Dillon Cove", NA)
+# ck <- holding_raw |>
+#   filter(stream == "deer creek") |>
+#   group_by(reach) |>
+#   tally()
+# dput(ck$reach)
+deer_s <- tibble(stream = rep("deer creek",12),
+                  reach = c("A Line to Wilson Cove", "Highway 32 (Red Bridge) to Lower Falls", 
+                            "Lower Falls to A Line", "Murphy Trail to Ponderosa Way", "Polk Springs to Murphy Trail", 
+                            "Ponderosa Way to Moak Cove", "Ponderosa Way to Trail 2E17", 
+                            "Potato Patch Camp to Highway 32 (Red Bridge)", "Trail 2E17 to Dillon Cove", 
+                            "Upper Falls to Potato Patch Camp", "Wilson Cove to Polk Springs", NA
+                  ),
+                  description = c("A Line to Wilson Cove", "Highway 32 (Red Bridge) to Lower Falls", 
+                                  "Lower Falls to A Line", "Murphy Trail to Ponderosa Way", "Polk Springs to Murphy Trail", 
+                                  "Ponderosa Way to Moak Cove", "Ponderosa Way to Trail 2E17", 
+                                  "Potato Patch Camp to Highway 32 (Red Bridge)", "Trail 2E17 to Dillon Cove", 
+                                  "Upper Falls to Potato Patch Camp", "Wilson Cove to Polk Springs", NA
+                  )
                   # north_bounding_coordinate = ,
                   # south_bounding_coordinate = ,
                   # east_bounding_coordinate = ,
                   # south_bounding_coordinate = ,
 )
-
-feather_s <- tibble(stream = rep("feather river",170),
-                  reach = c("Table Mountain", "Cottonwood", "Moes Ditch", "Hatchery Riffle", 
-                            "Lower Auditorium", "Bedrock", "Trailer Park", "Mathews", "Aleck", 
-                            "Upper Robinson", "Lower Robinson", "Steep", "Eye", "Gateway", 
-                            "Hatchery Ditch", "Hatchery Pipe", "Upper Auditorium", "Mid Auditorium", 
-                            "Weir", "Top Of Auditorium", "Moes Side Channel", "Below Lower Auditorium", 
-                            "Eye Riffle", "Weir Riffle", "Steep Side Channel", "Steep Riffle", 
-                            "Auditorium", "Robinson", "Below Auditorium", "Upper Bedrock", 
-                            "Lower Bedrock", "Upper Mathews", "Upper Aleck", "Middle Robinson", 
-                            "Top Of Steep", "Vance West", "Vance East", "Big Hole East", 
-                            "G95 Side Channel", "G95 East Side Channel Top", "G95", "G95 Main Bottom", 
-                            "Upper Hour", "Lower Hour", "Keister Riffle", "Goose Riffle", 
-                            "Big Riffle", "Big Bar", "Upper McFarland", "Upper Vance East", 
-                            "Lower Table Mountain", "Upper Moes Side Channel", "Upper Moes Channel", 
-                            "Upper Hatchery", "Lower Hatchery", "Lower Gateway", "Eye Side Channel", 
-                            "Upper Vance", "Big Hole West", "Below Big Hole East", "G95 West Side Channel", 
-                            "Top Of Hour", "Mid Hour", "Palm", "Keister", "Goose", "Big", 
-                            "Below Big Bar", "Lower McFarland", "Developing", "G95 East Side Channel Bottom", 
-                            "Lower Vance East", "Mid Vance East", "Top Vance East", "Upper Steep", 
-                            "Top of Mathews", "Below Weir", "G95 Main", "G95 East Side Channel", 
-                            "Lower Hatchery Ditch", "Upper Hatchery Riffle", "Top Of Moes Ditch", 
-                            "Lower Moes Ditch", "Lower Steep Side Channel", "Lower Hatchery Riffle", 
-                            "Upper Moes Ditch", "Upper Hatchery Ditch", "Upper Trailer Park", 
-                            "Lower Trailer Park", "Thermalito", "Top Big Hole East", "G95 West Side Channel Top", 
-                            "G95 Main Top", "G95 East Side Channel Mid", "Top Vance West", 
-                            "Below Big Hole", "Top Keister", "Top Big River Right", "Big River Left", 
-                            "Lower Big Bar", "Mid McFarland", "Developing Riffle", "Hour Glide", 
-                            "Keister Top", "Upper Cottonwood", "Upper Hour East", "Hatchery", 
-                            "Hatchery Side Channel", "Hour", "G95 West Side Channel Bottom", 
-                            "Great Western", "Top Of Hatchery", "Lower Big Riffle", NA, "High Flow", 
-                            "Bedrock Riffle", "Aleck Riffle", "Gateway Side Channel", "Gateway Main Channel", 
-                            "Palm Riffle", "1", "2", "3", "4", "8", "7", "6", "5", "10", 
-                            "13", "14", "15", "17", "18", "19", "20", "43", "45", "42", "9", 
-                            "11", "12", "16", "25", "29", "33", "32", "39", "40", "41", "26", 
-                            "38", "30", "36", "22", "23", "24", "28", "37", "46", "27", "31", 
-                            "47", "44", "35", "48", "34", "21", "50", "0"),
-                  description = c("Table Mountain", "Cottonwood", "Moes Ditch", "Hatchery Riffle", 
-                                  "Lower Auditorium", "Bedrock", "Trailer Park", "Mathews", "Aleck", 
-                                  "Upper Robinson", "Lower Robinson", "Steep", "Eye", "Gateway", 
-                                  "Hatchery Ditch", "Hatchery Pipe", "Upper Auditorium", "Mid Auditorium", 
-                                  "Weir", "Top Of Auditorium", "Moes Side Channel", "Below Lower Auditorium", 
-                                  "Eye Riffle", "Weir Riffle", "Steep Side Channel", "Steep Riffle", 
-                                  "Auditorium", "Robinson", "Below Auditorium", "Upper Bedrock", 
-                                  "Lower Bedrock", "Upper Mathews", "Upper Aleck", "Middle Robinson", 
-                                  "Top Of Steep", "Vance West", "Vance East", "Big Hole East", 
-                                  "G95 Side Channel", "G95 East Side Channel Top", "G95", "G95 Main Bottom", 
-                                  "Upper Hour", "Lower Hour", "Keister Riffle", "Goose Riffle", 
-                                  "Big Riffle", "Big Bar", "Upper McFarland", "Upper Vance East", 
-                                  "Lower Table Mountain", "Upper Moes Side Channel", "Upper Moes Channel", 
-                                  "Upper Hatchery", "Lower Hatchery", "Lower Gateway", "Eye Side Channel", 
-                                  "Upper Vance", "Big Hole West", "Below Big Hole East", "G95 West Side Channel", 
-                                  "Top Of Hour", "Mid Hour", "Palm", "Keister", "Goose", "Big", 
-                                  "Below Big Bar", "Lower McFarland", "Developing", "G95 East Side Channel Bottom", 
-                                  "Lower Vance East", "Mid Vance East", "Top Vance East", "Upper Steep", 
-                                  "Top of Mathews", "Below Weir", "G95 Main", "G95 East Side Channel", 
-                                  "Lower Hatchery Ditch", "Upper Hatchery Riffle", "Top Of Moes Ditch", 
-                                  "Lower Moes Ditch", "Lower Steep Side Channel", "Lower Hatchery Riffle", 
-                                  "Upper Moes Ditch", "Upper Hatchery Ditch", "Upper Trailer Park", 
-                                  "Lower Trailer Park", "Thermalito", "Top Big Hole East", "G95 West Side Channel Top", 
-                                  "G95 Main Top", "G95 East Side Channel Mid", "Top Vance West", 
-                                  "Below Big Hole", "Top Keister", "Top Big River Right", "Big River Left", 
-                                  "Lower Big Bar", "Mid McFarland", "Developing Riffle", "Hour Glide", 
-                                  "Keister Top", "Upper Cottonwood", "Upper Hour East", "Hatchery", 
-                                  "Hatchery Side Channel", "Hour", "G95 West Side Channel Bottom", 
-                                  "Great Western", "Top Of Hatchery", "Lower Big Riffle", NA, "High Flow", 
-                                  "Bedrock Riffle", "Aleck Riffle", "Gateway Side Channel", "Gateway Main Channel", 
-                                  "Palm Riffle", "1", "2", "3", "4", "8", "7", "6", "5", "10", 
-                                  "13", "14", "15", "17", "18", "19", "20", "43", "45", "42", "9", 
-                                  "11", "12", "16", "25", "29", "33", "32", "39", "40", "41", "26", 
-                                  "38", "30", "36", "22", "23", "24", "28", "37", "46", "27", "31", 
-                                  "47", "44", "35", "48", "34", "21", "50", "0")
+# ck <- daily_redd_raw |>
+#   filter(stream == "feather river") |>
+#   group_by(reach) |>
+#   tally()
+# dput(ck$reach)
+feather_s <- tibble(stream = rep("feather river",33),
+                  reach = c("1", "10", "11", "12", "14", "15", "16", "17", "18", "19", 
+                            "20", "21", "22", "23", "24", "25", "27", "29", "3", "31", "32", 
+                            "33", "34", "35", "36", "37", "4", "5", "6", "7", "8", "historical reach - no description", 
+                            NA),
+                  description = c("1", "10", "11", "12", "14", "15", "16", "17", "18", "19", 
+                                  "20", "21", "22", "23", "24", "25", "27", "29", "3", "31", "32", 
+                                  "33", "34", "35", "36", "37", "4", "5", "6", "7", "8", "historical reach - no description", 
+                                  NA)
                   # north_bounding_coordinate = ,
                   # south_bounding_coordinate = ,
                   # east_bounding_coordinate = ,
                   # south_bounding_coordinate = ,
 )
+# ck <- daily_redd_raw |>
+#   filter(stream == "mill creek") |>
+#   group_by(reach) |>
+#   tally()
+# dput(ck$reach)
 
 mill_s <- tibble(stream = rep("mill creek",16),
-                  reach = c("Above Hwy 36", "Hwy 36 To Little Hole In Ground", 
-                            "Litte Hole In Ground To Hole In Ground", "Hole In Ground To Ishi Trail Head", 
-                            "Ishi Trail Head To Big Bend", "Big Bend To Canyon Camp", "Canyon Camp To Sooner Place", 
-                            "Sooner Place To Mccarthy Place", "Mccarthy Place To Savercool Place", 
-                            "Savercool Place  To Black Rock", "Black Rock To Below Ranch House", 
-                            "Below Ranch House To Above Avery", "Above Avery To Pape Place", 
-                            "Pape Place To Buckhorn Gulch", "Buckhorn Gulch To Upper Dam", NA
+                  reach = c("Above Avery To Pape Place", "Above Hwy 36", "Below Ranch House To Above Avery", 
+                            "Big Bend To Canyon Camp", "Black Rock To Below Ranch House", 
+                            "Buckhorn Gulch To Upper Dam", "Canyon Camp To Sooner Place", 
+                            "Hole In Ground To Ishi Trail Head", "Hwy 36 To Little Hole In Ground", 
+                            "Ishi Trail Head To Big Bend", "Litte Hole In Ground To Hole In Ground", 
+                            "Mccarthy Place To Savercool Place", "Pape Place To Buckhorn Gulch", 
+                            "Savercool Place  To Black Rock", "Sooner Place To Mccarthy Place", NA
                   ),
-                  description = c("Above Hwy 36", "Hwy 36 To Little Hole In Ground", 
-                                  "Litte Hole In Ground To Hole In Ground", "Hole In Ground To Ishi Trail Head", 
-                                  "Ishi Trail Head To Big Bend", "Big Bend To Canyon Camp", "Canyon Camp To Sooner Place", 
-                                  "Sooner Place To Mccarthy Place", "Mccarthy Place To Savercool Place", 
-                                  "Savercool Place  To Black Rock", "Black Rock To Below Ranch House", 
-                                  "Below Ranch House To Above Avery", "Above Avery To Pape Place", 
-                                  "Pape Place To Buckhorn Gulch", "Buckhorn Gulch To Upper Dam", NA
+                  description = c("Above Avery To Pape Place", "Above Hwy 36", "Below Ranch House To Above Avery", 
+                                  "Big Bend To Canyon Camp", "Black Rock To Below Ranch House", 
+                                  "Buckhorn Gulch To Upper Dam", "Canyon Camp To Sooner Place", 
+                                  "Hole In Ground To Ishi Trail Head", "Hwy 36 To Little Hole In Ground", 
+                                  "Ishi Trail Head To Big Bend", "Litte Hole In Ground To Hole In Ground", 
+                                  "Mccarthy Place To Savercool Place", "Pape Place To Buckhorn Gulch", 
+                                  "Savercool Place  To Black Rock", "Sooner Place To Mccarthy Place", NA
                   )
                   # north_bounding_coordinate = ,
                   # south_bounding_coordinate = ,
