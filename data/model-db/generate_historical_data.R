@@ -827,6 +827,18 @@ filter(butte_catch_ck, month(date) == 10)
 butte_release_ck <- filter(release_raw, stream == "butte creek", year(date_released) == 2021)   
 
 # check battle creek
+# I think what is happening here is that the trap was running in nov 2020 but not chinook were caught so they are not included in the catch dataset
 filter(ck, stream == "battle creek")
-battle_catch_ck <- filter(catch_raw, stream == "battle creek", year(date) == 2006)
-battle_release_ck <- filter(release_raw, stream == "battle creek", year(date_released) == 2006)
+# no catch data in nov 2020
+battle_catch_ck <- filter(catch_raw, stream == "battle creek", year(date) == 2020)
+# two releases in nov 2020 
+battle_release_ck <- filter(release_raw, stream == "battle creek", year(date_released) == 2020)
+battle_catch_ck <- filter(catch, year(sample_date) == 2020, grepl("battle", station_code), grepl("hinook", common_name))
+
+# check sacramento river
+filter(ck, stream == "sacramento river")
+# 2023 data starts in march and is only for rbdd; there is release data from jan/feb
+# I think we must be missing some of the 2023 catch data
+# Checked the data on EDI and there is no catch for before march 2023
+sac_catch_ck <- filter(catch_raw, stream == "sacramento river", year(date) == 2023)
+sac_release_ck <- filter(release_raw, stream == "sacramento river", year(date_released) == 2023)
