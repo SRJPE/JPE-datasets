@@ -32,18 +32,22 @@ gcs_get_object(object_name = "standard-format-data/daily_yearling_ruleset.csv",
 
 # define files to pull in (in some cases there is just one catch file while others
 # have sample and environmental data)
-files_battle <- tibble(path = rep("rst/battle-creek/data/battle_",4),
-                       name = c("rst_catch","rst_environmental","rst_passage_estimates", "mark_reacpture"),
-                       save = rep(here::here("data","rst", "battle_rst_"), 4))
+# files_battle <- tibble(path = rep("rst/battle-creek/data/battle_",4),
+#                        name = c("rst_catch","rst_environmental","rst_passage_estimates", "mark_reacpture"),
+#                        save = rep(here::here("data","rst", "battle_rst_"), 4))
+
+files_battle_clear <- tibble(path = "rst/battle_clear_",
+                             name = c("catch_edi", "environmental_edi", "recapture_edi","release_edi","trap_edi"),
+                             save = rep(here::here("data","rst","battle_clear_"),5))
 files_butte <- tibble(path = "rst/butte-creek/data/butte_rst",
                       name = c(""),
                       save = here::here("data","rst", "butte_rst"))
 files_butte_camp <- tibble(path = rep("rst/butte-creek/data-raw/butte_",3),
                         name = c("catch_camp","trap_camp", "environmental_camp"),
                         save = rep(here::here("data","rst", "butte_"), 3))
-files_clear <- tibble(path = rep("rst/clear-creek/data/clear_",4),
-                      name = c("rst_catch","rst_environmental","rst_passage_estimates", "mark_reacpture"),
-                      save = rep(here::here("data", "rst", "clear_rst_"), 4))
+# files_clear <- tibble(path = rep("rst/clear-creek/data/clear_",4),
+#                       name = c("rst_catch","rst_environmental","rst_passage_estimates", "mark_reacpture"),
+#                       save = rep(here::here("data", "rst", "clear_rst_"), 4))
 files_deer <- tibble(path = "rst/deer-creek/data/deer_rst",
                      name = c(""),
                      save = here::here("data","rst", "deer_rst"))
@@ -82,10 +86,9 @@ get_data <- function(path, name, save) {
                  overwrite = TRUE)
 }
 # apply function to each set of files
-pmap(files_battle, get_data)
+pmap(files_battle_clear, get_data)
 pmap(files_butte, get_data)
 pmap(files_butte_camp, get_data)
-pmap(files_clear, get_data)
 pmap(files_deer, get_data)
 pmap(files_feather, get_data)
 pmap(files_feather_camp, get_data)
@@ -107,10 +110,9 @@ gcs_get_object(object_name = "rst/rbdd/data/catch.csv",
 # load in data
 daily_yearling_ruleset <- read_csv(here::here("data", "daily_yearling_ruleset.csv"))
 # catch data
-battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"), lazy = FALSE )
+battle_clear_rst <- read_csv(here::here("data", "rst", "battle_clear_catch_edi.csv"), lazy = FALSE )
 butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv"), lazy = FALSE ) # contains trap data too
 butte_rst_camp <- read_csv(here::here("data", "rst", "butte_catch_camp.csv"), lazy = FALSE )
-clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"), lazy = FALSE )
 deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv"), lazy = FALSE ) # contains trap data too
 feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"), lazy = FALSE )
 feather_rst_camp <- read_csv(here::here("data", "rst", "feather_catch_camp.csv"), lazy = FALSE )
@@ -124,11 +126,10 @@ yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"), lazy = FALSE )
 rbdd_rst <- read_csv(here::here("data", "rst", "rbdd_rst.csv"), lazy = FALSE)
 
 # sampling effort and environmental
-battle_environmental <- read_csv(here::here("data","rst", "battle_rst_environmental.csv"), lazy = FALSE )
-battle_mark_recapture <- read_csv(here::here("data","rst", "battle_rst_mark_reacpture.csv"), lazy = FALSE )
+battle_clear_environmental <- read_csv(here::here("data","rst", "battle_clear_environmental_edi.csv"), lazy = FALSE )
+battle_clear_recapture <- read_csv(here::here("data","rst", "battle_clear_recapture_edi.csv"), lazy = FALSE )
+battle_clear_release <- read_csv(here::here("data","rst", "battle_clear_release_edi.csv"), lazy = FALSE )
 butte_trap_camp <- read_csv(here::here("data", "rst", "butte_trap_camp.csv"), lazy = FALSE )
-clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"), lazy = FALSE )
-clear_mark_recapture <- read_csv(here::here("data", "rst", "clear_rst_mark_reacpture.csv"), lazy = FALSE )
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"), lazy = FALSE )
 feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"), lazy = FALSE )
 knights_effort <- read_csv(here::here("data", "rst", "knights_trap_camp.csv"), lazy = FALSE )
@@ -206,25 +207,26 @@ lifestage_encoding_dt <- function(dat) {
 }
 ```
 
-## Battle Creek
-
-```{r, battle_data_dictionary}
-battle_data_dictionary <- read_rds(here::here("data-raw", 
-                                              "qc-markdowns", "rst", "data-dictionaries", "battle_rst_data_dictionary.rds"))
-kable(battle_data_dictionary)
-```
+## Battle & Clear Creek
 
 ```{r, battle_clean}
 ### Catch #####
-battle_rst %>% glimpse
-unique(battle_rst$run)
-unique(battle_rst$lifestage)
-filter(battle_rst, is.na(fork_length), count > 0) %>% glimpse
-filter(battle_rst, is.na(run)) %>% glimpse
+battle_clear_rst %>% glimpse()
+unique(battle_clear_rst$run)
+unique(battle_clear_rst$lifestage)
+filter(battle_clear_rst, is.na(fork_length), count > 0) %>% glimpse
+filter(battle_clear_rst, is.na(run)) %>% glimpse
 
-battle_rst %>% group_by(date, run, fork_length, lifestage, dead, interpolated) %>% count() %>% filter(n > 1)
-
-filter(battle_rst, date == "2003-12-28")
+# Note that there are many repeat entries where all values are the same except count
+# ck <- battle_clear_rst %>% 
+#   group_by(date, site, run, fork_length, weight, lifestage, interpolated, species, subsite) %>% 
+#   count() %>% 
+#   filter(n > 1)
+# # There are also repeat entries where all are the same. Need to double check that these are not duplicates. Checked the data pulled from EDI and there are the same number of records so assume there are no duplicates.
+# ck <- battle_clear_rst %>% 
+#   group_by(date, site, run, fork_length, weight, lifestage, interpolated, species, subsite, count) %>% 
+#   count() %>% 
+#   filter(n > 1)
 
 # notes to include
 # some data may be interpolated (~1% may be interpolated)
@@ -233,76 +235,58 @@ filter(battle_rst, date == "2003-12-28")
 # Origin - Natural because trap is above that hatchery
 # run method: fWS_race (Sheila Greene LAD with adjustments, all fall run are spring run)
 
-battle_rst_clean <- battle_rst %>%
-  select(-c(sample_id)) %>%
-  group_by(date, run, fork_length, lifestage, dead, interpolated) %>%
+battle_clear_rst_clean <- battle_clear_rst %>%
+  group_by(stream, site, subsite, date, run, fork_length, lifestage, interpolated) %>%
   summarize(count = sum(count, na.rm = T))
 
-battle_rst_min <- battle_rst_clean %>% 
+battle_clear_rst_min <- battle_clear_rst_clean %>% 
   mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
-  group_by(wy) %>% 
+  group_by(wy, stream, site, subsite) %>% 
   summarize(min = min(date))
 
 # Trap operations and environmental data was captured separately
 # Need to check that if data in environmental it is also in catch data
 # e.g. make sure that if no catch then 0 in catch data
 
-battle_trap_clean <- battle_environmental %>%
+battle_clear_trap_clean <- battle_clear_environmental %>%
   # use sample date because this is the date the trap would have been checked
-  select(sample_date) %>% 
+  select(date, stream, site, subsite) %>% 
   distinct()
 
-battle_trap_min <- battle_trap_clean %>% 
-  mutate(wy = ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))) %>% 
-  group_by(wy) %>% 
-  summarize(trap_min = min(sample_date))
+battle_clear_trap_min <- battle_clear_trap_clean %>% 
+  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
+  group_by(wy, stream, site, subsite) %>% 
+  summarize(trap_min = min(date))
 
 # when comparing min dates in rst and environmental data, they differ
 # this means that we need to add in zero catch data
-battle_min_date_compare <- full_join(battle_rst_min, battle_trap_min)
+battle_clear_min_date_compare <- full_join(battle_clear_rst_min, battle_clear_trap_min)
+
+# The biggest difference is 19 days
+ck <- battle_clear_min_date_compare |> 
+  filter(min != trap_min) |> 
+  mutate(off = trap_min - min)
 
 # select recaptured fish to add to full catch table
-battle_recapture <- battle_mark_recapture %>% 
-  select(release_date, caught_day_1, caught_day_2, caught_day_3, caught_day_4, caught_day_5, origin) %>% 
-  mutate(stream = "battle creek",
-         site = "ubc",
-         subsite = "ubc",
-         release_id = paste0("BAT", row_number())) %>%
-  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "date", values_to = "count") %>%
-  mutate(date = case_when(date == "caught_day_1" ~ release_date + 1, 
-                                    date == "caught_day_2" ~ release_date + 2,
-                                    date == "caught_day_3" ~ release_date + 3,
-                                    date == "caught_day_4" ~ release_date + 4,
-                                    date == "caught_day_5" ~ release_date + 5),
-         adipose_clipped = case_when(origin == "natural" ~ F,
-                                     origin == "hatchery" ~ T),
-         species = "chinook salmon",
-         run = "not recorded",
-         lifestage = "not recorded",
-         run_method = "not recorded") %>% 
-  select(-release_date, -origin) %>% 
-  filter(count > 0 & !is.na(count))
+battle_clear_recapture_format <- battle_clear_recapture |> 
+  rename(date = date_recaptured,
+         count = number_recaptured) |> 
+  mutate(species = "chinook salmon") |> 
+  select(-median_fork_length_recaptured)
   
 # This contains ALL data
-# Assumption is that if date is in environmental data but not catch data there was zero catch
-battle_rst_clean_final <- full_join(battle_rst_clean, 
-                                    battle_trap_clean %>% 
-                                      rename(date = sample_date)) %>% 
+battle_clear_rst_clean_final <- battle_clear_rst |> 
   mutate(count = ifelse(is.na(count), 0, count),
-         stream = "battle creek",
-         site = "ubc",
-         subsite = "ubc",
          adipose_clipped = F,
          run_method = "adjusted length-at-date",
-         species = "chinook salmon",
          release_id = NA) %>% 
-  bind_rows(battle_recapture)
+  bind_rows(battle_clear_recapture_format)
 
 # convert to data table for faster mutation
-setDT(battle_rst_clean_final)
+setDT(battle_clear_rst_clean_final)
 # THIS CODE MODIFIES battle_rst_clean_final using functions that
 # mutate using data.table package
-battle_rst_clean_final %>% 
+battle_clear_rst_clean_final %>% 
   run_encoding_dt() %>% 
   lifestage_encoding_dt()
 ```
@@ -454,112 +438,6 @@ butte_rst_clean %>%
 - trap_status, gear_id, north_brush, south_brush, debris, comments, trap_revolutions, rpms_start, rpms_end: included in operations table
 - weather, temperature, turbidity, secchi, velocity: included in environmental table
 - time is removed because this is captured in trap operations table
-
-## Clear Creek
-
-```{r, clear_data_dictionary}
-clear_data_dictionary <- read_rds(here::here("data-raw", "qc-markdowns", "rst",
-                                             "data-dictionaries", "clear_rst_data_dictionary.rds"))
-kable(clear_data_dictionary)
-```
-
-```{r, clear_clean}
-clear_rst %>%glimpse
-unique(clear_rst$run)
-unique(clear_rst$lifestage)
-# only one with missing run designation
-filter(clear_rst, is.na(run)) %>% tally()
-# notes to include
-# some data may be interpolated (less than 1% may be interpolated)
-# all runs included
-# no variable for mark code so assume all unmarked
-# locations are unique locations
-# run method: fWS_race (Sheila Greene LAD with adjustments, all fall run are spring run)
-unique(clear_rst$station_code)
-
-clear_rst_clean <- clear_rst %>%
-  select(-c(sample_id)) %>%
-  rename(site = station_code) %>%
-  group_by(date, site, run, fork_length, lifestage, dead, interpolated) %>%
-  summarize(count = sum(count, na.rm = T)) 
-
-clear_rst_min <- clear_rst_clean %>% 
-  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
-  group_by(wy) %>% 
-  summarize(min = min(date))
-
-# Trap operations and environmental data was captured separately
-# Need to check that if data in environmental it is also in catch data
-# e.g. make sure that if no catch then 0 in catch data
-
-clear_trap_clean <- clear_environmental %>%
-  rename(site = station_code) %>%
-  # use sample date because this is the date the trap would have been checked
-  select(site, sample_date) %>% 
-  distinct()
-
-clear_trap_min <- clear_trap_clean %>% 
-  mutate(wy = ifelse(month(sample_date) %in% 10:12, year(sample_date) + 1, year(sample_date))) %>% 
-  group_by(wy) %>% 
-  summarize(trap_min = min(sample_date))
-
-# when comparing min dates in rst and environmental data, they differ
-# this means that we need to add in zero catch data
-clear_min_date_compare <- full_join(clear_rst_min, clear_trap_min)
-
-# select recaptured fish to add to full catch table
-clear_recapture <- clear_mark_recapture %>% 
-  select(release_date, release_site, caught_day_1, caught_day_2, caught_day_3, caught_day_4, caught_day_5) %>% 
-  mutate(stream = "clear creek",
-         release_id = paste0("CLR", row_number()), 
-         site = case_when(release_site == "CCRB" ~ "ucc", 
-                          release_site == "VB" ~ "lcc"),
-         subsite = site) %>%
-  select(-release_site) %>% 
-  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "date", values_to = "count") %>%
-  mutate(date = case_when(date == "caught_day_1" ~ release_date + 1, 
-                                    date == "caught_day_2" ~ release_date + 2,
-                                    date == "caught_day_3" ~ release_date + 3,
-                                    date == "caught_day_4" ~ release_date + 4,
-                                    date == "caught_day_5" ~ release_date + 5),
-         species = "chinook salmon",
-         run = "not recorded",
-         lifestage = "not recorded",
-         run_method = "not recorded") %>% 
-  select(-release_date) %>% 
-  filter(count > 0 & !is.na(count))
-  
-# This contains ALL data
-# Assumption is that if date is in environmental data but not catch data there was zero catch
-clear_rst_clean_final <- full_join(clear_rst_clean, 
-                                    clear_trap_clean %>% 
-                                      rename(date = sample_date)) %>% 
-  mutate(count = ifelse(is.na(count), 0, count),
-         stream = "clear creek",
-         site = tolower(site),
-         subsite = site,
-         adipose_clipped = F,
-         run_method = "adjusted length-at-date",
-         species = "chinook salmon") %>% 
-  bind_rows(clear_recapture) %>% 
-  # there is one obs in recapture data missing site/subsite. filled in with ucc
-  mutate(site = ifelse(is.na(site), "ucc", site),
-         subsite = ifelse(is.na(subsite), "ucc", subsite))
-
-# THIS CODE MODIFIES battle_rst_clean_final using functions that
-# mutate using data.table package
-setDT(clear_rst_clean_final)
-clear_rst_clean_final %>% 
-  run_encoding_dt() %>% 
-  lifestage_encoding_dt()
-  
-```
-
-### Variables removed
-
-- sample_id: unable to connect this to any additional data so it is not relevant
-to include
-
 
 ## Deer Creek
 
@@ -1166,9 +1044,8 @@ lad_format <- full_join(lad_spring_format, lad_fall_format) %>%
 ```{r, combined}
 # TODO fill in run method - this will involve outreach with monitoring programs
 # improve performance by using data.table
-combined_rst <- bind_rows(battle_rst_clean_final,
+combined_rst <- bind_rows(battle_clear_rst_clean_final,
                           butte_rst_clean,
-                          clear_rst_clean_final,
                           deer_rst_clean,
                           feather_rst_clean,
                           mill_rst_clean,
