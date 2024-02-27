@@ -117,6 +117,11 @@ battle_clear_trap_clean <- battle_clear_trap |>
   # removes entries with missing site
   filter(!is.na(stream))
 unique(battle_clear_trap_clean$stream)
+
+# issues with trap start and stop date
+ck <- battle_clear_trap_clean |> 
+  mutate(diff = as.numeric(trap_stop_date - trap_start_date)) |> 
+  filter(diff > 7 | diff < -7)
 ```
 
 ### Variables removed
@@ -179,19 +184,42 @@ butte_trap_clean_pre_2015 <- butte_rst %>%
 
 butte_trap_clean_camp <- butte_trap_camp %>% 
     select(-c(debrisVolumeCat, debrisVolume, debrisVolumeUnits)) %>%
-  mutate(stream = "butte creek",
-         site = "okie dam", # Only fish at okie dam now - also refered to as parot-phelan
-         subsite = ifelse(subSiteName == "PP RST", "okie dam 1", "okie dam fyke trap"),
-         trap_visit_date = as.Date(visitTime),
-         trap_visit_time = as_hms(visitTime),
-         trap_stop_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
-                                      T ~ as.Date(NA)),
-         trap_stop_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as_hms(visitTime),
-                                      T ~ as_hms(NA)),
-         trap_start_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as.Date(lag(visitTime2)),
-                                     T ~ as.Date(NA)),
-         trap_start_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as_hms(lag(visitTime2)),
-                                     T ~ as_hms(NA))) %>% 
+  mutate(
+    stream = "butte creek",
+    site = "okie dam",
+    # Only fish at okie dam now - also refered to as parot-phelan
+    subsite = ifelse(subSiteName == "PP RST", "okie dam 1", "okie dam fyke trap"),
+    trap_visit_date = as.Date(visitTime),
+    trap_visit_time = as_hms(visitTime),
+    trap_stop_date = case_when(
+      visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as.Date(visitTime),
+      T ~ as.Date(NA)
+    ),
+    trap_stop_time = case_when(
+      visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") ~ as_hms(visitTime),
+      T ~ as_hms(NA)
+    ),
+    trap_start_date = case_when(
+      visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") |
+        (
+          fishProcessed == "Processed fish" &
+            visitType != "Start trap & begin trapping"
+        ) ~ as.Date(lag(visitTime2)),
+      T ~ as.Date(NA)
+    ),
+    trap_start_time = case_when(
+      visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") |
+        (
+          fishProcessed == "Processed fish" &
+            visitType != "Start trap & begin trapping"
+        ) ~ as_hms(lag(visitTime2)),
+      T ~ as_hms(NA)
+    ),
+    diff = as.numeric(trap_stop_date - trap_start_date),
+    # logic to assign trap_start_date based on the last stop date does not always work so assume 1 day less
+    trap_start_date = case_when(diff > 7 | diff < -7 ~ as_date(trap_stop_date - 1),
+                                T ~ trap_start_date)
+  ) %>% 
   rename(trap_visit_id = trapVisitID,
          rpms_start = rpmRevolutionsAtStart,
          rpms_seconds_start = rpmSecondsAtStart,
@@ -205,7 +233,7 @@ butte_trap_clean_camp <- butte_trap_camp %>%
          is_half_cone_configuration = halfCone,
          in_thalweg = inThalweg,
          include = includeCatch) %>%
-  select(-c(subSiteName, siteName, visitTime, visitTime2, projectDescriptionID)) %>% 
+  select(-c(subSiteName, siteName, visitTime, visitTime2, projectDescriptionID, diff)) %>% 
    mutate(trap_visit_id = as.character(trap_visit_id),
          in_thalweg = case_when(in_thalweg == "Yes" ~ T, 
                                 in_thalweg == "No" ~ F,
@@ -240,6 +268,11 @@ keep_dates <- butte_trap_clean_unfiltered %>%
 butte_trap_clean <- 
   butte_trap_clean_unfiltered %>% 
   filter(trap_stop_date %in% keep_dates) %>% glimpse()
+
+# no issues with trap start and stop date
+ck <- butte_trap_clean |> 
+  mutate(diff = as.numeric(trap_stop_date - trap_start_date)) |> 
+  filter(diff > 7 | diff < -7)
 
 unique(butte_trap_clean$site)
 unique(butte_trap_clean$subsite)
@@ -291,6 +324,8 @@ deer_trap_clean <- deer_rst %>%
 # 
 # filter(deer_trap_clean, date == "2001-11-10")
 deer_trap_clean %>% glimpse
+# deer only has stop date
+
 ```
 
 ### Variables removed
@@ -372,6 +407,11 @@ filter(ck, n > 1)
 filter(feather_trap_clean, trap_stop_date == "2000-03-13")
 # should not be processing fish during "Service/adjust/clean trap"
 filter(feather_trap_clean, fish_processed == "processed fish", is.na(trap_start_date))
+
+# no issues with trap start and stop date
+ck <- feather_trap_clean |> 
+  mutate(diff = as.numeric(trap_stop_date - trap_start_date)) |> 
+  filter(diff > 7 | diff < -7)
 ```
 
 ### Variables removed
@@ -408,6 +448,7 @@ mill_trap_clean <- mill_rst %>%
 #   filter(n > 1)
 # filter(mill_trap_clean, date == "2002-02-07")
 mill_trap_clean %>% glimpse
+# mill only has stop date
 ```
 
 ### Variables removed
@@ -462,6 +503,7 @@ yuba_trap_clean <- yuba_rst %>%
 #   tally() %>%
 #   filter(n > 1)
 yuba_trap_clean %>% glimpse
+# yuba only has stop date
 ```
 
 ### Variables removed
@@ -494,7 +536,10 @@ knights_trap_clean_2006 <- knights_effort %>%
          trap_start_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as.Date(lag(visitTime)),
                                      T ~ as.Date(NA)),
          trap_start_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as_hms(lag(visitTime)),
-                                     T ~ as_hms(NA))) %>%
+                                     T ~ as_hms(NA)),
+         diff = as.numeric(trap_stop_date - trap_start_date),
+         trap_start_date = case_when(diff > 7 | diff < -7 ~ as_date(trap_stop_date - 1),
+                                     T ~ trap_start_date)) %>%
   rename(trap_visit_id = trapVisitID,
          rpms_start = rpmRevolutionsAtStart,
          rpms_seconds_start = rpmSecondsAtStart,
@@ -510,7 +555,7 @@ knights_trap_clean_2006 <- knights_effort %>%
          include = includeCatch,
          debris_level = debrisVolumeCat) %>%
   ungroup() %>% 
-  select(-c(subSiteName, siteName, visitTime, visitTime2)) %>% 
+  select(-c(subSiteName, siteName, visitTime, visitTime2, diff)) %>% 
   mutate(trap_visit_id = as.character(trap_visit_id),
          in_thalweg = case_when(in_thalweg == "Yes" ~ T, 
                                 in_thalweg == "No" ~ F,
@@ -549,8 +594,11 @@ knights_trap_clean_pre2006 <- knights_effort_pre2006 %>%
   mutate(trap_start_date = as_date(trap_start_date),
          trap_stop_date = as_date(trap_stop_date),
          trap_stop_date = case_when(is.na(trap_stop_date) & !is.na(date) ~ date, 
-                                    T ~ trap_stop_date)) %>%
-  select(-date) %>% 
+                                    T ~ trap_stop_date),
+         diff = as.numeric(trap_stop_date - trap_start_date),
+         trap_start_date = case_when(diff > 7 | diff < -7 ~ as_date(trap_stop_date - 1),
+                                     T ~ trap_start_date)) %>%
+  select(-date, -diff) %>% 
   distinct()
 
 knights_trap_clean_pre2002 <- knight_trap_pre2002 %>% 
@@ -577,6 +625,10 @@ ck <- knights_trap_clean_pre2006 %>%
   group_by(trap_stop_date,  subsite) %>%
   tally()
 knights_trap_clean %>% glimpse
+# no issues with trap start and stop date
+ck <- knights_trap_clean |> 
+  mutate(diff = as.numeric(trap_stop_date - trap_start_date)) |> 
+  filter(diff > 6 | diff < -6)
 
 ```
 
@@ -615,7 +667,10 @@ tisdale_trap_clean <- tisdale_trap_camp %>%
          trap_start_date = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as.Date(lag(visitTime)),
                                      T ~ as.Date(NA)),
          trap_start_time = case_when(visitType %in% c("Continue trapping", "Unplanned restart", "End trapping") | (fishProcessed == "Processed fish" & visitType != "Start trap & begin trapping") ~ as_hms(lag(visitTime)),
-                                     T ~ as_hms(NA))) %>%
+                                     T ~ as_hms(NA)),
+         diff = as.numeric(trap_stop_date - trap_start_date),
+         trap_start_date = case_when(diff > 7 | diff < -7 ~ as_date(trap_stop_date - 1),
+                                     T ~ trap_start_date)) %>%
   rename(trap_visit_id = trapVisitID,
          rpms_start = rpmRevolutionsAtStart,
          rpms_seconds_start = rpmSecondsAtStart,
@@ -631,7 +686,7 @@ tisdale_trap_clean <- tisdale_trap_camp %>%
          include = includeCatch,
          debris_level = debrisVolumeCat) %>%
   ungroup() %>% 
-  select(-c(subSiteName, siteName, visitTime, visitTime2, projectDescriptionID)) %>% 
+  select(-c(subSiteName, siteName, visitTime, visitTime2, projectDescriptionID, diff)) %>% 
   mutate(trap_visit_id = as.character(trap_visit_id),
          in_thalweg = case_when(in_thalweg == "Yes" ~ T, 
                                 in_thalweg == "No" ~ F,
@@ -663,6 +718,12 @@ filter(ck, n > 1)
 filter(tisdale_trap_clean, trap_stop_date == "2011-03-25")
 filter(tisdale_trap_clean, trap_stop_date == "2011-03-26")
 filter(tisdale_trap_clean, trap_stop_date == "2011-03-27")
+
+# no issues with trap start and stop date
+ck <- tisdale_trap_clean |> 
+  mutate(diff = as.numeric(trap_stop_date - trap_start_date)) |> 
+  filter(diff > 6 | diff < -6)
+
 
 ```
 
@@ -742,6 +803,10 @@ combined_trap_final <- combined_trap %>%
   relocate(c(visit_type, trap_functioning, fish_processed, gear_type, in_thalweg, partial_sample, is_half_cone_configuration), .after = trap_stop_time) %>% 
   relocate(c(sample_period_revolutions,include,comments), .after = last_col()) %>% 
   relocate(debris_level, .after = debris_volume)
+
+ck <- combined_trap_final |> 
+  mutate(diff = as.numeric(trap_stop_date - trap_start_date)) |> 
+  filter(diff > 7 | diff < -7)
 ```
 
 ## Exploratory plots

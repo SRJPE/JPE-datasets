@@ -76,7 +76,16 @@ gcs_get_object(object_name = "standard-format-data/daily_yearling_ruleset.csv",
                overwrite = TRUE)
 daily_yearling_ruleset <- read_csv(here::here("data", "daily_yearling_ruleset.csv"))
 
+dates_trap_running <- standard_trap |> 
+  select(trap_start_date, trap_stop_date, stream, site, subsite, trap_functioning) |> 
+  filter(trap_functioning != "trap not in service") |> 
+  select(-c(trap_functioning)) |> 
+  distinct(trap_start_date, trap_stop_date, stream, site, subsite) |> 
+  glimpse()
 
+ck <- dates_trap_running |> 
+  mutate(diff = trap_stop_date - trap_start_date) |> 
+  filter(diff != 1, diff != 0)
 standard_catch_unmarked <- standard_catch %>% 
   filter(species == "chinook salmon", # filter for only chinook
          is.na(release_id)) %>%  # filter for only unmarked fish, exclude recaptured fish that were part of efficiency trial
@@ -436,10 +445,6 @@ updated_standard_catch_with_run |>
 
 # add include_in_model variable based on sampling window criteria
 # read in years to include produced in prep data for model
-gcs_get_object(object_name = "jpe-model-data/stream_week_site_year_include.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data", "model-data", "stream_week_site_year_include.csv"), overwrite = TRUE)
-
 years_to_include <- read_csv(here::here("data", "model-data", "stream_week_site_year_include.csv")) |> 
   select(stream, site, monitoring_year, min_date, max_date) |> glimpse()
 

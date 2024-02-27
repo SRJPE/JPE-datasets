@@ -241,11 +241,16 @@ trap_format <- trap |>
          trap_stop_date = case_when(trap_visit_id == "050_20" & trap_start_date == "2020-02-20" ~ as_date("2020-02-20"),
                                     T ~ trap_stop_date),
   # fill in missing start dates with the stop date from previous day
+  # this does not completely work so second step would be to correct with the assumption
+  # that trap stop date is one day after the start date
          trap_start_date = case_when(is.na(trap_start_date) ~ lag(trap_stop_date),
                                 T ~ trap_start_date),
          trap_start_time = case_when(is.na(trap_start_time) ~ lag(trap_stop_time), 
-                                T ~ trap_start_time)) %>% 
-  select(-debris_tubs, -avg_time_per_rev) %>%
+                                T ~ trap_start_time),
+         diff = as.numeric(trap_stop_date - trap_start_date),
+         trap_start_date = case_when(diff > 7 | diff < -7 ~ as_date(trap_stop_date - 1), 
+                                     T ~ trap_start_date)) %>% 
+  select(-debris_tubs, -avg_time_per_rev, -diff) %>%
   filter(!is.na(trap_start_date), !is.na(stream)) %>%
   data.frame() %>%
   distinct()
