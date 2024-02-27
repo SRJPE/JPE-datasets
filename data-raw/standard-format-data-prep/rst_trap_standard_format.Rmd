@@ -82,9 +82,8 @@ gcs_get_object(object_name = "rst/rbdd/data/trap.csv",
                saveToDisk = "data/rst/rbdd_trap.csv",
                overwrite = TRUE)
 # catch data
-battle_rst <- read_csv(here::here("data", "rst", "battle_rst_catch.csv"))
+battle_clear_rst <- read_csv(here::here("data", "rst", "battle_clear_catch_edi.csv"))
 butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv")) # contains trap data too
-clear_rst <- read_csv(here::here("data", "rst", "clear_rst_catch.csv"))
 deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv")) # contains trap data too
 feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"))
 feather_rst_camp <- read_csv(here::here("data", "rst", "feather_catch_camp.csv"))
@@ -96,8 +95,8 @@ yuba_rst <- read_csv(here::here("data", "rst", "yuba_rst.csv"))
 rbdd_rst <- read_csv(here::here("data", "rst", "rbdd_rst.csv"))
 
 # sampling effort and environmental
-battle_environmental <- read_csv(here::here("data", "rst", "battle_rst_environmental.csv"))
-clear_environmental <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv"))
+battle_clear_trap <- read_csv(here::here("data", "rst", "battle_clear_trap_edi.csv"))
+battle_clear_environmental <- read_csv(here::here("data", "rst", "battle_clear_environmental_edi.csv"))
 butte_trap_camp <- read_csv(here::here("data", "rst", "butte_trap_camp.csv"))
 feather_effort <- read_csv(here::here("data", "rst", "feather_rst_effort.csv"))
 feather_trap_camp <- read_csv(here::here("data", "rst", "feather_trap_camp.csv"))
@@ -110,78 +109,14 @@ rbdd_trap <- read_csv(here::here("data", "rst", "rbdd_trap.csv"))
 
 # Data formatting {.tabset}
 
-## Battle Creek
+## Battle & Clear Creek
 
 ```{r, battle_clean}
-# counter means number on cone revolution counter at sample_date, sample_time
-battle_environmental %>% str
-unique(battle_environmental$trap_sample_type)
-unique(battle_environmental$fish_properly)
-unique(battle_environmental$partial_sample)
-unique(battle_environmental$debris_tubs)
-unique(battle_environmental$gear_condition_code)
-unique(battle_environmental$trap_fishing)
-filter(battle_environmental, !is.na(start_counter))
 
-# filter(battle_environmental, start_counter > 0)
-
-# check to see why some dates are NA. I think this is an error
-# because these contain no data. Decided to remove. 
-# filter(battle_trap_clean, is.na(start_date))
-
-battle_trap_clean <- battle_environmental %>% 
-  select(-c(baileys_eff, num_released, report_baileys_eff, sub_week, sample_weight,
-            flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
-            weather_code, lunar_phase, diel,
-            habitat, debris_type, start_counter,
-            trap_sample_type, river_left_depth, river_center_depth, river_right_depth,
-            fish_properly, trap_fishing)) %>%
-  # sample_date and sample_time are described as the end of 24 hour sampling period
-  # rename to match others
-  rename(trap_visit_id = sample_id,
-         trap_stop_date = sample_date,
-         trap_stop_time = sample_time,
-         sample_period_revolutions = counter,
-         comments = trap_comments,
-         is_half_cone_configuration = cone,
-         in_thalweg = thalweg) %>%
-  mutate(stream = "battle creek",
-         site = "ubc",
-         subsite = site,
-         # debris in gallons (1 tub = 10 gallons)
-         debris_volume = debris_tubs*10,
-         is_half_cone_configuration = ifelse(is_half_cone_configuration == 0.5, T, F),
-         # convert average time per revolution to revolutions per minute
-         rpms_start = 60/avg_time_per_rev,
-         # fix typos in trap start date
-         trap_start_date = case_when(trap_stop_date == "2004-02-13" ~ as_date("2004-02-12"),
-                                trap_stop_date == "2005-01-06" ~ as_date("2005-01-05"),
-                                trap_visit_id == "207_20" ~ as_date("2020-07-24"),
-                                trap_visit_id == "049_20" ~ as_date("2020-02-17"),
-                                trap_visit_id == "085_19" ~ as_date("2020-03-2025"),
-                                trap_visit_id == "274_18" ~ as_date("2018-09-20"),
-                                trap_visit_id == "006_16" ~ as_date("2016-01-05"),
-                                T ~ trap_start_date),
-         trap_stop_date = case_when(trap_visit_id == "050_20" ~ as_date("2020-02-20"),
-                                    T ~ trap_stop_date),
-  # fill in missing start dates with the stop date from previous day
-         trap_start_date = case_when(is.na(trap_start_date) ~ lag(trap_stop_date),
-                                T ~ trap_start_date),
-         trap_start_time = case_when(is.na(trap_start_time) ~ lag(trap_stop_time), 
-                                T ~ trap_start_time)) %>% 
-  select(-debris_tubs, -avg_time_per_rev) %>%
-  filter(!is.na(trap_start_date)) %>%
-  data.frame() %>%
-  distinct()
- 
-# check to make sure one row per day/time 
-# battle_trap_clean %>%
-#   group_by(start_date, start_time) %>%
-#   tally() %>%
-#   filter(n < 1)
-
-# battle_trap_clean %>% group_by(trap_sample_type) %>% tally()
-battle_trap_clean %>% glimpse
+battle_clear_trap_clean <- battle_clear_trap |> 
+  # removes entries with missing site
+  filter(!is.na(stream))
+unique(battle_clear_trap_clean$stream)
 ```
 
 ### Variables removed
@@ -317,78 +252,6 @@ All variables removed are included in the catch table or environmental table.
 - gear_id removed because the subsite provided information about the gear
 
 Some subsites are NA, especially in the first few years. It would be good to better understand what is going on with these data gaps. 
-
-## Clear Creek
-
-```{r, clear_clean}
-unique(clear_environmental$gear_condition_code)
-unique(clear_environmental$station_code)
-
-# there are NA start_dates which don't have any data. need to remove.
-
-clear_trap_clean <- clear_environmental %>%
-  select(-c(num_released, baileys_eff, sub_week,
-            flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
-            weather_code, lunar_phase, diel,
-            habitat, debris_type, start_counter,
-            trap_sample_type, river_left_depth, river_center_depth, river_right_depth,
-            fish_properly, trap_fishing)) %>%
-  rename(trap_visit_id = sample_id,
-         site = station_code,
-         trap_stop_date = sample_date,
-         trap_stop_time = sample_time,
-         sample_period_revolutions = counter,
-         comments = trap_comments,
-         is_half_cone_configuration = cone,
-         in_thalweg = thalweg) %>%
-  mutate(stream = "clear creek",
-         # debris in gallons (1 tub = 10 gallons)
-         debris_volume = debris_tubs*10,
-         site = tolower(site),
-         subsite = site,
-         is_half_cone_configuration = ifelse(is_half_cone_configuration == 0.5, T, F),
-         # convert average time per revolution to revolutions per minute
-         rpms_start = 60/avg_time_per_rev,
-    # fix typos
-        trap_start_time = case_when(trap_stop_date == "2020-02-24" ~ trap_stop_time,
-                                     T ~ trap_start_time),
-         trap_stop_time = case_when(trap_stop_date == "2020-02-24" ~ trap_start_time,
-                                    site == "LCC" & trap_stop_date == "2021-05-10" ~ as_hms("08:00:00"),
-                                     T ~ trap_stop_time),
-         trap_start_date = case_when(trap_stop_date == "2006-01-07" ~ as_date("2006-01-06"),
-                                     T ~ trap_start_date),
-         remove = case_when(trap_stop_date == "2005-01-16" & is.na(trap_start_time) ~ "remove",
-                            T ~ "keep")) %>% 
-  filter(remove == "keep") %>% 
-  select(-debris_tubs, -avg_time_per_rev, -remove) %>%
-  filter(!is.na(trap_start_date)) %>%
-  distinct()
-
-# check to make sure one row per day/time 
-# clear_trap_clean %>%
-#   group_by(start_date, start_time, site) %>%
-#   tally() %>%
-#   filter(n > 1)
-# clear_trap_clean %>% group_by(trap_sample_type) %>% tally()
-clear_trap_clean %>% glimpse
-```
-
-### Variables removed
-
-- sample_id: doesn't map to data outside of CAMP
-- baileys_eff is a calculated value
-- num_released included in mark and recapture data
-- sub_week: is related to efficiency and included in efficiency table
-- flow_start_meter, flow_end_meter, flow_set_time, velocity, turbidity,
-weather_code, lunar_phase, diel included in environmental table
-- river_left_depth, river_center_depth, river_right_depth removed because they should be included in the environmental table rather than trap. 
-- habitat removed because most data are in "run"
-- debris_type removed because data does not exist for other locations and is treated like a comments field
-- start_counter is always NA or 0. No meaningful data.
-- trap_sample_type - 3666 non-intensive, 57 random. we do not know what encodings mean and almost all are non-intensive
-- trap_fishing and fish_properly do not offer new information from gear_condition
-
-Note that sample_id was renamed to trap_visit_id for clarity and links to catch and environmental data
 
 ## Deer Creek
 
@@ -806,9 +669,8 @@ filter(tisdale_trap_clean, trap_stop_date == "2011-03-27")
 # Standard format {.tabset}
 
 ```{r, combined}
-combined_trap_raw <- bind_rows(battle_trap_clean,
+combined_trap_raw <- bind_rows(battle_clear_trap_clean,
                           butte_trap_clean,
-                          clear_trap_clean,
                           deer_trap_clean,
                           feather_trap_clean,
                           mill_trap_clean,

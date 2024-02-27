@@ -59,7 +59,7 @@ T - Tisdale, Y - Yuba River)
 
 ## Read in data {.tabset}
 
-### Battle Creek
+### Battle & Clear Creek
 
 #### Columns Removed
 
@@ -72,26 +72,13 @@ columns for environmental data are selected.
 - habitat
 
 We did not include lunar phase since that stream can be found elsewhere. 
-
-
 ```{r, message=FALSE, warning=FALSE}
-gcs_get_object(object_name = "rst/battle-creek/data/battle_rst_environmental.csv",
+gcs_get_object(object_name = "rst/battle_clear_environmental_edi.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data", "rst", "battle_rst_environmental.csv"),
+               saveToDisk = here::here("data", "rst", "battle_clear_environmental.csv"),
                overwrite = TRUE)
 
-battle_env <- read_csv(here::here("data", "rst", "battle_rst_environmental.csv")) %>% 
-  select(trap_visit_id = sample_id, date = sample_date, 
-         velocity, turbidity, weather = weather_code, habitat, `river depth left` = river_left_depth, `river depth center` = river_center_depth, `river depth right` = river_right_depth) %>%
-  mutate(stream = "battle creek",
-         site = "ubc",
-         subsite = "ubc") %>%
-  distinct() %>%
-  mutate_if(is.numeric, as.character) %>% 
-  pivot_longer(cols = c("velocity", "turbidity", "weather", "habitat", "river depth left", "river depth center", "river depth right"), values_to = "text", names_to = "parameter") %>% 
-  mutate(value = as.numeric(text),
-         text = ifelse(!is.na(value), NA_character_, text)) %>% 
-  glimpse
+battle_clear_env <- read_csv(here::here("data", "rst", "battle_clear_environmental.csv"))
 ```
 
 ### Butte Creek
@@ -162,41 +149,6 @@ keep_dates <- butte_env_unfiltered %>%
 
 butte_env <- butte_env_unfiltered %>%
   filter(date %in% keep_dates) # keep only dates with RST sampling - not fyke only 
-```
-
-### Clear Creek
-
-#### Columns Removed
-
-The dataset included operations and environmental data. Below only
-columns for environmental data are selected.
-
-- velocity
-- turbidity
-- weather
-- habitat
-
-We did not include lunar phase since that stream can be found elsewhere. 
-
-```{r, message=FALSE, warning=FALSE}
-gcs_get_object(object_name = "rst/clear-creek/data/clear_rst_environmental.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data", "rst", "clear_rst_environmental.csv"),
-               overwrite = TRUE)
-
-clear_env <- read_csv(here::here("data", "rst", "clear_rst_environmental.csv")) %>% 
-  select(trap_visit_id = sample_id, date = sample_date, 
-         velocity, turbidity, weather = weather_code, habitat, station_code, `river depth left` = river_left_depth, `river depth center` = river_center_depth, `river depth right` = river_right_depth) %>%
-  mutate(stream = "clear creek", 
-         site = ifelse(station_code == "ucc", "ucc", "lcc"),
-         subsite = site) %>%
-  select(-station_code) %>%
-  distinct() %>%
-  mutate_if(is.numeric, as.character) %>% 
-  pivot_longer(cols = c("velocity", "turbidity", "weather", "habitat", "river depth left", "river depth center", "river depth right"), values_to = "text", names_to = "parameter") %>% 
-  mutate(value = as.numeric(text),
-         text = ifelse(!is.na(value), NA_character_, text)) %>% 
-  glimpse
 ```
 
 ### Deer Creek
@@ -447,10 +399,10 @@ gcs_get_object(object_name = "rst/rbdd/data/environmental.csv",
 rbdd_environmental <- read_csv(here::here("data", "rst","rbdd_environmental.csv"))
 ```
 
-## Combine data:
+## Combine data
 
 ```{r}
-combined_env <- bind_rows(battle_env, butte_env, clear_env, deer_env,
+combined_env <- bind_rows(battle_clear_env, butte_env, deer_env,
                           feather_env, knights_env, tisdale_env, 
                           mill_env, yuba_env, rbdd_environmental) %>% 
   mutate(text = case_when(parameter == "weather" & text == "partially cloudy" ~ "partly cloudy",
@@ -464,9 +416,7 @@ combined_env <- bind_rows(battle_env, butte_env, clear_env, deer_env,
                            T ~ value),
          date = as.Date(date)) %>% 
   # we do not need to keep rows for parameters where no data was collected because it does not provide any additional information
-  filter(!is.na(value) | !is.na(text)) %>% 
-  # decided to remove this because not needed for standard datasets
-  select(-trap_visit_id)
+  filter(!is.na(value) | !is.na(text)) 
 ```
 
 ## Explore Varibles {.tabset}

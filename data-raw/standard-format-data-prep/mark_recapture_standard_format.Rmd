@@ -80,7 +80,7 @@ All released and recaptured fish are chinook salmon.
 
 ## Read in data {.tabset}
 
-### Battle Creek
+### Battle & Clear Creek
 
 #### Columns Removed
 
@@ -90,48 +90,25 @@ All released and recaptured fish are chinook salmon.
 -   **number_recaptured:** Number recaptured is removed since we are interested in the number recaptured per day not the total number recaptured
 -   **cone_status:** Cone status is included in trap operations data
 
-```{r, message=FALSE, warning=FALSE}
-gcs_get_object(object_name = "rst/battle-creek/data/battle_mark_reacpture.csv",
+```{r}
+gcs_get_object(object_name = "rst/battle_clear_recapture_edi.csv",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data", "rst", "battle_mark_recapture.csv"),
+               saveToDisk = here::here("data", "rst", "battle_clear_recapture.csv"),
+               overwrite = TRUE)
+gcs_get_object(object_name = "rst/battle_clear_release_edi.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data", "rst", "battle_clear_release.csv"),
                overwrite = TRUE)
 
-battle_mark_recap <- read_csv(here::here("data", "rst", "battle_mark_recapture.csv")) %>% 
-  mutate(stream = "battle creek",
-         site = "ubc",
-         release_id = paste0("BAT", row_number())) %>%
-  rename(number_released = no_released, number_recaptured = recaps,
-         median_fork_length_recaptured = recap_med_fork_length_mm, 
-         median_fork_length_released = mark_med_fork_length_mm) %>%
-  select(-no_marked, -mortality, -mean_flow_day_of_rel, -mean_temp_day_of_rel, -number_recaptured) %>% 
-  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "date_recaptured", values_to = "number_recaptured") %>%
-  mutate(date_recaptured = case_when(date_recaptured == "caught_day_1" ~ release_date + 1, 
-                                    date_recaptured == "caught_day_2" ~ release_date + 2,
-                                    date_recaptured == "caught_day_3" ~ release_date + 3,
-                                    date_recaptured == "caught_day_4" ~ release_date + 4,
-                                    date_recaptured == "caught_day_5" ~ release_date + 5,),
-         median_fork_length_recaptured = ifelse(number_recaptured == 0 | is.na(number_recaptured), 
-                                                NA, as.numeric(median_fork_length_recaptured))) %>% 
-    filter(!is.na(number_released)) # filter 1 value that have na in raw data for number released
-  
-battle_released <- battle_mark_recap %>% 
-  select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
-         days_held_post_mark, day_or_night_release, release_temp, release_flow = flow_release, release_turbidity, 
-         origin) %>% 
-  filter(release_date >= as_date("2003-10-01")) %>%
-  rename(date_released = release_date,
-         origin_released = origin,
-         time_released = release_time) %>% 
-  distinct() %>% 
-  glimpse()
-  
-  
-battle_recaptured <-  battle_mark_recap %>% 
-  select(stream, site, release_id, date_recaptured, number_recaptured, median_fork_length_recaptured) %>% 
-  filter(date_recaptured >= as_date("2003-10-01")) %>%
-  mutate(subsite = "ubc") %>% 
-  glimpse()
-  
+b_c_release <- read_csv(here::here("data", "rst", "battle_clear_release.csv")) |> glimpse()
+b_c_recapture <- read_csv(here::here("data", "rst", "battle_clear_recapture.csv"))
+
+battle_clear_released <- b_c_release |> 
+  rename(release_flow = flow_at_release,
+         release_temp = temperature_at_release,
+         release_turbidity = turbidity_at_release)
+battle_clear_recaptured <- b_c_recapture
+
 ```
 
 ### Butte Creek
@@ -190,59 +167,6 @@ butte_recaptured <- read_csv(here::here("data", "rst", "butte_recaptures.csv")) 
 
 unique(butte_recaptured$subsite)
 
-```
-
-### Clear Creek
-
-#### Columns Removed
-
--   **no_marked:** Number of fish marked was removed since we are focused on fish released not the fish marked. no_marked = no_released + mortality. We keep no_released as the total number released durring a mark recapture trial
--   **mortality:** Fish who died are removed since we are using number of fish relelased not number of fish marked
--   **mean_flow_day_of_rel, mean_temp_day_of_rel:** Other environmental variables kept (flow_at_release, temperature_at_release, and turbidity_at_release). Additional environmental variables can be added back in based on gage data or trap_environmentals.csv if we need more information. There are no environmental variables for Feather River and Knights Landing.
--   **number_recaptured:** Number recaptured is removed since we are interested in the number recaptured per day not the total number recaptured
--   **cone_status:** Cone status is included in trap operations data
-
-```{r, message=FALSE, warning=FALSE}
-gcs_get_object(object_name = "rst/clear-creek/data/clear_mark_reacpture.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = here::here("data", "rst", "clear_mark_recapture.csv"),
-               overwrite = TRUE)
-
-clear_mark_recap <- read_csv(here::here("data", "rst", "clear_mark_recapture.csv")) %>% 
-  mutate(stream = "clear creek",
-         release_id = paste0("CLR", row_number()), 
-         site = case_when(release_site == "CCRB" ~ "ucc", 
-                          release_site == "VB" ~ "lcc")) %>% 
-  rename(number_released = no_released, number_recaptured = recaps,
-         median_fork_length_recaptured = recap_med_fork_length_mm, 
-         median_fork_length_released = mark_med_fork_length_mm) %>%
-  select(-no_marked, -mean_flow_day_of_rel, -mean_temp_day_of_rel, -number_recaptured, -release_site) %>% 
-  pivot_longer(cols = caught_day_1:caught_day_5, names_to = "date_recaptured", values_to = "number_recaptured") %>%
-  mutate(date_recaptured = case_when(date_recaptured == "caught_day_1" ~ release_date + 1, 
-                                    date_recaptured == "caught_day_2" ~ release_date + 2,
-                                    date_recaptured == "caught_day_3" ~ release_date + 3,
-                                    date_recaptured == "caught_day_4" ~ release_date + 4,
-                                    date_recaptured == "caught_day_5" ~ release_date + 5,),
-         median_fork_length_recaptured = ifelse(number_recaptured == 0 | is.na(number_recaptured), 
-                                                NA, as.numeric(median_fork_length_recaptured))) %>% 
-    filter(!is.na(number_released)) # filter 2 values that have na in raw data for number released
-
-clear_released <- clear_mark_recap %>% 
-  select(stream, site, release_id, release_date, release_time, number_released, median_fork_length_released, 
-         days_held_post_mark, day_or_night_release, release_temp, release_flow = flow_release, release_turbidity) %>% 
-  mutate(release_date = as_date(release_date)) %>% 
-  rename(date_released = release_date,
-         time_released = release_time) %>% 
-  distinct() %>% 
-  glimpse()
-  
-  
-clear_recaptured <-  clear_mark_recap %>% 
-  select(stream, site, release_id, date_recaptured, number_recaptured, median_fork_length_recaptured) %>% 
-  mutate(date_recaptured = as_date(date_recaptured),
-         subsite = site) %>% 
-  glimpse
-  
 ```
 
 ### Feather River
@@ -417,10 +341,10 @@ rbdd_release <- read_csv(here::here("data", "rst", "rbdd_release.csv")) |>
   mutate(release_id = paste0(release_id, year(date_released)))
 ```
 
-## Combine datasets:
+## Combine datasets
 
 ```{r}
-combined_release <- bind_rows(battle_released, butte_released, clear_released, feather_released, knights_released, tisdale_released) %>% 
+combined_release <- bind_rows(battle_clear_released, butte_released, feather_released, knights_released, tisdale_released) %>% 
   relocate(stream, site, release_id, date_released, time_released, site_released, subsite_released, number_released, 
            median_fork_length_released, day_or_night_release, origin_released, run_released, lifestage_released, source_released, 
            days_held_post_mark, flow_at_release = release_flow, temperature_at_release = release_temp, turbidity_at_release = release_turbidity) %>% 
@@ -431,14 +355,14 @@ combined_release <- bind_rows(battle_released, butte_released, clear_released, f
          site_released = ifelse(is.na(site_released), "not recorded", site_released),
          subsite_released = ifelse(is.na(subsite_released), "not recorded", subsite_released),
          include = ifelse(is.na(include), "yes", include)) %>% 
-  bind_rows(rbdd_release)
+  bind_rows(rbdd_release) |> glimpse()
 
 # ck <- combined_release %>%
 #   group_by(stream, site, release_id) %>%
 #   tally() %>%
 #   filter(n > 1)
 
-combined_recapture <- bind_rows(battle_recaptured, butte_recaptured, clear_recaptured, feather_recaptured, knights_recaptured, tisdale_recaptured, rbdd_recapture) %>%
+combined_recapture <- bind_rows(battle_clear_recaptured, butte_recaptured, feather_recaptured, knights_recaptured, tisdale_recaptured, rbdd_recapture) %>%
   relocate(stream, site, subsite, release_id,
            date_recaptured, number_recaptured, median_fork_length_recaptured) %>% glimpse
 ```
@@ -485,8 +409,6 @@ combined_release %>%
   ungroup() %>% 
   summarize(n = sum(n))
 ```
-
-Battle and Clear Creek do not provide a release id so we generated above. In some cases Tisdale does not provide a release id so we generated similar to Clear and Battle
 
 ### release_date
 
@@ -570,7 +492,8 @@ table(combined_release$day_or_night_release)
 
 combined_release <- combined_release %>%
   mutate(night_release = case_when(day_or_night_release == "day" ~ FALSE, 
-                                   day_or_night_release == "night" ~ TRUE)) %>%
+                                   day_or_night_release == "night" ~ TRUE,
+                                   T ~ night_release)) %>%
   select(-day_or_night_release) %>% glimpse
 ```
 
