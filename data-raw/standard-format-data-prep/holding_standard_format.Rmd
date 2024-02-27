@@ -140,7 +140,7 @@ deer_holding_clean <- bind_rows(deer_holding_1986_1996,
                                 deer_holding_1997_2020) %>%
   rename(reach = location) %>%
   mutate(stream = "deer creek",
-         date = as_date(paste0(year, "-08-01")))
+         date = as_date(paste0(year, "-08-01")),
          run = "spring",
          adipose_clipped = as.character(F)) # no hatchery, any adipose clipped fish would be strays
 ```
@@ -196,6 +196,46 @@ combined_holding <- bind_rows(battle_holding_clean,
                               clear_holding_clean,
                               deer_holding_clean)
 ```
+
+## Save file without standardized reaches
+We need all raw reaches to pull into `analysis/adult-reach-analysis.R`
+
+# Save data
+```{r, save_data}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(combined_holding,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_holding_raw_reaches.csv",
+           predefinedAcl = "bucketLevel")
+```
+## Survey Reach Standardization
+
+Survey reach naming conventions changed over time for several monitoring programs. A standardized reach lookup table was created in `analysis/adult-reach-analysis.R` and is merged in here to standardize all reaches.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+gcs_get_object(
+  object_name = "jpe-model-data/standard_reach_lookup.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "standard-format-data", "standard-reach-lookup.csv"),
+  overwrite = TRUE
+)
+
+standard_reach_lookup <- read_csv(here::here("data", "standard-format-data", "standard-reach-lookup.csv")) |> 
+  # join sub-reach for butte
+  mutate(standardized_reach = ifelse(stream == "butte creek", standardized_sub_reach, standardized_reach),
+         reach = ifelse(stream == "butte creek", sub_reach, reach)) |>
+  select(stream, reach, standardized_reach)
+
+combined_holding <- combined_holding |> 
+  left_join(standard_reach_lookup, by = c("stream", "reach")) |>
+  select(-reach) |> 
+  rename(reach = standardized_reach) |> 
+  relocate(reach, .before = river_mile) |> 
+  glimpse()
+```
+
 
 ## Data dictionary
 

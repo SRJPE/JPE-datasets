@@ -258,13 +258,53 @@ carcass_combined <- bind_rows(battle_carcass,
   glimpse()
 ```
 
+###  Save file without standardized reaches
+We need all raw reaches to pull into `analysis/adult-reach-analysis.R`
+
+# Save data
+```{r, save_data}
+f <- function(input, output) write_csv(input, file = output)
+
+gcs_upload(carcass_combined,
+           object_function = f,
+           type = "csv",
+           name = "standard-format-data/standard_carcass_raw_reaches.csv",
+           predefinedAcl = "bucketLevel")
+```
+
+### Survey Reach Standardization
+
+Survey reach naming conventions changed over time for several monitoring programs. A standardized reach lookup table was created in `analysis/adult-reach-analysis.R` and is merged in here to standardize all reaches.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+gcs_get_object(
+  object_name = "jpe-model-data/standard_reach_lookup.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "standard-format-data", "standard-reach-lookup.csv"),
+  overwrite = TRUE
+)
+
+standard_reach_lookup <- read_csv(here::here("data", "standard-format-data", "standard-reach-lookup.csv")) |> 
+  # join sub-reach for butte
+  mutate(standardized_reach = ifelse(stream == "butte creek", standardized_sub_reach, standardized_reach),
+         reach = ifelse(stream == "butte creek", sub_reach, reach)) |>
+  select(stream, reach, standardized_reach)
+
+combined_carcass_with_reach <- carcass_combined |> 
+  ungroup() |> 
+  left_join(standard_reach_lookup, by = c("stream", "reach")) |>
+  select(-reach) |> 
+  rename(reach = standardized_reach) |> 
+  relocate(reach, .before = sex) |> 
+  glimpse()
+```
 
 ### Upload standardized data to google cloud
 ```{r, include = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
 # combined chops and tags
-gcs_upload(carcass_combined,
+gcs_upload(combined_carcass_with_reach,
            object_function = f,
            type = "csv",
            name = "standard-format-data/standard_carcass.csv",
