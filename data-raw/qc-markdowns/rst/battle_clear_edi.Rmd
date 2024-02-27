@@ -23,18 +23,23 @@ This script pulls data from EDI for Battle and Clear creeks. Previously data had
 
 ```{r, include =F }
 # Pull in data from EDI
-res <- read_data_entity_names(packageId = "edi.1509.1")
+scope = "edi"
+identifier = "1509"
+revision = list_data_package_revisions(scope, identifier, filter = "newest")
+version <- paste(scope, identifier, revision, sep = ".")
+
+res <- read_data_entity_names(packageId = version)
 # catch
-raw <- read_data_entity(packageId = "edi.1509.1", entityId = res$entityId[1])
+raw <- read_data_entity(packageId = version, entityId = res$entityId[1])
 catch <- readr::read_csv(file = raw)
 #trap
-raw <- read_data_entity(packageId = "edi.1509.1", entityId = res$entityId[2])
+raw <- read_data_entity(packageId = version, entityId = res$entityId[2])
 trap <- readr::read_csv(file = raw)
 #recapture
-raw <- read_data_entity(packageId = "edi.1509.1", entityId = res$entityId[3])
+raw <- read_data_entity(packageId = version, entityId = res$entityId[3])
 recapture <- readr::read_csv(file = raw)
 #release
-raw <- read_data_entity(packageId = "edi.1509.1", entityId = res$entityId[4])
+raw <- read_data_entity(packageId = version, entityId = res$entityId[4])
 release <- readr::read_csv(file = raw)
 ```
 
