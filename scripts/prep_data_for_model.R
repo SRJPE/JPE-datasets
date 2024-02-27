@@ -719,8 +719,8 @@ write_csv(standard_temperature_w_site_group, "data/model-data/standard_temperatu
 weekly_temperature <- standard_temperature_w_site_group |> 
   mutate(week = week(date),
          year = year(date)) |> 
-  group_by(week, year, stream, site_group, site, subsite, source) |> 
-  summarize(mean_temperature = mean(mean_daily_temp_c, na.rm = T))
+  group_by(week, year, stream, site_group, site, subsite, gage_agency, gage_number, statistic) |> 
+  summarize(mean_temperature = mean(value, na.rm = T))
 # Trap --------------------------------------------------------------------
 
 # Join trap operations data to catch data
