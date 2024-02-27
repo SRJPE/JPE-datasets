@@ -1,22 +1,36 @@
 ---
 title: "Covariate processing for stock recruit model"
-output: html_document
+author: "ashley vizek"
+output: 
+  html_document:
+    theme: flatly
 date: "2023-12-21"
 ---
 
 ```{r setup, include=FALSE}
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = F, messages = F, warning = F)
 
 library(tidyverse)
 library(zoo)
 library(googleCloudStorageR)
+library(gsheet)
+library(kableExtra)
 ```
 
 # Overview
 
-The goal of this document is to process covariates for use in SR JPE stock recruitment modeling. Initial literature review and planning has been completed to outline covariates that are expected to be important based on past research. This work can be found here: https://docs.google.com/spreadsheets/d/1Q4VUBE72KdPq0x65y_vUoDMj5dDHp8XwOyDNIyIJKpE/edit#gid=0
+The goal of this document is to process covariates for use in SR JPE stock recruitment modeling. Initial literature review and planning has been completed to outline covariates that are expected to be important based on past research. This work can be found [here](https://docs.google.com/spreadsheets/d/1Q4VUBE72KdPq0x65y_vUoDMj5dDHp8XwOyDNIyIJKpE/edit#gid=0).
+
+*Table 1. Summary of covariates to include in stock recruit modeling based on preliminary literature review*
+
+```{r}
+covariate_references <- gsheet2tbl("https://docs.google.com/spreadsheets/d/1Q4VUBE72KdPq0x65y_vUoDMj5dDHp8XwOyDNIyIJKpE/edit#gid=0")
+
+kable(covariate_references) |> 
+  kable_classic(full_width = T)
+```
 
 # Temperature
 
@@ -25,7 +39,7 @@ Temperature has been found to influence spawning and rearing. Therefore it is ex
 - Number of degree days
 - Day of year when 7DADM is above 13 C
 - Maximum weekly stream temperature
-- In development: Emergence date (calculated from degree days and median spawning date)
+- *In development: Emergence date (calculated from temperature and spawning date)*
 
 ```{r, include=F}
 # google cloud set up
@@ -41,9 +55,11 @@ standard_temperature <- read_csv("data/standard-format-data/standard_temperature
 
 ## Number of degree days
 
-- Includes the sum of the daily mean temperatures between August and December (spawning time period) by year and stream. Note that for streams with multiple locations the max daily mean was selected.
+Sum of the daily mean temperatures between August and December (spawning time period) by year and stream. 
 
-```{r}
+*Note that for streams with multiple locations the max daily mean was selected.*
+
+```{r, include = F}
 # 1. Filter data to the spawning and incubation time period
 # 2. Calculate the DD (use 0 as threshold for now)
 
@@ -66,21 +82,30 @@ std_temp_dd_spawn <- standard_temperature |>
   summarize(max_mean = max(mean, na.rm = T)) |> 
   group_by(year, stream) |> 
   summarize(gdd_spawn = sum(max_mean)) |> glimpse()
-  
+```
+
+
+```{r}
 
 std_temp_dd_spawn |> 
   ggplot(aes(x = year, y = gdd_spawn, color = stream)) + 
-  geom_line()
+  geom_line() +
+  labs(x = "",
+       y = "Sum of daily mean temperatures during spawning/incubation time period (Aug-Dec)") +
+  theme_minimal()
 
 # years for each stream, data are complete
-std_temp_dd_spawn |> 
-  ggplot(aes(x = year, y = stream)) + 
-  geom_point()
+# std_temp_dd_spawn |> 
+#   ggplot(aes(x = year, y = stream)) + 
+#   geom_point()
 ```
+
+*Figure 1. Annual sum of daily mean temperatures during spawning and incubation time period (Aug - Dec)*
 
 ## Day of year when 7DADM drops above/below 13 C
 
-- Includes day of the year and week when the 7DADM is above 13C
+Day of the year and week when the 7DADM is above 13C
+
 - Data are not filtered to the spawning time period (Aug-Dec) as this threshold is typically met before August
 - Below 13C is not included as this does not make sense in terms of impact on salmon. Temperatures are rarely below 13C during the spawning time period and if they are, unlikely to be significantly cold enough to have an impact
 - TODO - Currently do not have max daily temperatures for the Sacramento so mainstem is not included
@@ -135,11 +160,14 @@ std_temp_7dadm_threshold <- full_join(std_temp_7dadm_above_13,
   pivot_longer(cols = c(above_13, below_13), values_to = "week", names_to = "threshold")
 ggplot(std_temp_7dadm_threshold, aes(x = year, y = week, color = threshold)) +
   geom_point() +
-  facet_wrap(~stream)
+  facet_wrap(~stream) +
+  theme_minimal()
 
 ```
 
-```{r}
+*Figure 2. Plot of week where threshold is met (above or below 13) for all years and streams*
+
+```{r, include=F}
 std_temp_7dadm_final <- std_temp_7dadm_above_13 |> 
   rename(above_13_temp_week = above_13) |> 
   mutate(above_13_temp_day = yday(date)) |> 
@@ -165,18 +193,36 @@ std_temp_weekly <- standard_temperature |>
             weekly_max_temp_median = median(w_max, na.rm = T)) |> glimpse()
   
 ```
-**Plot of mean, median, max of the maximum weekly temperature**
 
 ```{r}
 std_temp_weekly |> 
   ggplot(aes(x = year, y = weekly_max_temp_max)) +
   geom_line() +
-  facet_wrap(~stream)
+  facet_wrap(~stream) +
+  labs(x = "",
+       y = "Weekly max temperatures (Celcius)") +
+  theme_minimal()
 ```
 
-## TODO Emergence date
+*Figure 3. Plot of mean, median, max of the maximum weekly temperature*
+
+## Emergence date
+
+*In development*
+
+Emergence data encompasses the effect of temperature and is expected to affect growth and survival of juveniles. Modeled following [Kaylor et al. 2022](https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/ecs2.4160). Daily Ei values are summed from the spawn date, and emergence is assumed to occur on the first day where Ei exceeds 1.
+
+Ei = 1 / exp [loge a - loge(Ti - b)]
+
+logea = 6.872
+b = -0.332
+Ti = mean daily temperature
+Ei = daily contribution to development (ranging from 0 to 1)
+
+Constants derived from [Beacham and Murray (1990)](https://afspubs.onlinelibrary.wiley.com/doi/epdf/10.1577/1548-8659%281990%29119%3C0927%3ATESADO%3E2.3.CO%3B2)
 
 # Flow
+
 Precipitation and streamflow have been found to influence spawning and rearing. Therefore it is expected to affect the translation from stock to recruit. Streamflow can be included in multiple different formats including:
 - Mean, median, max precipitation (or streamflow)
 
@@ -190,7 +236,7 @@ standard_flow <- read_csv("data/standard-format-data/standard_flow.csv")
 
 ## Mean, median, max flow
 
-```{r}
+```{r, include = F}
 std_flow_spawn_summary <- standard_flow |> 
   mutate(year = year(date)) |> 
   filter(month(date) %in% c(8:12), stream != "sacramento river") |> 
@@ -203,12 +249,18 @@ std_flow_spawn_summary <- standard_flow |>
             min = min(flow_cfs, na.rm = T)) |> 
   pivot_longer(cols = mean:min, values_to = "value", names_to = "statistic") |> 
   mutate(value = ifelse(is.nan(value) | is.infinite(value), NA_real_, value))
+```
 
+```{r}
 std_flow_spawn_summary |> 
   ggplot(aes(x = year, y = value, color = statistic)) +
   geom_line() +
   facet_wrap(~stream, scales = "free_y")
+```
 
+*Figure 4. Plot of annual summarized (mean, median, max, min) max temperatures during the spawning and incubation time period (Aug - Dec)*
+
+```{r, include = F}
 std_flow_rear_summary <- standard_flow |> 
   mutate(year = ifelse(month(date) %in% c(10:12), year(date) + 1, year(date))) |> 
   filter(month(date) %in% c(11:12, 1:7), stream != "sacramento river") |> 
@@ -221,12 +273,18 @@ std_flow_rear_summary <- standard_flow |>
             min = min(flow_cfs, na.rm = T)) |> 
   pivot_longer(cols = mean:min, values_to = "value", names_to = "statistic") |> 
   mutate(value = ifelse(is.nan(value) | is.infinite(value), NA_real_, value))
+```
 
+```{r}
 std_flow_rear_summary |> 
   ggplot(aes(x = year, y = value, color = statistic)) +
   geom_line() +
   facet_wrap(~stream, scales = "free_y")
+```
 
+*Figure 5. Plot of annual summarized (mean, median, max, min) max temperatures during the rearing time period (Nov - July)*
+
+```{r, include = F}
 std_flow_final <- std_flow_spawn_summary |> 
   pivot_wider(id_cols = c(year, stream), values_from = "value", names_from = "statistic") |> 
   rename(mean_flow = mean,
