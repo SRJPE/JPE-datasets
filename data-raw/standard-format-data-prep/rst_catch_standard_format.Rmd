@@ -211,15 +211,22 @@ lifestage_encoding_dt <- function(dat) {
 
 ```{r, battle_clean}
 ### Catch #####
-battle_clear_rst %>% glimpse
+battle_clear_rst %>% glimpse()
 unique(battle_clear_rst$run)
 unique(battle_clear_rst$lifestage)
 filter(battle_clear_rst, is.na(fork_length), count > 0) %>% glimpse
 filter(battle_clear_rst, is.na(run)) %>% glimpse
 
-battle_clear_rst %>% group_by(date, site, run, fork_length, lifestage, interpolated) %>% count() %>% filter(n > 1)
-
-filter(battle_clear_rst, date == "2003-12-28")
+# Note that there are many repeat entries where all values are the same except count
+# ck <- battle_clear_rst %>% 
+#   group_by(date, site, run, fork_length, weight, lifestage, interpolated, species, subsite) %>% 
+#   count() %>% 
+#   filter(n > 1)
+# # There are also repeat entries where all are the same. Need to double check that these are not duplicates. Checked the data pulled from EDI and there are the same number of records so assume there are no duplicates.
+# ck <- battle_clear_rst %>% 
+#   group_by(date, site, run, fork_length, weight, lifestage, interpolated, species, subsite, count) %>% 
+#   count() %>% 
+#   filter(n > 1)
 
 # notes to include
 # some data may be interpolated (~1% may be interpolated)

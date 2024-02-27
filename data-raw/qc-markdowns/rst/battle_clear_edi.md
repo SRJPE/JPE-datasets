@@ -17,6 +17,7 @@ Clear RST QC markdowns.
 # TODO what is powerhous battle?
 # TODO should the NA counts be 0s? These likely have been estimated and have values for r_catch. Should we use r_catch?
 # TODO there is no adipose_clipped or hatchery variable in the data
+# TODO we did not previously have data for lbc. assumed it was because spring were not caught at this trap but there are spring in the lbc site. we also did not have data prior to 2003.
 
 catch_format <- catch |> 
   select(sample_date, station_code, count, fork_length, weight, fws_run, interp, common_name, life_stage) |> 
@@ -38,7 +39,8 @@ catch_format <- catch |>
                                lifestage == "obvious fry" ~ "fry",
                                T ~ lifestage),
          run = case_when(is.na(run) & count > 0 ~ "not recorded",
-                         T ~ run))
+                         T ~ run)) |> 
+  filter(!is.na(stream))
 ```
 
 ## QA/QC
@@ -129,8 +131,9 @@ catch_format %>%
     ## `.groups` argument.
     ## Joining with `by = join_by(site, year)`
 
-![](battle_clear_edi_files/figure-gfm/lifestage_qaqc-1.png)<!-- --> \###
-count
+![](battle_clear_edi_files/figure-gfm/lifestage_qaqc-1.png)<!-- -->
+
+### count
 
 ``` r
 filter(catch_format, is.na(count)) %>% glimpse()
@@ -209,8 +212,9 @@ catch_format %>%
     ## `.groups` argument.
     ## Joining with `by = join_by(site, year)`
 
-![](battle_clear_edi_files/figure-gfm/weight_qaqc-1.png)<!-- --> \##
-Save data
+![](battle_clear_edi_files/figure-gfm/weight_qaqc-1.png)<!-- -->
+
+## Save data
 
 ``` r
 f <- function(input, output) write_csv(input, file = output)
@@ -222,9 +226,9 @@ gcs_upload(catch_format,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2024-01-17 17:42:57 > File size detected as  38.6 Mb
+    ## ℹ 2024-02-27 08:19:12 > File size detected as  38.6 Mb
 
-    ## ℹ 2024-01-17 17:42:57 > Found resumeable upload URL:  https://www.googleapis.com/upload/storage/v1/b/jpe-dev-bucket/o/?uploadType=resumable&name=rst%2Fbattle_clear_catch_edi.csv&upload_id=ABPtcPrdjI6hot-4jinG79RqLa29TVo61dRzv7U19D43G7Bq231nfO9IAZ0lhQ-0JZ5A9aTwEY892ns9Bf8nWs5kftm5QjIOXZqExQBeQzfJem9uiw
+    ## ℹ 2024-02-27 08:19:12 > Found resumeable upload URL:  https://www.googleapis.com/upload/storage/v1/b/jpe-dev-bucket/o/?uploadType=resumable&name=rst%2Fbattle_clear_catch_edi.csv&upload_id=ABPtcPoEsw4QwiNehOI8rHo_PLQgvnhyxWDUWYjEj4BECjcwYkQvlyrQ6qS4qx7tAGsuno-btJCcFKyn0dALR1DYzY8kEUdK6MSeBCcThOZiollW8w
 
 # Trap
 
@@ -267,7 +271,7 @@ trap_format <- trap |>
          trap_start_time = case_when(is.na(trap_start_time) ~ lag(trap_stop_time), 
                                 T ~ trap_start_time)) %>% 
   select(-debris_tubs, -avg_time_per_rev) %>%
-  filter(!is.na(trap_start_date)) %>%
+  filter(!is.na(trap_start_date), !is.na(stream)) %>%
   data.frame() %>%
   distinct()
 ```
@@ -344,8 +348,8 @@ trap_format %>%
   tally()
 ```
 
-    ## # A tibble: 6 × 4
-    ## # Groups:   stream, site [6]
+    ## # A tibble: 5 × 4
+    ## # Groups:   stream, site [5]
     ##   stream       site  subsite     n
     ##   <chr>        <chr> <chr>   <int>
     ## 1 battle creek lbc   lbc      1939
@@ -353,7 +357,6 @@ trap_format %>%
     ## 3 battle creek <NA>  <NA>       71
     ## 4 clear creek  lcc   lcc      6630
     ## 5 clear creek  ucc   ucc      4397
-    ## 6 <NA>         <NA>  <NA>        7
 
 ### debris_volume
 
@@ -395,25 +398,25 @@ gcs_upload(trap_format,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2024-01-17 17:43:03 > File size detected as  2.3 Mb
+    ## ℹ 2024-02-27 08:19:31 > File size detected as  2.3 Mb
 
     ## ==Google Cloud Storage Object==
     ## Name:                rst/battle_clear_trap_edi.csv 
     ## Type:                csv 
     ## Size:                2.3 Mb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_trap_edi.csv?generation=1705542183616923&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_trap_edi.csv?generation=1709050772972115&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/rst%2Fbattle_clear_trap_edi.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/rst%2Fbattle_clear_trap_edi.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/rst/battle_clear_trap_edi.csv/1705542183616923 
-    ## MD5 Hash:            8Nl8u1GuvoFrDSTUM1xuwg== 
+    ## ID:                  jpe-dev-bucket/rst/battle_clear_trap_edi.csv/1709050772972115 
+    ## MD5 Hash:            gRhTYE26umNd6PD5jHxD1Q== 
     ## Class:               STANDARD 
-    ## Created:             2024-01-18 01:43:03 
-    ## Updated:             2024-01-18 01:43:03 
-    ## Generation:          1705542183616923 
+    ## Created:             2024-02-27 16:19:32 
+    ## Updated:             2024-02-27 16:19:32 
+    ## Generation:          1709050772972115 
     ## Meta Generation:     1 
-    ## eTag:                CJuDhODn5YMDEAE= 
-    ## crc32c:              5Lqn5w==
+    ## eTag:                CNPE56H2y4QDEAE= 
+    ## crc32c:              wsdBCg==
 
 # Environmental
 
@@ -567,9 +570,9 @@ gcs_upload(environmental_format,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2024-01-17 17:43:08 > File size detected as  4.9 Mb
+    ## ℹ 2024-02-27 08:19:37 > File size detected as  4.9 Mb
 
-    ## ℹ 2024-01-17 17:43:08 > Found resumeable upload URL:  https://www.googleapis.com/upload/storage/v1/b/jpe-dev-bucket/o/?uploadType=resumable&name=rst%2Fbattle_clear_environmental_edi.csv&upload_id=ABPtcPq2VnEzyeQzl9ZwNj5piUHONL0-bhUrzH3AsBN7rrjiN6ZSZDQZ56OSIFKVgGC_jPQyj4uKH_tia6o9G-OdW_0pOay7dITVUh4guNtdbno8-A
+    ## ℹ 2024-02-27 08:19:37 > Found resumeable upload URL:  https://www.googleapis.com/upload/storage/v1/b/jpe-dev-bucket/o/?uploadType=resumable&name=rst%2Fbattle_clear_environmental_edi.csv&upload_id=ABPtcPohK67qUoLLiD56NCEpV-7OGE5iRAb4lQSIFybDkahzU23ul6Jd46-rs0KgJQ8yQttg7ftcwS9hZd-g0GkE5XxsHc9aCZdDLB0SnvXVtcwt
 
 # Release
 
@@ -797,24 +800,24 @@ gcs_upload(release_format,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2024-01-17 17:43:14 > File size detected as  85 Kb
+    ## ℹ 2024-02-27 08:19:44 > File size detected as  85 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                rst/battle_clear_release_edi.csv 
     ## Type:                csv 
     ## Size:                85 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_release_edi.csv?generation=1705542194789558&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_release_edi.csv?generation=1709050784629292&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/rst%2Fbattle_clear_release_edi.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/rst%2Fbattle_clear_release_edi.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/rst/battle_clear_release_edi.csv/1705542194789558 
+    ## ID:                  jpe-dev-bucket/rst/battle_clear_release_edi.csv/1709050784629292 
     ## MD5 Hash:            0Xt7+3XymKXbRGeqLBMLDQ== 
     ## Class:               STANDARD 
-    ## Created:             2024-01-18 01:43:14 
-    ## Updated:             2024-01-18 01:43:14 
-    ## Generation:          1705542194789558 
+    ## Created:             2024-02-27 16:19:44 
+    ## Updated:             2024-02-27 16:19:44 
+    ## Generation:          1709050784629292 
     ## Meta Generation:     1 
-    ## eTag:                CLb5reXn5YMDEAE= 
+    ## eTag:                CKyEr6f2y4QDEAE= 
     ## crc32c:              786GXA==
 
 # Recapture
@@ -946,22 +949,22 @@ gcs_upload(recapture_format,
            predefinedAcl = "bucketLevel")
 ```
 
-    ## ℹ 2024-01-17 17:43:17 > File size detected as  170 Kb
+    ## ℹ 2024-02-27 08:19:46 > File size detected as  170 Kb
 
     ## ==Google Cloud Storage Object==
     ## Name:                rst/battle_clear_recapture_edi.csv 
     ## Type:                csv 
     ## Size:                170 Kb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_recapture_edi.csv?generation=1705542197527064&alt=media 
+    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/rst%2Fbattle_clear_recapture_edi.csv?generation=1709050787246942&alt=media 
     ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/rst%2Fbattle_clear_recapture_edi.csv 
     ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/rst%2Fbattle_clear_recapture_edi.csv 
     ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/rst/battle_clear_recapture_edi.csv/1705542197527064 
+    ## ID:                  jpe-dev-bucket/rst/battle_clear_recapture_edi.csv/1709050787246942 
     ## MD5 Hash:            At1xK0Z2K1b87pNuxBDrdA== 
     ## Class:               STANDARD 
-    ## Created:             2024-01-18 01:43:17 
-    ## Updated:             2024-01-18 01:43:17 
-    ## Generation:          1705542197527064 
+    ## Created:             2024-02-27 16:19:47 
+    ## Updated:             2024-02-27 16:19:47 
+    ## Generation:          1709050787246942 
     ## Meta Generation:     1 
-    ## eTag:                CJiE1ebn5YMDEAE= 
+    ## eTag:                CN7mzqj2y4QDEAE= 
     ## crc32c:              bR9IQQ==

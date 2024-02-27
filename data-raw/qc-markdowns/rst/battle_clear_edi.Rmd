@@ -45,6 +45,7 @@ release <- readr::read_csv(file = raw)
 # TODO what is powerhous battle?
 # TODO should the NA counts be 0s? These likely have been estimated and have values for r_catch. Should we use r_catch?
 # TODO there is no adipose_clipped or hatchery variable in the data
+# TODO we did not previously have data for lbc. assumed it was because spring were not caught at this trap but there are spring in the lbc site. we also did not have data prior to 2003.
 
 catch_format <- catch |> 
   select(sample_date, station_code, count, fork_length, weight, fws_run, interp, common_name, life_stage) |> 
@@ -66,7 +67,8 @@ catch_format <- catch |>
                                lifestage == "obvious fry" ~ "fry",
                                T ~ lifestage),
          run = case_when(is.na(run) & count > 0 ~ "not recorded",
-                         T ~ run))
+                         T ~ run)) |> 
+  filter(!is.na(stream))
   
 ```
 
@@ -130,11 +132,13 @@ catch_format %>%
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
+
 ### count
 
 ```{r, count_qaqc}
 filter(catch_format, is.na(count)) %>% glimpse()
 ```
+
 ### interpolated
 
 ```{r, interpolated_qaqc}
@@ -182,6 +186,7 @@ catch_format %>%
   geom_col() +
   facet_wrap(~site)
 ```
+
 ## Save data
 
 ```{r}
@@ -236,7 +241,7 @@ trap_format <- trap |>
          trap_start_time = case_when(is.na(trap_start_time) ~ lag(trap_stop_time), 
                                 T ~ trap_start_time)) %>% 
   select(-debris_tubs, -avg_time_per_rev) %>%
-  filter(!is.na(trap_start_date)) %>%
+  filter(!is.na(trap_start_date), !is.na(stream)) %>%
   data.frame() %>%
   distinct()
 
