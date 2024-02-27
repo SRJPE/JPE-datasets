@@ -7,21 +7,26 @@ gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 f <- function(input, output) write_csv(input, file = output)
 
-read_data_entity_names("edi.1365.7")
+scope = "edi"
+identifier = "1365"
+revision = list_data_package_revisions(scope, identifier, filter = "newest")
+version <- paste(scope, identifier, revision, sep = ".")
+
+read_data_entity_names(version)
 # catch
-raw <- read_data_entity("edi.1365.7", "58540ac4ed34ce05f3309510f4be91e5")
+raw <- read_data_entity(version, "58540ac4ed34ce05f3309510f4be91e5")
 rb_catch_raw <- readr::read_csv(file = raw)
 # trap
-raw <- read_data_entity("edi.1365.7", "eed3b61b7eb6030dafc9e4765f07a106")
+raw <- read_data_entity(version, "eed3b61b7eb6030dafc9e4765f07a106")
 rb_trap_raw <- readr::read_csv(file = raw)
 # recapture
-raw <- read_data_entity("edi.1365.7", "460853b8a4a0a2308c2bfb4d3dc2793c")
+raw <- read_data_entity(version, "460853b8a4a0a2308c2bfb4d3dc2793c")
 rb_recapture_raw <- readr::read_csv(file = raw)
 # release
-raw <- read_data_entity("edi.1365.7", "414dd61cd26985641875fb194328f8a6")
+raw <- read_data_entity(version, "414dd61cd26985641875fb194328f8a6")
 rb_release_raw <- readr::read_csv(file = raw)
 # release fish
-raw <- read_data_entity("edi.1365.7", "f1649215c4114b74d964b825d6371b66")
+raw <- read_data_entity(version, "f1649215c4114b74d964b825d6371b66")
 rb_release_fish_raw <- readr::read_csv(file = raw)
 
 # format data to match structure of existing data for model
