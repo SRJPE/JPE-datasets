@@ -115,13 +115,20 @@ rbdd_trap <- read_csv(here::here("data", "rst", "rbdd_trap.csv"))
 
 battle_clear_trap_clean <- battle_clear_trap |> 
   # removes entries with missing site
-  filter(!is.na(stream))
+  filter(!is.na(stream)) |> 
+  mutate(trap_start_date1 = trap_start_date,
+         trap_start_date = case_when(trap_stop_date < trap_start_date ~ trap_stop_date,
+                                     T ~ trap_start_date),
+         trap_stop_date = case_when(trap_stop_date < trap_start_date ~ trap_start_date1,
+                                    T ~ trap_stop_date)) |> 
+  select(-trap_start_date1)
 unique(battle_clear_trap_clean$stream)
 
 # issues with trap start and stop date
 ck <- battle_clear_trap_clean |> 
   mutate(diff = as.numeric(trap_stop_date - trap_start_date)) |> 
   filter(diff > 7 | diff < -7)
+filter(battle_clear_trap_clean, trap_stop_date < trap_start_date)
 ```
 
 ### Variables removed
@@ -267,7 +274,14 @@ keep_dates <- butte_trap_clean_unfiltered %>%
 # Filter out days that only fyke is running 
 butte_trap_clean <- 
   butte_trap_clean_unfiltered %>% 
-  filter(trap_stop_date %in% keep_dates) %>% glimpse()
+  filter(trap_stop_date %in% keep_dates) %>% 
+  mutate(trap_start_date1 = trap_start_date,
+         trap_start_date = case_when(trap_stop_date < trap_start_date ~ trap_stop_date,
+                                     T ~ trap_start_date),
+         trap_stop_date = case_when(trap_stop_date < trap_start_date ~ trap_start_date1, 
+                                 T ~ trap_stop_date)) |> 
+  select(-trap_start_date1) |> 
+  glimpse()
 
 # no issues with trap start and stop date
 ck <- butte_trap_clean |> 
@@ -276,6 +290,8 @@ ck <- butte_trap_clean |>
 
 unique(butte_trap_clean$site)
 unique(butte_trap_clean$subsite)
+
+filter(butte_trap_clean, trap_stop_date < trap_start_date)
 ```
 
 ### Variables removed
