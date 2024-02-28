@@ -156,6 +156,8 @@ butte_released <- read_csv(here::here("data", "rst", "butte_releases.csv")) %>%
   select(-light_condition) %>%  
   left_join(butte_release_fish) %>% 
   mutate(release_id = as.character(release_id)) %>% 
+  # remove the release trial associated with when only the fyke was running
+  filter(!(month(date_released) == 10 & year(date_released) == 2021)) |> 
   glimpse()
 
 butte_recaptured <- read_csv(here::here("data", "rst", "butte_recaptures.csv")) %>% 
@@ -806,11 +808,13 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(combined_release,
            object_function = f,
            type = "csv",
-           name = "standard-format-data/standard_release.csv")
+           name = "standard-format-data/standard_release.csv",
+           predefinedAcl = "bucketLevel")
 
 gcs_upload(combined_recapture,
            object_function = f,
            type = "csv",
-           name = "standard-format-data/standard_recapture.csv")
+           name = "standard-format-data/standard_recapture.csv",
+           predefinedAcl = "bucketLevel")
 
 ```
