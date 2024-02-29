@@ -220,12 +220,10 @@ if (length(missing_years) == 0) {
 
 **Plotting Temperature over Period of Record**
 Checking Deer data sites from logger:
- *Data gap from 2003-2006
- *No concerning outliers
- *Temperature ranges between 0-30 degree Celcius 
+  - Data gap from 2003-2006
+  - No concerning outliers
+  - Temperature ranges between 0-30 degree Celcius 
 ```{r}
-# Make whatever plot is appropriate 
-
 #checking temporal coverage across deer sites from logger
 deer_plot_logger <- ggplot(combined_table, aes(x = date, y = temperature, color = "Logger data")) +
   geom_line(color = "darkred") +
@@ -235,6 +233,7 @@ deer_plot_logger <- ggplot(combined_table, aes(x = date, y = temperature, color 
 print(deer_plot_logger)
 ```
 
+This plot shows the coverage of all logger data from Deer sites and CDEC 
 
 ```{r}
 # Create the combined plot of all logger Deer sites and CDEC
@@ -243,7 +242,11 @@ combined_CDEC_logger_plot <- deer_plot_logger +
    scale_color_manual(values = c("blue", "darkred")) +
    labs(title = "Combined Plot to See Temporal coverage - Deer Logger and CDEC Data", y = "Temperature (deg C)", color = "Data Source")
 print(combined_CDEC_logger_plot)
+```
 
+
+CDEC DVC mean temperature plot 
+```{r}
 #CDEC mean temp
 DCV_mean_temp <- DCV_hourly_temps |> 
   group_by(month = month(date),
@@ -332,6 +335,8 @@ ggplot()+
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_5_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#The overall temperature ranges starts to become significantly smaller than the overall temperature range from CDEC. The mean max temperature is ~20 degrees C, and the mean min is ~3.4 degrees C. CDEC's range is ~4.16 C to 25.5 C
+
 
 #plotting means from "Deer 9-5 Wilson Cove" + CDEC 
 DCV_filtered6 <- DCV_mean_temp |> 
@@ -343,6 +348,8 @@ ggplot()+
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_6_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#The overall temperature ranges starts to become significantly smaller than the overall temperature range from CDEC. This is reasonable as this station continues to be higher up the stream. The mean max temperature is ~18 degrees C, and the mean min is ~2.7 degrees C. CDEC's range is ~4.16 C to 25.5 C. 
+#Recommend to use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values, also the area where data was collected is were adult fish spawning happens
 
 #plotting means from "Deer 9-6 C-Pool" + CDEC 
 DCV_filtered7 <- DCV_mean_temp |> 
@@ -354,7 +361,9 @@ ggplot()+
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_7_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
-#Recommend to use this logger data since it is in area of adult fish spawning
+
+#The overall temperature ranges starts to become significantly smaller than the overall temperature range from CDEC. This is reasonable as this station continues to be higher up the stream. The mean max temperature is ~18 degrees C, and the mean min is ~2.7 degrees C. CDEC's range is ~2.87 C to 17.3 C. 
+#Recommend to use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values, also the area where data was collected is were adult fish spawning happens
 
 
 
@@ -368,7 +377,9 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = deer_8_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
-## Observations: Upper Falls appears to have much lower temperatures compared to other logger sites and also CDEC data, we can assume that this due to the location of Upper Falls, higher up in the Feather river system where altitude is higher than closer to Sacramento confluence. Recommend to use this logger data since it is in area of adult fish spawning
+## Observations: Upper Falls appears to have much lower temperatures compared to other logger sites and also CDEC data, we can assume that this due to the location of Upper Falls, higher up in the Feather river system where altitude is higher than closer to Sacramento confluence. 
+#Temperature ranges are generally smaller than data from other logger sites. The highest summer temps are ~14 C and the highest temps during winter (Dec, Jan, Feb) are below 5 degrees C
+#Recommend to use this logger data since it is in area of adult fish spawning
 ```
 
 **Numeric Summary of [Variable] over Period of Record**
