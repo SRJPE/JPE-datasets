@@ -52,7 +52,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ```
 
 Read in data from google cloud, glimpse raw data and domain description sheet: 
-```{r}
+```{r, echo=FALSE}
 # read in data to clean 
 gcs_get_object(object_name = "environmental/data-raw/MASTER_TEMPERATURE.mdb",
                bucket = gcs_get_global_bucket(),
@@ -66,7 +66,7 @@ master_temp_deer_mill <- odbcConnectAccess2007(here::here("data-raw", "standard-
 
 ## Data transformations
 
-```{r}
+```{r, include=FALSE}
 # For different excel sheets for each year read in and combine years here
 
 tables <- sqlTables(master_temp_deer_mill)
@@ -242,16 +242,18 @@ Plot showing temperature ranges and data temporal coverage across all Deer sites
 mill_plot_logger <- ggplot(combined_table_mill, aes(x = date, y = temperature, color = "Logger data")) +
   geom_line(color = "darkred") +
   labs(title = "Mill temp plot from Logger data", y = "Temperature (deg C)", color = "Data Source")
-glimpse(mill_plot_logger)
 
+print(mill_plot_logger)
 ```
 
 ### Variable: `Temperature`
 
 **Plotting Temperarure over Period of Record**
 
+This plot shows the coverage of all logger data from Deer sites and CDEC
+Red color shows logger data and blue shows CDEC data
 
-```{r}
+```{r, warning=FALSE, echo=FALSE}
 # Create the combined plot of all logger Mill sites and CDEC
 combined_CDEC_logger_plot <- mill_plot_logger +
    geom_line(data = MLM_hourly_temps, aes(x = date, y = temperature, color = "CDEC data")) +
@@ -260,14 +262,19 @@ combined_CDEC_logger_plot <- mill_plot_logger +
 print(combined_CDEC_logger_plot)
 ```
 
+## Plot showing CDEC (MLM station) mean temperatures
 
-```{r}
+```{r, echo=FALSE}
 #CDEC mean temp
 MLM_mean_temp <- MLM_hourly_temps |> 
   group_by(month = month(date),
            year = format(date, "%Y")) |> 
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
+```
 
+
+
+```{r, echo=FALSE}
 #Checking if data in all years from CDEC ----
 unique_years_CDEC <- unique(MLM_mean_temp$year)
 
@@ -286,7 +293,17 @@ if (length(missing_years_CDEC) == 0) {
 
 ```
 
-```{r}
+
+## Plot comparing CDEC MLM mean temperature and logger data from Mill 8-0 Mouth
+
+Comments:
+
+  - This logger data is at the mouth of Mill creek, therefore we can see that temperatures tend to be slightly higher than CDEC's. This could be due to the proximity to the Sac river. One thing to note is the really high temperature variability during fall (August-October)  
+  - The monthly mean temperatures on January (~8 degrees) are too similar, higher than December and February, which suggest might be inaccurate
+  - Winter lowest temperatures (Nov, Dec, Feb) don't go lower than ~7 degrees C and the highest is ~25 degrees C during August
+Recommendation: use CDEC data, this might not be a good dataset to rely on, it seems to overlap a little with CDEC anyways
+
+```{r, echo=FALSE}
 #plotting means from Mill 8-0 Mouth + CDEC 
 MLM_filtered1 <- MLM_mean_temp |> 
   mutate(month = factor(month)) |> 
@@ -301,8 +318,22 @@ ggplot() +
 #This logger data is at the mouth of Mill creek, therefore we can see that temperatures tend to be slightly higher than CDEC's. This could be due to the proximity to the Sac river. One thing to note is the really high temperature variability during fall (August-October)  
 #The monthly mean temperatures on January (~8 degrees) are too similar, higher than December and February, which suggest might be inaccurate
 #Winter lowest temperatures (Nov, Dec, Feb) don't go lower than ~7 degrees C and the highest is ~25 degrees C during August
+```
 
 
+
+## Plot comparing CDEC MLM mean temperature and logger data from Mill 8-1 VIDEO Station
+
+Comments: 
+
+  - Temperature from this logger could have inaccuracies. 
+  - During the months of Jul, Aug, Sept, the plot shows no data ranges, this suggests this logger data either doesn't have complete data throughout the months, or something the temperatures recorded during those months is way too similar
+
+Recommendation: 
+
+  - Should not use this data since ranges seem off
+
+```{r, echo=FALSE}
 #plotting means from Mill 8-1 VIDEO Station + CDEC 
 ggplot() +
   geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
@@ -311,8 +342,23 @@ ggplot() +
        x = "Month") +
   geom_boxplot(data = mill_2_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Temperature from this logger could have inaccuracies. During the months of Jul, Aug, Sept, the plot shows no data ranges, this suggests this logger data either doesn't have complete data throughout the months, or something the temperatures recorded during those months is way too similar
+```
 
 
+
+## Plot comparing CDEC MLM mean temperature and logger data from Mill 8-1 VIDEO Station
+
+Comments: 
+
+  - Temperature ranges fluctuate less than at other point of the logger and has a consistent increase from Jan-Jul, and a consistent drop Jul-Dec
+  - Winter lowest temperatures ~6 degrees C
+  - The highest temps are during July ~23 degrees C
+
+Recommendation: 
+
+  - Data can be used in addition to CDEC, since the locations is higher up the stream and seems reasonable
+
+```{r, echo=FALSE}
 #plotting means from Mill 8-2 Little Mill Confluence + CDEC 
 ggplot() +
   geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
@@ -324,8 +370,23 @@ ggplot() +
 #Temperature ranges fluctuate less than at other point of the logger and has a consistent increase from Jan-Jul, and a consistent drop Jul-Dec
 #Winter lowest temperatures ~6 degrees C
 #The highest temps are during July ~23 degrees C
+```
 
 
+
+## Plot comparing CDEC MLM mean temperature and logger data from Mill 8-3 Rancheria 
+
+Comments:
+
+  - The range of mean temperatures throughout the months is a bid wider than CDEC (and other sites from logger)
+  - Winter months don't vary so much from CDEC, but fall and summer do. 
+  - The mean temperature is lower during those seasons with a high of ~18 degrees C during summer
+  
+Recommendation:
+
+  - Data can be used in addition to CDEC, since the locations is higher up the stream and seems reasonable
+
+```{r, echo=FALSE}
 #plotting means from Mill 8-3 Rancheria + CDEC 
 ggplot() +
   geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
@@ -336,7 +397,21 @@ ggplot() +
 #Comments:
 #The range of mean temperatures throughout the months is a bid wider than CDEC (and other sites from logger)
 #Winter months don't vary so much from CDEC, but fall and summer do. The mean temperature is lower during those seasons with a high of ~18 degrees C during summer
+```
 
+
+
+## Plot comparing CDEC MLM mean temperature and logger data from Mill 8-4 Black Rock
+
+Comments: 
+
+  - The decrease on mean temperatures in general (compared to CDEC) is reasonable due to the location higher up in the stream, and the elevation change 
+  
+Recommendation: 
+
+  - Data can be used in addition to CDEC, since the locations is higher up the stream and seems reasonable
+
+```{r, echo=FALSE}
 #plotting means from Mill 8-4 Black Rock + CDEC 
 ggplot() +
   geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
@@ -345,10 +420,24 @@ ggplot() +
        x = "Month") +
   geom_boxplot(data = mill_5_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Comments:
-#The decrease on mean temperatures in general (compared to CDEC) is reasonable due to the location higher up in the stream, and the elevation change 
+#The decrease on mean temperatures in general (compared to CDEC) is reasonable due to the location higher up in the stream, and the elevation change
+```
 
 
 
+## Plot comparing CDEC MLM mean temperature and logger data from Mill 8-5 Sooner
+
+Comments: 
+
+  - Temperature relatively consistent throughout January and February. Ranging from ~4-6 degrees C. 
+  - Summer months are significantly cooler than CDECs data, and this could be do to the location difference. 
+  - Logger temperatures go only as high as ~16 degrees C 
+  
+Recommendation: 
+
+  - Use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values
+  
+```{r, echo=FALSE}
 #plotting means from Mill 8-5 Sooner + CDEC 
 ggplot() +
   geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
@@ -358,8 +447,22 @@ ggplot() +
   geom_boxplot(data = mill_6_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Temperature relatively consistent throughout January and February. Ranging from ~4-6 degrees C. Summer months are significantly cooler than CDECs data, and this could be do to the location difference. Logger temperatures go only as high as ~16 degrees C
 #Recommend to use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values
+```
 
 
+
+## Plot comparing CDEC MLM mean temperature and logger data from Mill 8-6 Canyon Camp
+
+Comments: 
+
+  - Temperature ranges in most months are significantly small, varying ~ less than a degrees Celsius. Specially for all months except May, June, and July
+  - On the other hand, June temperatures have a significantly bigger range ~8 to 12.5 degrees Celsius
+  
+Recommendation: 
+
+  - Since it is only one month that has that big of a range the recommendation would be to not rely on that logger, at least for that month
+  
+```{r, echo=FALSE}
 #plotting means from Mill 8-6 Canyon Camp  + CDEC 
 ggplot() +
   geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
@@ -368,8 +471,20 @@ ggplot() +
        x = "Month") +
   geom_boxplot(data = mill_7_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Comments: temperature ranges in most months are significantly small, varying ~ less than a degrees Celsius. Specially for all months except May, June, and July. On the other hand, June temperatures have a significantly bigger range ~8 to 12.5 degrees Celsius. Since it is only one month that has that big of a range the recommendation would be to not rely on that logger, at least for that month.
+```
 
 
+## Plot comparing CDEC MLM mean temperature and logger data from Mill 8-7 Hole in Ground
+
+Comments: 
+
+  - This temperature ranges are relatively big throughout. This location is surrounded by big mountain ranges so that could be the reason of this temperature fluctuation
+  
+Recommendation: 
+
+  - Use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values
+
+```{r, echo=FALSE}
 #plotting means from Mill 8-7 Hole in Ground + CDEC 
 ggplot() +
   geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
@@ -379,8 +494,21 @@ ggplot() +
   geom_boxplot(data = mill_8_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Comments: this temperature ranges are relatively big throughout. This location is surrounded by big mountain ranges so that could be the reason of this temperature fluctuation.
 #Recommend to use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values
+```
 
 
+## Plot comparing CDEC MLM mean temperature and logger data from Mill 8-8 Little Hole in Ground
+
+Comments: 
+
+  - This logger data has data from the highest point of the stream. Therefore, it is expected that mean temperatures don't go over ~17 degrees C throughout the year
+  - The lowest temperatures are in December and January and they go as low as ~3 degrees C
+  
+Recommendation: 
+
+  - Use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values
+  
+```{r, echo=FALSE}
 #plotting means from Mill 8-8 Little Hole in Ground + CDEC 
 ggplot() +
   geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
@@ -397,16 +525,12 @@ ggplot() +
 
 ```
 
-**Numeric Summary of [Variable] over Period of Record**
-
-```{r}
-# Table with summary statistics
-```
 
 **NA and Unknown Values**
 
-Provide a stat on NA or unknown values
-```{r}
+  - No "NA" values found throughout the data
+  
+```{r, include=FALSE}
 combined_means_mill <- bind_rows(mill_1_monthly_mean, mill_2_monthly_mean, mill_3_monthly_mean, mill_4_monthly_mean, mill_5_monthly_mean, mill_6_monthly_mean, mill_7_monthly_mean, mill_8_monthly_mean, mill_9_monthly_mean, .id = "mill_site")
 
 sum(is.na(combined_means_mill$mean_temp))
@@ -414,44 +538,9 @@ sum(is.na(combined_means_mill$mean_temp))
 sum(is.na(MLM_mean_temp$mean_temp))
 ```
 
-## Explore Categorical variables: {.tabset}
-
-General notes: If there is an opportunity to turn yes no into boolean do so, but not if you loose value 
-
-```{r}
-# Filter clean data to show only categorical variables
-```
-
-
-### Variable: `Temperature`
-```{r}
-#table() 
-```
-
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-# Fix any inconsistencies with categorical variables
-```
-
-**Create lookup rda for [variable] encoding:** 
-```{r}
-# Create named lookup vector
-# Name rda [watershed]_[data type]_[variable_name].rda
-# save rda to data/ 
-```
-
-**NA and Unknown Values**
-
-Provide a stat on NA or unknown values
-
-## Summary of identified issues
-
-* List things that are funcky/bothering us but that we don't feel like should be changed without more investigation
-
 ## Save cleaned data back to google cloud 
 
-```{r}
+```{r, include=FALSE}
 # Write to google cloud 
 # Name file [watershed]_[data type].csv
 ```
