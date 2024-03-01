@@ -85,6 +85,7 @@ mill_1_monthly_mean <- mill_1 |>
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
 
 
+
 mill_2 <- sqlFetch(master_temp_deer_mill, "Mill 8-1 VIDEO Station")|> 
     mutate(date = as_date(Date)) |>                                            
   mutate(temperature = fahrenheit.to.celsius(Temperature, round = 1)) |> 
@@ -233,7 +234,9 @@ if (length(missing_years) == 0) {
 
 ## Explore Numeric Variables: {.tabset}
 
-```{r}
+Plot showing temperature ranges and data temporal coverage across all Deer sites from logger 
+
+```{r, echo=FALSE}
 # Filter clean data to show only numeric variables 
 #checking temporal coverage across deer sites from logger
 mill_plot_logger <- ggplot(combined_table_mill, aes(x = date, y = temperature, color = "Logger data")) +
@@ -241,14 +244,11 @@ mill_plot_logger <- ggplot(combined_table_mill, aes(x = date, y = temperature, c
   labs(title = "Mill temp plot from Logger data", y = "Temperature (deg C)", color = "Data Source")
 glimpse(mill_plot_logger)
 
-print(mill_plot_logger)
-
-
 ```
 
 ### Variable: `Temperature`
 
-**Plotting [Variable] over Period of Record**
+**Plotting Temperarure over Period of Record**
 
 
 ```{r}
@@ -258,7 +258,10 @@ combined_CDEC_logger_plot <- mill_plot_logger +
    scale_color_manual(values = c("blue", "darkred")) +
    labs(title = "Combined Plot to See Temporal coverage - Mill Logger and CDEC Data", y = "Temperature (deg C)", color = "Data Source")
 print(combined_CDEC_logger_plot)
+```
 
+
+```{r}
 #CDEC mean temp
 MLM_mean_temp <- MLM_hourly_temps |> 
   group_by(month = month(date),
@@ -307,7 +310,7 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_2_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
-#TODO check data from this logger, it seems like Jul, Aug, Sept, data might have something wrong 
+#Temperature from this logger could have inaccuracies. During the months of Jul, Aug, Sept, the plot shows no data ranges, this suggests this logger data either doesn't have complete data throughout the months, or something the temperatures recorded during those months is way too similar
 
 
 #plotting means from Mill 8-2 Little Mill Confluence + CDEC 
@@ -353,6 +356,8 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_6_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Temperature relatively consistent throughout January and February. Ranging from ~4-6 degrees C. Summer months are significantly cooler than CDECs data, and this could be do to the location difference. Logger temperatures go only as high as ~16 degrees C
+#Recommend to use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values
 
 
 #plotting means from Mill 8-6 Canyon Camp  + CDEC 
@@ -362,6 +367,7 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_7_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Comments: temperature ranges in most months are significantly small, varying ~ less than a degrees Celsius. Specially for all months except May, June, and July. On the other hand, June temperatures have a significantly bigger range ~8 to 12.5 degrees Celsius. Since it is only one month that has that big of a range the recommendation would be to not rely on that logger, at least for that month.
 
 
 #plotting means from Mill 8-7 Hole in Ground + CDEC 
@@ -371,6 +377,8 @@ ggplot() +
        y = "Mean Temperature (deg C)",
        x = "Month") +
   geom_boxplot(data = mill_8_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
+#Comments: this temperature ranges are relatively big throughout. This location is surrounded by big mountain ranges so that could be the reason of this temperature fluctuation.
+#Recommend to use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values
 
 
 #plotting means from Mill 8-8 Little Hole in Ground + CDEC 
@@ -387,7 +395,6 @@ ggplot() +
 #CDEC station is significantly lower down the stream, closer to the Sac River confluence. 
 #The lowest data location point from the logger is at mouth, then the next one is at little Mill Creek confluence (much higher upstream, in relation to CDEC MLM station)
 
-# TODO analyze plots. Check for location of the data coming from logger and see if any relationship on temp variability/logger sampled location
 ```
 
 **Numeric Summary of [Variable] over Period of Record**
