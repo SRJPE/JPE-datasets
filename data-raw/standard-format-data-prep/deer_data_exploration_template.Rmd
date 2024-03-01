@@ -67,7 +67,7 @@ master_temp_deer_mill <- odbcConnectAccess2007(here::here("data-raw", "standard-
 
 ## Data transformations
 
-```{r}
+```{r, include=FALSE}
 # Pulling all Deer tables from logger 
 
 tables <- sqlTables(master_temp_deer_mill)
@@ -189,8 +189,13 @@ DCV_hourly_temps <- DCV_CDEC |>
 
 ```
 
-Checking if data in all years
-```{r}
+
+Data is missing for the following years:
+  - 2003
+  - 2004
+  - 2005
+
+```{r, include=FALSE}
 #From Loggers
 combined_table$year <- year(combined_table$date)
 
@@ -211,19 +216,17 @@ if (length(missing_years) == 0) {
 
 ## Explore Numeric Variables: {.tabset}
 
-```{r}
-# Filter clean data to show only numeric variables 
-
-```
-
-### Variable: `[name]`
+### Variable: `Temperature`
 
 **Plotting Temperature over Period of Record**
+
 Checking Deer data sites from logger:
+
   - Data gap from 2003-2006
   - No concerning outliers
   - Temperature ranges between 0-30 degree Celcius 
-```{r}
+  
+```{r, echo=FALSE}
 #checking temporal coverage across deer sites from logger
 deer_plot_logger <- ggplot(combined_table, aes(x = date, y = temperature, color = "Logger data")) +
   geom_line(color = "darkred") +
@@ -233,9 +236,11 @@ deer_plot_logger <- ggplot(combined_table, aes(x = date, y = temperature, color 
 print(deer_plot_logger)
 ```
 
-This plot shows the coverage of all logger data from Deer sites and CDEC 
+This plot shows the coverage of all logger data from Deer sites and CDEC
 
-```{r}
+Red color shows logger data and blue shows CDEC data
+
+```{r, echo=TRUE}
 # Create the combined plot of all logger Deer sites and CDEC
 combined_CDEC_logger_plot <- deer_plot_logger +
    geom_line(data = DCV_hourly_temps, aes(x = date, y = temperature, color = "CDEC data")) +
@@ -245,8 +250,9 @@ print(combined_CDEC_logger_plot)
 ```
 
 
-CDEC DVC mean temperature plot 
-```{r}
+Plot showing CDEC (DVC station) mean temperatures
+
+```{r, echo=FALSE}
 #CDEC mean temp
 DCV_mean_temp <- DCV_hourly_temps |> 
   group_by(month = month(date),
@@ -270,9 +276,17 @@ if (length(missing_years_CDEC) == 0) {
 }
 
 ```
+## Plot comparing CDEC DCV mean temperature and logger data from Deer 9-0 Mouth (2013-2018)
+
+Comments: 
 
 
-```{r}
+  
+Recommendation: 
+
+
+
+```{r, echo=FALSE}
 #For context, DCV Station is lower than Dillon Cove and 9-2 trail, on an elevation of ~520'
 
 #plotting means from Deer 9-0 Mouth + CDEC 
@@ -286,7 +300,19 @@ ggplot() +
        x = "Month") +
   geom_boxplot(data = deer_1_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Logger data similar to CDEC, however this might be lower in the stream, closer to the Sacramento confluence. Recommendation is to use logger from higher up, where adult fish spawn
+```
 
+
+
+## Plot comparing CDEC DCV mean temperature and logger data from Deer 9-1 VIDEO Station SV Dam (2014-2018)
+
+Comments: 
+
+
+  
+Recommendation: 
+
+```{r, echo=FALSE}
 #plotting means from Deer 9-1 VIDEO Station SV Dam + CDEC 
 DCV_filtered2 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
@@ -298,7 +324,19 @@ ggplot() +
        x = "Month") +
   geom_boxplot(data = deer_2_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Plot shows very similar data ranges than CDEC data. However, interquartile range is higher than other logger sites, and CDEC, which could make this dataset a little less reliable.
+```
 
+
+
+## Plot comparing CDEC DCV mean temperature and logger data from Deer 9-2 Trail 2E17 (2001-2018)
+
+Comments: 
+
+
+  
+Recommendation: 
+
+```{r, echo=FALSE}
 #plotting means from "Deer 9-2 Trail 2E17" + CDEC 
 DCV_filtered3 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
@@ -311,7 +349,19 @@ ggplot()+
   geom_boxplot(data = deer_3_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Logger temperatures are slightly lower than CDEC, there is a consistent range temperature difference. The widest temperature difference is during the summer (Jun, Jul, Aug) with about mean temperature difference of ~ 3.5 degrees C. This Lower temperature is expected since the elevation change is of over 1000'.
 #Suggestion: this data could be used to represent higher up the stream from CDEC
+```
 
+
+
+## Plot comparing CDEC DCV mean temperature and logger data from Deer 9-3 Beaver Cr (2001-2018)
+
+Comments: 
+
+
+  
+Recommendation: 
+
+```{r, echo=FALSE}
 #plotting means from "Deer 9-3 Beaver Cr" + CDEC 
 DCV_filtered4 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
@@ -324,7 +374,19 @@ ggplot()+
   geom_boxplot(data = deer_4_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #Logger temperatures are lower than CDEC, there temperature range difference is a bit inconsistent throughout the year. Summer month ranges are the most different than the logger (Jun, Jul, Aug, Sept). However, temperatures for February seem to have a relatively small range (>1 degree C), which suggests some data in from that month might be inaccurate.
 #Suggestion: This logger can be used to represent higher up the stream from CDEC, or used as complement to Murphy Trail site, depending on the purpose of data use, due to their proximity.
+```
 
+
+
+## Plot comparing CDEC DCV mean temperature and logger data from Deer 9-4 Murphy Trail (2001-2018)
+
+Comments: 
+
+
+  
+Recommendation: 
+
+```{r, echo=FALSE}
 #plotting means from "Deer 9-4 Murphy Trail" + CDEC 
 DCV_filtered5 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
@@ -336,8 +398,19 @@ ggplot()+
        x = "Month") +
   geom_boxplot(data = deer_5_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #The overall temperature ranges starts to become significantly smaller than the overall temperature range from CDEC. The mean max temperature is ~20 degrees C, and the mean min is ~3.4 degrees C. CDEC's range is ~4.16 C to 25.5 C
+```
 
 
+
+## Plot comparing CDEC DCV mean temperature and logger data from Deer 9-5 Wilson Cove (2001-2018)
+
+Comments: 
+
+
+  
+Recommendation: 
+
+```{r, echo=FALSE}
 #plotting means from "Deer 9-5 Wilson Cove" + CDEC 
 DCV_filtered6 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
@@ -350,7 +423,19 @@ ggplot()+
   geom_boxplot(data = deer_6_monthly_mean, aes(x = month, y = mean_temp), fill = "red")
 #The overall temperature ranges starts to become significantly smaller than the overall temperature range from CDEC. This is reasonable as this station continues to be higher up the stream. The mean max temperature is ~18 degrees C, and the mean min is ~2.7 degrees C. CDEC's range is ~4.16 C to 25.5 C. 
 #Recommend to use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values, also the area where data was collected is were adult fish spawning happens
+```
 
+
+
+## Plot comparing CDEC DCV mean temperature and logger data from Deer 9-6 C-Pool (2001-2018)
+
+Comments: 
+
+
+  
+Recommendation: 
+
+```{r, echo=FALSE}
 #plotting means from "Deer 9-6 C-Pool" + CDEC 
 DCV_filtered7 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
@@ -364,9 +449,19 @@ ggplot()+
 
 #The overall temperature ranges starts to become significantly smaller than the overall temperature range from CDEC. This is reasonable as this station continues to be higher up the stream. The mean max temperature is ~18 degrees C, and the mean min is ~2.7 degrees C. CDEC's range is ~2.87 C to 17.3 C. 
 #Recommend to use this logger data since coverage is different than CDEC and does not seem to have unreasonable overall temperature values, also the area where data was collected is were adult fish spawning happens
+```
 
 
 
+## Plot comparing CDEC DCV mean temperature and logger data from Upper Falls (2013-2018)
+
+Comments: 
+
+
+  
+Recommendation: 
+
+```{r, echo=FALSE}
 #plotting means from "Deer 9-7 Upper Falls" + CDEC 
 DCV_filtered8 <- DCV_mean_temp |> 
   mutate(month = factor(month)) |> 
