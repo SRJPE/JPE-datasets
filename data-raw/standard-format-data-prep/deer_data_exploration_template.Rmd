@@ -195,7 +195,7 @@ Data is missing for the following years:
   - 2004
   - 2005
 
-```{r, include=FALSE}
+```{r, echo=FALSE}
 #From Loggers
 combined_table$year <- year(combined_table$date)
 

@@ -212,8 +212,8 @@ MLM_hourly_temps <- MLM_CDEC |>
 
 ```
 
-Checking if data in all years
-```{r}
+Completeness of data 2001-2018: 
+```{r, echo=FALSE}
 #From Loggers
 combined_table_mill$year <- year(combined_table_mill$date)
 
@@ -235,11 +235,12 @@ if (length(missing_years) == 0) {
 ## Explore Numeric Variables: {.tabset}
 
 Plot showing temperature ranges and data temporal coverage across all Deer sites from logger 
+Note that outliers were removed by setting temperature range from 0-37 degrees C
 
 ```{r, echo=FALSE}
 # Filter clean data to show only numeric variables 
 #checking temporal coverage across deer sites from logger
-mill_plot_logger <- ggplot(combined_table_mill, aes(x = date, y = temperature, color = "Logger data")) +
+mill_plot_logger <- ggplot(combined_table_mill, aes(x = date, y = temperature, color = "")) +
   geom_line(color = "darkred") +
   labs(title = "Mill temp plot from Logger data", y = "Temperature (deg C)", color = "Data Source")
 
@@ -270,6 +271,16 @@ MLM_mean_temp <- MLM_hourly_temps |>
   group_by(month = month(date),
            year = format(date, "%Y")) |> 
   summarise(mean_temp = mean(temperature, na.rm = TRUE))
+
+MLM_filtered1 <- MLM_mean_temp |> 
+  mutate(month = factor(month)) |> 
+  filter(year >= 2013, year <= 2018)
+
+ggplot() +
+  geom_boxplot(data = MLM_filtered1, aes(x = month, y = mean_temp)) +
+  labs(title = "Monthly Mean Temperatures from CDEC station MLM",
+       y = "Mean Temperature (deg C)",
+       x = "Month") 
 ```
 
 
