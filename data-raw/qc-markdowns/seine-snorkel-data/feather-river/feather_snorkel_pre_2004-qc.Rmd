@@ -15,37 +15,21 @@ library(scales)
 library(readxl)
 ```
 
-# Feather River Snorkel Data Pre-2004
+# Feather River Snorkel Data 1999 - 2003
 
 ## Description of Monitoring Data
 
-TODO update
+Feather River Snorkel Data from 1999 - 2003. These data were provided to flowwest in an access database `FR_S_and_S_Oroville.mdb`. We extracted the tables of interest (`SnorkObservations` and `SnorkelSurvey`, as well as some lookup tables). Snorkel survey data from 2004 - 2020 are available in a separate database `Snorkel_Revided.mdb` and processed in the markdown `feather_snorkel_qc.Rmd`.
 
-Feather River Snorkel Data from 2004 - 2020. This data was provided to flowwest in an access database  Snorkel_Revided.mdb. We queried it to have all year and important variables. Snorkel data from 1999 - 2003 is available in a separate access database FR S and S Oroville.mdb
-
-**Timeframe:** 2004 - 2020TODO update
-
+**Timeframe:** 1999 - 2003
 
 **Completeness of Record throughout timeframe:** 
 
-Only SR collected are in 2011 and 2012
-
-No environmental data collected pre 2010.
-
-
-No data for: 
-
-* 2006
-* 2008
-* 2009
-* 2014
-
+Only SR collected are in 1999 - 2001
 
 **Sampling Location:** Feather River
 
 **Data Contact:** [Casey Campos](mailto:Casey.Campos@water.ca.gov)
-
-Any additional info?
 
 ## Access Cloud Data
 
@@ -68,7 +52,7 @@ gcs_get_object(object_name =
 ```
 
 Read in data from google cloud, glimpse raw data: 
-```{r, warning=FALSE}
+```{r, warning=FALSE, message = FALSE}
 db_filepath <- here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "feather-river-db.mdb")
 
 library(Hmisc)
@@ -121,6 +105,7 @@ cleaner_snorkel_data <- snorkel_raw |>
            huc_cover = str_to_lower(huc_cover),
            huc_o_cover = str_to_lower(huc_o_cover),
            huc_substrate = str_to_lower(huc_substrate)) |> 
+  rename(flow = velocity, adj_flow = adj_velocity) |> 
   glimpse()
 
 cleaner_snorkel_metadata <- snorkel_metadata_raw |> 
@@ -134,15 +119,15 @@ cleaner_snorkel_metadata <- snorkel_metadata_raw |>
          section_type = str_to_lower(section_type),
          weather = str_to_lower(Weather)) |> 
   select(-c(Weather)) |> 
-  rename(river_velocity = river_flow) |> 
   glimpse()
 
 snorkel <- left_join(cleaner_snorkel_data, cleaner_snorkel_metadata, by = "survey_id") |> 
   # remove units (repetitive) and comments, rename some variables for clarity
   select(survey_id, date, location, unit, survey_type, section_type, count = number, species, run,
          fork_length = fl, max_fork_length = max_fl, fish_depth, river_depth = depth,
-         velocity, adj_velocity, river_velocity, bank_distance, huc_unit, huc_cover,
-         huc_o_cover, huc_substrate, visibility, temperature, weather) |> 
+         flow, adj_flow, river_flow, bank_distance, huc_unit, huc_cover,
+         huc_o_cover, huc_substrate, visibility, temperature, weather) |>
+  filter(!is.na(date)) |> 
   glimpse()
 
 ```
@@ -158,69 +143,133 @@ snorkel |> select_if(is.numeric) |> colnames()
 **Plotting flow over Period of Record**
 
 ```{r}
-cleaner_snorkel_data |> 
+snorkel |> 
   ggplot(aes(x = date, y = flow)) + 
   geom_line(linetype = "dashed") + 
   geom_point() +
-  facet_wrap(~year(date), scales = "free_x") + 
   theme_minimal()
 ```
 
-Very inconsistent and sparse flow measures. 
+Very inconsistent and sparse flow measures. No flow measurements after 2000-04-04.
 
 ```{r}
-cleaner_snorkel_data |> 
+snorkel |> 
   ggplot(aes(x = flow)) +
   geom_histogram() + 
   theme_minimal()
 ```
 
-Flow is between 0 - 8000. 0 values must be errors or NA.  
+Flow is between 0 - 5.8. 0 values must be errors or `NA`.  
 
 **Numeric Summary of flow over Period of Record**
 
 ```{r}
-summary(cleaner_snorkel_data$flow)
+summary(snorkel$flow)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$flow))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `flow` column are NA. 
+* `r round(sum(is.na(snorkel$flow))/nrow(snorkel), 3) * 100` % of values in the `flow` column are NA. 
 
+### Variable: `adj_flow`
 
-### Variable: `turbidity`
-
-**Plotting turbidity over Period of Record**
+**Plotting adjusted flow over Period of Record**
 
 ```{r}
-cleaner_snorkel_data |> 
-  ggplot(aes(x = date, y = turbidity)) + 
+snorkel |> 
+  ggplot(aes(x = date, y = adj_flow)) + 
   geom_line(linetype = "dashed") + 
   geom_point() +
-  facet_wrap(~year(date), scales = "free") + 
   theme_minimal()
 ```
 
-We only have non zero turbidity values for 2011, 2012, 2017, 2018, and 2019
+Very inconsistent and sparse adjusted flow measures. No adjusted flow measurements after 2000-03-23.
 
 ```{r}
-cleaner_snorkel_data |>
-  ggplot(aes(x = turbidity)) + 
+snorkel |> 
+  ggplot(aes(x = adj_flow)) +
   geom_histogram() + 
   theme_minimal()
 ```
 
-Most turbidity measures are 0. All fall between 0 and 4.5. 
+Adjusted is between 0 - 3.97. 0 values must be errors or `NA`.  
 
-**Numeric Summary of turbidity over Period of Record**
+**Numeric Summary of flow over Period of Record**
 
 ```{r}
-summary(cleaner_snorkel_data$turbidity)
+summary(snorkel$adj_flow)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$turbidity))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `turbidity` column are NA.
+* `r round(sum(is.na(snorkel$adj_flow))/nrow(snorkel), 3) * 100` % of values in the `adj_flow` column are NA. 
+
+### Variable: `river_flow`
+
+**Plotting river flow over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = date, y = river_flow)) + 
+  geom_line(linetype = "dashed") + 
+  geom_point() +
+  theme_minimal()
+```
+
+River flow is collected more consistently than `flow` or `adj_flow`
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = river_flow)) +
+  geom_histogram() + 
+  theme_minimal()
+```
+
+River flow is between 1 - 9564. River flow seems to be the most consistent and reasonable flow variable in this dataset.  
+
+**Numeric Summary of river flow over Period of Record**
+
+```{r}
+summary(snorkel$river_flow)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$river_flow))/nrow(snorkel), 3) * 100` % of values in the `flow` column are NA. 
+
+
+### Variable: `visibility`
+
+**Plotting visibility over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = date, y = visibility)) + 
+  geom_line(linetype = "dashed") + 
+  geom_point() +
+  theme_minimal()
+```
+
+Visibility is collected sporadically.
+
+```{r}
+snorkel |>
+  ggplot(aes(x = visibility)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
+
+All visibility measures fall between 0.5 and 9.0. 
+
+**Numeric Summary of visibility over Period of Record**
+
+```{r}
+summary(snorkel$visibility)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$visibility))/nrow(snorkel), 3) * 100` % of values in the `visibility` column are NA.
 
 ### Variable: `temperature`
 
@@ -229,35 +278,33 @@ TODO: Check that they are in both F and C and then divide appropriately
 **Plotting temperature over Period of Record**
 
 ```{r}
-cleaner_snorkel_data |> 
+snorkel |> 
   ggplot(aes(x = date, y = temperature)) + 
   geom_line(linetype = "dashed") + 
   geom_point() +
-  facet_wrap(~year(date), scales = "free") + 
   theme_minimal()
 ```
 
-No temp measures before 2010, consistency of temperature measures varies throughout the years. 
+Consistency of temperature measures varies throughout the years. 
 
 ```{r}
-cleaner_snorkel_data |> 
+snorkel |> 
   ggplot(aes(x = temperature)) +
   geom_histogram() +
   theme_minimal()
 ```
 
-Interesting temperature distribution. I wonder if some measures are in C and some in F? 0 values are likely also a mistake or NA.
+Appears as if most values are collected in Fahrenheit and a few are collected in Celsius (the lowest ones)?
 
 **Numeric Summary of temperature over Period of Record**
 
 ```{r}
-summary(cleaner_snorkel_data$temperature)
+summary(snorkel$temperature)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$temperature))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `temperature` column are NA.
-
+* `r round(sum(is.na(snorkel$temperature))/nrow(snorkel), 3) * 100` % of values in the `temperature` column are NA.
 
 
 ### Variable: `count`
@@ -271,7 +318,7 @@ sac_indices <- waterYearType::water_year_indices |>
 ```
 
 ```{r}
-cleaner_snorkel_data |> 
+snorkel |> 
   filter(run == "spring") |>
   group_by(date) |>
   summarise(total_daily_catch = sum(count, na.rm = T)) |>
@@ -296,15 +343,16 @@ cleaner_snorkel_data |>
 ```
 
 
-Very few SR fish, only caught SR in 2011 and 2012.  
+Very few SR fish, only caught SR in 1999, 2000, and 2001.  
 ```{r}
-cleaner_snorkel_data  |>
+snorkel  |>
   mutate(year = as.factor(year(date))) |>
-  ggplot(aes(x = year, y = count)) + 
+  ggplot(aes(x = year, y = count, fill = run)) + 
   geom_col() + 
   theme_minimal() +
   labs(title = "Total Fish Counted each Year",
        y = "Total fish count") + 
+  scale_fill_manual(values = c("#E1BD6D", "#0B775E", "#F2300F", "#35274A")) +
   theme(text = element_text(size = 18),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ```
@@ -313,128 +361,143 @@ cleaner_snorkel_data  |>
 **Numeric Summary of count over Period of Record**
 
 ```{r}
-summary(cleaner_snorkel_data$count)
+summary(snorkel$count)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$count))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `count` column are NA.
+* `r round(sum(is.na(snorkel$count))/nrow(snorkel), 3) * 100` % of values in the `count` column are NA.
 
-
-
-### Variable: `est_size`
-
-TODO figure out what size is describing. Is it length? or weight? 
+### Variable: `fork_length`
 
 **Plotting est_size over Period of Record**
 
 ```{r}
-cleaner_snorkel_data |> 
-  ggplot(aes(x = est_size)) + 
+snorkel |> 
+  ggplot(aes(x = fork_length)) + 
   geom_histogram() + 
   theme_minimal()
-  
 ```
 
-Estimated sizes fall between 0 and 1000. Again we need to figure out what type of size variable they are estimating 
 
-**Numeric Summary of est_size over Period of Record**
+**Numeric Summary of fork_length over Period of Record**
 
 ```{r}
-summary(cleaner_snorkel_data$est_size)
+summary(snorkel$fork_length)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$est_size))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `est_size` column are NA.
+* `r round(sum(is.na(snorkel$fork_length))/nrow(snorkel), 3) * 100` % of values in the `fork_length` column are NA.
 
+### Variable: `max_fork_length`
 
+**Plotting max fork length over Period of Record**
 
-### Variable: `water_depth_m`
+```{r}
+snorkel |> 
+  ggplot(aes(x = max_fork_length)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
 
-Depth of water, units: m 
+**Numeric Summary of max fork length over Period of Record**
+
+```{r}
+summary(snorkel$max_fork_length)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$max_fork_length))/nrow(snorkel), 3) * 100` % of values in the `max_fork_length` column are NA.
+
+### Variable: `fish_depth`
+
+Depth at which fish was observed.
+
+**Plotting fish depth over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = fish_depth)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
+Most of the fish were observed at a depth between 0-2m.
+
+**Numeric Summary of fish depth over Period of Record**
+
+```{r}
+summary(snorkel$fish_depth)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$fish_depth))/nrow(snorkel), 3) * 100` % of values in the `fish_depth` column are NA.
+
+### Variable: `river_depth`
+
+Depth of the river at sampling site.
 
 **Plotting water depth over Period of Record**
 
 ```{r}
-cleaner_snorkel_data |> 
-  ggplot(aes(x = water_depth_m)) + 
+snorkel |> 
+  ggplot(aes(x = river_depth)) + 
   geom_histogram() + 
   theme_minimal()
 ```
-Depth of water is between 0 and 3 meters. 
+River depth was mostly between 1-2 m.
 
 **Numeric Summary of depth of water over Period of Record**
 
 ```{r}
-summary(cleaner_snorkel_data$water_depth_m)
+summary(snorkel$river_depth)
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$water_depth_m))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `water_depth_m` column are NA.
+* `r round(sum(is.na(snorkel$river_depth))/nrow(snorkel), 3) * 100` % of values in the `river_depth` column are NA.
 
+### Variable: `bank_distance`
 
+Distance from river bank.
 
+**Plotting distance from river bank over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = bank_distance)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
+
+Distance from river bank was generally between 0-2.5 m. 
+
+**Numeric Summary of distance from river bank over Period of Record**
+
+```{r}
+summary(snorkel$bank_distance)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$bank_distance))/nrow(snorkel), 3) * 100` % of values in the `bank_distance` column are NA.
 
 ## Explore Categorical variables: {.tabset}
 
 
 ```{r}
-cleaner_snorkel_data |> select_if(is.character) |> colnames()
+snorkel |> select_if(is.character) |> colnames()
 ```
 
 
-### Variable: `survey_id`
+### Variable: `location`
 
-Each row does not correspond to a unique survey. 
-
-```{r}
-length(unique(cleaner_snorkel_data$survey_id)) == length(cleaner_snorkel_data)
-```
-
-There are `r length(unique(cleaner_snorkel_data$survey_id))` unique survey ids
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_snorkel_data$survey_id))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `survey_id` column are NA.
-
-### Variable: `weather_code`
-
-No lookup table for weather codes provided. However, they are fairly easy to interperate. Would be best if we could get weather codes standardized throughout and condense these down. 
+Locations appear to be mapped to a survey reach and can be inconsistent (i.e. some are reach X - reach Y, some are just reach X). In later years, this is `section_name`.
 
 ```{r}
-table(cleaner_snorkel_data$weather_code) 
-```
-
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
-
-```{r}
-cleaner_snorkel_data$weather_code <- case_when(cleaner_snorkel_data$weather_code %in% c("CLD", "CLDY") ~ "cloudy", 
-                                               cleaner_snorkel_data$weather_code %in% c("CLR (Hot)", "CLR/Hot", "Hot and CLR", "CLR Hot") ~ "clear and hot",
-                                               cleaner_snorkel_data$weather_code %in% c("RAIN", "RAN", "CLD/RAIN", "LT RAIN", "CLD, Wind, Light Sprinkles") ~
-                                                 "precipitation",
-                                               cleaner_snorkel_data$weather_code %in% c("CLR 95", "CLR") ~ "clear",
-                                               cleaner_snorkel_data$weather_code %in% c("PT. CLDY", "CLR/CLD") ~ "partly cloudy",
-                                               cleaner_snorkel_data$weather_code %in% c("sun", "SUN") ~ "sunny",
-                                               cleaner_snorkel_data$weather_code == c("CLR WINDY") ~ "clear and windy",
-                                               cleaner_snorkel_data$weather_code == c("WND") ~ "windy",
-                                               cleaner_snorkel_data$weather_code == c("LT CLD/HAZE") ~ "hazy")
-
-table(cleaner_snorkel_data$weather_code) 
-```
-
-I would still like to simplify these down more but this is better for now. 
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_snorkel_data$weather_code))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `weather_code` column are NA.
-
-### Variable: `section_name`
-
-Cleaned up section names, TODO need more information to decide if we can combine some of these section names. 
-
-```{r}
+table(snorkel$location)
 
 format_site_name <- function(string) {
   clean <- 
@@ -446,240 +509,169 @@ format_site_name <- function(string) {
     stringr::str_to_title()
 }
 
-cleaner_snorkel_data$section_name <- format_site_name(cleaner_snorkel_data$section_name)
-table(cleaner_snorkel_data$section_name)
-
-
+snorkel$location <- format_site_name(snorkel$location)
+table(snorkel$location)
 ```
+
+There are `r length(unique(snorkel$location))` unique locations.
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$section_name))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `section_name` column are NA.
-
-### Variable: `units_covered`
-
-A lot of units described here. If multiple units are covered they are listed. 
-
-```{r}
-unique(cleaner_snorkel_data$units_covered)[1:10]
-```
-
-There are `r length(unique(cleaner_snorkel_data$units_covered))` unique groups units covered. 
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_snorkel_data$units_covered))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `units_covered` column are NA.
-
-### Variable: `survey_comments` `observation_comments`
-```{r}
-unique(cleaner_snorkel_data$survey_comments)[1:5]
-```
-
-```{r}
-unique(cleaner_snorkel_data$observation_comments)[1:5]
-```
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_snorkel_data$survey_comments))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `survey_comments` column are NA.
-
-* `r round(sum(is.na(cleaner_snorkel_data$observation_comments))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `observation_comments` column are NA.
-
-### Variable: `observation_id`
-
-Each row does not correspond to a unique observation.  
-```{r}
-length(unique(cleaner_snorkel_data$observation_id)) == length(cleaner_snorkel_data)
-```
-
-There are `r length(unique(cleaner_snorkel_data$observation_id))` unique observation ids
-
-* `r round(sum(is.na(cleaner_snorkel_data$observation_id))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `observation_id` column are NA.
+* `r round(sum(is.na(snorkel$location))/nrow(snorkel), 3) * 100` % of values in the `location` column are NA.
 
 ### Variable: `unit`
 
-```{r}
-table(cleaner_snorkel_data$unit) 
-```
+Not sure what `unit` corresponds to - should clarify this. In later years (see other .Rmd) this is `section_name`. 
 
-There are `r length(unique(cleaner_snorkel_data$unit))` unique units covered. 
+```{r}
+table(snorkel$unit) 
+```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$unit))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `unit` column are NA.
+* `r round(sum(is.na(snorkel$unit))/nrow(snorkel), 3) * 100` % of values in the `unit` column are NA.
 
-### Variable: `size_class`
+### Variable: `survey_type`
 
-| Size Class | Size Range |
-| ---------- | ---------- |
-| I |	0-50 |
-| II |	51-75 |
-| III |	76-100 |
-| IV |	101-150 |
-| V |	151-300 |
-| VI |	301-499 |
-| VII |	500+ |
+Survey type, either `comp` or `unit`.
 
 ```{r}
-table(cleaner_snorkel_data$size_class) 
+table(snorkel$survey_type) 
 ```
-
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$size_class))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `size_class` column are NA.
+* `r round(sum(is.na(snorkel$survey_type))/nrow(snorkel), 3) * 100` % of values in the `survey_type` column are NA.
 
-### Variable: `substrate`
+### Variable: `section_type`
 
-| SubstrateCode |	Substrate |
-| ------------- | --------- |
-| 1 |	Organic Fines, Mud (0.05 mm) |
-| 2 |	Sand (0.05 to 2 mm) |
-| 3 |	Small Gravel (2 to 50 mm) |
-| 4 |	Large Gravel (50 to 150 mm) |
-| 5 |	Cobble (150 to 300 mm) |
-| 6 |	Boulder (> 300 mm) |
-| 0 | ? |
-
-It appears that if more than one substrate is present they list all by creating multi-didget numbers. Not sure what 0 stands for? TODO 
+Section type: either `permanent` or `random`
 
 ```{r}
-table(cleaner_snorkel_data$substrate) 
+table(snorkel$section_type)
+
+snorkel$section_type <- ifelse(snorkel$section_type == "n/a", NA, snorkel$section_type)
+
+table(snorkel$section_type)
 ```
 
-What is the best way to show multiple substrates at different sites? In the seine data they have many substrate columns but I do not think I like that better. 
+There are `r length(unique(snorkel$section_type))` unique groups units covered. 
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$substrate))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `substrate` column are NA.
+* `r round(sum(is.na(snorkel$section_type))/nrow(snorkel), 3) * 100` % of values in the `section_type` column are NA.
 
-### Variable: `instream_cover`
+### Variable: `species` 
 
-| ICoverCode |	ICover |
-| ---------- | ------- |
-| A |	No apparent cover |
-| B |	Small instream objects/small-medium woody debris |
-| C |	Large instream objects/large woody debris |
-| D |	Overhead objects |
-| E |	Submerged aquatic veg/filamentous algae |
-| F |	Undercut bank |
-
-Instream cover appears to use a similar method as substrate where they add letters on if multiple covers are present. 
+Dataset were filtered to only Chinook.
 
 ```{r}
-table(cleaner_snorkel_data$instream_cover) 
-```
+table(snorkel$species)
 
-What is the best way to display/simplify these?
+snorkel$species <- ifelse(snorkel$species == "None", "unknown", "chinook")
 
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_snorkel_data$instream_cover))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `instream_cover` column are NA.
-
-
-### Variable: `overhead_cover`
-
-| OCoverCode |	OCover |
-| --------- | -------- |
-| 0 |	No Apparent Cover |
-| 1 |	Overhanging veg/obj (< 0.5 m above surface) |
-| 2 |	Overhanging veg/obj (0.5 to 2 m above surface |
-| 3 |	Surface turbulence, bubble curtain |
-
-Overhead cover appears to use a similar method as substrate and instream cover where they add letters on if multiple covers are present. 
-
-```{r}
-table(cleaner_snorkel_data$overhead_cover) 
+table(snorkel$species)
 ```
 
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$overhead_cover))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `overhead_cover` column are NA.
+* `r round(sum(is.na(snorkel$species))/nrow(snorkel), 3) * 100` % of values in the `species` column are NA.
 
+### Variable: `run``
 
-
-### Variable: `hydrology_code`
-
-Looks like these are already defined for the most part, GM = Glide Edgewater so we can change that. 
+Run type.
 
 ```{r}
-table(cleaner_snorkel_data$hydrology_code) 
+table(snorkel$run)
 ```
 
-Fix inconsistencies with spelling, capitalization, and abbreviations. 
+There are `r length(unique(snorkel$run))` unique observation ids
+
+* `r round(sum(is.na(snorkel$run))/nrow(snorkel), 3) * 100` % of values in the `run` column are NA.
+
+### Variable: `huc_unit`
 
 ```{r}
-cleaner_snorkel_data$hydrology_code <- ifelse(cleaner_snorkel_data$hydrology_code == "GM", "Glide Edgewater", cleaner_snorkel_data$hydrology_code)
-
-table(cleaner_snorkel_data$hydrology_code) 
+table(snorkel$huc_unit) 
 ```
 
-* `r round(sum(is.na(cleaner_snorkel_data$hydrology_code))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `hydrology_code` column are NA.
+There are `r length(unique(snorkel$huc_unit))` unique units covered. 
 
+**NA and Unknown Values**
 
+* `r round(sum(is.na(snorkel$huc_unit))/nrow(snorkel), 3) * 100` % of values in the `huc_unit` column are NA.
 
-### Variable: `lwd_number`
+### Variable: `huc_cover`
 
-I am not sure what this number is refering to, TODO
+This is instream cover. Lookup table from database was joined in cleaning stage.
 
 ```{r}
-table(cleaner_snorkel_data$lwd_number) 
+snorkel <- snorkel |> 
+  rename(instream_cover = huc_cover)
+table(snorkel$instream_cover) 
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$instream_cover))/nrow(snorkel), 3) * 100` % of values in the `instream_cover` column are NA.
+
+### Variable: `huc_o_cover`
+
+This is overhead cover. Lookup table from database was joined at cleaning stage.
+
+
+```{r}
+snorkel <- snorkel |> 
+  rename(overhead_cover = huc_o_cover)
+table(snorkel$overhead_cover) 
 ```
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$lwd_number))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `lwd_number` column are NA.
+* `r round(sum(is.na(snorkel$overhead_cover))/nrow(snorkel), 3) * 100` % of values in the `overhead_cover` column are NA.
 
-### Variable: `run`
+### Variable: `huc_substrate`
 
-Chinook Run 
+Lookup table from database was joined at cleaning stage.
+
 
 ```{r}
-table(cleaner_snorkel_data$run) 
+snorkel <- snorkel |> 
+  rename(substrate = huc_substrate)
+table(snorkel$substrate) 
 ```
+
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$run))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `run` column are NA.
+* `r round(sum(is.na(snorkel$substrate))/nrow(snorkel), 3) * 100` % of values in the `substrate` column are NA.
 
 
-Only 13 identified SR fish. This data may not be very helpful for us in the JPE
+### Variable: `weather`
 
+Lookup table from database was joined at cleaning stage.
 
-### Variable: `tagged`
-
-If the fish is tagged or not
 
 ```{r}
-table(cleaner_snorkel_data$tagged) 
+table(snorkel$weather) 
 ```
+
 
 **NA and Unknown Values**
 
-* `r round(sum(is.na(cleaner_snorkel_data$tagged))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `tagged` column are NA.
+* `r round(sum(is.na(snorkel$weather))/nrow(snorkel), 3) * 100` % of values in the `weather` column are NA.
 
-### Variable: `clipped`
-
-If the fish has a clipped fin or not
-
-```{r}
-table(cleaner_snorkel_data$clipped) 
-```
-
-**NA and Unknown Values**
-
-* `r round(sum(is.na(cleaner_snorkel_data$clipped))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `clipped` column are NA.
 
 
 ## Summary of identified issues
 
-* Snorkel surveys are not done every year in the timeframe 
-* Environmental data very sparse, especially in early years
+* No spring run observed in `2002` and `2003`
+* Some survey IDs do not have associated dates: `472`, some entries from survey id `546`, and some `NA` survey dates.
+* Several flow variables, though `river_flow` is the most consistently collected
 * Still a few unknown columns that we need to define and understand 
-* Figure out the best way to display and standardize substrate and cover information
-* Very few Spring Run Chinook (13)
-* Detailed information on location split up into units and sections, TODO need to improve organization in these settings
+* Detailed information on location and units split up; need to update standardized reach lookup table so that it accounts for the new entries represented in this dataset
 
 ## Save cleaned data back to google cloud 
 
