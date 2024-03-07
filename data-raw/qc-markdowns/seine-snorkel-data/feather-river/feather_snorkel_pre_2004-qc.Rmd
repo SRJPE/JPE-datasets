@@ -675,8 +675,12 @@ table(snorkel$weather)
 
 ## Save cleaned data back to google cloud 
 
-```{r}
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(snorkel,
+           object_function = f,
+           type = "csv",
+           name = "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/pre_2004_snorkel.csv",
+           predefinedAcl = "bucketLevel")
 ```
 
