@@ -1,8 +1,8 @@
 ---
 title: "Combine Feather River Snorkel Data"
 author: "Liz Stebbins"
-date: '2024-05-07'
-output: html_document
+date: "5/2/2024"
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -122,45 +122,6 @@ all_snorkel_data <- bind_rows(clean_snorkel_post_2004,
                            clean_snorkel_pre_2004)  |> glimpse()
 ```
 
-## Save file without standardized reaches
-We need all raw reaches to pull into `analysis/adult-reach-analysis.R`
-
-
-# Save data
-```{r, eval = FALSE}
-# TODO?
-# f <- function(input, output) write_csv(input, file = output)
-# 
-# gcs_upload(all_redd_data,
-#            object_function = f,
-#            type = "csv",
-#            name = "standard-format-data/standard_redd_raw_reaches.csv",
-#            predefinedAcl = "bucketLevel")
-```
-
-## Survey Reach Standardization
-
-Survey reach naming conventions changed over time for several monitoring programs. A standardized reach lookup table was created in `analysis/adult-reach-analysis.R` and is merged in here to standardize all reaches.
-
-```{r echo=TRUE, message=FALSE, warning=FALSE, eval = FALSE}
-# gcs_get_object(
-#   object_name = "jpe-model-data/standard_reach_lookup.csv",
-#   bucket = gcs_get_global_bucket(),
-#   saveToDisk = here::here("data", "standard-format-data", "standard-reach-lookup.csv"),
-#   overwrite = TRUE
-# )
-# 
-# standard_reach_lookup <- read_csv(here::here("data", "standard-format-data", "standard-reach-lookup.csv")) |> 
-#   select(stream, reach, standardized_reach)
-# 
-# redd_data_final <- all_redd_data |> 
-#   left_join(standard_reach_lookup, by = c("stream", "reach")) |> 
-#   select(-reach) |> 
-#   rename(reach = standardized_reach) |> 
-#   relocate(reach, .before = river_mile) |> 
-#   glimpse()
-```
-
 
 ## Save Cleaned Data to Google Cloud
 
@@ -169,7 +130,7 @@ knitr::kable(all_snorkel_data  |> head())
 ```
 
 ```{r, eval=FALSE}
-write_csv(all_snorkel_data, #here::here("data","redd-carcass-holding","standard_all_redd_data.csv"))
+#write_csv(all_snorkel_data, #here::here("data","redd-carcass-holding","standard_all_redd_data.csv"))
 ```
 
 ```{r, eval=FALSE}
