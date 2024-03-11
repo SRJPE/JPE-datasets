@@ -39,8 +39,6 @@ snorkel_post_2004 <- read_csv(here::here("data-raw", "qc-markdowns", "seine-snor
 
 ## Standard format for Adult All Redd Data
 
-
-  
 ## Read in data {.tabset}
   
 Below we read in the snorkel data from the different databases and rename or select columns so that we can join all the monitoring datasets together in the section below.
@@ -122,6 +120,86 @@ all_snorkel_data <- bind_rows(clean_snorkel_post_2004,
                            clean_snorkel_pre_2004)  |> glimpse()
 ```
 
+## Standardization of combined data
+
+### Location
+
+This code was written by Maddee and pulled in on 3-11-2024:
+
+```{r}
+all_snorkel_data_section_names <- all_snorkel_data |> 
+  mutate(section_name = case_when(section_name == "Eye" ~ "Eye Riffle",
+                                 section_name %in% c("Hatchery Side Ditch") ~ "Hatchery Ditch",
+                                 section_name == "Hatchery Side Channel" ~ "Hatchery Riffle", 
+                                 section_name == "Gridley Side Channel" ~ "Gridley Riffle", 
+                                 section_name %in% c("Robinson", "Lower Robinson") ~ "Robinson Riffle",
+                                 section_name == "Goose" ~ "Goose Riffle", 
+                                 section_name == "Auditorium" ~ "Auditorium Riffle",
+                                 section_name %in% c("Matthews", "Mathews", "Mathews Riffle") ~ "Matthews Riffle",
+                                 section_name %in% c("G95 Side Channel", "G95 West Side Channel", "G95 Side West", "G95 Side") ~ "G95", 
+                                 section_name %in% c("Vance West Riffle", "Vance West", "Vance W Riffle") ~ "Vance West",
+                                 section_name %in% c("Moes", "Moes Ditch") ~ "Mo's Ditch",
+                                 section_name == "Aleck" ~ "Aleck Riffle",
+                                 section_name == "Lower Mcfarland" ~ "McFarland",
+                                 section_name %in% c("Bed Rock Riffle", "Bedrock", "Bedrock Park") ~ "Bedrock Park Riffle",
+                                 section_name == "Steep" ~ "Steep Riffle",
+                                 section_name %in% c("Keister", "Keister Riffle") ~ "Kiester Riffle",
+                                 section_name == "Junkyard" ~ "Junkyard Riffle",
+                                 section_name == "Gateway" ~ "Gateway Riffle",
+                                 section_name == "Trailer Park" ~ "Trailer Park Riffle",
+                                 section_name %in% c("Hatchery Ditch And Moes", "Hatchery Ditch Moes Ditch", 
+                                                            "Hatchery Side Channel Moes Ditch", 
+                                                            "Hatchery Ditch And Moes Ditch", 
+                                                            "Hatchery Side Channel And Moes Ditch", 
+                                                            "Hatchery Ditch Moes") ~ "Hatchery Ditch and Mo's Ditch", 
+                                        section_name %in% c("Hatchery And Moes Side Channels", "Hatchery Side Ch Moes Side Ch", 
+                                                            "Hatchery Side Channel And Moes") ~ "Hatchery and Mo's Riffles", 
+                                        .default = as.character(section_name))) |> 
+  glimpse()
+```
+
+```{r, message = FALSE}
+# map to section_number from standard_reach_lookup file
+gcs_get_object(
+  object_name = "jpe-model-data/standard_reach_lookup.csv",
+  bucket = gcs_get_global_bucket(),
+  saveToDisk = here::here("data", "standard-format-data", "standard-reach-lookup.csv"),
+  overwrite = TRUE
+)
+
+standard_reach_lookup_feather <- read_csv(here::here("data", "standard-format-data", "standard-reach-lookup.csv")) |> 
+  select(stream, reach, standardized_reach, reach_description) |> 
+  filter(stream == "feather river") |> 
+  glimpse()
+
+# map the section name to a section number (where applicable)
+all_snorkel_data_final <- all_snorkel_data_section_names |> 
+  mutate(section_number = case_when(section_name == "Aleck Riffle" ~ 14,
+                                    section_name == "Auditorium Riffle" ~ 6,
+                                    section_name == "Bedrock Park Riffle" ~ 10,
+                                    section_name == "Bedrock Riffle" ~ 10,
+                                    section_name == "Big Riffle" ~ 25,
+                                    section_name == "Eye Riffle" ~ 20,
+                                    section_name == "G95" ~ 27,
+                                    section_name == "Gateway Riffle" ~ 21,
+                                    section_name == "Goose Riffle" ~ 33,
+                                    section_name == "Hatchery and Mo's Riffles" ~ 5,
+                                    section_name == "Hatchery Ditch" ~ 17,
+                                    section_name == "Hatchery Ditch and Mo's Ditch" ~ 17,
+                                    section_name == "Hatchery Ditch Lower Moes Ditch Upper" ~ 5,
+                                    section_name == "Hatchery Riffle" ~ 4,
+                                    section_name == "Matthews Riffle" ~ 12,
+                                    section_name == "McFarland" ~ 36,
+                                    section_name == "Mo's Ditch" ~ 5,
+                                    section_name == "Robinson Riffle" ~ 16,
+                                    section_name == "Steep Riffle" ~ 18,
+                                    section_name == "Trailer Park Riffle" ~ 11,
+                                    section_name == "Upper Mcfarland" ~ 36,
+                                    section_name == "Vance East" ~ 23,
+                                    section_name == "Vance West" ~ 22,
+                                    TRUE ~ NA))
+
+```
 
 ## Save Cleaned Data to Google Cloud
 
