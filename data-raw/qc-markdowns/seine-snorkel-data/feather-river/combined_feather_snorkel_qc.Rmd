@@ -86,8 +86,6 @@ lookup_HUC_o_cover <- mdb.get(db_filepath, "HUCOcoverLU")
 lookup_HUC_substrate <- mdb.get(db_filepath, "HUCsubstrateLU")
 detach(package:Hmisc)
 
-# TODO still need to do instream cover codes and substrate - they are complicated and time consuming
-
 # first join the lookup tables
 clean_snorkel_post_2004_lu <- snorkel_post_2004 |> 
   left_join(lookup_HUC_o_cover, by = c("overhead_cover" = "CoverCode")) |> 
@@ -168,8 +166,6 @@ gcs_get_object(
 standard_reach_lookup_feather <- read_csv(here::here("data", "standard-format-data", "standard-reach-lookup.csv")) |> 
   select(stream, reach, standardized_reach, reach_description) |> 
   filter(stream == "feather river")
-
-# TODO do we want to use the numbers from the map, and not these other survey numbers?
 
 # map the section name to a section number (where applicable)
 all_snorkel_data_final <- all_snorkel_data_section_names |> 
