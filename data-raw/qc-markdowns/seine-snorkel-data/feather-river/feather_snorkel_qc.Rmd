@@ -466,6 +466,8 @@ There are `r length(unique(cleaner_snorkel_data$unit))` unique units covered.
 
 * `r round(sum(is.na(cleaner_snorkel_data$unit))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `unit` column are NA.
 
+This is pulled from a lookup table in the database.
+
 ### Variable: `size_class`
 
 | Size Class | Size Range |
