@@ -19,7 +19,7 @@ library(readxl)
 
 ## Description of Monitoring Data
 
-Feather River Snorkel Data from 1999 - 2003. These data were provided to flowwest in an access database `FR_S_and_S_Oroville.mdb`. We extracted the tables of interest (`SnorkObservations` and `SnorkelSurvey`, as well as some lookup tables). Snorkel survey data from 2004 - 2020 are available in a separate database `Snorkel_Revided.mdb` and processed in the markdown `feather_snorkel_qc.Rmd`.
+Feather River Snorkel Data from 1999 - 2003. These data were provided to flowwest in an access database `FR_S_and_S_Oroville.mdb`. We extracted the tables of interest (`SnorkObservations` and `SnorkelSurvey`, as well as some lookup tables). Snorkel survey data from 2004 - 2020 are available in a separate database `Snorkel_Revised.mdb` and processed in the markdown `feather_snorkel_qc.Rmd`.
 
 **Timeframe:** 1999 - 2003
 
