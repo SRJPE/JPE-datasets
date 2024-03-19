@@ -75,36 +75,34 @@ clean_snorkel_pre_2004 <- snorkel_pre_2004 |>
 columns created/renamed:
 - `weather_code` renamed to `weather`
 - `hydrology_code` renamed to `hydrology`
-- 
 
 ```{r}
 # get lookup tables from pre-2004 table for some codes
-db_filepath <- here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "feather-river-db.mdb")
-library(Hmisc)
-lookup_HUC_cover <- mdb.get(db_filepath, "HUCcoverLU")
-lookup_HUC_o_cover <- mdb.get(db_filepath, "HUCOcoverLU")
-lookup_HUC_substrate <- mdb.get(db_filepath, "HUCsubstrateLU")
-detach(package:Hmisc)
+# db_filepath <- here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "feather-river-db.mdb")
+# library(Hmisc)
+# lookup_HUC_cover <- mdb.get(db_filepath, "HUCcoverLU")
+# lookup_HUC_o_cover <- mdb.get(db_filepath, "HUCOcoverLU")
+# lookup_HUC_substrate <- mdb.get(db_filepath, "HUCsubstrateLU")
+# detach(package:Hmisc)
 
 # first join the lookup tables
-clean_snorkel_post_2004_lu <- snorkel_post_2004 |> 
-  left_join(lookup_HUC_o_cover, by = c("overhead_cover" = "CoverCode")) |> 
-    mutate(Cover = case_when(overhead_cover == 12 ~ "Overhead Object/Veg. 0 - 0.5m, Overhead Object/Veg. 0.5 - 2m",
-                           overhead_cover == 13 ~ "Overhead Object/Veg. 0 - 0.5m, Submerged Aquatic Veg/Algae",
-                           overhead_cover == 4 ~ "unknown (code 4)",
-                           TRUE ~ Cover),
-           Cover = str_to_lower(Cover)) |> 
-  select(-c(overhead_cover)) |> 
-  rename(overhead_cover = Cover) |> 
-  glimpse()
+# clean_snorkel_post_2004_lu <- snorkel_post_2004 |> 
+  # left_join(lookup_HUC_o_cover, by = c("overhead_cover" = "CoverCode")) |> 
+  #   mutate(Cover = case_when(overhead_cover == 12 ~ "Overhead Object/Veg. 0 - 0.5m, Overhead Object/Veg. 0.5 - 2m",
+  #                          overhead_cover == 13 ~ "Overhead Object/Veg. 0 - 0.5m, Submerged Aquatic Veg/Algae",
+  #                          overhead_cover == 4 ~ "unknown (code 4)",
+  #                          TRUE ~ Cover),
+  #          Cover = str_to_lower(Cover)) |> 
+  # select(-c(overhead_cover)) |> 
+  # rename(overhead_cover = Cover) |> 
+  # glimpse()
 
-clean_snorkel_post_2004 <- clean_snorkel_post_2004_lu |> 
+clean_snorkel_post_2004 <- snorkel_post_2004 |> 
   select(-c(survey_comments, observation_comments, time_of_temperature,
             observation_id, lwd_number)) |> 
   rename(weather = weather_code,
          hydrology = hydrology_code) |> 
-  mutate(hydrology = str_to_lower(hydrology),
-         substrate = as.character(substrate)) |> 
+  mutate(hydrology = str_to_lower(hydrology)) |> 
   glimpse()
 ```
 

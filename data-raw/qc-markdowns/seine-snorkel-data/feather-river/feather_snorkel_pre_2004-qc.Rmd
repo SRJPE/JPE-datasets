@@ -89,23 +89,24 @@ cleaner_snorkel_data <- snorkel_raw |>
   mutate(huc_ocover = as.numeric(huc_ocover)) |> 
   filter(species %in% c("CHN", "None", "C", "CHNF", "CHNS", "CHNL")) |>  # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
   left_join(lookup_HUC_unit |> 
-              rename(huc_unit = Unit), by = c("hu_cunit" = "UnitCode")) |>
-  left_join(lookup_HUC_cover |> 
-            rename(huc_cover = Cover), by = c("huc_icover" = "CoverCode")) |>
-  left_join(lookup_HUC_substrate |> 
-            rename(huc_substrate = Substrate), by = c("hu_csubstrate" = "SubstrateCode")) |>
-  left_join(lookup_HUC_o_cover |> 
-            rename(huc_o_cover = Cover), by = c("huc_ocover" = "CoverCode")) |>
-  select(-c(hu_csubstrate, hu_cunit, huc_icover, huc_ocover, snorkler, obs_id)) |> 
+              rename(huc_unit = Unit), by = c("hu_cunit" = "UnitCode")) |> 
+  rename(huc_substrate = hu_csubstrate, huc_instream_cover = huc_icover, 
+         huc_overhead_cover = huc_ocover, flow = velocity, adj_flow = adj_velocity) |> 
+  # left_join(lookup_HUC_cover |> 
+  #           rename(huc_cover = Cover), by = c("huc_icover" = "CoverCode")) |>
+  # left_join(lookup_HUC_substrate |> 
+  #           rename(huc_substrate = Substrate), by = c("hu_csubstrate" = "SubstrateCode")) |>
+  # left_join(lookup_HUC_o_cover |> 
+  #           rename(huc_o_cover = Cover), by = c("huc_ocover" = "CoverCode")) |>
+  select(-c(snorkler, obs_id)) |> 
     mutate(run = case_when(species  == "CHNF" ~ "fall",
                          species == "CHNS" ~ "spring",
                          species == "CHNL" ~ "late fall",
                          species %in% c("CHN",  "None", "C") ~ "unknown"),
-           huc_unit = str_to_lower(huc_unit),
-           huc_cover = str_to_lower(huc_cover),
-           huc_o_cover = str_to_lower(huc_o_cover),
-           huc_substrate = str_to_lower(huc_substrate)) |> 
-  rename(flow = velocity, adj_flow = adj_velocity) |> 
+           huc_unit = str_to_lower(huc_unit)) |> 
+           # huc_cover = str_to_lower(huc_cover),
+           # huc_o_cover = str_to_lower(huc_o_cover),
+           # huc_substrate = str_to_lower(huc_substrate)) |> 
   glimpse()
 
 cleaner_snorkel_metadata <- snorkel_metadata_raw |> 
@@ -125,8 +126,8 @@ snorkel <- left_join(cleaner_snorkel_data, cleaner_snorkel_metadata, by = "surve
   # remove units (repetitive) and comments, rename some variables for clarity
   select(survey_id, date, location, unit, survey_type, section_type, count = number, species, run,
          fork_length = fl, max_fork_length = max_fl, fish_depth, river_depth = depth,
-         flow, adj_flow, river_flow, bank_distance, huc_unit, huc_cover,
-         huc_o_cover, huc_substrate, visibility, temperature, weather) |>
+         flow, adj_flow, river_flow, bank_distance, huc_unit, huc_instream_cover,
+         huc_overhead_cover, huc_substrate, visibility, temperature, weather) |>
   filter(!is.na(date)) |> 
   glimpse()
 
@@ -602,13 +603,13 @@ There are `r length(unique(snorkel$huc_unit))` unique units covered.
 
 * `r round(sum(is.na(snorkel$huc_unit))/nrow(snorkel), 3) * 100` % of values in the `huc_unit` column are NA.
 
-### Variable: `huc_cover`
+### Variable: `huc_instream_cover`
 
 This is instream cover. Lookup table from database was joined in cleaning stage.
 
 ```{r}
 snorkel <- snorkel |> 
-  rename(instream_cover = huc_cover)
+  rename(instream_cover = huc_instream_cover)
 table(snorkel$instream_cover) 
 ```
 
@@ -617,14 +618,14 @@ table(snorkel$instream_cover)
 
 * `r round(sum(is.na(snorkel$instream_cover))/nrow(snorkel), 3) * 100` % of values in the `instream_cover` column are NA.
 
-### Variable: `huc_o_cover`
+### Variable: `huc_overhead_cover`
 
 This is overhead cover. Lookup table from database was joined at cleaning stage.
 
 
 ```{r}
 snorkel <- snorkel |> 
-  rename(overhead_cover = huc_o_cover)
+  rename(overhead_cover = huc_overhead_cover)
 table(snorkel$overhead_cover) 
 ```
 
@@ -670,6 +671,7 @@ table(snorkel$weather)
 * No spring run observed in `2002` and `2003`
 * Some survey IDs do not have associated dates: `472`, some entries from survey id `546`, and some `NA` survey dates.
 * Several flow variables, though `river_flow` is the most consistently collected
+* `huc_instream_cover`, `huc_overhead_cover`, and `huc_substrate` have lookup tables but they are incomplete, so we kept them as codes in order to streamline combining with post-2004 data.
 * Still a few unknown columns that we need to define and understand 
 * Detailed information on location and units split up; need to update standardized reach lookup table so that it accounts for the new entries represented in this dataset
 
