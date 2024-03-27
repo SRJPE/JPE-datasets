@@ -76,6 +76,9 @@ gcs_get_object(object_name = "standard-format-data/daily_yearling_ruleset.csv",
                overwrite = TRUE)
 daily_yearling_ruleset <- read_csv(here::here("data", "daily_yearling_ruleset.csv"))
 
+# when we filter the catch dataset to chinook we may lose some dates where the trap was running
+# but no chinook were caught. the following code creates a list of all dates trap is assumed to be
+# running so that if that date does not exist in the catch data we can assign chinook count = 0
 dates_trap_running <- standard_trap |> 
   select(trap_start_date, trap_stop_date, stream, site, subsite, trap_functioning) |> 
   filter(trap_functioning != "trap not in service") |> 
@@ -83,10 +86,31 @@ dates_trap_running <- standard_trap |>
   distinct(trap_start_date, trap_stop_date, stream, site, subsite) |> 
   glimpse()
 
-ck <- dates_trap_running |> 
-  mutate(diff = trap_stop_date - trap_start_date) |> 
-  filter(diff != 1, diff != 0)
-standard_catch_unmarked <- standard_catch %>% 
+date_ranges_trap_running <- dates_trap_running |> 
+  mutate(diff = as.numeric(trap_stop_date - trap_start_date)) |> 
+  filter(diff > 1) |>  
+  rowwise() |> 
+  mutate(date_list = list(seq.Date(from = as_date(trap_start_date), to = as_date(trap_stop_date), by = "day"))) |> 
+  glimpse()
+
+full_date_list <- date_ranges_trap_running |> 
+  group_by(row_number()) |> 
+  group_map(function(data, i) {
+    data |> 
+      tibble(dates = unlist(date_list)) |> 
+      mutate(dates = as_date(dates))
+  }) |> 
+  list_rbind() |> 
+  select(stream, site, subsite, dates) |> 
+  bind_rows(dates_trap_running |> 
+              select(stream, site, subsite, trap_start_date) |> 
+              rename(dates = trap_start_date),
+            dates_trap_running |> 
+              select(stream, site, subsite, trap_stop_date) |> 
+              rename(dates = trap_stop_date)) |> 
+  distinct()
+
+standard_catch_unmarked_raw <- standard_catch %>% 
   filter(species == "chinook salmon", # filter for only chinook
          is.na(release_id)) %>%  # filter for only unmarked fish, exclude recaptured fish that were part of efficiency trial
   mutate(month = month(date), # add to join with lad and yearling
@@ -100,6 +124,14 @@ standard_catch_unmarked <- standard_catch %>%
                                          T ~ NA)) |> 
   select(-species, -release_id, -is_yearling, -month, -day, -cutoff) |> 
   glimpse()
+
+standard_catch_unmarked <- standard_catch_unmarked_raw |> 
+  # note there are some join issues happening here
+  # add in dates that trap was running
+  right_join(full_date_list |> rename(date = dates)) |> 
+  # replace NA count with 0 for the dates where no chinook were caught
+  mutate(count = ifelse(is.na(count), 0, count))
+
 
 # FL-based lifestage logic ------------------------------------------------
 

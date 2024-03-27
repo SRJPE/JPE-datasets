@@ -800,7 +800,7 @@ glimpse(release_raw)
 catch_month_year_stream <- catch_raw |> 
   mutate(month = month(date),
          year = year(date)) |> 
-  filter(count > 0, !is.na(count)) |> 
+  #filter(count > 0, !is.na(count)) |> 
   select(month, year, stream) |> 
   distinct() |> 
   mutate(catch = T)
@@ -816,6 +816,7 @@ ck <- filter(catch_release_overlap, release == T & is.na(catch))
 # check butte creek
 # I think what is happening is that catch from 10/2021 are being removed because only the fyke trap is running
 # This same logic should be applied to the release data
+# This has now been fixed by removing the release data
 filter(ck, stream == "butte creek")
 butte_catch_ck <- filter(catch_raw, stream == "butte creek", year(date) == 2021)
 # checked the raw data for butte
