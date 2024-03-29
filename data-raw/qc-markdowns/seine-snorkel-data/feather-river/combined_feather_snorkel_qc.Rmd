@@ -19,7 +19,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 ## Snorkel Data Standardization
 
 FlowWest received snorkel data for Feather River in two separate Access databases: one for pre-2004 data and one for 2004-2020 data. These are processed in separate markdowns.
-  
+
 ```{r, message = FALSE, warning = FALSE}
 gcs_get_object(object_name = 
                  "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/pre_2004_snorkel.csv",
@@ -40,28 +40,26 @@ snorkel_post_2004 <- read_csv(here::here("data-raw", "qc-markdowns", "seine-snor
 ## Standard format for Adult All Snorkel Data
 
 ## Read in data {.tabset}
-  
+
 Below we read in the snorkel data from the different databases and rename or select columns so that we can join all the monitoring datasets together in the section below.
 
 ### Pre-2004
 
 #### Columns Removed
 
-- `flow` and `adj_flow` - sparsely recorded and values not on the same scale as `river_flow`
-- `fish_depth` seemed redundant with `river_depth`
-- `max_fork_length` seemed redundant with `fork_length`
+-   `flow` and `adj_flow` - sparsely recorded and values not on the same scale as `river_flow`
+-   `fish_depth` seemed redundant with `river_depth`
+-   `max_fork_length` seemed redundant with `fork_length`
 
-columns created/renamed:
-- `river_flow` renamed to `flow`
-- `river_depth` renamed to `water_depth_m`
-- `huc_unit` renamed to `unit_type`
+columns created/renamed: - `river_flow` renamed to `flow` - `river_depth` renamed to `water_depth_m` - `huc_unit` renamed to `unit_type`
 
 ```{r}
 clean_snorkel_pre_2004 <- snorkel_pre_2004 |> 
   select(-c(flow, adj_flow, fish_depth, max_fork_length)) |> 
   rename(flow = river_flow,
          water_depth_m = river_depth,
-         unit_type = huc_unit) |> 
+         unit_type = huc_unit,
+         section_name = location) |> 
   glimpse()
 ```
 
@@ -69,12 +67,10 @@ clean_snorkel_pre_2004 <- snorkel_pre_2004 |>
 
 #### Columns Removed
 
-- `survey_comments` and `observation_comments` - not necessary for final dataset
-- `time_of_temperature`, `observation_id`, `lwd_number` - not necessary for final dataset
+-   `survey_comments` and `observation_comments` - not necessary for final dataset
+-   `time_of_temperature`, `observation_id`, `lwd_number` - not necessary for final dataset
 
-columns created/renamed:
-- `weather_code` renamed to `weather`
-- `hydrology_code` renamed to `hydrology`
+columns created/renamed: - `weather_code` renamed to `weather` - `hydrology_code` renamed to `hydrology`
 
 ```{r}
 # get lookup tables from pre-2004 table for some codes
@@ -97,15 +93,27 @@ columns created/renamed:
   # rename(overhead_cover = Cover) |> 
   # glimpse()
 
+# Get species lookup information:
+# library(Hmisc)
+# snorke_rev <- here::here("data-raw","qc-markdowns", "seine-snorkel-data", "feather-river",  "Snorkel_Revised.mdb")
+# mdb.get(snorke_rev, tables = TRUE)
+# 
+# species_lu <- mdb.get(snorke_rev, tables = "SpeciesLU") |> 
+#   janitor::clean_names() |> 
+#   rename(species_name = species,
+#          species = species_code) |> 
+#  write_csv('species_lu.csv')
+
+
 clean_snorkel_post_2004 <- snorkel_post_2004 |> 
   select(-c(survey_comments, observation_comments, time_of_temperature,
             observation_id, lwd_number)) |> 
   rename(weather = weather_code,
          hydrology = hydrology_code) |> 
   mutate(hydrology = str_to_lower(hydrology)) |> 
+  left_join(read_csv('species_lu.csv')) |> 
   glimpse()
 ```
-
 
 ## Combine data:
 
@@ -118,30 +126,90 @@ all_snorkel_data <- bind_rows(clean_snorkel_post_2004,
 
 ### Location
 
-This code was written by Maddee and pulled in on 3-13-2024. Mapped to standard section names in DMP map.
+#### Name reconciliation decisions:
+
+-   When multiple sections were listed in the section name, the first was used for reconciliation. The only cases where this isn't the case is when an unkown section name is listed first (ex. `Table Mt Bridge To Hatchery Riffle` is reconciled to `Hatchery Riffle` because there is no Table Mt Bridge section name)
+-   Unknowns (see below) were grouped into one category called "Unknown"
+-   New names (see below) were added when they seemed to match the naming conventions of the other sections. It is unknown where they are located.
+
+**Unknowns:**
+
+-   "Palm Ave Access"
+-   "66 75 67"
+-   "66 6 66 75"
+-   "Montgomery Street"
+-   "338"
+-   "Comp"
+-   "River Mile 66 9 Units 5 6 7 8"
+-   "Sections 1 25"
+-   "Hwy 70 Bridge To Hwy 162 Bridge"
+-   "Tbl Mountn Bridge To Cottonwd Rd"
+
+**New names:** 
+
+-   Big Hole Boat Launch
+-   Great Western Riffle
+-   Hour Glide
+-   Swampy Bend
+-   Hour Riffle
+-   Big Bar Riffle
+-   Herringer Riffle
 
 ```{r}
 all_snorkel_data_section_names <- all_snorkel_data |> 
-  mutate(section_name = case_when(section_name == "Vance West" ~ "Vance Riffle",
-                                  section_name == "Eye" ~ "Eye Riffle",
-                                  section_name == "Hatchery Side Ditch" ~ "Hatchery Ditch",
-                                  section_name == "Hatchery Side Channel" ~ "Hatchery Riffle", 
-                                  section_name == "Gridley Side Channel" ~ "Gridley Riffle", 
-                                  section_name %in% c("Robinson", "Lower Robinson") ~ "Robinson Riffle",
-                                  section_name == "Goose" ~ "Goose Riffle", 
-                                  section_name == "Auditorium" ~ "Auditorium Riffle",
-                                  section_name %in% c("Matthews", "Mathews", "Mathews Riffle") ~ "Matthews Riffle",
-                                  section_name %in% c("G95 Side Channel", "G95 West Side Channel", "G95 Side West", "G95 Side") ~ "G95", 
-                                  section_name %in% c("Vance West Riffle", "Vance W Riffle", "Vance East") ~ "Vance Riffle",
-                                  section_name %in% c("Moes", "Moes Ditch") ~ "Mo's Ditch",
-                                  section_name == "Aleck" ~ "Aleck Riffle",
-                                  section_name %in% c("Lower Mcfarland", "Upper Mcfarland") ~ "McFarland",
-                                  section_name %in% c("Bed Rock Riffle", "Bedrock Riffle", "Bedrock", "Bedrock Park") ~ "Bedrock Park Riffle",
-                                  section_name == "Steep" ~ "Steep Riffle",
-                                  section_name %in% c("Keister", "Keister Riffle") ~ "Kiester Riffle",
+  mutate(section_name = case_when(section_name %in% c("Palm Ave Access", "66 75 67", "66 6 66 75", "Montgomery Street", "338", "Comp", 
+                                                      "River Mile 66 9 Units 5 6 7 8", "Sections 1 25", "Hwy 70 Bridge To Hwy 162 Bridge", 
+                                                      "Tbl Mountn Bridge To Cottonwd Rd") ~ "Unknown",
+                                  section_name %in% c("Big Bar Riffle to Big Bar", "Big Riffle To Mcfarland Riffle", "Big Riffle To Big Bar") ~ "Big Bar Riffle",
+                                  section_name %in% c("Herring Side Main Channel", "Herringer Side Channel Main Channel") ~ "Herringer Riffle",
+                                  section_name %in% c("Vance West", "Riffle Below Vance Avenue Boat Launch", "Vance Avenue Boat Launch", "Vance Ave Boat Ramp", "Vance To G95") ~ "Vance Riffle",
+                                  section_name %in% c("Hour Glide", "Lower Hour",  "Hour Bar Pool", "Hour") ~ "Hour Glide",
+                                  section_name %in% c("Lower Hour Riffle", "Hour Riffle") ~ "Hour Riffle", 
+                                  section_name %in% c("Swampy Bend") ~ "Swampy Bend",
+                                  section_name %in% c("Above Big Hole Boat Launch", "Across From Big Hole Boat Launch", "Bh Boatramp To G95",  
+                                                      "Big Hole Island To G95", "Vance Ave To Big Hole Bw", "Island Bottom Of Big Hole Island", "Big Hole Island", 
+                                                      "Vance Ave To Big Hole Boat Launch", "Big Hole Islands 1 4 Mile Below R M 58", 
+                                                      "Big Hole Islands R M 57", "Big Hole Boat Launch To G95", "Big Hole Boat Launch To G95") ~ "Big Hole Boat Launch",
+                                  section_name %in% c("Below Great Western Riffle", "Great Western To Gravel Mine") ~ "Great Western Riffle",
+                                  section_name %in% c("Auditorium", "Auditoreum Riffle", "Auditorium Rifle", "Auditrium Riffle", 
+                                                      "Auditorium To Bedrock", "Auditorium Riffle To Bedrock", "Auditrium Riffle", 
+                                                      "Lower Auditorium To Upper Bedrock Pool", "Upper Auditorium") ~ "Auditorium Riffle",
+                                  section_name %in% c("Eye", "Above Eye Riffle", "Lower Eye To Gateway", "Weir To Eye Riffle", "Lower Eye Pool", 
+                                                      "Eye To Gateway", "Eye Riffle Gateway To Outlet", "Weir Eye Riffle", "Lower Eye Riffle To Gateway Riffle", 
+                                                      "Eye Riffle Eye Side") ~ "Eye Riffle",
+                                  section_name %in%  c("Hatchery Side Ditch", "Above Hatchery", "Hatchery Ditch Bottom", "Hatchery Ditch Top", "Upper Hatchery Ditch", 
+                                                       "Hatchery Ditch Lower Half", "Lower Hatchery Ditch", "Hatchery Ditch Upper", "Hatchery Ditch Upper Half") ~ "Hatchery Ditch", 
+                                  section_name %in% c("Hatchery Side Channel", "Table Mtn Bridge To Hatchery Riffle", "Hatchery Riffle To Upper Bedrock Pool",
+                                                      "Tble Mountain Bridge To Hatchery Riffle", "Hatchery To Auditorium", "Hatchery Riffle Bottom Moes Ditch To Middle Moes", 
+                                                      "Hatchery Riffle To Lower Auditorium", "Hatchery Riffle To Auditorium", "Hatchery Riffle And Auditorium Riffle", 
+                                                      "Fish Barrier Dam To Hatchery Riffle", "Table Mt Bridge To Hatchery Riffle") ~ "Hatchery Riffle", 
+                                  section_name %in% c("Gridley Side Channel", "Gridley Riffle Side Channel See Comments") ~ "Gridley Riffle", 
+                                  section_name %in% c("Robinson", "Lower Robinson", "Robinson To Steep", "Gravel Mine To N Robinson Riffle", "Robinsons Riffle To Robinsons Pool", 
+                                                      "Robinson To Eye", "Robinson Steep Eye", "Robinson Pond Side Channels Steep Side Channel", 
+                                                      "Robinson Riffle Steep Riffle", "Robinson Side Channel", "Robinson Pond Outlet Channel", "Robinson Main And Side", 
+                                                      "Robinson To Steep Riffle", "Robinson To Eye", "Robinson Main And Side Channel", "Robinson To Gateway", "Robinson Steep Eye") ~ "Robinson Riffle",
+                                  section_name %in% c("Goose", "Goose To Mcfarland", "Goose Backwater To Big Bar Riffle", "Goose Riffle To Big Riffle") ~ "Goose Riffle", 
+                                  section_name %in% c("Matthews", "Mathews", "Mathews Riffle", "Matthews To Aleck", "Montgomery St Access To Mathews Riffle", "Matthews To Alec") ~ "Matthews Riffle",
+                                  section_name %in% c("G95 Side Channel", "G95 West Side Channel", "G95 Side West", "G95 Side", "Below G95", "G95 To Hour Glide", "G95 G95e", 
+                                                      "East Channel G95 Lower Section", "G95 To Keister Backwater") ~ "G95", 
+                                  section_name %in% c("Vance West Riffle", "Vance W Riffle", "Vance East", "Vance Ave Boatramp To Big Hole Boatramp", 
+                                                      "Thermalito Bar To Vance Ave Riffle", "Riffle Below Vance Avenue Boat Launch", "Vance Avenue Boat Launch", 
+                                                      "Vance Ave Boat Ramp", "Vance to G95") ~ "Vance Riffle",
+                                  section_name %in% c("Moes", "Moes Ditch", "Middle Of Moes Ditch") ~ "Mo's Ditch",
+                                  section_name %in% c("Aleck", "Alec Riffle To Great Western", "Aleck Riffle To Great Western", "Hwy 162 Bridge To Aleck Riffle") ~ "Aleck Riffle",
+                                  section_name %in% c("Lower Mcfarland", "Upper Mcfarland", "Mcfarland Bend", "Mcfarland To Swampy Bend", 
+                                                      "Mcfarland Riffle", "Big Bar Mcfarland", "Below Macfarland Riffle Gridley Bridge", "Big Bar To Mcfarland", "Macfarland") ~ "McFarland",
+                                  section_name %in% c("Bed Rock Riffle", "Bedrock Riffle", "Bedrock", "Bedrock Park", "Bedrock And Trailer Park", 
+                                                      "Bedrock Riffle To Hwy 70 Bridge", "Bedrock To Montgomery", "Upper Bedrock Pool To H70 Bridge", "Fish Barrier Dam To Bedrock") ~ "Bedrock Park Riffle",
+                                  section_name %in% c("Steep", "Steep To Weir", "Steep To Eye", "Steep Riffle to Eye Riffle", "Steep Side Channels", 
+                                                      "Steep Main And Side", "Steep Riffle To Eye Riffle", "Steep Riffle Side Channel", "Steep Riffle Steep Side", 
+                                                      "Steep Steep Side", "Steep Side Channel") ~ "Steep Riffle",
+                                  section_name %in% c("Keister", "Keister Riffle", "Keister Riffle Before Goose Backwater") ~ "Kiester Riffle",
                                   section_name == "Junkyard" ~ "Junkyard Riffle",
-                                  section_name == "Gateway" ~ "Gateway Riffle",
-                                  section_name == "Trailer Park" ~ "Trailer Park Riffle",
+                                  section_name %in% c("Gateway", "Gateway To Outlet", "Gateway Pool Thermalito Pool") ~ "Gateway Riffle",
+                                  section_name %in% c("Trailer Park", "Montgomery St Park To Trailer Park Riffle", "Trailer Park To Aleck", 
+                                                      "Trailer Park To Mathews Riffle", "Trailer Park Aleck Robinson Mathews", "Trailer Park Riffle And Matthews Riffle", 
+                                                      "Trailer Park To Mathews") ~ "Trailer Park Riffle",
                                   section_name %in% c("Hatchery Ditch And Moes", "Hatchery Ditch Moes Ditch", 
                                                       "Hatchery Side Channel Moes Ditch", 
                                                       "Hatchery Ditch Lower Moes Ditch Upper",
@@ -152,8 +220,9 @@ all_snorkel_data_section_names <- all_snorkel_data |>
                                                       "Hatchery Side Channel And Moes") ~ "Hatchery and Mo's Riffles", 
                                   .default = as.character(section_name))) |> 
   glimpse()
-```
 
+
+```
 
 ```{r, message = FALSE}
 # map to section_number from DMP for VA feather snorkel
@@ -212,6 +281,7 @@ all_snorkel_data_final <- all_snorkel_data_final |>
   select(-temperature) |> 
   rename(temperature = temperature_c)
 ```
+
 ## Save Cleaned Data to Google Cloud
 
 ```{r}

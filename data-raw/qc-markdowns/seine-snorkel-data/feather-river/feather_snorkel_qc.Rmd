@@ -19,7 +19,7 @@ library(readxl)
 
 ## Description of Monitoring Data
 
-Feather River Snorkel Data from 2004 - 2020. This data was provided to flowwest in an access database  Snorkel_Revided.mdb. We queried it to have all year and important variables. Snorkel data from 1999 - 2003 is available in a separate access database FR S and S Oroville.mdb
+Feather River Snorkel Data from 2004 - 2020. This data was provided to flowwest in an access database  Snorkel_Revised.mdb. We queried it to have all year and important variables. Snorkel data from 1999 - 2003 is available in a separate access database FR S and S Oroville.mdb
 
 **Timeframe:** 2004 - 2020 
 
@@ -93,14 +93,14 @@ cleaner_snorkel_data <- raw_snorkel %>%
          substrate = as.character(substrate), 
          overhead_cover = as.character(overhead_cover),
          lwd_number = as.character(lwd_number)) %>% # I think this is some sort of tag number so I am changing to character
-  filter(!is.na(date), # survey ID 1 and 106 do not specify date 
-         species %in% c("CHN", "NONE", "CHNU", "CHNT", "CHNC", "CHNF", "CHNS")) %>% # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
+  filter(!is.na(date)) |>  # survey ID 1 and 106 do not specify date 
+         #species %in% c("CHN", "NONE", "CHNU", "CHNT", "CHNC", "CHNF", "CHNS")) %>% # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
   mutate(run = case_when(species  == "CHNF" ~ "fall",
                          species == "CHNS" ~ "spring",
                          species %in% c("CHN", "CHNT", "NONE", "CHNU", "CHNC") ~ "unknown"),
          tagged = if_else(grepl('T$', species), TRUE, FALSE),
          clipped = if_else(species == "CHNC", TRUE, FALSE)) %>%
-  select(-observer, -sid, -species) %>% # remove sid because it is the same as survey_id 
+  #select(-observer, -sid, -species) %>% # remove sid because it is the same as survey_id 
   glimpse()
 
 ```
