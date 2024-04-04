@@ -19,11 +19,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, data_pull, include = F, echo = F}
-# # Data pull ---------------------------------------------------------------
+# Data pull ---------------------------------------------------------------
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-# pull in butte creek escapement estimates
+# pull in butte creek escapement estimates (2001-2022)
+# pull in butte creek confidence intervals (2012-2022)
 # https://www.calfish.org/ProgramsData/ConservationandManagement/CentralValleyMonitoring/SacramentoValleyTributaryMonitoring/ButteCreek.aspx
 gcs_get_object(object_name = 
                  "adult-holding-redd-and-carcass-surveys/butte-creek/Butte_Creek_Historic_Escapement.csv",
@@ -31,9 +32,26 @@ gcs_get_object(object_name =
                saveToDisk = here::here("data", "butte_escapement.csv"),
                overwrite = TRUE)
 
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek/data-raw/Butte Creek Adult Escapment CJS Confidence Est.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "standard-format-data-prep",  "butte_confidence_intervals.xlsx"),
+               overwrite = TRUE)
+
 butte <- read_csv(here::here("data", "butte_escapement.csv")) |> 
-  select(year = Year, spawner_abundance_estimate = `Post Spawn Est.`) |> 
-  mutate(stream = "butte creek")
+  select(year = Year, spawner_abundance_estimate = `Post Spawn Est.`)
+
+butte_with_CIs <- readxl::read_xlsx(here::here("data-raw", "standard-format-data-prep", "butte_confidence_intervals.xlsx")) |> 
+  select(year = Year, spawner_abundance_estimate = Estimate, lower = `Lower Confidence`,
+         upper = `Higher Confidence`, confidence_interval = Confidence) |> 
+  filter(year != "2021 Pre-Spawn") |>
+  mutate(year = as.numeric(year))
+
+all_butte <- bind_rows(butte |> 
+                         filter(year < 2012), butte_with_CIs) |> 
+  mutate(stream = "butte creek",
+         confidence_interval = case_when(confidence_interval == 0.90 ~ "90%",
+                                         confidence_interval == 0.95 ~ "95%",
+                                         TRUE ~ NA))
 
 # pull in yuba cjs estimates
 # Notes from Colin Laubach about the Yuba River CJS estimates
@@ -60,14 +78,13 @@ gcs_get_object(object_name =
 feather <- readxl::read_excel(here::here("data", "feather_escapement.xlsx")) |> 
   rename(spawner_abundance_estimate = estimate) |> 
   mutate(stream = "feather river",
-         adipose_fin_clip = "not recorded",
-         run = "combined fall and spring")
-
-
+         #adipose_fin_clip = "not recorded",
+         run = "combined fall and spring",
+         confidence_interval = ifelse(confidence_interval == 90, "90%", confidence_interval))
 ```
 
 ```{r, data_pull, include = F, echo = F}
-cjs_estimates <- bind_rows(butte, yuba, feather)
+cjs_estimates <- bind_rows(all_butte, yuba, feather)
 write_csv(cjs_estimates, "data/cjs_estimates.csv")
 ```
 
