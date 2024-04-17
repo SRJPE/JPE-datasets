@@ -210,7 +210,9 @@ all_snorkel_data_final |>
 
 all_snorkel_data_final <- all_snorkel_data_final |> 
   select(-temperature) |> 
-  rename(temperature = temperature_c)
+  rename(temperature = temperature_c) |> 
+  mutate(section_name = str_to_title(section_name),
+         location = str_to_title(location))
 ```
 ## Save Cleaned Data to Google Cloud
 

@@ -93,16 +93,16 @@ cleaner_snorkel_data <- raw_snorkel %>%
          substrate = as.character(substrate), 
          overhead_cover = as.character(overhead_cover),
          lwd_number = as.character(lwd_number)) %>% # I think this is some sort of tag number so I am changing to character
-  filter(!is.na(date), # survey ID 1 and 106 do not specify date 
-         species %in% c("CHN", "NONE", "CHNU", "CHNT", "CHNC", "CHNF", "CHNS")) %>% # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
+  filter(!is.na(date)) |>  # survey ID 1 and 106 do not specify date 
+         # species %in% c("CHN", "NONE", "CHNU", "CHNT", "CHNC", "CHNF", "CHNS")) %>% # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
   mutate(run = case_when(species  == "CHNF" ~ "fall",
                          species == "CHNS" ~ "spring",
                          species %in% c("CHN", "CHNT", "NONE", "CHNU", "CHNC") ~ "unknown"),
          tagged = if_else(grepl('T$', species), TRUE, FALSE),
-         clipped = if_else(species == "CHNC", TRUE, FALSE)) %>%
-  select(-observer, -sid, -species) %>% # remove sid because it is the same as survey_id 
+         clipped = if_else(species == "CHNC", TRUE, FALSE),
+        species = ifelse(species %in% c("CHN", "CHNT", "NONE", "CHNU", "CHNC", "CHNS", "CHNF"), "CHN", species)) %>%
+  select(-observer, -sid) %>% # remove sid because it is the same as survey_id 
   glimpse()
-
 ```
 
 ## Explore Numeric Variables: {.tabset}
@@ -467,6 +467,19 @@ There are `r length(unique(cleaner_snorkel_data$unit))` unique units covered.
 * `r round(sum(is.na(cleaner_snorkel_data$unit))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `unit` column are NA.
 
 This is pulled from a lookup table in the database.
+
+### Variable: `species`
+
+```{r}
+table(cleaner_snorkel_data$species) 
+```
+
+There are `r length(unique(cleaner_snorkel_data$species))` unique species observed. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(cleaner_snorkel_data$species))/nrow(cleaner_snorkel_data), 3) * 100` % of values in the `species` column are NA.
+
 
 ### Variable: `size_class`
 
