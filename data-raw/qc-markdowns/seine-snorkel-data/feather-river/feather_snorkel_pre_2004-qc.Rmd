@@ -87,7 +87,7 @@ Read in individual observation files and survey metadata files. Update column na
 cleaner_snorkel_data <- snorkel_raw |> 
   janitor::clean_names() |> 
   mutate(huc_ocover = as.numeric(huc_ocover)) |> 
-  filter(species %in% c("CHN", "None", "C", "CHNF", "CHNS", "CHNL")) |>  # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
+  # filter(species %in% c("CHN", "None", "C", "CHNF", "CHNS", "CHNL")) |>  # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
   left_join(lookup_HUC_unit |> 
               rename(huc_unit = Unit), by = c("hu_cunit" = "UnitCode")) |> 
   rename(huc_substrate = hu_csubstrate, huc_instream_cover = huc_icover, 
@@ -564,14 +564,13 @@ There are `r length(unique(snorkel$section_type))` unique groups units covered.
 
 ### Variable: `species` 
 
-Dataset were filtered to only Chinook.
-
+Species are messy ans should be updated
 ```{r}
-table(snorkel$species)
-
-snorkel$species <- ifelse(snorkel$species == "None", "unknown", "chinook")
-
-table(snorkel$species)
+# table(snorkel$species)
+# 
+# snorkel$species <- ifelse(snorkel$species == "None", "unknown", "chinook")
+# 
+# table(snorkel$species)
 ```
 
 
