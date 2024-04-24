@@ -235,12 +235,16 @@ unique(trap$debris_level_id)
 
 ck <- filter(trap, is.na(trap_visit_time_start) & is.na(trap_visit_time_end))
 
-# TODO ADD CHECKS
-# trap location id
-# visit type id
-# trap functioning id
-# fish processed id
-# debris level id
+try(if(any((unique(trap$trap_location_id) %in% trap_location$id) == F)) 
+  stop("Missing Trap Location ID! Please fix!"))
+try(if(any((unique(trap$visit_type_id) %in% visit_type$id) == F))
+  stop("Missing Visit Type ID! Please fix!"))
+try(if(any((unique(trap$trap_functioning_id) %in% trap_functioning$id) == F))
+  stop("Missing Trap Functioning ID! Please fix!"))
+try(if(any((unique(trap$fish_processed_id) %in% fish_processed$id) == F))
+  stop("Missing Fish Processed ID! Please fix!"))
+try(if(any((unique(trap$debris_level_id) %in% debris_level$id) == F))
+  stop("Missing Debris Level ID! Please fix!"))
 
 # check that there are no missing dates
 gcs_upload(trap,
@@ -628,7 +632,7 @@ passage <- passage_raw |>
                            T ~ ymd_hms(paste0(date, " 00:00:00")))) |> 
   rename(hours_sampled = hours) |> 
   select(-c(time, viewing_condition, spawning_condition, jack_size, ladder, 
-            flow, temperature, comments)) |> 
+            flow, temperature)) |> 
   # survey_location_id
   mutate(stream = tolower(stream),
          reach = NA,

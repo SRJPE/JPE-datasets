@@ -10,15 +10,16 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 # trap_location -----------------------------------------------------------
 
-battle <- tibble(stream = c("battle creek","battle creek", "battle creek", "battle creek"),
-                 site = c("ubc", "ubc", "lbc", "powerhouse"),
-                 subsite = c("ubc", NA, "lbc","powerhouse"),
+battle <- tibble(stream = c("battle creek","battle creek", "battle creek", "battle creek", "battle creek"),
+                 site = c("ubc", "ubc", "lbc", "powerhouse",NA),
+                 subsite = c("ubc", NA, "lbc","powerhouse", NA),
                  site_group = c("battle creek"),
                  description = c("upper battle creek rst site location", 
                                  "upper battle creek rst site location and subsite is
                                  not associated with release location",
                                  "lower battle creek rst site location",
-                                 "powerhouse battle creek rst site loction")) 
+                                 "powerhouse battle creek rst site loction",
+                                 "site is not recorded")) 
 butte <- tibble(stream = c(rep("butte creek", 5)),
                 site = c(rep("okie dam",4), "adams dam"),
                 subsite = c("okie dam 1", "okie dam 2", "okie dam fyke trap", NA, "adams dam"),

@@ -74,9 +74,12 @@ rb_trap <- rb_trap_raw |>
                                       gear_condition %in% c("total block", "not rotating") ~ "trap stopped functioning",
                                       gear_condition == "partial block" ~ "trap functioning but not normally",
                                       T ~ gear_condition),
+         trap_functioning = ifelse(is.na(trap_functioning), "not recorded", trap_functioning),
+         visit_type = "not recorded",
+         fish_processed = "not recorded",
          gear_type = "rotary screw trap") |> 
   select(stream, site, subsite, trap_start_date, trap_start_time, trap_functioning,
-         gear_type, is_half_cone_configuration, debris_volume, counter_start)
+         gear_type, is_half_cone_configuration, debris_volume, counter_start, visit_type, fish_processed)
 
 gcs_upload(rb_trap,
            object_function = f,
