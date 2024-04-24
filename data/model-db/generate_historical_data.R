@@ -801,13 +801,13 @@ catch_month_year_stream <- catch_raw |>
   mutate(month = month(date),
          year = year(date)) |> 
   #filter(count > 0, !is.na(count)) |> 
-  select(month, year, stream) |> 
+  select(month, year, stream, site) |> 
   distinct() |> 
   mutate(catch = T)
 release_month_year_stream <- release_raw |> 
   mutate(month = month(date_released),
          year = year(date_released)) |> 
-  select(month, year, stream) |> 
+  select(month, year, stream, site) |> 
   distinct() |> 
   mutate(release = T)
 catch_release_overlap <- full_join(catch_month_year_stream,
