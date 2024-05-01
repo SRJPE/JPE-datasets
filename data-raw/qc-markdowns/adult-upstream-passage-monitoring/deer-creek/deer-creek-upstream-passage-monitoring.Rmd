@@ -14,7 +14,7 @@ library(scales)
 library (RColorBrewer)
 ```
 
-# Deer Creek Adult Upstream Passage Monitoring Data 2014 to 2020 
+# Deer Creek Adult Upstream Passage Monitoring Data 2014 to 2023 
 
 **Description of Monitoring Data**
 
@@ -24,7 +24,7 @@ Adult spring run salmon passage daily estimates based on data collected at SVRIC
 
 **Timeframe:** 
 
-2014 to 2020
+2014 to 2023
 
 **Completeness of Record throughout timeframe:**
 
@@ -49,9 +49,22 @@ gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-raw/Deer Creek SRCS Daily Video Passage Estimates 2014-2020.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "deer_creek_passage_estimate_raw.xlsx")
+               saveToDisk = "deer_creek_passage_estimate_raw.xlsx",
+               overwrite = TRUE)
+
+# 2020-2021 passage data
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-raw/Copy of DCVS both 2021-22 Spring FINAL 8-17-22.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2021.xlsx",
+               overwrite = TRUE)
+# 2022-2023 passage data
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-raw/DCVS both 2022-23 Spring DRAFT 8-26-23.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2022.xlsx",
+               overwrite = TRUE)
 ```
 
+### 2014-2020
 Data for each year is in a separate sheet 
 ```{r, message=FALSE, warning=FALSE}
 sheets <- readxl::excel_sheets('deer_creek_passage_estimate_raw.xlsx')
@@ -61,24 +74,71 @@ list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_pas
 ```
 Bind the sheets into one file
 ```{r}
-raw_data <- dplyr::bind_rows(list_all) %>% 
+raw_data <- dplyr::bind_rows(list_all) |> 
+  glimpse()
+```
+
+### 2021-2023
+```{r, message=FALSE, warning=FALSE}
+# 2021
+raw_data_2021 <- readxl::read_xlsx(path = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2021.xlsx", 
+                                      sheet = "DEER-South-21-22",
+                                      skip = 5,
+                                   col_types = c("date", "date", rep("numeric", 8), rep("text", 3))) |> 
+  glimpse()
+
+# 2022
+raw_data_2022 <- readxl::read_xlsx(path = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2022.xlsx", 
+                                                          sheet = "DEER-South-22-23",
+                                                          skip = 5,
+                                   col_types = c(rep("date", 2), rep("numeric", 8), rep("text", 3)))
+
+raw_data_2021_2023 <- bind_rows(raw_data_2021, raw_data_2022) |> 
   glimpse()
 ```
 
 ## Data Transformations
 
+### 2014-2020
 ```{r}
-cleaner_data <- raw_data %>% 
-  set_names(tolower(colnames(raw_data))) %>% 
-  select(-"...5") %>% #comments describe dates
+cleaner_data <- raw_data |> 
+  set_names(tolower(colnames(raw_data))) |> 
+  select(-"...5") |> #comments describe dates
   rename("passage_estimate" =  'adult spring-run passing svric dam',
          "flow" = "avg daily flow below svric dam",
-         "temperature"= "avg daily h2o temp below svric dam") %>% 
-  filter(date != "Totals:", date != "Total:") %>%
+         "temperature"= "avg daily h2o temp below svric dam") |> 
+  filter(date != "Totals:", date != "Total:") |>
   mutate(date = case_when(
     str_length(date) == 5 ~ as.Date(as.numeric(date), origin="1899-12-30"),
     TRUE ~ as.Date(date, "%m/%d/%Y")
-  )) %>% 
+  )) |> 
+  glimpse()
+```
+
+### 2021-2023
+```{r}
+cleaner_data_2023 <- raw_data_2021_2023 |> 
+    mutate(time = format(`Start Time`, "%H:%M:%S")) |> 
+  select(date = Date, time, salmon_up = `UP Salmon`, salmon_down = `DN Salmon`, jacks_up = `UP Jacks`, jacks_down = `DN Jacks`, view_adjust = `Viewing Adjust`) |> 
+  pivot_longer(salmon_up:jacks_down,
+               names_to = "direction", 
+               values_to = "count") |> 
+  mutate(jack = ifelse(str_detect(direction, "jack"), TRUE, FALSE),
+         direction = ifelse(str_detect(direction, "up"), "up", "down"),
+         count = ifelse(is.na(count), 0, count),
+         view_adjust = case_when(view_adjust == 1 ~ "turbid",
+                                 view_adjust == 2 ~ "weir down",
+                                 view_adjust == 3 ~ "equipment fail",
+                                 view_adjust == 4 ~ "DIDSON/Aris",
+                                 is.na(view_adjust) ~ "VAKI",
+                                 TRUE ~ as.character(view_adjust))) |> 
+  glimpse()
+```
+### Bind all years together
+```{r}
+all_deer_data <- bind_rows(cleaner_data, 
+                           cleaner_data_2023 |> 
+                             rename(passage_estimate = count)) |> 
   glimpse()
 ```
 
@@ -87,15 +147,19 @@ cleaner_data <- raw_data %>%
 The following table describes the variables included in this dataset and the percent that do not include data. 
 
 ```{r data_dictionary}
-percent_na <- cleaner_data %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+percent_na <- all_deer_data |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
   pivot_longer(cols = everything())
   
-data_dictionary <- tibble(variables = colnames(cleaner_data),
+data_dictionary <- tibble(variables = colnames(all_deer_data),
                           description = c("Date of sampling",
-                                          "Passage estimate of Spring Run Chinook, TODO get methodlogy for generating passage estimates",
+                                          "Passage estimate of Spring Run Chinook",
                                           "Flow in CFS",
-                                          "Temperature"),
+                                          "Temperature",
+                                          "Time of sampling", 
+                                          "Reason camera needed to be adjusted", 
+                                          "Direction of passage", 
+                                          "Whether or not the fish was jack sized"),
                           
                           percent_na = round(percent_na$value*100)
                           
@@ -108,66 +172,66 @@ knitr::kable(data_dictionary)
 Check for outlier and NA values
 
 ```{r}
-summary(cleaner_data$date)
+summary(all_deer_data$date)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+*  `r round(sum(is.na(all_deer_data$date))/nrow(all_deer_data), 3)*100` % of values in the `date` column are NA.
 
 ## Explore Numerical Values
 
 ```{r}
-cleaner_data %>% select_if(is.numeric) %>% colnames()
+all_deer_data |> select_if(is.numeric) |> colnames()
 ```
 
 
 ### Variable:`passage_estimate` 
 ```{r}
-cleaner_data %>% 
-  mutate(year = as.factor(year(date))) %>% 
+all_deer_data |> 
+  mutate(year = as.factor(year(date))) |> 
   ggplot(aes(x=date, y = passage_estimate))+
   geom_line()+
   facet_wrap(~year, scales = "free")+
   theme_minimal()+
-  labs(title = "Daily Passage Estimate From 2014 - 2020")
+  labs(title = "Daily Passage Estimate From 2014 - 2023")
 ```
 
 
 ```{r}
-cleaner_data %>% 
-  mutate(year = as.factor(year(date))) %>% 
-  group_by(year) %>% 
-  summarise(total = sum(passage_estimate)) %>%
+all_deer_data |> 
+  mutate(year = as.factor(year(date))) |> 
+  group_by(year) |> 
+  summarise(total = sum(passage_estimate)) |>
   ggplot(aes(x = year, y = total, group = 1))+
   geom_line()+
   geom_point(aes(x=year, y = total))+
   theme_minimal()+
-  labs(title = "Passage Estimate from 2014 - 2020",
+  labs(title = "Passage Estimate from 2014 - 2023",
        y = "Total passage_estimate")
 ```
 
-**Numeric Summary of passage_estimate From 2014 to 2020**
+**Numeric Summary of passage_estimate From 2014 to 2023**
 ```{r}
-summary(cleaner_data$passage_estimate)
+summary(all_deer_data$passage_estimate)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$passage_estimate))/nrow(cleaner_data), 3)*100` % of values in the `passage_estimate` column are NA.
+*  `r round(sum(is.na(all_deer_data$passage_estimate))/nrow(all_deer_data), 3)*100` % of values in the `passage_estimate` column are NA.
 
 ### Variable:`flow`
 
 Flow in cfs
 
 ```{r fig.height=8, fig.width=8}
-cleaner_data %>% 
-  group_by(date) %>%
-  mutate(avg_flow = mean(flow, na.rm = T)) %>%
-  ungroup() %>% 
+all_deer_data |> 
+  group_by(date) |>
+  mutate(avg_flow = mean(flow, na.rm = T)) |>
+  ungroup() |> 
   mutate(year = as.factor(year(date)),
          fake_year = 1900,
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>% 
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) |> 
   ggplot(aes(x = fake_date, y = avg_flow, color = year)) + 
   scale_color_brewer(palette = "Dark2")+
   geom_point(alpha = .25) + 
@@ -180,8 +244,8 @@ cleaner_data %>%
        x = "Date")  
 ```
 ```{r fig.height=8, fig.width=8}
-cleaner_data %>% 
-  mutate(year = as.factor(year(date))) %>% 
+all_deer_data |> 
+  mutate(year = as.factor(year(date))) |> 
   ggplot(aes(x=flow, fill = year))+
   scale_fill_brewer(palette = "Dark2")+
   geom_histogram()+
@@ -189,27 +253,27 @@ cleaner_data %>%
   labs(title = "Distribution of Flow")
 ```
 
-**Numeric Summary of flow From 2014 to 2020**
+**Numeric Summary of flow From 2014 to 2023**
 ```{r}
-summary(cleaner_data$flow)
+summary(all_deer_data$flow)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$flow))/nrow(cleaner_data), 3)*100` % of values in the `flow` column are NA.
+*  `r round(sum(is.na(all_deer_data$flow))/nrow(all_deer_data), 3)*100` % of values in the `flow` column are NA.
 
 ### Variable:`temperature`
 
 Temperature in F, convert below
 
 ```{r fig.height=8, fig.width=8}
-cleaner_data %>% 
-  group_by(date) %>%
-  mutate(avg_temp = mean(temperature, na.rm = T)) %>%
-  ungroup() %>% 
+all_deer_data |> 
+  group_by(date) |>
+  mutate(avg_temp = mean(temperature, na.rm = T)) |>
+  ungroup() |> 
   mutate(year = as.factor(year(date)),
          fake_year = 1900,
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>% 
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) |> 
   ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
   scale_color_brewer(palette = "Dark2")+
   geom_point(alpha = .25) + 
@@ -223,8 +287,8 @@ cleaner_data %>%
 ```
 
 ```{r fig.height=8, fig.width=8}
-cleaner_data %>% 
-  mutate(year = as.factor(year(date))) %>% 
+all_deer_data |> 
+  mutate(year = as.factor(year(date))) |> 
   ggplot(aes(x=temperature, fill = year))+
   scale_fill_brewer(palette = "Dark2")+
   geom_histogram(bins = 5)+
@@ -232,33 +296,34 @@ cleaner_data %>%
   labs(title = "Distribution of Temperature")
 ```
 
-**Numeric Summary of temperature From 2014 to 2020**
+**Numeric Summary of temperature From 2014 to 2023**
 ```{r}
-summary(cleaner_data$temperature)
+summary(all_deer_data$temperature)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$temperature))/nrow(cleaner_data), 3)*100` % of values in the `temperature` column are NA.
+*  `r round(sum(is.na(all_deer_data$temperature))/nrow(all_deer_data), 3)*100` % of values in the `temperature` column are NA.
 
 ### Notes and Issues
 
-* Only have passage estimates may want to purse raw data
+* These are counts and not estimates for 2021-2023, confirm this is true for earlier data
 * Temperature in F, convert to C below 
 
 ```{r}
-cleaner_data <- cleaner_data %>%
+all_deer_data <- all_deer_data |>
   mutate(temperature = (temperature - 32) * (5/9))
 ```
 
 
 ## Next steps
 
-* See if we need raw data from this video monitoring 
+* Confirm counts for earlier data
+* Do they have flow/temp for those missing years?
 
 ### Add cleaned data back onto google cloud
 ```{r}
-deer_upstream_estimate <- cleaner_data %>% glimpse()
+deer_upstream_estimate <- all_deer_data |> glimpse()
 ```
 
 ```{r, eval =FALSE}
