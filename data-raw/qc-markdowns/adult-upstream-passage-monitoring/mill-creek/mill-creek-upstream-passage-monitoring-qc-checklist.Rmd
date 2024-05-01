@@ -123,6 +123,7 @@ mill_counts_2021_2023 <- bind_rows(mill_counts_2021_2022_raw |>
                                  view_adjust == 2 ~ "weir down",
                                  view_adjust == 3 ~ "equipment fail",
                                  view_adjust == 4 ~ "DIDSON/Aris",
+                                 is.na(view_adjust) ~ "VAKI",
                                  TRUE ~ as.character(view_adjust))) |> 
   glimpse()
 ```
@@ -200,7 +201,7 @@ all_mill_data  |>
        y = "Total passage_estimate")
 ```
 
-**Numeric Summary of passage_estimate From 2012 to 2020**
+**Numeric Summary of passage_estimate From 2012 to 2023**
 ```{r}
 summary(all_mill_data$passage_estimate)
 ```
@@ -244,7 +245,7 @@ all_mill_data  |>
   labs(title = "Distribution of Flow")
 ```
 
-**Numeric Summary of flow From 2012 to 2020**
+**Numeric Summary of flow From 2012 to 2023**
 ```{r}
 summary(all_mill_data$flow)
 ```
@@ -289,7 +290,7 @@ all_mill_data  |>
   labs(title = "Distribution of Temperature")
 ```
 
-**Numeric Summary of temperature From 2012 to 2020**
+**Numeric Summary of temperature From 2012 to 2023**
 ```{r}
 summary(all_mill_data$temperature)
 ```
