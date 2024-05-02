@@ -203,6 +203,7 @@ clean_mill_redd <- mill_redd  |>
   mutate(stream = 'mill creek',
          # pseudo date to add into daily data
          date = as_date(paste0(year, "-10-01")))  |>
+  select(-surveyed) |> 
   glimpse()
 ```
 
