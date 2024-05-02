@@ -184,7 +184,7 @@ clean_clear_redd <- clear_redd  |>
 
 #### Columns Removed
 
-None
+- `surveyed` column
 
 ```{r}
 gcs_get_object(
@@ -199,6 +199,7 @@ summary(mill_redd)
 
 clean_mill_redd <- mill_redd  |>
   rename(reach = location)  |>
+  filter(surveyed %in% c(TRUE, NA)) |> # remove years where reach was not surveyed
   mutate(stream = 'mill creek',
          # pseudo date to add into daily data
          date = as_date(paste0(year, "-10-01")))  |>
