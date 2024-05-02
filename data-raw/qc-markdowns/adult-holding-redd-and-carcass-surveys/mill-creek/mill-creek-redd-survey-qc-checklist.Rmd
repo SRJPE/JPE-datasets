@@ -78,7 +78,7 @@ raw_data <- readxl::read_excel(here::here("data-raw", "qc-markdowns","adult-hold
   glimpse()
 ```
 
-### read in updated data (1997-2023)
+### read in updated data (2007-2023)
 ```{r}
 raw_data_2023 <- readxl::read_excel(here::here("data-raw", "qc-markdowns","adult-holding-redd-and-carcass-surveys", "mill-creek",
                                        "mill_creek_snorkel_2007-2023_raw.xlsx"),
@@ -90,6 +90,20 @@ raw_data_2023 <- readxl::read_excel(here::here("data-raw", "qc-markdowns","adult
 ## Data Transformations
 
 ```{r}
+# get 1997-2006
+cleaner_data_early <- raw_data |> 
+  select(location = Section, starting_elevation = `Starting Elevevation`,
+         seq(3, 21, 2)) |> 
+  filter(!location %in% c("Total Redds Counted:", NA)) |> 
+  pivot_longer(3:12, 
+               names_to = "year",
+               values_to = "redd_count") |> 
+  mutate(year = readr::parse_number(year),
+         surveyed = ifelse(redd_count == "n/s", FALSE, TRUE),
+         redd_count = ifelse(surveyed & is.na(redd_count), 0, as.numeric(redd_count)),
+         starting_elevation = as.numeric(str_remove(starting_elevation, "'"))) |> 
+  glimpse()
+
 cleaner_data_raw <- raw_data_2023 |> 
   rename(location = `...1`) |> 
   select(-c(seq(2, 36, 2))) |>
@@ -101,15 +115,11 @@ cleaner_data_raw <- raw_data_2023 |>
   mutate(year = readr::parse_number(year)) |> 
   glimpse()
 
-# join back in starting elevation data (where we have it)
-starting_elevations <- raw_data |> 
-  select(starting_elevation = `Starting Elevevation`,
-         location = Section) |> 
-  mutate(starting_elevation = as.numeric(str_remove_all(starting_elevation, "'"))) |> 
-  glimpse()
-
-cleaner_data <- cleaner_data_raw |> 
-  left_join(starting_elevations, by = "location") |> 
+cleaner_data <- bind_rows(cleaner_data_early, cleaner_data_raw) |> 
+  mutate(location = str_replace_all(location, " Place", ""),
+         location = str_replace_all(location, "HIG", "Hole-in-Ground"),
+         location = case_when(location == "Savercool  to Black Rock" ~ "Savercool to Black Rock",
+         TRUE ~ location)) |> 
   glimpse()
 ```
 
@@ -126,15 +136,17 @@ data_dictionary <- tibble(variables = colnames(cleaner_data),
                           description = c("Survey reach",
                                           "Survey year",
                                           "Number of redds observed",
-                                          "Elevation at sample start point"),
+                                          "Elevation at sample start point",
+                                          "Whether or not a reach was surveyed for a given year"),
                           data_type = c("character",
                                         "year",
                                         "numeric",
-                                        "numeric"),
+                                        "numeric",
+                                        "logical"),
                           encoding = c(NA,
                                        NA,
                                        NA,
-                                       NA),
+                                       NA, NA),
                           percent_na = round(percent_na$value*100)
                           
 )
