@@ -48,7 +48,8 @@ gcs_list_objects()
 # git data and save as xlsx
 gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data-raw/Mill Creek SRCS Daily Video Passage Estimates 2012-2020.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/mill_creek_passage_estimate_raw.xlsx")
+               saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/mill_creek_passage_estimate_raw.xlsx",
+               overwrite = TRUE)
 
 # 2020-2021 passage data
 gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data-raw/Copy of MCVS 2021-22 spring FINAL 8-17-22.xlsx",
@@ -91,7 +92,7 @@ raw_data <- dplyr::bind_rows(list_all)  |>
 ### Original data file (2012-2020)
 
 ```{r}
-all_mill_data <- raw_data  |> 
+cleaner_data <- raw_data  |> 
   set_names(tolower(colnames(raw_data)))  |> 
   select(-"...5")  |> #comments describe dates
   rename("passage_estimate" =  'adult spring-run passing ward dam',
@@ -317,9 +318,10 @@ all_mill_data <- all_mill_data  |>
 mill_upstream_estimate <- all_mill_data  |> glimpse()
 ```
 
-```{r, evaluate = FALSE}
+```{r}
 f <- function(input, output) write_csv(input, file = output)
 gcs_upload(mill_upstream_estimate,
            object_function = f,
            type = "csv",
-           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv")
+           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv",
+           predefinedAcl = "bucketLevel")
