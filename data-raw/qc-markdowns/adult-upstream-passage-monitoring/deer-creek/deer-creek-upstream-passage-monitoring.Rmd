@@ -332,4 +332,5 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(deer_upstream_estimate,
            object_function = f,
            type = "csv",
-           name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv")
+           name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv",
+           predefinedAcl = "bucketLevel")
