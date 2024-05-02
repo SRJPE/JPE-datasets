@@ -38,7 +38,7 @@ files_clear <- tibble(path = "adult-holding-redd-and-carcass-surveys/clear-creek
                       save = rep("data/redd-carcass-holding/clear_holding"))
 files_deer <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_",2),
                      name = c("adult_holding_1986_to_1996",
-                              "adult_holding_1997_to_2020"),
+                              "adult_holding_1997_to_2023"),
                      save = "data/redd-carcass-holding/deer_")
 # function to save file to disk
 get_data <- function(path, name, save) {
@@ -91,8 +91,8 @@ kable(battle_data_dictionary)
 ```{r, battle_clean}
 # There are multiple observations per reach. Checked raw data and there is not a 
 # field for crew name etc to indicate that there are duplicates
-battle_holding_clean <- battle_holding %>%
-  select(-notes) %>%
+battle_holding_clean <- battle_holding |>
+  select(-notes) |>
   mutate(stream = "battle creek",
          year = lubridate::year(date),
          adipose_clipped = "not recorded",
@@ -114,9 +114,9 @@ kable(clear_data_dictionary)
 ```{r, clear_clean}
 # There are multiple observations per reach. Checked raw data and there is not a 
 # field for crew name etc to indicate that there are duplicates
-clear_holding_clean <- clear_holding %>%
-  select(-comments) %>%
-  rename(jacks = jack_count) %>%
+clear_holding_clean <- clear_holding |>
+  select(-comments) |>
+  rename(jacks = jack_count) |>
   mutate(stream = "clear creek",
          year = lubridate::year(date),
          run = "spring",
@@ -137,8 +137,8 @@ kable(deer_data_dictionary)
 
 ```{r, deer_clean}
 deer_holding_clean <- bind_rows(deer_holding_1986_1996,
-                                deer_holding_1997_2020) %>%
-  rename(reach = location) %>%
+                                deer_holding_1997_2020) |>
+  rename(reach = location) |>
   mutate(stream = "deer creek",
          date = as_date(paste0(year, "-08-01")),
          run = "spring",
@@ -158,7 +158,7 @@ kable(butte_data_dictionary)
 
 
 ```{r, butte_clean}
-butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
+butte_holding_clean <- bind_rows(butte_holding_01 |> select(-comments),
                                  butte_holding_02,
                                  butte_holding_03,
                                  butte_holding_04,
@@ -174,14 +174,14 @@ butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
                                  butte_holding_14,
                                  butte_holding_15,
                                  butte_holding_16,
-                                 butte_holding_17) %>%
-  group_by(date, reach) %>%
-  summarize(avg_count = round(mean(fish_count, na.rm = T), digits = 0)) %>%
-  rename(count = avg_count) %>% 
+                                 butte_holding_17) |>
+  group_by(date, reach) |>
+  summarize(avg_count = round(mean(fish_count, na.rm = T), digits = 0)) |>
+  rename(count = avg_count) |> 
   mutate(stream = "butte creek",
          year = lubridate::year(date),
          run = "spring",
-         adipose_clipped = "not recorded") %>% 
+         adipose_clipped = "not recorded") |> 
   glimpse()
 ```
 
@@ -303,8 +303,8 @@ kable(holding_catch_data_dictionary)
 Total count per year for each waterbody
 
 ```{r}
-combined_holding %>% 
-  group_by(year, stream) %>%
+combined_holding |> 
+  group_by(year, stream) |>
   ggplot(aes(x = year, y = count, fill = stream))+
   geom_col()
 ```
@@ -312,20 +312,20 @@ combined_holding %>%
 Average count per month. This chart shows Battle, Butte and Clear; Deer does not have monthly count.
 
 ```{r}
-combined_holding %>% 
-  mutate(month = lubridate::month(date)) %>% 
-  group_by(month, stream) %>% 
-  summarize(average_count = mean(count, na.rm = T)) %>%
+combined_holding |> 
+  mutate(month = lubridate::month(date)) |> 
+  group_by(month, stream) |> 
+  summarize(average_count = mean(count, na.rm = T)) |>
   ggplot(aes(x = month, y = average_count, fill = stream)) +
   geom_col()
 ```
 
 Average jacks per month. Jacks is only collected at Battle and Clear.
 ```{r}
-combined_holding %>% 
-  mutate(month = lubridate::month(date)) %>% 
-  group_by(month, stream) %>% 
-  summarize(average_jacks = mean(jacks, na.rm = T)) %>% 
+combined_holding |> 
+  mutate(month = lubridate::month(date)) |> 
+  group_by(month, stream) |> 
+  summarize(average_jacks = mean(jacks, na.rm = T)) |> 
   ggplot(aes(x = month, y = average_jacks, fill = stream)) + 
   geom_col()
 ```
@@ -333,8 +333,8 @@ combined_holding %>%
 River mile distribution for Battle and Clear
 
 ```{r}
-combined_holding %>% 
-  filter(!is.na(river_mile)) %>% 
+combined_holding |> 
+  filter(!is.na(river_mile)) |> 
   ggplot(aes(x = stream, y = river_mile)) + 
   geom_boxplot(
   )
@@ -358,17 +358,17 @@ Monthly count is not recorded for Deer.
 Figure below shows the percentage count by month for each waterbody except Deer.
 ```{r, count_qaqc}
 
-total_count <- combined_holding %>% 
-  mutate(month = month(date)) %>% 
-  group_by(stream) %>% 
+total_count <- combined_holding |> 
+  mutate(month = month(date)) |> 
+  group_by(stream) |> 
   summarize(total = sum(count, na.rm = T))
 
-combined_holding %>% 
-  mutate(month = month(date)) %>% 
-  group_by(stream, month) %>% 
-  summarize(count = sum(count, na.rm = T)) %>% 
-  left_join(total_count) %>% 
-  mutate(percent = (count/total)*100) %>% 
+combined_holding |> 
+  mutate(month = month(date)) |> 
+  group_by(stream, month) |> 
+  summarize(count = sum(count, na.rm = T)) |> 
+  left_join(total_count) |> 
+  mutate(percent = (count/total)*100) |> 
   ggplot(aes(x= month, y = percent, fill = stream)) +
   geom_col() +
   facet_wrap(~stream, scales = "free_y")
@@ -382,17 +382,17 @@ Jacks are not recorded for Deer and Butte
 Figure below show the percentage count by month for Battle and Clear.
 
 ```{r, jack_qa_qc}
-total_jacks <- combined_holding %>% 
-  mutate(month = month(date)) %>% 
-  group_by(stream) %>% 
+total_jacks <- combined_holding |> 
+  mutate(month = month(date)) |> 
+  group_by(stream) |> 
   summarize(total = sum(jacks, na.rm = T))
 
-combined_holding %>% 
-  mutate(month = month(date)) %>% 
-  group_by(stream, month) %>% 
-  summarize(count = sum(jacks, na.rm = T)) %>% 
-  left_join(total_jacks) %>% 
-  mutate(percent = (count/total)*100) %>% 
+combined_holding |> 
+  mutate(month = month(date)) |> 
+  group_by(stream, month) |> 
+  summarize(count = sum(jacks, na.rm = T)) |> 
+  left_join(total_jacks) |> 
+  mutate(percent = (count/total)*100) |> 
   ggplot(aes(x= month, y = percent, fill = stream)) +
   geom_col() +
   facet_wrap(~stream, scales = "free_y")
