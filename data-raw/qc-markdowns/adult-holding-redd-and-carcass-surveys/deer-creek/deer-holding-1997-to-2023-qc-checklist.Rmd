@@ -54,12 +54,13 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/deer-creek/data-raw/Deer Creek SRCS snorkel survey counts by section 1997-2020.xlsx",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "deer_creek_holding_1997_raw.xlsx",
-               Overwrite = TRUE)
+               overwrite = TRUE)
 
 # 1997-2023 data
 gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/deer-creek/data-raw/Deer Creek Spring-Run Snorkel Counts by Section 1997-2023.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/deer-creek/deer_creek_snorkel_1997-2023_raw.xlsx")
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/deer-creek/deer_creek_snorkel_1997-2023_raw.xlsx",
+               overwrite = TRUE)
 ```
 ### 1997-2020 data
 ```{r}
