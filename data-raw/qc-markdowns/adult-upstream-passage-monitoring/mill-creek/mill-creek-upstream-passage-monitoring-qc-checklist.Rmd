@@ -14,7 +14,7 @@ library(scales)
 library (RColorBrewer)
 ```
 
-# Mill Creek Adult Upstream Passage Estimate Data 2012 to 2023
+# Mill Creek Adult Upstream Passage Estimate Data 2007 to 2023
 
 **Description of Monitoring Data**
 
@@ -22,7 +22,7 @@ Adult spring run daily passage estimate is based on data recorded at Ward Dam vi
 
 **Timeframe:** 
 
-2012 to 2023
+2007 to 2023
 
 **Completeness of Record throughout timeframe:**
 
