@@ -1,5 +1,5 @@
 ---
-title: "Deer Creek Adult Upstream Passage Estimate QC"
+title: "Deer Creek Adult Upstream Count QC"
 author: "Inigo Peng"
 date: "10/19/2021"
 output: rmarkdown::github_document
@@ -20,7 +20,7 @@ library (RColorBrewer)
 
 Adult spring run salmon passage daily estimates based on data collected at SVRIC Dam on Deer River via video monitoring.
 
-**QC/Raw or Passage Estimate** QC Passage Estimates
+**QC/Raw or Count** QC Counts
 
 **Timeframe:** 
 
@@ -39,108 +39,391 @@ Some missing data for variable flow
 ## Access Cloud Data
 
 ```{r, eval=FALSE}
-# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running
-# Open object from google cloud storage
-# Set your authentication using gcs_auth
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-gcs_list_objects()
-# git data and save as xlsx
-gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-raw/Deer Creek SRCS Daily Video Passage Estimates 2014-2020.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "deer_creek_passage_estimate_raw.xlsx",
-               overwrite = TRUE)
+
+# get filenames for deer creek
+deer_creek_filenames <- gcs_list_objects() |> 
+  filter(str_detect(name, "adult-upstream-passage-monitoring/deer-creek/data-raw/")) |> 
+  filter(str_detect(name, "DCVS|DSVS|DNVS")) |> 
+  pull(name)
+
+# define function to download all files
+get_files_from_cloud <- function(filename) {
+  print(substr(filename, 55, nchar(filename)))
+  gcs_get_object(object_name = filename,
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = paste0("data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/", substr(filename, 55, nchar(filename))),
+                 overwrite = TRUE)
+  message(paste0("downloaded ", filename))
+}
+
+lapply(deer_creek_filenames, get_files_from_cloud)
 
 # 2020-2021 passage data
-gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-raw/Copy of DCVS both 2021-22 Spring FINAL 8-17-22.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2021.xlsx",
-               overwrite = TRUE)
-# 2022-2023 passage data
-gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-raw/DCVS both 2022-23 Spring DRAFT 8-26-23.xlsx",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2022.xlsx",
-               overwrite = TRUE)
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-raw/Copy of DCVS both 2021-22 Spring FINAL 8-17-22.xlsx",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2021.xlsx",
+#                overwrite = TRUE)
+# # 2022-2023 passage data
+# gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data-raw/DCVS both 2022-23 Spring DRAFT 8-26-23.xlsx",
+#                bucket = gcs_get_global_bucket(),
+#                saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2022.xlsx",
+               # overwrite = TRUE)
+save_to_prefix <- "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/"
 ```
 
-### 2014-2020
-Data for each year is in a separate sheet 
+## Read in and clean raw count data for each year
+
+This requires a different approach for each year because the file formats change. We also need to distinguish between files for one ladder (north or south) vs. files for both ladders. 
+
+### 2013-2014
+
 ```{r, message=FALSE, warning=FALSE}
-sheets <- readxl::excel_sheets('deer_creek_passage_estimate_raw.xlsx')
-list_all <- lapply(sheets, function(x) readxl::read_excel(path = "deer_creek_passage_estimate_raw.xlsx", 
-                                                          sheet = x, 
-                                                          col_types = c("text", "numeric", "numeric", "numeric", "text")))
-```
-Bind the sheets into one file
-```{r}
-raw_data <- dplyr::bind_rows(list_all) |> 
-  glimpse()
-```
-
-### 2021-2023
-```{r, message=FALSE, warning=FALSE}
-# 2021
-raw_data_2021 <- readxl::read_xlsx(path = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2021.xlsx", 
-                                      sheet = "DEER-South-21-22",
-                                      skip = 5,
-                                   col_types = c("date", "date", rep("numeric", 8), rep("text", 3))) |> 
+deer_2013_raw <- readxl::read_xls(paste0(save_to_prefix, "DCVS 2013-2014 as of 4-14-17.xls"), 
+                                  sheet = "Sheet1",
+                                  skip = 24) |> 
   glimpse()
 
-# 2022
-raw_data_2022 <- readxl::read_xlsx(path = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2022.xlsx", 
-                                                          sheet = "DEER-South-22-23",
-                                                          skip = 5,
-                                   col_types = c(rep("date", 2), rep("numeric", 8), rep("text", 3)))
-
-raw_data_2021_2023 <- bind_rows(raw_data_2021, raw_data_2022) |> 
-  glimpse()
-```
-
-## Data Transformations
-
-### 2014-2020
-```{r}
-cleaner_data <- raw_data |> 
-  set_names(tolower(colnames(raw_data))) |> 
-  select(-"...5") |> #comments describe dates
-  rename("passage_estimate" =  'adult spring-run passing svric dam',
-         "flow" = "avg daily flow below svric dam",
-         "temperature"= "avg daily h2o temp below svric dam") |> 
-  filter(date != "Totals:", date != "Total:") |>
-  mutate(date = case_when(
-    str_length(date) == 5 ~ as.Date(as.numeric(date), origin="1899-12-30"),
-    TRUE ~ as.Date(date, "%m/%d/%Y")
-  )) |> 
-  glimpse()
-```
-
-### 2021-2023
-```{r}
-cleaner_data_2023 <- raw_data_2021_2023 |> 
-    mutate(time = format(`Start Time`, "%H:%M:%S")) |> 
-  select(date = Date, time, salmon_up = `UP Salmon`, salmon_down = `DN Salmon`, jacks_up = `UP Jacks`, jacks_down = `DN Jacks`, view_adjust = `Viewing Adjust`) |> 
-  pivot_longer(salmon_up:jacks_down,
-               names_to = "direction", 
+deer_2013 <- deer_2013_raw |> 
+  janitor::clean_names() |> 
+  filter(!date %in% c("Date", "Totals:")) |> 
+  # this converts "no data" to NA
+  mutate(across(south_ladder_daily_spring_run_chinook_total:post_diversion_average_daily_flow_cfs, as.numeric)) |> 
+  select(date, south_ladder_daily_spring_run_chinook_total, north_ladder_daily_spring_run_chinook_total, avg_flow = post_diversion_average_daily_flow_cfs) |> 
+  pivot_longer(south_ladder_daily_spring_run_chinook_total:north_ladder_daily_spring_run_chinook_total,
+               names_to = "ladder", 
                values_to = "count") |> 
-  mutate(jack = ifelse(str_detect(direction, "jack"), TRUE, FALSE),
-         direction = ifelse(str_detect(direction, "up"), "up", "down"),
-         count = ifelse(is.na(count), 0, count),
-         view_adjust = case_when(view_adjust == 1 ~ "turbid",
-                                 view_adjust == 2 ~ "weir down",
-                                 view_adjust == 3 ~ "equipment fail",
-                                 view_adjust == 4 ~ "DIDSON/Aris",
-                                 is.na(view_adjust) ~ "VAKI",
-                                 TRUE ~ as.character(view_adjust))) |> 
+  mutate(ladder = ifelse(ladder == "south_ladder_daily_spring_run_chinook_total", "south", "north"),
+         date = mdy(date)) |> 
   glimpse()
 ```
-### Bind all years together
-```{r}
-all_deer_data <- bind_rows(cleaner_data, 
-                           cleaner_data_2023 |> 
-                             rename(passage_estimate = count)) |> 
+
+### 2014-2015
+- in separate files for `north` and `south` ladders
+
+```{r, message=FALSE, warning=FALSE}
+deer_2014_raw_north <- readxl::read_xlsx(paste0(save_to_prefix, "DNVS 2014-2015 as of  6-30-2015.xlsx"), 
+                                  sheet = "DATA ENTRY",
+                                  skip = 4) |> 
+  mutate(ladder = "north") |> 
+  glimpse()
+
+deer_2014_raw_south <- readxl::read_xlsx(paste0(save_to_prefix, "DSVS 2014-2015 as of 6-30-2015.xlsx"), 
+                                  sheet = "DATA ENTRY",
+                                  skip = 4) |> 
+  mutate(ladder = "south") |> 
+  glimpse()
+
+deer_2014 <- bind_rows(deer_2014_raw_north, 
+                       deer_2014_raw_south) |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust, ladder) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "up_salmon", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
   glimpse()
 ```
+
+### 2015-2016
+- in separate files for `north` and `south` ladders
+
+```{r, message=FALSE, warning=FALSE}
+deer_2015_raw_north <- readxl::read_xlsx(paste0(save_to_prefix, "DNVS 2015-2016 as of 8-12-2016.xlsx"), 
+                                  sheet = "DATA ENTRY",
+                                  skip = 5) |> 
+  mutate(ladder = "north") |> 
+  glimpse()
+
+deer_2015_raw_south <- readxl::read_xlsx(paste0(save_to_prefix, "DSVS 2015-2016 as of 8-12-2016.xlsx"), 
+                                  sheet = "DATA ENTRY",
+                                  skip = 5) |> 
+  mutate(ladder = "south") |> 
+  glimpse()
+
+deer_2015 <- bind_rows(deer_2015_raw_north, 
+                             deer_2015_raw_south) |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust, ladder) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "up_salmon", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
+  glimpse()
+```
+
+### 2016-2017
+- `north` and `south` ladders in different tabs
+
+```{r, message=FALSE, warning=FALSE}
+deer_2016_raw_north <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2016-2017 as of  9-19-18.xlsx"), 
+                                  sheet = "DNVS 16-17 Spring",
+                                  skip = 5) |> 
+  mutate(ladder = "north",
+         across(`UP Salmon`:`DN Trout`, as.numeric)) |> 
+  glimpse()
+
+deer_2016_raw_south <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2016-2017 as of  9-19-18.xlsx"), 
+                                         sheet = "DSVS 16-17 Spring",
+                                  
+                                  skip = 5) |> 
+  mutate(ladder = "south",
+         across(`UP Salmon`:`DN Trout`, as.numeric),
+         `Viewing Adjust!!` = as.character(`Viewing Adjust!!`)) |> 
+  glimpse()
+
+deer_2016 <- bind_rows(deer_2016_raw_north,
+                       deer_2016_raw_south) |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust, ladder) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "up_salmon", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
+  glimpse()
+```
+
+
+### 2017-2018
+- `north` and `south` ladders in different tabs
+
+```{r, message=FALSE, warning=FALSE}
+deer_2017_raw_north <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2017-2018 as of 9-14-18.xlsx"), 
+                                  sheet = "DEER-North-17-18",
+                                  skip = 5) |> 
+  mutate(ladder = "north") |>
+  glimpse()
+
+deer_2017_raw_south <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2017-2018 as of 9-14-18.xlsx"), 
+                                         sheet = "DEER-South-17-18",
+                                  
+                                  skip = 5) |> 
+  mutate(ladder = "south") |> 
+  glimpse()
+
+deer_2017 <- bind_rows(deer_2017_raw_north,
+                       deer_2017_raw_south) |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust, ladder) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "up_salmon", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
+  glimpse()
+```
+
+### 2018-2019
+- `north` and `south` ladders in different tabs
+
+```{r, message=FALSE, warning=FALSE}
+deer_2018_raw_north <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2018-2019 as of 12-14-20.xlsx"), 
+                                  sheet = "DEER-North-18-19",
+                                  skip = 5) |> 
+  mutate(ladder = "north") |>
+  glimpse()
+
+deer_2018_raw_south <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2018-2019 as of 12-14-20.xlsx"), 
+                                         sheet = "DEER-South-18-19",
+                                  
+                                  skip = 5) |> 
+  mutate(ladder = "south") |> 
+  glimpse()
+
+deer_2018 <- bind_rows(deer_2018_raw_south,
+                       deer_2018_raw_north) |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust, ladder) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "up_salmon", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
+  glimpse()
+```
+### 2019-2020
+- `north` and `south` ladders in different tabs
+
+```{r, message=FALSE, warning=FALSE}
+deer_2019_raw_north <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2019-2020 as of 9-9-21.xlsx"), 
+                                  sheet = "DEER-North-19-20",
+                                  skip = 5) |> 
+  mutate(ladder = "north") |>
+  glimpse()
+
+deer_2019_raw_south <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2019-2020 as of 9-9-21.xlsx"), 
+                                         sheet = "DEER-South-19-20",
+                                  
+                                  skip = 5) |> 
+  mutate(ladder = "south") |> 
+  glimpse()
+
+deer_2019 <- bind_rows(deer_2019_raw_south,
+                       deer_2019_raw_north) |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust, ladder) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "up_salmon", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
+  glimpse()
+```
+
+### 2020-2021
+- `north` and `south` ladders in different tabs
+
+```{r, message=FALSE, warning=FALSE}
+deer_2020_raw_north <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS Both 2020-2021 as of 10-13-22.xlsx"), 
+                                  sheet = "DEER-North 20-21-DK ",
+                                  skip = 2) |> 
+  mutate(ladder = "north") |>
+  glimpse()
+
+deer_2020_raw_south <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS Both 2020-2021 as of 10-13-22.xlsx"), 
+                                         sheet = "DEER-South-20-21",
+                                  
+                                  skip = 4) |> 
+  mutate(ladder = "south") |> 
+  glimpse()
+
+deer_2020 <- bind_rows(deer_2020_raw_north,
+                       deer_2020_raw_south) |> 
+  janitor::clean_names() |>
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust, ladder) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "up_salmon", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
+  glimpse()
+```
+
+### 2021-2022
+- `north` and `south` ladders in different tabs
+
+```{r, message=FALSE, warning=FALSE}
+deer_2021_raw_north <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2021-22 Spring FINAL 3-3-23.xlsx"), 
+                                  sheet = "DEER-North-21-22",
+                                  skip = 5) |> 
+  mutate(ladder = "north") |>
+  glimpse()
+
+deer_2021_raw_south <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2021-22 Spring FINAL 3-3-23.xlsx"), 
+                                         sheet = "DEER-South-21-22",
+                                  
+                                  skip = 5) |> 
+  mutate(ladder = "south") |> 
+  glimpse()
+
+deer_2021 <- bind_rows(deer_2021_raw_north,
+                       deer_2021_raw_south) |> 
+  janitor::clean_names() |>
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust, ladder) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "up_salmon", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
+  glimpse()
+```
+### 2022-2023
+- `north` and `south` ladders in different tabs
+
+```{r, message=FALSE, warning=FALSE}
+deer_2022_raw_north <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2022-2023 as of 10-16-23.xlsx"), 
+                                  sheet = "DEER-North-22-23",
+                                  skip = 5) |> 
+  mutate(ladder = "north") |>
+  glimpse()
+
+deer_2022_raw_south <- readxl::read_xlsx(paste0(save_to_prefix, "DCVS both 2022-2023 as of 10-16-23.xlsx"), 
+                                         sheet = "DEER-South-22-23",
+                                  
+                                  skip = 5) |> 
+  mutate(ladder = "south") |> 
+  glimpse()
+
+deer_2022 <- bind_rows(deer_2022_raw_north,
+                       deer_2022_raw_south) |> 
+  janitor::clean_names() |>
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust, ladder) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "up_salmon", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
+  glimpse()
+```
+
+
+## Data transformations
+
+```{r, message=FALSE, warning=FALSE}
+all_years_raw <- bind_rows(deer_2013, deer_2014, deer_2015, deer_2016,
+                           deer_2017, deer_2018, deer_2019, deer_2020,
+                           deer_2021, deer_2022) |> 
+  glimpse()
+
+all_deer_data <- all_years_raw |> 
+  select(-count_type) |> 
+  # pulled from excel tabs
+  mutate(viewing_adjust = case_when(is.na(viewing_adjust) | viewing_adjust == 0 ~ "VAKI",
+                                    viewing_adjust == 1 ~ "turbid",
+                                    viewing_adjust == 3 ~ "equipment fail",
+                                    viewing_adjust == 4 ~ "DIDSON",
+                                    viewing_adjust == 6 ~ "GV",
+                                    viewing_adjust == 7 ~ "Hwell",
+                                    TRUE ~ NA)) |> 
+  relocate(date, start_time, count, passage_direction, jack, viewing_adjust, flow = avg_flow) |> 
+  filter(!is.na(date)) |> 
+  # TODO is this correct, assumign that NAs are 0s?
+  mutate(date = as.Date(date),
+         count = ifelse(is.na(count), 0, count)) |> 
+  glimpse()
+```
+
 
 ## Data Dictionary
 
@@ -153,13 +436,13 @@ percent_na <- all_deer_data |>
   
 data_dictionary <- tibble(variables = colnames(all_deer_data),
                           description = c("Date of sampling",
-                                          "Passage estimate of Spring Run Chinook",
+                                          "Start time of sampling",
+                                          "Count of fish",
+                                          "Direction of fish passage",
+                                          "Whether or not the fish was jack sized (fewer than 24 inches)",
+                                          "Reason camera needed to be adjusted",
                                           "Flow in CFS",
-                                          "Temperature",
-                                          "Time of sampling", 
-                                          "Reason camera needed to be adjusted", 
-                                          "Direction of passage", 
-                                          "Whether or not the fish was jack sized"),
+                                          "Ladder (north or south) data came from"),
                           
                           percent_na = round(percent_na$value*100)
                           
@@ -186,15 +469,15 @@ all_deer_data |> select_if(is.numeric) |> colnames()
 ```
 
 
-### Variable:`passage_estimate` 
+### Variable:`count` 
 ```{r}
 all_deer_data |> 
   mutate(year = as.factor(year(date))) |> 
-  ggplot(aes(x=date, y = passage_estimate))+
+  ggplot(aes(x=date, y = count))+
   geom_line()+
   facet_wrap(~year, scales = "free")+
   theme_minimal()+
-  labs(title = "Daily Passage Estimate From 2014 - 2023")
+  labs(title = "Daily Count From 2014 - 2023")
 ```
 
 
@@ -202,37 +485,37 @@ all_deer_data |>
 all_deer_data |> 
   mutate(year = as.factor(year(date))) |> 
   group_by(year) |> 
-  summarise(total = sum(passage_estimate)) |>
+  summarise(total = sum(count, na.rm = T)) |>
   ggplot(aes(x = year, y = total, group = 1))+
   geom_line()+
   geom_point(aes(x=year, y = total))+
   theme_minimal()+
-  labs(title = "Passage Estimate from 2014 - 2023",
-       y = "Total passage_estimate")
+  labs(title = "Count from 2014 - 2023",
+       y = "Total count")
 ```
 
-**Numeric Summary of passage_estimate From 2014 to 2023**
+**Numeric Summary of count From 2014 to 2023**
 ```{r}
-summary(all_deer_data$passage_estimate)
+summary(all_deer_data$count)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(all_deer_data$passage_estimate))/nrow(all_deer_data), 3)*100` % of values in the `passage_estimate` column are NA.
+*  `r round(sum(is.na(all_deer_data$count))/nrow(all_deer_data), 3)*100` % of values in the `count` column are NA.
 
 ### Variable:`flow`
 
-Flow in cfs
+Flow in cfs, only collected in `2014`
 
 ```{r fig.height=8, fig.width=8}
 all_deer_data |> 
   group_by(date) |>
-  mutate(avg_flow = mean(flow, na.rm = T)) |>
+  mutate(flow = mean(flow, na.rm = T)) |>
   ungroup() |> 
   mutate(year = as.factor(year(date)),
          fake_year = 1900,
          fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) |> 
-  ggplot(aes(x = fake_date, y = avg_flow, color = year)) + 
+  ggplot(aes(x = fake_date, y = flow, color = year)) + 
   scale_color_brewer(palette = "Dark2")+
   geom_point(alpha = .25) + 
   scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
@@ -262,75 +545,129 @@ summary(all_deer_data$flow)
 
 *  `r round(sum(is.na(all_deer_data$flow))/nrow(all_deer_data), 3)*100` % of values in the `flow` column are NA.
 
-### Variable:`temperature`
+### Variable:`passage_direction` 
 
-Temperature in F, convert below
-
-```{r fig.height=8, fig.width=8}
-all_deer_data |> 
-  group_by(date) |>
-  mutate(avg_temp = mean(temperature, na.rm = T)) |>
-  ungroup() |> 
-  mutate(year = as.factor(year(date)),
-         fake_year = 1900,
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) |> 
-  ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
-  scale_color_brewer(palette = "Dark2")+
-  geom_point(alpha = .25) + 
-  scale_x_date(labels = date_format("%b"), date_breaks = "1 month") + 
-  theme_minimal() + 
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(title = "Daily Water Temperature (colored by year)",
-       y = "Average Daily Temperature", 
-       x = "Date")  
-```
-
-```{r fig.height=8, fig.width=8}
+```{r}
 all_deer_data |> 
   mutate(year = as.factor(year(date))) |> 
-  ggplot(aes(x=temperature, fill = year))+
+  ggplot(aes(x=date, y = count, fill = passage_direction))+
+  geom_col()+
   scale_fill_brewer(palette = "Dark2")+
-  geom_histogram(bins = 5)+
-  theme_minimal()+
-  labs(title = "Distribution of Temperature")
+  facet_wrap(~year, scales = "free")+
+  theme_minimal() +
+  labs(title = "Daily Count From 2014 - 2023")
 ```
 
-**Numeric Summary of temperature From 2014 to 2023**
+
 ```{r}
-summary(all_deer_data$temperature)
+all_deer_data |> 
+  mutate(year = as.factor(year(date))) |> 
+  group_by(date, passage_direction) |> 
+  summarise(total_passage = sum(count)) |> 
+  ggplot(aes(x=date, y = total_passage, color = passage_direction))+
+  geom_line(linewidth = 0.8, alpha = 0.5)+
+  scale_color_brewer(palette = "Dark2")+
+  facet_wrap(~year(date), scales = "free")+
+  theme_minimal() +
+  labs(title = "Daily Count From 2014 - 2023")
+```
+
+**Numeric Summary of passage_direction from 2014 to 2023**
+```{r}
+table(all_deer_data$passage_direction)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(all_deer_data$temperature))/nrow(all_deer_data), 3)*100` % of values in the `temperature` column are NA.
+*  `r round(sum(is.na(all_deer_data$passage_direction))/nrow(all_deer_data), 3)*100` % of values in the `passage_direction` column are NA.
 
-### Notes and Issues
-
-* These are counts and not estimates for 2021-2023, confirm this is true for earlier data
-* Temperature in F, convert to C below 
+### Variable:`jack` 
 
 ```{r}
-all_deer_data <- all_deer_data |>
-  mutate(temperature = (temperature - 32) * (5/9))
+all_deer_data |> 
+  group_by(date, jack) |> 
+  summarise(total_count = sum(count)) |> 
+  ggplot(aes(x=date, y = total_count, fill = jack)) +
+  geom_col(position = "dodge")+
+  facet_wrap(~year(date), scales = "free")+
+  theme_minimal()+
+  labs(title = "Daily Count From 2014 - 2023")
+```
+
+**Numeric Summary of jack From 2014 to 2023**
+```{r}
+table(all_deer_data$jack)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(all_deer_data$jack))/nrow(all_deer_data), 3)*100` % of values in the `jack` column are NA.
+
+### Variable:`viewing_adjust` 
+
+```{r}
+all_deer_data |> 
+  group_by(date, viewing_adjust) |> 
+  summarise(total_count = sum(count)) |> 
+  ggplot(aes(x=date, y = total_count, fill = viewing_adjust))+
+  geom_col(position = "dodge")+
+  scale_fill_brewer(palette = "Dark2") +
+  facet_wrap(~year(date), scales = "free")+
+  theme_minimal()+
+  labs(title = "Daily Count From 2014 - 2023")
+```
+
+**Numeric Summary of viewing_adjust From 2014 to 2023**
+```{r}
+all_deer_data |> 
+  group_by(year(date), viewing_adjust) |> 
+  tally()
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(all_deer_data$viewing_adjust))/nrow(all_deer_data), 3)*100` % of values in the `viewing_adjust` column are NA.
+
+### Variable:`ladder` 
+
+```{r}
+all_deer_data |> 
+  ggplot(aes(x=date, y = count, color = ladder))+
+  geom_line()+
+  facet_wrap(~year(date), scales = "free")+
+  theme_minimal()+
+  labs(title = "Daily Count From 2014 - 2023")
 ```
 
 
+**Numeric Summary of ladder From 2014 to 2023**
+```{r}
+table(all_deer_data$ladder)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(all_deer_data$ladder))/nrow(all_deer_data), 3)*100` % of values in the `ladder` column are NA.
+
+
+### Notes and Issues
+
+* Numbers are really low for 2023
+
 ## Next steps
 
-* Confirm counts for earlier data
 * Do they have flow/temp for those missing years?
 
 ### Add cleaned data back onto google cloud
 ```{r}
-deer_upstream_estimate <- all_deer_data |> glimpse()
+deer_upstream_counts <- all_deer_data |> glimpse()
 ```
 
 ```{r, eval =FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
-gcs_upload(deer_upstream_estimate,
+gcs_upload(deer_upstream_counts,
            object_function = f,
            type = "csv",
-           name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv",
+           name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_counts.csv",
            predefinedAcl = "bucketLevel")
