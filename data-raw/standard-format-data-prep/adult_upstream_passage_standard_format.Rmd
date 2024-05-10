@@ -198,19 +198,17 @@ Remove `view_adjust` (no `DIDSON`)
 
 ```{r}
 # download file as csv
-gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv",
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_counts.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "deer_adult_upstream.csv"),
                overwrite = TRUE)
 
 deer_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "deer_adult_upstream.csv")) |> 
-    rename(count = passage_estimate, # confirm with matt johnson that this is a count not a modeled passage
-           
-           jack_size = jack,
-           passage_direction = direction,
-           viewing_condition = view_adjust) |> 
+    rename(jack_size = jack,
+           viewing_condition = viewing_adjust,
+           time = start_time) |> 
     mutate(stream = "deer creek",
-           method = "video",
+           method = ifelse(viewing_condition == "DIDSON", "DIDSON", "video"),
            jack_size = case_when(jack_size ~ "yes",
                                !jack_size ~ "no",
                                TRUE ~ NA_character_)) |> 
@@ -225,17 +223,15 @@ Remove `view_adjust` (but include in `method` column)
 
 ```{r}
 # download file as csv
-gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv",
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_counts.csv",
                 bucket = gcs_get_global_bucket(),
                 saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "mill_adult_upstream.csv"),
                 overwrite = TRUE)
 
 mill_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "mill_adult_upstream.csv")) |> 
-  filter(!is.na(date)) |> # removes 2 NA rows
-  rename(count = passage_estimate,
-         passage_direction = direction, # confirm with matt johnson that this is a count not a modeled passage
-         jack_size = jack,
-         viewing_condition = view_adjust) |> 
+  rename(jack_size = jack,
+         viewing_condition = viewing_adjust,
+         time = start_time) |> 
   mutate(stream = "mill creek",
          method = case_when(viewing_condition == "DIDSON/Aris" ~ "DIDSON",
                             TRUE ~ "video"),
