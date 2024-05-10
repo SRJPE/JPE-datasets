@@ -653,7 +653,7 @@ all_mill_data <- all_mill_data  |>
 mill_upstream_counts <- all_mill_data  |> glimpse()
 ```
 
-```{r}
+```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 gcs_upload(mill_upstream_counts,
            object_function = f,
