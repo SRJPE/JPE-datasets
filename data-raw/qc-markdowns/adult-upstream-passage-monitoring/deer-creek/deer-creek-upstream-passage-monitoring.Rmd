@@ -71,10 +71,13 @@ lapply(deer_creek_filenames, get_files_from_cloud)
 #                bucket = gcs_get_global_bucket(),
 #                saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/deer_creek_passage_counts_2022.xlsx",
                # overwrite = TRUE)
-save_to_prefix <- "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/"
 ```
 
 ## Read in and clean raw count data for each year
+
+```{r, message = FALSE, warning = FALSE}
+save_to_prefix <- "data-raw/qc-markdowns/adult-upstream-passage-monitoring/deer-creek/"
+```
 
 This requires a different approach for each year because the file formats change. We also need to distinguish between files for one ladder (north or south) vs. files for both ladders. 
 
@@ -653,6 +656,7 @@ table(all_deer_data$ladder)
 ### Notes and Issues
 
 * Numbers are really low for 2023
+* Confirm that we can code all NAs as 0 counts
 
 ## Next steps
 
@@ -663,7 +667,7 @@ table(all_deer_data$ladder)
 deer_upstream_counts <- all_deer_data |> glimpse()
 ```
 
-```{r, eval =FALSE}
+```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
 
 gcs_upload(deer_upstream_counts,
