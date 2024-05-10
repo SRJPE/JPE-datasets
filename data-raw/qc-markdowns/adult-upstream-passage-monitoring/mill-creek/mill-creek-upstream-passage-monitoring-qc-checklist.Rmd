@@ -68,17 +68,12 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data-
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/mill_creek_passage_counts_2021.xlsx",
                overwrite = TRUE)
-
-save_to_prefix <- "data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/"
-
-# 2022-2023 passage data
-# gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data-raw/MCVS 2022-23 spring 8-26-23.xlsx",
-#                bucket = gcs_get_global_bucket(),
-#                saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/mill_creek_passage_counts_2022.xlsx",
-#                overwrite = TRUE)
-
 ```
 ## Read in and clean raw count data for each year
+
+```{r, message = FALSE, warning = FALSE}
+save_to_prefix <- "data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/"
+```
 
 This requires a different approach for each year because the file formats change.
 
@@ -660,8 +655,9 @@ mill_upstream_counts <- all_mill_data  |> glimpse()
 
 ```{r}
 f <- function(input, output) write_csv(input, file = output)
-gcs_upload(mill_upstream_estimate,
+gcs_upload(mill_upstream_counts,
            object_function = f,
            type = "csv",
-           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_count.csv",
+           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_counts.csv",
            predefinedAcl = "bucketLevel")
+```
