@@ -26,14 +26,14 @@ Adult spring run daily passage estimate is based on data recorded at Ward Dam vi
 
 **Completeness of Record throughout timeframe:**
 
-* Few missing values for count
-* 10 - 15 % missing values for physical variables
+* All NA values for count are converted to `0`
+* Flow and temperature are only collected for early years (`2007-2012`) and are mostly NA
 
 **Sampling Location:** 
 
 * Ward Dam   
 
-**Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
+**Data Contact:** [Ryan Revnak](mailto:Ryan.Revnak@wildlife.ca.gov) and [Doug Killam](mailto:Doug.Killam@wildlife.ca.gov)
 
 ## Access Cloud Data
 
@@ -202,8 +202,8 @@ mill_2012 <- mill_2012_raw |>
   pivot_longer(up_salmon:dn_salmon,
                names_to = "passage_direction", 
                values_to = "count") |> 
-  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down")) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -222,8 +222,8 @@ mill_2013 <- mill_2013_raw |>
   pivot_longer(up_salmon:dn_salmon,
                names_to = "passage_direction", 
                values_to = "count") |> 
-  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down")) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -246,9 +246,8 @@ mill_2014 <- mill_2014_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 ### 2015-2016
@@ -269,9 +268,8 @@ mill_2015 <- mill_2015_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -294,7 +292,6 @@ mill_2016 <- mill_2016_raw |>
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
          jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
   glimpse()
 ```
 
@@ -316,9 +313,8 @@ mill_2017 <- mill_2017_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -340,9 +336,8 @@ mill_2018 <- mill_2018_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -364,9 +359,8 @@ mill_2019 <- mill_2019_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -388,9 +382,8 @@ mill_2020 <- mill_2020_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -411,9 +404,8 @@ mill_2021 <- mill_2021_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 
 ```
@@ -436,9 +428,8 @@ mill_2022 <- mill_2022_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -460,7 +451,8 @@ all_mill_data <- all_years_raw |>
                                     viewing_adjust == 3 ~ "equipment fail",
                                     viewing_adjust == 4 ~ "DIDSON/Aris",
                                     is.na(viewing_adjust) ~ "VAKI",
-                                    TRUE ~ NA)) |> 
+                                    TRUE ~ NA),
+         count = ifelse(is.na(count), 0, count)) |> 
   relocate(date, start_time, count, passage_direction, jack, viewing_adjust, avg_water_temp, avg_flow_in_cfs) |> 
   filter(year(date) > 2000) |> 
   filter(!is.na(date)) |> 
@@ -484,7 +476,7 @@ data_dictionary <- tibble(variables = colnames(all_mill_data),
                                           "Time of obseration",
                                           "Counts of spring run Chinook",
                                           "Direction of fish passage",
-                                          "Whether or not the fish was les than 24 inches (jack size)",
+                                          "Whether or not the fish was less than 24 inches (jack size)",
                                           "Reason camera needed to be adjusted", "Average water temperature", "Flow in CFS"),
                           
                           percent_na = round(percent_na$value*100)
@@ -525,10 +517,8 @@ all_mill_data  |>
 all_mill_data  |> 
   filter(date != is.na(date))  |>
   mutate(year = as.factor(year(date)))  |>
-  # glimpse()
   group_by(year)  |> 
   summarise(total = sum(count, na.rm  = TRUE))  |>
-  # glimpse()
   ggplot(aes(x = year, y = total, group = 1))+
   geom_line()+
   geom_point(aes(x=year, y = total))+
@@ -537,11 +527,10 @@ all_mill_data  |>
        y = "Total count")
 ```
 
-**Numeric Summary of count From 2012 to 2023**
+**Numeric Summary of count From 2007 to 2023**
 ```{r}
 summary(all_mill_data$count)
 ```
-Note: there is a negative estimate in one of the days - need to remove that
 
 **NA and Unknown Values**  
 
@@ -581,7 +570,7 @@ all_mill_data  |>
   labs(title = "Distribution of Flow")
 ```
 
-**Numeric Summary of flow From 2012 to 2023**
+**Numeric Summary of flow From 2007 to 2023**
 ```{r}
 summary(all_mill_data$flow)
 ```
@@ -626,7 +615,7 @@ all_mill_data  |>
   labs(title = "Distribution of Temperature")
 ```
 
-**Numeric Summary of temperature From 2012 to 2023**
+**Numeric Summary of temperature From 2007 to 2023**
 ```{r}
 summary(all_mill_data$temperature)
 ```

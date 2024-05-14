@@ -208,7 +208,8 @@ deer_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-mon
            viewing_condition = viewing_adjust,
            time = start_time) |> 
     mutate(stream = "deer creek",
-           method = ifelse(viewing_condition == "DIDSON", "DIDSON", "video"),
+           run = "spring",
+           method = ifelse(viewing_condition == "DIDSON", "didson", "video"),
            jack_size = case_when(jack_size ~ "yes",
                                !jack_size ~ "no",
                                TRUE ~ NA_character_)) |> 
@@ -233,7 +234,8 @@ mill_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-mon
          viewing_condition = viewing_adjust,
          time = start_time) |> 
   mutate(stream = "mill creek",
-         method = case_when(viewing_condition == "DIDSON/Aris" ~ "DIDSON",
+         run = "spring",
+         method = case_when(viewing_condition == "DIDSON/Aris" ~ "didson",
                             TRUE ~ "video"),
          jack_size = case_when(jack_size ~ "yes",
                                !jack_size ~ "no",
@@ -287,6 +289,7 @@ combined_upstream_passage <- bind_rows(battle_upstream_passage |>
                                        yuba_upstream_passage) |> 
   relocate(stream, date, time, count, run, adipose_clipped, sex, passage_direction, 
            viewing_condition, spawning_condition, jack_size, ladder, flow, temperature, hours, method) |>
+  mutate(viewing_condition = str_to_lower(viewing_condition)) |> 
   glimpse()
 ```
 

@@ -16,14 +16,15 @@ Ward Dam via video monitoring.
 
 **Completeness of Record throughout timeframe:**
 
-- Few missing values for count
-- 10 - 15 % missing values for physical variables
+- All NA values for count are converted to `0`
+- 
 
 **Sampling Location:**
 
 - Ward Dam
 
-**Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
+**Data Contact:** [Ryan Revnak](mailto:Ryan.Revnak@wildlife.ca.gov) and
+[Doug Killam](mailto:Doug.Killam@wildlife.ca.gov)
 
 ## Access Cloud Data
 
@@ -420,8 +421,8 @@ mill_2012 <- mill_2012_raw |>
   pivot_longer(up_salmon:dn_salmon,
                names_to = "passage_direction", 
                values_to = "count") |> 
-  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down")) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -491,8 +492,8 @@ mill_2013 <- mill_2013_raw |>
   pivot_longer(up_salmon:dn_salmon,
                names_to = "passage_direction", 
                values_to = "count") |> 
-  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down")) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
@@ -545,21 +546,20 @@ mill_2014 <- mill_2014_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
-    ## Rows: 158
+    ## Rows: 44,852
     ## Columns: 7
-    ## $ date              <dttm> 2014-12-15, 2014-12-15, 2014-12-16, 2014-12-16, 201…
-    ## $ start_time        <chr> "17:00:00", "21:30:00", "03:00:00", "10:00:00", "12:…
-    ## $ viewing_adjust    <chr> "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "4…
-    ## $ count_type        <chr> "up_salmon", "up_salmon", "up_salmon", "up_salmon", …
-    ## $ count             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…
+    ## $ date              <dttm> 2014-12-10, 2014-12-10, 2014-12-10, 2014-12-10, 201…
+    ## $ start_time        <chr> "09:30:00", "09:30:00", "09:30:00", "09:30:00", "10:…
+    ## $ viewing_adjust    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ count_type        <chr> "up_salmon", "dn_salmon", "up_jacks", "dn_jacks", "u…
+    ## $ count             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ passage_direction <chr> "down", "down", "down", "down", "down", "down", "dow…
-    ## $ jack              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+    ## $ jack              <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, …
 
 ### 2015-2016
 
@@ -598,21 +598,20 @@ mill_2015 <- mill_2015_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
-    ## Rows: 652
+    ## Rows: 53,644
     ## Columns: 7
-    ## $ date              <dttm> 2015-10-26, 2015-10-26, 2015-10-26, 2015-10-26, 201…
-    ## $ start_time        <chr> "05:30:00", "06:00:00", "07:00:00", "08:00:00", "08:…
+    ## $ date              <dttm> 2015-10-25, 2015-10-25, 2015-10-25, 2015-10-25, 201…
+    ## $ start_time        <chr> "14:30:00", "14:30:00", "14:30:00", "14:30:00", "15:…
     ## $ viewing_adjust    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
-    ## $ count_type        <chr> "up_salmon", "up_salmon", "up_salmon", "up_salmon", …
-    ## $ count             <dbl> 1, 4, 2, 3, 1, 3, 5, 13, 8, 13, 1, 8, 5, 1, 13, 2, 1…
+    ## $ count_type        <chr> "up_salmon", "dn_salmon", "up_jacks", "dn_jacks", "u…
+    ## $ count             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ passage_direction <chr> "down", "down", "down", "down", "down", "down", "dow…
-    ## $ jack              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+    ## $ jack              <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, …
 
 ### 2016-2017
 
@@ -652,18 +651,17 @@ mill_2016 <- mill_2016_raw |>
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
          jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
   glimpse()
 ```
 
-    ## Rows: 516
+    ## Rows: 59,136
     ## Columns: 6
-    ## $ date              <dttm> 2016-10-14, 2016-10-14, 2016-10-14, 2016-10-14, 201…
-    ## $ start_time        <chr> "04:30:00", "05:30:00", "08:00:00", "08:30:00", "09:…
-    ## $ count_type        <chr> "up_salmon", "up_salmon", "up_salmon", "up_salmon", …
-    ## $ count             <dbl> 1, 2, 1, 2, 1, 1, 1, 1, 2, 3, 1, 1, 2, 1, 1, 3, 1, 2…
+    ## $ date              <dttm> 2016-10-13, 2016-10-13, 2016-10-13, 2016-10-13, 201…
+    ## $ start_time        <chr> "00:00:00", "00:00:00", "00:00:00", "00:00:00", "00:…
+    ## $ count_type        <chr> "up_salmon", "dn_salmon", "up_jacks", "dn_jacks", "u…
+    ## $ count             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ passage_direction <chr> "down", "down", "down", "down", "down", "down", "dow…
-    ## $ jack              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+    ## $ jack              <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, …
 
 ### 2017-2018
 
@@ -702,21 +700,20 @@ mill_2017 <- mill_2017_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
-    ## Rows: 427
+    ## Rows: 62,016
     ## Columns: 7
-    ## $ date              <dttm> 2017-09-28, 2017-10-05, 2017-10-07, 2017-10-07, 201…
-    ## $ start_time        <chr> "07:30:00", "06:30:00", "00:00:00", "00:00:00", "00:…
+    ## $ date              <dttm> 2017-09-18, 2017-09-18, 2017-09-18, 2017-09-18, 201…
+    ## $ start_time        <chr> "00:00:00", "00:00:00", "00:00:00", "00:00:00", "00:…
     ## $ viewing_adjust    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
-    ## $ count_type        <chr> "up_salmon", "up_salmon", "up_salmon", "dn_salmon", …
-    ## $ count             <dbl> 1, 1, 1, 1, 2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 2, 2, 1…
+    ## $ count_type        <chr> "up_salmon", "dn_salmon", "up_jacks", "dn_jacks", "u…
+    ## $ count             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ passage_direction <chr> "down", "down", "down", "down", "down", "down", "dow…
-    ## $ jack              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+    ## $ jack              <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, …
 
 ### 2018-2019
 
@@ -753,21 +750,20 @@ mill_2018 <- mill_2018_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
-    ## Rows: 590
+    ## Rows: 63,360
     ## Columns: 7
-    ## $ date              <dttm> 2018-10-01, 2018-10-03, 2018-10-05, 2018-10-15, 201…
-    ## $ start_time        <chr> "22:30:00", "05:00:00", "04:00:00", "06:30:00", "02:…
+    ## $ date              <dttm> 2018-09-20, 2018-09-20, 2018-09-20, 2018-09-20, 201…
+    ## $ start_time        <chr> "00:00:00", "00:00:00", "00:00:00", "00:00:00", "00:…
     ## $ viewing_adjust    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
-    ## $ count_type        <chr> "up_salmon", "up_salmon", "up_salmon", "up_salmon", …
-    ## $ count             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 3, 2, 1, 1, 2, 1, 2, 5, 2, 4…
+    ## $ count_type        <chr> "up_salmon", "dn_salmon", "up_jacks_less_24", "dn_ja…
+    ## $ count             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ passage_direction <chr> "down", "down", "down", "down", "down", "down", "dow…
-    ## $ jack              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRU…
+    ## $ jack              <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, …
 
 ### 2019-2020
 
@@ -805,21 +801,20 @@ mill_2019 <- mill_2019_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
-    ## Rows: 1,090
+    ## Rows: 63,936
     ## Columns: 7
-    ## $ date              <dttm> 2019-09-22, 2019-09-22, 2019-09-22, 2019-09-22, 201…
-    ## $ start_time        <chr> "09:00:00", "10:00:00", "10:30:00", "11:00:00", "11:…
+    ## $ date              <dttm> 2019-09-16, 2019-09-16, 2019-09-16, 2019-09-16, 201…
+    ## $ start_time        <chr> "00:00:00", "00:00:00", "00:00:00", "00:00:00", "00:…
     ## $ viewing_adjust    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
-    ## $ count_type        <chr> "up_salmon", "up_salmon", "up_salmon", "up_salmon", …
-    ## $ count             <dbl> 1, 3, 6, 4, 6, 10, 3, 4, 7, 6, 1, 5, 2, 2, 1, 1, 1, …
+    ## $ count_type        <chr> "up_salmon", "dn_salmon", "up_jacks_less_24", "dn_ja…
+    ## $ count             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ passage_direction <chr> "down", "down", "down", "down", "down", "down", "dow…
-    ## $ jack              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+    ## $ jack              <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, …
 
 ### 2020-2021
 
@@ -858,21 +853,20 @@ mill_2020 <- mill_2020_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
-    ## Rows: 535
+    ## Rows: 24,396
     ## Columns: 7
-    ## $ date              <dttm> 2021-02-20, 2021-02-22, 2021-02-23, 2021-02-25, 202…
-    ## $ start_time        <chr> "00:30:00", "18:30:00", "20:00:00", "00:00:00", "01:…
+    ## $ date              <dttm> 2021-02-20, 2021-02-20, 2021-02-20, 2021-02-20, 202…
+    ## $ start_time        <chr> "00:00:00", "00:00:00", "00:00:00", "00:00:00", "00:…
     ## $ viewing_adjust    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
-    ## $ count_type        <chr> "up_salmon", "up_salmon", "up_salmon", "up_salmon", …
-    ## $ count             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1…
+    ## $ count_type        <chr> "up_salmon", "dn_salmon", "up_jacks_less_24", "dn_ja…
+    ## $ count             <dbl> NA, NA, NA, NA, 1, NA, NA, NA, NA, NA, NA, NA, NA, N…
     ## $ passage_direction <chr> "down", "down", "down", "down", "down", "down", "dow…
-    ## $ jack              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+    ## $ jack              <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, …
 
 ### 2021-2022
 
@@ -891,21 +885,20 @@ mill_2021 <- mill_2021_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
-    ## Rows: 486
+    ## Rows: 63,936
     ## Columns: 7
-    ## $ date              <dttm> 2021-10-14, 2021-10-15, 2021-10-15, 2021-10-15, 202…
-    ## $ start_time        <chr> "18:00:00", "00:30:00", "00:30:00", "04:30:00", "04:…
+    ## $ date              <dttm> 2021-10-01, 2021-10-01, 2021-10-01, 2021-10-01, 202…
+    ## $ start_time        <chr> "00:00:00", "00:00:00", "00:00:00", "00:00:00", "00:…
     ## $ viewing_adjust    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
-    ## $ count_type        <chr> "up_salmon", "up_salmon", "dn_salmon", "up_salmon", …
-    ## $ count             <dbl> 1, 2, 1, 4, 2, 4, 3, 2, 6, 4, 4, 3, 3, 1, 1, 1, 2, 1…
+    ## $ count_type        <chr> "up_salmon", "dn_salmon", "up_jacks_less_24", "dn_ja…
+    ## $ count             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ passage_direction <chr> "down", "down", "down", "down", "down", "down", "dow…
-    ## $ jack              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+    ## $ jack              <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, …
 
 ### 2022-2023
 
@@ -943,21 +936,20 @@ mill_2022 <- mill_2022_raw |>
                names_to = "count_type", 
                values_to = "count") |> 
   mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
-         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
-  filter(!is.na(count)) |> 
-  mutate(viewing_adjust = as.character(viewing_adjust)) |> 
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
   glimpse()
 ```
 
-    ## Rows: 214
+    ## Rows: 63,936
     ## Columns: 7
-    ## $ date              <dttm> 2022-09-22, 2022-09-22, 2022-09-28, 2022-09-28, 202…
-    ## $ start_time        <chr> "04:30:00", "05:00:00", "12:00:00", "12:30:00", "16:…
+    ## $ date              <dttm> 2022-09-21, 2022-09-21, 2022-09-21, 2022-09-21, 202…
+    ## $ start_time        <chr> "00:00:00", "00:00:00", "00:00:00", "00:00:00", "00:…
     ## $ viewing_adjust    <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
-    ## $ count_type        <chr> "dn_salmon", "up_salmon", "dn_salmon", "up_salmon", …
-    ## $ count             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 3, 1, 1, 1, 2…
+    ## $ count_type        <chr> "up_salmon", "dn_salmon", "up_jacks_less_24", "dn_ja…
+    ## $ count             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
     ## $ passage_direction <chr> "down", "down", "down", "down", "down", "down", "dow…
-    ## $ jack              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+    ## $ jack              <lgl> FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, …
 
 ## Data transformations
 
@@ -977,7 +969,8 @@ all_mill_data <- all_years_raw |>
                                     viewing_adjust == 3 ~ "equipment fail",
                                     viewing_adjust == 4 ~ "DIDSON/Aris",
                                     is.na(viewing_adjust) ~ "VAKI",
-                                    TRUE ~ NA)) |> 
+                                    TRUE ~ NA),
+         count = ifelse(is.na(count), 0, count)) |> 
   relocate(date, start_time, count, passage_direction, jack, viewing_adjust, avg_water_temp, avg_flow_in_cfs) |> 
   filter(year(date) > 2000) |> 
   filter(!is.na(date)) |> 
@@ -986,7 +979,7 @@ all_mill_data <- all_years_raw |>
   glimpse()
 ```
 
-    ## Rows: 58,318
+    ## Rows: 552,862
     ## Columns: 8
     ## $ date              <date> 2007-03-06, 2007-03-06, 2007-03-07, 2007-03-07, 200…
     ## $ start_time        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
@@ -1024,13 +1017,13 @@ knitr::kable(data_dictionary)
 | variables         | description                                                | percent_na |
 |:------------------|:-----------------------------------------------------------|-----------:|
 | date              | Date of sampling                                           |          0 |
-| start_time        | Time of obseration                                         |          4 |
+| start_time        | Time of obseration                                         |          0 |
 | count             | Counts of spring run Chinook                               |          0 |
 | passage_direction | Direction of fish passage                                  |          0 |
-| jack              | Whether or not the fish was les than 24 inches (jack size) |         92 |
-| viewing_adjust    | Reason camera needed to be adjusted                        |          0 |
-| temperature       | Average water temperature                                  |         97 |
-| flow              | Flow in CFS                                                |         97 |
+| jack              | Whether or not the fish was les than 24 inches (jack size) |         10 |
+| viewing_adjust    | Reason camera needed to be adjusted                        |          7 |
+| temperature       | Average water temperature                                  |        100 |
+| flow              | Flow in CFS                                                |        100 |
 
 ## Explore `date`
 
@@ -1041,7 +1034,7 @@ summary(all_mill_data$date)
 ```
 
     ##         Min.      1st Qu.       Median         Mean      3rd Qu.         Max. 
-    ## "2007-03-06" "2013-02-20" "2013-11-18" "2013-12-22" "2014-04-19" "2023-05-28"
+    ## "2007-03-06" "2016-05-19" "2018-10-06" "2018-09-19" "2021-05-04" "2023-08-19"
 
 **NA and Unknown Values**
 
@@ -1068,10 +1061,8 @@ all_mill_data  |>
 all_mill_data  |> 
   filter(date != is.na(date))  |>
   mutate(year = as.factor(year(date)))  |>
-  # glimpse()
   group_by(year)  |> 
   summarise(total = sum(count, na.rm  = TRUE))  |>
-  # glimpse()
   ggplot(aes(x = year, y = total, group = 1))+
   geom_line()+
   geom_point(aes(x=year, y = total))+
@@ -1082,21 +1073,18 @@ all_mill_data  |>
 
 ![](mill-creek-upstream-passage-monitoring-qc-checklist_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
-**Numeric Summary of count From 2012 to 2023**
+**Numeric Summary of count From 2007 to 2023**
 
 ``` r
 summary(all_mill_data$count)
 ```
 
-    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
-    ##   0.0000   0.0000   0.0000   0.3164   0.0000 265.0000       75
-
-Note: there is a negative estimate in one of the days - need to remove
-that
+    ##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+    ##   0.00000   0.00000   0.00000   0.03333   0.00000 265.00000
 
 **NA and Unknown Values**
 
-- 0.1 % of values in the `count` column are NA.
+- 0 % of values in the `count` column are NA.
 
 ### Variable:`flow`
 
@@ -1139,18 +1127,18 @@ all_mill_data  |>
 
 ![](mill-creek-upstream-passage-monitoring-qc-checklist_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
-**Numeric Summary of flow From 2012 to 2023**
+**Numeric Summary of flow From 2007 to 2023**
 
 ``` r
 summary(all_mill_data$flow)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   19.34  111.71  155.09  254.59  327.57 2151.44   56506
+    ##    19.3   111.7   155.1   254.6   327.6  2151.4  551050
 
 **NA and Unknown Values**
 
-- 96.9 % of values in the `flow` column are NA.
+- 99.7 % of values in the `flow` column are NA.
 
 ### Variable:`temperature`
 
@@ -1192,18 +1180,18 @@ all_mill_data  |>
 
 ![](mill-creek-upstream-passage-monitoring-qc-checklist_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
-**Numeric Summary of temperature From 2012 to 2023**
+**Numeric Summary of temperature From 2007 to 2023**
 
 ``` r
 summary(all_mill_data$temperature)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   34.66   46.07   50.61   52.34   57.47   77.34   56506
+    ##    34.7    46.1    50.6    52.3    57.5    77.3  551050
 
 **NA and Unknown Values**
 
-- 96.9 % of values in the `temperature` column are NA.
+- 99.7 % of values in the `temperature` column are NA.
 
 ### Notes and Issues
 
@@ -1224,7 +1212,7 @@ all_mill_data <- all_mill_data  |>
 mill_upstream_counts <- all_mill_data  |> glimpse()
 ```
 
-    ## Rows: 58,318
+    ## Rows: 552,862
     ## Columns: 8
     ## $ date              <date> 2007-03-06, 2007-03-06, 2007-03-07, 2007-03-07, 200…
     ## $ start_time        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
@@ -1243,23 +1231,3 @@ gcs_upload(mill_upstream_counts,
            name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_counts.csv",
            predefinedAcl = "bucketLevel")
 ```
-
-    ## ℹ 2024-05-10 09:03:50.39514 > File size detected as  2.4 Mb
-
-    ## ==Google Cloud Storage Object==
-    ## Name:                adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_counts.csv 
-    ## Type:                csv 
-    ## Size:                2.4 Mb 
-    ## Media URL:           https://www.googleapis.com/download/storage/v1/b/jpe-dev-bucket/o/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_counts.csv?generation=1715357034729245&alt=media 
-    ## Download URL:        https://storage.cloud.google.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_counts.csv 
-    ## Public Download URL: https://storage.googleapis.com/jpe-dev-bucket/adult-upstream-passage-monitoring%2Fmill-creek%2Fdata%2Fmill_upstream_counts.csv 
-    ## Bucket:              jpe-dev-bucket 
-    ## ID:                  jpe-dev-bucket/adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_counts.csv/1715357034729245 
-    ## MD5 Hash:            n1EeeEQN5i4dYrLhF48tPA== 
-    ## Class:               STANDARD 
-    ## Created:             2024-05-10 16:03:54 
-    ## Updated:             2024-05-10 16:03:54 
-    ## Generation:          1715357034729245 
-    ## Meta Generation:     1 
-    ## eTag:                CJ2e3/W6g4YDEAE= 
-    ## crc32c:              d3zrPQ==

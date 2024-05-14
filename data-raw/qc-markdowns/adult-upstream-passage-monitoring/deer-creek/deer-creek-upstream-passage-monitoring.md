@@ -24,7 +24,8 @@ Some missing data for variable flow
 
 - SVRIC Dam
 
-**Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
+**Data Contact:** [Ryan Revnak](mailto:Ryan.Revnak@wildlife.ca.gov) and
+[Doug Killam](mailto:Doug.Killam@wildlife.ca.gov)
 
 ## Access Cloud Data
 
@@ -893,7 +894,6 @@ all_deer_data <- all_years_raw |>
                                     TRUE ~ NA)) |> 
   relocate(date, start_time, count, passage_direction, jack, viewing_adjust, flow = avg_flow) |> 
   filter(!is.na(date)) |> 
-  # TODO is this correct, assumign that NAs are 0s?
   mutate(date = as.Date(date),
          count = ifelse(is.na(count), 0, count)) |> 
   glimpse()
