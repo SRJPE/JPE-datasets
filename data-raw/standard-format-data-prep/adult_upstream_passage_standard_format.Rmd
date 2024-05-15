@@ -78,12 +78,12 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/battle-creek/dat
                saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "battle_adult_upstream.csv"),
                overwrite = TRUE)
 
-battle_video <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "battle_adult_upstream.csv")) %>% 
+battle_video <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "battle_adult_upstream.csv")) |> 
   mutate(stream = "battle creek",
          method = "video",
          adipose_clipped = case_when(adipose == "present" ~ F, # originally adipose was present/absent which maps to F/T for clipped
-                             adipose == "absent" ~ T)) %>% 
-  filter(count != 0) %>% # occurs when catch of non chinook fish 
+                             adipose == "absent" ~ T)) |> 
+  filter(count != 0) |> # occurs when catch of non chinook fish 
   select(-adipose) |> 
   glimpse()
 
@@ -166,9 +166,9 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/clear-creek/data
                saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "clear_adult_upstream.csv"),
                overwrite = TRUE)
 
-clear_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "clear_adult_upstream.csv")) %>% 
-  select(-time_block) %>%
-  rename(time = time_passed) %>% 
+clear_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "clear_adult_upstream.csv")) |> 
+  select(-time_block) |>
+  rename(time = time_passed) |> 
   mutate(stream = "clear creek",
          viewing_condition = case_when( 
            viewing_condition == 1 ~ "normal",  
@@ -184,8 +184,8 @@ clear_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-mo
          ),
          adipose_clipped = case_when(adipose == "present" ~ F, # originally adipose was present/absent which maps to F/T for clipped
                              adipose == "absent" ~ T),
-         method = "video") %>% 
-  filter(count != 0) %>% # occurs when catch of non chinook fish
+         method = "video") |> 
+  filter(count != 0) |> # occurs when catch of non chinook fish
   select(-adipose) |> 
   glimpse()
 ```
@@ -194,41 +194,53 @@ clear_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-mo
 
 #### Columns Removed
 
-No columns are removed from deer creek upstream passage video data.
+Remove `view_adjust` (no `DIDSON`)
 
 ```{r}
 # download file as csv
-gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_passage_estimate.csv",
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/deer-creek/data/deer_upstream_counts.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "deer_adult_upstream.csv"),
                overwrite = TRUE)
 
-deer_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "deer_adult_upstream.csv")) %>% 
-    rename(count = passage_estimate) %>% # confirm with matt johnson that this is a count not a modeled passage
+deer_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "deer_adult_upstream.csv")) |> 
+    rename(jack_size = jack,
+           viewing_condition = viewing_adjust,
+           time = start_time) |> 
     mutate(stream = "deer creek",
-           method = "video") %>% 
-    glimpse
+           run = "spring",
+           method = ifelse(viewing_condition == "DIDSON", "didson", "video"),
+           jack_size = case_when(jack_size ~ "yes",
+                               !jack_size ~ "no",
+                               TRUE ~ NA_character_)) |> 
+  glimpse()
 ```
 
 ### Mill Creek
 
 #### Columns Removed
 
-No columns are removed from mill creek upstream passage video data.
+Remove `view_adjust` (but include in `method` column)
 
 ```{r}
-
 # download file as csv
-gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv",
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_counts.csv",
                 bucket = gcs_get_global_bucket(),
                 saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "mill_adult_upstream.csv"),
                 overwrite = TRUE)
 
-mill_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "mill_adult_upstream.csv")) %>% 
-  rename(count = passage_estimate) %>% # confirm with matt johnson that this is a count not a modeled passage
+mill_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "mill_adult_upstream.csv")) |> 
+  rename(jack_size = jack,
+         viewing_condition = viewing_adjust,
+         time = start_time) |> 
   mutate(stream = "mill creek",
-         method = "video") %>% 
-  glimpse
+         run = "spring",
+         method = case_when(viewing_condition == "DIDSON/Aris" ~ "didson",
+                            TRUE ~ "video"),
+         jack_size = case_when(jack_size ~ "yes",
+                               !jack_size ~ "no",
+                               TRUE ~ NA_character_)) |> 
+  glimpse()
 ```
 
 ### Yuba River
@@ -255,15 +267,15 @@ gcs_get_object(object_name = "adult-upstream-passage-monitoring/yuba-river/data/
                 saveToDisk = here::here("data", "adult-upstream-passage-monitoring", "yuba_adult_upstream.csv"),
                 overwrite = TRUE)
 
-yuba_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "yuba_adult_upstream.csv")) %>% 
+yuba_upstream_passage <- read_csv(here::here("data", "adult-upstream-passage-monitoring", "yuba_adult_upstream.csv")) |> 
   select(-category, -speed_m_per_s, -length_cm, 
-         -depth_m, -position_in_frame) %>% # No clear methodology shared by yuba on these data and how they should be used  
+         -depth_m, -position_in_frame) |> # No clear methodology shared by yuba on these data and how they should be used  
   mutate(stream = "yuba river",
          method = "video",
-         adipose_clipped = case_when(adipose == "clipped" ~ T)) %>% 
+         adipose_clipped = case_when(adipose == "clipped" ~ T)) |> 
   select(-adipose) |> 
-  distinct() %>%
-  glimpse
+  distinct() |>
+  glimpse()
 ```
 
 ## Combine data
@@ -274,10 +286,11 @@ combined_upstream_passage <- bind_rows(battle_upstream_passage |>
                                        clear_upstream_passage, 
                                        deer_upstream_passage, 
                                        mill_upstream_passage, 
-                                       yuba_upstream_passage) %>% 
+                                       yuba_upstream_passage) |> 
   relocate(stream, date, time, count, run, adipose_clipped, sex, passage_direction, 
-           viewing_condition, spawning_condition, jack_size, ladder, flow, temperature, hours, method) %>%
-  glimpse
+           viewing_condition, spawning_condition, jack_size, ladder, flow, temperature, hours, method) |>
+  mutate(viewing_condition = str_to_lower(viewing_condition)) |> 
+  glimpse()
 ```
 
 ## Explore Varibles{.tabset}
@@ -291,7 +304,7 @@ unique(combined_upstream_passage$stream)
 ### date
 
 ```{r}
-combined_upstream_passage %>% ggplot() + 
+combined_upstream_passage |> ggplot() + 
   geom_point(aes(x = date, y = stream, color = stream), alpha = .1) +
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
@@ -302,10 +315,9 @@ combined_upstream_passage %>% ggplot() +
 
 ### time
 
-Mill and Deer do not give passage time they give daily passage only.
 
 ```{r}
-combined_upstream_passage %>% ggplot() + 
+combined_upstream_passage |> ggplot() + 
   geom_point(aes(x = time, y = stream, color = stream), alpha = .1) +
   scale_color_manual(values = color_pal) +
   theme_minimal() + 
@@ -319,14 +331,14 @@ combined_upstream_passage %>% ggplot() +
 Group by day to see distribution of daily count values
 
 ```{r}
-daily <- combined_upstream_passage %>% 
-  group_by(stream, date) %>%
+daily <- combined_upstream_passage |> 
+  group_by(stream, date) |>
   summarize(count = sum(count, na.rm = T)) 
 
 summary(daily$count)
 
 
-daily %>% ggplot() + 
+daily |> ggplot() + 
   geom_boxplot(aes(x = count,y = stream,  color = stream), 
                  alpha = .5, binwidth  = 1) + 
   scale_color_manual(values = color_pal) +
@@ -349,7 +361,7 @@ Deer and Mill Creek datasets only report spring run values
 Change the run names to be consistent with the other monitoring types
 
 ```{r}
-combined_upstream_passage <- combined_upstream_passage %>% 
+combined_upstream_passage <- combined_upstream_passage |> 
   mutate(run = case_when(run == "SR" ~ "spring",
                          run == "LF" ~ "late fall",
                          run == "WR" ~ "winter", 
@@ -358,9 +370,9 @@ combined_upstream_passage <- combined_upstream_passage %>%
                          is.na(run) ~ "not recorded"),
          run = ifelse(stream %in% c("mill creek", "deer creek"), "spring", run))
 
-combined_upstream_passage %>% 
-  group_by(stream) %>%
-  summarise(run = unique(run) %>% base::paste(collapse = ', '))
+combined_upstream_passage |> 
+  group_by(stream) |>
+  summarise(run = unique(run) |> base::paste(collapse = ', '))
 
 unique(combined_upstream_passage$run)
 
@@ -376,9 +388,9 @@ unique(combined_upstream_passage$adipose_clipped)
 
 
 ```{r}
-combined_upstream_passage %>% 
-  group_by(stream) %>%
-  summarise(origin = unique(adipose_clipped) %>% base::paste(collapse = ', ')) 
+combined_upstream_passage |> 
+  group_by(stream) |>
+  summarise(origin = unique(adipose_clipped) |> base::paste(collapse = ', ')) 
 ```
 
 ### sex
@@ -386,9 +398,9 @@ combined_upstream_passage %>%
 Clear and Battle Creek is the only stream that reports data on the sex of fish
 
 ```{r}
-combined_upstream_passage %>% 
-  group_by(stream) %>%
-  summarise(sex = unique(sex) %>% base::paste(collapse = ', ')) 
+combined_upstream_passage |> 
+  group_by(stream) |>
+  summarise(sex = unique(sex) |> base::paste(collapse = ', ')) 
 
 combined_upstream_passage <- combined_upstream_passage |> 
   mutate(sex = case_when(sex == "F" ~ "female",
@@ -402,19 +414,19 @@ unique(combined_upstream_passage$sex)
 ### passage_direction
 
 ```{r}
-combined_upstream_passage %>% 
-  group_by(stream) %>%
-  summarise(passage_direction = unique(passage_direction) %>% base::paste(collapse = ', '))
+combined_upstream_passage |> 
+  group_by(stream) |>
+  summarise(passage_direction = unique(passage_direction) |> base::paste(collapse = ', '))
 ```
 
 ### viewing_condition
 
-Only clear creek provides a viewing condition
+Clear creek, deer creek, and mill creek provide a viewing condition
 
 ```{r}
-combined_upstream_passage %>% 
-  group_by(stream) %>%
-  summarise(viewing_condition = unique(viewing_condition) %>% base::paste(collapse = ', ')) 
+combined_upstream_passage |> 
+  group_by(stream) |>
+  summarise(viewing_condition = unique(viewing_condition) |> base::paste(collapse = ', ')) 
 
 ```
 
@@ -423,20 +435,20 @@ combined_upstream_passage %>%
 Only clear creek provides a spawning condition
 
 ```{r}
-combined_upstream_passage %>% 
-  group_by(stream) %>%
-  summarise(spawning_condition = unique(spawning_condition) %>% base::paste(collapse = ', ')) 
+combined_upstream_passage |> 
+  group_by(stream) |>
+  summarise(spawning_condition = unique(spawning_condition) |> base::paste(collapse = ', ')) 
 
 ```
 
 ### jack_size
 
-Only clear creek provides a jack size
+Deer creek, mill creek, and clear creek provide a jack size
 
 ```{r}
-combined_upstream_passage %>% 
-  group_by(stream) %>%
-  summarise(jack_size = unique(jack_size) %>% base::paste(collapse = ', ')) 
+combined_upstream_passage |> 
+  group_by(stream) |>
+  summarise(jack_size = unique(jack_size) |> base::paste(collapse = ', ')) 
 
 ```
 
@@ -445,9 +457,9 @@ combined_upstream_passage %>%
 Only yuba river gives a ladder variable to describe which ladder the fish is seen on
 
 ```{r}
-combined_upstream_passage %>% 
-  group_by(stream) %>%
-  summarise(ladder = unique(ladder) %>% base::paste(collapse = ', ')) 
+combined_upstream_passage |> 
+  group_by(stream) |>
+  summarise(ladder = unique(ladder) |> base::paste(collapse = ', ')) 
 
 ```
 
@@ -458,7 +470,7 @@ Only yuba river gives a hours variable to describe how many of 24 hours in a day
 Our assumption is that all other locations attempt to view all 24 hours of video footage however we do not have a way to calculate actual hours viewed from the data provided 
 
 ```{r}
-combined_upstream_passage %>% 
+combined_upstream_passage |> 
   ggplot() +
   geom_histogram(aes(x = hours, fill = stream), binwidth = 1) + 
   scale_fill_manual(values = color_pal) +
@@ -473,7 +485,7 @@ combined_upstream_passage %>%
 Only mill and deer creek give daily flow and temperature values attached to their data
 
 ```{r}
-combined_upstream_passage %>% 
+combined_upstream_passage |> 
   ggplot() +
   geom_histogram(aes(x = flow, fill = stream), 
                  binwidth = 30, alpha = .5, position = "identity") + 
@@ -485,8 +497,8 @@ combined_upstream_passage %>%
 ```
 
 ```{r}
-combined_upstream_passage %>% 
-  filter(stream %in% c("mill creek", "deer creek")) %>%
+combined_upstream_passage |> 
+  filter(stream %in% c("mill creek", "deer creek")) |>
   ggplot() +
   geom_line(aes(x = date, y = flow, color = stream), size = 1) + 
   scale_color_manual(values = color_pal) +
@@ -501,7 +513,7 @@ combined_upstream_passage %>%
 Only mill and deer creek give daily flow and temperature values attached to their data
 
 ```{r}
-combined_upstream_passage %>% 
+combined_upstream_passage |> 
   ggplot() +
   geom_histogram(aes(x = temperature, fill = stream), binwidth = 1, alpha = .5, position = "identity") + 
    scale_fill_manual(values = color_pal) +
@@ -512,8 +524,8 @@ combined_upstream_passage %>%
 ```
 
 ```{r}
-combined_upstream_passage %>% 
-  filter(stream %in% c("mill creek", "deer creek")) %>%
+combined_upstream_passage |> 
+  filter(stream %in% c("mill creek", "deer creek")) |>
   ggplot() +
   geom_line(aes(x = date, y = temperature, color = stream), size = 1) + 
   scale_color_manual(values = color_pal) +
@@ -528,7 +540,7 @@ combined_upstream_passage %>%
 ```{r}
 clean_passage <- combined_upstream_passage 
 
-knitr::kable(clean_passage %>% head)
+knitr::kable(clean_passage |> head())
 ```
 
 ```{r}

@@ -14,7 +14,7 @@ library(scales)
 library (RColorBrewer)
 ```
 
-# Mill Creek Adult Upstream Passage Estimate Data 2012 to 2020 
+# Mill Creek Adult Upstream Passage Estimate Data 2007 to 2023
 
 **Description of Monitoring Data**
 
@@ -22,18 +22,18 @@ Adult spring run daily passage estimate is based on data recorded at Ward Dam vi
 
 **Timeframe:** 
 
-2012 to 2020
+2007 to 2023
 
 **Completeness of Record throughout timeframe:**
 
-* Few missing values for passage_estimate
-* 10 - 15 % missing values for physical variables
+* All NA values for count are converted to `0`
+* Flow and temperature are only collected for early years (`2007-2012`) and are mostly NA
 
 **Sampling Location:** 
 
 * Ward Dam   
 
-**Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
+**Data Contact:** [Ryan Revnak](mailto:Ryan.Revnak@wildlife.ca.gov) and [Doug Killam](mailto:Doug.Killam@wildlife.ca.gov)
 
 ## Access Cloud Data
 
@@ -44,58 +44,440 @@ Adult spring run daily passage estimate is based on data recorded at Ward Dam vi
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 # Set global bucket 
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
-gcs_list_objects()
-# git data and save as xlsx
-gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data-raw/Mill Creek SRCS Daily Video Passage Estimates 2012-2020.xlsx",
+
+# get filenames for mill creek
+mill_creek_filenames <- gcs_list_objects() |> 
+  filter(str_detect(name, "adult-upstream-passage-monitoring/mill-creek/data-raw/MCVS")) |> 
+  pull(name)
+
+# define function to download all files
+get_files_from_cloud <- function(filename) {
+  print(substr(filename, 55, nchar(filename)))
+  gcs_get_object(object_name = filename,
+                 bucket = gcs_get_global_bucket(),
+                 saveToDisk = paste0("data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/", substr(filename, 55, nchar(filename))),
+                 overwrite = TRUE)
+  message(paste0("downloaded ", filename))
+}
+
+lapply(mill_creek_filenames, get_files_from_cloud)
+
+# get the one that says COPY of
+# 2020-2021 passage data
+gcs_get_object(object_name = "adult-upstream-passage-monitoring/mill-creek/data-raw/Copy of MCVS 2021-22 spring FINAL 8-17-22.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "mill_creek_passage_estimate_raw.xlsx")
+               saveToDisk = "data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/mill_creek_passage_counts_2021.xlsx",
+               overwrite = TRUE)
+```
+## Read in and clean raw count data for each year
+
+```{r, message = FALSE, warning = FALSE}
+save_to_prefix <- "data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/"
 ```
 
-Data for each year is in a separate sheet
-```{r, message=FALSE, warning=FALSE}
-sheets <- readxl::excel_sheets('mill_creek_passage_estimate_raw.xlsx')
-list_all <- lapply(sheets, function(x) readxl::read_excel(path = "mill_creek_passage_estimate_raw.xlsx", sheet = x, col_types = c("text", "numeric", "numeric", "numeric", "text")))
+This requires a different approach for each year because the file formats change.
+
+### 2006-2007
+```{r, message = FALSE, warning = FALSE}
+mill_2006_raw <- readxl::read_xls(paste0(save_to_prefix, "MCVS 2006-2007 as of 2-14-2008.xls"), 
+                                  sheet = "Daily Totals",
+                                  skip = 3) |> 
+  glimpse()
+
+mill_2006 <- mill_2006_raw |> 
+  janitor::clean_names() |> 
+  select(date, avg_water_temp, avg_flow_in_cfs, salmon_up, salmon_down) |> 
+  pivot_longer(salmon_up:salmon_down,
+               names_to = "passage_direction", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(passage_direction == "salmon_up", "up", "down")) |> 
+  glimpse()
 ```
+### 2007-2008
+```{r, message = FALSE, warning = FALSE}
+mill_2007_raw <- readxl::read_xls(paste0(save_to_prefix, "MCVS 2007-2008 as of 7-24-08.xls"), 
+                                  sheet = "Daily Totals",
+                                  skip = 3) |> 
+  glimpse()
 
-Bind the sheets into one file
-
-```{r, message=FALSE, warning=FALSE}
-raw_data <- dplyr::bind_rows(list_all) %>% 
+mill_2007 <- mill_2007_raw |> 
+  janitor::clean_names() |> 
+  select(date, avg_water_temp = water_temp, number_up, number_down) |> 
+  pivot_longer(number_up:number_down,
+               names_to = "passage_direction", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(passage_direction == "number_up", "up", "down")) |> 
   glimpse()
 ```
 
-## Data Transformations
+### 2008-2009
+```{r, message = FALSE, warning = FALSE}
+mill_2008_raw <- readxl::read_xls(paste0(save_to_prefix, "MCVS 2008-2009 as of 8-10-10.xls"), 
+                                  sheet = "Summary Totals ",
+                                  skip = 4) |> 
+  glimpse()
 
-```{r}
-cleaner_data <- raw_data %>% 
-  set_names(tolower(colnames(raw_data))) %>% 
-  select(-"...5") %>% #comments describe dates
-  rename("passage_estimate" =  'adult spring-run passing ward dam',
-         "flow" = "avg daily flow below ward dam",
-         "temperature"= "avg daily h2o temp below ward dam") %>% 
-  filter(date != "Totals:", date != "Total:") %>%
-  mutate(date = case_when(
-    str_length(date) == 5 ~ as.Date(as.numeric(date), origin="1899-12-30"),
-    str_detect(date, '[/]') ~ as.Date(date, "%m/%d/%Y"))
-    # TRUE ~ as.Date(date))
-  ) %>% 
+mill_2008 <- mill_2008_raw |> 
+  janitor::clean_names() |> 
+  select(date, avg_water_temp = water_temp_avg, avg_flow_in_cfs = flow_avg, salmon_number_up, salmon_number_down) |> 
+  pivot_longer(salmon_number_up:salmon_number_down,
+               names_to = "passage_direction", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(passage_direction == "salmon_number_up", "up", "down")) |> 
   glimpse()
 ```
+### 2009-2010
+```{r, message = FALSE, warning = FALSE}
+mill_2009_raw <- readxl::read_xls(paste0(save_to_prefix, "MCVS 2009-2010 as of  9-21-10.xls"), 
+                                  sheet = "SUMMARY",
+                                  skip = 4) |> 
+  glimpse()
+
+mill_2009 <- mill_2009_raw |> 
+  janitor::clean_names() |> 
+  select(date, avg_water_temp = water_temp_avg, avg_flow_in_cfs = flow_avg, salmon_number_up, salmon_number_down) |> 
+  pivot_longer(salmon_number_up:salmon_number_down,
+               names_to = "passage_direction", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(passage_direction == "salmon_number_up", "up", "down")) |> 
+  glimpse()
+```
+
+### 2010-2011
+- no `flow` or `temperature`, but some columns `flow_mch_max` and `mch_low_water_tmp_avg`.
+
+```{r, message = FALSE, warning = FALSE}
+mill_2010_raw <- readxl::read_xls(paste0(save_to_prefix, "MCVS 2010-2011 as of 10-16-12.xls"), 
+                                  sheet = "SUMMARY",
+                                  skip = 4) |> 
+  glimpse()
+
+mill_2010 <- mill_2010_raw |> 
+  janitor::clean_names() |> 
+  select(date, salmon_number_up, salmon_number_down) |> 
+  pivot_longer(salmon_number_up:salmon_number_down,
+               names_to = "passage_direction", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(passage_direction == "salmon_number_up", "up", "down")) |> 
+  glimpse()
+```
+
+### 2011-2012
+- seems they started collecting more flow and temp variables, adding a descriptor `mch` to them and collecting `min` and `max`.
+
+```{r, message = FALSE, warning = FALSE}
+mill_2011_raw <- readxl::read_xls(paste0(save_to_prefix, "MCVS 2011-2012 as of 9-22-13.xls"), 
+                                  sheet = "SUMMARY",
+                                  skip = 4,
+                                  col_types = c("date", rep("text", 23))) |> 
+  glimpse()
+
+mill_2011 <- mill_2011_raw |> 
+  janitor::clean_names() |> 
+  select(date, avg_water_temp = average_water_temp_mch, avg_flow_in_cfs = avg_flow_mch_low, number_salmon_up, number_salmon_down) |> 
+  mutate(across(avg_water_temp:number_salmon_down, as.numeric)) |> 
+  pivot_longer(number_salmon_up:number_salmon_down,
+               names_to = "passage_direction", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down")) |> 
+  glimpse()
+```
+### 2012-2013
+- this moves to a new format for data collection
+- There is a tab `Post R MCVS spring 2013` which is summed by day and has `original.counts` vs `consensus.counts` and `adjusted.counts`
+- we are using the tab `DATA ENTRY` which has raw counts with `passage_direction`, `time`, and `view_adjust`.
+- no covariates
+
+```{r, message = FALSE, warning = FALSE}
+mill_2012_raw <- readxl::read_xls(paste0(save_to_prefix, "MCVS 2012-2013 as of 9-22-13 .xls"), 
+                                  sheet = "DATA ENTRY",
+                                  skip = 4) |> 
+  glimpse()
+
+mill_2012 <- mill_2012_raw |> 
+  janitor::clean_names() |>
+  mutate(up_salmon = as.numeric(up_salmon),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_salmon,
+               names_to = "passage_direction", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+```
+
+### 2013-2014
+```{r, message = FALSE, warning = FALSE}
+mill_2013_raw <- readxl::read_xls(paste0(save_to_prefix, "MCVS 2013-2014 as of 11-24-2014.xls"), 
+                                  sheet = "DATA ENTRY",
+                                  skip = 4) |> 
+  glimpse()
+
+mill_2013 <- mill_2013_raw |> 
+  janitor::clean_names() |>
+  mutate(up_salmon = as.numeric(up_salmon),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_salmon,
+               names_to = "passage_direction", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(passage_direction == "number_salmon_up", "up", "down"),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+```
+
+### 2014-2015
+- includes `jack` now
+
+```{r, message = FALSE, warning = FALSE}
+mill_2014_raw <- readxl::read_xlsx(paste0(save_to_prefix, "MCVS 2014-2015 as of  7-3-2015.xlsx"), 
+                                  sheet = "DATA ENTRY",
+                                  skip = 3) |> 
+  glimpse()
+
+mill_2014 <- mill_2014_raw |> 
+  janitor::clean_names() |>
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+```
+### 2015-2016
+
+```{r, message = FALSE, warning = FALSE}
+mill_2015_raw <- readxl::read_xlsx(paste0(save_to_prefix, "MCVS 2015-2016 as of  4-25-2017.xlsx"), 
+                                  sheet = "DATA ENTRY",
+                                  skip = 5) |> 
+  glimpse()
+
+mill_2015 <- mill_2015_raw |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+```
+
+### 2016-2017
+
+```{r, message = FALSE, warning = FALSE}
+mill_2016_raw <- readxl::read_xlsx(paste0(save_to_prefix, "MCVS 2016-2017 as of  9-25-18.xlsx"), 
+                                  sheet = "DATA ENTRY 16-17",
+                                  skip = 5) |> 
+  glimpse()
+
+mill_2016 <- mill_2016_raw |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE)) |> 
+  glimpse()
+```
+
+### 2017-2018
+
+```{r, message = FALSE, warning = FALSE}
+mill_2017_raw <- readxl::read_xlsx(paste0(save_to_prefix, "MCVS 2017-2018 as of  9-14-18.xlsx"), 
+                                  sheet = "MILL-17-18 ",
+                                  skip = 5) |> 
+  glimpse()
+
+mill_2017 <- mill_2017_raw |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks, as.numeric),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks, dn_jacks, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_jacks,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+```
+
+### 2018-2019
+
+```{r, message = FALSE, warning = FALSE}
+mill_2018_raw <- readxl::read_xlsx(paste0(save_to_prefix, "MCVS 2018-2019 as of 3-19-20.xlsx"), 
+                                  sheet = "MILL-18-19",
+                                  skip = 5) |> 
+  glimpse()
+
+mill_2018 <- mill_2018_raw |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks_less_24, as.numeric),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks_less_24, dn_jacks_less_24, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_jacks_less_24,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+```
+
+### 2019-2020
+
+```{r, message = FALSE, warning = FALSE}
+mill_2019_raw <- readxl::read_xlsx(paste0(save_to_prefix, "MCVS 2019-20 as of  9-9-21.xlsx"), 
+                                  sheet = "MILL-19-20",
+                                  skip = 5) |> 
+  glimpse()
+
+mill_2019 <- mill_2019_raw |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks_less_24, as.numeric),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks_less_24, dn_jacks_less_24, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_jacks_less_24,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+```
+
+### 2020-2021
+
+```{r, message = FALSE, warning = FALSE}
+mill_2020_raw <- readxl::read_xlsx(paste0(save_to_prefix, "MCVS 2020-21 as of  3-3-23.xlsx"), 
+                                  sheet = "MILL-20-21",
+                                  skip = 3) |> 
+  glimpse()
+
+mill_2020 <- mill_2020_raw |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks_less_24, as.numeric),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks_less_24, dn_jacks_less_24, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_jacks_less_24,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+```
+
+### 2021-2022
+
+```{r, message = FALSE, warning = FALSE}
+mill_2021_raw <- readxl::read_xlsx("data-raw/qc-markdowns/adult-upstream-passage-monitoring/mill-creek/mill_creek_passage_counts_2021.xlsx", 
+                                         sheet = "MILL-21-22", 
+                                         skip = 5)
+
+mill_2021 <- mill_2021_raw |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks_less_24, as.numeric),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks_less_24, dn_jacks_less_24, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_jacks_less_24,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+
+```
+
+### 2022-2023
+
+```{r, message = FALSE, warning = FALSE}
+mill_2022_raw <- readxl::read_xlsx(paste0(save_to_prefix, "MCVS 2022-23 as of 8-28-23.xlsx"), 
+                                         sheet = "MILL-22-23", 
+                                         skip = 5) |> 
+  glimpse()
+
+mill_2022 <- mill_2022_raw |> 
+  janitor::clean_names() |> 
+  mutate(across(up_salmon:dn_jacks_less_24, as.numeric),
+         start_time = format(start_time, "%H:%M:%S")) |> 
+  select(date, start_time, up_salmon, dn_salmon, 
+         up_jacks_less_24, dn_jacks_less_24, viewing_adjust) |> 
+  pivot_longer(up_salmon:dn_jacks_less_24,
+               names_to = "count_type", 
+               values_to = "count") |> 
+  mutate(passage_direction = ifelse(count_type == "number_salmon_up", "up", "down"),
+         jack = ifelse(str_detect(count_type, "jacks"), TRUE, FALSE),
+         viewing_adjust = as.character(viewing_adjust)) |> 
+  glimpse()
+```
+
+## Data transformations
+
+```{r, message=FALSE, warning=FALSE}
+all_years_raw <- bind_rows(mill_2006, mill_2007, mill_2008, 
+                           mill_2009, mill_2010, mill_2011, 
+                           mill_2012, mill_2013, mill_2014, 
+                           mill_2015, mill_2016, mill_2017,
+                           mill_2018, mill_2019, mill_2020,
+                           mill_2021, mill_2022)
+
+all_mill_data <- all_years_raw |> 
+  select(-count_type) |> 
+  mutate(viewing_adjust = case_when(viewing_adjust == 0 ~ "normal",
+                                    viewing_adjust == 1 ~ "turbid",
+                                    viewing_adjust == 2 ~ "weir down",
+                                    viewing_adjust == 3 ~ "equipment fail",
+                                    viewing_adjust == 4 ~ "DIDSON/Aris",
+                                    is.na(viewing_adjust) ~ "VAKI",
+                                    TRUE ~ NA),
+         count = ifelse(is.na(count), 0, count)) |> 
+  relocate(date, start_time, count, passage_direction, jack, viewing_adjust, avg_water_temp, avg_flow_in_cfs) |> 
+  filter(year(date) > 2000) |> 
+  filter(!is.na(date)) |> 
+  mutate(date = as.Date(date)) |> 
+  rename(flow = avg_flow_in_cfs, temperature = avg_water_temp) |> 
+  glimpse()
+```
+
 
 ## Data Dictionary
 
 The following table describes the variables included in this dataset and the percent that do not include data. 
 
 ```{r data_dictionary}
-percent_na <- cleaner_data %>%
-  summarise_all(list(name = ~sum(is.na(.))/length(.))) %>%
+percent_na <- all_mill_data  |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.)))  |>
   pivot_longer(cols = everything())
   
-data_dictionary <- tibble(variables = colnames(cleaner_data),
+data_dictionary <- tibble(variables = colnames(all_mill_data),
                           description = c("Date of sampling",
-                                          "Passage estimate of Spring Run Chinook, TODO get methodlogy for generating passage estimates",
-                                          "Flow in CFS",
-                                          "Temperature (F) we convert to C"),
+                                          "Time of obseration",
+                                          "Counts of spring run Chinook",
+                                          "Direction of fish passage",
+                                          "Whether or not the fish was less than 24 inches (jack size)",
+                                          "Reason camera needed to be adjusted", "Average water temperature", "Flow in CFS"),
                           
                           percent_na = round(percent_na$value*100)
                           
@@ -109,68 +491,64 @@ knitr::kable(data_dictionary)
 Check for outlier and NA values
 
 ```{r}
-summary(cleaner_data$date)
+summary(all_mill_data$date)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$date))/nrow(cleaner_data), 3)*100` % of values in the `date` column are NA.
+*  `r round(sum(is.na(all_mill_data$date))/nrow(all_mill_data), 3)*100` % of values in the `date` column are NA.
 
 ## Explore Numerical Values
 
-### Variable:`passage_estimate` 
+### Variable:`count` 
 ```{r}
-cleaner_data %>%
-  filter(date != is.na(date)) %>%
-  mutate(year = as.factor(year(date))) %>% 
+all_mill_data  |>
+  mutate(year = as.factor(year(date)))  |> 
   # glimpse()
-  ggplot(aes(x=date, y = passage_estimate))+
+  ggplot(aes(x=date, y = count))+
   geom_line()+
   facet_wrap(~year, scales = "free")+
   theme_minimal()+
-  labs(title = "Daily Passage Estimate From 2012 - 2020")
+  labs(title = "Daily Counts From 2007 - 2023")
 ```
 
 
 ```{r}
-cleaner_data %>% 
-  filter(date != is.na(date)) %>%
-  mutate(year = as.factor(year(date))) %>%
-  # glimpse()
-  group_by(year) %>% 
-  summarise(total = sum(passage_estimate, na.rm  = TRUE)) %>%
-  # glimpse()
+all_mill_data  |> 
+  filter(date != is.na(date))  |>
+  mutate(year = as.factor(year(date)))  |>
+  group_by(year)  |> 
+  summarise(total = sum(count, na.rm  = TRUE))  |>
   ggplot(aes(x = year, y = total, group = 1))+
   geom_line()+
   geom_point(aes(x=year, y = total))+
   theme_minimal()+
-  labs(title = "Total Annual Passage Estimate from 2012 - 2020",
-       y = "Total passage_estimate")
+  labs(title = "Total Annual Passage Estimate from 2007 - 2023",
+       y = "Total count")
 ```
 
-**Numeric Summary of passage_estimate From 2012 to 2020**
+**Numeric Summary of count From 2007 to 2023**
 ```{r}
-summary(cleaner_data$passage_estimate)
+summary(all_mill_data$count)
 ```
-Note: there is a negative estimate in one of the days - need to remove that
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$passage_estimate))/nrow(cleaner_data), 3)*100` % of values in the `passage_estimate` column are NA.
+*  `r round(sum(is.na(all_mill_data$count))/nrow(all_mill_data), 3)*100` % of values in the `count` column are NA.
 
 ### Variable:`flow`
 
 Flow in cfs
 
 ```{r fig.height=8, fig.width=8}
-cleaner_data %>% 
-  filter(date != is.na(date)) %>%
-  group_by(date) %>%
-  mutate(avg_flow = mean(flow, na.rm = T)) %>%
-  ungroup() %>% 
+all_mill_data  |> 
+  filter(date != is.na(date))  |>
+  group_by(date)  |>
+  mutate(avg_flow = mean(flow, na.rm = T))  |>
+  ungroup()  |> 
   mutate(year = as.factor(year(date)),
          fake_year = 1900,
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>% 
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date))))  |> 
   ggplot(aes(x = fake_date, y = avg_flow, color = year)) + 
   scale_color_brewer(palette = "Dark2")+
   geom_point(alpha = .25) + 
@@ -183,8 +561,8 @@ cleaner_data %>%
        x = "Date")  
 ```
 ```{r fig.height=8, fig.width=8}
-cleaner_data %>% 
-  mutate(year = as.factor(year(date))) %>% 
+all_mill_data  |> 
+  mutate(year = as.factor(year(date)))  |> 
   ggplot(aes(x=flow, fill = year))+
   scale_fill_brewer(palette = "Dark2")+
   geom_histogram()+
@@ -192,28 +570,28 @@ cleaner_data %>%
   labs(title = "Distribution of Flow")
 ```
 
-**Numeric Summary of flow From 2012 to 2020**
+**Numeric Summary of flow From 2007 to 2023**
 ```{r}
-summary(cleaner_data$flow)
+summary(all_mill_data$flow)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$flow))/nrow(cleaner_data), 3)*100` % of values in the `flow` column are NA.
+*  `r round(sum(is.na(all_mill_data$flow))/nrow(all_mill_data), 3)*100` % of values in the `flow` column are NA.
 
 ### Variable:`temperature`
 
 Temperature in F, convert to C below 
 
 ```{r fig.height=8, fig.width=8}
-cleaner_data %>% 
-  filter(date != is.na(date)) %>%
-  group_by(date) %>%
-  mutate(avg_temp = mean(temperature, na.rm = T)) %>%
-  ungroup() %>% 
+all_mill_data  |> 
+  filter(date != is.na(date))  |>
+  group_by(date)  |>
+  mutate(avg_temp = mean(temperature, na.rm = T))  |>
+  ungroup()  |> 
   mutate(year = as.factor(year(date)),
          fake_year = 1900,
-         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) %>% 
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date))))  |> 
   ggplot(aes(x = fake_date, y = avg_temp, color = year)) + 
   scale_color_brewer(palette = "Dark2")+
   geom_point(alpha = .25) + 
@@ -227,9 +605,9 @@ cleaner_data %>%
 ```
 
 ```{r fig.height=8, fig.width=8}
-cleaner_data %>% 
-  filter(date != is.na(date)) %>%
-  mutate(year = as.factor(year(date))) %>% 
+all_mill_data  |> 
+  filter(date != is.na(date))  |>
+  mutate(year = as.factor(year(date)))  |> 
   ggplot(aes(x=temperature, fill = year))+
   scale_fill_brewer(palette = "Dark2")+
   geom_histogram(bins = 10)+
@@ -237,40 +615,38 @@ cleaner_data %>%
   labs(title = "Distribution of Temperature")
 ```
 
-**Numeric Summary of temperature From 2012 to 2020**
+**Numeric Summary of temperature From 2007 to 2023**
 ```{r}
-summary(cleaner_data$temperature)
+summary(all_mill_data$temperature)
 ```
 
 **NA and Unknown Values**  
 
-*  `r round(sum(is.na(cleaner_data$temperature))/nrow(cleaner_data), 3)*100` % of values in the `temperature` column are NA.
+*  `r round(sum(is.na(all_mill_data$temperature))/nrow(all_mill_data), 3)*100` % of values in the `temperature` column are NA.
 
 ### Notes and Issues
 
-* passage_estimate drops significantly after 2014
-* Only have passage estimates may want to purse raw data
+* count drops significantly in 2023
+* We are treating these as counts (in standard format, rename passage estimates to counts) - are these passage estimates for the earlier data?
 * Temperature in F, convert to C below 
 
 ```{r}
-cleaner_data <- cleaner_data %>%
+all_mill_data <- all_mill_data  |>
   mutate(temperature = (temperature - 32) * (5/9))
 ```
 
 
-## Next steps
-
-* See if we need raw data from this video monitoring 
-
 ### Add cleaned data back onto google cloud
 
 ```{r}
-mill_upstream_estimate <- cleaner_data %>% glimpse()
+mill_upstream_counts <- all_mill_data  |> glimpse()
 ```
 
-```{r}
+```{r, eval = FALSE}
 f <- function(input, output) write_csv(input, file = output)
-gcs_upload(mill_upstream_estimate,
+gcs_upload(mill_upstream_counts,
            object_function = f,
            type = "csv",
-           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_passage_estimate.csv")
+           name = "adult-upstream-passage-monitoring/mill-creek/data/mill_upstream_counts.csv",
+           predefinedAcl = "bucketLevel")
+```

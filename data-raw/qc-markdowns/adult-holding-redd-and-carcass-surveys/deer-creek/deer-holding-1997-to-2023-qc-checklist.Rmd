@@ -1,0 +1,191 @@
+---
+title: "deer-holding-1997-to-2020-qc-checklist"
+author: "Inigo Peng"
+date: "10/19/2021"
+output: rmarkdown::github_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library (RColorBrewer)
+library(knitr)
+```
+
+# Deer Creek Adult Holding Survey Data 1997 to 2020 
+
+**Description of Monitoring Data**
+
+The adult holding survey data is in three files: first one is from 1986 to 1996, second one is 1997 to 2020, and a third is 1997-2023. Originally the data file from 1997-2020 was used, but this is updated to use the 1997-2023 data as of `2024-05-1`. The data is collected via snorkel counts. The data has been qced and summed up.
+
+**Timeframe:** 
+
+1997 to 2023
+
+**Completeness of Record throughout timeframe:**
+
+* Some data lacks for Trail 2E17 to Dillon Cove
+
+**Sampling Location:** 
+
+* Upper Falls to Potato Patch
+* Potato Patch to Lower Falls
+* Lower Falls to A-Line
+* A-Line to Wilson Cove
+* Wilson Cove to Polk Springs
+* Polk Springs to Murphy Trail
+* Murphy Trail to Ponderosa Way
+* Ponderosa Way to Trail 2E17
+* Trail 2E17 to Dillon Cove     
+
+
+**Data Contact:** [Matt Johnson](mailto:Matt.Johnson@wildlife.ca.gov)
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+
+# 1997-2020 data (for comparison)
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/deer-creek/data-raw/Deer Creek SRCS snorkel survey counts by section 1997-2020.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "deer_creek_holding_1997_raw.xlsx",
+               overwrite = TRUE)
+
+# 1997-2023 data
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/deer-creek/data-raw/Deer Creek Spring-Run Snorkel Counts by Section 1997-2023.xlsx",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/deer-creek/deer_creek_snorkel_1997-2023_raw.xlsx",
+               overwrite = TRUE)
+```
+### 1997-2020 data
+```{r}
+raw_data = readxl::read_excel('deer_creek_holding_1997_raw.xlsx', 
+                              col_types = c("text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
+                                            "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
+                                            "numeric", "numeric", "numeric", "numeric", "numeric"))
+glimpse(raw_data)
+```
+
+### 1997-2023 data
+```{r}
+raw_data_2023 <- readxl::read_xlsx(path = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/deer-creek/deer_creek_snorkel_1997-2023_raw.xlsx",
+                                   sheet = "Deer SRCS Snorkel 1997-2022",
+                                   skip = 5) |> 
+  glimpse()
+```
+## Data Transformations
+
+### Older dataset
+```{r}
+cleaner_data <- raw_data |> 
+  slice(1:(n()-1)) |> 
+  pivot_longer(!'Survey Reach', names_to = "year", values_to = "count") |> 
+  rename('location' = 'Survey Reach') |> 
+  glimpse()
+```
+
+### Updated dataset (with 2022 and 2023)
+```{r}
+cleaner_data_2023 <- raw_data_2023 |> 
+  rename(location = `Survey Reach`) |> 
+  filter(!location %in% c(NA, "Total Count:")) |> 
+  filter(!str_detect(location, "not surveyed")) |> 
+  mutate(across(`1997`:`2023`, as.character)) |> 
+  pivot_longer(!"location", names_to = "year", values_to = "count") |> 
+  mutate(surveyed = ifelse(count %in% c("n/s", "*"), FALSE, TRUE),
+         count = ifelse(count %in% c("n/s", "*"), NA_integer_, as.numeric(count)),
+         year = as.numeric(year)) |> 
+  glimpse()
+```
+
+## Data Dictionary
+
+The following table describes the variables included in this dataset and the percent that do not include data.
+
+```{r data_dictionary}
+percent_na <- cleaner_data_2023 |>
+  summarise_all(list(name = ~sum(is.na(.))/length(.))) |>
+  pivot_longer(cols = everything())
+  
+data_dictionary <- tibble(variables = colnames(cleaner_data_2023),
+                          description = c("Survey reach",
+                                          "Sample year",
+                                          "Number of fish observed",
+                                          "Whether or not that reach was surveyed in a given year"),
+                          percent_na = round(percent_na$value*100)
+                          
+)
+kable(data_dictionary)
+```
+
+
+## Explore Categorical Variables
+
+### Variable `location`
+```{r}
+table(cleaner_data_2023$location)
+```
+
+**NA and Unknown Values**  
+
+*  `r round(sum(is.na(cleaner_data_2023$location))/nrow(cleaner_data_2023), 3)*100` % of values in the `location` column are NA.
+
+## Explore Numeric Variables
+
+### Variable `count`
+```{r fig.height=7, fig.width=10}
+#Find the most distinctive colours for visual
+colourCount = length(unique(cleaner_data_2023$location))
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))
+
+cleaner_data_2023 |>
+  mutate(year = as.factor(year)) |> 
+  ggplot(aes(x = year, y = count, fill = location))+
+  scale_fill_manual(values = getPalette(colourCount))+
+  geom_col()+
+  theme_minimal()+
+  labs(title = "Adult Holding Count By Year")+
+  theme(axis.text.x = element_text(angle = 90))+
+  ylim(0, 3000)
+```
+```{r}
+cleaner_data_2023 |> 
+  ggplot(aes(x = count, y = location))+
+  geom_boxplot() +
+  theme_minimal()+
+  labs(title = "Adult Holding Count By Reach")
+```
+
+**Numeric Annual Summary of count From 1997 to 2023**
+```{r}
+cleaner_data_2023 |>
+  group_by(year) |>
+  summarise(count = sum(count, na.rm = T)) |>
+  pull(count) |>
+  summary()
+```
+
+**NA and Unknown Values**  
+
+* `r round(sum(is.na(cleaner_data_2023$count))/nrow(cleaner_data_2023), 5)*100` % of values in the `count` column are NA. 
+
+## Next steps
+
+
+## Add cleaned data back onto google cloud
+```{r}
+deer_adult_holding_survey_1997_to_2023 <- cleaner_data_2023 |> 
+  glimpse()
+```
+```{r}
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(deer_adult_holding_survey_1997_to_2023,
+           object_function = f,
+           type = "csv",
+           name = "adult-holding-redd-and-carcass-surveys/deer-creek/data/deer_adult_holding_1997_to_2023.csv")
+```
