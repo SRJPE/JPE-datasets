@@ -793,6 +793,7 @@ combined_trap <- combined_trap_raw %>%
          # convert ft to m and inches to cm
          depth_adjust = depth_adjust*2.54,
          rpms_start = case_when(!is.na(rpms_seconds_start) & rpms_seconds_start != 60 ~ rpms_start*60/rpms_seconds_start,
+                                is.infinite(rpms_start) ~ 0,
                                 T ~ rpms_start),
          rpms_end = case_when(!is.na(rpms_seconds_end) & rpms_seconds_end != 60 ~ rpms_end*60/rpms_seconds_end,
                                 T ~ rpms_end),
