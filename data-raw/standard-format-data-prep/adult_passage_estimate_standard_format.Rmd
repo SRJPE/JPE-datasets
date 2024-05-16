@@ -83,7 +83,7 @@ gcs_get_object(object_name =
 - They were manually extracted and entered into an excel for speed, but raw files are in the bucket.
 
 ```{r}
-deer_raw <- readxl::read_excel(here("data", "deer_escapement_estimates.csv"))
+deer_raw <- readxl::read_excel(here::here("data", "deer_escapement_estimates.csv"))
 
 
 # deer creek 2014 collects north and south ladders separately; for 

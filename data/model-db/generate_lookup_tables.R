@@ -402,6 +402,32 @@ gcs_upload(direction,
            predefinedAcl = "bucketLevel")
 
 
+# upstream_method ------------------------------------------------------------------
+upstream_method <- tibble(definition = c("video","trap","didson",NA),
+                    description = c("upstream passage data is captured through a video system",
+                                    "upstream passage data is captured through weir traps",
+                                    "upstream passage data is captured through a DIDSON sonar system",
+                                    "methodology is not captured")) |> # note that we can probably fill these in
+  mutate(id = row_number())
+gcs_upload(upstream_method,
+           object_function = f,
+           type = "csv",
+           name = "model-db/upstream_method.csv",
+           predefinedAcl = "bucketLevel")
+
+# upstream_ladder ------------------------------------------------------------------
+ladder <- tibble(definition = c("north","south","both",NA),
+                          description = c("upstream passage data is reported for north ladder",
+                                          "upstream passage data is reported for south ladder",
+                                          "upstream passage data is reported for both ladders",
+                                          "ladder is not captured")) |> # note that we can probably fill these in
+  mutate(id = row_number())
+gcs_upload(ladder,
+           object_function = f,
+           type = "csv",
+           name = "model-db/ladder.csv",
+           predefinedAcl = "bucketLevel")
+
 # method ------------------------------------------------------------------
 # method <- tibble(definition = c("maximum yearly redd count", "summed by redd id"),
 #                     description = c("","")) |> 

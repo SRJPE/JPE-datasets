@@ -134,6 +134,7 @@ try(if(any((unique(catch$run_id) %in% run$id) == F))
 try(if(any((unique(catch$lifestage_id) %in% lifestage$id) == F))
   stop("Missing Lifestage ID! Please fix!"))
 
+ck_deer <- filter(catch, trap_location_id %in% 16:17)
 gcs_upload(catch,
            object_function = f,
            type = "csv",
@@ -355,7 +356,7 @@ release <- release_raw |>
 # check that there are no missing dates
 # one time check - compare to last table provided josh with
 # check number recaptured and number released make sense
-
+ck_deer <- filter(release, trap_location_id %in% 16:17)
 gcs_upload(release,
            object_function = f,
            type = "csv",
@@ -408,7 +409,7 @@ unique(recaptured_fish$lifestage_id)
 # one time check - compare to last table provided josh with
 # check number recaptured and number released make sense
 
-
+ck_deer <- filter(recaptured_fish, trap_location_id %in% 16:17)
 gcs_upload(recaptured_fish,
            object_function = f,
            type = "csv",
@@ -511,7 +512,10 @@ carcass_estimates <- carcass_estimates_raw |>
          lower_bound_estimate = lower,
          confidence_level = confidence_interval) |> 
   # this is so we can join to survey_location
-  mutate(reach = NA) |> 
+  mutate(reach = NA,
+         confidence_level = case_when(confidence_level == "90%" ~ 90,
+                                      confidence_level == "95%" ~ 95,
+                                      T ~ as.numeric(confidence_level))) |> 
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
   rename(survey_location_id = id) |>
@@ -655,7 +659,11 @@ passage <- passage_raw |>
   #direction_id
   left_join(direction, by = c("passage_direction" = "definition")) |> 
   rename(direction_id = id) |> 
-  select(-passage_direction, -description)
+  select(-passage_direction, -description) |> 
+  # method
+  left_join(upstream_method, by = c("method" = "definition")) |> 
+  rename(upstream_method_id = id) |> 
+  select(-method, -description)
 
 try(if(any((unique(passage$survey_location_id) %in% survey_location$id) == F)) 
   stop("Missing Survey Location ID! Please fix!"))
@@ -686,16 +694,20 @@ passage_estimates <- passage_estimates_raw |>
   # survey_location_id
   mutate(reach = NA,
          # these fields will be filled in when we get this information
-         upper_bound_estimate = NA,
-         lower_bound_estimate = NA,
-         confidence_level = NA) |> 
+         upper_bound_estimate = ucl,
+         lower_bound_estimate = lcl,
+         confidence_level = confidence_interval) |> 
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
   rename(survey_location_id = id) |>
   # run_id
   left_join(run, by = c("run" = "definition")) |> 
   rename(run_id = id) |> 
-  select(-run, -description)   
+  select(-run, -description, -ucl, -lcl, -confidence_interval) |> 
+  # ladder_id
+  left_join(upstream_ladder, by = c("ladder" = "definition")) |> 
+  rename(ladder_id = id) |> 
+  select(-ladder, -description)
   
 try(if(any((unique(passage_estimates$survey_location_id) %in% survey_location$id) == F)) 
   stop("Missing Survey Location ID! Please fix!"))
