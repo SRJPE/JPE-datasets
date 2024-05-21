@@ -198,7 +198,7 @@ mill_redd <- read_csv(here::here("data", "redd-carcass-holding", "mill_redd.csv"
 summary(mill_redd)
 
 clean_mill_redd <- mill_redd  |>
-  rename(reach = location)  |>
+  rename(reach = location)  |> 
   filter(surveyed %in% c(TRUE, NA)) |> # remove years where reach was not surveyed
   mutate(stream = 'mill creek',
          # pseudo date to add into daily data
@@ -323,9 +323,8 @@ standard_reach_lookup <- read_csv(here::here("data", "standard-format-data", "st
   select(stream, reach, standardized_reach)
 
 redd_data_final <- all_redd_data |> 
-  left_join(standard_reach_lookup, by = c("stream", "reach")) |> 
-  select(-reach) |> 
-  rename(reach = standardized_reach) |> 
+  left_join(standard_reach_lookup, by = c("stream", "reach")) |> # TODO something weird going on with mill creek standardized reaches
+  mutate(reach = ifelse(stream == "mill creek", reach, standardized_reach)) |> 
   relocate(reach, .before = river_mile) |> 
   glimpse()
 ```
