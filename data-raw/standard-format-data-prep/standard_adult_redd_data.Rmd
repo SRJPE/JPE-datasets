@@ -199,6 +199,8 @@ summary(mill_redd)
 
 clean_mill_redd <- mill_redd  |>
   rename(reach = location)  |> 
+  mutate(reach = ifelse(reach == "Litte Hole-in-Ground to Hole-in-Ground",
+                        "Little Hole-in-Ground to Hole-in-Ground", reach)) |> 
   filter(surveyed %in% c(TRUE, NA)) |> # remove years where reach was not surveyed
   mutate(stream = 'mill creek',
          # pseudo date to add into daily data
