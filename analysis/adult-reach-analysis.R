@@ -301,7 +301,9 @@ deer_reach_lookup <- tibble("reach" = unique(all_deer_reaches$reach),
                                                       "Murphy Trail to Ponderosa Way",
                                                       "Ponderosa Way to Moak Cove",
                                                       "Ponderosa Way to Trail 2E17",
+                                                      "Upper Falls to Potato Patch Camp",
                                                       "Potato Patch Camp to Highway 32 (Red Bridge)",
+                                                      "Lower Falls to A Line",
                                                       "A Line to Wilson Cove",
                                                       "Wilson Cove to Polk Springs",
                                                       "Polk Springs to Murphy Trail",
@@ -327,7 +329,9 @@ all_mill_reaches |>
 # no need to standardize for Mill Creek, but create lookup to bind rows
 mill_reach_lookup <- tibble(reach = unique(all_mill_reaches$reach),
                             standardized_reach = unique(all_mill_reaches$reach),
-                            reach_description = unique(all_mill_reaches$reach))
+                            reach_description = unique(all_mill_reaches$reach)) |> 
+  mutate(standardized_reach = case_when(standardized_reach == "Ranch House to above Avery" ~ "Below Ranch House to above Avery",
+                                        T ~ standardized_reach))
 
 # Feather -----------------------------------------------------------------
 all_feather_reaches <- bind_rows(redd |> 

@@ -284,11 +284,13 @@ all_redd_data <- bind_rows(clean_battle_redd,
                            clean_feather_redd,
                            clean_mill_redd,
                            clean_yuba_redd)  |> 
-  mutate(species = case_when(species %in% c("chinook","CHN") ~ "chinook",
+  mutate(species = case_when(species %in% c("chinook","CHN", "Chinook") ~ "chinook",
                              species %in% c("UNK", "Unknown", "Salmonid") ~ "unknown",
                              species %in% c("SH", "O. mykiss") ~ "steelhead",
-                             is.na(species) ~ "not recorded"),
-         run = ifelse(is.na(run), "not recorded", run))
+                             is.na(species) ~ "not recorded",
+                             T ~ species),
+         run = ifelse(is.na(run), "not recorded", run),
+         run = ifelse(run == "late-fall", "late fall", run))
 ```
 
 ## Save file without standardized reaches
