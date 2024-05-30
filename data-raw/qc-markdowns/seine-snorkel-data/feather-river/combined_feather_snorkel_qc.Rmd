@@ -1,0 +1,230 @@
+---
+title: "Combine Feather River Snorkel Data"
+author: "Liz Stebbins"
+date: "5/2/2024"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(googleCloudStorageR)
+library(knitr)
+color_pal <- c("#9A8822",  "#F8AFA8", "#FDDDA0", "#74A089", "#899DA4", "#446455", "#DC863B", "#C93312")
+
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+```
+
+## Snorkel Data Standardization
+
+FlowWest received snorkel data for Feather River in two separate Access databases: one for pre-2004 data and one for 2004-2020 data. These are processed in separate markdowns.
+  
+```{r, message = FALSE, warning = FALSE}
+gcs_get_object(object_name = 
+                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/pre_2004_snorkel.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "snorkel_pre_2004.csv"),
+               overwrite = TRUE)
+gcs_get_object(object_name = 
+                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/post_2004_snorkel.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "snorkel_post_2004.csv"),
+               overwrite = TRUE)
+
+snorkel_pre_2004 <- read_csv(here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "snorkel_pre_2004.csv"))
+snorkel_post_2004 <- read_csv(here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "snorkel_post_2004.csv"))
+
+```
+
+## Standard format for Adult All Snorkel Data
+
+## Read in data {.tabset}
+  
+Below we read in the snorkel data from the different databases and rename or select columns so that we can join all the monitoring datasets together in the section below.
+
+### Pre-2004
+
+#### Columns Removed
+
+- `flow` and `adj_flow` - sparsely recorded and values not on the same scale as `river_flow`
+- `fish_depth` seemed redundant with `river_depth`
+- `max_fork_length` seemed redundant with `fork_length`
+
+columns created/renamed:
+- `river_flow` renamed to `flow`
+- `river_depth` renamed to `water_depth_m`
+- `huc_unit` renamed to `unit_type`
+
+```{r}
+clean_snorkel_pre_2004 <- snorkel_pre_2004 |> 
+  select(-c(flow, adj_flow, fish_depth, max_fork_length)) |> 
+  rename(flow = river_flow,
+         water_depth_m = river_depth,
+         unit_type = huc_unit) |> 
+  glimpse()
+```
+
+### Post-2004
+
+#### Columns Removed
+
+- `survey_comments` and `observation_comments` - not necessary for final dataset
+- `time_of_temperature`, `observation_id`, `lwd_number` - not necessary for final dataset
+
+columns created/renamed:
+- `weather_code` renamed to `weather`
+- `hydrology_code` renamed to `hydrology`
+
+```{r}
+# get lookup tables from pre-2004 table for some codes
+# db_filepath <- here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "feather-river-db.mdb")
+# library(Hmisc)
+# lookup_HUC_cover <- mdb.get(db_filepath, "HUCcoverLU")
+# lookup_HUC_o_cover <- mdb.get(db_filepath, "HUCOcoverLU")
+# lookup_HUC_substrate <- mdb.get(db_filepath, "HUCsubstrateLU")
+# detach(package:Hmisc)
+
+# first join the lookup tables
+# clean_snorkel_post_2004_lu <- snorkel_post_2004 |> 
+  # left_join(lookup_HUC_o_cover, by = c("overhead_cover" = "CoverCode")) |> 
+  #   mutate(Cover = case_when(overhead_cover == 12 ~ "Overhead Object/Veg. 0 - 0.5m, Overhead Object/Veg. 0.5 - 2m",
+  #                          overhead_cover == 13 ~ "Overhead Object/Veg. 0 - 0.5m, Submerged Aquatic Veg/Algae",
+  #                          overhead_cover == 4 ~ "unknown (code 4)",
+  #                          TRUE ~ Cover),
+  #          Cover = str_to_lower(Cover)) |> 
+  # select(-c(overhead_cover)) |> 
+  # rename(overhead_cover = Cover) |> 
+  # glimpse()
+
+clean_snorkel_post_2004 <- snorkel_post_2004 |> 
+  select(-c(survey_comments, observation_comments, time_of_temperature,
+            observation_id, lwd_number)) |> 
+  rename(weather = weather_code,
+         hydrology = hydrology_code) |> 
+  mutate(hydrology = str_to_lower(hydrology)) |> 
+  glimpse()
+```
+
+
+## Combine data:
+
+```{r}
+all_snorkel_data <- bind_rows(clean_snorkel_post_2004, 
+                           clean_snorkel_pre_2004)  |> glimpse()
+```
+
+## Standardization of combined data
+
+### Location
+
+This code was written by Maddee and pulled in on 3-13-2024. Mapped to standard section names in DMP map.
+
+```{r}
+all_snorkel_data_section_names <- all_snorkel_data |> 
+  mutate(section_name = case_when(section_name == "Vance West" ~ "Vance Riffle",
+                                  section_name == "Eye" ~ "Eye Riffle",
+                                  section_name == "Hatchery Side Ditch" ~ "Hatchery Ditch",
+                                  section_name == "Hatchery Side Channel" ~ "Hatchery Riffle", 
+                                  section_name == "Gridley Side Channel" ~ "Gridley Riffle", 
+                                  section_name %in% c("Robinson", "Lower Robinson") ~ "Robinson Riffle",
+                                  section_name == "Goose" ~ "Goose Riffle", 
+                                  section_name == "Auditorium" ~ "Auditorium Riffle",
+                                  section_name %in% c("Matthews", "Mathews", "Mathews Riffle") ~ "Matthews Riffle",
+                                  section_name %in% c("G95 Side Channel", "G95 West Side Channel", "G95 Side West", "G95 Side") ~ "G95", 
+                                  section_name %in% c("Vance West Riffle", "Vance W Riffle", "Vance East") ~ "Vance Riffle",
+                                  section_name %in% c("Moes", "Moes Ditch") ~ "Mo's Ditch",
+                                  section_name == "Aleck" ~ "Aleck Riffle",
+                                  section_name %in% c("Lower Mcfarland", "Upper Mcfarland") ~ "McFarland",
+                                  section_name %in% c("Bed Rock Riffle", "Bedrock Riffle", "Bedrock", "Bedrock Park") ~ "Bedrock Park Riffle",
+                                  section_name == "Steep" ~ "Steep Riffle",
+                                  section_name %in% c("Keister", "Keister Riffle") ~ "Kiester Riffle",
+                                  section_name == "Junkyard" ~ "Junkyard Riffle",
+                                  section_name == "Gateway" ~ "Gateway Riffle",
+                                  section_name == "Trailer Park" ~ "Trailer Park Riffle",
+                                  section_name %in% c("Hatchery Ditch And Moes", "Hatchery Ditch Moes Ditch", 
+                                                      "Hatchery Side Channel Moes Ditch", 
+                                                      "Hatchery Ditch Lower Moes Ditch Upper",
+                                                      "Hatchery Ditch And Moes Ditch", 
+                                                      "Hatchery Side Channel And Moes Ditch", 
+                                                      "Hatchery Ditch Moes") ~ "Hatchery Ditch and Mo's Ditch",
+                                  section_name %in% c("Hatchery And Moes Side Channels", "Hatchery Side Ch Moes Side Ch", 
+                                                      "Hatchery Side Channel And Moes") ~ "Hatchery and Mo's Riffles", 
+                                  .default = as.character(section_name))) |> 
+  glimpse()
+```
+
+
+```{r, message = FALSE}
+# map to section_number from DMP for VA feather snorkel
+# map the section name to a section number (where applicable)
+all_snorkel_data_final <- all_snorkel_data_section_names |> 
+  mutate(section_number = case_when(section_name == "Aleck Riffle" ~ 8,
+                                    section_name == "Auditorium Riffle" ~ 4,
+                                    section_name == "Bedrock Park Riffle" ~ 5,
+                                    section_name == "Bedrock Riffle" ~ 10,
+                                    section_name == "Big Riffle" ~ 17,
+                                    section_name == "Eye Riffle" ~ 11,
+                                    section_name == "G95" ~ 14,
+                                    section_name == "Gateway Riffle" ~ 12,
+                                    section_name == "Goose Riffle" ~ 16,
+                                    section_name == "Gridley Riffle" ~ 19,
+                                    section_name == "Hatchery Ditch" ~ 2,
+                                    section_name == "Hatchery Riffle" ~ 1,
+                                    section_name == "Junkyard Riffle" ~ 20,
+                                    section_name == "Kiester Riffle" ~ 15,
+                                    section_name == "Matthews Riffle" ~ 7,
+                                    section_name == "McFarland" ~ 18,
+                                    section_name == "Mo's Ditch" ~ 3,
+                                    section_name == "Robinson Riffle" ~ 9,
+                                    section_name == "Steep Riffle" ~ 10,
+                                    section_name == "Trailer Park Riffle" ~ 6,
+                                    section_name == "Vance Riffle" ~ 13,
+                                    TRUE ~ NA))
+```
+
+### Temperature - conversion of F to C
+
+It looks like temperature was recorded in either `F` or `C` over the whole time period. There seems to be a distinct cutoff between `F` temperatures (the higher points) and `C` temperatures. For all temperatures above a threshold of `40` (which, if that were in `F`, would be `104`), we convert to `C`.
+
+There are some `0` values.
+
+```{r}
+all_snorkel_data_final |> 
+  ggplot(aes(x = date, y = temperature)) +
+  geom_point() +
+  theme_minimal() +
+  labs(x = "Date", y = "Temperature", title = "Temperature sampled over time frame")
+```
+
+```{r}
+all_snorkel_data_final <- all_snorkel_data_final |> 
+  mutate(temperature_c = ifelse(temperature >= 40, 
+                                weathermetrics::fahrenheit.to.celsius(temperature),
+                                temperature))
+all_snorkel_data_final |> 
+  ggplot(aes(x = date, y = temperature_c)) +
+  geom_point() +
+  theme_minimal() +
+  labs(x = "Date", y = "Temperature (C)", title = "Temperature in C sampled over time frame")
+
+all_snorkel_data_final <- all_snorkel_data_final |> 
+  select(-temperature) |> 
+  rename(temperature = temperature_c) |> 
+  mutate(section_name = str_to_title(section_name),
+         location = str_to_title(location))
+```
+## Save Cleaned Data to Google Cloud
+
+```{r}
+knitr::kable(all_snorkel_data_final  |> head())
+```
+
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(all_snorkel_data_final,
+           object_function = f,
+           type = "csv",
+           name = "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data/combined_feather_snorkel_data.csv",
+           predefinedAcl = "bucketLevel")
+```

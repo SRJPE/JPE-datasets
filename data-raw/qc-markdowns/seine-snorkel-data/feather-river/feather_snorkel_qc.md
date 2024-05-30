@@ -8,7 +8,7 @@ Erin Cain
 ## Description of Monitoring Data
 
 Feather River Snorkel Data from 2004 - 2020. This data was provided to
-flowwest in an access database Snorkel\_Revided.mdb. We queried it to
+flowwest in an access database Snorkel_Revised.mdb. We queried it to
 have all year and important variables. Snorkel data from 1999 - 2003 is
 available in a separate access database FR S and S Oroville.mdb
 
@@ -22,10 +22,10 @@ No environmental data collected pre 2010.
 
 No data for:
 
--   2006
--   2008
--   2009
--   2014
+- 2006
+- 2008
+- 2009
+- 2014
 
 **Sampling Location:** Feather River
 
@@ -48,7 +48,8 @@ gcs_list_objects()
 gcs_get_object(object_name = 
                  "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/feather_snorkel_and_catch.xlsx",
                bucket = gcs_get_global_bucket(),
-               saveToDisk = "raw_snorkel.xlsx",
+               saveToDisk = here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "raw_snorkel.xlsx"),
+               # saveToDisk = "raw_snorkel.xlsx",
                overwrite = TRUE)
 ```
 
@@ -56,43 +57,43 @@ Read in data from google cloud, glimpse raw data:
 
 ``` r
 # read in data to clean 
-raw_snorkel <- read_xlsx("raw_snorkel.xlsx") %>% glimpse
+raw_snorkel <- read_xlsx(here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "raw_snorkel.xlsx")) %>% glimpse
 ```
 
     ## Rows: 12,460
     ## Columns: 27
-    ## $ SurveyID              <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
-    ## $ Date                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ Flow                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Weather Code`        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ Turbidity             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ Temperature           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Time of Temperature` <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ `Snorkel StartTtime`  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ `Snorkel End Time`    <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,~
-    ## $ `Section Name`        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Units Covered`       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ Survey_Comments       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ ObsID                 <dbl> 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, ~
-    ## $ SID                   <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
-    ## $ Observer              <chr> NA, "RK,BW,KW", NA, NA, NA, NA, NA, "RK,BW,KW", ~
-    ## $ Unit                  <chr> "29A", "31", "31", "31", "31A", "31A", "31A", "3~
-    ## $ Species               <chr> "CHN", "RBTS", "RBTS", "RBTC", "RBTC", "RBTC", "~
-    ## $ Count                 <dbl> 100, 1, 1, 7, 7, 1, 1, 25, 75, 2, 300, 12, 30, 2~
-    ## $ `Size Class`          <chr> "III", "VI", "VI", "V", "V", "VI", "VI", "I", "I~
-    ## $ `Est Size`            <dbl> NA, 600, 500, 350, 350, 550, 600, NA, NA, NA, NA~
-    ## $ Substrate             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Instream Cover`      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Overhead Cover`      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Hydrology Code`      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `Water Depth (m)`     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ `LWD .`               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ Observation_Comments  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
+    ## $ SurveyID              <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+    ## $ Date                  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ Flow                  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Weather Code`        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ Turbidity             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ Temperature           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Time of Temperature` <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ `Snorkel StartTtime`  <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ `Snorkel End Time`    <dttm> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+    ## $ `Section Name`        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Units Covered`       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ Survey_Comments       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ ObsID                 <dbl> 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, …
+    ## $ SID                   <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+    ## $ Observer              <chr> NA, "RK,BW,KW", NA, NA, NA, NA, NA, "RK,BW,KW", …
+    ## $ Unit                  <chr> "29A", "31", "31", "31", "31A", "31A", "31A", "3…
+    ## $ Species               <chr> "CHN", "RBTS", "RBTS", "RBTC", "RBTC", "RBTC", "…
+    ## $ Count                 <dbl> 100, 1, 1, 7, 7, 1, 1, 25, 75, 2, 300, 12, 30, 2…
+    ## $ `Size Class`          <chr> "III", "VI", "VI", "V", "V", "VI", "VI", "I", "I…
+    ## $ `Est Size`            <dbl> NA, 600, 500, 350, 350, 550, 600, NA, NA, NA, NA…
+    ## $ Substrate             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Instream Cover`      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Overhead Cover`      <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Hydrology Code`      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `Water Depth (m)`     <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ `LWD .`               <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ Observation_Comments  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
 
 ## Data transformations
 
 Update column names and column types. Remove sid because it is a
-duplicate of survey\_id column. Filter to only show chinook salmon.
+duplicate of survey_id column. Filter to only show chinook salmon.
 
 ``` r
 cleaner_snorkel_data <- raw_snorkel %>% 
@@ -111,46 +112,49 @@ cleaner_snorkel_data <- raw_snorkel %>%
          substrate = as.character(substrate), 
          overhead_cover = as.character(overhead_cover),
          lwd_number = as.character(lwd_number)) %>% # I think this is some sort of tag number so I am changing to character
-  filter(!is.na(date), # survey ID 1 and 106 do not specify date 
-         species %in% c("CHN", "NONE", "CHNU", "CHNT", "CHNC", "CHNF", "CHNS")) %>% # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
+  filter(!is.na(date)) |>  # survey ID 1 and 106 do not specify date 
+         #species %in% c("CHN", "NONE", "CHNU", "CHNT", "CHNC", "CHNF", "CHNS")) %>% # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
   mutate(run = case_when(species  == "CHNF" ~ "fall",
                          species == "CHNS" ~ "spring",
                          species %in% c("CHN", "CHNT", "NONE", "CHNU", "CHNC") ~ "unknown"),
          tagged = if_else(grepl('T$', species), TRUE, FALSE),
          clipped = if_else(species == "CHNC", TRUE, FALSE)) %>%
-  select(-observer, -sid, -species) %>% # remove sid because it is the same as survey_id 
+  #select(-observer, -sid, -species) %>% # remove sid because it is the same as survey_id 
   glimpse()
 ```
 
-    ## Rows: 2,753
-    ## Columns: 27
-    ## $ survey_id            <chr> "2", "2", "2", "2", "3", "3", "3", "3", "3", "3",~
-    ## $ date                 <date> 2007-06-27, 2007-06-27, 2007-06-27, 2007-06-27, ~
-    ## $ flow                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ weather_code         <chr> NA, NA, NA, NA, "CLR", "CLR", "CLR", "CLR", "CLR"~
-    ## $ turbidity            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ temperature          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ time_of_temperature  <time> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
-    ## $ start_time           <time>       NA,       NA,       NA,       NA, 10:00:00~
-    ## $ end_time             <time>       NA,       NA,       NA,       NA, 14:00:00~
-    ## $ section_name         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ units_covered        <chr> NA, NA, NA, NA, "26,33,30,31,31a,32,32a", "26,33,~
-    ## $ survey_comments      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ observation_id       <chr> "79", "81", "84", "86", "96", "98", "99", "100", ~
-    ## $ unit                 <chr> "169", "173", "185", "215B", "26", "33", "33", "3~
-    ## $ count                <dbl> 50, 4, 15, 7, 0, 3, 30, 1, NA, 15, NA, 70, 14, 24~
-    ## $ size_class           <chr> "III", "I", "III", "III", NA, "II", "III", NA, NA~
-    ## $ est_size             <dbl> NA, NA, NA, NA, NA, 50, 75, 100, NA, 100, NA, 75,~
-    ## $ substrate            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ instream_cover       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ overhead_cover       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ hydrology_code       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ water_depth_m        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ lwd_number           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ observation_comments <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
-    ## $ run                  <chr> "unknown", "unknown", "unknown", "unknown", "unkn~
-    ## $ tagged               <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ~
-    ## $ clipped              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ~
+    ## Rows: 12,355
+    ## Columns: 30
+    ## $ survey_id            <chr> "2", "2", "2", "2", "2", "2", "2", "2", "2", "2",…
+    ## $ date                 <date> 2007-06-27, 2007-06-27, 2007-06-27, 2007-06-27, …
+    ## $ flow                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ weather_code         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ turbidity            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ temperature          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ time_of_temperature  <time> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+    ## $ start_time           <time>       NA,       NA,       NA,       NA,       NA…
+    ## $ end_time             <time>       NA,       NA,       NA,       NA,       NA…
+    ## $ section_name         <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ units_covered        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ survey_comments      <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ observation_id       <chr> "79", "80", "81", "82", "83", "84", "85", "86", "…
+    ## $ sid                  <dbl> 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2…
+    ## $ observer             <chr> "TV", NA, NA, NA, NA, NA, NA, NA, NA, "KM", NA, N…
+    ## $ unit                 <chr> "169", "169", "173", "173", "185", "185", "215B",…
+    ## $ species              <chr> "CHN", "RBTS", "CHN", "RBTS", "RBTS", "CHN", "RBT…
+    ## $ count                <dbl> 50, 4, 4, 5, 12, 15, 14, 7, 1, 10, 6, 2, 6, 1, 17…
+    ## $ size_class           <chr> "III", "IV", "I", "IV", "IV", "III", "IV", "III",…
+    ## $ est_size             <dbl> NA, 175, NA, 150, 150, NA, 175, NA, 440, NA, NA, …
+    ## $ substrate            <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ instream_cover       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ overhead_cover       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ hydrology_code       <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ water_depth_m        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ lwd_number           <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ observation_comments <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+    ## $ run                  <chr> "unknown", NA, "unknown", NA, NA, "unknown", NA, …
+    ## $ tagged               <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, …
+    ## $ clipped              <lgl> FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, …
 
 ## Explore Numeric Variables:
 
@@ -158,8 +162,8 @@ cleaner_snorkel_data <- raw_snorkel %>%
 cleaner_snorkel_data %>% select_if(is.numeric) %>% colnames()
 ```
 
-    ## [1] "flow"          "turbidity"     "temperature"   "count"        
-    ## [5] "est_size"      "water_depth_m"
+    ## [1] "flow"          "turbidity"     "temperature"   "sid"          
+    ## [5] "count"         "est_size"      "water_depth_m"
 
 ### Variable: `flow`
 
@@ -198,11 +202,11 @@ summary(cleaner_snorkel_data$flow)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       0     620     800    1068    1245    8000     530
+    ##       0     620    1200    1759    2300    8000     991
 
 **NA and Unknown Values**
 
--   19.3 % of values in the `flow` column are NA.
+- 8 % of values in the `flow` column are NA.
 
 ### Variable: `turbidity`
 
@@ -242,11 +246,11 @@ summary(cleaner_snorkel_data$turbidity)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.0000  0.0000  0.0000  0.3582  0.6700  4.0000     549
+    ##  0.0000  0.0000  0.0000  0.3873  0.0400  4.1800    1088
 
 **NA and Unknown Values**
 
--   19.9 % of values in the `turbidity` column are NA.
+- 8.8 % of values in the `turbidity` column are NA.
 
 ### Variable: `temperature`
 
@@ -289,11 +293,11 @@ summary(cleaner_snorkel_data$temperature)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##    0.00   12.00   47.30   34.89   55.40   68.00     530
+    ##    0.00   16.50   55.40   42.04   61.00   71.60     998
 
 **NA and Unknown Values**
 
--   19.3 % of values in the `temperature` column are NA.
+- 8.1 % of values in the `temperature` column are NA.
 
 ### Variable: `count`
 
@@ -324,7 +328,7 @@ cleaner_snorkel_data %>%
   scale_fill_manual(values = wesanderson::wes_palette("Moonrise2", 5, type = "continuous"))
 ```
 
-    ## Joining, by = "water_year"
+    ## Joining with `by = join_by(water_year)`
 
 ![](feather_snorkel_qc_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
@@ -350,18 +354,18 @@ cleaner_snorkel_data  %>%
 summary(cleaner_snorkel_data$count)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##     0.0     2.0    10.0   321.9    50.0 25000.0     309
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+    ##     0.00     1.00     4.00    92.64    20.00 30000.00      331
 
 **NA and Unknown Values**
 
--   11.2 % of values in the `count` column are NA.
+- 2.7 % of values in the `count` column are NA.
 
 ### Variable: `est_size`
 
 TODO figure out what size is describing. Is it length? or weight?
 
-**Plotting est\_size over Period of Record**
+**Plotting est_size over Period of Record**
 
 ``` r
 cleaner_snorkel_data %>% 
@@ -377,18 +381,18 @@ cleaner_snorkel_data %>%
 Estimated sizes fall between 0 and 1000. Again we need to figure out
 what type of size variable they are estimating
 
-**Numeric Summary of est\_size over Period of Record**
+**Numeric Summary of est_size over Period of Record**
 
 ``` r
 summary(cleaner_snorkel_data$est_size)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##     0.0    45.0    60.0   127.2    85.0   950.0     732
+    ##     0.0    45.0    75.0   127.4   125.0   950.0    1202
 
 **NA and Unknown Values**
 
--   26.6 % of values in the `est_size` column are NA.
+- 9.7 % of values in the `est_size` column are NA.
 
 ### Variable: `water_depth_m`
 
@@ -415,11 +419,11 @@ summary(cleaner_snorkel_data$water_depth_m)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##  0.0500  0.2500  0.4000  0.5178  0.6000  3.0000     761
+    ##  0.0500  0.3000  0.5000  0.6443  0.8000  4.0000    1989
 
 **NA and Unknown Values**
 
--   27.6 % of values in the `water_depth_m` column are NA.
+- 16.1 % of values in the `water_depth_m` column are NA.
 
 ## Explore Categorical variables:
 
@@ -429,9 +433,10 @@ cleaner_snorkel_data %>% select_if(is.character) %>% colnames()
 
     ##  [1] "survey_id"            "weather_code"         "section_name"        
     ##  [4] "units_covered"        "survey_comments"      "observation_id"      
-    ##  [7] "unit"                 "size_class"           "substrate"           
-    ## [10] "instream_cover"       "overhead_cover"       "hydrology_code"      
-    ## [13] "lwd_number"           "observation_comments" "run"
+    ##  [7] "observer"             "unit"                 "species"             
+    ## [10] "size_class"           "substrate"            "instream_cover"      
+    ## [13] "overhead_cover"       "hydrology_code"       "lwd_number"          
+    ## [16] "observation_comments" "run"
 
 ### Variable: `survey_id`
 
@@ -443,11 +448,11 @@ length(unique(cleaner_snorkel_data$survey_id)) == length(cleaner_snorkel_data)
 
     ## [1] FALSE
 
-There are 350 unique survey ids
+There are 560 unique survey ids
 
 **NA and Unknown Values**
 
--   0 % of values in the `survey_id` column are NA.
+- 0 % of values in the `survey_id` column are NA.
 
 ### Variable: `weather_code`
 
@@ -461,25 +466,39 @@ table(cleaner_snorkel_data$weather_code)
 
     ## 
     ##                        CLD CLD, Wind, Light Sprinkles 
-    ##                        217                          1 
-    ##                   CLD/RAIN                       CLDY 
-    ##                         89                         16 
+    ##                        697                         20 
+    ##                 CLD, Windy     CLD/ RAIN INTERMITTENT 
+    ##                         17                          4 
+    ##                  CLD/ WIND                   CLD/RAIN 
+    ##                         12                         94 
+    ##                    CLD/Sun                       CLDY 
+    ##                         34                         38 
     ##                        CLR                  CLR (Hot) 
-    ##                       1431                         12 
+    ##                       8167                         46 
     ##                     CLR 95                    CLR Hot 
-    ##                          1                          3 
+    ##                         17                         47 
+    ##                    CLR HOT                 CLR smokey 
+    ##                        190                         11 
     ##                  CLR WINDY                    CLR/CLD 
-    ##                         22                          5 
-    ##                    CLR/Hot                Hot and CLR 
-    ##                          1                          8 
-    ##                LT CLD/HAZE                    LT RAIN 
-    ##                          7                          6 
+    ##                         24                         30 
+    ##                    CLR/Hot                   CLR/WIND 
+    ##                         59                          7 
+    ##                       Hazy                   Hazy/CLR 
+    ##                         60                         27 
+    ##                Hot and CLR                LT CLD/HAZE 
+    ##                         19                          9 
+    ##                    LT RAIN                   Pt. Cldy 
+    ##                          6                         72 
     ##                   PT. CLDY                       RAIN 
-    ##                         19                          4 
-    ##                        RAN                        sun 
-    ##                         20                          7 
-    ##                        SUN                        WND 
-    ##                        334                         18
+    ##                         21                          6 
+    ##                        RAN                      Smoke 
+    ##                         90                         38 
+    ##                Smokey Haze                        sun 
+    ##                         20                         31 
+    ##                        Sun                        SUN 
+    ##                         25                       1283 
+    ##                      SUNNY                        WND 
+    ##                         25                         43
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -500,16 +519,16 @@ table(cleaner_snorkel_data$weather_code)
 
     ## 
     ##           clear   clear and hot clear and windy          cloudy            hazy 
-    ##            1432              24              22             233               7 
+    ##            8184             171              24             735               9 
     ##   partly cloudy   precipitation           sunny           windy 
-    ##              24             120             341              18
+    ##              51             216            1314              43
 
 I would still like to simplify these down more but this is better for
 now.
 
 **NA and Unknown Values**
 
--   19.3 % of values in the `weather_code` column are NA.
+- 13 % of values in the `weather_code` column are NA.
 
 ### Variable: `section_name`
 
@@ -533,69 +552,85 @@ table(cleaner_snorkel_data$section_name)
 
     ## 
     ##                                 Aleck                          Aleck Riffle 
-    ##                                    44                                    16 
+    ##                                   136                                   132 
     ##                            Auditorium                     Auditorium Riffle 
-    ##                                    20                                    39 
+    ##                                   113                                   116 
     ##                       Bed Rock Riffle                               Bedrock 
-    ##                                     3                                    37 
+    ##                                    22                                   141 
     ##                          Bedrock Park                        Bedrock Riffle 
-    ##                                    21                                    38 
-    ##                            Big Riffle                                   Eye 
-    ##                                    22                                    73 
+    ##                                    87                                    97 
+    ##                            Big Riffle                   Big Riffle Bayou Rl 
+    ##                                   372                                    44 
+    ##              Big Riffle Downstream Rl                             Bigriffle 
+    ##                                    31                                    21 
+    ##                              Cox Flat                                   Eye 
+    ##                                    23                                   168 
     ##                            Eye Riffle                                   G95 
-    ##                                    64                                    17 
+    ##                                   410                                   251 
     ##                              G95 Side                      G95 Side Channel 
-    ##                                     5                                     6 
+    ##                                    69                                    83 
     ##                         G95 Side West                 G95 West Side Channel 
-    ##                                    11                                     7 
+    ##                                    13                                     9 
     ##                               Gateway                        Gateway Riffle 
-    ##                                    79                                    28 
+    ##                                   397                                    80 
     ##                                 Goose                          Goose Riffle 
-    ##                                     1                                    15 
-    ##                        Gridley Riffle                  Gridley Side Channel 
-    ##                                    14                                     5 
+    ##                                   154                                   147 
+    ##                        Gridley Riffle                    Gridley S C Riffle 
+    ##                                   249                                    15 
+    ##                  Gridley Side Channel             Hatchery And Moes Ditches 
+    ##                                   108                                    47 
     ##       Hatchery And Moes Side Channels                        Hatchery Ditch 
-    ##                                    26                                   126 
+    ##                                    65                                   322 
     ##               Hatchery Ditch And Moes         Hatchery Ditch And Moes Ditch 
-    ##                                    37                                     9 
+    ##                                   156                                    51 
     ## Hatchery Ditch Lower Moes Ditch Upper                   Hatchery Ditch Moes 
-    ##                                     1                                    31 
+    ##                                     3                                   108 
     ##             Hatchery Ditch Moes Ditch                       Hatchery Riffle 
-    ##                                     8                                    84 
+    ##                                    29                                   341 
     ##         Hatchery Side Ch Moes Side Ch                 Hatchery Side Channel 
-    ##                                    26                                    80 
+    ##                                   110                                   108 
     ##        Hatchery Side Channel And Moes  Hatchery Side Channel And Moes Ditch 
-    ##                                     3                                    12 
+    ##                                     5                                    46 
     ##      Hatchery Side Channel Moes Ditch                   Hatchery Side Ditch 
-    ##                                     3                                    45 
-    ##                              Junkyard                       Junkyard Riffle 
-    ##                                    14                                     6 
-    ##                               Keister                        Keister Riffle 
-    ##                                     9                                     5 
-    ##                       Lower Mcfarland                        Lower Robinson 
-    ##                                    11                                     4 
-    ##                               Mathews                        Mathews Riffle 
-    ##                                     6                                     1 
-    ##                              Matthews                       Matthews Riffle 
-    ##                                    20                                    37 
-    ##                                  Moes                            Moes Ditch 
-    ##                                     9                                     1 
-    ##                              Robinson                       Robinson Riffle 
-    ##                                    59                                    74 
+    ##                                     7                                    49 
+    ##                     Herringer Pond Rl           Hidden Gridley Side Channel 
+    ##                                     8                                    61 
+    ##                  Hour To Palm Side Rl                              Junkyard 
+    ##                                     6                                   450 
+    ##                       Junkyard Riffle                               Keister 
+    ##                                   297                                   288 
+    ##                        Keister Riffle                       Lower Mcfarland 
+    ##                                   174                                   419 
+    ##                        Lower Robinson                               Mathews 
+    ##                                    35                                    63 
+    ##                        Mathews Riffle                              Matthews 
+    ##                                    12                                   101 
+    ##                       Matthews Riffle                                  Moes 
+    ##                                   123                                    22 
+    ##                            Moes Ditch                     Moes Side Channel 
+    ##                                    15                                     2 
+    ##             River Bend Upstream Beach                              Robinson 
+    ##                                     4                                   254 
+    ##                       Robinson Riffle                             Section 2 
+    ##                                   233                                     5 
     ##                                 Steep                          Steep Riffle 
-    ##                                    60                                   113 
+    ##                                   311                                   312 
     ##                          Trailer Park                   Trailer Park Riffle 
-    ##                                    57                                    11 
-    ##                       Upper Mcfarland                            Vance East 
-    ##                                     1                                    11 
-    ##                        Vance W Riffle                            Vance West 
-    ##                                     4                                    24 
-    ##                     Vance West Riffle 
-    ##                                     2
+    ##                                   299                                    66 
+    ##                         Trailer Parkk                  Upper Hatchery Ditch 
+    ##                                     7                                     4 
+    ##            Upper Hour Side Channel Rl                       Upper Mcfarland 
+    ##                                     2                                    37 
+    ##                                 Vance                            Vance East 
+    ##                                    22                                    11 
+    ##                          Vance Riffle                        Vance W Riffle 
+    ##                                    13                                     6 
+    ##                            Vance West                     Vance West Riffle 
+    ##                                   163                                    23
 
 **NA and Unknown Values**
 
--   42.1 % of values in the `section_name` column are NA.
+- 28.9 % of values in the `section_name` column are NA.
 
 ### Variable: `units_covered`
 
@@ -611,11 +646,11 @@ unique(cleaner_snorkel_data$units_covered)[1:10]
     ##  [7] "55 56"                  "96 97 98"               "119 120"               
     ## [10] "189 185"
 
-There are 120 unique groups units covered.
+There are 166 unique groups units covered.
 
 **NA and Unknown Values**
 
--   41.9 % of values in the `units_covered` column are NA.
+- 29.8 % of values in the `units_covered` column are NA.
 
 ### Variable: `survey_comments` `observation_comments`
 
@@ -635,15 +670,15 @@ unique(cleaner_snorkel_data$observation_comments)[1:5]
 
     ## [1] NA                                               
     ## [2] "Just upstream of culvert-used as instream cover"
-    ## [3] "ROOT BALL"                                      
-    ## [4] "ALL IN MARGIN"                                  
-    ## [5] "MARGIN"
+    ## [3] "VISUAL OBSERVATION NOTICED WHEN WALKING"        
+    ## [4] "Spawning pair- digging redds"                   
+    ## [5] "Spawning pair -digging redds"
 
 **NA and Unknown Values**
 
--   84.8 % of values in the `survey_comments` column are NA.
+- 83.1 % of values in the `survey_comments` column are NA.
 
--   96.5 % of values in the `observation_comments` column are NA.
+- 97.3 % of values in the `observation_comments` column are NA.
 
 ### Variable: `observation_id`
 
@@ -655,9 +690,9 @@ length(unique(cleaner_snorkel_data$observation_id)) == length(cleaner_snorkel_da
 
     ## [1] FALSE
 
-There are 2753 unique observation ids
+There are 12355 unique observation ids
 
--   0 % of values in the `observation_id` column are NA.
+- 0 % of values in the `observation_id` column are NA.
 
 ### Variable: `unit`
 
@@ -666,36 +701,48 @@ table(cleaner_snorkel_data$unit)
 ```
 
     ## 
-    ##    1   10  100  102  103  104  105  107  108  119   12  120  121 121A  122  123 
-    ##    1    1    2    1   23   34   31    2    1   95    1   26    1    6    6    3 
-    ##  124  125  126  127  161  162  163  164  165  166  167  169  170  171  172  173 
-    ##    7    2    1    3    1    1    1    1    1    1    1   37   15   60   10   43 
-    ##  174  175  176  177  178  179  180  183  185  189   19  191  192  193  197  198 
-    ##   13   43    7    3    4    2    2    5   62  186   41    1    1    1    1    1 
-    ##  199   20  200  205  207  208   21  210  213  215 215A 215B  216  217   22  221 
-    ##    1    1    3    3    1    1    2  108    1    7   43   25   23   36    4   22 
-    ##  224  225  226  228  229   23  233  236  237   24  241   25   26  266  267  268 
-    ##    1   15   31   28   36   58    1    1    1   34    1   33  276   15    2   31 
-    ##  269   27  270  271 272B 273B 274B  275  276  278   28  282  283  284  288  289 
-    ##    1   49    1    1    1    1    1    1    1    1   49    1    1    1    1    1 
-    ##   29  290  294  295  296  297  299  29A   30  303  304  305  306  308   31  310 
-    ##   41    1    1    1    1    1    1   11   23    1    1    1    1    1   24    1 
-    ##  311  31A   32 323A 323B  328 329B  32A   33  330  331  334  335  336  337  352 
-    ##    1    7   73   38   21    2    1   11  277    1    1    1    2    1    1    1 
-    ##  355  356  358  359   36  361  362  364  365  367  368   37  370   38  387  388 
-    ##    1    1    1    1    1    1    1    1    1    1    1    1    1    2    1    1 
-    ##   39  397  402  403  405  406  407  408  409  410  411  412  413   42  424  426 
-    ##    2    3    6    6    1    1    1   23    3    4    4    2    3    2   13    9 
-    ##  441  445  446  448  449  450  451  452  453  454   46  483  484  485  486  487 
-    ##    1    5    1    1    5   15    5    4    4    1    1    1    2    2   18    6 
-    ##  499    5   50  502   52   54   55   56   59    6    7    8    9   96   97   98 
-    ##    6    1    1   14    2   15   40   89    1    1    1    1    1   66   13   30
+    ##     1    10   100   102   103   104   105   106   107   108    11   119    12 
+    ##     1     1     2     2   100   160   111     1     2     2     1   344     1 
+    ##   120   121  121A   122   123   124   125   126   127   161   162   163   164 
+    ##    90     2    20    19    13    18     3     1     3     1     1     1     1 
+    ##   165   166   167   169   170   171   172   173   174   175   176   177   178 
+    ##     2     4     1   116    63   150    36   185    97   119    10     7     5 
+    ##   179   180   183   185   189    19   191   192   193   197   198   199    20 
+    ##     2     2     8   231   718   123     1     1     1     1     1     1     2 
+    ##   200   205   207   208    21   210   213   215  215A  215B   216   217    22 
+    ##    21    12     2     1     5   452     1    26   153   124    89   139     4 
+    ##   221   224   225   226   227   228   229    23   233   235   236   237    24 
+    ##    82     1    61   118     2   151   146   126     1     1     1     1   178 
+    ##   241    25    26   266   267   268   269    27   270   271  272B  273B  274B 
+    ##     1   111   681    56     2   205     1   121     1     1     1     1     1 
+    ##   275   276   278    28   282   283   284   288   289    29   290   294   295 
+    ##     1     1     1   169     1     1     1     1     1   142     1     1     1 
+    ##   296   297   299   29A    30   303   304   305   306   308   309    31   310 
+    ##     1     1     1    20   111     1     1     1     1     1     1   125     1 
+    ##   311   31A    32  323A  323B   328  329B   32A    33   330   331   334   335 
+    ##     1    10   162   269   205     2     1    20   925     1     1     1     2 
+    ##   336   337    34    35   351   352   355   356   358   359    36   361   362 
+    ##     1     1     1     1     1     1     1     1     1     1     1     1     1 
+    ##   364   365   367   368    37   370    38   387   388    39   397   402   403 
+    ##     1     1     1     1     1     1     2     1     1     2    40   258   194 
+    ##   405   406   407   408   409   410   411   412   413    42   424   426   441 
+    ##     1     1     1   334     3     4     4     2     3     2   210   254    40 
+    ##   445   446   448   449   450   451   452   453   454    46   483   484   485 
+    ##    30     1     1     8   442    24     4     4     1     1     1     2     3 
+    ##   486   487  487B   499     5    50   500   502    51    52    54    55    56 
+    ##   235   191     8   487     1     1     6   296     3     2    43   114   361 
+    ##    59     6     7     8     9    96    97    98   BRB    CF  HGSC  HPRL HTPSC 
+    ##     1     1     1     1     1   251   106   127    44    23    61     8     6 
+    ##  RBUB  SEC2  UHSC 
+    ##     4     5     2
 
-There are 192 unique units covered.
+There are 212 unique units covered.
 
 **NA and Unknown Values**
 
--   0 % of values in the `unit` column are NA.
+- 0.1 % of values in the `unit` column are NA.
+
+This is pulled from a lookup table in the database.
 
 ### Variable: `size_class`
 
@@ -715,11 +762,11 @@ table(cleaner_snorkel_data$size_class)
 
     ## 
     ##   I  II III  IV   V  VI VII 
-    ## 272 326 167  48  11  49  55
+    ## 959 891 677 629 382 250  95
 
 **NA and Unknown Values**
 
--   66.3 % of values in the `size_class` column are NA.
+- 68.6 % of values in the `size_class` column are NA.
 
 ### Variable: `substrate`
 
@@ -730,7 +777,7 @@ table(cleaner_snorkel_data$size_class)
 | 3             | Small Gravel (2 to 50 mm)    |
 | 4             | Large Gravel (50 to 150 mm)  |
 | 5             | Cobble (150 to 300 mm)       |
-| 6             | Boulder (&gt; 300 mm)        |
+| 6             | Boulder (\> 300 mm)          |
 | 0             | ?                            |
 
 It appears that if more than one substrate is present they list all by
@@ -741,12 +788,14 @@ table(cleaner_snorkel_data$substrate)
 ```
 
     ## 
-    ##     0     1    12   123  1234   124  1245    13   134   135    14   145  1456 
-    ##     1    30    98    93    20     9     1    68    27     1     4     4     2 
-    ##    15     2    23   234  2344  2345 23456   235    24   245    25   256     3 
-    ##     2   107   259   150     1     5     1     1     5     2     6     2   324 
-    ##    34   345  3456     4    45   456     5    56     6 
-    ##   269    66    13   267    35    39    84     4     1
+    ##     0     1    12   123  1234 12345  1235   124  1245   125  1256   126    13 
+    ##     4   351   659   412   110     5     2    99    23    12     2    44   211 
+    ##   134  1345   135    14   145  1453  1456    15   156    16     2    23   234 
+    ##   161    13     5    64    79     6    10    17    15    44   933  1091   678 
+    ##  2344  2345 23456   235    24   245    25   256    26     3    34   345  3456 
+    ##     1    46     6     5    65    22    46     8     4  1611  1141   296    22 
+    ##   346    35   350   356     4    41    45   456     5    56     6 
+    ##     2    10     1    11  1189     1   341   105   309    40    21
 
 What is the best way to show multiple substrates at different sites? In
 the seine data they have many substrate columns but I do not think I
@@ -754,7 +803,7 @@ like that better.
 
 **NA and Unknown Values**
 
--   27.3 % of values in the `substrate` column are NA.
+- 16.2 % of values in the `substrate` column are NA.
 
 ### Variable: `instream_cover`
 
@@ -775,29 +824,31 @@ table(cleaner_snorkel_data$instream_cover)
 ```
 
     ## 
-    ##     A    AE     B    BC   BCD  BCDE BCDEF  BCDF   BCE  BCEF   BCF    BD   BDE 
-    ##   534     2   360    22    32   102    42     3    62    11     3    26   130 
-    ##  BDEF   BDF    BE   BEC   BED   BEF  BEFD    BF     C    CD   CDE  CDEF   CDF 
-    ##    39    24   214     1    12    15     1     5    72     7    12     1     2 
-    ##    CE   CED   CEF    CF     D    DE     E    EB    EC   ECF    EF   EFD     F 
-    ##    42     2     6     2    15     5   137    13     4     1    23     2    12 
-    ##    FE 
-    ##     1
+    ##     0     A    AE     B    BC   BCD  BCDE BCDEF  BCDF   BCE  BCED  BCEF   BCF 
+    ##     3  3122    15  1306   180   159   344    58     9   424     3    24     7 
+    ##    BD   BDE  BDEF   BDF    BE   BEC   BED   BEF  BEFD    BF    BG     C    CB 
+    ##   128   409    52    32  1063     8    26    31     1    36     1   507     5 
+    ##   CBE    CC    CD   CDE  CDEF   CDF    CE   CED   CEF    CF     D    DE     E 
+    ##     2     1    34    40     3     3   387    12    19    13    32    17  1588 
+    ##    EA    EB   EBC    EC   ECF  EDBC    EF   EFB   EFD     F    FB   FBD    FE 
+    ##     1    58     2    36     1     3    52     1     5    54     1     1     1 
+    ##   FEB     R 
+    ##    10     1
 
 What is the best way to display/simplify these?
 
 **NA and Unknown Values**
 
--   27.4 % of values in the `instream_cover` column are NA.
+- 16.4 % of values in the `instream_cover` column are NA.
 
 ### Variable: `overhead_cover`
 
-| OCoverCode | OCover                                         |
-|------------|------------------------------------------------|
-| 0          | No Apparent Cover                              |
-| 1          | Overhanging veg/obj (&lt; 0.5 m above surface) |
-| 2          | Overhanging veg/obj (0.5 to 2 m above surface  |
-| 3          | Surface turbulence, bubble curtain             |
+| OCoverCode | OCover                                        |
+|------------|-----------------------------------------------|
+| 0          | No Apparent Cover                             |
+| 1          | Overhanging veg/obj (\< 0.5 m above surface)  |
+| 2          | Overhanging veg/obj (0.5 to 2 m above surface |
+| 3          | Surface turbulence, bubble curtain            |
 
 Overhead cover appears to use a similar method as substrate and instream
 cover where they add letters on if multiple covers are present.
@@ -807,12 +858,12 @@ table(cleaner_snorkel_data$overhead_cover)
 ```
 
     ## 
-    ##   0   1  12  13   2   3   4 
-    ## 708 974  28  10 237  33   1
+    ##    0    1   12  123   13    2    3    4 
+    ## 5279 3854   69    1   17  972  130    3
 
 **NA and Unknown Values**
 
--   27.7 % of values in the `overhead_cover` column are NA.
+- 16.4 % of values in the `overhead_cover` column are NA.
 
 ### Variable: `hydrology_code`
 
@@ -824,10 +875,12 @@ table(cleaner_snorkel_data$hydrology_code)
 ```
 
     ## 
-    ##        Backwater            Glide  Glide Edgewater               GM 
-    ##              122              416              685                1 
-    ##             Pool           Riffle Riffle Edgewater 
-    ##               88              337              352
+    ##        Backwater                G            Glide  Glide Edgewater 
+    ##             1255                1             2216             3570 
+    ##               GM             Pool           Riffle Riffle Edgewater 
+    ##                1              431             1572             1317 
+    ##                W 
+    ##                2
 
 Fix inconsistencies with spelling, capitalization, and abbreviations.
 
@@ -838,12 +891,12 @@ table(cleaner_snorkel_data$hydrology_code)
 ```
 
     ## 
-    ##        Backwater            Glide  Glide Edgewater             Pool 
-    ##              122              416              686               88 
-    ##           Riffle Riffle Edgewater 
-    ##              337              352
+    ##        Backwater                G            Glide  Glide Edgewater 
+    ##             1255                1             2216             3571 
+    ##             Pool           Riffle Riffle Edgewater                W 
+    ##              431             1572             1317                2
 
--   27.3 % of values in the `hydrology_code` column are NA.
+- 16.1 % of values in the `hydrology_code` column are NA.
 
 ### Variable: `lwd_number`
 
@@ -854,12 +907,16 @@ table(cleaner_snorkel_data$lwd_number)
 ```
 
     ## 
-    ##    0 3001 3002 3003 3004 3005 3006 3007 3008 3010 3013 3018 3020 
-    ## 2111    2    1    7    1    1   16    6    2    4    1    1    1
+    ##     0     1  2001  2002  2003  3001  3002  3003  3004  3005  3006  3007  3008 
+    ## 11010     1     1     1     1     5    10    21     6     5    27    17     5 
+    ##  3009  3010  3011  3012  3013  3014  3015  3016  3017  3018  3019  3020  3021 
+    ##     6    17     2     3     3     5     5     3     5    15     5    11    10 
+    ##  3022  3023  3024  3026 
+    ##     7     1     2     4
 
 **NA and Unknown Values**
 
--   21.8 % of values in the `lwd_number` column are NA.
+- 9.2 % of values in the `lwd_number` column are NA.
 
 ### Variable: `run`
 
@@ -875,7 +932,7 @@ table(cleaner_snorkel_data$run)
 
 **NA and Unknown Values**
 
--   0 % of values in the `run` column are NA.
+- 77.7 % of values in the `run` column are NA.
 
 Only 13 identified SR fish. This data may not be very helpful for us in
 the JPE
@@ -890,11 +947,11 @@ table(cleaner_snorkel_data$tagged)
 
     ## 
     ## FALSE  TRUE 
-    ##  2747     6
+    ## 12076   279
 
 **NA and Unknown Values**
 
--   0 % of values in the `tagged` column are NA.
+- 0 % of values in the `tagged` column are NA.
 
 ### Variable: `clipped`
 
@@ -906,26 +963,30 @@ table(cleaner_snorkel_data$clipped)
 
     ## 
     ## FALSE  TRUE 
-    ##  2731    22
+    ## 12092    22
 
 **NA and Unknown Values**
 
--   0 % of values in the `clipped` column are NA.
+- 2 % of values in the `clipped` column are NA.
 
 ## Summary of identified issues
 
--   Snorkel surveys are not done every year in the timeframe
--   Environmental data very sparse, especially in early years
--   Still a few unknown columns that we need to define and understand
--   Figure out the best way to display and standardize substrate and
-    cover information
--   Very few Spring Run Chinook (13)
--   Detailed information on location split up into units and sections,
-    TODO need to improve organization in these settings
+- Snorkel surveys are not done every year in the timeframe
+- Environmental data very sparse, especially in early years
+- Still a few unknown columns that we need to define and understand
+- Figure out the best way to display and standardize substrate and cover
+  information
+- Very few Spring Run Chinook (13)
+- Detailed information on location split up into units and sections,
+  TODO need to improve organization in these settings
 
 ## Save cleaned data back to google cloud
 
 ``` r
-# Write to google cloud 
-# Name file [watershed]_[data type].csv
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(cleaner_snorkel_data,
+           object_function = f,
+           type = "csv",
+           name = "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/post_2004_snorkel.csv",
+           predefinedAcl = "bucketLevel")
 ```
