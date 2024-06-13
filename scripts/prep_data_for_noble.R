@@ -33,8 +33,8 @@ knights_2021_present <- knights_raw |>
 
 
 # Butte
-res <- read_data_entity_names(packageId = "edi.1497.1")
-raw <- read_data_entity(packageId = "edi.1497.1", entityId = res$entityId[1])
+res <- read_data_entity_names(packageId = "edi.1497.12")
+raw <- read_data_entity(packageId = "edi.1497.12", entityId = res$entityId[1])
 butte_raw <- read_csv(file = raw)
 butte_2021_present <- butte_raw |> 
   filter(commonName == "chinook salmon") |> 
@@ -44,8 +44,8 @@ butte_2021_present <- butte_raw |>
   mutate(stream = "butte creek")
 
 # Feather 
-res <- read_data_entity_names(packageId = "edi.1239.3")
-raw <- read_data_entity(packageId = "edi.1239.3", entityId = res$entityId[1])
+res <- read_data_entity_names(packageId = "edi.1239.11")
+raw <- read_data_entity(packageId = "edi.1239.11", entityId = res$entityId[1])
 feather_raw <- read_csv(file = raw)
 feather_2021_present <- feather_raw |> 
   filter(commonName == "Chinook salmon") |> 
@@ -109,8 +109,8 @@ battle_2021_present <- battle_clear_raw |>
          subSiteName = siteName) |> 
   select(-common_name)
 # Yuba - just started in 2022/2023
-res <- read_data_entity_names(packageId = "edi.1529.2")
-raw <- read_data_entity(packageId = "edi.1529.2", entityId = res$entityId[1])
+res <- read_data_entity_names(packageId = "edi.1529.8")
+raw <- read_data_entity(packageId = "edi.1529.8", entityId = res$entityId[1])
 yuba_raw <- read_csv(file = raw)
 yuba_2021_present <- yuba_raw |> 
   filter(commonName == "Chinook salmon") |> 
@@ -126,6 +126,12 @@ current_data <- bind_rows(butte_2021_present,
                           knights_2021_present) |> 
   filter(!is.na(stream))
 write_csv(current_data, here::here("data", "PLAD-data","catch_2021_current.csv"))
+
+yuba_butte_feather <- bind_rows(butte_2021_present, 
+                                feather_2021_present,
+                                yuba_2021_present) |> 
+  filter(!is.na(stream))
+write_csv(yuba_butte_feather, here::here("data", "PLAD-data","catch_2021_current_yuba_butte_feather.csv"))
 
 # upload to google cloud bucket
 f <- function(input, output) write_csv(input, file = output)
