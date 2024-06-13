@@ -434,3 +434,28 @@ gcs_upload(ladder,
 #            name = "model-db/method.csv",
 #            predefinedAcl = "bucketLevel")
 
+
+# years available ---------------------------------------------------------
+
+# create a lookup that includes the start and end year by location
+gcs_get_object(object_name = "jpe-model-data/daily_trap.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-data/daily_trap.csv",
+               overwrite = TRUE)
+trap_raw <- read_csv("data/model-data/daily_trap.csv")
+years_available <- trap_raw |> 
+  group_by(stream, site) |> 
+  summarize(start_date = min(trap_start_date, na.rm = T),
+            end_date = max(trap_start_date, na.rm = T),
+            start_date2 = min(trap_stop_date, na.rm = T),
+            end_date2 = max(trap_stop_date, na.rm = T)) |> 
+  mutate(start_date = case_when(is.infinite(start_date) ~ start_date2, 
+                                T ~ start_date),
+         end_date = case_when(!is.infinite(end_date2) ~ end_date2, 
+                              T ~ end_date)) |> 
+  select(-c(start_date2, end_date2))
+gcs_upload(years_available,
+           object_function = f,
+           type = "csv",
+           name = "model-db/seed_data_years_available.csv",
+           predefinedAcl = "bucketLevel")
