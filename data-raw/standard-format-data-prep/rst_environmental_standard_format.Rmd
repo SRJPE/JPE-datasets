@@ -185,6 +185,29 @@ deer_env <- read_csv(here::here("data", "rst", "deer_rst_environmental.csv"),
 
 ```
 
+We will be handling data updates for Deer and Mill through DataTackle but 2021-2023 need to be added to historical data because they are not handled by DataTackle. The 2023-2024 season and forward will be handled by DataTackle.
+
+```{r}
+res <- read_data_entity_names(packageId = "edi.1504.3")
+raw <- read_data_entity(packageId = "edi.1504.3", entityId = res$entityId[4])
+deer_mill_trap_raw <- read_csv(file = raw)
+
+new_deer_environmental <- deer_mill_trap_raw |> 
+  filter(stream == "deer creek", date > max(deer_env$date)) |> 
+  mutate(site = stream,
+         subsite = site) |> 
+  select(date, stream, site, subsite, turbidity, weather, temperature = water_temperature) %>%
+  distinct() %>%
+  mutate_if(is.numeric, as.character) %>% 
+  pivot_longer(cols = c("turbidity", "weather", "temperature"), values_to = "text", names_to = "parameter") %>% 
+  mutate(value = as.numeric(text),
+         text = ifelse(!is.na(value), NA_character_, text)) %>% 
+  glimpse()
+
+deer_env_clean_combined <- bind_rows(deer_env,
+                                      new_deer_environmental)
+```
+
 ### Feather River
 
 #### Columns Removed
@@ -349,6 +372,22 @@ mill_env <- read_csv(here::here("data", "rst", "mill_rst_environmental.csv")) %>
 
 ```
 
+```{r}
+new_mill_environmental <- deer_mill_trap_raw |> 
+  filter(stream == "mill creek", date > max(mill_env$date)) |> 
+  mutate(site = stream,
+         subsite = site) |> 
+  select(date, stream, site, subsite, turbidity, weather, temperature = water_temperature) %>%
+  distinct() %>%
+  mutate_if(is.numeric, as.character) %>% 
+  pivot_longer(cols = c("turbidity", "weather", "temperature"), values_to = "text", names_to = "parameter") %>% 
+  mutate(value = as.numeric(text),
+         text = ifelse(!is.na(value), NA_character_, text)) %>% 
+  glimpse()
+
+mill_env_clean_combined <- bind_rows(mill_env,
+                                      new_mill_environmental)
+```
 ### Yuba River
 
 #### Columns Removed
@@ -402,9 +441,9 @@ rbdd_environmental <- read_csv(here::here("data", "rst","rbdd_environmental.csv"
 ## Combine data
 
 ```{r}
-combined_env <- bind_rows(battle_clear_env, butte_env, deer_env,
+combined_env <- bind_rows(battle_clear_env, butte_env, deer_env_clean_combined,
                           feather_env, knights_env, tisdale_env, 
-                          mill_env, yuba_env, rbdd_environmental) %>% 
+                          mill_env_clean_combined, yuba_env, rbdd_environmental) %>% 
   mutate(text = case_when(parameter == "weather" & text == "partially cloudy" ~ "partly cloudy",
                           parameter == "weather" & text == "foggy" ~ "fog",
                           parameter == "weather" & text %in% c("precipitation", "rain", "rainy", "windy and precipitation") ~ "precipitation",
