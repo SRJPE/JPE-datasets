@@ -344,6 +344,29 @@ deer_trap_clean %>% glimpse
 
 ```
 
+We will be handling data updates for Deer and Mill through DataTackle but 2021-2023 need to be added to historical data because they are not handled by DataTackle. The 2023-2024 season and forward will be handled by DataTackle.
+
+```{r}
+res <- read_data_entity_names(packageId = "edi.1504.3")
+raw <- read_data_entity(packageId = "edi.1504.3", entityId = res$entityId[4])
+deer_mill_trap_raw <- read_csv(file = raw)
+
+new_deer_trap <- deer_mill_trap_raw |> 
+  filter(stream == "deer creek", date > max(deer_trap_clean$trap_stop_date)) |> 
+  rename(trap_stop_date = date,
+         rpms_start = rpm_before,
+         rpms_end = rpm_after,
+         gear_condition_code = trap_condition,
+         debris_volume = debris_gal) |> 
+  mutate(site = stream,
+         subsite = site) |> 
+  select(-c(weather, turbidity, water_temperature))
+
+deer_trap_clean_combined <- bind_rows(deer_trap_clean,
+                                      new_deer_trap)
+```
+
+
 ### Variables removed
 
 All variables removed are included in the catch table or environmental table.
@@ -475,6 +498,21 @@ mill_trap_clean %>% glimpse
 
 All other removed variables included in the catch table.
 
+```{r}
+new_mill_trap <- deer_mill_trap_raw |> 
+  filter(stream == "mill creek", date > max(mill_trap_clean$trap_stop_date)) |> 
+  rename(trap_stop_date = date,
+         rpms_start = rpm_before,
+         rpms_end = rpm_after,
+         gear_condition_code = trap_condition,
+         debris_volume = debris_gal) |> 
+  mutate(site = stream,
+         subsite = site) |> 
+  select(-c(weather, turbidity, water_temperature))
+
+mill_trap_clean_combined <- bind_rows(mill_trap_clean,
+                                      new_mill_trap)
+```
 
 ## Yuba River
 
@@ -748,9 +786,9 @@ ck <- tisdale_trap_clean |>
 ```{r, combined}
 combined_trap_raw <- bind_rows(battle_clear_trap_clean,
                           butte_trap_clean,
-                          deer_trap_clean,
+                          deer_trap_clean_combined,
                           feather_trap_clean,
-                          mill_trap_clean,
+                          mill_trap_clean_combined,
                           yuba_trap_clean,
                           knights_trap_clean,
                           tisdale_trap_clean)
