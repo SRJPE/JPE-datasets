@@ -11,6 +11,7 @@ library(lubridate)
 library(googleCloudStorageR)
 library(knitr)
 library(hms)
+library(EDIutils)
 
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
@@ -466,6 +467,26 @@ deer_rst_clean <- deer_rst %>%
          species = "chinook salmon")
 ```
 
+We will be handling data updates for Deer and Mill through DataTackle but 2021-2023 need to be added to historical data because they are not handled by DataTackle. The 2023-2024 season and forward will be handled by DataTackle.
+
+```{r}
+res <- read_data_entity_names(packageId = "edi.1504.3")
+raw <- read_data_entity(packageId = "edi.1504.3", entityId = res$entityId[1])
+deer_mill_catch_raw <- read_csv(file = raw)
+
+new_deer_catch <- deer_mill_catch_raw |> 
+  filter(stream == "deer creek", date > max(deer_rst_clean$date)) |> 
+  mutate(site = stream,
+         subsite = site,
+         run = "not recorded",
+         run_method = "not recorded",
+         adipose_clipped = F)
+
+deer_rst_clean_combined <- bind_rows(deer_rst_clean,
+                                      new_deer_catch)
+```
+
+
 ### Variables removed
 
 - flow, turbidity, weather, water_temperature_celsius: included in environmental table
@@ -630,6 +651,19 @@ mill_rst_clean <- mill_rst %>%
          adipose_clipped = F,
          lifestage = "not recorded",
          species = "chinook salmon")
+```
+
+```{r}
+new_mill_catch <- deer_mill_catch_raw |> 
+  filter(stream == "mill creek", date > max(mill_rst_clean$date)) |> 
+  mutate(site = stream,
+         subsite = site,
+         run = "not recorded",
+         run_method = "not recorded",
+         adipose_clipped = F)
+
+mill_rst_clean_combined <- bind_rows(mill_rst_clean,
+                                      new_mill_catch)
 ```
 
 ### Variables removed
@@ -1046,9 +1080,9 @@ lad_format <- full_join(lad_spring_format, lad_fall_format) %>%
 # improve performance by using data.table
 combined_rst <- bind_rows(battle_clear_rst_clean_final,
                           butte_rst_clean,
-                          deer_rst_clean,
+                          deer_rst_clean_combined,
                           feather_rst_clean,
-                          mill_rst_clean,
+                          mill_rst_clean_combined,
                           yuba_rst_clean,
                           knights_rst_clean_final,
                           tisdale_rst_clean,
