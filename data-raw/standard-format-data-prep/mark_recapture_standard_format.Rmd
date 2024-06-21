@@ -170,6 +170,32 @@ butte_recaptured <- read_csv(here::here("data", "rst", "butte_recaptures.csv")) 
 unique(butte_recaptured$subsite)
 
 ```
+### Deer and Mill Creeks
+
+We will be handling data updates for Deer and Mill through DataTackle but 2021-2023 need to be added to historical data because they are not handled by DataTackle. The 2023-2024 season and forward will be handled by DataTackle.
+
+```{r}
+res <- read_data_entity_names(packageId = "edi.1504.3")
+raw <- read_data_entity(packageId = "edi.1504.3", entityId = res$entityId[2])
+deer_mill_recapture_raw <- read_csv(file = raw)
+
+raw <- read_data_entity(packageId = "edi.1504.3", entityId = res$entityId[3])
+deer_mill_release_raw <- read_csv(file = raw)
+
+deer_mill_release <- deer_mill_release_raw |> 
+  mutate(site = stream) |> 
+  rename(date_released = release_date,
+         median_fork_length_released = mean_fl_released,
+         origin_released = release_origin)
+
+deer_mill_recapture <- deer_mill_recapture_raw |> 
+  mutate(site = stream,
+         subsite = site) |> 
+  rename(date_recaptured = recapture_date,
+         number_recaptured = total_recaptured,
+         median_fork_length_recaptured = mean_fl_recaptured) |> 
+  select(-c(min_fl_recaptured, max_fl_recaptured))
+```
 
 ### Feather River
 
@@ -289,6 +315,7 @@ knights_recaptured <- read_csv(here::here("data", "rst", "knights_recaptures.csv
               mutate(date_released = case_when(is.na(date_released) ~ ymd(paste0(year_released, "-01-01")) + weeks(week_released - 1), 
                                    T ~ date_released),
                      date_recaptured = date_released + 1)) %>% 
+  select(-c(date_released, week_released, year_released)) |> 
 glimpse()
 ```
 
@@ -346,7 +373,7 @@ rbdd_release <- read_csv(here::here("data", "rst", "rbdd_release.csv")) |>
 ## Combine datasets
 
 ```{r}
-combined_release <- bind_rows(battle_clear_released, butte_released, feather_released, knights_released, tisdale_released) %>% 
+combined_release <- bind_rows(battle_clear_released, butte_released, feather_released, knights_released, tisdale_released, deer_mill_release) %>% 
   relocate(stream, site, release_id, date_released, time_released, site_released, subsite_released, number_released, 
            median_fork_length_released, day_or_night_release, origin_released, run_released, lifestage_released, source_released, 
            days_held_post_mark, flow_at_release = release_flow, temperature_at_release = release_temp, turbidity_at_release = release_turbidity) %>% 
@@ -364,7 +391,7 @@ combined_release <- bind_rows(battle_clear_released, butte_released, feather_rel
 #   tally() %>%
 #   filter(n > 1)
 
-combined_recapture <- bind_rows(battle_clear_recaptured, butte_recaptured, feather_recaptured, knights_recaptured, tisdale_recaptured, rbdd_recapture) %>%
+combined_recapture <- bind_rows(battle_clear_recaptured, butte_recaptured, feather_recaptured, knights_recaptured, tisdale_recaptured, rbdd_recapture, deer_mill_recapture) %>%
   relocate(stream, site, subsite, release_id,
            date_recaptured, number_recaptured, median_fork_length_recaptured) %>% glimpse
 ```
