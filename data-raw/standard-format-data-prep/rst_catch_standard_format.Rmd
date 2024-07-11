@@ -1109,7 +1109,8 @@ combined_rst <- bind_rows(battle_clear_rst_clean_final,
          is_yearling = case_when(fork_length <= cutoff & !run %in% c("fall","late fall", "winter") ~ F,
                                  fork_length > cutoff & !run %in% c("fall","late fall", "winter") ~ T,
                                  run %in% c("fall","late fall", "winter") ~ NA,
-                                 T ~ NA)) %>% # few cases primarily from pre 2002 Sac that are species are NA
+                                 T ~ NA),
+         lifestage = ifelse(lifestage == "sac fry", "yolk sac fry", lifestage)) %>% # few cases primarily from pre 2002 Sac that are species are NA
   select(date, run, fork_length, lifestage, dead, interpolated, count, stream, site_group, site, subsite, adipose_clipped, run_method, species, release_id, weight, is_yearling)
 
 unique(combined_rst$run)

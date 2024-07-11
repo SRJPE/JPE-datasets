@@ -443,8 +443,15 @@ gcs_get_object(object_name = "jpe-model-data/daily_trap.csv",
                saveToDisk = "data/model-data/daily_trap.csv",
                overwrite = TRUE)
 trap_raw <- read_csv("data/model-data/daily_trap.csv")
+
+gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data/model-data/daily_catch_unmarked.csv",
+               overwrite = TRUE)
+catch_raw <- read_csv("data/model-data/daily_catch_unmarked.csv")
+
 years_available <- trap_raw |> 
-  group_by(stream, site) |> 
+  group_by(stream, site, subsite) |> 
   summarize(start_date = min(trap_start_date, na.rm = T),
             end_date = max(trap_start_date, na.rm = T),
             start_date2 = min(trap_stop_date, na.rm = T),
@@ -454,6 +461,12 @@ years_available <- trap_raw |>
          end_date = case_when(!is.infinite(end_date2) ~ end_date2, 
                               T ~ end_date)) |> 
   select(-c(start_date2, end_date2))
+
+years_available <- catch_raw |> 
+  group_by(stream, site, subsite) |> 
+  summarize(start_date = min(date, na.rm = T),
+            end_date = max(date, na.rm = T))
+
 gcs_upload(years_available,
            object_function = f,
            type = "csv",

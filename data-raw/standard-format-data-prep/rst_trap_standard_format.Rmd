@@ -359,7 +359,9 @@ new_deer_trap <- deer_mill_trap_raw |>
          gear_condition_code = trap_condition,
          debris_volume = debris_gal) |> 
   mutate(site = stream,
-         subsite = site) |> 
+         subsite = site,
+         trap_stop_time = as_hms(trap_stop_date),
+         trap_stop_date = as_date(trap_stop_date)) |> 
   select(-c(weather, turbidity, water_temperature))
 
 deer_trap_clean_combined <- bind_rows(deer_trap_clean,
@@ -507,7 +509,9 @@ new_mill_trap <- deer_mill_trap_raw |>
          gear_condition_code = trap_condition,
          debris_volume = debris_gal) |> 
   mutate(site = stream,
-         subsite = site) |> 
+         subsite = site,
+         trap_stop_time = as_hms(trap_stop_date),
+         trap_stop_date = as_date(trap_stop_date)) |> 
   select(-c(weather, turbidity, water_temperature))
 
 mill_trap_clean_combined <- bind_rows(mill_trap_clean,

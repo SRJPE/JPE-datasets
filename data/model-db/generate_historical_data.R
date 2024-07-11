@@ -218,9 +218,9 @@ trap <- trap_raw |>
          rpm_end = rpms_end,
          total_revolutions = sample_period_revolutions) |> 
   mutate(trap_visit_time_start = case_when(!is.na(trap_start_time) ~ ymd_hms(paste(trap_start_date, trap_start_time)),
-                                           T ~ ymd(trap_start_date)),
+                                           T ~ ymd_hms(paste0(trap_start_date, "00:00:00"))),
          trap_visit_time_end = case_when(!is.na(trap_stop_time) ~ ymd_hms(paste(trap_stop_date, trap_stop_time)),
-                                         T ~ ymd(trap_stop_date)),
+                                         T ~ ymd_hms(paste0(trap_stop_date, "00:00:00"))),
          rpm_end = ifelse(is.infinite(rpm_end), NA, rpm_end)) |> 
   select(-c(trap_start_time, trap_start_date, trap_stop_time, trap_stop_date)) |> 
  select(c(trap_location_id, visit_type_id, trap_visit_time_start, trap_visit_time_end,
@@ -235,6 +235,7 @@ unique(trap$fish_processed_id)
 unique(trap$debris_level_id)
 
 ck <- filter(trap, is.na(trap_visit_time_start) & is.na(trap_visit_time_end))
+ck_deer <- filter(trap, trap_location_id %in% 16:17)
 
 try(if(any((unique(trap$trap_location_id) %in% trap_location$id) == F)) 
   stop("Missing Trap Location ID! Please fix!"))
@@ -351,11 +352,6 @@ release <- release_raw |>
   rename(lifestage_id = id) |> 
   select(-lifestage_released, -description)
 
-# Need to determine if want to keep this table or make it just a release table
-# trap location, origin, run, lifestage
-# check that there are no missing dates
-# one time check - compare to last table provided josh with
-# check number recaptured and number released make sense
 ck_deer <- filter(release, trap_location_id %in% 16:17)
 gcs_upload(release,
            object_function = f,
@@ -378,14 +374,29 @@ gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
                overwrite = TRUE)
 standard_catch <- read_csv("data/standard-format-data/standard_catch.csv")
 
-recapture_raw <- standard_catch %>% 
+# the goal of pulling from the standard catch is that there is more infomation
+# for recaptured fish than in the recapture table though not all release id
+# are in standard catch
+recapture_raw_ck <- standard_catch %>%
   filter(species == "chinook salmon", # filter for only chinook
          !is.na(release_id)) %>%  # filter for only recaptured fish that were part of efficiency trial
   select(-species)
 
-recaptured_fish <- recapture_raw |> 
+release_id_recapture <- recapture_raw_ck |> 
+  select(stream, site, subsite, release_id) |> 
+  distinct() |> 
+  mutate(exists_catch = T)
+
+recaptured_fish <- recapture_raw_ck |> 
   select(stream, site, subsite, date, count, run, lifestage, adipose_clipped, dead, fork_length, weight,
          release_id) |> 
+  bind_rows(recapture_raw |> 
+              left_join(release_id_recapture) |> 
+              filter(is.na(exists_catch)) |> 
+              rename(date = date_recaptured,
+                     count = number_recaptured,
+                     fork_length = median_fork_length_recaptured)) |> 
+  select(-exists_catch) |> 
   # trap_location_id
   left_join(trap_location, by = c("stream", "site", "subsite")) |> 
   select(-c(stream, site, subsite, site_group, description)) |> 
@@ -402,12 +413,6 @@ recaptured_fish <- recapture_raw |>
 unique(recaptured_fish$trap_location_id)
 unique(recaptured_fish$run_id)
 unique(recaptured_fish$lifestage_id)
-
-# TODO ADD CHECKS
-# trap location, run, lifestage
-# check that there are no missing dates
-# one time check - compare to last table provided josh with
-# check number recaptured and number released make sense
 
 ck_deer <- filter(recaptured_fish, trap_location_id %in% 16:17)
 gcs_upload(recaptured_fish,

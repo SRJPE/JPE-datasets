@@ -194,7 +194,9 @@ deer_mill_recapture <- deer_mill_recapture_raw |>
   rename(date_recaptured = recapture_date,
          number_recaptured = total_recaptured,
          median_fork_length_recaptured = mean_fl_recaptured) |> 
-  select(-c(min_fl_recaptured, max_fl_recaptured))
+  select(-c(min_fl_recaptured, max_fl_recaptured)) |> 
+  mutate(date_recaptured = case_when(date_recaptured == "2032-01-24" ~ as.Date("2023-01-24"),
+                                     T ~ as.Date(date_recaptured)))
 ```
 
 ### Feather River

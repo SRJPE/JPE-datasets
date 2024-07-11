@@ -841,7 +841,7 @@ compare_flow |>
 
 # add zero recaptures
 recapture_summary <- select(standard_release, stream, site, release_id, date_released, week_released, year_released) |> 
-  full_join(select(standard_recapture, -c(date_released, week_released, year_released))) |> 
+  full_join(standard_recapture) |> 
   mutate(number_recaptured = ifelse(is.na(number_recaptured), 0, number_recaptured),
          site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
                                 site %in% hfc_sites ~ "feather river hfc",
@@ -959,5 +959,5 @@ gcs_upload(standard_daily_redd,
            type = "csv",
            name = "jpe-model-data/daily_redd.csv",
            predefinedAcl = "bucketLevel")
-write_csv(standard_annual_redd, "data/model-data/daily_redd.csv")
+write_csv(standard_daily_redd, "data/model-data/daily_redd.csv")
 
