@@ -367,7 +367,7 @@ gcs_get_object(object_name = "standard-format-data/standard_recapture.csv",
                saveToDisk = "data/standard-format-data/standard_recapture.csv",
                overwrite = TRUE)
 recapture_raw <- read_csv("data/standard-format-data/standard_recapture.csv")
-
+filter(recapture_raw, stream == "deer creek")
 gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_catch.csv",
@@ -397,6 +397,9 @@ recaptured_fish <- recapture_raw_ck |>
                      count = number_recaptured,
                      fork_length = median_fork_length_recaptured)) |> 
   select(-exists_catch) |> 
+  mutate(subsite = case_when(subsite == "okie RST" ~ "okie dam 1",
+                             subsite == "not recorded" ~ NA,
+                             T ~ subsite)) |> 
   # trap_location_id
   left_join(trap_location, by = c("stream", "site", "subsite")) |> 
   select(-c(stream, site, subsite, site_group, description)) |> 
@@ -411,9 +414,10 @@ recaptured_fish <- recapture_raw_ck |>
   select(-lifestage) 
 
 unique(recaptured_fish$trap_location_id)
+filter(recaptured_fish, is.na(trap_location_id))
 unique(recaptured_fish$run_id)
 unique(recaptured_fish$lifestage_id)
-
+# need to make sure deer is included (only in the recapture and not catch)
 ck_deer <- filter(recaptured_fish, trap_location_id %in% 16:17)
 gcs_upload(recaptured_fish,
            object_function = f,
