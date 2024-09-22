@@ -1,0 +1,687 @@
+---
+title: "Feather River Snorkel Pre-2004 QC"
+author: "Liz Stebbins"
+date: "3/6/2024"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
+library(tidyverse)
+library(lubridate)
+library(googleCloudStorageR)
+library(ggplot2)
+library(scales)
+library(readxl)
+```
+
+# Feather River Snorkel Data 1999 - 2003
+
+## Description of Monitoring Data
+
+Feather River Snorkel Data from 1999 - 2003. These data were provided to flowwest in an access database `FR_S_and_S_Oroville.mdb`. We extracted the tables of interest (`SnorkObservations` and `SnorkelSurvey`, as well as some lookup tables). Snorkel survey data from 2004 - 2020 are available in a separate database `Snorkel_Revised.mdb` and processed in the markdown `feather_snorkel_qc.Rmd`.
+
+**Timeframe:** 1999 - 2003
+
+**Completeness of Record throughout timeframe:** 
+
+Only SR collected are in 1999 - 2001
+
+**Sampling Location:** Feather River
+
+**Data Contact:** [Casey Campos](mailto:Casey.Campos@water.ca.gov)
+
+## Access Cloud Data
+
+```{r, eval=FALSE}
+# Run Sys.setenv() to specify GCS_AUTH_FILE and GCS_DEFAULT_BUCKET before running 
+# getwd() to see how to specify paths 
+# Open object from google cloud storage
+# Set your authentication using gcs_auth
+gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
+# Set global bucket 
+gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
+gcs_list_objects()
+# git data and save as xlsx
+gcs_get_object(object_name = 
+                 "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/db_from_feather_river/FR_S_and_S_Oroville.mdb",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/seine-snorkel-data/feather-river/feather-river-db.mdb",
+               overwrite = TRUE)
+
+```
+
+Read in data from google cloud, glimpse raw data: 
+```{r, warning=FALSE, message = FALSE}
+db_filepath <- here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "feather-river-db.mdb")
+
+library(Hmisc)
+mdb.get(db_filepath, tables = TRUE) 
+all_species <- mdb.get(db_filepath, "All Species Query Table") # what is this table?
+snorkel_obsv <- mdb.get(db_filepath, "SnorkObservationsTBL") 
+snorkel_survey_metadata <- mdb.get(db_filepath, "SnorkSurveyTBL")
+lookup_HUC_cover <- mdb.get(db_filepath, "HUCcoverLU")
+lookup_HUC_o_cover <- mdb.get(db_filepath, "HUCOcoverLU")
+lookup_HUC_substrate <- mdb.get(db_filepath, "HUCsubstrateLU")
+lookup_HUC_unit <- mdb.get(db_filepath, "HUCunitLU")
+lookup_weather <- mdb.get(db_filepath, "WeatherLU")
+detach(package:Hmisc)
+
+# write to csvs
+write_csv(snorkel_obsv, here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "raw_pre_2004_snorkel_data_feather.csv"))
+write_csv(snorkel_survey_metadata, here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "raw_pre_2004_snorkel_data_feather_metadata.csv"))
+
+# read in data
+snorkel_raw <- read_csv(here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "raw_pre_2004_snorkel_data_feather.csv"))
+snorkel_metadata_raw <- read_csv(here::here("data-raw", "qc-markdowns", "seine-snorkel-data", "feather-river", "raw_pre_2004_snorkel_data_feather_metadata.csv"))
+
+```
+
+## Data transformations
+`All Species Query Table` only spans `1998-1999`.
+
+Read in individual observation files and survey metadata files. Update column names and column types. Filter to only show chinook salmon.
+
+
+```{r}
+cleaner_snorkel_data <- snorkel_raw |> 
+  janitor::clean_names() |> 
+  mutate(huc_ocover = as.numeric(huc_ocover)) |> 
+  # filter(species %in% c("CHN", "None", "C", "CHNF", "CHNS", "CHNL")) |>  # filter species to relevant values (none is helpful to show they snorkeled and did not see anything)
+  left_join(lookup_HUC_unit |> 
+              rename(huc_unit = Unit), by = c("hu_cunit" = "UnitCode")) |> 
+  rename(huc_substrate = hu_csubstrate, huc_instream_cover = huc_icover, 
+         huc_overhead_cover = huc_ocover, flow = velocity, adj_flow = adj_velocity) |> 
+  # left_join(lookup_HUC_cover |> 
+  #           rename(huc_cover = Cover), by = c("huc_icover" = "CoverCode")) |>
+  # left_join(lookup_HUC_substrate |> 
+  #           rename(huc_substrate = Substrate), by = c("hu_csubstrate" = "SubstrateCode")) |>
+  # left_join(lookup_HUC_o_cover |> 
+  #           rename(huc_o_cover = Cover), by = c("huc_ocover" = "CoverCode")) |>
+  select(-c(snorkler, obs_id)) |> 
+    mutate(run = case_when(species  == "CHNF" ~ "fall",
+                         species == "CHNS" ~ "spring",
+                         species == "CHNL" ~ "late fall",
+                         species %in% c("CHN",  "None", "C") ~ "unknown"),
+           huc_unit = str_to_lower(huc_unit)) |> 
+           # huc_cover = str_to_lower(huc_cover),
+           # huc_o_cover = str_to_lower(huc_o_cover),
+           # huc_substrate = str_to_lower(huc_substrate)) |> 
+  glimpse()
+
+cleaner_snorkel_metadata <- snorkel_metadata_raw |> 
+  janitor::clean_names() |> 
+  left_join(lookup_weather, by = c("weather" = "WeatherCode")) |> 
+  select(-c(visibility_comments, x_of_divers, x_of_center_passes, pass_width, comments,
+          temp_time, snorkel_time_start, snorkel_time_stop, weather,
+          snorkel_crew, shore_crew, recorder)) |> # doesn't seem like time information is being read in from mdb.get - TODO 
+  mutate(location = str_to_title(location),
+         survey_type = str_to_lower(survey_type),
+         section_type = str_to_lower(section_type),
+         weather = str_to_lower(Weather)) |> 
+  select(-c(Weather)) |> 
+  glimpse()
+
+snorkel <- left_join(cleaner_snorkel_data, cleaner_snorkel_metadata, by = "survey_id") |> 
+  # remove units (repetitive) and comments, rename some variables for clarity
+  select(survey_id, date, location, unit, survey_type, section_type, count = number, species, run,
+         fork_length = fl, max_fork_length = max_fl, fish_depth, river_depth = depth,
+         flow, adj_flow, river_flow, bank_distance, huc_unit, huc_instream_cover,
+         huc_overhead_cover, huc_substrate, visibility, temperature, weather) |>
+  filter(!is.na(date)) |> 
+  glimpse()
+
+```
+
+## Explore Numeric Variables: {.tabset}
+
+```{r}
+snorkel |> select_if(is.numeric) |> colnames()
+```
+
+### Variable: `flow`
+
+**Plotting flow over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = date, y = flow)) + 
+  geom_line(linetype = "dashed") + 
+  geom_point() +
+  theme_minimal()
+```
+
+Very inconsistent and sparse flow measures. No flow measurements after 2000-04-04.
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = flow)) +
+  geom_histogram() + 
+  theme_minimal()
+```
+
+Flow is between 0 - 5.8. 0 values must be errors or `NA`.  
+
+**Numeric Summary of flow over Period of Record**
+
+```{r}
+summary(snorkel$flow)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$flow))/nrow(snorkel), 3) * 100` % of values in the `flow` column are NA. 
+
+### Variable: `adj_flow`
+
+**Plotting adjusted flow over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = date, y = adj_flow)) + 
+  geom_line(linetype = "dashed") + 
+  geom_point() +
+  theme_minimal()
+```
+
+Very inconsistent and sparse adjusted flow measures. No adjusted flow measurements after 2000-03-23.
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = adj_flow)) +
+  geom_histogram() + 
+  theme_minimal()
+```
+
+Adjusted is between 0 - 3.97. 0 values must be errors or `NA`.  
+
+**Numeric Summary of flow over Period of Record**
+
+```{r}
+summary(snorkel$adj_flow)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$adj_flow))/nrow(snorkel), 3) * 100` % of values in the `adj_flow` column are NA. 
+
+### Variable: `river_flow`
+
+**Plotting river flow over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = date, y = river_flow)) + 
+  geom_line(linetype = "dashed") + 
+  geom_point() +
+  theme_minimal()
+```
+
+River flow is collected more consistently than `flow` or `adj_flow`
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = river_flow)) +
+  geom_histogram() + 
+  theme_minimal()
+```
+
+River flow is between 1 - 9564. River flow seems to be the most consistent and reasonable flow variable in this dataset.  
+
+**Numeric Summary of river flow over Period of Record**
+
+```{r}
+summary(snorkel$river_flow)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$river_flow))/nrow(snorkel), 3) * 100` % of values in the `flow` column are NA. 
+
+
+### Variable: `visibility`
+
+**Plotting visibility over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = date, y = visibility)) + 
+  geom_line(linetype = "dashed") + 
+  geom_point() +
+  theme_minimal()
+```
+
+Visibility is collected sporadically.
+
+```{r}
+snorkel |>
+  ggplot(aes(x = visibility)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
+
+All visibility measures fall between 0.5 and 9.0. 
+
+**Numeric Summary of visibility over Period of Record**
+
+```{r}
+summary(snorkel$visibility)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$visibility))/nrow(snorkel), 3) * 100` % of values in the `visibility` column are NA.
+
+### Variable: `temperature`
+
+TODO: Check that they are in both F and C and then divide appropriately  
+
+**Plotting temperature over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = date, y = temperature)) + 
+  geom_line(linetype = "dashed") + 
+  geom_point() +
+  theme_minimal()
+```
+
+Consistency of temperature measures varies throughout the years. 
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = temperature)) +
+  geom_histogram() +
+  theme_minimal()
+```
+
+Appears as if most values are collected in Fahrenheit and a few are collected in Celsius (the lowest ones)?
+
+**Numeric Summary of temperature over Period of Record**
+
+```{r}
+summary(snorkel$temperature)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$temperature))/nrow(snorkel), 3) * 100` % of values in the `temperature` column are NA.
+
+
+### Variable: `count`
+
+**Plotting count over Period of Record**
+
+```{r, include=FALSE}
+sac_indices <- waterYearType::water_year_indices |> 
+    filter(location == "Sacramento Valley") |> 
+    transmute(water_year = WY, year_type = as.character(Yr_type))
+```
+
+```{r}
+snorkel |> 
+  filter(run == "spring") |>
+  group_by(date) |>
+  summarise(total_daily_catch = sum(count, na.rm = T)) |>
+  # filter(year(date) > 2014, year(date) < 2021) |>
+  mutate(water_year = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) |> 
+  left_join(sac_indices) |>
+  mutate(year = as.factor(year(date)),
+         fake_year = if_else(month(date) %in% 10:12, 1900, 1901),
+         fake_date = as.Date(paste0(fake_year,"-", month(date), "-", day(date)))) |>
+  ggplot(aes(x = fake_date, y = total_daily_catch, fill = year_type)) + 
+  geom_col() + 
+  scale_x_date(labels = date_format("%b"), limits = c(as.Date("1901-03-01"), as.Date("1901-10-01")), date_breaks = "1 month") + 
+  theme_minimal() + 
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = "bottom") + 
+  labs(title = "Total Daily Raw Fish Count",
+       y = "Total daily catch",
+       x = "Date")+ 
+  facet_wrap(~water_year, scales = "free") + 
+  scale_fill_manual(values = wesanderson::wes_palette("Moonrise2", 5, type = "continuous"))
+```
+
+
+Very few SR fish, only caught SR in 1999, 2000, and 2001.  
+```{r}
+snorkel  |>
+  mutate(year = as.factor(year(date))) |>
+  ggplot(aes(x = year, y = count, fill = run)) + 
+  geom_col() + 
+  theme_minimal() +
+  labs(title = "Total Fish Counted each Year",
+       y = "Total fish count") + 
+  scale_fill_manual(values = c("#E1BD6D", "#0B775E", "#F2300F", "#35274A")) +
+  theme(text = element_text(size = 18),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+```
+
+
+**Numeric Summary of count over Period of Record**
+
+```{r}
+summary(snorkel$count)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$count))/nrow(snorkel), 3) * 100` % of values in the `count` column are NA.
+
+### Variable: `fork_length`
+
+**Plotting est_size over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = fork_length)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
+
+
+**Numeric Summary of fork_length over Period of Record**
+
+```{r}
+summary(snorkel$fork_length)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$fork_length))/nrow(snorkel), 3) * 100` % of values in the `fork_length` column are NA.
+
+### Variable: `max_fork_length`
+
+**Plotting max fork length over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = max_fork_length)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
+
+**Numeric Summary of max fork length over Period of Record**
+
+```{r}
+summary(snorkel$max_fork_length)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$max_fork_length))/nrow(snorkel), 3) * 100` % of values in the `max_fork_length` column are NA.
+
+### Variable: `fish_depth`
+
+Depth at which fish was observed.
+
+**Plotting fish depth over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = fish_depth)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
+Most of the fish were observed at a depth between 0-2m.
+
+**Numeric Summary of fish depth over Period of Record**
+
+```{r}
+summary(snorkel$fish_depth)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$fish_depth))/nrow(snorkel), 3) * 100` % of values in the `fish_depth` column are NA.
+
+### Variable: `river_depth`
+
+Depth of the river at sampling site.
+
+**Plotting water depth over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = river_depth)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
+River depth was mostly between 1-2 m.
+
+**Numeric Summary of depth of water over Period of Record**
+
+```{r}
+summary(snorkel$river_depth)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$river_depth))/nrow(snorkel), 3) * 100` % of values in the `river_depth` column are NA.
+
+### Variable: `bank_distance`
+
+Distance from river bank.
+
+**Plotting distance from river bank over Period of Record**
+
+```{r}
+snorkel |> 
+  ggplot(aes(x = bank_distance)) + 
+  geom_histogram() + 
+  theme_minimal()
+```
+
+Distance from river bank was generally between 0-2.5 m. 
+
+**Numeric Summary of distance from river bank over Period of Record**
+
+```{r}
+summary(snorkel$bank_distance)
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$bank_distance))/nrow(snorkel), 3) * 100` % of values in the `bank_distance` column are NA.
+
+## Explore Categorical variables: {.tabset}
+
+
+```{r}
+snorkel |> select_if(is.character) |> colnames()
+```
+
+
+### Variable: `location`
+
+Locations appear to be mapped to a survey reach and can be inconsistent (i.e. some are reach X - reach Y, some are just reach X). In later years, this is `section_name`.
+
+```{r}
+table(snorkel$location)
+
+format_site_name <- function(string) {
+  clean <- 
+    str_replace_all(string, "'", "") |>
+    str_replace_all("G-95", "G95") |> 
+    str_replace_all("[^[:alnum:]]", " ") |> 
+    trimws() |> 
+    stringr::str_squish() |>
+    stringr::str_to_title()
+}
+
+snorkel$location <- format_site_name(snorkel$location)
+table(snorkel$location)
+```
+
+There are `r length(unique(snorkel$location))` unique locations.
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$location))/nrow(snorkel), 3) * 100` % of values in the `location` column are NA.
+
+### Variable: `unit`
+
+Not sure what `unit` corresponds to - should clarify this. In later years (see other .Rmd) this is `section_name`. 
+
+```{r}
+table(snorkel$unit) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$unit))/nrow(snorkel), 3) * 100` % of values in the `unit` column are NA.
+
+### Variable: `survey_type`
+
+Survey type, either `comp` or `unit`.
+
+```{r}
+table(snorkel$survey_type) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$survey_type))/nrow(snorkel), 3) * 100` % of values in the `survey_type` column are NA.
+
+### Variable: `section_type`
+
+Section type: either `permanent` or `random`
+
+```{r}
+table(snorkel$section_type)
+
+snorkel$section_type <- ifelse(snorkel$section_type == "n/a", NA, snorkel$section_type)
+
+table(snorkel$section_type)
+```
+
+There are `r length(unique(snorkel$section_type))` unique groups units covered. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$section_type))/nrow(snorkel), 3) * 100` % of values in the `section_type` column are NA.
+
+### Variable: `species` 
+
+Species are messy ans should be updated
+```{r}
+# table(snorkel$species)
+# 
+# snorkel$species <- ifelse(snorkel$species == "None", "unknown", "chinook")
+# 
+# table(snorkel$species)
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$species))/nrow(snorkel), 3) * 100` % of values in the `species` column are NA.
+
+### Variable: `run``
+
+Run type.
+
+```{r}
+table(snorkel$run)
+```
+
+There are `r length(unique(snorkel$run))` unique observation ids
+
+* `r round(sum(is.na(snorkel$run))/nrow(snorkel), 3) * 100` % of values in the `run` column are NA.
+
+### Variable: `huc_unit`
+
+```{r}
+table(snorkel$huc_unit) 
+```
+
+There are `r length(unique(snorkel$huc_unit))` unique units covered. 
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$huc_unit))/nrow(snorkel), 3) * 100` % of values in the `huc_unit` column are NA.
+
+### Variable: `huc_instream_cover`
+
+This is instream cover. Lookup table from database was joined in cleaning stage.
+
+```{r}
+snorkel <- snorkel |> 
+  rename(instream_cover = huc_instream_cover)
+table(snorkel$instream_cover) 
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$instream_cover))/nrow(snorkel), 3) * 100` % of values in the `instream_cover` column are NA.
+
+### Variable: `huc_overhead_cover`
+
+This is overhead cover. Lookup table from database was joined at cleaning stage.
+
+
+```{r}
+snorkel <- snorkel |> 
+  rename(overhead_cover = huc_overhead_cover)
+table(snorkel$overhead_cover) 
+```
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$overhead_cover))/nrow(snorkel), 3) * 100` % of values in the `overhead_cover` column are NA.
+
+### Variable: `huc_substrate`
+
+Lookup table from database was joined at cleaning stage.
+
+
+```{r}
+snorkel <- snorkel |> 
+  rename(substrate = huc_substrate)
+table(snorkel$substrate) 
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$substrate))/nrow(snorkel), 3) * 100` % of values in the `substrate` column are NA.
+
+
+### Variable: `weather`
+
+Lookup table from database was joined at cleaning stage.
+
+
+```{r}
+table(snorkel$weather) 
+```
+
+
+**NA and Unknown Values**
+
+* `r round(sum(is.na(snorkel$weather))/nrow(snorkel), 3) * 100` % of values in the `weather` column are NA.
+
+
+
+## Summary of identified issues
+
+* No spring run observed in `2002` and `2003`
+* Some survey IDs do not have associated dates: `472`, some entries from survey id `546`, and some `NA` survey dates.
+* Several flow variables, though `river_flow` is the most consistently collected
+* `huc_instream_cover`, `huc_overhead_cover`, and `huc_substrate` have lookup tables but they are incomplete, so we kept them as codes in order to streamline combining with post-2004 data.
+* Still a few unknown columns that we need to define and understand 
+* Detailed information on location and units split up; need to update standardized reach lookup table so that it accounts for the new entries represented in this dataset
+
+## Save cleaned data back to google cloud 
+
+```{r, eval=FALSE}
+f <- function(input, output) write_csv(input, file = output)
+gcs_upload(snorkel,
+           object_function = f,
+           type = "csv",
+           name = "juvenile-rearing-monitoring/seine-and-snorkel-data/feather-river/data-raw/pre_2004_snorkel.csv",
+           predefinedAcl = "bucketLevel")
+```
+
