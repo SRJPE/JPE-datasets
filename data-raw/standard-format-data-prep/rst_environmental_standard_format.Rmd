@@ -663,6 +663,19 @@ There are no missing subsites
 filter(combined_env, is.na(subsite))
 table(combined_env$subsite, useNA = "ifany")
 ```
+```{r, include = F}
+check_dates <- function(dat) {
+  dat |> 
+    group_by(stream, site, subsite) |> 
+    summarize(min_date = min(date),
+              max_date = max(date))
+}
+
+combined_env |> 
+  check_dates() |> 
+  view()
+
+```
 
 ## Save data to google cloud 
 

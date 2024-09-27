@@ -99,6 +99,12 @@ gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked.csv",
                overwrite = TRUE)
 catch_raw <- read_csv("data/model-data/daily_catch_unmarked.csv")
 
+
+catch |>
+  group_by(stream, site, subsite) |>
+  summarize(min_date = min(date, na.rm = T),
+            max_date = max(date, na.rm = T)) |>  view()
+filter(catch, is.na(date))
 # add trap location id
 # run id
 # lifestage id
@@ -106,6 +112,7 @@ catch_raw <- read_csv("data/model-data/daily_catch_unmarked.csv")
 # need to fix the feather river sites in catch data 
 
 catch <- catch_raw |> 
+  filter(!(stream == "mill creek" & month(date) > 6 & year(date) == 2023)) |> 
   select(stream, site, subsite, date, count, run, lifestage, adipose_clipped, 
          dead, fork_length, weight) |> 
   # trap_location_id
@@ -122,7 +129,7 @@ catch <- catch_raw |>
   select(-lifestage) |> 
   mutate(actual_count = NA)
 
-ck <- filter(catch, is.na(trap_location_id))
+ck <- filter(catch, is.na(trap_location_id)) |> view()
 unique(catch$trap_location_id)
 unique(catch$lifestage_id)
 unique(catch$run_id)
@@ -134,7 +141,7 @@ try(if(any((unique(catch$run_id) %in% run$id) == F))
 try(if(any((unique(catch$lifestage_id) %in% lifestage$id) == F))
   stop("Missing Lifestage ID! Please fix!"))
 
-ck_deer <- filter(catch, trap_location_id %in% 16:17)
+ck_deer <- filter(catch, trap_location_id %in% 16:17) |> view()
 gcs_upload(catch,
            object_function = f,
            type = "csv",
@@ -146,7 +153,11 @@ gcs_get_object(object_name = "jpe-model-data/daily_trap.csv",
                saveToDisk = "data/model-data/daily_trap.csv",
                overwrite = TRUE)
 trap_raw <- read_csv("data/model-data/daily_trap.csv")
-
+trap_raw |>
+  group_by(stream, site, subsite) |>
+  summarize(min_date = min(trap_stop_date, na.rm = T),
+            max_date = max(trap_stop_date, na.rm = T)) |>  view()
+filter(trap_raw, is.na(trap_stop_date) & is.na(trap_visit_date) & is.na(trap_start_date))
 
 gcs_get_object(object_name = "standard-format-data/standard_RST_environmental.csv",
                bucket = gcs_get_global_bucket(),
@@ -186,6 +197,7 @@ trap <- trap_raw |>
          trap_stop_date, trap_stop_time, trap_functioning, is_half_cone_configuration,
          fish_processed, rpms_start, rpms_end, sample_period_revolutions,
          debris_volume, debris_level, include) |> 
+  filter(!(stream == "mill creek" & month(trap_stop_date) > 6 & year(trap_stop_date) == 2023)) |> 
   mutate(fish_processed = case_when(fish_processed == "no catch data, fish released" ~ "no catch data and fish released",
                                     fish_processed == "no catch data, fish left in live box" ~ "no catch data and fish left in live box",
                                     T ~ fish_processed)) |> 
@@ -234,8 +246,8 @@ unique(trap$trap_functioning_id)
 unique(trap$fish_processed_id)
 unique(trap$debris_level_id)
 
-ck <- filter(trap, is.na(trap_visit_time_start) & is.na(trap_visit_time_end))
-ck_deer <- filter(trap, trap_location_id %in% 16:17)
+ck <- filter(trap, is.na(trap_visit_time_start) & is.na(trap_visit_time_end)) |> view()
+ck_deer <- filter(trap, trap_location_id %in% 16:17) |> view()
 
 try(if(any((unique(trap$trap_location_id) %in% trap_location$id) == F)) 
   stop("Missing Trap Location ID! Please fix!"))

@@ -128,7 +128,7 @@ unique(battle_clear_trap_clean$stream)
 ck <- battle_clear_trap_clean |> 
   mutate(diff = as.numeric(trap_stop_date - trap_start_date)) |> 
   filter(diff > 7 | diff < -7)
-filter(battle_clear_trap_clean, trap_stop_date < trap_start_date)
+#filter(battle_clear_trap_clean, trap_stop_date < trap_start_date)
 ```
 
 ### Variables removed
@@ -1073,6 +1073,19 @@ combined_trap %>%
   ggplot(aes(x = `year(trap_stop_date)`, y = percent, fill = debris_level)) +
   geom_bar(stat = "identity", position = "stack") +
   facet_wrap(~stream)
+```
+```{r, include = F}
+check_dates <- function(dat) {
+  dat |> 
+    group_by(stream, site, subsite) |> 
+    summarize(min_date = min(trap_stop_date),
+              max_date = max(trap_stop_date))
+}
+
+combined_trap |> 
+  check_dates() |> 
+  view()
+
 ```
 
 # Save data

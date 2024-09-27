@@ -768,6 +768,19 @@ hours_fished_weekly %>%
   ggplot(aes(x = hours_fished, fill = stream)) +
   geom_histogram(alpha = .75, position = 'identity')
 ```
+```{r, include = F}
+check_dates <- function(dat) {
+  dat |> 
+    group_by(stream, site, subsite) |> 
+    summarize(min_date = min(date),
+              max_date = max(date))
+}
+
+hours_fished_combined |> 
+  check_dates() |> 
+  view()
+
+```
 
 # Save data
 

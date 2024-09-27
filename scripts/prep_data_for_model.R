@@ -489,6 +489,12 @@ rst_with_inclusion_criteria <- updated_standard_catch |>
   select(-c(monitoring_year, min_date, max_date, year, week)) |> 
   glimpse()
 
+
+rst_with_inclusion_criteria |>
+  group_by(stream, site, subsite) |>
+  summarize(min_date = min(date, na.rm = T),
+            max_date = max(date, na.rm = T)) |> view()
+
 gcs_upload(rst_with_inclusion_criteria,
            object_function = f,
            type = "csv",

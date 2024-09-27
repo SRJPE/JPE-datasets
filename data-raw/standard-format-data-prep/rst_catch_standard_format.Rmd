@@ -338,6 +338,11 @@ butte_rst_clean_pre_2015 <- butte_rst %>%
   group_by(date, site, subsite, dead, fork_length, weight, adipose_clipped, lifestage, stream, run, run_method, species) %>%
   summarize(count = sum(count, na.rm = T)) 
 
+ck <- butte_rst_clean_pre_2015 |> 
+  mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
+  group_by(monitoring_year) |> 
+  summarize(total_count = sum(count, na.rm=T))
+
 ```
 
 Prep data from CAMP to combine with RST clean
@@ -382,7 +387,10 @@ Combine butte pre 2015 (excel) and post 2015 (CAMP). No temporal overlap in data
 ```{r, combine_butte}
 # bind rows
 butte_rst_clean <- bind_rows(butte_rst_clean_pre_2015, butte_rst_clean_camp) %>% glimpse()
-
+ck <- butte_rst_clean |> 
+  mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
+  group_by(monitoring_year) |> 
+  summarize(total_count = sum(count, na.rm=T))
 ```
 
 Check that all days trap running have catch rows
@@ -422,7 +430,10 @@ keep_dates <- butte_rst_clean %>%
 
 butte_rst_clean <- butte_rst_clean %>%
   filter(date %in% keep_dates) # keep only dates with RST sampling - not fyke only 
-
+ck <- butte_rst_clean |> 
+  mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
+  group_by(monitoring_year) |> 
+  summarize(total_count = sum(count, na.rm=T))
 setDT(butte_rst_clean)
 # THIS CODE MODIFIES battle_rst_clean_final using functions that
 # mutate using data.table package
@@ -621,6 +632,12 @@ feather_rst_clean %>%
   run_encoding_dt() %>% 
   run_method_encoding_dt() %>% 
   lifestage_encoding_dt()
+
+ck2 <- feather_rst_clean |> 
+  filter(species == 'chinook salmon') |> 
+  mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |>
+  group_by(monitoring_year, site) |> 
+  summarize(total_count = sum(count, na.rm = T))
 ```
 
 ## Mill Creek
@@ -1428,6 +1445,21 @@ combined_rst %>%
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
+
+```{r, include = F}
+check_dates <- function(dat) {
+  dat |> 
+    group_by(stream, site, subsite) |> 
+    summarize(min_date = min(date),
+              max_date = max(date))
+}
+
+combined_rst |> 
+  check_dates() |> 
+  view()
+
+```
+
 
 # Save data
 
