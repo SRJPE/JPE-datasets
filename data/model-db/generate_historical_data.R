@@ -576,9 +576,10 @@ daily_redd <- daily_redd_raw |>
   # remove any NA entries - there should not be any now that Feather issue fixed
   # remove any non chinook species
   filter(!is.na(date), species %in% c("chinook", "not recorded", "unknown")) |> 
-  select(date, latitude, longitude, reach, redd_id, age, velocity, run, stream) |> 
+  select(date, latitude, longitude, reach, redd_id, age, velocity, run, stream, redd_count) |> 
   # change format to date instead of datetime
-  mutate(date = as.Date(date)) |> 
+  mutate(date = as.Date(date),
+         redd_count = ifelse(is.na(redd_count),1,redd_count)) |> 
   # TODO we need to add a lookup table - liz is working on the standard reach names
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
