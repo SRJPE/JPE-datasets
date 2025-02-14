@@ -111,6 +111,7 @@ full_date_list <- date_ranges_trap_running |>
   distinct()
 
 standard_catch_unmarked_raw <- standard_catch %>% 
+  distinct() |> # notcied some duplicates for knights landing that may have resulted from adding in 0s for trap visit not in catch
   filter(species == "chinook salmon", # filter for only chinook
          is.na(release_id)) %>%  # filter for only unmarked fish, exclude recaptured fish that were part of efficiency trial
   mutate(month = month(date), # add to join with lad and yearling
@@ -128,7 +129,7 @@ standard_catch_unmarked_raw <- standard_catch %>%
 standard_catch_unmarked <- standard_catch_unmarked_raw |> 
   # note there are some join issues happening here
   # add in dates that trap was running
-  right_join(full_date_list |> rename(date = dates)) |> 
+  full_join(full_date_list |> rename(date = dates)) |> 
   # replace NA count with 0 for the dates where no chinook were caught
   mutate(count = ifelse(is.na(count), 0, count))
 
