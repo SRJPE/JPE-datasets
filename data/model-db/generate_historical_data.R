@@ -97,14 +97,19 @@ gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/model-data/daily_catch_unmarked.csv",
                overwrite = TRUE)
-catch_raw <- read_csv("data/model-data/daily_catch_unmarked.csv")
+catch_raw <- read_csv("data/model-data/daily_catch_unmarked.csv") |> # fix few issues with na subsites
+  mutate(subsite = case_when(site == "okie dam" & is.na(subsite) ~ "okie dam 1",
+                             stream == "battle creek" & is.na(subsite) & year(date) > 2004 ~ "ubc",
+                             T ~ subsite),
+         site = case_when(stream == "battle creek" & is.na(site) & year(date) > 2004 ~ "ubc",
+                          T ~ site))
 
 
-catch |>
-  group_by(stream, site, subsite) |>
-  summarize(min_date = min(date, na.rm = T),
-            max_date = max(date, na.rm = T)) |>  view()
-filter(catch, is.na(date))
+# catch |>
+#   group_by(stream, site, subsite) |>
+#   summarize(min_date = min(date, na.rm = T),
+#             max_date = max(date, na.rm = T)) |>  view()
+# filter(catch, is.na(date))
 # add trap location id
 # run id
 # lifestage id
@@ -152,7 +157,13 @@ gcs_get_object(object_name = "jpe-model-data/daily_trap.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/model-data/daily_trap.csv",
                overwrite = TRUE)
-trap_raw <- read_csv("data/model-data/daily_trap.csv")
+trap_raw <- read_csv("data/model-data/daily_trap.csv") |> 
+  mutate(subsite = case_when(site == "okie dam" & is.na(subsite) ~ "okie dam 1",
+                             stream == "battle creek" & is.na(subsite) ~ "ubc",
+                             site == "yuba river" & is.na(subsite) ~ "yub",
+                             T ~ subsite),
+         site = case_when(stream == "battle creek" & is.na(site) ~ "ubc",
+                          T ~ site))
 trap_raw |>
   group_by(stream, site, subsite) |>
   summarize(min_date = min(trap_stop_date, na.rm = T),
@@ -410,7 +421,7 @@ recaptured_fish <- recapture_raw_ck |>
                      fork_length = median_fork_length_recaptured)) |> 
   select(-exists_catch) |> 
   mutate(subsite = case_when(subsite == "okie RST" ~ "okie dam 1",
-                             subsite == "not recorded" ~ NA,
+                             subsite == "not recorded" ~ NA_character_,
                              T ~ subsite)) |> 
   # trap_location_id
   left_join(trap_location, by = c("stream", "site", "subsite")) |> 
