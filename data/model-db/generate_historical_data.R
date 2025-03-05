@@ -590,8 +590,7 @@ daily_redd <- daily_redd_raw |>
   select(date, latitude, longitude, reach, redd_id, age, velocity, run, stream, redd_count) |> 
   # change format to date instead of datetime
   mutate(date = as.Date(date),
-         redd_count = ifelse(is.na(redd_count),1,redd_count)) |> 
-  # TODO we need to add a lookup table - liz is working on the standard reach names
+         redd_count = ifelse(is.na(redd_count),0,redd_count)) |> 
   left_join(survey_location, by = c("stream", "reach")) |>
   select(-c(stream, reach, description)) |>
   rename(survey_location_id = id) |>

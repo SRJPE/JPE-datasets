@@ -101,7 +101,7 @@ deer <- deer_raw |>
 - They were manually extracted and entered into an excel for speed, but raw files are in the bucket.
 
 ```{r}
-mill_raw <- readxl::read_excel(here("data", "mill_escapement_estimates.csv"))
+mill_raw <- readxl::read_excel(here::here("data", "mill_escapement_estimates.csv"))
 
 mill <- mill_raw |> 
   filter(species == "chinook") |> 
