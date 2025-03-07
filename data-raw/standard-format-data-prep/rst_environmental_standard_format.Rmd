@@ -14,6 +14,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.width=15, fig.height=10)
 library(tidyverse)
 library(googleCloudStorageR)
+library(EDIutils)
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
 
@@ -414,11 +415,12 @@ yuba_env <- read_csv(here::here("data", "rst", "yuba_rst_environmental.csv"),
   mutate(date = lubridate::as_date(date)) %>%
   select(date, temperature, turbidity, velocity, site = location) %>% 
   mutate(stream = "yuba river",
-         subsite = case_when(site == "Yuba River" ~ "yub",
+         subsite = case_when(site == "Yuba River" ~ "hal", # assume the Yuba River ones are hal. it should not matter too much.
+                             site == "5 foot RST at Hallwood" ~ "hal3",
                              site == "RST 1 at Hallwood on Yuba River" ~ "hal",
-                             site == "RST 2 at Hallwood" ~ "hal2",
-                             site == "5 foot RST at Hallwood" ~ "hal3"),
-         site = ifelse(subsite == "yub", "yuba river", "hallwood"),
+                             site == "RST 2 at Hallwood" ~ "hal2"), 
+         site = "hallwood", # there are some cases where location is "Yuba River" Casey Campos said via email to Ashley Vizek that these should be Hallwood
+         
          temperature = ifelse(temperature > 40, round((temperature - 32) * (5/9), 1), temperature)) %>% # appears to be F and C temps at yuba 
   distinct() %>%
   pivot_longer(cols = c("turbidity", "velocity", "temperature"), values_to = "value", names_to = "parameter") %>% 

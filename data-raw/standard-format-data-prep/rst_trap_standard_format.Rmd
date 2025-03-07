@@ -8,7 +8,8 @@ library(tidyverse)
 library(lubridate)
 library(googleCloudStorageR)
 library(knitr)
-library(hms)
+library(hms)  
+library(EDIutils)
 root.dir <- rprojroot::find_rstudio_root_file()
 knitr::opts_knit$set(root.dir)
 ```
@@ -23,7 +24,7 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
 Data were checked and cleaned in scripts available [here](https://github.com/FlowWest/JPE-datasets/tree/main/scripts/rst)
 
-FlowWest received trap operations data from 9 monitoring programs:
+FlowWest received trap operations data from 9 monitoring programs: 
 
 -   Battle Creek
 -   Butte Creek
@@ -543,11 +544,12 @@ yuba_trap_clean <- yuba_rst %>%
          debris_level = debris,
          gear_type = method) %>%
   mutate(stream = "yuba river",
-         subsite = case_when(site == "Yuba River" ~ "yub",
+         subsite = case_when(site == "Yuba River" ~ "hal", # assume the Yuba River ones are hal. it should not matter too much.
                              site == "5 foot RST at Hallwood" ~ "hal3",
                              site == "RST 1 at Hallwood on Yuba River" ~ "hal",
                              site == "RST 2 at Hallwood" ~ "hal2"),
-         site = ifelse(subsite == "yub", "yuba river", "hallwood"),
+         site = "hallwood", # there are some cases where location is "Yuba River" Casey Campos said via email to Ashley Vizek that these should be Hallwood
+         
          sample_period_revolutions = case_when(trap_revolutions == 0 ~ trap_revolutions2,
                                                T ~ trap_revolutions),
          trap_stop_date = as_date(trap_stop_date),

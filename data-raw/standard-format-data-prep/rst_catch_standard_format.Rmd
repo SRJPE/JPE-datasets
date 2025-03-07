@@ -714,9 +714,9 @@ filter(yuba_rst, run == "unknown") %>% glimpse
 
 yuba_rst_clean<- yuba_rst %>%
   select(date, fork_length, weight, lifestage, count, run, location) %>%
-  mutate(site = ifelse(location == "Yuba River", "yuba river", "hallwood"),
+  mutate(site = "hallwood", # there are some cases where location is "Yuba River" Casey Campos said via email to Ashley Vizek that these should be Hallwood
          date = as_date(date),
-         subsite = case_when(location == "Yuba River" ~ "yub",
+         subsite = case_when(location == "Yuba River" ~ "hal", # assume the Yuba River ones are hal. it should not matter too much.
                              location == "5 foot RST at Hallwood" ~ "hal3",
                              location == "RST 1 at Hallwood on Yuba River" ~ "hal",
                              location == "RST 2 at Hallwood" ~ "hal2")) %>%
