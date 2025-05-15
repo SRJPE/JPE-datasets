@@ -40,9 +40,9 @@ gcs_get_object(object_name = "standard-format-data/daily_yearling_ruleset.csv",
 files_battle_clear <- tibble(path = "rst/battle_clear_",
                              name = c("catch_edi", "environmental_edi", "recapture_edi","release_edi","trap_edi"),
                              save = rep(here::here("data","rst","battle_clear_"),5))
-files_butte <- tibble(path = "rst/butte-creek/data/butte_rst",
+files_butte <- tibble(path = "rst/butte-creek/data/butte_rst_05152025",
                       name = c(""),
-                      save = here::here("data","rst", "butte_rst"))
+                      save = here::here("data","rst", "butte_rst_05152025"))
 files_butte_camp <- tibble(path = rep("rst/butte-creek/data-raw/butte_",3),
                         name = c("catch_camp","trap_camp", "environmental_camp"),
                         save = rep(here::here("data","rst", "butte_"), 3))
@@ -112,7 +112,7 @@ gcs_get_object(object_name = "rst/rbdd/data/catch.csv",
 daily_yearling_ruleset <- read_csv(here::here("data", "daily_yearling_ruleset.csv"))
 # catch data
 battle_clear_rst <- read_csv(here::here("data", "rst", "battle_clear_catch_edi.csv"), lazy = FALSE )
-butte_rst <- read_csv(here::here("data", "rst", "butte_rst.csv"), lazy = FALSE ) # contains trap data too
+butte_rst <- read_csv(here::here("data", "rst", "butte_rst_05152025.csv"), lazy = FALSE ) # contains trap data too
 butte_rst_camp <- read_csv(here::here("data", "rst", "butte_catch_camp.csv"), lazy = FALSE )
 deer_rst <- read_csv(here::here("data", "rst", "deer_rst.csv"), lazy = FALSE ) # contains trap data too
 feather_rst <- read_csv(here::here("data", "rst", "feather_rst.csv"), lazy = FALSE )
@@ -1095,6 +1095,7 @@ lad_format <- full_join(lad_spring_format, lad_fall_format) %>%
 ```{r, combined}
 # TODO fill in run method - this will involve outreach with monitoring programs
 # improve performance by using data.table
+#2126829
 combined_rst <- bind_rows(battle_clear_rst_clean_final,
                           butte_rst_clean,
                           deer_rst_clean_combined,
@@ -1469,6 +1470,6 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(combined_rst,
            object_function = f,
            type = "csv",
-           name = "standard-format-data/standard_rst_catch.csv",
+           name = "standard-format-data/standard_rst_catch_051525.csv",
            predefinedAcl = "bucketLevel")
 ```
