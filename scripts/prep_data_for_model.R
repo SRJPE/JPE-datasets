@@ -489,7 +489,7 @@ rst_with_inclusion_criteria <- updated_standard_catch |>
          include_in_model = ifelse(is.na(min_date), FALSE, include_in_model)) |> 
   select(-c(monitoring_year, min_date, max_date, year, week)) |> 
   glimpse()
-
+write_csv(rst_with_inclusion_criteria, "daily_catch_unmarked.csv")
 
 rst_with_inclusion_criteria |>
   group_by(stream, site, subsite) |>
@@ -499,7 +499,7 @@ rst_with_inclusion_criteria |>
 gcs_upload(rst_with_inclusion_criteria,
            object_function = f,
            type = "csv",
-           name = "jpe-model-data/daily_catch_unmarked.csv",
+           name = "jpe-model-data/daily_catch_unmarked_051525.csv",
            predefinedAcl = "bucketLevel")
 
 write_csv(rst_with_inclusion_criteria, "data/model-data/daily_catch_unmarked.csv")

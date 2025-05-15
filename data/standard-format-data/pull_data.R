@@ -20,7 +20,7 @@ standard_release <- read_csv("data/standard-format-data/standard_release.csv")
 
 # RST Monitoring Data
 # standard rst catch data table
-gcs_get_object(object_name = "standard-format-data/standard_rst_catch.csv",
+gcs_get_object(object_name = "standard-format-data/standard_rst_catch_051525.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/standard-format-data/standard_catch.csv",
                overwrite = TRUE)
