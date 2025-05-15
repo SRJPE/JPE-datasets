@@ -70,9 +70,10 @@ glimpse(raw_data)
 
 ## Data Transformations
 ```{r}
+# 63,418 obs
 cleaner_data <- raw_data %>% 
   set_names(tolower(colnames(raw_data))) %>%
-  select(-c("staffgauge", "methodcode", "organismcode")) %>% #no value associated with reading (e.g. cfs, ft), #all organisms are chinooks %>%
+  select(-c("staffgauge", "organismcode")) %>% #no value associated with reading (e.g. cfs, ft), #all organisms are chinooks %>%
   rename('date'= sampledate,
          'station' = stationcode,
          'trap_status' = trapstatus,
@@ -83,6 +84,7 @@ cleaner_data <- raw_data %>%
          'north_brush' = northbrush,
          'south_brush' = southbrush,
          'time' = sampletime,
+         'method' = methodcode,
          'gear_id' = gearid,
          'temperature' = watertemperature,
          'velocity' = watervelocity,
@@ -90,7 +92,9 @@ cleaner_data <- raw_data %>%
          'rpms_start' = rpmsstart,
          'rpms_end'= rpmsend) %>% 
   mutate(time = hms::as_hms(time),
-         date = as.Date(date)) %>%
+         date = as.Date(date),
+         gear_id = ifelse(is.na(gear_id), method, gear_id)) %>%
+  select(-method) |> 
   glimpse()
 
 
@@ -276,8 +280,8 @@ table(cleaner_data$lifestage)
 ```{r}
 cleaner_data <- cleaner_data %>% 
   mutate(gear_id = case_when(
-    gear_id == 'DSTR1' ~ 'diversion fyke trap 1',
-    gear_id == 'RSTR1' ~ 'rotary screw trap 1',
+    gear_id %in% c('DSTR','DSTR1') ~ 'diversion fyke trap 1',
+    gear_id %in% c('RSTR','RSTR1') ~ 'rotary screw trap 1',
     gear_id == 'RSTR2' ~ 'rotary screw trap 2'
   ))
 
@@ -791,7 +795,7 @@ cleaner_data <- cleaner_data %>%
 butte_creek_rst <- cleaner_data %>% glimpse()
 ```
 ```{r}
-write_csv(butte_creek_rst, "butte_rst.csv")
+write_csv(butte_creek_rst, "butte_rst_05152025.csv")
 ```
 
 
@@ -802,5 +806,6 @@ f <- function(input, output) write_csv(input, file = output)
 gcs_upload(butte_creek_rst,
            object_function = f,
            type = "csv",
-           name = "rst/butte-creek/data/butte-creek-rst.csv")
+           name = "rst/butte-creek/data/butte_rst_05152025.csv",
+           predefinedAcl = "bucketLevel")
 ```

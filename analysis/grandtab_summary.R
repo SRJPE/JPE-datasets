@@ -22,3 +22,4 @@ grandtab <- grandtab_raw |>
 grandtab_summary <- grandtab |> 
   group_by(stream) |> 
   summarize(average_estimate = mean(estimate, na.rm = T))
+
