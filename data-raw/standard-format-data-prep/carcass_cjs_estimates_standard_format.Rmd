@@ -31,9 +31,19 @@ gcs_get_object(object_name =
                saveToDisk = here::here("data", "butte_escapement.csv"),
                overwrite = TRUE)
 
+gcs_get_object(object_name = "adult-holding-redd-and-carcass-surveys/butte-creek/data/adult_b_GH_Edits.csv",
+               bucket = gcs_get_global_bucket(),
+               saveToDisk = "data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/butte-creek/adult_b_GH_Edits.csv",
+               overwrite = TRUE)
+butte_raw <- read_csv("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/butte-creek/adult_b_GH_Edits.csv") |> 
+  filter(data_type == "carcass_estimate")
+
 butte <- read_csv(here::here("data", "butte_escapement.csv")) |> 
   select(year = Year, spawner_abundance_estimate = `Post Spawn Est.`) |> 
-  mutate(stream = "butte creek")
+  mutate(stream = "butte creek") |> 
+  left_join(butte_raw) |> 
+  mutate(spawner_abundance_estimate = ifelse(!is.na(`GH Edits`), `GH Edits`, spawner_abundance_estimate)) |> 
+  select(year, stream, spawner_abundance_estimate)
 
 # pull in yuba cjs estimates
 # Notes from Colin Laubach about the Yuba River CJS estimates
