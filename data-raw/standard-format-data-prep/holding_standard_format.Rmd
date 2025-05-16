@@ -26,13 +26,9 @@ gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 files_battle <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/battle-creek/data/battle_holding"),
                        name = c(""),
                        save = rep("data/redd-carcass-holding/battle_holding"))
-files_butte <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_",17),
-                       name = c("holding_2001",
-                                "holding_2002", "holding_2003", "holding_2004", "holding_2005", "holding_2006",
-                                "holding_2007", "holding_2008", "holding_2009", "holding_2010", "holding_2011",
-                                "holding_2012", "holding_2013", "holding_2014", "holding_2015", "holding_2016",
-                                "holding_2017"),
-                      save = "data/redd-carcass-holding/butte_")
+files_butte <- tibble(path = rep("adult-holding-redd-and-carcass-surveys/butte-creek/data/butte_annual_holding"),
+                       name = c(""),
+                      save = "data/redd-carcass-holding/butte_holding")
 files_clear <- tibble(path = "adult-holding-redd-and-carcass-surveys/clear-creek/data/clear_holding",
                       name = c(""),
                       save = rep("data/redd-carcass-holding/clear_holding"))
@@ -57,23 +53,7 @@ pmap(files_deer, get_data)
 # load in data
 # catch data
 battle_holding <- read_csv("data/redd-carcass-holding/battle_holding.csv")
-butte_holding_01 <- read_csv("data/redd-carcass-holding/butte_holding_2001.csv")
-butte_holding_02 <- read_csv("data/redd-carcass-holding/butte_holding_2002.csv")
-butte_holding_03 <- read_csv("data/redd-carcass-holding/butte_holding_2003.csv")
-butte_holding_04 <- read_csv("data/redd-carcass-holding/butte_holding_2004.csv")
-butte_holding_05 <- read_csv("data/redd-carcass-holding/butte_holding_2005.csv")
-butte_holding_06 <- read_csv("data/redd-carcass-holding/butte_holding_2006.csv")
-butte_holding_07 <- read_csv("data/redd-carcass-holding/butte_holding_2007.csv")
-butte_holding_08 <- read_csv("data/redd-carcass-holding/butte_holding_2008.csv")
-butte_holding_09 <- read_csv("data/redd-carcass-holding/butte_holding_2009.csv")
-butte_holding_10 <- read_csv("data/redd-carcass-holding/butte_holding_2010.csv")
-butte_holding_11 <- read_csv("data/redd-carcass-holding/butte_holding_2011.csv")
-butte_holding_12 <- read_csv("data/redd-carcass-holding/butte_holding_2012.csv")
-butte_holding_13 <- read_csv("data/redd-carcass-holding/butte_holding_2013.csv")
-butte_holding_14 <- read_csv("data/redd-carcass-holding/butte_holding_2014.csv")
-butte_holding_15 <- read_csv("data/redd-carcass-holding/butte_holding_2015.csv")
-butte_holding_16 <- read_csv("data/redd-carcass-holding/butte_holding_2016.csv")
-butte_holding_17 <- read_csv("data/redd-carcass-holding/butte_holding_2017.csv")
+butte_holding <- read_csv("data/redd-carcass-holding/butte_holding.csv")
 clear_holding <- read_csv("data/redd-carcass-holding/clear_holding.csv")
 deer_holding_1997_2020 <- read_csv("data/redd-carcass-holding/deer_adult_holding_1997_to_2020.csv")
 deer_holding_1986_1996 <- read_csv("data/redd-carcass-holding/deer_adult_holding_1986_to_1996.csv")
@@ -151,37 +131,16 @@ deer_holding_clean <- bind_rows(deer_holding_1986_1996,
 
 ## Butte Creek
 
-```{r, butte_holding_data_dictionary}
-butte_data_dictionary <- read_rds("data-raw/qc-markdowns/adult-holding-redd-and-carcass-surveys/data-dictionaries/butte_holding_data_dictionary.rds")
-kable(butte_data_dictionary)
-```
+Note that this is annual data at the Butte Creek level rather than daily at the reach level.
 
+Date is assigned as August 1 of the year to make it easier to use with other datasets
 
 ```{r, butte_clean}
-butte_holding_clean <- bind_rows(butte_holding_01 %>% select(-comments),
-                                 butte_holding_02,
-                                 butte_holding_03,
-                                 butte_holding_04,
-                                 butte_holding_05,
-                                 butte_holding_06,
-                                 butte_holding_07, 
-                                 butte_holding_08,
-                                 butte_holding_09,
-                                 butte_holding_10,
-                                 butte_holding_11,
-                                 butte_holding_12,
-                                 butte_holding_13,
-                                 butte_holding_14,
-                                 butte_holding_15,
-                                 butte_holding_16,
-                                 butte_holding_17) %>%
-  group_by(date, reach) %>%
-  summarize(avg_count = round(mean(fish_count, na.rm = T), digits = 0)) %>%
-  rename(count = avg_count) %>% 
+butte_holding_clean <- butte_holding |> 
   mutate(stream = "butte creek",
-         year = lubridate::year(date),
          run = "spring",
-         adipose_clipped = "not recorded") %>% 
+         adipose_clipped = "not recorded",
+         date = as_date(paste0(year, "-08-01"))) %>% 
   glimpse()
 ```
 
@@ -355,7 +314,7 @@ unique(combined_holding$picket_weir_relate)
 
 Monthly count is not recorded for Deer.
 
-Figure below shows the percentage count by month for each waterbody except Deer.
+Figure below shows the percentage count by month for each waterbody except Deer and Butte.
 ```{r, count_qaqc}
 
 total_count <- combined_holding %>% 
