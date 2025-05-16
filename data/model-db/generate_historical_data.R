@@ -93,7 +93,7 @@ gcs_get_object(object_name = "model-db/direction.csv",
                overwrite = TRUE)
 direction <- read_csv("data/model-db/direction.csv")
 # catch -------------------------------------------------------------------
-gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked.csv",
+gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked_051525.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/model-data/daily_catch_unmarked.csv",
                overwrite = TRUE)

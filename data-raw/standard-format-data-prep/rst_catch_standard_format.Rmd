@@ -43,9 +43,6 @@ files_battle_clear <- tibble(path = "rst/battle_clear_",
 files_butte <- tibble(path = "rst/butte-creek/data/butte_rst_05152025",
                       name = c(""),
                       save = here::here("data","rst", "butte_rst_05152025"))
-files_butte_camp <- tibble(path = rep("rst/butte-creek/data-raw/butte_",3),
-                        name = c("catch_camp","trap_camp", "environmental_camp"),
-                        save = rep(here::here("data","rst", "butte_"), 3))
 # files_clear <- tibble(path = rep("rst/clear-creek/data/clear_",4),
 #                       name = c("rst_catch","rst_environmental","rst_passage_estimates", "mark_reacpture"),
 #                       save = rep(here::here("data", "rst", "clear_rst_"), 4))
@@ -89,7 +86,6 @@ get_data <- function(path, name, save) {
 # apply function to each set of files
 pmap(files_battle_clear, get_data)
 pmap(files_butte, get_data)
-pmap(files_butte_camp, get_data)
 pmap(files_deer, get_data)
 pmap(files_feather, get_data)
 pmap(files_feather_camp, get_data)
@@ -345,79 +341,46 @@ ck <- butte_rst_clean_pre_2015 |>
 
 ```
 
-Prep data from CAMP to combine with RST clean
-```{r, butte_camp_clean}
-butte_rst_clean_camp <- butte_rst_camp %>%
-  # seems like there are catch entries when it wasn't a sampling visit, remove these
-  filter(fishProcessed != "N/A; not a sampling visit") %>% 
-  # removing existing mark for now. will add all those in later
-  select(-c(catchRawID, trapVisitID, visitTime2, markType_1, markColor_1, markPosition_1, markCode_1, fishProcessed)) %>%
-  # combine atcapture and final run
-  mutate(run = ifelse(!is.na(finalRun), finalRun, atCaptureRun),
-         runMethod = ifelse(!is.na(finalRunMethod), finalRunMethod, atCaptureRunMethod)) %>% 
-  select(-c(atCaptureRun, atCaptureRunMethod, finalRun, finalRunMethod)) %>% 
-  rename(fork_length = forkLength,
-         adipose_clipped = fishOrigin,
-         species = commonName,
-         lifestage = lifeStage,
-         date = visitTime,
-         run_method = runMethod,
-         site = siteName,
-         subsite = subSiteName,
-         release_id = releaseID,
-         dead = mort) %>% 
-  group_by(date, species, fork_length, weight, lifestage, dead, run, adipose_clipped, run_method, site, subsite, release_id) %>%
-  summarize(count = sum(n, na.rm = T)) %>% 
-  ungroup() %>% 
-  mutate(stream = "butte creek",
-         site = "okie dam", # only fish okie dam site past 2015 
-         subsite = ifelse(subsite == "PP RST", "okie dam 1", "okie dam fyke trap"),
-         adipose_clipped = case_when(adipose_clipped == "Natural" ~ F,
-                                     adipose_clipped == "Hatchery" ~ T),
-         lifestage = tolower(lifestage),
-         species = tolower(species),
-         run_method = tolower(run_method),
-         run = tolower(run),
-         dead = ifelse(dead == "Yes", T, F),
-         release_id = as.character(ifelse(release_id == 0 | release_id == 255, NA, release_id))) %>% glimpse()
+Data that are stored in CAMP are now on EDI. We pull from EDI rather than using CAMP db files.
 
+```{r, butte_camp_clean}
+res <- read_data_entity_names(packageId = "edi.1497.14")
+raw <- read_data_entity(packageId = "edi.1497.14", entityId = res$entityId[1])
+catch_edi <- read_csv(file = raw)
+
+butte_catch_edi <- catch_edi |> 
+  mutate(commonName = tolower(commonName)) |> 
+  filter(commonName == "chinook salmon") |> 
+  mutate(stream = "butte creek",
+         site_group = "butte creek",
+         adipose_clipped = case_when(fishOrigin == "Natural" ~ F,
+                                     fishOrigin == "Hatchery" ~ T,
+                                     T ~ NA),
+         dead = NA,
+         weight = NA,
+         species = "chinook salmon",
+         site = case_when(siteName %in% c("parrot-phelan", "Parrott-Phelan canal trap box","Okie RST","Parrot-Phelan RST") ~ "okie dam",
+                          T ~ siteName),
+         subsite = case_when(subSiteName %in% c("pp rst","Okie RST","PP RST") ~ "okie dam 1",
+                             subSiteName == "canal trap box" ~ "okie dam fyke trap",
+                             subSiteName == "pp rst 2" ~ "okie dam 2",
+                             subSiteName == "adams dam" ~ "adams dam",
+                             T ~ NA)) |>
+  rename(date = visitTime,
+         count = n,
+         run = finalRun,
+         lifestage = lifeStage,
+         fork_length = forkLength,
+         actual_count = actualCount) |> 
+  filter(date <= as_date("2022-06-30") & date > as_date("2015-06-03")) |> 
+  select(date, stream, site, subsite, site_group, count, run, lifestage, adipose_clipped,
+         dead, fork_length, weight, actual_count, species) 
 ```
 
 Combine butte pre 2015 (excel) and post 2015 (CAMP). No temporal overlap in datasets so we can just bind rows
 ```{r, combine_butte}
 # bind rows
-butte_rst_clean <- bind_rows(butte_rst_clean_pre_2015, butte_rst_clean_camp) %>% glimpse()
-ck <- butte_rst_clean |> 
-  mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
-  group_by(monitoring_year) |> 
-  summarize(total_count = sum(count, na.rm=T))
-```
-
-Check that all days trap running have catch rows
-```{r}
-butte_rst_min <- butte_rst_clean %>% 
-  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
-  group_by(wy) %>% 
-  summarize(min = min(date))
-
-# pre 2015 all catch and trap stored in one spot
-butte_trap_pre_2015 <- butte_rst %>% 
-  select(date) %>% 
-  mutate(wy = ifelse(month(date) %in% 10:12, year(date) + 1, year(date))) %>% 
-  group_by(wy) %>% 
-  summarize(min = min(date))
-
-butte_trap_camp_dates <-  butte_trap_camp %>%
-  # no fish are processed on these days so don't want to include catch data
-  filter(fishProcessed != "N/A; not a sampling visit") %>% 
-  mutate(wy = ifelse(month(visitTime) %in% 10:12, year(visitTime) + 1, year(visitTime))) %>% 
-  group_by(wy) %>% 
-  summarize(min = min(visitTime))
-
-butte_trap_combined <- bind_rows(butte_trap_pre_2015, butte_trap_camp_dates) %>%  rename(trap_min = min)
-
-# min date in catch and trap aligns 
-butte_min_date_compare <- full_join(butte_rst_min, butte_trap_combined)
+butte_rst_clean <- bind_rows(butte_rst_clean_pre_2015, butte_catch_edi) %>% glimpse()
 ```
 
 

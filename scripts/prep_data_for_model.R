@@ -17,49 +17,10 @@ hfc_subsites <- c("herringer_east", "herringer_upper_west", "herringer_west", "l
 lfc_sites <- c("eye riffle", "gateway riffle", "steep riffle")
 hfc_sites <- c("herringer riffle", "live oak", "shawn's beach", "sunset pumps")
 
-# RST years to include ----------------------------------------------------
-# 
 # upload data
 gcs_auth(json_file = Sys.getenv("GCS_AUTH_FILE"))
 gcs_global_bucket(bucket = Sys.getenv("GCS_DEFAULT_BUCKET"))
 
-# read in data
-# this file was created in analysis/generate_sample_window.R
-gcs_get_object(object_name = "jpe-model-data/stream_week_year_include.csv",
-               bucket = gcs_get_global_bucket(),
-               saveToDisk = "data/standard-format-data/stream_week_year_include.csv",
-               overwrite = TRUE)
-years_to_include <- read_csv("data/standard-format-data/stream_week_year_include.csv")
-
-stream_week_site_year_include <- years_to_include |>
-  group_by(monitoring_year, stream, site) |> 
-  # decided to go inclusively 
-  # if just take min week does not account for the monitoring year so need to find min date first
-  summarise(min_date = min(min_date),
-            min_week = week(min_date),
-            max_date = max(max_date),
-            max_week = week(max_date)) |> 
-  # identified as excluded due to incomplete sampling
-  mutate(exclude = case_when(monitoring_year == 2022 & stream == "battle creek" ~ T,
-                             monitoring_year == 2005 & site == "yuba river" ~ T,
-                             monitoring_year == 2008 & site == "yuba river" ~ T,
-                             monitoring_year == 2007 & site == "sunset pumps" ~ T,
-                             monitoring_year == 2009 & site == "sunset pumps" ~ T,
-                             T ~ F),
-         site_group = case_when(site %in% lfc_sites ~ "feather river lfc",
-                                site %in% hfc_sites ~ "feather river hfc",
-                                T ~ NA)) |> 
-  filter(exclude == F) |> 
-  select(monitoring_year, stream, site_group, site, min_date, min_week, max_date, max_week)
-
-# View(stream_week_site_year_include)
-
-gcs_upload(stream_week_site_year_include,
-           object_function = f,
-           type = "csv",
-           name = "jpe-model-data/stream_week_site_year_include.csv",
-           predefinedAcl = "bucketLevel")
-write_csv(stream_week_site_year_include, "data/model-data/stream_week_site_year_include.csv")
 
 # Catch -------------------------------------------------------------------
 
@@ -108,22 +69,17 @@ full_date_list <- date_ranges_trap_running |>
             dates_trap_running |> 
               select(stream, site, subsite, trap_stop_date) |> 
               rename(dates = trap_stop_date)) |> 
-  distinct()
-
+  distinct() |> 
+  filter(!is.na(dates))
+#1184541
 standard_catch_unmarked_raw <- standard_catch %>% 
-  distinct() |> # notcied some duplicates for knights landing that may have resulted from adding in 0s for trap visit not in catch
+  mutate(lifestage = ifelse(is.na(lifestage), "not recorded", lifestage)) |> 
+  #distinct() |> # notcied some duplicates for knights landing that may have resulted from adding in 0s for trap visit not in catch
   filter(species == "chinook salmon", # filter for only chinook
-         is.na(release_id)) %>%  # filter for only unmarked fish, exclude recaptured fish that were part of efficiency trial
+         is.na(release_id), # filter for only unmarked fish, exclude recaptured fish that were part of efficiency trial
+         lifestage != "adult") %>%  # remove the adult fish (mostly on Butte)
   mutate(month = month(date), # add to join with lad and yearling
          day = day(date)) |> 
-  left_join(daily_yearling_ruleset) |> 
-  mutate(lifestage_for_model = case_when(fork_length > cutoff & !run %in% c("fall","late fall", "winter") ~ "yearling",
-                                         fork_length <= cutoff & fork_length > 45 & !run %in% c("fall","late fall", "winter") ~ "smolt",
-                                         fork_length > 45 & run %in% c("fall", "late fall", "winter", "not recorded") ~ "smolt",
-                                         fork_length > 45 & stream == "sacramento river" ~ "smolt",
-                                         fork_length <= 45 ~ "fry", # logic from flora includes week (all weeks but 7, 8, 9 had this threshold) but I am not sure this is necessary, worth talking through
-                                         T ~ NA)) |> 
-  select(-species, -release_id, -is_yearling, -month, -day, -cutoff) |> 
   glimpse()
 
 standard_catch_unmarked <- standard_catch_unmarked_raw |> 
@@ -133,380 +89,17 @@ standard_catch_unmarked <- standard_catch_unmarked_raw |>
   # replace NA count with 0 for the dates where no chinook were caught
   mutate(count = ifelse(is.na(count), 0, count))
 
-
-# FL-based lifestage logic ------------------------------------------------
-
-
-# add logic to assign lifestage_for_model 
-# extrapolate lifestage for model for plus count fish/fish without fork lenghts based on weekly fl probabilities
-# Create table with prob fry, smolt, and yearlings for each stream, site, week, year
-
-weekly_lifestage_bins <- standard_catch_unmarked |> 
-  filter(!is.na(fork_length), count != 0) |> 
-  mutate(year = year(date), week = week(date)) |> 
-  group_by(year, week, stream, site) |> 
-  summarize(percent_fry = sum(lifestage_for_model == "fry")/n(),
-            percent_smolt = sum(lifestage_for_model == "smolt")/n(),
-            percent_yearling = sum(lifestage_for_model == "yearling")/n()) |> 
-  ungroup() |> 
-  glimpse() 
-
-# Use when no FL data for a year 
-proxy_weekly_fl <- standard_catch_unmarked |> 
-  mutate(year = year(date), week = week(date)) |> 
-  filter(!is.na(lifestage_for_model)) |> 
-  group_by(week, stream) |> 
-  summarize(percent_fry = sum(lifestage_for_model == "fry")/n(),
-            percent_smolt = sum(lifestage_for_model == "smolt")/n(),
-            percent_yearling = sum(lifestage_for_model == "yearling")/n()) |> 
-  ungroup() |> 
-  glimpse() 
-
-# Years without FL data 
-proxy_lifestage_bins_for_weeks_without_fl <- standard_catch_unmarked |> 
-  group_by(year = year(date), week = week(date), stream, site) |> 
-  summarise(fork_length = mean(fork_length, na.rm = TRUE)) |> 
-  filter(is.na(fork_length)) |> 
-  left_join(proxy_weekly_fl, by = c("week" = "week", "stream" = "stream")) |> 
-  select(-fork_length) |> 
-  glimpse() 
-
-all_lifestage_bins <- bind_rows(weekly_lifestage_bins, proxy_lifestage_bins_for_weeks_without_fl)
-
-# create table of all na values that need to be filled
-na_filled_lifestage <- standard_catch_unmarked |> 
-  mutate(week = week(date), year = year(date)) |> 
-  filter(is.na(fork_length) & count > 0) |> 
-  left_join(all_lifestage_bins, by = c("week" = "week", "year" = "year", "stream" = "stream", "site" = "site")) |> 
-  mutate(fry = round(count * percent_fry), 
-         smolt = round(count * percent_smolt), 
-         yearling = round(count * percent_yearling)) |> 
-  select(-lifestage_for_model, -count, -week, -year) |> # remove because all na, assigning in next line
-  pivot_longer(fry:yearling, names_to = 'lifestage_for_model', values_to = 'count') |> 
-  select(-c(percent_fry, percent_smolt, percent_yearling)) |>  
-  filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
-  mutate(model_lifestage_method = "assign count based on weekly distribution",
-         week = week(date), 
-         year = year(date)) |> 
-  glimpse()
-
-# add filled values back into combined_rst 
-# first filter combined rst to exclude rows in na_to_fill
-# total of 
-combined_rst_wo_na_fl <- standard_catch_unmarked |> 
-  mutate(week = week(date), year = year(date)) |> 
-  filter(!is.na(fork_length)) |> 
-  mutate(model_lifestage_method = "assigned from fl cutoffs") |> 
-  glimpse()
-
-# weeks we cannot predict lifestage
-gap_weeks <- proxy_lifestage_bins_for_weeks_without_fl |> 
-  filter(is.na(percent_fry) & is.na(percent_smolt) & is.na(percent_yearling)) |> 
-  select(year, week, stream, site)
-
-formatted_standard_catch <- standard_catch_unmarked |> 
-  mutate(week = week(date), year = year(date)) |> glimpse()
-
-weeks_wo_lifestage <- gap_weeks |> 
-  left_join(formatted_standard_catch, by = c("year" = "year", "stream" = "stream", "week" = "week", "site" = "site")) |> 
-  filter(!is.na(count), count > 0) |> 
-  mutate(model_lifestage_method = "Not able to determine, no weekly fl data ever") |> 
-  glimpse()
-
-no_catch <- standard_catch_unmarked |> 
-  mutate(week = week(date), year = year(date)) |>
-  filter(is.na(fork_length) & count == 0)
-
-# less rows now than in original, has to do with removing count != 0 in line 104, is there any reason not to do this?
-updated_standard_catch <- bind_rows(combined_rst_wo_na_fl, na_filled_lifestage, no_catch, weeks_wo_lifestage) |> glimpse()
-
-# Quick plot to check that we are not missing data 
-updated_standard_catch |> 
-  ggplot() + 
-  geom_line(aes(x = date, y = count, color = site)) + facet_wrap(~stream, scales = "free")
-
-
-
-# historical lifestage-based logic ---------------------------------------
-
-# create df that assigns all "unknown" and "not recorded" lifestages NA
-standard_catch_unmarked_field <- standard_catch_unmarked |> 
-  mutate(lifestage = ifelse(lifestage %in% c("not recorded", "unknown", NA_character_), 
-                            NA_character_, lifestage)) 
-  
-# plot to compare proportion of NAs by lifestage method (field vs. FL cutoff model)
-standard_catch_unmarked |> 
-  mutate(year = year(date)) |> 
-  group_by(stream, year) |> 
-  summarise(prop_na_model = sum(is.na(lifestage_for_model)) / n()) |> 
-  full_join(standard_catch_unmarked_field |> 
-              mutate(year = year(date)) |> 
-              group_by(stream, year) |> 
-              summarise(#n = n(), 
-                        #n_na = sum(is.na(lifestage)),
-                        prop_na_historical = sum(is.na(lifestage)) / n()),
-              by = c("stream", "year")) |> 
-  pivot_longer(prop_na_model:prop_na_historical, 
-               names_to = "available data",
-               values_to = "proportion_na") |> 
-  mutate(`available data` = ifelse(`available data` == "prop_na_model", "Fork length", "Field-assigned lifestage"),
-         stream = str_to_title(stream)) |> 
-  ggplot(aes(x = year, y = proportion_na, color = `available data`)) +
-  geom_line(alpha = 0.8) + 
-  theme_minimal() +
-  facet_wrap(~stream, scales = "free") +
-  xlab("Year") + ylab("Proportion of records where lifestage is NA") +
-  ggtitle("Data availability: field lifestage vs. FL cutoff-based lifestage") +
-  theme(legend.position = "bottom")
-
-# now fill in based on field-assigned lifestages (same method as above)
-weekly_field_lifestage_bins <- standard_catch_unmarked_field |> 
-  filter(!is.na(lifestage), count > 0) |> 
-  mutate(year = year(date), week = week(date)) |> 
-  group_by(year, week, stream, site) |> 
-  summarize(percent_adult = sum(lifestage == "adult") / n(),
-            percent_fry = sum(lifestage == "fry") / n(),
-            percent_parr = sum(lifestage == "parr") / n(),
-            percent_silvery_parr = sum(lifestage == "silvery parr") / n(),
-            percent_smolt = sum(lifestage == "smolt") / n(),
-            percent_yearling = sum(lifestage == "yearling") / n(),
-            percent_yolk_sac_fry = sum(lifestage == "yolk sac fry") / n()) |> 
-  ungroup() |> 
-  glimpse() 
-
-# Use when no lifestage data for a year 
-proxy_weekly_field <- standard_catch_unmarked_field |> 
-  mutate(year = year(date), week = week(date)) |> 
-  filter(!is.na(lifestage)) |> 
-  group_by(week, stream) |> 
-  summarize(percent_adult = sum(lifestage == "adult") / n(),
-            percent_fry = sum(lifestage == "fry") / n(),
-            percent_parr = sum(lifestage == "parr") / n(),
-            percent_silvery_parr = sum(lifestage == "silvery parr") / n(),
-            percent_smolt = sum(lifestage == "smolt") / n(),
-            percent_yearling = sum(lifestage == "yearling") / n(),
-            percent_yolk_sac_fry = sum(lifestage == "yolk sac fry") / n()) |> 
-  ungroup() |> 
-  glimpse() 
-
-# years with no lifestage data
-proxy_lifestage_bins_for_weeks_without_lifestage <- standard_catch_unmarked_field |> 
-  group_by(year = year(date), week = week(date), stream, site) |> 
-  summarise(lifestage_na = sum(is.na(lifestage)) / n()) |> 
-  #filter(lifestage_na > 0) |> 
-  filter(lifestage_na == 1) |> 
-  left_join(proxy_weekly_field, by = c("week", "stream")) |> 
-  select(-lifestage_na) |> 
-  ungroup() |> 
-  glimpse() 
-
-all_lifestage_bins_field <- bind_rows(weekly_field_lifestage_bins, 
-                                proxy_lifestage_bins_for_weeks_without_lifestage)
-
-# create table of all NA values that need to be filled
-# drops 77615 rows
-na_filled_lifestage_field <- standard_catch_unmarked_field |> 
-  ungroup() |> 
-  mutate(week = week(date), year = year(date)) |> 
-  filter(is.na(lifestage)) |> 
-  #filter(is.na(lifestage) & count > 0) |> 
-  left_join(all_lifestage_bins_field, by = c("week", "year", "stream", "site"),
-            multiple = "all") |>
-  mutate(adult = round(count * percent_adult),
-         fry = round(count * percent_fry),
-         percent_parr = round(count * percent_parr),
-         silvery_parr = round(count * percent_silvery_parr),
-         smolt = round(count * percent_smolt),
-         yearling = round(count * percent_yearling),
-         yolk_sac_fry = round(count * percent_yolk_sac_fry)) |> 
-  select(-c(lifestage, count, week, year)) |> # remove because all na, assigning in next line
-  pivot_longer(adult:yolk_sac_fry, names_to = "lifestage", values_to = "count") |> 
-  select(-c(percent_adult, percent_fry, percent_parr, percent_silvery_parr,
-            percent_smolt, percent_yearling, percent_yolk_sac_fry)) |>  
-  filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
-  mutate(model_lifestage_method = "assign count based on weekly distribution of field assigned lifestage",
-         week = week(date), 
-         year = year(date)) 
-
-# fill in run for all streams ------------------------------------------
-# how many records have no information for run?
-# ~15% of battle creek have no run; ~3% of clear creek have no run
-updated_standard_catch_na_run <- updated_standard_catch |> 
-  mutate(run = ifelse(run %in% c("not recorded", "unknown", NA_character_), NA_character_, run)) |> glimpse()
-
-updated_standard_catch_na_run |> 
-  group_by(stream, run) |> 
-  summarise(n = n()) |> 
-  mutate(freq = n / sum(n)) |> 
-  filter(is.na(run))
-
-updated_standard_catch_na_run |> 
-  filter(stream == "clear creek") |> 
-  group_by(site, week) |> 
-  summarise(n = n(),
-            prop_spring = sum(run == "spring", na.rm = T) / n,
-            prop_other = sum(run %in% c("fall", "late fall", "winter", NA_character_) / n)) |> 
-  ggplot(aes(x = week, y = prop_spring)) + 
-  geom_bar(stat = "identity") +
-  facet_wrap(~site, scales = "free")
-
-updated_standard_catch_na_run_no_deer_mill <- updated_standard_catch_na_run |> 
-  filter(!stream %in% c("deer creek", "mill creek")) |> 
-  glimpse()
-
-# create weekly proportion bins for run (spring / not spring / unknown)
-weekly_run_bins <- updated_standard_catch_na_run_no_deer_mill |> 
-  filter(!is.na(run), count != 0) |> 
-  mutate(year = year(date), week = week(date)) |> 
-  group_by(year, week, stream, site) |>
-  summarize(percent_spring = sum(run == "spring", na.rm = T)/n(),
-            percent_not_spring = sum(run != "spring", na.rm = T) / n()) |> 
-  ungroup() |> 
-  glimpse()
-
-# Use when no run data for a year 
-proxy_weekly_run <- updated_standard_catch_na_run_no_deer_mill |>
-  mutate(year = year(date), week = week(date)) |>
-  filter(count > 0, !is.na(run)) |> 
-  group_by(week, stream, site) |>
-  summarise(percent_spring = sum(run == "spring", na.rm = T)/n(),
-            percent_not_spring = sum(run != "spring", na.rm = T)/n()) |>
-  ungroup() |>
-  glimpse()
-
-# # Years without run data 
-proxy_run_bins_for_weeks_without_run <- updated_standard_catch_na_run_no_deer_mill |>
-  filter(count > 0) |> 
-  group_by(year, week, stream, site) |>
-  summarise(all_na = sum(is.na(run)) == n()) |> 
-  ungroup() |> 
-  filter(all_na) |> 
-  left_join(proxy_weekly_run, by = c("week", "stream", "site")) |>
-  select(-all_na) |>
-  glimpse()
-
-all_run_bins <- bind_rows(weekly_run_bins, proxy_run_bins_for_weeks_without_run) |>
-  glimpse()
-  
-
-# create table of all na values that need to be filled
-na_filled_run <- updated_standard_catch_na_run_no_deer_mill |> 
-  filter(is.na(run) & count > 0) |> 
-  left_join(all_run_bins, by = c("year", "week", "stream", "site")) |> 
-  mutate(spring_run = round(count * percent_spring),
-         not_spring_run = round(count * percent_not_spring)) |> 
-  select(-c(count, week, year, run)) |> # remove bc all NA, assigning in next line
-  pivot_longer(spring_run:not_spring_run, names_to = 'run_for_model', values_to = 'count') |> 
-  select(-c(percent_spring, percent_not_spring)) |>  
-  filter(count != 0) |> # remove 0 values introduced when 0 prop of a lifestage, significantly decreases size of DF 
-  mutate(model_run_method = "assign run based on weekly distribution",
-         week = week(date), 
-         year = year(date)) |> 
-  select(-run_method) |> 
-  glimpse()
-
-# add filled values back into combined_rst 
-# first filter combined rst to exclude rows in na_to_fill
-
-combined_rst_wo_na_lifestage <- standard_catch_unmarked_field |> 
-  mutate(week = week(date), year = year(date)) |> 
-  filter(!is.na(lifestage)) |> 
-  mutate(model_lifestage_method = "field-assigned lifestage") |> 
-  glimpse()
-
-# weeks we cannot predict lifestage
-gap_weeks_field <- proxy_lifestage_bins_for_weeks_without_lifestage |> 
-  filter(is.na(percent_adult) & is.na(percent_fry) & is.na(percent_parr) &
-         is.na(percent_silvery_parr) & is.na(percent_smolt) & is.na(percent_yearling) &
-         is.na(percent_yolk_sac_fry)) |> 
-  select(year, week, stream, site)
-
-formatted_standard_catch_field <- standard_catch_unmarked_field |> 
-  mutate(week = week(date), year = year(date)) |> glimpse()
-
-weeks_wo_lifestage_field <- gap_weeks_field |> 
-  left_join(formatted_standard_catch_field, by = c("year", "stream", "week", "site")) |> 
-  filter(!is.na(count) & count > 0) |> 
-  mutate(model_lifestage_method = "Not able to determine, no weekly lifestage data") |> 
-  glimpse()
-
-no_catch_field <- standard_catch_unmarked_field |> 
-  mutate(week = week(date), year = year(date)) |>
-  filter(count == 0) |> 
-  #filter(is.na(lifestage) & count == 0) |> 
-  mutate(model_lifestage_method = "no catch")
-
-updated_standard_catch_field <- bind_rows(combined_rst_wo_na_lifestage, na_filled_lifestage_field, 
-                                          no_catch_field, weeks_wo_lifestage_field) |> glimpse()
-
-updated_standard_catch_field |> 
-  ggplot() + 
-  geom_line(aes(x = date, y = count, color = site)) + facet_wrap(~stream, scales = "free")
-
-# total of 
-combined_rst_wo_na_run <- updated_standard_catch_na_run_no_deer_mill |> 
-  filter(!is.na(run) & count > 0) |> 
-  mutate(run_for_model = if_else(run == "spring", "spring_run", "not_spring_run")) |> 
-  mutate(model_run_method = ifelse(is.na(run_method), "not recorded", run_method)) |> 
-  select(-run_method) |> 
-  glimpse() 
-
-mill_and_deer <- updated_standard_catch_na_run |> 
-  filter(stream %in% c("mill creek", "deer creek")) |> 
-  mutate(run_for_model = NA,
-         model_run_method = "mill and deer - no data to interpolate") |> 
-  select(-run_method)
-
-no_catch_run <- updated_standard_catch_na_run_no_deer_mill |> 
-  filter(count == 0) |> 
-  mutate(run_for_model = NA,
-         model_run_method = "count is 0") |> 
-  select(-run_method)
-
-# TODO we added lots of records here. I think it has to do with joining on site - all joins in this section
-# have increased nrow()
-updated_standard_catch_with_run <- bind_rows(combined_rst_wo_na_run, na_filled_run, no_catch_run, mill_and_deer) |> glimpse()
-
-# Quick plot to check that we are not missing data 
-updated_standard_catch_with_run |> 
-  filter(model_run_method != "count is 0") |> 
-  ggplot() + 
-  geom_line(aes(x = date, y = count, color = run_for_model)) + facet_wrap(~stream, scales = "free")
-
-
-
-
-# add include_in_model variable based on sampling window criteria
-# read in years to include produced in prep data for model
-years_to_include <- read_csv(here::here("data", "model-data", "stream_week_site_year_include.csv")) |> 
-  select(stream, site, monitoring_year, min_date, max_date) |> glimpse()
-
-rst_with_inclusion_criteria <- updated_standard_catch |> 
-  mutate(monitoring_year = ifelse(month(date) %in% 9:12, year(date) + 1, year(date))) |> 
-  left_join(years_to_include) |> 
-  mutate(include_in_model = ifelse(date >= min_date & date <= max_date, TRUE, FALSE),
-         # if the year was not included in the list of years to include then should be FALSE
-         include_in_model = ifelse(is.na(min_date), FALSE, include_in_model)) |> 
-  select(-c(monitoring_year, min_date, max_date, year, week)) |> 
-  glimpse()
-write_csv(rst_with_inclusion_criteria, "daily_catch_unmarked.csv")
-
-rst_with_inclusion_criteria |>
-  group_by(stream, site, subsite) |>
-  summarize(min_date = min(date, na.rm = T),
-            max_date = max(date, na.rm = T)) |> view()
-
-gcs_upload(rst_with_inclusion_criteria,
+gcs_upload(standard_catch_unmarked,
            object_function = f,
            type = "csv",
            name = "jpe-model-data/daily_catch_unmarked_051525.csv",
            predefinedAcl = "bucketLevel")
 
-write_csv(rst_with_inclusion_criteria, "data/model-data/daily_catch_unmarked.csv")
+write_csv(standard_catch_unmarked, "data/model-data/daily_catch_unmarked.csv")
 
 # Summarize standard_catch by week
 # stream, site, subsite, week, year, run, lifestage, adipose_clipped
-weekly_standard_catch_unmarked <- rst_with_inclusion_criteria %>% 
+weekly_standard_catch_unmarked <- standard_catch_unmarked %>% 
   mutate(week = week(date),
          year = year(date)) %>% 
   group_by(week, year, stream, site, subsite, run, lifestage, adipose_clipped, lifestage_for_model, include_in_model) %>% 
@@ -528,7 +121,7 @@ write_csv(weekly_standard_catch_unmarked, "data/model-data/weekly_catch_unmarked
 # Need fork length distributions by week and lifestage (fry/smolt)
 # Provide as raw data, small size bins, larger size bins
 
-catch_fl_summary_site <- rst_with_inclusion_criteria |> 
+catch_fl_summary_site <- standard_catch_unmarked |> 
   # only want to include those weeks being included in model
   filter(include_in_model == T) |> 
   mutate(week = week(date),
@@ -545,7 +138,7 @@ gcs_upload(catch_fl_summary_site,
            predefinedAcl = "bucketLevel")
 write_csv(catch_fl_summary_site, "data/model-data/fork_length_summary_site.csv")
 
-catch_fl_summary_stream <- rst_with_inclusion_criteria |> 
+catch_fl_summary_stream <- standard_catch_unmarked |> 
   # only want to include those weeks being included in model
   filter(include_in_model == T) |> 
   mutate(week = week(date),
