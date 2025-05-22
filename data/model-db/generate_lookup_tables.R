@@ -444,7 +444,7 @@ gcs_get_object(object_name = "jpe-model-data/daily_trap.csv",
                overwrite = TRUE)
 trap_raw <- read_csv("data/model-data/daily_trap.csv")
 
-gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked.csv",
+gcs_get_object(object_name = "jpe-model-data/daily_catch_unmarked_051525.csv",
                bucket = gcs_get_global_bucket(),
                saveToDisk = "data/model-data/daily_catch_unmarked.csv",
                overwrite = TRUE)
@@ -465,8 +465,11 @@ years_available <- trap_raw |>
 years_available <- catch_raw |> 
   group_by(stream, site, subsite) |> 
   summarize(start_date = min(date, na.rm = T),
-            end_date = max(date, na.rm = T))
-
+            end_date = max(date, na.rm = T)) |> 
+  filter(!stream %in% c("battle creek", "clear creek", "feather river"), site != "tisdale") |>  # removing where we have EDI data
+  mutate(end_date = case_when(subsite %in% c("okie dam 1", "okie dam fyke trap") ~ as_date("2015-11-02"),
+                              site == "knights landing" & subsite %in% c("8.3", "8.4") ~ as_date("2003-11-26"),
+                              T ~ end_date))
 gcs_upload(years_available,
            object_function = f,
            type = "csv",
